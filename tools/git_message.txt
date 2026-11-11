@@ -1,4 +1,4 @@
-Round 4 part 3 (A+B): gravity element on R, slots grow with Magic level, 7 new long spells; dodge step, ward, staff strike, weak and strong elements, mana pressure
+Round 4 part 3 (C): spells mark the ground - spikes stay, fire keeps burning, water pools into floods and carries lightning; first frames drawn under the loading picture
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

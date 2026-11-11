@@ -51,7 +51,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -182,6 +182,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"where":  # fantasy world: the player's spot in map metres, for the log
 			var here: Vector3 = session.call("fantasy").call("player_local")
 			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])
+		"marks":  # fantasy world: what lies on the ground, for the log
+			var lying: Node = session.call("fantasy").get("marks")
+			_lines.append("marks %s: spikes=%d fire=%d water=%d widest water %.1f m" % [" ".join(words.slice(1)), int(lying.call("count_of", "spikes")), int(lying.call("count_of", "fire")), int(lying.call("count_of", "water")), float(lying.call("widest", "water"))])
 		"face":  # turn to the nearest creature
 			var nearest: Node3D = null
 			for enemy: Variant in session.call("director").call("enemy_list"):
@@ -209,11 +212,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 func _stage(renderer: String, stage: String, seconds: float) -> void:
 	await get_tree().create_timer(seconds, true, false, true).timeout
 	var started := Time.get_ticks_usec()
+	var last := started
+	var worst := 0.0  # the longest single frame: tells a hitch from a steadily slow view
 	for i in 30:
 		await RenderingServer.frame_post_draw
+		var now := Time.get_ticks_usec()
+		worst = maxf(worst, float(now - last) / 1000.0)
+		last = now
 	var ms := float(Time.get_ticks_usec() - started) / 30000.0
 	get_viewport().get_texture().get_image().save_jpg(OUT + "boot_%s_%s.jpg" % [renderer, stage], 0.9)
-	_lines.append("%s frame_ms=%.2f draws=%d tris=%d video_mb=%.0f" % [stage, ms,
+	_lines.append("%s frame_ms=%.2f worst_frame_ms=%.1f draws=%d tris=%d video_mb=%.0f" % [stage, ms, worst,
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
 		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0])

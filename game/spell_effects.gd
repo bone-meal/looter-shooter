@@ -21,6 +21,7 @@ const BOSS_HOLD := 0.25  # bosses are held for this share of a freeze or stagger
 
 signal healed(amount: float)  # the caster healed (the world tops up health)
 signal landed(local_kind: String, at: Vector3, spell: Dictionary)  # a spell reached the ground (fires get lit there)
+signal touched(at: Vector3, radius: float, damage: float, spell: Dictionary, show_only: bool)  # every place a spell bursts, sprays or sweeps: what it leaves there is game/ground_marks.gd's business
 
 var source: Node  # has enemy_list()
 var weakness := {}  # data/fantasy/combat.json "weakness" (empty = creatures have no weak or strong element)
@@ -203,6 +204,9 @@ func _run(job: Dictionary, delta: float) -> void:
 				job["next"] = float(job["t"]) + 0.15
 				var ticks := maxf(float(spell["seconds"]) / 0.15, 1.0)
 				_hit_line(origin, end, width, float(job["damage"]) / ticks, job, aim)
+				if float(job["t"]) >= float(job.get("mark_at", 0.0)):  # where the stream ends, it leaves its mark (a water jet floods the spot)
+					job["mark_at"] = float(job["t"]) + 0.3
+					touched.emit(end, maxf(width * 2.5, 1.5), float(job["damage"]) / ticks, spell, bool(job["show"]))
 		"bolt":
 			var pos: Vector3 = job["pos"]
 			var step: Vector3 = (job["aim"] as Vector3) * float(spell["speed"]) * delta
@@ -369,6 +373,7 @@ func _wave(job: Dictionary) -> void:
 		_shape(BALL, from + dir, Vector3(0.6, 0.6, 0.6), Vector3(2.2, 1.6, 2.2), Color(color, 0.6), 0.35, dir * radius / 0.35)
 		for k in 4 + int(job["count"]):
 			_mote(job, from + dir * randf_range(0.6, 1.6) + Vector3(0.0, randf_range(-0.3, 1.1), 0.0), dir * radius / randf_range(0.32, 0.6), 0.45, 0.5)
+	touched.emit(from + flat * radius * 0.55, radius * 0.45, float(job["damage"]), spell, bool(job.get("show", false)))
 	for enemy in _enemies():
 		var rel := _center(enemy) - from
 		rel.y = 0.0
@@ -424,6 +429,8 @@ func _within(at: Vector3, radius: float) -> Array:
 
 # Everything within `radius` of a point takes the hit (pushed away from the middle when the spell pushes).
 func _burst(at: Vector3, radius: float, damage: float, job: Dictionary, _dir: Vector3, show := true) -> void:
+	if String(job["kind"]) != "zone":
+		touched.emit(at, radius, damage, job["spell"], bool(job.get("show", false)))
 	if show:
 		_shape(BALL, at, Vector3.ONE * 0.6, Vector3.ONE * radius * 2.0, Color(job["color"], 0.6), 0.35)
 		if job.has("look"):
@@ -526,6 +533,12 @@ func _hurt(enemy: Node3D, damage: float, job: Dictionary, dir: Vector3) -> void:
 					_hurt(other, damage * 0.6, chained, Vector3.ZERO)
 	if effects.has("regen") and float(job["heal"]) > 0.0:
 		healed.emit(float(job["heal"]) * 0.1)
+
+
+# What lies on the ground (game/ground_marks.gd) hurts a creature standing in it: the same rules as a spell's own
+# hit (weak and strong elements, wetness), with the mark's own `effects`.
+func ground_hit(enemy: Node3D, damage: float, spell: Dictionary, effects: Dictionary) -> void:
+	_hurt(enemy, damage, {"kind": "mark", "spell": spell, "effects": effects, "count": int(spell.get("count", 1)), "heal": 0.0}, Vector3.ZERO)
 
 
 # A patch that keeps hurting what stands in it.

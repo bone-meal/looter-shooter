@@ -11,6 +11,7 @@ extends Node
 
 const SpellBook = preload("res://core/spell_book.gd")
 const CombatRules = preload("res://core/combat_rules.gd")
+const GroundRules = preload("res://core/ground_rules.gd")
 const SkillLevels = preload("res://core/skill_levels.gd")
 const FantasyBag = preload("res://core/fantasy_bag.gd")
 const QuestLog = preload("res://core/quest_log.gd")
@@ -216,6 +217,27 @@ func _check_combat(combat: Dictionary) -> void:
 		_need(String(combat["words"].get(key, "")) != "", "no combat word for %s" % key)
 
 
+# What spells leave on the ground: the rules agree with the data file, and plain spells leave what one expects.
+func _check_ground(ground: Dictionary, spells: Dictionary) -> void:
+	for part: String in ["spikes", "fire", "water", "shock"]:
+		_need(ground.has(part), "ground.json has no %s" % part)
+	var water: Dictionary = ground["water"]
+	_need(is_equal_approx(GroundRules.pooled(water, 3.0, 4.0), 5.0), "two puddles do not add their areas")
+	_need(GroundRules.pooled(water, 50.0, 50.0) == float(water["max_radius"]), "a flood grows past its cap")
+	_need(GroundRules.boiled(water, 3.0, 5.0) == 0.0 and GroundRules.boiled(water, 5.0, 3.0) == 4.0, "fire boils a puddle wrongly")
+	_need(GroundRules.flooded(water, float(water["flood_radius"])) and not GroundRules.flooded(water, float(water["min_radius"])), "flood size is judged wrong")
+	var book := SpellBook.new(spells)
+	var expect := {"E": ["spikes"], "EF": ["fire"], "W": ["water"], "FW": [], "AF": ["shock"], "A": []}
+	for sequence: String in expect:
+		var left := GroundRules.leaves(ground, book.resolve(sequence))
+		_need(Array(left) == expect[sequence], "spell %s leaves %s on the ground, expected %s" % [sequence, str(left), str(expect[sequence])])
+	var leaving := 0
+	for secret: Dictionary in spells["secrets"]:
+		if not GroundRules.leaves(ground, book.resolve(String(secret["sequence"]))).is_empty():
+			leaving += 1
+	print("ground: %d of %d secret spells leave something on the ground" % [leaving, (spells["secrets"] as Array).size()])
+
+
 # Fishing waters, boss moves, tribes, layouts.
 func _check_round_two(all: Dictionary) -> void:
 	var world: Dictionary = all["world"]
@@ -242,6 +264,7 @@ func _check_round_two(all: Dictionary) -> void:
 		var strong := String(enemies[id].get("strong", ""))
 		_need(all["spells"]["elements"].has(weak) and all["spells"]["elements"].has(strong) and weak != strong, "enemy %s needs a weak and a different strong element" % id)
 	_check_combat(all["combat"])
+	_check_ground(all["ground"], all["spells"])
 	var tribes: Dictionary = all["enemies"]["tribes"]
 	for banner: String in tribes["camps"]:
 		_need(enemies.has(banner + "_warrior"), "tribe %s has no warrior" % banner)

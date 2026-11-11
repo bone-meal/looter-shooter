@@ -1,0 +1,46 @@
+{
+ "version": 1,
+ "_about": "What spells leave on the ground of the fantasy world (rules: core/ground_rules.gd, play: game/ground_marks.gd). Placeholders for the director. max_marks: how many marks exist at once (the oldest goes first). max_height: a spell that bursts higher than this above the ground leaves nothing. spikes: a spell whose bits are one of `shapes` (data/fantasy/spells.json look.shape) and whose form is one of `forms` leaves its spikes standing for `seconds`; creatures on foot among them are slowed by `slow` and take damage_share of the spell's hit every `tick` seconds. fire: a spell that burns (and does not wet) leaves burning ground of radius_share x its own radius (not below min_radius, not above max_radius) for seconds + seconds_per_element for each element in the cast; creatures in it take damage_share of the hit every tick and keep burning burn_seconds. water: a spell that wets (and does not burn) leaves a puddle; more water in the same place adds its AREA to the puddle up to max_radius; from flood_radius on it is a flood that slows creatures by flood_slow; whoever stands in water stays wet for wet_seconds (wet creatures take half again as much from lightning, the old rule); a puddle dries after seconds + seconds_per_m for each metre of radius. Fire that lands in water goes out and boils part of the puddle away; water that lands on fire puts it out. shock: lightning (a spell that chains or shocks) touching a puddle hits EVERY creature standing in it for damage_share of the hit and stuns it `stun` seconds, at most once every `again` seconds per puddle. Flying creatures are above all of it; nothing here hurts players.",
+ "max_marks": 24,
+ "max_height": 2.5,
+ "tick": 0.5,
+ "spikes": {
+  "shapes": [
+   "rock",
+   "shard"
+  ],
+  "forms": [
+   "ground",
+   "quake",
+   "meteors"
+  ],
+  "seconds": 12.0,
+  "radius_share": 1.0,
+  "slow": 0.5,
+  "damage_share": 0.15
+ },
+ "fire": {
+  "seconds": 7.0,
+  "seconds_per_element": 1.0,
+  "radius_share": 0.8,
+  "min_radius": 1.2,
+  "max_radius": 8.0,
+  "damage_share": 0.12,
+  "burn_seconds": 2.0
+ },
+ "water": {
+  "seconds": 12.0,
+  "seconds_per_m": 2.0,
+  "radius_share": 0.8,
+  "min_radius": 1.5,
+  "max_radius": 12.0,
+  "flood_radius": 5.0,
+  "flood_slow": 0.35,
+  "wet_seconds": 3.0
+ },
+ "shock": {
+  "damage_share": 0.6,
+  "stun": 0.8,
+  "again": 0.5
+ }
+}

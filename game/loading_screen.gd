@@ -15,6 +15,7 @@ var _names: Array = []
 var _steps := 1
 var _seen := 0
 var _fading: Tween
+var _ending := 0  # counts finish() calls, so an older one that is still waiting gives up
 
 
 func _ready() -> void:
@@ -38,6 +39,7 @@ func _ready() -> void:
 func begin(steps: int) -> void:
 	if _fading != null:
 		_fading.kill()
+	_ending += 1
 	_steps = maxi(steps, 1)
 	_seen = 0
 	modulate.a = 1.0
@@ -65,6 +67,15 @@ func finish(_unused: int = 0) -> void:
 	get_viewport().disable_3d = false
 	_seen = _steps
 	_front.queue_redraw()
+	# The first frames of the 3D view can take seconds (Forward+ builds its shaders then: 3.2 s measured on the
+	# GTX 1080): they are drawn under the picture, and only then does it fade.
+	_ending += 1
+	var mine := _ending
+	for i in 3:
+		await RenderingServer.frame_post_draw
+	if mine != _ending:
+		return  # begin() or another finish() came in between
+	LoadClock.mark("first frames of the view drawn")
 	_fading = create_tween()
 	_fading.tween_property(self, "modulate:a", 0.0, 0.6)
 	_fading.tween_callback(hide)

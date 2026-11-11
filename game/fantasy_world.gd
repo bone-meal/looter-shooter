@@ -25,6 +25,7 @@ const FantasyWork = preload("res://game/fantasy_work.gd")
 const StaffCaster = preload("res://game/staff_caster.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
 const CombatTools = preload("res://game/combat_tools.gd")
+const GroundMarks = preload("res://game/ground_marks.gd")
 const FantasySpawner = preload("res://game/fantasy_spawner.gd")
 const BossMoves = preload("res://game/boss_moves.gd")
 const FantasySounds = preload("res://game/fantasy_sounds.gd")
@@ -68,6 +69,7 @@ var work := FantasyWork.new()
 var caster := StaffCaster.new()
 var effects := SpellEffects.new()
 var combat := CombatTools.new()  # dodge, ward, staff strike
+var marks := GroundMarks.new()  # what spells leave on the ground
 var spawner := FantasySpawner.new()
 var moves := BossMoves.new()
 var panel := FantasyPanel.new()
@@ -153,6 +155,11 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	effects.healed.connect(func(amount: float) -> void: _player.health.heal(amount))
 	effects.landed.connect(_on_spell_landed)
 	add_child(effects)
+	add_child(marks)
+	marks.source = director
+	marks.effects = effects
+	marks.setup(data["ground"])
+	effects.touched.connect(marks.touch)
 	add_child(caster)
 	caster.setup(self, player, effects)
 	caster.cast_done.connect(_on_cast)
@@ -412,6 +419,7 @@ func leave() -> void:
 	if party == null:
 		spawner.stop()  # online the host keeps running them for whoever is still in there
 	effects.clear()
+	marks.clear()
 	moves.clear()
 	combat.set_active(false)
 	rooms.reset()
