@@ -1,22 +1,4 @@
-# Round 4, item 2: the Omaha level (deleted on the director's order). Its ten enemies now live in data/enemies.json.
-game/omaha_world.gd
-game/omaha_world.gd.uid
-game/omaha_spawner.gd
-game/omaha_spawner.gd.uid
-core/omaha_geo.gd
-core/omaha_geo.gd.uid
-tools/omaha_check.gd
-tools/omaha_check.gd.uid
-tools/omaha_check.tscn
-tools/omaha_check.log
-tools/omaha_fetch.gd
-tools/omaha_fetch.gd.uid
-tools/omaha_fetch.tscn
-tools/omaha_bake.py
-data/omaha
-tools/shots/omaha_a.png
-tools/shots/omaha_a.png.import
-tools/shots/omaha_b.png
-tools/shots/omaha_b.png.import
-tools/shots/omaha_c.png
-tools/shots/omaha_c.png.import
+# Loading pictures that came out badly (a wall, a blurred slope): taken out of the game.
+assets/ui/loading/fernhollow.jpg
+assets/ui/loading/cinderreach.jpg
+assets/ui/loading/stormcrown.jpg

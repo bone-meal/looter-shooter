@@ -6,6 +6,7 @@ const WeaponModels = preload("res://game/weapon_models.gd")
 const GunPartsView = preload("res://game/gun_parts_view.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const TierSound = preload("res://game/tier_sound.gd")
+const SoundBoard = preload("res://game/sound_board.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 
@@ -79,7 +80,9 @@ func spawn(gun: Dictionary, pos: Vector3) -> void:
 	player.unit_size = 10.0 + float(ti) * 3.0
 	player.volume_db = -6.0 + float(ti)
 	node.add_child(player)
-	player.play()
+	if SoundBoard.allow("chime_" + tier_id):  # the Sounds page of the settings can mute each tier's chime
+		player.play()
+		SoundBoard.heard("chime_" + tier_id)
 	var ttl := float(cfg["despawn_seconds_gold_up"]) if ti >= gun_db.tier_index("gold") else float(cfg["despawn_seconds"])
 	_drops.append({"node": node, "gun": gun, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": ttl, "animated": TierStyle.animated(gun_db, tier_id), "tier": tier_id})
 	_tint(_drops[_drops.size() - 1], 0.0)

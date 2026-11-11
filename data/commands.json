@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Chat commands (type / in chat). scope: self = changes only your own character and runs on your machine; world = changes the shared world and runs on the host; host = only the host may use it. A client may use commands only after the host typed /op <name>. Commands are a developer switch: settings `dev_commands` (default on in debug builds, off in release exports).",
+ "_about": "Chat commands (type / in chat). scope: self = changes only your own character and runs on your machine; world = changes the shared world and runs on the host; host = only the host may use it. A client may use commands only after the host typed /op <name>. Commands are ON IN EVERY BUILD for now, release exports included (director 2026-11-10; the switch is settings `dev_commands` in core/settings_state.gd).",
  "commands": [
   {"name": "help", "usage": "/help [command]", "help": "Lists the commands, or explains one.", "scope": "self"},
   {"name": "give", "usage": "/give gun [tier] [body] | unique <id|all> | item <id> [count] | coins <amount>", "help": "Puts a rolled gun, a pony unique, an item or casino coins in your inventory. Tiers: grey green blue purple gold orange rainbow pony.", "scope": "self"},

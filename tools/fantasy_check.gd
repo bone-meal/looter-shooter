@@ -281,6 +281,15 @@ func _check_round_two(all: Dictionary) -> void:
 	_lines.append("layout: %d things in %d places, %d roadside sites, fishing spots %s, %d bosses with special attacks" % [total, (world["places"] as Array).size(), sites, str(spots), bosses])
 	_need(int(spots["fresh"]) > 0 and int(spots["salt"]) > 0, "no fishing spots were placed on fresh or salt water")
 	_check_ways(all, layout)
+	# every fantasy sound can be found (and muted) on the Sounds page of the settings
+	var listed := {}
+	for group: Dictionary in (JSON.parse_string(FileAccess.get_file_as_string("res://data/sound_list.json")) as Dictionary)["groups"]:
+		for sound: Dictionary in group["sounds"]:
+			listed[String(sound["id"])] = true
+	for id: String in all["sounds"]["sounds"]:
+		_need(listed.has(id), "sound %s is missing from data/sound_list.json" % id)
+	for id: String in all["sounds"]["ambience"]:
+		_need(listed.has("ambience_" + id), "ambience %s is missing from data/sound_list.json" % id)
 
 
 # Round 4: what can be bumped into. Every gate of a walled place can be walked through and there is no other way

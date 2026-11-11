@@ -1,0 +1,277 @@
+{
+ "version": 1,
+ "_about": "Every sound of the game for the Sounds page of the settings (game/sound_menu.gd): groups in the order shown, each sound with the id the code plays (game/sound_board.gd) and the label the player reads. Fantasy sounds = the ids of data/fantasy/sounds.json; ambience_<region id>; chime_<gun tier id>. A sound that is not listed here still plays, it just cannot be muted: tools/fantasy_check.tscn reports any that are missing.",
+ "groups": [
+  {
+   "name": "Spells",
+   "sounds": [
+    {
+     "id": "element_w",
+     "label": "Element added: water"
+    },
+    {
+     "id": "element_f",
+     "label": "Element added: fire"
+    },
+    {
+     "id": "element_e",
+     "label": "Element added: earth"
+    },
+    {
+     "id": "element_a",
+     "label": "Element added: air"
+    },
+    {
+     "id": "cast_flame",
+     "label": "Spell cast: flame"
+    },
+    {
+     "id": "cast_drop",
+     "label": "Spell cast: drop"
+    },
+    {
+     "id": "cast_rock",
+     "label": "Spell cast: rock"
+    },
+    {
+     "id": "cast_gust",
+     "label": "Spell cast: gust"
+    },
+    {
+     "id": "cast_blob",
+     "label": "Spell cast: blob"
+    },
+    {
+     "id": "cast_grain",
+     "label": "Spell cast: grains"
+    },
+    {
+     "id": "cast_leaf",
+     "label": "Spell cast: leaves"
+    },
+    {
+     "id": "cast_prism",
+     "label": "Spell cast: prism"
+    },
+    {
+     "id": "cast_puff",
+     "label": "Spell cast: puff"
+    },
+    {
+     "id": "cast_shard",
+     "label": "Spell cast: shards"
+    },
+    {
+     "id": "cast_spark",
+     "label": "Spell cast: sparks"
+    },
+    {
+     "id": "cast_big",
+     "label": "Spell cast: the boom of a long combo"
+    },
+    {
+     "id": "impact",
+     "label": "Spell hits"
+    },
+    {
+     "id": "refuse",
+     "label": "Spell refused"
+    }
+   ]
+  },
+  {
+   "name": "Bosses and creatures",
+   "sounds": [
+    {
+     "id": "boss_wake",
+     "label": "Boss wakes"
+    },
+    {
+     "id": "boss_warn",
+     "label": "Boss attack: warning"
+    },
+    {
+     "id": "boss_hit",
+     "label": "Boss attack: lands"
+    },
+    {
+     "id": "creature_fall",
+     "label": "Creature falls"
+    },
+    {
+     "id": "clash",
+     "label": "Tribes clashing"
+    }
+   ]
+  },
+  {
+   "name": "Gathering and crafting",
+   "sounds": [
+    {
+     "id": "gather_woodcutting",
+     "label": "Chopping wood"
+    },
+    {
+     "id": "gather_mining",
+     "label": "Mining"
+    },
+    {
+     "id": "gather_fishing",
+     "label": "Fishing"
+    },
+    {
+     "id": "gather_farming",
+     "label": "Farming"
+    },
+    {
+     "id": "gather_alchemy",
+     "label": "Picking herbs"
+    },
+    {
+     "id": "fire_light",
+     "label": "Lighting a fire"
+    },
+    {
+     "id": "craft_fire",
+     "label": "Cooking"
+    },
+    {
+     "id": "craft_forge",
+     "label": "Forge"
+    },
+    {
+     "id": "craft_workbench",
+     "label": "Workbench"
+    },
+    {
+     "id": "craft_cauldron",
+     "label": "Cauldron"
+    },
+    {
+     "id": "drink",
+     "label": "Eating and drinking"
+    },
+    {
+     "id": "item",
+     "label": "Item received"
+    }
+   ]
+  },
+  {
+   "name": "Quests and levels",
+   "sounds": [
+    {
+     "id": "quest_accept",
+     "label": "Quest accepted"
+    },
+    {
+     "id": "quest_step",
+     "label": "Quest step done"
+    },
+    {
+     "id": "quest_done",
+     "label": "Quest finished"
+    },
+    {
+     "id": "level_up",
+     "label": "Level up"
+    }
+   ]
+  },
+  {
+   "name": "Windows and map",
+   "sounds": [
+    {
+     "id": "ui_open",
+     "label": "Window or container opens"
+    },
+    {
+     "id": "ui_close",
+     "label": "Window closes"
+    },
+    {
+     "id": "ui_click",
+     "label": "Click"
+    },
+    {
+     "id": "ui_map",
+     "label": "Map"
+    }
+   ]
+  },
+  {
+   "name": "Ambience of Aurelind",
+   "sounds": [
+    {
+     "id": "ambience_amberfield",
+     "label": "Ambience: Amberfield"
+    },
+    {
+     "id": "ambience_greenwald",
+     "label": "Ambience: Greenwald"
+    },
+    {
+     "id": "ambience_brinemouth",
+     "label": "Ambience: Brinemouth"
+    },
+    {
+     "id": "ambience_sunscar",
+     "label": "Ambience: Sunscar"
+    },
+    {
+     "id": "ambience_frostmere",
+     "label": "Ambience: Frostmere"
+    },
+    {
+     "id": "ambience_cinderreach",
+     "label": "Ambience: Cinderreach"
+    },
+    {
+     "id": "ambience_stormcrown",
+     "label": "Ambience: Stormcrown"
+    },
+    {
+     "id": "ambience_hollow_crown",
+     "label": "Ambience: Hollow Crown"
+    }
+   ]
+  },
+  {
+   "name": "Gun drops",
+   "sounds": [
+    {
+     "id": "chime_grey",
+     "label": "Drop chime: grey"
+    },
+    {
+     "id": "chime_green",
+     "label": "Drop chime: green"
+    },
+    {
+     "id": "chime_blue",
+     "label": "Drop chime: blue"
+    },
+    {
+     "id": "chime_purple",
+     "label": "Drop chime: purple"
+    },
+    {
+     "id": "chime_gold",
+     "label": "Drop chime: gold"
+    },
+    {
+     "id": "chime_orange",
+     "label": "Drop chime: orange"
+    },
+    {
+     "id": "chime_rainbow",
+     "label": "Drop chime: rainbow"
+    },
+    {
+     "id": "chime_pony",
+     "label": "Drop chime: pony"
+    }
+   ]
+  }
+ ]
+}

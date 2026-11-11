@@ -1,0 +1,17 @@
+{
+ "_about": "Pictures for the loading screens (game/loading_screen.gd): names of files assets/ui/loading/<name>.jpg; one is picked at random each time. They are the game's own screenshots without the HUD, taken by the '!photo <name>' step of a scripted run (tools/dev_boot.gd), which also adds the name here. Remove a name to stop showing that picture.",
+ "pictures": [
+  "island_shore",
+  "amberfield_farm",
+  "millbrook_square",
+  "southfield_village",
+  "greenwald",
+  "brinemouth",
+  "sunscar",
+  "dunehaven",
+  "frostmere",
+  "rimegate",
+  "skyrest"
+ ],
+ "version": 1
+}

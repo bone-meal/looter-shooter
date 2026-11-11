@@ -63,6 +63,7 @@ signal card_changed(progress: Dictionary)  # level, achievements or card edited:
 
 var settings: SettingsState  # set before add_child
 var net: Node3D  # game/net_session.gd, set before add_child (idle when playing alone)
+var loading: Control  # game/loading_screen.gd, set before add_child (may be null in test scenes)
 var player_name := ""  # set before add_child when playing online (the lobby name)
 var _save_key := ""  # which save file (the typed name)
 var _profile_name := ""  # saved with the inventory (see game/profile_io.gd)
@@ -139,7 +140,7 @@ var _chat_closed_at := -1.0  # engine time the chat input last closed (the same 
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
-	LoadClock.mark("engine, menu and scripts")
+	LoadClock.mark("session created")
 	_build_environment()
 	LoadClock.mark("sky and light")
 	var gates := Colosseum.build(self)
@@ -933,6 +934,8 @@ func _on_player_died() -> void:
 # skills and quests.
 func _enter_fantasy() -> void:
 	LoadClock.mark("(play until the fantasy world was entered)")
+	if loading != null:
+		loading.call("begin", 10 if _fantasy == null else 5)
 	_build_fantasy()
 	LoadClock.mark("fantasy: world built")
 	_in_fantasy = true
@@ -940,6 +943,8 @@ func _enter_fantasy() -> void:
 	_player.look_at_point(_fantasy.farm_world() + Vector3(0.0, 3.0, 0.0))  # you arrive facing the farmhouse
 	apply_settings()  # switches to the painted look and loads the land around the player
 	LoadClock.mark("fantasy: look applied, land around the player")
+	if loading != null:
+		loading.call("finish")
 	_player_hud.play_fade()
 
 

@@ -10,7 +10,9 @@ const MainMenu = preload("res://game/main_menu.gd")
 const PauseMenu = preload("res://game/pause_menu.gd")
 const SettingsMenu = preload("res://game/settings_menu.gd")
 const ControlsMenu = preload("res://game/controls_menu.gd")
-const GameSession = preload("res://game/game_session.gd")
+const SoundMenu = preload("res://game/sound_menu.gd")
+const LoadingScreen = preload("res://game/loading_screen.gd")
+const LoadClock = preload("res://game/load_clock.gd")
 const NetSession = preload("res://game/net_session.gd")
 const LobbyMenu = preload("res://game/lobby_menu.gd")
 const RendererSwitch = preload("res://game/renderer_switch.gd")
@@ -20,6 +22,8 @@ var _main_menu: Control
 var _pause_menu: Control
 var _settings_menu: Control
 var _controls_menu: Control
+var _sound_menu: Control
+var _loading: Control  # the picture shown while a session is built or Aurelind is entered
 var _settings_return: Control  # menu to show again when settings closes
 var _session: Node3D
 var _net: Node3D  # online session (always present, idle until used)
@@ -28,6 +32,7 @@ var _lobby: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # menus keep working while the game is paused
+	LoadClock.mark("engine start, main scene, menu scripts")
 	SettingsIO.load_into(_settings)
 	if RendererSwitch.relaunch_if_needed(_settings.renderer, get_tree(), ""):
 		set_process_unhandled_input(false)
@@ -64,6 +69,7 @@ func _ready() -> void:
 	_settings_menu.changed.connect(_on_settings_changed)
 	_settings_menu.closed.connect(_close_settings)
 	_settings_menu.controls_pressed.connect(_open_controls)
+	_settings_menu.sounds_pressed.connect(func() -> void: _show_only(_sound_menu))
 	layer.add_child(_settings_menu)
 
 	_controls_menu = ControlsMenu.new()
@@ -72,10 +78,19 @@ func _ready() -> void:
 	_controls_menu.closed.connect(_close_controls)
 	layer.add_child(_controls_menu)
 
+	_sound_menu = SoundMenu.new()
+	_sound_menu.settings = _settings
+	_sound_menu.changed.connect(_on_settings_changed)
+	_sound_menu.closed.connect(_close_controls)  # saves and goes back to the settings, like the controls page
+	layer.add_child(_sound_menu)
+
 	_lobby = LobbyMenu.new()
 	_lobby.net = _net
 	_lobby.back_pressed.connect(func() -> void: _show_only(_main_menu))
 	layer.add_child(_lobby)
+	_loading = LoadingScreen.new()
+	layer.add_child(_loading)  # last = on top of every menu
+	LoadClock.mark("settings, input, menus")
 
 	_show_only(_main_menu)
 	if OS.get_cmdline_user_args().has("--autostart"):  # developer check (tools/game_boot_check.tscn): skip the menu
@@ -103,8 +118,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	get_viewport().set_input_as_handled()
 
 
+# The game's own scripts (about a hundred files) are read here, under the loading picture, and not before the menu
+# shows: the menu comes up sooner and the wait has something to look at.
 func _start_game() -> void:
-	_session = GameSession.new()
+	_show_only(null)
+	_loading.call("begin", 10)
+	var session_script := load("res://game/game_session.gd") as GDScript
+	LoadClock.mark("game scripts read")
+	_session = session_script.new() as Node3D
+	_session.loading = _loading
 	_session.settings = _settings
 	_session.net = _net
 	_session.process_mode = Node.PROCESS_MODE_PAUSABLE
@@ -117,6 +139,7 @@ func _start_game() -> void:
 	_net.table_event_received.connect(_session.apply_table_event)
 	if _net.is_active():
 		_net.bind_world(_session, _session.local_player(), _session.director())
+	_loading.call("finish")
 	_show_only(null)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -189,7 +212,7 @@ func _on_settings_changed() -> void:
 
 # Shows one menu (or none) and frees the mouse whenever a menu is up.
 func _show_only(menu: Control) -> void:
-	for m in [_main_menu, _pause_menu, _settings_menu, _controls_menu, _lobby]:
+	for m in [_main_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _lobby]:
 		m.visible = (m == menu)
 	if menu != null:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

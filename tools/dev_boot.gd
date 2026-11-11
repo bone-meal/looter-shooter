@@ -49,7 +49,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !where [note] (the player's map position into the log).
+# !state (fantasy bag, levels and quests into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -145,6 +145,38 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for recipe: Dictionary in land.get("skilling")["recipes"]:
 				if String(recipe["id"]) == words[1]:
 					_lines.append("make %s -> '%s'" % [words[1], str(land.get("work").call("make", recipe))])
+		"photo":  # a clean picture for the loading screens (no HUD, no held gun): assets/ui/loading/<name>.jpg, listed in data/loading.json
+			var old := get_viewport().get_camera_3d()
+			var eye := Camera3D.new()
+			get_tree().root.add_child(eye)
+			eye.global_transform = old.global_transform.translated_local(Vector3(0.0, 0.5, -2.5))  # ahead of the player: nothing of them in view
+			eye.fov = 70.0
+			eye.far = old.far
+			eye.current = true
+			var hidden: Array = []
+			for found in get_tree().root.find_children("*", "CanvasLayer", true, false):
+				if (found as CanvasLayer).visible:
+					(found as CanvasLayer).visible = false
+					hidden.append(found)
+			for i in 4:
+				await RenderingServer.frame_post_draw
+			DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://assets/ui/loading/"))
+			get_viewport().get_texture().get_image().save_jpg("res://assets/ui/loading/%s.jpg" % words[1], 0.88)
+			for layer: CanvasLayer in hidden:
+				layer.visible = true
+			old.current = true
+			eye.queue_free()
+			var listed: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/loading.json"))
+			if not (listed["pictures"] as Array).has(words[1]):
+				(listed["pictures"] as Array).append(words[1])
+				var list_file := FileAccess.open("res://data/loading.json", FileAccess.WRITE)
+				list_file.store_string(JSON.stringify(listed, " "))
+				list_file.close()
+			_lines.append("photo %s" % words[1])
+		"sounds":  # opens the Sounds page of the settings (as Settings > Sounds does); "!sounds off" closes it
+			get_parent().call("_show_only", null if words.size() > 1 else get_parent().get("_sound_menu"))
+		"loading":  # shows the loading picture as a session start does; "!loading off" lets it fade
+			get_parent().get("_loading").call("finish" if words.size() > 1 else "begin", 4)
 		"where":  # fantasy world: the player's spot in map metres, for the log
 			var here: Vector3 = session.call("fantasy").call("player_local")
 			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])

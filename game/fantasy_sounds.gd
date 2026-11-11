@@ -1,8 +1,11 @@
 # Purpose: plays the fantasy world's sounds. Which file, how loud, how much its pitch varies and how far it carries is
 # data (data/fantasy/sounds.json); callers only name a sound and, if it happens somewhere, the place. A fixed set of
 # players is reused in turn, and each region's ambience loop cross-fades into the next as the player walks.
-# Dependencies: data/fantasy/sounds.json, assets/audio/fantasy/*.wav (tools/make_fantasy_sounds.py).
+# Every sound asks game/sound_board.gd whether the player muted it and tells it when it is audible.
+# Dependencies: data/fantasy/sounds.json, assets/audio/fantasy/*.wav (tools/make_fantasy_sounds.py), game/sound_board.gd.
 extends Node3D
+
+const SoundBoard = preload("res://game/sound_board.gd")
 
 const FOLDER := "res://assets/audio/fantasy/"
 
@@ -16,6 +19,9 @@ var _beds: Array[AudioStreamPlayer] = []  # two ambience players: one fading in,
 var _bed := 0
 var _region := ""
 var _master := 0.0
+var _bed_volume := -80.0  # what the current ambience plays at when it is not muted
+var _fade_until := 0.0  # engine time the ambience cross-fade is over
+var _poll := 0.0
 
 
 func setup(data: Dictionary) -> void:
@@ -49,7 +55,7 @@ func _stream(id: String) -> AudioStream:
 func play(id: String, at: Vector3 = Vector3.INF) -> void:
 	var def: Dictionary = _data["sounds"].get(id, {})
 	var stream := _stream(id)
-	if def.is_empty() or stream == null:
+	if def.is_empty() or stream == null or not SoundBoard.allow(id):
 		return
 	var pitch := 1.0
 	if def.has("pitch"):
@@ -64,6 +70,9 @@ func play(id: String, at: Vector3 = Vector3.INF) -> void:
 		voice.unit_size = float(def.get("range", 40.0)) * 0.15  # fades quickly with distance and is gone at `range`
 		voice.max_distance = float(def.get("range", 40.0))
 		voice.play()
+		var ear := get_viewport().get_camera_3d()
+		if ear == null or ear.global_position.distance_to(at) <= voice.max_distance:
+			SoundBoard.heard(id)
 	else:
 		var voice := _flat[_next_flat]
 		_next_flat = (_next_flat + 1) % _flat.size()
@@ -71,6 +80,23 @@ func play(id: String, at: Vector3 = Vector3.INF) -> void:
 		voice.volume_db = float(def.get("volume", 0.0)) + _master
 		voice.pitch_scale = pitch
 		voice.play()
+		SoundBoard.heard(id)
+
+
+# Twice a second: a muted ambience goes silent (and comes back when unmuted); a playing one counts as heard.
+func _process(delta: float) -> void:
+	_poll += delta
+	if _poll < 0.5:
+		return
+	_poll = 0.0
+	var bed := _beds[_bed]
+	if _region == "" or not bed.playing:
+		return
+	var id := "ambience_" + _region
+	if SoundBoard.allow(id):
+		SoundBoard.heard(id)
+	if Time.get_ticks_msec() / 1000.0 >= _fade_until:
+		bed.volume_db = _bed_volume if SoundBoard.allow(id) else -80.0
 
 
 # The ambience of a region fades in and the previous one out ("" = silence, on leaving the world).
@@ -99,4 +125,6 @@ func set_region(id: String) -> void:
 	fresh.stream = stream
 	fresh.volume_db = -60.0
 	fresh.play()
-	create_tween().tween_property(fresh, "volume_db", float(def.get("volume", -12.0)) + _master, seconds)
+	_bed_volume = float(def.get("volume", -12.0)) + _master
+	_fade_until = Time.get_ticks_msec() / 1000.0 + seconds
+	create_tween().tween_property(fresh, "volume_db", _bed_volume if SoundBoard.allow("ambience_" + id) else -80.0, seconds)

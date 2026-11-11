@@ -8,6 +8,7 @@ const SettingsState = preload("res://core/settings_state.gd")
 signal changed
 signal closed
 signal controls_pressed
+signal sounds_pressed
 
 var settings: SettingsState  # set before add_child
 
@@ -28,6 +29,9 @@ func _ready() -> void:
 	_check(box, "V-Sync", settings.vsync, func(on: bool) -> void: settings.vsync = on)
 	_check(box, "Fullscreen", settings.fullscreen, func(on: bool) -> void: settings.fullscreen = on)
 	_check(box, "Debug overlay (graphs)", settings.show_debug, func(on: bool) -> void: settings.show_debug = on)
+	_slider(box, "Master volume", 0.0, 1.0, 0.05, settings.volume, "%.2f",
+		func(v: float) -> void: settings.volume = v)
+	Widgets.button(box, "Sounds", func() -> void: sounds_pressed.emit())
 	Widgets.button(box, "Controls", func() -> void: controls_pressed.emit())
 	Widgets.button(box, "Back", func() -> void: closed.emit())
 

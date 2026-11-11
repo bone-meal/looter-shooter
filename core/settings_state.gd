@@ -21,7 +21,9 @@ var graphics := "medium"
 var shaders := "realistic"
 var renderer := "compatibility"  # applied at the next start (game/renderer_switch.gd)
 var bindings := {}  # action -> "key:87" / "mouse:1"; missing = default (see game/input_setup.gd)
-var dev_commands := OS.is_debug_build()  # chat commands such as /give (game/admin_commands.gd); off in release builds unless saved as on
+var dev_commands := true  # chat commands such as /give (game/admin_commands.gd). Director 2026-11-10: ON IN RELEASE BUILDS TOO for now (was: debug builds only)
+var volume := 1.0  # master volume 0..1
+var muted_sounds: Array = []  # sound ids switched off on the Sounds page (data/sound_list.json, game/sound_board.gd)
 
 
 func to_dict() -> Dictionary:
@@ -37,6 +39,8 @@ func to_dict() -> Dictionary:
 		"renderer": renderer,
 		"bindings": bindings,
 		"dev_commands": dev_commands,
+		"volume": volume,
+		"muted_sounds": muted_sounds,
 	}
 
 
@@ -50,7 +54,10 @@ func from_dict(d: Dictionary) -> void:
 	graphics = String(d.get("graphics", graphics))
 	shaders = String(d.get("shaders", shaders))
 	renderer = String(d.get("renderer", renderer))
-	dev_commands = OS.is_debug_build() or bool(d.get("dev_commands", false))  # a release build's saved "off" must not switch them off in the editor
+	dev_commands = true  # on everywhere for now (director 2026-11-10); a saved "off" from an older build is ignored
+	volume = clampf(float(d.get("volume", volume)), 0.0, 1.0)
+	var quiet: Variant = d.get("muted_sounds", [])
+	muted_sounds = (quiet as Array).duplicate() if quiet is Array else []
 	var saved = d.get("bindings", {})
 	if saved is Dictionary:
 		bindings = {}
