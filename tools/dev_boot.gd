@@ -105,6 +105,20 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("look_at_point", (boxes[0]["at"] as Vector3) + Vector3(0, 0.6, 0))
 		"roomexit":  # fantasy world, inside a room: stand at its door
 			player.call("teleport", (session.call("fantasy").get("rooms").get("_exit") as Vector3) + Vector3(0, 0.2, 0.2), 0.0)
+		"panel":  # fantasy world: open a page of the window (Skills, Bag, Quests, Spells) and pick the thing named after it
+			var window: Control = session.call("fantasy").get("panel")
+			window.call("open", words[1])
+			if words.size() > 2:
+				window.call("pick", words[2])
+		"station":  # fantasy world: open the window of a station (fire, forge, workbench, cauldron) and pick a recipe
+			var window: Control = session.call("fantasy").get("panel")
+			window.call("open_station", words[1])
+			if words.size() > 2:
+				window.call("pick", words[2])
+		"slot":  # hold the gun in hotbar slot n (1-9)
+			player.call("select_hotbar", int(words[1]) - 1)
+		"closepanel":
+			session.call("fantasy").call("close_panel")
 		"accept":
 			session.call("fantasy").call("accept", words[1])
 		"use":  # fantasy world: eat, equip or light an item from the bag

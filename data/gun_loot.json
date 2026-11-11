@@ -193,7 +193,8 @@
    "part_fill": 1.0,
    "animated": "pony",
    "skin": "pony",
-   "tag": "** PONY **",
+   "tag": "*PONY*",
+   "tag_font": "res://assets/fonts/Chewy-Regular.ttf",
    "uniques": [],
    "skills": 2,
    "skill_quality": [

@@ -1,0 +1,5 @@
+Beta build for testers.
+
+Windows: unzip, run LooterShooter.exe (keep the .dll next to it).
+Linux: unzip, then `chmod +x LooterShooter.x86_64` and run it.
+macOS: not built yet.

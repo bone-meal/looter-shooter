@@ -2,6 +2,7 @@
 # Dependencies: core/inventory_state.gd, core/item_db.gd, game/item_icons.gd. Emits `changed` after every click so the player re-reads the held item.
 extends Control
 
+const IconArt = preload("res://game/icon_art.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const ItemDb = preload("res://core/item_db.gd")
@@ -140,7 +141,8 @@ func _draw_equipment(hover: int) -> void:
 		draw_rect(r, Color(0.4, 1.0, 0.5, 0.95) if fits else (Color(1, 1, 0.6, 0.9) if hover == EQUIP_BASE + k else Color(1, 1, 1, 0.25)), false, 2.0 if (fits or hover == EQUIP_BASE + k) else 1.0)
 		var stack: Dictionary = inventory.equipment[slot]
 		if stack.is_empty():
-			draw_string(_font, r.position + Vector2(0, SLOT * 0.5 + 5), SLOT_LABELS[slot], HORIZONTAL_ALIGNMENT_CENTER, SLOT, 12, Color(1, 1, 1, 0.3))
+			IconArt.draw(self, ItemIcons.slot_shape(slot), r.grow(-9), Color.WHITE, 0.2)  # what goes here
+			draw_string(_font, r.position + Vector2(0, SLOT - 4), SLOT_LABELS[slot], HORIZONTAL_ALIGNMENT_CENTER, SLOT, 9, Color(1, 1, 1, 0.35))
 		else:
 			ItemIcons.draw(self, stack["id"], r.grow(-5), Color.WHITE)
 
@@ -205,7 +207,7 @@ func _draw_gun_tooltip(gun: Dictionary, slot: int, view: Vector2) -> void:
 	var tint := TierStyle.color(gun_db, String(gun["tier"]), _now())
 	draw_rect(Rect2(pos, Vector2(width, height)), Color(0.06, 0.05, 0.1, 0.97))
 	draw_rect(Rect2(pos, Vector2(width, height)), tint, false, 2.0)
-	draw_string(_font, pos + Vector2(10, 22), GunStats.display_name(gun_db, gun), HORIZONTAL_ALIGNMENT_LEFT, -1, 17, tint)
+	TierStyle.draw_name(self, _font, pos + Vector2(10, 22), gun_db, String(gun["tier"]), GunStats.display_name(gun_db, gun), 17, tint)
 	draw_string(_font, pos + Vector2(10, 40), "vs held gun" if not other.is_empty() else "Rolled gun", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.7, 0.7, 0.8))
 	var y := 58.0
 	for line: Array in lines:

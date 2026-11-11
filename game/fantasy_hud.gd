@@ -8,6 +8,8 @@ extends Control
 
 const InputSetup = preload("res://game/input_setup.gd")
 const Style = preload("res://game/fantasy_style.gd")
+const IconArt = preload("res://game/icon_art.gd")
+const PanelQuests = preload("res://game/panel_quests.gd")
 
 const MEDAL := 17.0  # radius of a skill medallion
 const MOVE_SECONDS := 2.4
@@ -79,10 +81,14 @@ func _draw_skills() -> void:
 		var share := float(world.skills.progress(id))
 		if share > 0.0:
 			draw_arc(center, MEDAL - 1.5, -PI * 0.5, -PI * 0.5 + TAU * share, 32, color, 3.0, true)
-		Style.text(self, center + Vector2(-MEDAL, 5.0), str(int(world.skills.level(id))), 15, Style.PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, MEDAL * 2.0)
-		Style.text(self, center + Vector2(-MEDAL - 4.0, MEDAL + 12.0), String(world.skills.skill_name(id)).left(4), 10, color.lerp(Style.PARCHMENT, 0.45), HORIZONTAL_ALIGNMENT_CENTER, MEDAL * 2.0 + 8.0)
-	var keys := "%s  skills and bag      %s  quests and spells      %s  map" % [InputSetup.label(settings, "skills"), InputSetup.label(settings, "quests"), InputSetup.label(settings, "map")]
-	Style.text(self, Vector2(18.0, 52.0 + MEDAL * 2.0 + 34.0), keys, 13, Color(Style.PARCHMENT, 0.8))
+		IconArt.draw(self, String(world.skilling["skills"][id]["icon"]), Rect2(center - Vector2(11.0, 11.0), Vector2(22.0, 22.0)), color)
+		Style.text(self, center + Vector2(-MEDAL - 4.0, MEDAL + 13.0), str(int(world.skills.level(id))), 12, Style.PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, MEDAL * 2.0 + 8.0)
+	var x := 16.0  # the three keys, each with the sign of what it opens
+	for hint: Array in [["skills", "bag"], ["quests", "scroll"], ["map", "map"]]:
+		var label := InputSetup.label(settings, String(hint[0]))
+		IconArt.draw(self, String(hint[1]), Rect2(x, 52.0 + MEDAL * 2.0 + 20.0, 18.0, 18.0), Style.GOLD)
+		Style.text(self, Vector2(x + 22.0, 52.0 + MEDAL * 2.0 + 34.0), label, 13, Color(Style.PARCHMENT, 0.8))
+		x += 34.0 + Style.font().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
 
 
 func _draw_toasts() -> void:
@@ -110,7 +116,8 @@ func _draw_quests() -> void:
 		return
 	for i in ids.size():
 		var quest: Dictionary = world.quests.quest(ids[i])
-		Style.text(self, Vector2(card.position.x + 14.0, y), String(quest["name"]), 16, Style.GOLD, HORIZONTAL_ALIGNMENT_LEFT, width - 28.0)
+		IconArt.draw(self, String(PanelQuests.STEP_SHAPES.get(String(world.quests.step(ids[i]).get("type", "")), "dots")), Rect2(card.position.x + 12.0, y - 15.0, 18.0, 18.0), Style.GOLD)
+		Style.text(self, Vector2(card.position.x + 36.0, y), String(quest["name"]), 16, Style.GOLD, HORIZONTAL_ALIGNMENT_LEFT, width - 50.0)
 		Style.paragraph(self, Vector2(card.position.x + 14.0, y + 19.0), String(world.quests.step_text(ids[i])), 13, Style.PARCHMENT, width - 28.0)
 		if i < ids.size() - 1:
 			Style.rule(self, Vector2(card.position.x + 40.0, y + 44.0), Vector2(card.end.x - 40.0, y + 44.0))

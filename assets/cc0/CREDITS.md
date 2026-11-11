@@ -39,3 +39,5 @@ Rule for this project: only CC0 or original material goes in here. Nothing from 
 ## Other data
 
 - Omaha map geometry: (c) OpenStreetMap contributors, ODbL (see data/omaha/map.json `credit`).
+- Font "Chewy" (the word *PONY*): by Sideshow, Apache License 2.0, from github.com/google/fonts (assets/fonts/Chewy-Regular.ttf, licence text beside it).
+- Icons (assets/ui/icons_*.png) are drawn by our own script tools/make_icons.py.

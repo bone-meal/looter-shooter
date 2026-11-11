@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt.",
+ "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow).",
  "start": {
   "equip": {
    "staff": "ash_staff",
@@ -23,7 +23,8 @@
     0.75,
     0.7,
     0.6
-   ]
+   ],
+   "icon": "staff"
   },
   "oak_staff": {
    "kind": "staff",
@@ -34,7 +35,8 @@
     0.45,
     0.7,
     0.3
-   ]
+   ],
+   "icon": "staff"
   },
   "coral_staff": {
    "kind": "staff",
@@ -45,7 +47,8 @@
     1.0,
     0.55,
     0.5
-   ]
+   ],
+   "icon": "staff"
   },
   "sunstone_staff": {
    "kind": "staff",
@@ -56,7 +59,8 @@
     1.0,
     0.8,
     0.3
-   ]
+   ],
+   "icon": "staff"
   },
   "frostpine_staff": {
    "kind": "staff",
@@ -67,7 +71,8 @@
     0.7,
     0.9,
     1.0
-   ]
+   ],
+   "icon": "staff"
   },
   "obsidian_staff": {
    "kind": "staff",
@@ -78,7 +83,8 @@
     0.9,
     0.25,
     0.15
-   ]
+   ],
+   "icon": "staff"
   },
   "stormcall_staff": {
    "kind": "staff",
@@ -89,7 +95,8 @@
     0.6,
     0.7,
     1.0
-   ]
+   ],
+   "icon": "staff"
   },
   "prism_staff": {
    "kind": "staff",
@@ -100,7 +107,8 @@
     1.0,
     0.8,
     1.0
-   ]
+   ],
+   "icon": "staff"
   },
   "traveller_robe": {
    "kind": "robe",
@@ -111,7 +119,8 @@
     0.55,
     0.45,
     0.35
-   ]
+   ],
+   "icon": "robe"
   },
   "woodland_robe": {
    "kind": "robe",
@@ -122,7 +131,8 @@
     0.3,
     0.5,
     0.25
-   ]
+   ],
+   "icon": "robe"
   },
   "tidecloth_robe": {
    "kind": "robe",
@@ -133,7 +143,8 @@
     0.25,
     0.5,
     0.75
-   ]
+   ],
+   "icon": "robe"
   },
   "sunweave_robe": {
    "kind": "robe",
@@ -144,7 +155,8 @@
     0.9,
     0.7,
     0.3
-   ]
+   ],
+   "icon": "robe"
   },
   "rimefur_robe": {
    "kind": "robe",
@@ -155,7 +167,8 @@
     0.85,
     0.92,
     1.0
-   ]
+   ],
+   "icon": "robe"
   },
   "cinder_robe": {
    "kind": "robe",
@@ -166,7 +179,8 @@
     0.6,
     0.15,
     0.1
-   ]
+   ],
+   "icon": "robe"
   },
   "stormsilk_robe": {
    "kind": "robe",
@@ -177,103 +191,230 @@
     0.5,
     0.45,
     0.8
-   ]
+   ],
+   "icon": "robe"
   },
   "copper_axe": {
    "kind": "tool",
    "slot": "axe",
-   "tier": 1
+   "tier": 1,
+   "icon": "axe",
+   "color": [
+    0.85,
+    0.52,
+    0.32
+   ]
   },
   "iron_axe": {
    "kind": "tool",
    "slot": "axe",
-   "tier": 2
+   "tier": 2,
+   "icon": "axe",
+   "color": [
+    0.64,
+    0.66,
+    0.7
+   ]
   },
   "steel_axe": {
    "kind": "tool",
    "slot": "axe",
-   "tier": 3
+   "tier": 3,
+   "icon": "axe",
+   "color": [
+    0.8,
+    0.83,
+    0.87
+   ]
   },
   "skysteel_axe": {
    "kind": "tool",
    "slot": "axe",
-   "tier": 4
+   "tier": 4,
+   "icon": "axe",
+   "color": [
+    0.55,
+    0.78,
+    0.98
+   ]
   },
   "copper_pickaxe": {
    "kind": "tool",
    "slot": "pickaxe",
-   "tier": 1
+   "tier": 1,
+   "icon": "pickaxe",
+   "color": [
+    0.85,
+    0.52,
+    0.32
+   ]
   },
   "iron_pickaxe": {
    "kind": "tool",
    "slot": "pickaxe",
-   "tier": 2
+   "tier": 2,
+   "icon": "pickaxe",
+   "color": [
+    0.64,
+    0.66,
+    0.7
+   ]
   },
   "steel_pickaxe": {
    "kind": "tool",
    "slot": "pickaxe",
-   "tier": 3
+   "tier": 3,
+   "icon": "pickaxe",
+   "color": [
+    0.8,
+    0.83,
+    0.87
+   ]
   },
   "skysteel_pickaxe": {
    "kind": "tool",
    "slot": "pickaxe",
-   "tier": 4
+   "tier": 4,
+   "icon": "pickaxe",
+   "color": [
+    0.55,
+    0.78,
+    0.98
+   ]
   },
   "reed_rod": {
    "kind": "tool",
    "slot": "rod",
-   "tier": 1
+   "tier": 1,
+   "icon": "rod",
+   "color": [
+    0.75,
+    0.7,
+    0.4
+   ]
   },
   "oak_rod": {
    "kind": "tool",
    "slot": "rod",
-   "tier": 2
+   "tier": 2,
+   "icon": "rod",
+   "color": [
+    0.55,
+    0.4,
+    0.25
+   ]
   },
   "frostpine_rod": {
    "kind": "tool",
    "slot": "rod",
-   "tier": 3
+   "tier": 3,
+   "icon": "rod",
+   "color": [
+    0.62,
+    0.78,
+    0.85
+   ]
   },
   "ember_rod": {
    "kind": "tool",
    "slot": "rod",
-   "tier": 4
+   "tier": 4,
+   "icon": "rod",
+   "color": [
+    0.7,
+    0.3,
+    0.15
+   ]
   },
   "bread": {
    "kind": "food",
-   "heal": 30
+   "heal": 30,
+   "icon": "bread",
+   "color": [
+    0.85,
+    0.65,
+    0.35
+   ]
   },
   "fried_minnow": {
    "kind": "food",
-   "heal": 40
+   "heal": 40,
+   "icon": "cooked_fish",
+   "color": [
+    0.85,
+    0.7,
+    0.4
+   ]
   },
   "grilled_trout": {
    "kind": "food",
-   "heal": 80
+   "heal": 80,
+   "icon": "cooked_fish",
+   "color": [
+    0.8,
+    0.55,
+    0.35
+   ]
   },
   "seared_silverfin": {
    "kind": "food",
-   "heal": 140
+   "heal": 140,
+   "icon": "cooked_fish",
+   "color": [
+    0.85,
+    0.85,
+    0.8
+   ]
   },
   "spiced_sandskipper": {
    "kind": "food",
-   "heal": 220
+   "heal": 220,
+   "icon": "cooked_fish",
+   "color": [
+    0.92,
+    0.6,
+    0.25
+   ]
   },
   "icefin_stew": {
    "kind": "food",
-   "heal": 320
+   "heal": 320,
+   "icon": "stew",
+   "color": [
+    0.6,
+    0.82,
+    0.92
+   ]
   },
   "charred_eel": {
    "kind": "food",
-   "heal": 450
+   "heal": 450,
+   "icon": "cooked_fish",
+   "color": [
+    0.4,
+    0.28,
+    0.22
+   ]
   },
   "mana_tonic": {
    "kind": "potion",
-   "mana": 60
+   "mana": 60,
+   "icon": "potion",
+   "color": [
+    0.3,
+    0.5,
+    1.0
+   ]
   },
   "health_draught": {
    "kind": "potion",
-   "heal": 120
+   "heal": 120,
+   "icon": "potion",
+   "color": [
+    0.9,
+    0.25,
+    0.25
+   ]
   },
   "sun_elixir": {
    "kind": "potion",
@@ -281,7 +422,13 @@
    "buff": {
     "power": 1.2,
     "seconds": 60
-   }
+   },
+   "icon": "potion",
+   "color": [
+    1.0,
+    0.8,
+    0.25
+   ]
   },
   "frost_ward": {
    "kind": "potion",
@@ -289,7 +436,13 @@
    "buff": {
     "armor": 0.2,
     "seconds": 60
-   }
+   },
+   "icon": "potion",
+   "color": [
+    0.65,
+    0.9,
+    1.0
+   ]
   },
   "cinder_draught": {
    "kind": "potion",
@@ -297,135 +450,393 @@
    "buff": {
     "power": 1.35,
     "seconds": 60
-   }
+   },
+   "icon": "potion",
+   "color": [
+    1.0,
+    0.45,
+    0.15
+   ]
   },
   "ash_log": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "log",
+   "color": [
+    0.78,
+    0.72,
+    0.55
+   ]
   },
   "oak_log": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "log",
+   "color": [
+    0.55,
+    0.4,
+    0.25
+   ]
   },
   "palm_log": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "log",
+   "color": [
+    0.72,
+    0.58,
+    0.38
+   ]
   },
   "frostpine_log": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "log",
+   "color": [
+    0.62,
+    0.78,
+    0.85
+   ]
   },
   "emberwood_log": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "log",
+   "color": [
+    0.62,
+    0.25,
+    0.15
+   ]
   },
   "copper_ore": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "ore",
+   "color": [
+    0.85,
+    0.52,
+    0.32
+   ]
   },
   "iron_ore": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "ore",
+   "color": [
+    0.64,
+    0.66,
+    0.7
+   ]
   },
   "sunstone": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "crystal",
+   "color": [
+    1.0,
+    0.78,
+    0.3
+   ]
   },
   "frost_crystal": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "crystal",
+   "color": [
+    0.7,
+    0.92,
+    1.0
+   ]
   },
   "obsidian": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "crystal",
+   "color": [
+    0.36,
+    0.28,
+    0.44
+   ]
   },
   "skysteel_ore": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "ore",
+   "color": [
+    0.55,
+    0.78,
+    0.98
+   ]
   },
   "copper_bar": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "bar",
+   "color": [
+    0.85,
+    0.52,
+    0.32
+   ]
   },
   "iron_bar": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "bar",
+   "color": [
+    0.64,
+    0.66,
+    0.7
+   ]
   },
   "skysteel_bar": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "bar",
+   "color": [
+    0.55,
+    0.78,
+    0.98
+   ]
   },
   "minnow": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.7,
+    0.76,
+    0.82
+   ]
   },
   "trout": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.6,
+    0.72,
+    0.5
+   ]
   },
   "silverfin": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.86,
+    0.89,
+    0.93
+   ]
   },
   "sandskipper": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.86,
+    0.7,
+    0.45
+   ]
   },
   "icefin": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.65,
+    0.86,
+    0.96
+   ]
   },
   "lava_eel": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.92,
+    0.36,
+    0.16
+   ]
   },
   "wheat": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "wheat",
+   "color": [
+    0.92,
+    0.78,
+    0.35
+   ]
   },
   "meadowmint": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "herb",
+   "color": [
+    0.4,
+    0.76,
+    0.46
+   ]
   },
   "glowcap": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "mushroom",
+   "color": [
+    0.45,
+    0.9,
+    0.76
+   ]
   },
   "sunpetal": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "flower",
+   "color": [
+    1.0,
+    0.76,
+    0.26
+   ]
   },
   "frostbloom": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "flower",
+   "color": [
+    0.76,
+    0.9,
+    1.0
+   ]
   },
   "cinderroot": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "root",
+   "color": [
+    0.78,
+    0.32,
+    0.16
+   ]
   },
   "straw_bundle": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "straw",
+   "color": [
+    0.9,
+    0.8,
+    0.45
+   ]
   },
   "slime_jelly": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "jelly",
+   "color": [
+    0.5,
+    0.86,
+    0.4
+   ]
   },
   "wolf_pelt": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "pelt",
+   "color": [
+    0.52,
+    0.47,
+    0.42
+   ]
   },
   "crab_shell": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "shell",
+   "color": [
+    0.92,
+    0.52,
+    0.42
+   ]
   },
   "scorpion_sting": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "sting",
+   "color": [
+    0.78,
+    0.62,
+    0.3
+   ]
   },
   "amber_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    1.0,
+    0.75,
+    0.2
+   ]
   },
   "verdant_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    0.3,
+    0.76,
+    0.36
+   ]
   },
   "azure_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    0.25,
+    0.55,
+    0.96
+   ]
   },
   "ochre_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    0.8,
+    0.6,
+    0.25
+   ]
   },
   "white_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    0.95,
+    0.95,
+    0.95
+   ]
   },
   "crimson_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    0.86,
+    0.16,
+    0.2
+   ]
   },
   "storm_pigment": {
-   "kind": "pigment"
+   "kind": "pigment",
+   "icon": "pigment",
+   "color": [
+    0.55,
+    0.5,
+    0.9
+   ]
   },
   "sprat": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.6,
+    0.7,
+    0.82
+   ]
   },
   "grilled_sprat": {
    "kind": "food",
-   "heal": 35
+   "heal": 35,
+   "icon": "cooked_fish",
+   "color": [
+    0.8,
+    0.72,
+    0.5
+   ]
   },
   "stormfin": {
-   "kind": "material"
+   "kind": "material",
+   "icon": "fish",
+   "color": [
+    0.52,
+    0.52,
+    0.86
+   ]
   },
   "seared_stormfin": {
    "kind": "food",
-   "heal": 380
+   "heal": 380,
+   "icon": "cooked_fish",
+   "color": [
+    0.55,
+    0.55,
+    0.82
+   ]
   }
  }
 }

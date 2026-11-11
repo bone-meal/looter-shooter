@@ -149,6 +149,8 @@ func _draw_status_icon(element: String, c: Vector2, left: float, full: float) ->
 
 
 func _draw_weapons(view: Vector2) -> void:
+	if player.guns_locked:  # the fantasy world: no guns there, so no hotbar and no gun box
+		return
 	_draw_hotbar(view)
 	var w = player.held_weapon()
 	if w == null:
@@ -164,7 +166,7 @@ func _draw_weapons(view: Vector2) -> void:
 	if not gun.is_empty():
 		tint = TierStyle.color(player.gun_db, String(gun["tier"]), now)
 		draw_rect(Rect2(x, top, SLOT_W, SLOT_H), tint, false, 3.0)
-		draw_string(_font, Vector2(x, top - 6), GunStats.display_name(player.gun_db, gun), HORIZONTAL_ALIGNMENT_RIGHT, SLOT_W, 14, tint)
+		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), GunStats.display_name(player.gun_db, gun), 14, tint, SLOT_W)
 	ItemIcons.draw(self, w.weapon_id, Rect2(x + 24, top + 8, 100, 34), tint)
 	var low: bool = w.ammo <= maxi(1, w.mag_size / 4)
 	var pip_w: float = 110.0 / w.mag_size

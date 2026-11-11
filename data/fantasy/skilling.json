@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt.",
+ "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station.",
  "max_level": 50,
  "xp_base": 30,
  "xp_power": 2.2,
@@ -10,63 +10,72 @@
     0.7,
     0.5,
     1.0
-   ]
+   ],
+   "icon": "spark"
   },
   "woodcutting": {
    "color": [
     0.45,
     0.75,
     0.35
-   ]
+   ],
+   "icon": "axe"
   },
   "firemaking": {
    "color": [
     1.0,
     0.55,
     0.2
-   ]
+   ],
+   "icon": "flame"
   },
   "fishing": {
    "color": [
     0.35,
     0.65,
     1.0
-   ]
+   ],
+   "icon": "fish"
   },
   "cooking": {
    "color": [
     0.95,
     0.75,
     0.45
-   ]
+   ],
+   "icon": "pot"
   },
   "mining": {
    "color": [
     0.65,
     0.65,
     0.7
-   ]
+   ],
+   "icon": "pickaxe"
   },
   "smithing": {
    "color": [
     0.8,
     0.45,
     0.3
-   ]
+   ],
+   "icon": "anvil"
   },
   "farming": {
    "color": [
     0.9,
     0.8,
     0.3
-   ]
+   ],
+   "icon": "wheat"
   },
   "alchemy": {
    "color": [
     0.4,
     0.9,
     0.75
-   ]
+   ],
+   "icon": "potion"
   }
  },
  "nodes": {
@@ -925,5 +934,19 @@
   "deplete_chance": 0.35,
   "tool_speed": 0.25,
   "reach_water": 7.5
+ },
+ "stations": {
+  "fire": {
+   "icon": "flame"
+  },
+  "forge": {
+   "icon": "anvil"
+  },
+  "workbench": {
+   "icon": "hammer"
+  },
+  "cauldron": {
+   "icon": "pot"
+  }
  }
 }

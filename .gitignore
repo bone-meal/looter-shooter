@@ -3,6 +3,7 @@
 .mono/
 # Exported builds go to GitHub Releases, not the repo
 versions/
+build/
 *.exe
 *.pck
 # Dev downloads and check-scene output

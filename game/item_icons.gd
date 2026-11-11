@@ -1,8 +1,18 @@
-# Purpose: draws simple vector icons for items (guns and the placeholder worm) into any CanvasItem. Used by the HUD and inventory screen.
-# Dependencies: none. Icons are keyed by item ID; unknown IDs get a plain bar.
+# Purpose: draws the icon of an item of the gun side of the game into any CanvasItem: guns and the worm as simple
+# drawn shapes, armour as the icon of the slot it is worn in (ring, trousers, helmet ...) in the item's own colour.
+# Used by the HUD and the inventory screen.
+# Dependencies: game/icon_art.gd (the icon sheet), data/items.json (slot and color of armour).
 extends RefCounted
 
+const IconArt = preload("res://game/icon_art.gd")
+
 const WORM := Color(0.95, 0.55, 0.68)
+# equipment slot -> shape of the icon sheet
+const SLOT_SHAPES := {"hat": "hat", "head": "helm", "earrings": "earrings", "necklace": "necklace", "glasses": "glasses", "mouth": "dots", "shirt": "shirt",
+	"chestplate": "chestplate", "gauntlets": "gauntlets", "ring": "ring", "bracelet": "bracelet", "pants": "pants", "leg_armor": "leg_armor", "cape": "cape",
+	"waist": "belt", "boots": "boots", "foot_armor": "sabatons"}
+
+static var _items := {}
 const WORM_LIGHT := Color(1.0, 0.75, 0.82)
 
 
@@ -59,7 +69,19 @@ static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color) -> vo
 			canvas.draw_rect(Rect2(o + Vector2(70, 15) * s, Vector2(5, 6) * s), Color(1.0, 0.45, 0.1))  # ember
 			canvas.draw_polyline(PackedVector2Array([o + Vector2(74, 12) * s, o + Vector2(70, 6) * s, o + Vector2(76, 0) * s]), Color(0.8, 0.8, 0.85, 0.7), maxf(2.0 * s, 1.0), true)  # smoke
 		_:
-			# Armor and anything unknown: a shield in a color derived from the ID.
-			var c := Color.from_hsv(float(id.hash() % 360) / 360.0, 0.45, 0.85)
-			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(26, 2) * s, o + Vector2(64, 2) * s, o + Vector2(64, 20) * s, o + Vector2(45, 34) * s, o + Vector2(26, 20) * s]), c)
-			canvas.draw_polyline(PackedVector2Array([o + Vector2(26, 2) * s, o + Vector2(64, 2) * s, o + Vector2(64, 20) * s, o + Vector2(45, 34) * s, o + Vector2(26, 20) * s, o + Vector2(26, 2) * s]), c.darkened(0.4), maxf(2.0 * s, 1.0))
+			# Armour: the shape says where it is worn (a ring, trousers, a helmet ...), the colour is the item's own (data/items.json).
+			var def: Dictionary = _defs().get(id, {})
+			var shape := slot_shape(String(def.get("slot", "")))
+			var c: Array = def.get("color", [0.8, 0.8, 0.82])
+			IconArt.draw(canvas, shape, rect, Color(c[0], c[1], c[2]))
+
+
+# The icon that stands for an equipment slot ("ring_2" and "ring" are both a ring).
+static func slot_shape(slot: String) -> String:
+	return String(SLOT_SHAPES.get(slot.trim_suffix("_1").trim_suffix("_2"), "shield"))
+
+
+static func _defs() -> Dictionary:
+	if _items.is_empty():
+		_items = JSON.parse_string(FileAccess.get_file_as_string("res://data/items.json"))["items"]
+	return _items

@@ -82,3 +82,20 @@ frostbloom: Frostbloom
 cinderroot: Cinderroot
 shallows_spot: Shore shallows
 deepsea_spot: Cold current
+
+[station fire]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Cooking Fire
+
+[station forge]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Forge
+
+[station workbench]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Workbench
+
+[station cauldron]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Cauldron
+

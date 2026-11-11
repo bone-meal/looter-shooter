@@ -63,6 +63,9 @@ func spawn(gun: Dictionary, pos: Vector3) -> void:
 	node.add_child(holder)
 	var label := Label3D.new()
 	label.text = GunStats.display_name(gun_db, gun)
+	var fancy := TierStyle.tag_font(gun_db, String(gun["tier"]))
+	if fancy != null:  # a pony drop: its whole name tag in the pony face
+		label.font = fancy
 	label.font_size = 40
 	label.pixel_size = 0.0045
 	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
