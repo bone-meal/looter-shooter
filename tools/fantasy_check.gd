@@ -537,3 +537,18 @@ func _check_ways(all: Dictionary, layout: FantasyLayout) -> void:
 					left_out += 1
 					_need(String(piece["loot"]) == "" and String(piece["station"]) == "", "room %s in %s: %s stands where the room is entered" % [kind, model, piece["model"]])
 	_lines.append("rooms: %d building and room pairs; %d plain pieces of furniture are left out because they would stand in the way in" % [rooms, left_out])
+	var doors := 0
+	var shut := 0
+	for place: Dictionary in world["places"]:  # the spot from which a building is entered must be free to stand on
+		var items := layout.place_items(place)
+		for item: Dictionary in items:
+			var model := String(item["model"])
+			if bool(item.get("inside", false)) or rules.walk_in(model) or rules.kind_of(model, float(item["x"]), float(item["z"])) == "":
+				continue
+			doors += 1
+			var spot := rules.door(item)
+			if layout.push_out(spot.x, spot.y, 0.35).distance_to(spot) > float(inside["door_reach"]) - 0.5:
+				shut += 1
+				_lines.append("  door of %s in %s cannot be reached" % [model, place["id"]])
+	_need(shut == 0, "%d doors cannot be reached" % shut)
+	_lines.append("doors: %d buildings are entered from a spot in front of their own wall; %d of the spots are out of reach" % [doors, shut])

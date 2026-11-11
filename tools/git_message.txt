@@ -1,4 +1,10 @@
-Round 4 part 4 (A+B): sculpted terrain (ridges, mesas, gorges, dunes, terraces, volcano; calm at places and paths), far ground cut away under loaded chunks, solid clutter (16 models), faster terrain rules
+Round 4 part 4 C: Tudor houses, town wall, gatehouse, chapel and barn in real detail
+
+- tools/blender/fantasy_house.py: one house builder (floors that jut out on joists, timber frame with braces, leaded windows, shutters, flower boxes, dormers, framed gables, chimney pots); townhouses turn their gable to the street; stone and desert regions build their own way
+- tools/blender/fantasy_walls.py: town wall with a wall walk, gatehouse with guard room and portcullis, chapel with tower and spire; barn framed and boarded
+- weathering stored in the models' colours (damp foot, moss on old stone)
+- a building's solid part is its plinth (props.json "walls"), so nobody bumps into air under eaves; the door spot follows it
+- tools/prop_shot: pictures of named models; fantasy_check: every door spot can be reached
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -96,6 +96,8 @@ class Maker:
                     lo[i], hi[i] = min(lo[i], v.co[i]), max(hi[i], v.co[i])
         # Blender x = right, y = forward (the game's -z), z = up
         self.sizes[name] = {"w": round(hi[0] - lo[0], 2), "d": round(hi[1] - lo[1], 2), "h": round(hi[2], 2), "x": round((hi[0] + lo[0]) / 2, 2), "z": round(-(hi[1] + lo[1]) / 2, 2), "solid": solid}
+        if getattr(m, "walls", None):  # the builder named its solid parts itself ([x, z, width, depth] each, game axes): roofs and overhangs stop nobody
+            self.sizes[name].update({"walls": m.walls, "wall_h": round(hi[2], 2)})
         print(name, m.export(OUT), self.sizes[name])
 
     def save(self):
@@ -107,65 +109,30 @@ class Maker:
         json.dump({"_about": about, "props": dict(sorted(known.items()))}, open(FOOTPRINTS, "w"), indent=1)
 
 
-def house(m, s, w, d, floors, roof_h, chimney=True, frame=True, door_x=0.0):
-    """A half-timbered house: stone footing, plastered floors with dark beams, gable roof (or flat with a parapet)."""
-    wall_h = 0.5 + 2.5 * floors
-    m.box(S(s, "stone"), (w + 0.2, 0.6, d + 0.2), (0, 0.3, 0), bevel=0.04)
-    m.box(S(s, "wall"), (w, wall_h - 0.5, d), (0, 0.5 + (wall_h - 0.5) / 2, 0), bevel=0.03)
-    if floors > 1:  # the upper floor juts out a little
-        m.box(S(s, "wall"), (w + 0.5, 2.4, d + 0.5), (0, wall_h - 1.2, 0), bevel=0.03)
-    if frame:
-        big = 0.25 if floors > 1 else 0.0
-        for sx in (-1, 1):
-            for sf in (-1, 1):
-                m.box(S(s, "timber"), (0.2, wall_h - 0.5, 0.2), (sx * (w / 2 + big), 0.5 + (wall_h - 0.5) / 2, sf * (d / 2 + big)), bevel=0.02)
-        for y in ([3.0] if floors > 1 else []) + [wall_h - 0.1]:
-            m.box(S(s, "timber"), (w + 2 * big + 0.24, 0.2, 0.2), (0, y, d / 2 + big), bevel=0.02)
-            m.box(S(s, "timber"), (w + 2 * big + 0.24, 0.2, 0.2), (0, y, -d / 2 - big), bevel=0.02)
-            m.box(S(s, "timber"), (0.2, 0.2, d + 2 * big + 0.24), (w / 2 + big, y, 0), bevel=0.02)
-            m.box(S(s, "timber"), (0.2, 0.2, d + 2 * big + 0.24), (-w / 2 - big, y, 0), bevel=0.02)
-        posts = max(1, int(w / 2.4))
-        for i in range(1, posts):
-            x = -w / 2 + w * i / posts
-            for sf in (-1, 1):
-                m.box(S(s, "timber"), (0.14, wall_h - 0.5, 0.1), (x, 0.5 + (wall_h - 0.5) / 2, sf * (d / 2 + big + 0.02)), bevel=0.015)
-        for sx in (-1, 1):  # diagonal braces on the front
-            m.rod(S(s, "timber"), 0.07, (sx * (w / 2 + big), wall_h - 2.3, d / 2 + big + 0.03), (sx * (w / 2 + big - 1.1), wall_h - 0.2, d / 2 + big + 0.03), segs=4)
-    # door and windows (front = +f)
-    front = d / 2 + (0.27 if floors > 1 else 0.02)
-    m.box(S(s, "timber"), (1.1, 2.0, 0.12), (door_x, 1.55, d / 2 + 0.03), bevel=0.03)
-    m.box(S(s, "trim"), (0.9, 1.8, 0.14), (door_x, 1.5, d / 2 + 0.04), bevel=0.03)
-    m.ball(c((0.9, 0.8, 0.3)), 0.05, (door_x + 0.3, 1.5, d / 2 + 0.13), u=6, v=4)
-    for floor in range(floors):
-        y = 1.9 + 2.5 * floor
-        for x in [v for v in (-w / 2 + 1.3, w / 2 - 1.3) if abs(v - door_x) > 1.2 or floor > 0]:
-            f = front if floor > 0 else d / 2 + 0.02
-            m.box(S(s, "timber"), (1.0, 1.1, 0.1), (x, y, f), bevel=0.02)
-            m.box(c((0.35, 0.5, 0.65)), (0.8, 0.9, 0.12), (x, y, f + 0.01), bevel=0.01)
-            m.box(S(s, "timber"), (0.06, 0.9, 0.14), (x, y, f + 0.01), bevel=0)
-            m.box(S(s, "timber"), (0.8, 0.06, 0.14), (x, y, f + 0.01), bevel=0)
-            m.box(S(s, "trim"), (1.1, 0.14, 0.26), (x, y - 0.62, f + 0.08), bevel=0.02)  # flower box
-    grow = 0.5 if floors > 1 else 0.0
-    if s.get("flat"):
-        m.box(S(s, "roof"), (w + 0.4, 0.3, d + 0.4), (0, wall_h + 0.15, 0), bevel=0.04)
-        for sx in (-1, 1):
-            m.box(S(s, "wall"), (0.3, 0.5, d + 0.4), (sx * (w / 2 + 0.05), wall_h + 0.5, 0), bevel=0.04)
-        for sf in (-1, 1):
-            m.box(S(s, "wall"), (w + 0.4, 0.5, 0.3), (0, wall_h + 0.5, sf * (d / 2 + 0.05)), bevel=0.04)
-        m.strip(S(s, "trim"), w * 0.8, 0.05, [(d / 2 + 0.3, wall_h - 0.2), (d / 2 + 1.8, wall_h - 0.7)], x=0)  # awning
-    else:
-        half = d / 2 + grow / 2 + 0.55
-        m.prof(S(s, "roof"), w + grow + 0.9, [(-half, wall_h - 0.15), (0, wall_h + roof_h), (half, wall_h - 0.15)], x=0, bevel=0.05)
-        m.prof(S(s, "wall"), w + grow, [(-half + 0.5, wall_h), (0, wall_h + roof_h - 0.45), (half - 0.5, wall_h)], x=0, bevel=0.0)
-        m.box(S(s, "timber"), (w + grow + 1.0, 0.16, 0.2), (0, wall_h + roof_h + 0.02, 0), bevel=0.03)
-        for k in range(1, 4):  # roof courses, so the big faces are not blank
-            t = k / 4.0
-            for sf in (-1, 1):
-                m.box(K(s["kinds"]["roof"], tuple(v * 0.86 for v in s["roof"])), (w + grow + 0.94, 0.05, 0.12), (0, wall_h - 0.15 + (roof_h + 0.15) * (1 - t) + 0.04, sf * half * t), tilt=sf * math.degrees(math.atan2(roof_h + 0.15, half)), bevel=0)
-    if chimney:
-        top = wall_h + (0.9 if s.get("flat") else roof_h + 0.7)
-        m.box(S(s, "stone"), (0.7, top - 0.5, 0.7), (w / 2 - 1.0, 0.5 + (top - 0.5) / 2, -d / 4), bevel=0.04)
-        m.box(S(s, "stone"), (0.86, 0.2, 0.86), (w / 2 - 1.0, top, -d / 4), bevel=0.03)
-    return wall_h
+def weathered(strength=1.0, moss=0.0):
+    """Use as `with weathered():` round the parts of a building: every colour gets darker towards the ground (damp
+    and splash-back) and drifts a little along the walls, so nothing is one flat tone. `moss` turns the damp foot
+    green (old stone walls)."""
+    import contextlib
+
+    @contextlib.contextmanager
+    def scope():
+        def shade(co):
+            low = math.exp(-max(co.z, 0.0) / 0.9)
+            k = (1.0 - 0.28 * strength * low) * (1.0 + 0.05 * strength * math.sin(co.x * 1.7 + co.y * 2.3 + co.z * 0.9))
+            return (k * (1.0 - 0.3 * moss * low), k, k * (1.0 - 0.38 * moss * low))
+        before = kit.SHADE
+        kit.SHADE = shade
+        try:
+            yield
+        finally:
+            kit.SHADE = before
+    return scope()
+
+
+def house(m, s, w, d, floors, roof_h, chimney=True, frame=True, door_x=0.0, gable_front=False):
+    """A house in the region's way of building (see fantasy_house.py). Returns the height of its walls."""
+    import fantasy_house
+    return fantasy_house.build(m, s, w, d, floors, roof_h, chimney=chimney, frame=frame, door_x=door_x, gable_front=gable_front)
 
 

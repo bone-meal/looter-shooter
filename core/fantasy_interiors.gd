@@ -47,7 +47,11 @@ func _frame(item: Dictionary) -> Array:
 # The spot on the map just outside a building's door.
 func door(item: Dictionary) -> Vector2:
 	var f := _frame(item)
-	return (f[0] as Vector2) - (f[2] as Vector2) * (float(f[3].get("d", 4.0)) * 0.5 + 0.9)
+	var size: Dictionary = f[3]
+	if size.has("walls") and not size.has("inner"):  # roofs and upper floors reach out over the street: the door is in the first solid piece
+		var piece: Array = size["walls"][0]
+		return Vector2(float(item["x"]), float(item["z"])) + (f[1] as Vector2) * float(piece[0]) + (f[2] as Vector2) * (float(piece[1]) - float(piece[3]) * 0.5 - 0.9)
+	return (f[0] as Vector2) - (f[2] as Vector2) * (float(size.get("d", 4.0)) * 0.5 + 0.9)
 
 
 # How large a building's room is inside (half width, half depth): its footprint without the walls, within limits.

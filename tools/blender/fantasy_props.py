@@ -12,6 +12,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import kit
 import fantasy_kit
+import fantasy_house as fh
 from fantasy_kit import K, S, c, SCHEMES, house, init, Maker
 
 
@@ -81,18 +82,18 @@ def build_all():
     # --- the painting's farmhouse: L-shaped, two floors, with a barn wing ---
     def farmhouse(m):
         house(m, amber, 11.0, 7.0, 2, 3.4, door_x=-2.0)
-        # barn wing at a right angle
-        m.box(S(amber, "stone"), (6.2, 0.6, 9.2), (8.4, 0.3, 2.5), bevel=0.04)
-        m.box(S(amber, "wall"), (6.0, 3.6, 9.0), (8.4, 2.3, 2.5), bevel=0.03)
-        m.prof(S(amber, "roof"), 9.9, [(5.0, 4.0), (8.4, 6.8), (11.8, 4.0)], x=2.5, bevel=0.05, across="f")
-        m.box(S(amber, "timber"), (2.6, 3.0, 0.14), (8.4, 2.0, 7.03), bevel=0.03)  # barn doors
-        m.box(S(amber, "trim"), (1.2, 2.8, 0.16), (7.78, 1.95, 7.04), bevel=0.02)
-        m.box(S(amber, "trim"), (1.2, 2.8, 0.16), (9.02, 1.95, 7.04), bevel=0.02)
-        for sx in (5.4, 11.4):
-            m.box(S(amber, "timber"), (0.22, 3.6, 0.22), (sx, 2.3, 7.0), bevel=0.02)
-        m.box(S(amber, "timber"), (6.3, 0.22, 0.22), (8.4, 4.0, 7.0), bevel=0.02)
-        m.box(S(amber, "stone"), (2.4, 0.3, 1.6), (-2.0, 0.15, 4.4), bevel=0.04)  # door step
-        m.cyl(S(amber, "timber"), 0.5, 3.6, 4.5, y=0.5, x=3.2, segs=10)  # rain barrel on its side... a trough
+        # barn wing at a right angle, framed like the house, its gable and great doors to the yard
+        m.shift = (8.4, 0.0, 2.5)
+        with fantasy_kit.weathered():
+            m.box(S(amber, "stone"), (6.2, 0.6, 9.2), (0, 0.3, 0), bevel=0.04)
+            m.box(S(amber, "wall"), (6.0, 3.6, 9.0), (0, 2.4, 0), bevel=0.0)
+            for name, plane, half in (("front", 4.5, 3.0), ("back", 4.5, 3.0), ("right", 3.0, 4.5), ("left", 3.0, 4.5)):
+                fh.timber_face(fh.Face(m, name, plane, half), amber, 0.6, 3.6, gap=(0.0, 2.9) if name == "front" else None)
+            fh.gable_roof(m, amber, 3.0, 4.5, 4.2, 2.6, front=True)
+            fh.great_doors(fh.Face(m, "front", 4.5, 3.0), amber, 0.0, 0.15, 2.8, 3.2)
+        m.shift = None
+        m.walls.append([8.4, -2.5, 6.2, 9.2])
+        m.cyl(S(amber, "timber"), 0.5, 3.9, 4.8, y=0.5, x=3.2, segs=10)  # rain barrel on its side... a trough
     model("farmhouse", farmhouse)
 
     def windmill(m):

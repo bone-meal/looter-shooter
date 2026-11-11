@@ -147,6 +147,9 @@ def material(name, paths, emission=None):
 # Per-corner colours of colored models: False = a byte layer (the glTF export turns it from screen colours into linear
 # light), True = a float layer (written to the file exactly as given). tools/blender/fantasy_kit.py switches it on.
 FLOAT_COLORS = False
+# Optional: a function of a corner's place (Blender axes, z up) that returns a multiplier (r, g, b) for its colour. Set by
+# tools/blender/fantasy_kit.py `weathered` so walls are darker near the ground and never one even tone.
+SHADE = None
 
 
 class Model:
@@ -161,6 +164,7 @@ class Model:
         self.nodes = {}  # node name -> [bmesh, [materials]]
         self.empties = []
         self.tree = {}  # node name -> (pivot in Blender space, parent name): jointed parts the game turns
+        self.shift = None  # (x, y, f): while set, every part added is moved by this much (a wing built about its own middle)
 
     # Declares a jointed part: its parts are still written in model space; the game turns it about `pivot`.
     def node(self, name, pivot=(0.0, 0.0, 0.0), parent=None):
@@ -172,6 +176,8 @@ class Model:
             mat, color = mat
         bmesh.ops.remove_doubles(bm, verts=bm.verts[:], dist=1e-6)
         bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+        if self.shift:
+            bmesh.ops.translate(bm, verts=bm.verts[:], vec=Vector((self.shift[0], self.shift[2], self.shift[1])))
         if bevel > 0:
             edges = bm.edges[:]
             if rim_only:  # tubes: round only the two end rims
@@ -195,7 +201,8 @@ class Model:
             axis = max(range(3), key=lambda i: abs(n[i]))
             for loop in face.loops:
                 if paint is not None:
-                    loop[paint] = (color[0], color[1], color[2], 1.0)
+                    k = SHADE(loop.vert.co) if SHADE else (1.0, 1.0, 1.0)
+                    loop[paint] = (color[0] * k[0], color[1] * k[1], color[2] * k[2], 1.0)
                 c = loop.vert.co
                 loop[uv].uv = (c.y * s, c.z * s) if axis == 0 else ((c.y * s, c.x * s) if axis == 2 else (c.x * s, c.z * s))
         mesh = bpy.data.meshes.new("part")

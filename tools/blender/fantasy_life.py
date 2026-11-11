@@ -11,7 +11,9 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+import fantasy_house
 import fantasy_kit
+import fantasy_walls
 from fantasy_kit import K, S, c, SCHEMES, house, init, Maker, blob, WOOD, DARK, IRON, GREY, CLOTH, STRAW, ROPE
 
 
@@ -49,23 +51,27 @@ def build_all():
         maker.model(name, build, solid=not name.startswith(SOFT))
 
     # ---------- town houses and shops, one per region scheme ----------
-    def townhouse(m, s):  # tall and narrow, each floor jutting out, as in a crowded street
-        house(m, s, 5.2, 6.2, 3, 3.0, door_x=-1.0)
-        m.box(S(s, "timber"), (0.9, 0.5, 0.5), (1.6, 6.9, 3.6), bevel=0.03)  # a hoist beam under the gable
-        m.rod(K("cloth", ROPE), 0.02, (1.6, 6.7, 3.8), (1.6, 5.4, 3.8), segs=4)
+    def townhouse(m, s):  # tall and narrow, its gable to the street, each floor jutting out over the one below
+        house(m, s, 5.2, 6.2, 3, 3.0, door_x=-1.0, gable_front=True)
+        m.box(S(s, "timber"), (0.2, 0.24, 1.3), (0, 10.55, 4.3), bevel=0.0)  # a hoist beam out of the gable
+        m.rod(K("cloth", ROPE), 0.02, (0, 10.45, 4.85), (0, 8.9, 4.85), segs=4)
+        m.ball(K("metal", IRON), 0.07, (0, 8.85, 4.85), u=5, v=3)
 
     def shop(m, s):  # a workshop with an open counter, a hanging sign and goods outside
         house(m, s, 7.2, 5.6, 2, 2.8, door_x=-2.2)
-        m.box(S(s, "timber"), (2.6, 0.12, 0.9), (1.4, 1.1, 3.2), bevel=0.02)  # counter
-        m.strip(K("cloth", s["trim"]), 3.0, 0.04, [(2.9, 2.9), (4.1, 2.3)], x=1.4)  # awning
-        for sx in (0.1, 2.7):
-            post(m, S(s, "timber"), sx, 4.0, 2.35, 0.05)
-        m.rod(K("metal", IRON), 0.03, (-3.3, 4.3, 3.0), (-3.3, 4.3, 3.9), segs=4)  # sign bracket
-        m.box(S(s, "trim"), (0.08, 0.7, 0.9), (-3.3, 3.85, 3.5), bevel=0.02)
-        m.box(K("paint", (0.95, 0.85, 0.5)), (0.1, 0.4, 0.5), (-3.3, 3.85, 3.5), bevel=0.02)
-        barrel_at(m, 3.2, 3.3)
-        crate_at(m, 0.4, 3.9, s=0.6)
-        sack_at(m, 2.4, 3.9, seed=3)
+        m.box(S(s, "timber"), (2.8, 0.1, 0.8), (1.7, 1.5, 3.3), bevel=0.0)  # counter under the window
+        for sx in (0.5, 2.9):
+            m.rod(S(s, "timber"), 0.05, (sx, 0.9, 2.95), (sx, 1.45, 3.6), segs=4)
+        m.strip(K("cloth", s["trim"]), 3.2, 0.04, [(3.2, 3.0), (4.4, 2.45)], x=1.7)  # awning
+        for sx in (0.2, 3.2):
+            post(m, S(s, "timber"), sx, 4.35, 2.45, 0.05)
+        m.rod(K("metal", IRON), 0.03, (-3.4, 4.6, 3.15), (-3.4, 4.6, 4.15), segs=4)  # sign bracket
+        m.box(S(s, "trim"), (0.08, 0.7, 0.9), (-3.4, 4.15, 3.7), bevel=0.0)
+        m.box(K("paint", (0.95, 0.85, 0.5)), (0.1, 0.4, 0.5), (-3.4, 4.15, 3.7), bevel=0.0)
+        barrel_at(m, 3.3, 3.5)
+        crate_at(m, 0.5, 4.0, s=0.6)
+        sack_at(m, 2.4, 4.1, seed=3)
+        m.walls.append([1.75, -3.7, 3.6, 1.5])  # the goods under the awning are in the way too
 
     for scheme, s in SCHEMES.items():
         model("townhouse_" + scheme, lambda m, s=s: townhouse(m, s))
@@ -74,18 +80,23 @@ def build_all():
     amber = SCHEMES["amber"]
 
     # ---------- farm and village buildings ----------
-    def barn(m):
-        m.box(K("stone", GREY), (9.2, 0.6, 12.2), (0, 0.3, 0), bevel=0.04)
-        m.box(K("wood", (0.5, 0.33, 0.2)), (9.0, 4.2, 12.0), (0, 2.6, 0), bevel=0.03)
-        for x in (-4.5, -1.5, 1.5, 4.5):
-            for sf in (-1, 1):
-                m.box(K("timber", DARK), (0.22, 4.2, 0.2), (x, 2.6, sf * 6.02), bevel=0.02)
-        m.prof(K("thatch", (0.72, 0.6, 0.32)), 13.0, [(-5.4, 4.5), (-2.6, 7.2), (0, 8.0), (2.6, 7.2), (5.4, 4.5)], x=0, bevel=0.06, across="f")
-        m.box(K("wood", DARK), (3.4, 3.6, 0.16), (0, 2.3, 6.06), bevel=0.03)  # great doors
-        m.box(K("timber", DARK), (0.12, 3.6, 0.2), (0, 2.3, 6.1), bevel=0.01)
-        m.box(K("wood", DARK), (1.3, 1.3, 0.14), (0, 5.6, 6.05), bevel=0.03)  # hay loft door
-        m.rod(K("timber", DARK), 0.08, (0, 6.6, 6.0), (0, 6.6, 7.2), segs=5)
+    def barn(m):  # framed in oak, boarded between the posts, its gable and great doors to the yard
+        with fantasy_kit.weathered():
+            m.box(K("stone", GREY), (9.2, 0.6, 12.2), (0, 0.3, 0), bevel=0.04)
+            m.box(S(fantasy_walls.BARN, "wall"), (9.0, 4.2, 12.0), (0, 2.7, 0), bevel=0.0)
+            for name, plane, half in (("front", 6.0, 4.5), ("back", 6.0, 4.5), ("right", 4.5, 6.0), ("left", 4.5, 6.0)):
+                face = fantasy_house.Face(m, name, plane, half)
+                fantasy_house.timber_face(face, fantasy_walls.BARN, 0.6, 4.2, gap=(0.0, 3.7) if name == "front" else None)
+                face.box(K("timber", DARK), 2 * half - (3.9 if name == "front" else 0.0), 0.14, 0.08, (half - 1.3) if name == "front" else 0.0, 3.4, 0.03)  # a second rail high up
+            front = fantasy_house.Face(m, "front", 6.0, 4.5)
+            fantasy_house.great_doors(front, fantasy_walls.BARN, 0.0, 0.15, 3.5, 3.6)
+            fantasy_house.gable_roof(m, fantasy_walls.BARN, 4.5, 6.0, 4.8, 3.2, front=True, gable_window=False)
+            front.box(K("wood", DARK), 1.3, 1.3, 0.1, 0.0, 5.9, 0.07)  # hay loft door
+            front.box(K("timber", DARK), 1.5, 0.14, 0.12, 0.0, 6.62, 0.08)
+            m.box(K("timber", DARK), (0.2, 0.22, 1.5), (0, 7.05, 6.6), bevel=0.0)  # hoist beam
+            m.rod(K("cloth", ROPE), 0.02, (0, 6.95, 7.25), (0, 5.6, 7.25), segs=4)
         blob(m, K("thatch", STRAW), (1.4, 0.9, 1.2), (3.2, 0.7, 7.2), seed=5)
+        m.walls = [[0.0, 0.0, 9.2, 12.2]]
     model("barn", barn)
 
     def granary(m):
@@ -97,19 +108,7 @@ def build_all():
             m.box(K("wood", WOOD), (1.0, 0.08, 0.5), (0, 0.2 + k * 0.2, 2.5 + (4 - k) * 0.25), bevel=0.01)  # steps
     model("granary", granary)
 
-    def chapel(m):
-        m.box(K("stone", GREY), (6.0, 5.0, 10.0), (0, 2.5, 0), bevel=0.05)
-        m.prof(K("slate", (0.35, 0.36, 0.42)), 10.6, [(-3.5, 4.8), (0, 8.2), (3.5, 4.8)], x=0, bevel=0.05, across="f")
-        m.box(K("stone", (0.56, 0.54, 0.52)), (4.0, 11.0, 4.0), (0, 5.5, 6.6), bevel=0.06)  # tower
-        m.lathe(K("slate", (0.3, 0.31, 0.38)), [(2.9, 11.0), (1.2, 13.5), (0.05, 17.0)], (0, 0, 6.6), segs=4)
-        m.box(K("wood", DARK), (1.6, 2.6, 0.2), (0, 1.3, 8.65), bevel=0.04)
-        for y in (6.0, 9.0):
-            m.box(glow, (0.7, 1.4, 0.1), (0, y, 8.62), bevel=0.02)
-        for f in (-3.0, 0.0, 3.0):
-            for sx in (-1, 1):
-                m.box(glow, (0.1, 2.2, 0.8), (sx * 3.02, 2.8, f), bevel=0.02)
-                m.box(K("stone", (0.5, 0.48, 0.46)), (0.6, 4.6, 0.7), (sx * 3.2, 2.3, f + 1.5), bevel=0.04)  # buttress
-    model("chapel", chapel)
+    model("chapel", fantasy_walls.chapel)
 
     def shed(m):  # open-sided: smithy, stable, market cover
         for sx in (-1, 1):
@@ -134,21 +133,9 @@ def build_all():
             m.box(K("wood", WOOD), (0.6, 0.05, 0.05), (0, 0.5 + k * 0.8, 1.8 - k * 0.06), bevel=0)
     model("watchtower", watchtower)
 
-    def town_wall(m):  # one 6 m stretch with a walk and teeth along the top
-        m.box(K("stone", GREY), (6.0, 3.4, 1.0), (0, 1.7, 0), bevel=0.04)
-        for k in range(4):
-            m.box(K("stone", (0.56, 0.54, 0.52)), (0.8, 0.7, 0.4), (-2.25 + k * 1.5, 3.75, 0.3), bevel=0.03)
-    model("town_wall", town_wall)
-
-    def town_gate(m):
-        for sx in (-1, 1):
-            m.box(K("stone", GREY), (2.6, 6.0, 2.6), (sx * 3.6, 3.0, 0), bevel=0.05)
-            m.lathe(K("slate", (0.35, 0.36, 0.42)), [(2.1, 6.0), (0.1, 8.2)], (sx * 3.6, 0, 0), segs=4)
-            m.box(glow, (0.4, 0.8, 0.1), (sx * 3.6, 4.4, 1.32), bevel=0.02)
-        m.box(K("stone", GREY), (4.6, 1.6, 1.4), (0, 4.6, 0), bevel=0.05)
-        m.box(K("wood", DARK), (0.2, 3.6, 2.0), (-2.2, 1.9, 1.5), bevel=0.02)  # doors standing open
-        m.box(K("wood", DARK), (0.2, 3.6, 2.0), (2.2, 1.9, 1.5), bevel=0.02)
-    model("town_gate", town_gate)
+    model("town_wall", fantasy_walls.town_wall)  # one 6 m stretch with a walk and teeth along the top
+    maker.sizes["town_wall"]["w"] = 6.0  # stretches stand 6 m apart; the end piers reach a little further so a curve closes up
+    model("town_gate", fantasy_walls.town_gate)
     maker.sizes["town_gate"].update({"walls": [[3.6, 0, 2.6, 2.6], [-3.6, 0, 2.6, 2.6]], "wall_h": 6.0})  # only the two towers are solid: the arch is open
 
     # ---------- what stands in yards and streets ----------

@@ -11,6 +11,7 @@ import os
 import sys
 
 sys.path.insert(0, os.path.dirname(__file__))
+import fantasy_house as fh
 import fantasy_kit as fk
 from fantasy_kit import K, S, c, WOOD, DARK, IRON, GREY, CLOTH, STRAW
 
@@ -78,36 +79,47 @@ def loot_crate(m):
 
 
 def open_house(m, s, w, d, wall_h=3.2, roof_h=2.6, chimney=True):
-    """A hollow house: plank floor, four walls with a doorway in the front, a ceiling under the roof."""
+    """A hollow house: plank floor, four walls with a doorway in the front, a ceiling under the roof. Outside it is
+    built like every other house of its region (fantasy_house.py): frame or cut stone, leaded windows, a real roof."""
     t = WALL_T
-    m.box(K("wood", (0.5, 0.38, 0.25)), (w - 0.1, 0.16, d - 0.1), (0, 0.08, 0), bevel=0.01)
-    m.box(S(s, "wall"), (w, wall_h, t), (0, wall_h / 2, -d / 2 + t / 2), bevel=0.02)
-    for sx in (-1, 1):
-        m.box(S(s, "wall"), (t, wall_h, d - 2 * t), (sx * (w / 2 - t / 2), wall_h / 2, 0), bevel=0.02)
+    kind = s.get("kinds", {}).get("wall", "plaster")
+    flat = bool(s.get("flat"))
+    with fk.weathered():
+        m.box(K("wood", (0.5, 0.38, 0.25)), (w - 0.1, 0.16, d - 0.1), (0, 0.08, 0), bevel=0.0)
+        m.box(S(s, "wall"), (w, wall_h, t), (0, wall_h / 2, -d / 2 + t / 2), bevel=0.0)
         fw = (w - DOOR_W) / 2
-        m.box(S(s, "wall"), (fw, wall_h, t), (sx * (DOOR_W / 2 + fw / 2), wall_h / 2, d / 2 - t / 2), bevel=0.02)
-        m.box(S(s, "timber"), (0.16, 2.3, t + 0.1), (sx * (DOOR_W / 2 + 0.02), 1.15, d / 2 - t / 2), bevel=0.02)  # door posts
-        for sf in (-1, 1):  # corner posts outside
-            m.box(S(s, "timber"), (0.22, wall_h, 0.22), (sx * (w / 2), wall_h / 2, sf * (d / 2)), bevel=0.02)
-        m.box(S(s, "stone"), (0.14, 0.5, d + 0.3), (sx * (w / 2 + 0.07), 0.25, 0), bevel=0.03)  # footing
-        # a window on each side wall: frame and dark pane outside
-        m.box(S(s, "timber"), (0.1, 1.1, 1.1), (sx * (w / 2 + 0.03), 1.75, 0), bevel=0.02)
-        m.box(c((0.3, 0.42, 0.55)), (0.12, 0.9, 0.9), (sx * (w / 2 + 0.04), 1.75, 0), bevel=0.01)
-    m.box(S(s, "wall"), (DOOR_W, wall_h - 2.3, t), (0, 2.3 + (wall_h - 2.3) / 2, d / 2 - t / 2), bevel=0.02)  # above the door
-    m.box(S(s, "timber"), (DOOR_W + 0.3, 0.18, t + 0.1), (0, 2.36, d / 2 - t / 2), bevel=0.02)
-    for sf in (-1, 1):
-        m.box(S(s, "timber"), (w + 0.24, 0.2, 0.2), (0, wall_h - 0.1, sf * (d / 2)), bevel=0.02)
-    m.box(K("wood", (0.42, 0.32, 0.2)), (w - 0.2, 0.1, d - 0.2), (0, wall_h - 0.05, 0), bevel=0.01)  # ceiling boards
-    for k in range(1, 4):  # ceiling beams
-        m.box(S(s, "timber"), (0.18, 0.2, d - 2 * t), (-w / 2 + w * k / 4, wall_h - 0.2, 0), bevel=0.02)
-    if s.get("flat"):
-        m.box(S(s, "roof"), (w + 0.4, 0.3, d + 0.4), (0, wall_h + 0.15, 0), bevel=0.04)
-    else:
-        half = d / 2 + 0.55
-        m.prof(S(s, "roof"), w + 0.9, [(-half, wall_h - 0.02), (0, wall_h + roof_h), (half, wall_h - 0.02)], x=0, bevel=0.05)
-        m.box(S(s, "timber"), (w + 1.0, 0.16, 0.2), (0, wall_h + roof_h + 0.02, 0), bevel=0.03)
-    if chimney:
-        m.box(S(s, "stone"), (0.8, wall_h + roof_h + 0.6, 0.7), (-w / 2 + 1.2, (wall_h + roof_h + 0.6) / 2, -d / 2 - 0.3), bevel=0.04)
+        for sx in (-1, 1):
+            m.box(S(s, "wall"), (t, wall_h, d - 2 * t), (sx * (w / 2 - t / 2), wall_h / 2, 0), bevel=0.0)
+            m.box(S(s, "wall"), (fw, wall_h, t), (sx * (DOOR_W / 2 + fw / 2), wall_h / 2, d / 2 - t / 2), bevel=0.0)
+            m.box(S(s, "timber"), (0.16, 2.3, t + 0.1), (sx * (DOOR_W / 2 + 0.02), 1.15, d / 2 - t / 2), bevel=0.0)  # door posts
+        m.box(S(s, "wall"), (DOOR_W, wall_h - 2.3, t), (0, 2.3 + (wall_h - 2.3) / 2, d / 2 - t / 2), bevel=0.0)  # above the door
+        m.box(S(s, "timber"), (DOOR_W + 0.3, 0.18, t + 0.1), (0, 2.36, d / 2 - t / 2), bevel=0.0)
+        m.box(K("wood", (0.42, 0.32, 0.2)), (w - 0.2, 0.1, d - 0.2), (0, wall_h - 0.05, 0), bevel=0.0)  # ceiling boards
+        for k in range(1, 4):  # ceiling beams
+            m.box(S(s, "timber"), (0.18, 0.2, d - 2 * t), (-w / 2 + w * k / 4, wall_h - 0.2, 0), bevel=0.0)
+        for name, plane, half in (("front", d / 2, w / 2), ("back", d / 2, w / 2), ("right", w / 2, d / 2), ("left", w / 2, d / 2)):
+            face = fh.Face(m, name, plane, half)
+            door = name == "front"
+            for a, b in ([(-half, -DOOR_W / 2 - 0.1), (DOOR_W / 2 + 0.1, half)] if door else [(-half - 0.14, half + 0.14)]):
+                face.box(S(s, "stone"), b - a, 0.5, 0.14, (a + b) / 2, 0.25, 0.07, bevel=0.03)  # footing
+            if kind == "plaster" and not flat:
+                fh.timber_face(face, s, 0.5, wall_h - 0.5, gap=(0.0, DOOR_W + 0.3) if door else None)
+            elif kind == "stone":
+                fh.stone_face(face, s, 0.0, wall_h)
+            spots = [-half * 0.62, half * 0.62] if name in ("front", "back") else [0.0]
+            for u in spots:  # no shutters beside the doorway: the open door lies against that wall
+                fh.window(face, s, u, 1.95, shutters=not flat and not door, stone=kind == "stone" or flat)
+        front = fh.Face(m, "front", d / 2, w / 2)
+        front.box(S(s, "trim"), 1.0, 2.15, 0.08, -DOOR_W / 2 - 0.62, 1.15, 0.13)  # the door, swung back against the wall
+        for dy in (0.55, 1.75):
+            front.box(K("metal", fh.IRON), 0.9, 0.07, 0.03, -DOOR_W / 2 - 0.62, dy, 0.185)
+        front.box(S(s, "stone"), DOOR_W + 0.3, 0.1, 0.5, 0.0, 0.05, 0.2, bevel=0.03)
+        if flat:
+            fh.flat_roof(m, s, w / 2, d / 2, wall_h)
+        else:
+            fh.gable_roof(m, s, w / 2, d / 2, wall_h, roof_h, timbered=kind == "plaster")
+        if chimney:
+            fh.chimney_stack(m, s, -w / 2 + 1.2, -d / 2 - 0.3, wall_h + (1.2 if flat else roof_h * 0.55 + 1.0))
     # the wall pieces as boxes in the game's own axes (x right, z = -f): [x, z, width, depth]
     fw = (w - DOOR_W) / 2
     walls = [[0, d / 2 - t / 2, w, t], [w / 2 - t / 2, 0, t, d], [-w / 2 + t / 2, 0, t, d],
