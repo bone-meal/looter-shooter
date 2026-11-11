@@ -15,3 +15,5 @@ tools/*.log
 tools/*.png
 tools/*.jpg
 *.tmp
+# Retired files wait here for the director to delete by hand (tools/retire_files.tscn)
+_to_delete/

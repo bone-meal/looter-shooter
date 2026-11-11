@@ -78,7 +78,7 @@ func _process(delta: float) -> void:
 		_cast(built)
 	_glow.visible = channelling
 	if channelling:
-		var size := 0.1 + 0.05 * float(sequence.length()) + sin(_time * 18.0) * 0.012
+		var size := 0.22 + 0.06 * float(sequence.length()) + sin(_time * 18.0) * 0.014
 		_glow.scale = Vector3.ONE * size
 		_glow_mat.albedo_color = _blend(sequence)
 
@@ -158,6 +158,6 @@ func _build_staff() -> void:
 	orb.rings = 6
 	_glow.mesh = orb
 	_glow.material_override = _glow_mat
-	_glow.position.y = 1.42
+	_glow.position.y = _tip.position.y if _tip != null else 1.44  # at the orb
 	_glow.visible = false
 	_staff.add_child(_glow)

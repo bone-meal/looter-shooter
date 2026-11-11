@@ -1,21 +1,26 @@
 # Purpose: going into the fantasy world's buildings and searching what is in them. Two cases (the rules are
 # core/fantasy_interiors.gd): the main story's WALK-IN houses are part of the open world, so here only their chests and
 # cupboards are found and searched; every other building is entered at its door (a short fade) into a furnished room
-# built for it on the spot, far from the map, whose windows carry a small picture of the land outside. A search gives
-# items from the container's loot table and the container stays empty until it refills (remembered per player).
-# Dependencies: game/fantasy_world.gd (terrain, layout, interiors, give, toast, sound, set_indoors), game/fantasy_models.gd.
+# built for it on the spot, far from the map, whose windows show a still picture of what really is outside that wall
+# (taken once on the way in; the lowest graphics tier paints a plain one instead). A search opens the container
+# (game/loot_opening.gd), gives items from its loot table, and it stays "(empty)" until it refills (remembered per player).
+# Dependencies: game/fantasy_world.gd (terrain, layout, interiors, places, give, toast, sound, set_indoors),
+# game/fantasy_models.gd, game/loot_opening.gd.
 extends Node3D
 
 const FantasyModels = preload("res://game/fantasy_models.gd")
+const LootOpening = preload("res://game/loot_opening.gd")
 
 signal station_opened(kind: String)  # a hearth, forge, bench or cauldron indoors was used
 signal faded  # the screen should fade (going in or out)
 
 const STATION_WORDS := {"fire": "Cook at the hearth", "forge": "Work the forge", "workbench": "Use the workbench", "cauldron": "Brew at the cauldron"}
+const VIEW_PIXELS := Vector2i(320, 270)  # the still picture in a window
 const FLOORS := {"wood": ["wood", Color(0.46, 0.35, 0.23)], "stone": ["stone", Color(0.5, 0.48, 0.45)], "dirt": ["rock", Color(0.36, 0.29, 0.22)]}
 
 var looted := {}  # container key -> unix time it can be searched again
 var prop_share := 1.0  # graphics tier: share of the plain furniture that is placed (containers and stations always are)
+var real_views := true  # graphics tier: windows show what really is outside (false = a small painted view)
 
 var _world: Node3D
 var _player: Node3D
@@ -23,7 +28,7 @@ var _near := "?"  # which place and site the lists below were made for
 var _doors: Array = []  # buildings that can be entered here: {"at": Vector2, "item", "kind", "key"}
 var _boxes: Array = []  # containers in reach of the open world (walk-in houses): {"at": Vector3 local, "loot", "key", "model"}
 var _room: Node3D  # the room the player is in (null = outdoors)
-var _room_boxes: Array = []  # {"at": Vector3 world, "loot", "key", "model"}
+var _room_boxes: Array = []  # {"at": Vector3 world, "loot", "key", "model", "node"}
 var _room_stations: Array = []  # {"at": Vector3 world, "kind"}
 var _exit := Vector3.ZERO  # world position of the room's door
 var _outside := Vector3.ZERO  # world position in front of the building, to return to
@@ -112,7 +117,7 @@ func prompt(key: String) -> String:
 		var at := _player.global_position
 		var box := _nearest(_room_boxes, at, reach)
 		if not box.is_empty():
-			return "[%s] Search %s" % [key, _name("container", String(box["model"])).to_lower()]
+			return _search_words(key, box)
 		var station := _nearest(_room_stations, at, reach)
 		if not station.is_empty():
 			return "[%s] %s" % [key, STATION_WORDS[String(station["kind"])]]
@@ -122,7 +127,7 @@ func prompt(key: String) -> String:
 	var local: Vector3 = _world.call("player_local")
 	var chest := _nearest(_boxes, local, reach)
 	if not chest.is_empty():
-		return "[%s] Search %s" % [key, _name("container", String(chest["model"])).to_lower()]
+		return _search_words(key, chest)
 	var door := _nearest(_doors, local, float(_world.data["interiors"]["door_reach"]))
 	if not door.is_empty():
 		return "[%s] Enter the %s" % [key, _name("building", String(door["kind"])).to_lower()]
@@ -157,10 +162,22 @@ func interact() -> bool:
 	return true
 
 
+func _empty(box: Dictionary) -> bool:
+	return float(looted.get(box["key"], 0.0)) > Time.get_unix_time_from_system()
+
+
+func _search_words(key: String, box: Dictionary) -> String:
+	var thing := _name("container", String(box["model"]))
+	return "%s (empty)" % thing if _empty(box) else "[%s] Search %s" % [key, thing.to_lower()]
+
+
 func _search(box: Dictionary) -> void:
 	var now := Time.get_unix_time_from_system()
-	if float(looted.get(box["key"], 0.0)) > now:
-		_world.emit_signal("toast", "Nothing left in here for now.", Color(1, 1, 1, 0.8))
+	var model: Node3D = box["node"] if box.has("node") else _world.get("places").call("container", String(box["key"]))
+	LootOpening.play(model)
+	if _empty(box):
+		_world.emit_signal("toast", "%s (empty)" % _name("container", String(box["model"])), Color(1, 1, 1, 0.8))
+		_world.call("sound", "ui_close")
 		return
 	var rules: RefCounted = _world.get("interiors")
 	var found: Dictionary = rules.call("roll", String(box["loot"]), _rng)
@@ -197,11 +214,12 @@ func _enter(door: Dictionary) -> void:
 	for side: float in [-1.0, 1.0]:
 		_slab(body, wall, Vector3(half.x * 2.0 + 0.6, high, 0.3), Vector3(0, high * 0.5, side * (half.y + 0.15)), true)
 		_slab(body, wall, Vector3(0.3, high, half.y * 2.0), Vector3(side * (half.x + 0.15), high * 0.5, 0), true)
-		_window(Vector3(side * half.x, 1.75, 0.0), side, timber)
+		_window(Vector3(side * half.x, 1.75, 0.0), side, timber, _real_view(item, side) if real_views else _view())
 	for k in 3:  # beams under the ceiling
 		_slab(body, timber, Vector3(0.2, 0.22, half.y * 2.0), Vector3(half.x * (float(k) - 1.0) * 0.6, high - 0.11, 0), false)
 	_slab(body, timber, Vector3(1.3, 2.15, 0.1), Vector3(0, 1.075, -half.y + 0.05), false)  # the door, on the front wall
-	_exit = _room.global_position + Vector3(0.0, 0.0, -half.y + 0.7)
+	var entry: Vector2 = rules.call("entry", half)
+	_exit = _room.global_position + Vector3(entry.x, 0.0, entry.y - 0.3)
 	var lamp := OmniLight3D.new()
 	lamp.light_color = Color(1.0, 0.84, 0.64)
 	lamp.light_energy = 1.5
@@ -216,19 +234,34 @@ func _enter(door: Dictionary) -> void:
 		var plain := String(piece["loot"]) == "" and String(piece["station"]) == ""
 		if plain and float(i % 10) / 10.0 >= prop_share:
 			continue
+		if plain and bool(_world.get("layout").call("covers", piece, rules.call("entry", half), 0.5)):
+			continue  # nothing plain stands where the room is entered
 		var made := FantasyModels.scene(String(piece["model"]))
 		if made == null:
 			continue
 		made.position = Vector3(float(piece["x"]), 0.0, float(piece["z"]))
 		made.rotation.y = float(piece["turn"])
 		_room.add_child(made)
+		for box: Array in _world.get("layout").call("boxes", piece):  # furniture is in the way like anything else
+			var shape := CollisionShape3D.new()
+			var block := BoxShape3D.new()
+			block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
+			shape.shape = block
+			shape.transform = made.transform * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
+			body.add_child(shape)
 		var at := _room.global_position + made.position
 		if String(piece["loot"]) != "":
-			_room_boxes.append({"at": at, "loot": String(piece["loot"]), "key": "%s:%d" % [door["key"], i], "model": String(piece["model"])})
+			_room_boxes.append({"at": at, "loot": String(piece["loot"]), "key": "%s:%d" % [door["key"], i], "model": String(piece["model"]), "node": made})
 		if String(piece["station"]) != "":
 			_room_stations.append({"at": at, "kind": String(piece["station"])})
-	_world.call("set_indoors", true)
 	faded.emit()
+	if real_views:  # the window pictures are taken of the daylit world: go in only once they are drawn
+		var mine := _room
+		await RenderingServer.frame_post_draw
+		await RenderingServer.frame_post_draw
+		if _room != mine:
+			return  # the world was left meanwhile
+	_world.call("set_indoors", true)
 	_player.call("teleport", _exit + Vector3(0.0, 0.2, 0.3), 0.0)
 	_player.call("look_at_point", _room.global_position + Vector3(0.0, 1.5, half.y))
 	_world.emit_signal("notice", _name("building", String(door["kind"])))
@@ -261,15 +294,34 @@ func _slab(body: StaticBody3D, look: Material, size: Vector3, at: Vector3, solid
 		body.add_child(shape)
 
 
-# A window on a side wall: a small picture of the land outside behind a timber cross.
-func _window(at: Vector3, side: float, timber: Material) -> void:
+# A still picture of what really is outside the building's side wall, taken once from where the window would be.
+func _real_view(item: Dictionary, side: float) -> Texture2D:
+	var spot: Array = _world.get("interiors").call("window_view", item, side)
+	var from: Vector2 = spot[0]
+	var way: Vector2 = spot[1]
+	var port := SubViewport.new()
+	port.size = VIEW_PIXELS
+	port.render_target_update_mode = SubViewport.UPDATE_ONCE
+	_room.add_child(port)
+	var eye := Camera3D.new()
+	eye.fov = 52.0
+	eye.far = 500.0
+	port.add_child(eye)
+	var at: Vector3 = _world.call("world_of", Vector3(from.x, float(_world.terrain.height(from.x, from.y)) + 1.75, from.y))
+	eye.look_at_from_position(at, at + Vector3(way.x, -0.04, way.y))
+	eye.current = true
+	return port.get_texture()
+
+
+# A window on a side wall: a picture of the land outside behind a timber cross.
+func _window(at: Vector3, side: float, timber: Material, picture: Texture2D) -> void:
 	var pane := MeshInstance3D.new()
 	var quad := QuadMesh.new()
 	quad.size = Vector2(1.3, 1.1)
 	pane.mesh = quad
 	var view := StandardMaterial3D.new()
 	view.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	view.albedo_texture = _view()
+	view.albedo_texture = picture
 	pane.material_override = view
 	pane.position = at - Vector3(side * 0.01, 0.0, 0.0)
 	pane.rotation.y = -side * PI * 0.5
@@ -285,7 +337,7 @@ func _window(at: Vector3, side: float, timber: Material) -> void:
 		_room.add_child(drawn)
 
 
-# The picture in the windows: this region's sky, far hills, the ground outside and a couple of roofs, painted once per room.
+# The painted picture for the lowest graphics tier: this region's sky, far hills, the ground outside and a couple of roofs, painted once per room.
 func _view() -> ImageTexture:
 	var terrain: RefCounted = _world.terrain
 	var mood: Dictionary = terrain.mood(_anchor.x, _anchor.z)

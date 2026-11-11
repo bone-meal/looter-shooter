@@ -1,4 +1,4 @@
-# Purpose: the enemy character models: skeleton swordsman, skeleton archer, the clockwork bear boss and the Omaha
+# Purpose: the enemy character models: skeleton swordsman, skeleton archer, the clockwork bear boss and the wasteland
 # wasteland enemies come from assets/models/creatures/ (modelled in Blender by tools/blender/creatures.py and
 # wasteland.py); when a skeleton or bear file is missing, and for the old blocky player, they are built here from boxes.
 # Dependencies: none. Limbs are pivots named LegL, LegR, ArmL, ArmR (bear also "Key") so game scripts can animate them.
@@ -76,7 +76,7 @@ static func skeleton(kind: String, bone: Material, accent: Color) -> Node3D:
 	return root
 
 
-# The Omaha wasteland people and beasts (tools/blender/wasteland.py): `file` is the enemy's "model" id. `body` is the
+# The wasteland people and beasts of the later arena waves (tools/blender/wasteland.py): `file` is the enemy's "model" id. `body` is the
 # enemy's own material and covers the clothes ("body" surfaces) or the skin of bare creatures ("hide"); their "gear"
 # and "metal" surfaces are coloured per part by the model itself. Pivots LegL, LegR, ArmL, ArmR.
 static func has_wastelander(file: String) -> bool:

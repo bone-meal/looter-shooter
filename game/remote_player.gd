@@ -10,9 +10,11 @@ const BodyMotion = preload("res://game/body_motion.gd")
 const RUN_SPEED := 7.0  # same as the player walk speed
 const CigaretteModel = preload("res://game/cigarette_model.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
+const DataStore = preload("res://core/data_store.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
 
 const HAND := Vector3(0.26, 1.3, -0.5)  # where the weapon sits in the body model
+const HEAD_HEIGHT := 1.6  # as game/player.gd: a shoulder-carried gun is placed from here
 
 signal shot(damage: float)
 signal struck(amount: float, element: String)  # an enemy run by this machine (the host) hit this player: their own machine takes the damage
@@ -171,7 +173,20 @@ func _place_held() -> void:
 		return
 	if _held_model.get_parent() != null:
 		_held_model.get_parent().remove_child(_held_model)
-	if _model.has_method("hand_anchor"):
+	var view: Dictionary = DataStore.load_json("res://data/weapons.json")["weapons"].get(_held_id, {}).get("view", {})
+	if _model.has_method("grip"):
+		_model.call("grip", null)
+	if _model.has_method("hand_anchor") and view.has("shoulder_hold"):  # a launcher rides on the shoulder; both hands reach for it
+		var at: Array = view["shoulder_hold"]
+		_held_model.position = Vector3(at[0], HEAD_HEIGHT + float(at[1]), at[2])
+		add_child(_held_model)
+		var hand := Node3D.new()
+		var spot: Array = view.get("shoulder_grip", [0.0, -0.12, 0.03])
+		hand.position = Vector3(spot[0], spot[1], spot[2])
+		_held_model.add_child(hand)
+		_model.call("grip", hand)
+		_model.call("support", _held_model.get_node_or_null("Support"))
+	elif _model.has_method("hand_anchor"):
 		_held_model.position = Vector3.ZERO
 		(_model.call("hand_anchor") as Node3D).add_child(_held_model)
 		_model.call("support", _held_model.get_node_or_null("Support"))  # long guns: left hand on the fore-end

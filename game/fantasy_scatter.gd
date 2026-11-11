@@ -66,16 +66,36 @@ func follow(center: Vector2i) -> void:
 	for key: Vector2i in _dressed.keys():
 		if maxi(absi(key.x - center.x), absi(key.y - center.y)) > tree_radius:
 			_undress(key)
-	refresh()
+	_dress_some(9, 1)  # what is right around the player at once; the rest one chunk a frame (_process)
 
 
-# Dresses loaded chunks in range that are still bare (also called while chunks arrive).
+# Dresses every loaded chunk in range that is still bare, at once (after a change of graphics settings).
 func refresh() -> void:
 	for dz in range(-tree_radius, tree_radius + 1):
 		for dx in range(-tree_radius, tree_radius + 1):
 			var key := Vector2i(_center.x + dx, _center.y + dz)
 			if not _dressed.has(key) and _land.loaded(key):
 				_dress(key, maxi(absi(dx), absi(dz)) <= tuft_radius)
+
+
+# One more bare chunk each frame, nearest first: dressing them all in the frame they arrive made the game stutter.
+func _process(_delta: float) -> void:
+	_dress_some(1, tree_radius)
+
+
+func _dress_some(limit: int, reach: int) -> void:
+	var left := limit
+	for ring in range(0, reach + 1):
+		for dz in range(-ring, ring + 1):
+			for dx in range(-ring, ring + 1):
+				if maxi(absi(dx), absi(dz)) != ring:
+					continue
+				var key := Vector2i(_center.x + dx, _center.y + dz)
+				if not _dressed.has(key) and _land.loaded(key):
+					_dress(key, ring <= tuft_radius)
+					left -= 1
+					if left <= 0:
+						return
 
 
 func _undress(key: Vector2i) -> void:
@@ -106,8 +126,11 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 		var def: Dictionary = _node_data[String(node[1])]
 		var index := _place(by_model, String(def["model"]), float(node[2]), float(node[3]), float(node[4]), 1.0, float(node[5]))
 		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), float(node[3]), float(node[4])), String(def["model"]), index)
-		if String(def["skill"]) in ["woodcutting", "mining"]:
+		if String(def["skill"]) == "woodcutting":
 			_trunk(trunks, float(node[2]), float(node[4]), 0.35)
+		elif String(def["skill"]) == "mining":  # a rock is as wide as its model
+			var rock: Dictionary = layout.props.get(String(def["model"]), {})
+			_trunk(trunks, float(node[2]), float(node[4]), maxf(maxf(float(rock.get("w", 0.9)), float(rock.get("d", 0.9))) * 0.4, 0.35))
 	for id: String in by_model:
 		var list: Array = by_model[id]
 		var mesh := _mesh(id)
@@ -159,11 +182,19 @@ func _add_tufts(holder: Node3D, key: Vector2i, x0: float, z0: float, size: float
 	var tip := Color(tuft["tip"][0], tuft["tip"][1], tuft["tip"][2])
 	var tall := float(tuft["height"])
 	var shown := 0
+	var lake_near := false  # only chunks by a lake need the (slow) water rule per tuft
+	for lake: Dictionary in terrain.lakes:
+		if Vector2(x0 + size * 0.5 - float(lake["x"]), z0 + size * 0.5 - float(lake["z"])).length() < float(lake["r"]) + size:
+			lake_near = true
 	for i in count:
 		var x := x0 + FantasyTerrain.hash01(key.x, key.y, 1000 + i * 2) * size
 		var z := z0 + FantasyTerrain.hash01(key.x, key.y, 1001 + i * 2) * size
-		var h := terrain.height(x, z)
-		if h < terrain.sea + 0.5 or not _clear_of_yards(x, z):
+		var here: Vector2 = _land.call("ground", x, z)  # height and trodden-ness from the chunk's own mesh
+		var h := here.x
+		if is_nan(h):
+			h = terrain.height(x, z)
+			here.y = terrain.trodden(x, z)
+		if h < terrain.sea + 0.5 or here.y >= 0.3 or (lake_near and terrain.water_at(x, z) != ""):
 			continue
 		var vary := FantasyTerrain.hash01(key.x, key.y, 5000 + i)
 		many.set_instance_transform(shown, Transform3D(Basis(Vector3.UP, vary * TAU).scaled(Vector3(1.0, tall * (0.7 + 0.6 * vary), 1.0)), Vector3(x, h - 0.03, z)))
@@ -174,10 +205,6 @@ func _add_tufts(holder: Node3D, key: Vector2i, x0: float, z0: float, size: float
 	drawn.multimesh = many
 	drawn.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	holder.add_child(drawn)
-
-
-func _clear_of_yards(x: float, z: float) -> bool:
-	return terrain.trodden(x, z) < 0.3 and terrain.water_at(x, z) == ""
 
 
 # One tuft: a few thin blades fanning out, darker at the root (the instance colour tints the whole tuft).

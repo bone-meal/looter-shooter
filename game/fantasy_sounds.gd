@@ -61,8 +61,8 @@ func play(id: String, at: Vector3 = Vector3.INF) -> void:
 		voice.global_position = at
 		voice.volume_db = float(def.get("volume", 0.0)) + _master
 		voice.pitch_scale = pitch
-		voice.unit_size = float(def.get("range", 40.0)) * 0.25
-		voice.max_distance = float(def.get("range", 40.0)) * 2.0
+		voice.unit_size = float(def.get("range", 40.0)) * 0.15  # fades quickly with distance and is gone at `range`
+		voice.max_distance = float(def.get("range", 40.0))
 		voice.play()
 	else:
 		var voice := _flat[_next_flat]

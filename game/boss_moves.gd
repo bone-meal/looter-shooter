@@ -34,6 +34,7 @@ void fragment() {
 }"""
 
 var bodies: Callable  # everyone a boss can hit (the spawner's list); used on the host only
+var reach_m := 80.0  # a boss uses a special attack only on somebody this close (it reached across the whole map before)
 
 var _world: Node3D
 var _player: Node3D
@@ -137,10 +138,13 @@ func _process(delta: float) -> void:
 			for body: Node3D in all:
 				if body.global_position.distance_to(boss.global_position) < target.global_position.distance_to(boss.global_position):
 					target = body
-			wait[ready] = float(entry["moves"][ready]["every"])
-			var roll := randi() & 0xFFFF
-			_begin(boss, entry["moves"][ready], target.global_position, roll, false)
-			started.emit(boss, ready, target.global_position, roll)
+			if target.global_position.distance_to(boss.global_position) > reach_m:
+				wait[ready] = 2.0  # nobody near: look again shortly
+			else:
+				wait[ready] = float(entry["moves"][ready]["every"])
+				var roll := randi() & 0xFFFF
+				_begin(boss, entry["moves"][ready], target.global_position, roll, false)
+				started.emit(boss, ready, target.global_position, roll)
 		entry["wait"] = wait
 	for i in range(_running.size() - 1, -1, -1):
 		var run: Dictionary = _running[i]

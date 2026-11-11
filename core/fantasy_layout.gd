@@ -2,7 +2,8 @@
 # rendering): the buildings and belongings of each place, the small sites scattered through the country, the trees, the
 # things to gather and the fishing spots on real water. Every machine gets the same answer, so the game can draw it
 # (game/fantasy_places.gd, game/fantasy_scatter.gd), build colliders from it, and creatures can walk around it
-# (`walk`) without any physics.
+# (`walk`) without any physics. What can be bumped into is one rule for everybody: `boxes` (and `plugs`, which close
+# the slits between things that stand too close to pass).
 # Dependencies: core/fantasy_terrain.gd, data/fantasy/layouts.json (the rules), data/fantasy/props.json (sizes),
 # data/fantasy/skilling.json (gather nodes). All positions are the world's own map metres (x east, z south).
 extends RefCounted
@@ -13,6 +14,7 @@ const TREE_SLOTS := 10
 const NODE_SLOTS := 8
 const GRID := 12.0  # metres: side of one square of the obstacle grid
 const WADE := 0.5  # creatures do not go into water deeper than this
+const PLUG_GAP := 1.3  # metres: a gap narrower than this between two things is closed (a player is 0.8 wide)
 
 var terrain: FantasyTerrain
 var rules: Dictionary
@@ -24,6 +26,8 @@ var _places := {}  # place id -> Array of items
 var _sites := {}  # Vector2i cell -> site ({} = nothing there)
 var _trees := {}  # chunk key -> Array of [model, x, z, grow, turn]
 var _grid := {}  # Vector2i square -> Array of [x, z, half width, half depth, cos, sin]
+var _walk_over := {}  # models nobody bumps into (rugs, crop rows ...): rules "walk_over"
+var _plugs := {}  # place or site id -> Array of [x, z, radius]
 var _chunk: float
 
 
@@ -33,6 +37,8 @@ func _init(land: FantasyTerrain, layout_rules: Dictionary, prop_sizes: Dictionar
 	props = prop_sizes
 	node_data = gather_nodes
 	_chunk = float(terrain.data["chunk"])
+	for model: String in rules.get("walk_over", []):
+		_walk_over[model] = true
 
 
 # --- places ---
@@ -49,7 +55,10 @@ func place_items(place: Dictionary, keep: Array = []) -> Array:
 		_remember(_places[id])
 		if interiors != null:  # the furniture of the main story's walk-in houses stands in the open world
 			for item: Dictionary in (_places[id] as Array).duplicate():
-				(_places[id] as Array).append_array(interiors.call("furnish", item))
+				for piece: Dictionary in interiors.call("furnish", item):
+					var plain := String(piece["loot"]) == "" and String(piece["station"]) == ""
+					if not (plain and covers(piece, interiors.call("entry_spot", item), 0.5)):  # nothing plain stands in the doorway
+						(_places[id] as Array).append(piece)
 	return _places[id]
 
 
@@ -120,6 +129,14 @@ func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x
 	var taken: Array = []  # [x, z, radius] of what already stands
 	for spot: Vector2 in keep:
 		taken.append([spot.x, spot.y, 1.7])
+	for rule: Dictionary in list:  # the road through each gate stays clear of whatever is placed by chance
+		if rule.has("wall"):
+			var gates := int(rule.get("gates", 0))
+			for k in gates:
+				var way := PI / 2.0 + float(k) * TAU / float(gates)
+				for step in range(-2, 3):
+					var out_m := float(rule["ring"]) * flat + float(step) * 4.0
+					taken.append([cx + cos(way) * out_m, cz + sin(way) * out_m, 2.0])
 	var salt := 0
 	for rule: Dictionary in list:
 		salt += 97
@@ -190,28 +207,42 @@ func _put(out: Array, taken: Array, model: String, x: float, z: float, turn: flo
 	return true
 
 
-# A wall around a place, in stretches as long as the wall model, with gaps where the gates stand.
+# A wall around a place in stretches as long as the wall model, closed right up to its gates: the stretches of a run
+# overlap a little rather than leave a hole. "tower" = a model built into the wall beside each gate.
 func _wall(out: Array, taken: Array, rule: Dictionary, cx: float, cz: float, flat: float) -> void:
 	var model := String(rule["wall"])
 	var radius := float(rule["ring"]) * flat
 	var length := maxf(float(_size(model)["w"]), 1.0)
-	var count := int(TAU * radius / length)
 	var gates := int(rule.get("gates", 0))
-	var gap := (float(_size(String(rule.get("gate", model)))["w"]) * 0.5 + length * 0.6) / radius
-	for k in gates:
-		var a := PI / 2.0 + float(k) * TAU / float(gates)  # the first gate faces south
-		_put(out, taken, String(rule["gate"]), cx + cos(a) * radius, cz + sin(a) * radius, atan2(-cos(a), -sin(a)), "", true, false)
-	for i in count:
-		var a := float(i) * TAU / float(count)
-		var open := false
-		for k in gates:
-			if absf(angle_difference(a, PI / 2.0 + float(k) * TAU / float(gates))) < gap:
-				open = true
-		if not open:
+	var runs := maxi(gates, 1)
+	var from_gate := 0.0  # metres from a gate's middle to where the wall meets it
+	var tower := String(rule.get("tower", ""))
+	if gates > 0:
+		var gate := _size(String(rule["gate"]))
+		from_gate = float(gate["w"]) * 0.5
+		if gate.has("walls"):
+			from_gate = 0.0
+			for piece: Array in gate["walls"]:
+				from_gate = maxf(from_gate, absf(float(piece[0])) + float(piece[2]) * 0.5)
+		from_gate -= 0.3
+	for k in runs:
+		var start := PI / 2.0 + float(k) * TAU / float(runs)  # the first gate faces south
+		var first := from_gate
+		if gates > 0:
+			_put(out, taken, String(rule["gate"]), cx + cos(start) * radius, cz + sin(start) * radius, atan2(-cos(start), -sin(start)), "", true, false)
+			if tower != "":
+				var wide := float(_size(tower)["w"])
+				var beside := start + (from_gate + wide * 0.5 - 0.2) / radius
+				_put(out, taken, tower, cx + cos(beside) * radius, cz + sin(beside) * radius, atan2(-cos(beside), -sin(beside)), "", true, false)
+				first += wide - 0.5
+		var span := TAU / float(runs) - (first + from_gate) / radius
+		var count := ceili(span * radius / length)
+		for i in count:
+			var a := start + first / radius + (float(i) + 0.5) * span / float(count)
 			var x := cx + cos(a) * radius
 			var z := cz + sin(a) * radius
 			if terrain.water_at(x, z) == "":
-				out.append({"model": model, "x": x, "z": z, "turn": -a - PI / 2.0, "solid": true, "station": ""})
+				out.append({"model": model, "x": x, "z": z, "turn": -a - PI / 2.0, "solid": true, "station": "", "run": true})
 
 
 # --- trees, things to gather, fishing spots (per piece of land) ---
@@ -302,22 +333,114 @@ func _shore_near(x: float, z: float) -> bool:
 
 # --- walking around things ---
 
+# Small or flimsy things (anything not solid, or under 2.5 m): lower graphics tiers place only a share of them.
+func loose(item: Dictionary) -> bool:
+	var size := _size(String(item["model"]))
+	return not bool(item.get("solid", false)) or maxf(float(size["w"]), float(size["d"])) < 2.5
+
+
+# The boxes a thing is made of for bumping into, in its own axes: [[x, z, width, depth, height]]. Nothing for what
+# is walked over or through (rugs, crop rows ...: "walk_over" in the rules). A gate is its two sides and a walk-in
+# house its wall pieces, so the way through stays open.
+func boxes(item: Dictionary) -> Array:
+	var model := String(item["model"])
+	if not props.has(model) or (not bool(item.get("solid", false)) and _walk_over.has(model)):
+		return []
+	var size: Dictionary = props[model]
+	var out: Array = []
+	if size.has("walls"):
+		for piece: Array in size["walls"]:
+			out.append([float(piece[0]), float(piece[1]), float(piece[2]), float(piece[3]), float(size["wall_h"])])
+		return out
+	var fit := 1.0 if item.has("run") else 0.92  # stretches of a wall close up; other things are a little smaller than they look
+	return [[float(size["x"]), float(size["z"]), maxf(float(size["w"]) * fit, 0.3), maxf(float(size["d"]) * fit, 0.3), float(size["h"])]]
+
+
+# True when a thing's boxes cover a point (with `pad` to spare). Works in any flat axes the thing is given in: the
+# map, or a room's own.
+func covers(item: Dictionary, point: Vector2, pad: float) -> bool:
+	for entry: Array in _map_boxes(item, false):
+		var rel := point - Vector2(entry[0], entry[1])
+		var local := Vector2(rel.x * float(entry[4]) - rel.y * float(entry[5]), rel.x * float(entry[5]) + rel.y * float(entry[4]))
+		if absf(local.x) < float(entry[2]) + pad and absf(local.y) < float(entry[3]) + pad:
+			return true
+	return false
+
+
+# The same boxes on the map: [x, z, half width, half depth, cos, sin] each. Creatures never go indoors, so for them
+# (`whole`) a walk-in house is its whole footprint.
+func _map_boxes(item: Dictionary, whole: bool) -> Array:
+	var list := boxes(item)
+	var size := _size(String(item["model"]))
+	if whole and size.has("inner"):
+		list = [[float(size["x"]), float(size["z"]), float(size["w"]), float(size["d"]), float(size["h"])]]
+	var turn := float(item["turn"])
+	var out: Array = []
+	for box: Array in list:
+		var ox := float(box[0]) * cos(turn) + float(box[1]) * sin(turn)
+		var oz := -float(box[0]) * sin(turn) + float(box[1]) * cos(turn)
+		out.append([float(item["x"]) + ox, float(item["z"]) + oz, float(box[2]) * 0.5, float(box[3]) * 0.5, cos(turn), sin(turn)])
+	return out
+
+
 func _remember(items: Array) -> void:
 	for item: Dictionary in items:
-		if not bool(item["solid"]):
-			continue
-		var size := _size(String(item["model"]))
-		var turn := float(item["turn"])
-		var ox := float(size["x"]) * cos(turn) + float(size["z"]) * sin(turn)
-		var oz := -float(size["x"]) * sin(turn) + float(size["z"]) * cos(turn)
-		var entry := [float(item["x"]) + ox, float(item["z"]) + oz, float(size["w"]) * 0.5, float(size["d"]) * 0.5, cos(turn), sin(turn)]
-		var reach := maxf(entry[2], entry[3]) + 1.0
-		for gz in range(floori((entry[1] - reach) / GRID), floori((entry[1] + reach) / GRID) + 1):
-			for gx in range(floori((entry[0] - reach) / GRID), floori((entry[0] + reach) / GRID) + 1):
-				var square := Vector2i(gx, gz)
-				if not _grid.has(square):
-					_grid[square] = []
-				(_grid[square] as Array).append(entry)
+		if bool(item.get("inside", false)):
+			continue  # furniture of a walk-in house: the house itself is already in the way
+		for entry: Array in _map_boxes(item, true):
+			var reach := maxf(entry[2], entry[3]) + 1.0
+			for gz in range(floori((entry[1] - reach) / GRID), floori((entry[1] + reach) / GRID) + 1):
+				for gx in range(floori((entry[0] - reach) / GRID), floori((entry[0] + reach) / GRID) + 1):
+					var square := Vector2i(gx, gz)
+					if not _grid.has(square):
+						_grid[square] = []
+					(_grid[square] as Array).append(entry)
+
+
+# Slits nobody could get through but a player could get wedged in: wherever two things of a place or site stand
+# closer than `PLUG_GAP` without touching, a round post [x, z, radius] closes the gap. Worked out once per place.
+func plugs(id: String, items: Array) -> Array:
+	if _plugs.has(id):
+		return _plugs[id]
+	var found: Array = []
+	var all: Array = []  # [box, item index, radius around its middle]
+	for i in items.size():
+		if loose(items[i]):
+			continue  # small things are left out on low graphics tiers: a post beside nothing would be worse than a slit
+		for box: Array in _map_boxes(items[i], false):
+			all.append([box, i, Vector2(box[2], box[3]).length()])
+	for a in all.size():
+		var one: Array = all[a][0]
+		for b in range(a + 1, all.size()):
+			var two: Array = all[b][0]
+			var apart := float(all[a][2]) + float(all[b][2]) + PLUG_GAP
+			if absf(float(one[0]) - float(two[0])) > apart or absf(float(one[1]) - float(two[1])) > apart or int(all[a][1]) == int(all[b][1]):
+				continue
+			var near := _closest(one, two)
+			var back := _closest(two, one)
+			if float(back[0]) < float(near[0]):
+				near = back
+			if float(near[0]) > 0.08 and float(near[0]) < PLUG_GAP:
+				var middle: Vector2 = ((near[1] as Vector2) + (near[2] as Vector2)) * 0.5
+				found.append([middle.x, middle.y, PLUG_GAP * 0.5 + 0.25])
+	_plugs[id] = found
+	return found
+
+
+# The corner of box `a` closest to box `b`: [distance, the corner, the nearest point of b]. 0 when a corner is inside.
+func _closest(a: Array, b: Array) -> Array:
+	var best := [INF, Vector2.ZERO, Vector2.ZERO]
+	for corner: Vector2 in [Vector2(1, 1), Vector2(1, -1), Vector2(-1, 1), Vector2(-1, -1)]:
+		var lx := corner.x * float(a[2])
+		var lz := corner.y * float(a[3])
+		var at := Vector2(float(a[0]) + lx * float(a[4]) + lz * float(a[5]), float(a[1]) - lx * float(a[5]) + lz * float(a[4]))
+		var rel := at - Vector2(b[0], b[1])
+		var local := Vector2(rel.x * float(b[4]) - rel.y * float(b[5]), rel.x * float(b[5]) + rel.y * float(b[4]))  # into b's own axes
+		var held := Vector2(clampf(local.x, -float(b[2]), float(b[2])), clampf(local.y, -float(b[3]), float(b[3])))
+		var d := local.distance_to(held)
+		if d < float(best[0]):
+			best = [d, at, Vector2(b[0], b[1]) + Vector2(held.x * float(b[4]) + held.y * float(b[5]), -held.x * float(b[5]) + held.y * float(b[4]))]
+	return best
 
 
 # Makes sure the places and sites around a point are laid out (call for wherever creatures are about to walk).

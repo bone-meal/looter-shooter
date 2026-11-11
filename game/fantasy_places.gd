@@ -1,6 +1,8 @@
 # Purpose: draws what core/fantasy_layout.gd says stands in the fantasy world's places and scattered sites, builds it
 # when the player comes near and removes it when far: every model once per place however many copies stand there (one
-# draw call per material), a box to bump into for each solid thing, the crafting stations and fires, and the people
+# draw call per material), boxes to bump into for everything the layout calls solid (`layout.boxes`, plus posts that
+# close slits too narrow to pass), the crafting stations and fires, the containers that can be searched (each a
+# scene of its own so its lid can open), and the people
 # (quest givers from data/fantasy/world.json plus a few ordinary folk per place) on rigged NPC bodies.
 # Dependencies: core/fantasy_terrain.gd, core/fantasy_layout.gd, game/fantasy_models.gd, game/npc_body.gd,
 # game/body_motion.gd.
@@ -38,6 +40,7 @@ var _timer := 0.0
 var _clock := 0.0
 var _marks := {}  # npc id -> text above the head ("!" quest to give, "..." a quest points here)
 var _meshes := {}
+var _containers := {}  # "place or site id:item index" -> the container's own Node3D (see game/fantasy_rooms.gd)
 
 
 # `folk` = region id -> {"name": String, "lines": Array} for the ordinary people (from the writers' files).
@@ -84,20 +87,35 @@ func setup(land_terrain: FantasyTerrain, world_layout: FantasyLayout, folk: Dict
 				"look": {"gender": style[0], "outfit": "desert_nomad" if tribe else style[1], "hair": style[2], "hair_color": style[3], "skin": (i * 3 + int(absf(cx))) % 10}})
 
 
+# Call twice a second with the player's spot. Builds ONE place or site per call, the nearest first (building every
+# one in range in the same frame was a long stall on arriving), and removes what is far away.
 func follow(local: Vector3) -> void:
+	var next_id := ""
+	var next_items: Array = []
+	var next_d := INF
 	for place: Dictionary in terrain.places:
 		var id := String(place["id"])
 		var d := Vector2(local.x - float(place["pos"][0]), local.z - float(place["pos"][1])).length() - float(place["flat"])
 		if d < show_at and not _built.has(id):
-			_build(id, layout.place_items(place))
+			if d < next_d:
+				next_d = d
+				next_id = id
+				next_items = layout.place_items(place)
 		elif d > show_at + HIDE_EXTRA and _built.has(id):
 			_unbuild(id)
 	var here := layout.site_cell(local.x, local.z)
 	for dz in range(-2, 3):
 		for dx in range(-2, 3):
 			var site := layout.site(here + Vector2i(dx, dz))
-			if not site.is_empty() and not _built.has(site["id"]) and Vector2(local.x - float(site["x"]), local.z - float(site["z"])).length() < show_at:
-				_build(String(site["id"]), site["items"])
+			if site.is_empty() or _built.has(site["id"]):
+				continue
+			var d := Vector2(local.x - float(site["x"]), local.z - float(site["z"])).length()
+			if d < show_at and d < next_d:
+				next_d = d
+				next_id = String(site["id"])
+				next_items = site["items"]
+	if next_id != "":
+		_build(next_id, next_items)
 	for id: String in _built.keys():
 		if id.begins_with("site:"):
 			var parts := id.split(":")
@@ -252,9 +270,18 @@ func _process(delta: float) -> void:
 			stations.remove_at(i)
 
 
+# The model of a container standing in the open world (null when its place is not built).
+func container(key: String) -> Node3D:
+	var found: Variant = _containers.get(key)
+	return found as Node3D if is_instance_valid(found) else null
+
+
 func _unbuild(id: String) -> void:
 	(_built[id] as Node3D).queue_free()
 	_built.erase(id)
+	for key: String in _containers.keys():
+		if key.begins_with(id + ":"):
+			_containers.erase(key)
 	for i in range(stations.size() - 1, -1, -1):
 		if String(stations[i]["place"]) == id:
 			stations.remove_at(i)
@@ -281,22 +308,23 @@ func _build(id: String, items: Array) -> void:
 		var x := float(item["x"])
 		var z := float(item["z"])
 		var size: Dictionary = layout.props.get(model, {})
-		var loose := not bool(item["solid"]) or maxf(float(size.get("w", 1.0)), float(size.get("d", 1.0))) < 2.5
+		var loose := layout.loose(item)
 		if loose and String(item["station"]) == "" and String(item.get("loot", "")) == "" and FantasyTerrain.hash01(i, int(x), int(z)) > prop_share:
 			continue
-		var walls: Array = size.get("walls", [])
-		var sunk := 0.14 if not walls.is_empty() else 0.05  # a walk-in house sits lower: its floor is level with the ground
+		var sunk := 0.14 if size.has("inner") else 0.05  # a walk-in house sits lower: its floor is level with the ground
 		var inside := bool(item.get("inside", false))
 		var at := Transform3D(Basis(Vector3.UP, float(item["turn"])), Vector3(x, terrain.height(x, z) - (-0.03 if inside else sunk), z))
 		if String(item["station"]) != "":
 			stations.append({"kind": String(item["station"]), "at": at.origin, "place": id, "until": 0.0})
-		if model in JOINTED:
+		if model in JOINTED or String(item.get("loot", "")) != "":
 			var made := FantasyModels.scene(model)
 			if made != null:
 				made.transform = at
 				holder.add_child(made)
 				if made.find_child("Sails", true, false) != null:
 					_sails.append(made.find_child("Sails", true, false) as Node3D)
+				if String(item.get("loot", "")) != "":
+					_containers["%s:%d" % [id, i]] = made
 		elif not loose and bool(item["solid"]):
 			big.append([_mesh(model), at])  # buildings and walls: folded into one mesh for the whole place
 		else:
@@ -304,14 +332,14 @@ func _build(id: String, items: Array) -> void:
 			if not copies.has(key):
 				copies[key] = []
 			(copies[key] as Array).append(at)
-		if not walls.is_empty():  # a walk-in house: one box per wall piece, the doorway stays open; a warm light inside
-			for piece: Array in walls:
-				var wall := CollisionShape3D.new()
-				var slab := BoxShape3D.new()
-				slab.size = Vector3(float(piece[2]), float(size["wall_h"]), float(piece[3]))
-				wall.shape = slab
-				wall.transform = at * Transform3D(Basis(), Vector3(float(piece[0]), float(size["wall_h"]) * 0.5, float(piece[1])))
-				body.add_child(wall)
+		for box: Array in layout.boxes(item):
+			var shape := CollisionShape3D.new()
+			var block := BoxShape3D.new()
+			block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
+			shape.shape = block
+			shape.transform = at * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
+			body.add_child(shape)
+		if size.has("inner"):  # a walk-in house: a warm light inside
 			var lamp := OmniLight3D.new()
 			lamp.light_color = Color(1.0, 0.82, 0.6)
 			lamp.light_energy = 1.4
@@ -320,13 +348,14 @@ func _build(id: String, items: Array) -> void:
 			lamp.distance_fade_begin = 40.0
 			lamp.position = at * Vector3(0.0, float(size["wall_h"]) - 0.7, 0.0)
 			holder.add_child(lamp)
-		elif bool(item["solid"]) and not size.is_empty():
-			var shape := CollisionShape3D.new()
-			var block := BoxShape3D.new()
-			block.size = Vector3(maxf(float(size["w"]) * 0.92, 0.3), float(size["h"]), maxf(float(size["d"]) * 0.92, 0.3))
-			shape.shape = block
-			shape.transform = at * Transform3D(Basis(), Vector3(float(size["x"]), float(size["h"]) * 0.5, float(size["z"])))
-			body.add_child(shape)
+	for plug: Array in layout.plugs(id, items):  # slits too narrow to pass are closed, so nobody gets wedged in one
+		var shape := CollisionShape3D.new()
+		var post := CylinderShape3D.new()
+		post.radius = float(plug[2])
+		post.height = 3.0
+		shape.shape = post
+		shape.position = Vector3(float(plug[0]), terrain.height(float(plug[0]), float(plug[1])) + 1.5, float(plug[1]))
+		body.add_child(shape)
 	if not big.is_empty():
 		_merges.append({"holder": holder, "list": big, "next": 0, "tools": {}})
 	for key: String in copies:
@@ -376,5 +405,14 @@ func _stand(entry: Dictionary) -> void:
 	mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 	mark.position.y = 2.5
 	body.add_child(mark)
+	var solid := StaticBody3D.new()  # people are in the way like anything else
+	var shape := CollisionShape3D.new()
+	var post := CylinderShape3D.new()
+	post.radius = 0.32
+	post.height = 1.8
+	shape.shape = post
+	shape.position.y = 0.9
+	solid.add_child(shape)
+	body.add_child(solid)
 	entry["node"] = body
 	entry["mark"] = mark

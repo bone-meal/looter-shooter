@@ -1,7 +1,7 @@
 # Purpose: the rules of what is inside the fantasy world's buildings (data/fantasy/interiors.json): which buildings
 # can be entered and what each is inside (a home, a smithy, a bakery ...), where its door is, the furniture of a room,
 # and what a search of a container gives. Two ways in: a WALK-IN house (main story; its model is hollow and has
-# "walls" in props.json) gets its furniture as ordinary things of the open world (`furnish`); every other building
+# "walls" and "inner" in props.json) gets its furniture as ordinary things of the open world (`furnish`); every other building
 # is entered through its door into a room of its own (`room`). Everything is in a building's own axes: x to the right,
 # z towards the back wall; the door is on the -z side (a model's front).
 # Dependencies: core/fantasy_terrain.gd (hash01 only). No rendering.
@@ -31,7 +31,7 @@ func kind_of(model: String, x: float, z: float) -> String:
 
 
 func walk_in(model: String) -> bool:
-	return (props.get(model, {}) as Dictionary).has("walls")
+	return (props.get(model, {}) as Dictionary).has("inner")  # a gate has "walls" too, but no room inside
 
 
 # The middle of a building's footprint and its front direction on the map.
@@ -85,6 +85,24 @@ func furnish(item: Dictionary) -> Array:
 		out.append({"model": piece["model"], "x": at.x, "z": at.y, "turn": float(item["turn"]) + float(piece["turn"]), "solid": false,
 			"station": piece["station"], "loot": piece["loot"], "inside": true})
 	return out
+
+
+# Where somebody stands just after coming in: in a room's own axes (`entry`), and on the map for a walk-in house.
+func entry(half: Vector2) -> Vector2:
+	return Vector2(0.0, -half.y + 1.0)
+
+
+func entry_spot(item: Dictionary) -> Vector2:
+	var f := _frame(item)
+	return (f[0] as Vector2) + (f[2] as Vector2) * entry(half_size(String(item["model"]))).y
+
+
+# Where to stand and which way to look to see what is really outside a building's side wall (`side`: 1 its right,
+# -1 its left): [spot on the map, direction]. For the windows of a room that is entered by a fade.
+func window_view(item: Dictionary, side: float) -> Array:
+	var f := _frame(item)
+	var way: Vector2 = (f[1] as Vector2) * side
+	return [(f[0] as Vector2) + way * (float(f[3].get("w", 6.0)) * 0.5 + 0.5), way]
 
 
 # Where the people who live in a walk-in house stand (map metres), one spot per index.

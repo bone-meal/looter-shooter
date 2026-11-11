@@ -1,5 +1,5 @@
 # Purpose: developer check for the creature models. Stands the two skeletons (one plain, one with an element tint), the
-# clockwork bear, the crow and the Omaha enemies of data/omaha/enemies.json (regular types in a row on the south side,
+# clockwork bear, the crow and the wasteland enemies of data/enemies.json (regular types in a row on the south side,
 # bosses on the west side, both facing the island centre; these are real game/enemy.gd nodes standing still) in the
 # realistic look, built the way the game builds them, and saves
 # pictures (tools/shots/creature_<view>.jpg, _fwd on Forward+) plus draw calls and frame time (tools/creature_shot*.log).
@@ -31,7 +31,7 @@ const VIEWS := [
 	["bosses_right", Vector3(-2.2, 2.6, -3.4), Vector3(-7.0, 2.1, -3.5)],
 	["boss_mid", Vector3(-2.8, 2.4, 0.0), Vector3(-7.0, 2.0, 0.0)],
 ]
-# Omaha enemies: [id, place relative to the island centre]; the bosses face +X. The other creatures are hidden in these views.
+# Wasteland enemies: [id, place relative to the island centre]; the bosses face +X. The other creatures are hidden in these views.
 const WASTELAND := [["raider", Vector3(-2.7, 0, 9)], ["feral", Vector3(-1.4, 0, 9)], ["scav_gunner", Vector3(0.0, 0, 9)], ["marksman", Vector3(1.3, 0, 9)], ["brute", Vector3(3.0, 0, 9)],
 	["boss_butcher", Vector3(-7, 0, 4.6)], ["boss_tyrant", Vector3(-7, 0, 2.3)], ["boss_dome_beast", Vector3(-7, 0, 0)], ["boss_warlord", Vector3(-7, 0, -2.3)], ["boss_overseer", Vector3(-7, 0, -4.6)]]
 
@@ -70,7 +70,7 @@ func _ready() -> void:
 			if leg != null:
 				leg.rotation.x = float(limb[1])  # mid-stride, as game/enemy.gd swings them
 	CrowModel.pose(cast[3][0] as Node3D, CrowModel.FLAP, 0.12)
-	var enemies: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/omaha/enemies.json")) as Dictionary)["enemies"]
+	var enemies: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]
 	for entry: Array in WASTELAND:
 		var stats: Dictionary = enemies[entry[0]]
 		if not CharacterModels.has_wastelander(String(stats["model"])):

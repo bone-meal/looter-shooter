@@ -168,7 +168,7 @@ func _frost(db: RefCounted, entry: Dictionary, origin: Vector3) -> void:
 	var boss_slow := SkillState.value(db, entry, "boss_slow")
 	_ring(origin, radius, Color(0.5, 0.85, 1.0))
 	for e in _near(origin, radius):
-		if e.enemy_id == "boss":
+		if String(e.enemy_id).begins_with("boss"):
 			e.apply_slow(boss_slow, seconds)
 		else:
 			e.apply_freeze(seconds)

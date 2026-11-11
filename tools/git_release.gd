@@ -1,12 +1,15 @@
 # Purpose: export the game with the Windows and Linux presets, zip each build and publish
 # the zips as a GitHub prerelease of the origin repo. Notes: tools/release_notes.txt
-# (optional, else GitHub writes them from the commits). Log: tools/git_release.log.
+# (optional, else GitHub writes them from the commits). Tag = v + next version from
+# tools/release_version.txt (director, 2026-11-10: v1.03 first, then 1.04, 1.05 ...).
+# Log: tools/git_release.log.
 # Depends on: tools/git_cli.gd, export_presets.cfg, installed export templates, gh.
 extends Node
 
 const GitCli = preload("res://tools/git_cli.gd")
 const PRESETS := ["Windows", "Linux"]
 const OUT_DIR := "build/release"
+const VERSION_FILE := "res://tools/release_version.txt"  # last released version, e.g. 1.02
 
 func _ready() -> void:
 	if not OS.get_cmdline_user_args().has("worker"):
@@ -21,8 +24,8 @@ func _ready() -> void:
 
 func _work() -> void:
 	var g = GitCli.new(ProjectSettings.globalize_path("res://tools/git_release.log"))
-	var stamp: String = Time.get_datetime_string_from_system().replace(":", "").replace("T", "-")
-	var tag: String = "beta-" + stamp.substr(0, 15)
+	var version: String = _next_version()
+	var tag: String = "v" + version
 	var zips: PackedStringArray = PackedStringArray()
 	for preset in PRESETS:
 		var name_low: String = str(preset).to_lower()
@@ -54,8 +57,18 @@ func _work() -> void:
 		gh_args.append("--generate-notes")
 	gh_args.append_array(zips)
 	var result: int = g.run("gh", gh_args)
+	if result == 0:
+		var vf := FileAccess.open(VERSION_FILE, FileAccess.WRITE)
+		vf.store_line(version)
+		vf.close()
 	g.line("RESULT " + ("OK " + tag if result == 0 else "RELEASE FAILED"))
 	_done(g)
+
+# Last released version + 0.01 (1.02 -> 1.03, 1.09 -> 1.10).
+func _next_version() -> String:
+	var last: String = FileAccess.get_file_as_string(VERSION_FILE).strip_edges()
+	var parts: PackedStringArray = last.split(".")
+	return "%d.%02d" % [parts[0].to_int(), parts[1].to_int() + 1]
 
 # Flat zip of every file in one build folder (exe/pck + GDExtension libraries).
 func _zip_dir(dir: String, zip_path: String) -> void:

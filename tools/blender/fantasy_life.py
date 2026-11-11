@@ -149,6 +149,7 @@ def build_all():
         m.box(K("wood", DARK), (0.2, 3.6, 2.0), (-2.2, 1.9, 1.5), bevel=0.02)  # doors standing open
         m.box(K("wood", DARK), (0.2, 3.6, 2.0), (2.2, 1.9, 1.5), bevel=0.02)
     model("town_gate", town_gate)
+    maker.sizes["town_gate"].update({"walls": [[3.6, 0, 2.6, 2.6], [-3.6, 0, 2.6, 2.6]], "wall_h": 6.0})  # only the two towers are solid: the arch is open
 
     # ---------- what stands in yards and streets ----------
     model("barrel", lambda m: (barrel_at(m, 0, 0), barrel_at(m, 0.85, 0.2), barrel_at(m, 0.4, 0.15, y=1.0, s=0.8)))

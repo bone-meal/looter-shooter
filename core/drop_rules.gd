@@ -27,10 +27,10 @@ static func roll_drops(db: RefCounted, cfg: Dictionary, rng: RandomNumberGenerat
 	return guns
 
 
-# Picks an affix for a new enemy, or {} for a normal one. Elites never appear before cfg.elite.min_wave and never for the boss.
+# Picks an affix for a new enemy, or {} for a normal one. Elites never appear before cfg.elite.min_wave and never for a boss.
 static func roll_elite(cfg: Dictionary, rng: RandomNumberGenerator, enemy_id: String, wave: int) -> Dictionary:
 	var e: Dictionary = cfg["elite"]
-	if enemy_id == "boss" or wave < int(e["min_wave"]) or rng.randf() > float(e["chance"]):
+	if enemy_id.begins_with("boss") or wave < int(e["min_wave"]) or rng.randf() > float(e["chance"]):
 		return {}
 	var affixes: Array = e["affixes"]
 	return affixes[rng.randi_range(0, affixes.size() - 1)]

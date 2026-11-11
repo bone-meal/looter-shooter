@@ -43,32 +43,6 @@ static func _wall(x: int, y: int) -> Color:
 	return Color(0.78 * shade, 0.68 * shade, 0.52 * shade)
 
 
-# Omaha painting: dusty sky, ruined skyline with one tall tower, the river below.
-static func omaha_texture() -> ImageTexture:
-	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)
-	for y in H:
-		for x in W:
-			img.set_pixel(x, y, _omaha_pixel(x, y))
-	return ImageTexture.create_from_image(img)
-
-
-static func _omaha_pixel(x: int, y: int) -> Color:
-	if y >= 150:
-		return Color(0.25, 0.38, 0.35).lerp(Color(0.14, 0.22, 0.22), float(y - 150) / 30.0) if (x + y * 2) % 37 > 3 else Color(0.5, 0.6, 0.5)
-	if y >= 138:
-		return Color(0.38, 0.30, 0.2)
-	if Vector2(x - 60, y - 40).length() < 15.0:
-		return Color(1.0, 0.85, 0.5)
-	var col := floori(x / 14.0)
-	var top := 138 - (30 + int(fposmod(float(col) * 7.3 + 3.1, 5.0)) * 13)
-	if col == 8:
-		top = 36 if (x % 14) < 9 else 60  # the tower, with a broken shoulder
-	if x >= 8 and x < 248 and y >= top:
-		var win: bool = (x % 6 == 2 or x % 6 == 3) and (y % 8 < 3)
-		return Color(0.15, 0.16, 0.2) if win else Color(0.3, 0.27, 0.25).lerp(Color(0.5, 0.42, 0.34), float(y - top) / 100.0)
-	return Color(0.85, 0.55, 0.32).lerp(Color(0.95, 0.78, 0.5), float(y) / 138.0)
-
-
 # Painting that leads back home: a palm island in a blue sea.
 static func island_texture() -> ImageTexture:
 	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)

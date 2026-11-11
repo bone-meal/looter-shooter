@@ -6,7 +6,7 @@
 # There is no outfit-less character.
 # The character faces -Z like every other body in the game.
 # Use: RiggedBody.build(appearance) (null when the packs are not on this machine: callers then use game/body_builder.gd),
-# then animate() every frame; head_anchor(), hand_anchor(), support(), attach(), tint_outfit(), third_person_hold(), hold() as needed.
+# then animate() every frame; head_anchor(), hand_anchor(), support(), grip(), attach(), tint_outfit(), third_person_hold(), hold() as needed.
 # Dependencies: data/characters.json, assets/cc0/packs/ (tools/pack_fetch.tscn), assets/anim/*.res (tools/anim_bake.tscn),
 # game/appearance_data.gd (skin tone list).
 extends Node3D
@@ -33,6 +33,8 @@ var _anchor: Node3D
 var _hand: Node3D
 var _reach: TwoBoneIK3D  # left arm reaching for a long gun's support point
 var _reach_target: Node3D
+var _grip: TwoBoneIK3D  # right arm reaching for the grip of a gun carried on the shoulder
+var _grip_target: Node3D
 var _handles: RiggedPose
 var _hold_amount := 0.0
 var _held_clip := ""  # hold() asked for before the body was in the scene; applied in _ready
@@ -247,6 +249,26 @@ func support(target: Node3D) -> void:
 	_reach.active = target != null
 	if target != null:
 		_reach.set_target_node(0, _reach.get_path_to(target))
+
+
+# A gun carried on the shoulder (launchers) is not in the hand of the weapon pose: the right hand reaches `target`
+# (the weapon model's "Grip" point) instead. Null = back to the pose.
+func grip(target: Node3D) -> void:
+	if target == _grip_target:
+		return
+	_grip_target = target
+	if _grip == null:
+		if target == null:
+			return
+		_grip = TwoBoneIK3D.new()
+		_skeleton.add_child(_grip)
+		_grip.set_setting_count(1)
+		_grip.set_root_bone_name(0, "upperarm_r")
+		_grip.set_middle_bone_name(0, "lowerarm_r")
+		_grip.set_end_bone_name(0, "hand_r")
+	_grip.active = target != null
+	if target != null:
+		_grip.set_target_node(0, _grip.get_path_to(target))
 
 
 # Where the local player's own weapon (which hangs from the camera) sits in third person to meet the hands of the weapon pose.

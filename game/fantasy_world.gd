@@ -30,6 +30,7 @@ const FantasySounds = preload("res://game/fantasy_sounds.gd")
 const FantasyMap = preload("res://game/fantasy_map.gd")
 const FantasyInteriors = preload("res://core/fantasy_interiors.gd")
 const FantasyRooms = preload("res://game/fantasy_rooms.gd")
+const LoadClock = preload("res://game/load_clock.gd")
 const EnemyBody = preload("res://game/enemy.gd")
 const FantasyHud = preload("res://game/fantasy_hud.gd")
 const ElementBox = preload("res://game/element_box.gd")
@@ -104,6 +105,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	_sun = style.get("sun")
 	position = OFFSET
 	data = FantasyData.load_all()
+	LoadClock.mark("fantasy: data and writing files")
 	for problem: String in data["problems"]:
 		push_warning("Fantasy text: " + problem)
 	terrain = FantasyTerrain.new(data["world"])
@@ -123,15 +125,17 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	sounds.call("setup", data["sounds"])
 	add_child(land)
 	land.setup(terrain)
+	LoadClock.mark("fantasy: rules, sounds, land set up")
 	add_child(gather)
 	add_child(scatter)
 	scatter.setup(terrain, layout, land, gather, skilling)
-	land.chunk_loaded.connect(func(_key: Vector2i, _origin: Vector3) -> void: scatter.refresh())
+	LoadClock.mark("fantasy: scatter set up")
 	add_child(places)
 	var folk := {}
 	for region: Dictionary in terrain.regions:
 		folk[String(region["id"])] = region["folk"]
 	places.setup(terrain, layout, folk)
+	LoadClock.mark("fantasy: every place laid out")
 	mana = max_mana()
 	add_child(work)
 	work.setup(self)
@@ -154,11 +158,13 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	caster.refused.connect(func(_why: String) -> void: sound("refuse"))
 	add_child(spawner)
 	spawner.setup(self, director, player)
+	LoadClock.mark("fantasy: work, rooms, spells, spawner")
 	spawner.notice.connect(func(text: String) -> void: notice.emit(text))
 	spawner.slain.connect(_on_slain)
 	add_child(moves)
 	moves.setup(self, player)
 	moves.bodies = spawner.bodies
+	moves.reach_m = float(data["enemies"]["spawn"]["boss_leash_m"])
 	spawner.boss_woke.connect(moves.watch)
 	spawner.boss_woke.connect(func(boss: Node3D, _moves: Array) -> void: sound("boss_wake", boss.global_position))
 	moves.started.connect(_on_move_started)
@@ -368,8 +374,11 @@ func enter(world_pos: Vector3) -> void:
 	rooms.reset()
 	var local := local_of(world_pos)
 	land.load_now(local)
+	LoadClock.mark("fantasy: ground under the player")
 	scatter.follow(land.key_at(local))
+	LoadClock.mark("fantasy: trees and grass")
 	places.follow(local)
+	LoadClock.mark("fantasy: places near the player")
 	_photo = bool(_style.call("has_photo_sky"))
 	if not _photo:  # a look without a photo sky (toon, vivid ...): this world's own plain sky
 		_env.background_mode = Environment.BG_SKY
@@ -415,6 +424,7 @@ func set_detail(detail: Dictionary) -> void:
 	places.folk_share = float(detail.get("folk", 1.0))
 	places.small_m = float(detail.get("small_m", 100.0))
 	rooms.prop_share = float(detail.get("props", 1.0))
+	rooms.real_views = int(detail.get("views", 1)) > 0
 	var motion := int(detail.get("motion", 3))
 	places.motion = motion
 	EnemyBody.limbs_move = motion >= 1

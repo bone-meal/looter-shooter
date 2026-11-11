@@ -3,7 +3,8 @@
 # quest line can be played to its end in order (simulated), the level curve against the quest rewards, and what the
 # terrain looks like in numbers. Writes tools/fantasy_check.log. Run scene tools/fantasy_check.tscn.
 # It also lists every text the writers' files are missing, checks the fishing waters, the boss moves and that every
-# model a layout names exists, and lays out every place once to count what stands there.
+# model a layout names exists, and lays out every place once to count what stands there. Round 4: every town gate
+# can be walked through, walls have no other holes, nothing blocks the way into a room.
 # Dependencies: core/fantasy_data.gd (rules + writers' text), spell_book.gd, skill_levels.gd, fantasy_bag.gd,
 # quest_log.gd, fantasy_terrain.gd, fantasy_layout.gd.
 extends Node
@@ -279,3 +280,64 @@ func _check_round_two(all: Dictionary) -> void:
 					spots[water] = int(spots[water]) + 1
 	_lines.append("layout: %d things in %d places, %d roadside sites, fishing spots %s, %d bosses with special attacks" % [total, (world["places"] as Array).size(), sites, str(spots), bosses])
 	_need(int(spots["fresh"]) > 0 and int(spots["salt"]) > 0, "no fishing spots were placed on fresh or salt water")
+	_check_ways(all, layout)
+
+
+# Round 4: what can be bumped into. Every gate of a walled place can be walked through and there is no other way
+# through its wall; no furniture stands where a room is entered; how many slits between buildings were closed.
+func _check_ways(all: Dictionary, layout: FantasyLayout) -> void:
+	var world: Dictionary = all["world"]
+	var props: Dictionary = all["props"]
+	var closed := 0
+	var began := Time.get_ticks_msec()
+	for place: Dictionary in world["places"]:
+		closed += layout.plugs(String(place["id"]), layout.place_items(place)).size()
+		for rule: Dictionary in all["layouts"]["kinds"].get(String(place["kind"]), []):
+			if not rule.has("wall") or int(rule.get("gates", 0)) == 0:
+				continue
+			var cx := float(place["pos"][0])
+			var cz := float(place["pos"][1])
+			var radius := float(rule["ring"]) * float(place["flat"])
+			var gates := int(rule["gates"])
+			for k in gates:
+				var a := PI / 2.0 + float(k) * TAU / float(gates)
+				var stopped := 0
+				for step in range(-14, 15):  # 7 m each side of the wall
+					var r := radius + float(step) * 0.5
+					if layout.push_out(cx + cos(a) * r, cz + sin(a) * r, 0.45).distance_to(Vector2(cx + cos(a) * r, cz + sin(a) * r)) > 0.01:
+						stopped += 1
+				_need(stopped == 0, "%s: gate %d cannot be walked through (%d blocked steps)" % [place["id"], k, stopped])
+			var gate: Dictionary = props[String(rule["gate"])]
+			var passage := float(gate["w"]) * 0.5
+			var leaks := 0
+			var steps := int(TAU * radius / 0.2)
+			for i in steps:
+				var a := float(i) * TAU / float(steps)
+				var by_gate := false
+				for k in gates:
+					if absf(angle_difference(a, PI / 2.0 + float(k) * TAU / float(gates))) * radius < passage:
+						by_gate = true
+				var x := cx + cos(a) * radius
+				var z := cz + sin(a) * radius
+				if not by_gate and layout.terrain.water_at(x, z) == "" and layout.push_out(x, z, 0.4).distance_to(Vector2(x, z)) < 0.01:
+					leaks += 1
+			_need(leaks == 0, "%s: the wall has %d holes that are not gates" % [place["id"], leaks])
+	_lines.append("ways: %d slits between buildings closed with posts (worked out in %d ms for all places)" % [closed, Time.get_ticks_msec() - began])
+	var rules: FantasyInteriors = layout.interiors
+	var inside: Dictionary = all["interiors"]
+	var left_out := 0
+	var rooms := 0
+	for model: String in props:  # every building that has a room, at the size its room really is
+		var kinds := {}
+		for start: String in inside["buildings"]:
+			if model.begins_with(start) and not rules.walk_in(model):
+				for kind: String in inside["buildings"][start]:
+					kinds[kind] = true
+		var half := rules.half_size(model)
+		for kind: String in kinds:
+			rooms += 1
+			for piece: Dictionary in rules.furniture(kind, half):
+				if layout.covers(piece, rules.entry(half), 0.5):
+					left_out += 1
+					_need(String(piece["loot"]) == "" and String(piece["station"]) == "", "room %s in %s: %s stands where the room is entered" % [kind, model, piece["model"]])
+	_lines.append("rooms: %d building and room pairs; %d plain pieces of furniture are left out because they would stand in the way in" % [rooms, left_out])

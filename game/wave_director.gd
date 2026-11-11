@@ -105,7 +105,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _spawn(id: String) -> void:
-	if id == "boss" and boss_handler.is_valid():
+	if id == "boss" and boss_handler.is_valid():  # only the clockwork bear is shared online; the wasteland bosses are each player's own
 		_alive += 1  # the shared boss counts as alive until it dies (or is found already dead)
 		boss_handler.call(self)
 		return
@@ -128,13 +128,13 @@ func _spawn(id: String) -> void:
 	add_child(enemy)
 	_enemies.append(enemy)
 	_alive += 1
-	if id == "boss":
+	if id.begins_with("boss"):  # its health shows as the bar at the top
 		_boss = enemy
 
 
 # Skeletons (not the boss) get an element with the configured chance, picked by weight. Returns "" for none.
 func _roll_element(id: String) -> String:
-	if id == "boss" or randf() > float(_elements["chance"]):
+	if id.begins_with("boss") or randf() > float(_elements["chance"]):
 		return ""
 	var total := 0.0
 	for e in _elements["elements"]:
@@ -150,11 +150,11 @@ func _roll_element(id: String) -> String:
 func _on_enemy_died(enemy: Node) -> void:
 	_alive = maxi(_alive - 1, 0)
 	_enemies.erase(enemy)
-	var wave := int(enemy.get_meta("tier")) if enemy.has_meta("tier") else _waves.wave_number()  # Omaha enemies carry their district tier
+	var wave := int(enemy.get_meta("tier")) if enemy.has_meta("tier") else _waves.wave_number()  # fantasy creatures carry their own level
 	killed.emit((enemy as Node3D).global_position, String(enemy.enemy_id), String(enemy.elite), wave)
 
 
-# Omaha: spawns one enemy with ready-made stats at a world position (see game/omaha_spawner.gd). Returns it.
+# Spawns one enemy with ready-made stats at a world position (game/fantasy_spawner.gd, /spawn). Returns it.
 func spawn_custom(id: String, stats: Dictionary, pos: Vector3, affix: Dictionary = {}) -> Enemy:
 	var enemy := Enemy.new()
 	if not affix.is_empty():

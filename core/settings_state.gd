@@ -50,7 +50,7 @@ func from_dict(d: Dictionary) -> void:
 	graphics = String(d.get("graphics", graphics))
 	shaders = String(d.get("shaders", shaders))
 	renderer = String(d.get("renderer", renderer))
-	dev_commands = bool(d.get("dev_commands", dev_commands))
+	dev_commands = OS.is_debug_build() or bool(d.get("dev_commands", false))  # a release build's saved "off" must not switch them off in the editor
 	var saved = d.get("bindings", {})
 	if saved is Dictionary:
 		bindings = {}

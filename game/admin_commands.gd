@@ -12,7 +12,7 @@ const GunStats = preload("res://core/gun_stats.gd")
 const DataStore = preload("res://core/data_store.gd")
 const Player = preload("res://game/player.gd")
 
-const ENEMY_FILES := ["res://data/enemies.json", "res://data/omaha/enemies.json", "res://data/fantasy/enemies.json"]
+const ENEMY_FILES := ["res://data/enemies.json", "res://data/fantasy/enemies.json"]
 const SPAWN_MAX := 20
 
 var session: Node3D

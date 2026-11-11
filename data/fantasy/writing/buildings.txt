@@ -73,11 +73,11 @@ name: Chest
 # WHAT: the name of this thing when it can be searched ("Search ...").
 name: Cupboard
 
-[container crate]
+[container loot_crate]
 # WHAT: the name of this thing when it can be searched ("Search ...").
 name: Crate
 
-[container barrel]
+[container loot_barrel]
 # WHAT: the name of this thing when it can be searched ("Search ...").
 name: Barrel
 

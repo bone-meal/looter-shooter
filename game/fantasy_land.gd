@@ -24,6 +24,7 @@ var radius := 5  # chunks kept around the player
 var _chunk: float
 var _half: int  # chunks from the middle of the land to its edge
 var _chunks := {}  # Vector2i -> Node3D (null while it is being worked out)
+var _grids := {}  # Vector2i -> [vertices, blend] of a shown chunk's mesh: cheap ground look-ups (see `ground`)
 var _ready_list: Array = []  # [key, arrays, faces] from the threads
 var _lock := Mutex.new()
 var _center := Vector2i(9999, 9999)
@@ -72,6 +73,28 @@ func loaded(key: Vector2i) -> bool:
 	return _chunks.get(key) != null
 
 
+# Height and how trodden the ground is at a point, read from the shown chunk's own mesh (x = height, y = trodden
+# 0..1). About twenty times cheaper than asking the terrain rules, and exactly what is drawn. Grass uses it.
+# Returns Vector2(NAN, 0) where no chunk is shown.
+func ground(x: float, z: float) -> Vector2:
+	var key := Vector2i(floori(x / _chunk), floori(z / _chunk))
+	if not _grids.has(key):
+		return Vector2(NAN, 0.0)
+	var verts: PackedVector3Array = _grids[key][0]
+	var blend: PackedFloat32Array = _grids[key][1]
+	var cell := _chunk / float(CELLS)
+	var fx := (x - float(key.x) * _chunk) / cell
+	var fz := (z - float(key.y) * _chunk) / cell
+	var gx := clampi(int(fx), 0, CELLS - 1)
+	var gz := clampi(int(fz), 0, CELLS - 1)
+	var tx := fx - float(gx)
+	var tz := fz - float(gz)
+	var i := gz * (CELLS + 1) + gx
+	var j := i + CELLS + 1
+	return Vector2(lerpf(lerpf(verts[i].y, verts[i + 1].y, tx), lerpf(verts[j].y, verts[j + 1].y, tx), tz),
+		lerpf(lerpf(blend[i * 4 + 2], blend[i * 4 + 6], tx), lerpf(blend[j * 4 + 2], blend[j * 4 + 6], tx), tz))
+
+
 # How many chunks are on screen and how many are still being worked out.
 func counts() -> Vector2i:
 	var shown := 0
@@ -93,6 +116,7 @@ func follow(local: Vector3) -> void:
 				(_chunks[key] as Node3D).queue_free()
 				chunk_unloaded.emit(key)
 			_chunks.erase(key)
+			_grids.erase(key)
 	var wanted: Array[Vector2i] = []
 	for dz in range(-radius, radius + 1):
 		for dx in range(-radius, radius + 1):
@@ -102,17 +126,29 @@ func follow(local: Vector3) -> void:
 	wanted.sort_custom(func(a: Vector2i, b: Vector2i) -> bool: return (a - at).length_squared() < (b - at).length_squared())
 	for key in wanted:
 		_chunks[key] = null
-		WorkerThreadPool.add_task(_work.bind(key))
+		WorkerThreadPool.add_task(_work.bind(key), true)  # high priority: every pool thread may take them (low priority gets very few)
 
 
-# Builds every chunk around a point right now (used when the player arrives, behind the fade).
+# The player arrives (behind the fade): waits only for the ground under and right around the point. Everything
+# further out is already queued nearest first and streams in over the next moments, with the far mesh showing
+# meanwhile. (Waiting for every chunk held the game for seconds: round 4, load times.)
 func load_now(local: Vector3) -> void:
 	follow(local)
+	var at := key_at(local)
 	var waited := 0
-	while counts().y > 0 and waited < 4000:
+	while not _ground_ready(at) and waited < 4000:
 		_apply(64)
 		OS.delay_msec(2)
 		waited += 1
+
+
+func _ground_ready(at: Vector2i) -> bool:
+	for dz in range(-1, 2):
+		for dx in range(-1, 2):
+			var key := Vector2i(at.x + dx, at.y + dz)
+			if _chunks.has(key) and _chunks[key] == null:
+				return false
+	return true
 
 
 func _process(_delta: float) -> void:
@@ -147,6 +183,7 @@ func _apply(limit: int) -> void:
 		holder.add_child(body)
 		add_child(holder)
 		_chunks[key] = holder
+		_grids[key] = [job[1][Mesh.ARRAY_VERTEX], job[1][Mesh.ARRAY_CUSTOM0]]
 		chunk_loaded.emit(key, holder.position)
 
 

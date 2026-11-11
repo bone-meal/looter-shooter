@@ -1,5 +1,5 @@
 {
- "_about": "What stands where in the fantasy world's places (rules: core/fantasy_layout.gd; sizes: data/fantasy/props.json). kinds: one list of rules per place kind (data/fantasy/world.json places.kind). A rule is ONE thing {model, at} or SEVERAL {models, count, ring} or a WALL {wall, gate, gates, ring}. at and ring are fractions of the place's flat radius (at_m and ring_m = metres); face: in | out | any; even = spaced evenly around the ring; station = a crafting station stands there; $ in a model name = the region's building scheme; extras = that many things from the region's own list below. sites: small spots scattered through the country (metres), region_sites: how often each kind turns up in a region. Things never overlap: a thing that does not fit is left out.",
+ "_about": "What stands where in the fantasy world's places (rules: core/fantasy_layout.gd; sizes: data/fantasy/props.json). kinds: one list of rules per place kind (data/fantasy/world.json places.kind). A rule is ONE thing {model, at} or SEVERAL {models, count, ring} or a WALL {wall, gate, gates, ring, tower}: the wall closes right up to its gates, the road through each gate is kept clear, tower = a model built into the wall beside each gate. at and ring are fractions of the place's flat radius (at_m and ring_m = metres); face: in | out | any; even = spaced evenly around the ring; station = a crafting station stands there; $ in a model name = the region's building scheme; extras = that many things from the region's own list below. sites: small spots scattered through the country (metres), region_sites: how often each kind turns up in a region. Things never overlap: a thing that does not fit is left out. walk_over: the models nobody bumps into (they lie flat, hang overhead or are too small); everything else in the world is solid to players and creatures.",
  "kinds": {
   "town": [
    {
@@ -330,9 +330,10 @@
    },
    {
     "wall": "palisade",
-    "gate": "watchtower",
+    "gate": "palisade_gate",
     "gates": 4,
-    "ring": 0.77
+    "ring": 0.77,
+    "tower": "watchtower"
    },
    {
     "models": [
@@ -892,7 +893,7 @@
    },
    {
     "wall": "palisade",
-    "gate": "totem",
+    "gate": "palisade_gate",
     "gates": 2,
     "ring": 0.92
    }
@@ -951,7 +952,7 @@
    },
    {
     "wall": "palisade",
-    "gate": "totem",
+    "gate": "palisade_gate",
     "gates": 2,
     "ring": 0.92
    }
@@ -1702,5 +1703,27 @@
    "ruin": 4,
    "cairns": 1
   }
- }
+ },
+ "walk_over": [
+  "rug",
+  "path_stones",
+  "veg_patch",
+  "crop_rows",
+  "nets",
+  "laundry",
+  "banner_blue",
+  "banner_red",
+  "prayer_flags",
+  "ripples",
+  "bedroll",
+  "bone_pile",
+  "stool",
+  "herb_blue",
+  "herb_green",
+  "herb_red",
+  "herb_yellow",
+  "herb_mushroom",
+  "signpost",
+  "staff_orb"
+ ]
 }

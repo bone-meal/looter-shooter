@@ -1,7 +1,10 @@
 # Purpose: the world map of the fantasy world (key M): the whole country drawn like an inked chart on parchment, with
 # the sea, lakes, hills, roads, every place the player has found by name (others are unnamed dots), region names with
 # their levels, quest marks, the player's arrow and the rest of the party. Walking stays possible while it is open.
-# The chart itself is painted once from the terrain rules on a background thread when the world is first built.
+# The chart itself is painted ONCE EVER from the terrain rules, on a background thread after the land around the
+# player has arrived, and kept as a picture in the user folder (named by a hash of the world data and the terrain
+# rules' version): later sessions just load it. (Painting it at every start cost about 6 s of a worker thread at
+# the very moment the land needed those threads.)
 # Dependencies: game/fantasy_world.gd (terrain, found places, map_marks, player_local), game/fantasy_spawner.gd
 # (bodies), game/fantasy_style.gd, game/input_setup.gd.
 extends Control
@@ -26,7 +29,6 @@ func _ready() -> void:
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	visible = false
-	_task = WorkerThreadPool.add_task(_paint)  # the terrain rules are pure: safe to read from another thread
 
 
 func is_open() -> bool:
@@ -46,12 +48,31 @@ func close() -> void:
 func _process(_delta: float) -> void:
 	if not bool(world.get("inside")):
 		visible = false
+	if _chart == null and _task < 0 and bool(world.get("inside")):
+		_fetch_chart()
 	if _task >= 0 and WorkerThreadPool.is_task_completed(_task):
 		WorkerThreadPool.wait_for_task_completion(_task)
 		_task = -1
 		_chart = ImageTexture.create_from_image(_image)
+		_image.save_png(_chart_file())
 	if visible:
 		queue_redraw()
+
+
+func _chart_file() -> String:
+	return "user://fantasy_chart_%d_%d_%d.png" % [PIXELS, int(world.terrain.RULES_VERSION), JSON.stringify(world.terrain.data).hash()]
+
+
+# The saved chart if there is one; otherwise it is painted once the land around the player has streamed in.
+func _fetch_chart() -> void:
+	var path := _chart_file()
+	if FileAccess.file_exists(path):
+		var saved := Image.load_from_file(path)
+		if saved != null and saved.get_width() == PIXELS:
+			_chart = ImageTexture.create_from_image(saved)
+			return
+	if int((world.get("land").call("counts") as Vector2i).y) == 0:
+		_task = WorkerThreadPool.add_task(_paint)  # the terrain rules are pure: safe to read from another thread
 
 
 # Runs on a worker thread: one dot per patch of land, coloured from the land's own palette, shaded by its slope.

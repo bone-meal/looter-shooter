@@ -27,7 +27,8 @@
     "folk": 0.3,
     "motion": 0,
     "bits": 0.35,
-    "small_m": 60
+    "small_m": 60,
+    "views": 0
    }
   },
   {
@@ -57,7 +58,8 @@
     "folk": 0.5,
     "motion": 1,
     "bits": 0.5,
-    "small_m": 80
+    "small_m": 80,
+    "views": 1
    }
   },
   {
@@ -87,7 +89,8 @@
     "folk": 0.8,
     "motion": 2,
     "bits": 0.75,
-    "small_m": 100
+    "small_m": 100,
+    "views": 1
    }
   },
   {
@@ -125,7 +128,8 @@
     "folk": 1.0,
     "motion": 3,
     "bits": 1.0,
-    "small_m": 110
+    "small_m": 110,
+    "views": 1
    }
   },
   {
@@ -163,7 +167,8 @@
     "folk": 1.0,
     "motion": 3,
     "bits": 1.0,
-    "small_m": 130
+    "small_m": 130,
+    "views": 1
    }
   }
  ],

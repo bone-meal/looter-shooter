@@ -1,5 +1,5 @@
 # Purpose: developer-time script. Models the original creatures with tools/blender/kit.py and exports them to
-# assets/models/creatures/: skeleton_sword, skeleton_bow (arena and Omaha enemies), clockwork_bear (boss, an original
+# assets/models/creatures/: skeleton_sword, skeleton_bow (arena enemies), clockwork_bear (boss, an original
 # brass wind-up bear: no hat, no bow tie), crow (the giant island crow). Each keeps the jointed parts, pivots and sizes
 # the game already animates (see game/character_models.gd and game/crow_model.gd). Model space: x right, y up, f forward.
 # Material names matter: the game swaps "bone" / "brass" for its own tintable material and "eye" / "cloth" by accent.

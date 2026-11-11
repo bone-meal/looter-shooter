@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "What is inside the fantasy world's buildings (core/fantasy_interiors.gd, game/fantasy_rooms.gd). buildings: the start of a model's name -> the kinds of interior it can be (several = picked per building from where it stands, so the same building is always the same thing). A model whose entry in props.json has \"walls\" is a WALK-IN house (main story): its furniture stands in the open world. Every other listed building is entered through its door into a room of its own (fade). rooms: per kind the floor and wall material (wood, stone, plaster, cloth, dirt), the wall colour and the furniture: model, at = [across, along] from -1 to 1 (across: -1 left, 1 right; along: -1 back wall, 1 the door's wall), turn in degrees (0 = facing the door), loot = a table below (a container to search), station = fire / forge / workbench / cauldron (usable like the ones outside). loot: rolls = [fewest, most] items a search gives, refill_s = seconds until it can be searched again, items = item id -> weight. Names of buildings and containers are in data/fantasy/writing/buildings.txt.",
+ "_about": "What is inside the fantasy world's buildings (core/fantasy_interiors.gd, game/fantasy_rooms.gd). buildings: the start of a model's name -> the kinds of interior it can be (several = picked per building from where it stands, so the same building is always the same thing). A model whose entry in props.json has \"inner\" is a WALK-IN house (main story): its furniture stands in the open world. Every other listed building is entered through its door into a room of its own (fade). rooms: per kind the floor and wall material (wood, stone, plaster, cloth, dirt), the wall colour and the furniture: model, at = [across, along] from -1 to 1 (across: -1 left, 1 right; along: -1 back wall, 1 the door's wall), turn in degrees (0 = facing the door), loot = a table below (a container to search), station = fire / forge / workbench / cauldron (usable like the ones outside). loot: rolls = [fewest, most] items a search gives, refill_s = seconds until it can be searched again, items = item id -> weight. Names of buildings and containers are in data/fantasy/writing/buildings.txt.",
  "door_reach": 2.6,
  "reach": 2.3,
  "offset": [
@@ -10,8 +10,8 @@
  ],
  "room_height": 3.0,
  "smallest": [
-  4.5,
-  4.5
+  6.0,
+  5.6
  ],
  "largest": [
   11.0,
@@ -446,7 +446,7 @@
      "turn": 90
     },
     {
-     "model": "crate",
+     "model": "loot_crate",
      "at": [
       0.8,
       0.75
@@ -627,7 +627,7 @@
      "loot": "alchemist_cupboard"
     },
     {
-     "model": "crate",
+     "model": "loot_crate",
      "at": [
       0.82,
       0.8
@@ -687,7 +687,7 @@
      "turn": 0
     },
     {
-     "model": "crate",
+     "model": "loot_crate",
      "at": [
       -0.82,
       0.2
@@ -704,7 +704,7 @@
      "turn": 0
     },
     {
-     "model": "barrel",
+     "model": "loot_barrel",
      "at": [
       0.82,
       0.3
@@ -793,40 +793,40 @@
     {
      "model": "table",
      "at": [
-      0.5,
-      0.2
+      0.55,
+      -0.05
      ],
      "turn": 0
     },
     {
      "model": "bench",
      "at": [
-      0.5,
-      0.48
+      0.55,
+      0.28
      ],
      "turn": 0
     },
     {
      "model": "table",
      "at": [
-      -0.3,
-      0.45
+      -0.55,
+      -0.05
      ],
      "turn": 0
     },
     {
      "model": "stool",
      "at": [
-      -0.3,
-      0.75
+      -0.55,
+      0.3
      ],
      "turn": 0
     },
     {
      "model": "stool",
      "at": [
-      -0.6,
-      0.45
+      -0.9,
+      -0.05
      ],
      "turn": 0
     },
@@ -885,8 +885,8 @@
     {
      "model": "cart",
      "at": [
-      0.45,
-      0.1
+      0.5,
+      -0.15
      ],
      "turn": 30
     },
@@ -916,7 +916,7 @@
      "turn": -90
     },
     {
-     "model": "crate",
+     "model": "loot_crate",
      "at": [
       0.8,
       0.75
@@ -978,7 +978,7 @@
      "turn": 90
     },
     {
-     "model": "barrel",
+     "model": "loot_barrel",
      "at": [
       0.75,
       0.2
@@ -1201,7 +1201,7 @@
      "loot": "tent_pots"
     },
     {
-     "model": "crate",
+     "model": "loot_crate",
      "at": [
       0.7,
       0.6
@@ -1245,7 +1245,7 @@
      "turn": 0
     },
     {
-     "model": "crate",
+     "model": "loot_crate",
      "at": [
       0.7,
       -0.5
@@ -1412,7 +1412,7 @@
      "model": "table",
      "at": [
       0.0,
-      0.2
+      -0.15
      ],
      "turn": 0
     }

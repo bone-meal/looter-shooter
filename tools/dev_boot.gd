@@ -12,19 +12,25 @@ var _lines := PackedStringArray()
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	Engine.max_physics_steps_per_frame = 60  # a slow machine still walks at full speed during a scripted run
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var renderer := "forward_plus" if RenderingServer.get_rendering_device() != null else "compatibility"
 	_lines.append("renderer=%s adapter=%s" % [renderer, RenderingServer.get_video_adapter_name()])
+	_lines.append("the game was ready to play %d ms after the program started" % Time.get_ticks_msec())
 	await _stage(renderer, "first_person", 3.0)
 	for arg in OS.get_cmdline_user_args():  # --cmd=/tp club;/give unique all  runs chat lines, then one more picture
 		if arg.begins_with("--cmd="):
 			var session := _find_with(get_tree().root, "run_chat")
 			session.set("no_save", true)  # a scripted run must never change the player's real save
+			(session.get("settings") as RefCounted).set("dev_commands", true)  # the steps are chat commands
 			for text in arg.substr(6).split(";", false):
 				if text.begins_with("!"):
 					await _dev(renderer, session, text.substr(1).split(" ", false))
 				else:
+					var began := Time.get_ticks_msec()
 					session.call("run_chat", text)
+					if Time.get_ticks_msec() - began > 50:
+						_lines.append("  (that took %d ms)" % (Time.get_ticks_msec() - began))
 				_lines.append("ran %s" % text)
 			await _stage(renderer, "after_commands", 2.0)
 	var player := _find_player(get_tree().root)
@@ -32,6 +38,8 @@ func _ready() -> void:
 	if player != null:
 		player.call("set_third_person", true)
 	await _stage(renderer, "third_person", 3.0)
+	_lines.append("LOAD TIMES (where the waiting went):")
+	_lines.append_array(load("res://game/load_clock.gd").get("marks"))
 	_lines.append("BOOT_DONE")
 	var f := FileAccess.open(OUT + "boot_%s.txt" % renderer, FileAccess.WRITE)
 	f.store_string("\n".join(_lines))
@@ -41,7 +49,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log).
+# !state (fantasy bag, levels and quests into the log), !where [note] (the player's map position into the log).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -97,8 +105,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						best = door
 				player.call("teleport", session.call("fantasy").call("ground_world", best["at"].x, best["at"].y), 0.0)
 				_lines.append("door of a %s" % best["kind"])
-		"nearbox":  # fantasy world, inside a room: stand next to its first container
-			var boxes: Array = session.call("fantasy").get("rooms").get("_room_boxes")
+		"nearbox":  # fantasy world: stand next to the first container of the room, or outdoors of the walk-in house here
+			var land: Node = session.call("fantasy")
+			if not bool(land.get("rooms").call("inside")):
+				var chests: Array = land.get("rooms").get("_boxes")
+				_lines.append("containers of walk-in houses here: %d" % chests.size())
+				if not chests.is_empty():
+					var spot: Vector3 = chests[0]["at"]
+					player.call("teleport", land.call("ground_world", spot.x + 0.8, spot.z + 0.8) + Vector3(0, 0.2, 0), 0.0)
+					player.call("look_at_point", land.call("world_of", spot) + Vector3(0, 0.5, 0))
+				return
+			var boxes: Array = land.get("rooms").get("_room_boxes")
 			_lines.append("containers in the room: %d" % boxes.size())
 			if not boxes.is_empty():
 				player.call("teleport", (boxes[0]["at"] as Vector3) + Vector3(0.9, 0.2, -0.9), 0.0)
@@ -128,6 +145,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for recipe: Dictionary in land.get("skilling")["recipes"]:
 				if String(recipe["id"]) == words[1]:
 					_lines.append("make %s -> '%s'" % [words[1], str(land.get("work").call("make", recipe))])
+		"where":  # fantasy world: the player's spot in map metres, for the log
+			var here: Vector3 = session.call("fantasy").call("player_local")
+			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])
 		"state":  # fantasy world: what the player has, for the log
 			var land: Node = session.call("fantasy")
 			_lines.append("bag=%s levels=%s active=%s done=%s mana=%d slots=%d" % [str(land.get("bag").items), str(land.get("skills").levels()), str(land.get("quests").active), str(land.get("quests").done), int(land.get("mana")), int(land.call("slots"))])

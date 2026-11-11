@@ -51,6 +51,7 @@ const BERSERK_MAX := 10
 const BERSERK_SECONDS := 3.0
 const GLASS_HEALTH := 0.65  # max health multiplier with the Glass Cannon buff
 const OVERKILL_RANGE := 5.0
+const OPTIC_KICK := 0.7  # degrees: view kick per shot through an optic part (the hidden gun cannot show recoil)
 const VIEW_KICK_RECOVERY := 5.0  # per second: how fast the scoped view settles back after a shot
 
 var third_person := false
@@ -187,12 +188,18 @@ func _ready() -> void:
 		_base_views.append(view)
 		_hip_positions.append(model.position)
 		var sight := model.get_node_or_null("Sight")  # models with a Sight marker line their sights up with the crosshair automatically
-		if sight != null:
-			_ads_positions.append(Vector3(-sight.position.x * model.scale.x, -sight.position.y * model.scale.y, ads[2]))
+		if sight != null:  # "ads_drop" lowers the gun a little so its own sights sit just under the crosshair instead of on it
+			_ads_positions.append(Vector3(-sight.position.x * model.scale.x, -sight.position.y * model.scale.y - float(view.get("ads_drop", 0.0)), ads[2]))
 		else:
 			_ads_positions.append(Vector3(ads[0], ads[1], ads[2]))
 		_base_ads.append(_ads_positions[_ads_positions.size() - 1])
 		_slides.append(model.get_node_or_null("Slide"))
+		if view.has("shoulder_hold"):  # launchers ride on the shoulder in third person: the right hand reaches this point
+			var grip := Node3D.new()
+			grip.name = "Grip"
+			var hand: Array = view.get("shoulder_grip", [0.0, -0.12, 0.03])
+			grip.position = Vector3(hand[0], hand[1], hand[2])
+			model.add_child(grip)
 	_select_slot(0)
 	refresh_held()
 	refresh_equipment()
@@ -496,6 +503,7 @@ func _build_gun_slot(index: int, body: String) -> void:
 	PonySkin.apply(_models[index], String(gun_db.tier(String(_held_gun["tier"])).get("skin", "")) == "pony")
 	_weapons[index] = WeaponState.new(body, _held_stats)
 	var view: Dictionary = _base_views[index].duplicate()
+	view["optic"] = String((_held_gun.get("parts", {}) as Dictionary).get("sight", {}).get("kind", "")) if eye > 0.0 else ""
 	view["ads_fov"] = float(view.get("ads_fov", 60.0)) * float(_held_stats["ads_fov"])
 	view["recoil_back"] = float(view.get("recoil_back", 0.05)) * float(_held_stats["recoil"])
 	view["recoil_pitch"] = float(view.get("recoil_pitch", 6.0)) * float(_held_stats["recoil"])
@@ -517,6 +525,19 @@ func _reset_slot(index: int, id: String) -> void:
 # 0..1 how far the scope view is up (only weapons with "scope": true, first person only).
 func scope_amount() -> float:
 	return _motion.ads_eased() if _holding and bool(_views[_slot].get("scope", false)) else 0.0
+
+
+# What the held gun is aimed through: "scope" (the sniper), an optic part ("red_dot", "acog", "holo") or "" for its
+# own iron sights. With anything but "" the gun model is hidden at full aim and game/scope_overlay.gd draws the view.
+func sight_kind() -> String:
+	if not _holding:
+		return ""
+	return "scope" if bool(_views[_slot].get("scope", false)) else String(_views[_slot].get("optic", ""))
+
+
+# 0..1 how far that view is up.
+func sight_amount() -> float:
+	return _motion.ads_eased() if sight_kind() != "" else 0.0
 
 
 func _select_slot(index: int) -> void:
@@ -612,20 +633,25 @@ func _animate_weapon(delta: float) -> void:
 	var model := _models[_slot]
 	if _body != null and _body.has_method("support"):  # long guns: the body's left hand reaches the fore-end
 		_body.call("support", model.get_node_or_null("Support") if third_person else null)
+		if _body.has_method("grip"):
+			_body.call("grip", model.get_node_or_null("Grip") if third_person else null)
 	var base := _third_person_hold if third_person else _hip_positions[_slot]
+	if third_person and view.has("shoulder_hold"):
+		var on_shoulder: Array = view["shoulder_hold"]
+		base = Vector3(on_shoulder[0], on_shoulder[1], on_shoulder[2])
 	model.position = base.lerp(_ads_positions[_slot], aim) + Vector3(0.0, -0.16, 0.04) * curve + Vector3(0.0, back * 0.25, back) * kick
 	model.rotation_degrees = Vector3(float(view.get("recoil_pitch", 6.0)) * kick + 20.0 * curve, 0.0, 35.0 * curve)
 	var slide := _slides[_slot]
 	if slide != null:
 		slide.position.z = 0.05 * kick
 	_camera.fov = lerpf(settings.fov, float(view.get("ads_fov", settings.fov)), aim)
-	model.visible = not (bool(view.get("scope", false)) and aim > 0.85)
+	model.visible = not (sight_kind() != "" and aim > 0.85)  # a scope or optic is looked THROUGH: the overlay takes over
 
 
 # Scoped shots kick the camera itself (the gun model is hidden in the scope): the weapon's "scope_kick" degrees up with a little sideways drift, scaled by the gun's recoil stat.
 func _kick_view() -> void:
-	var scope_kick: float = float(_views[_slot].get("scope_kick", 0.0))
-	if scope_kick <= 0.0 or scope_amount() < 0.5:
+	var scope_kick: float = float(_views[_slot].get("scope_kick", OPTIC_KICK if String(_views[_slot].get("optic", "")) != "" else 0.0))
+	if scope_kick <= 0.0 or sight_amount() < 0.5:
 		return
 	var amount := scope_kick * float(_held_stats.get("recoil", 1.0))
 	_view_kick += Vector2(amount, randf_range(-0.25, 0.25) * amount)
@@ -863,7 +889,7 @@ func on_enemy_killed(elite: String, enemy_id: String) -> void:
 		_berserk_until = now + BERSERK_SECONDS
 	if buffs.has("cooldown_siphon"):
 		var secs := float(buffs["cooldown_siphon"])
-		if enemy_id == "boss":
+		if enemy_id.begins_with("boss"):
 			secs = maxf(secs, 5.0)
 		elif elite != "":
 			secs = maxf(secs, 3.0)

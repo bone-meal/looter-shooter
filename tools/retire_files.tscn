@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/retire_files.gd" id="1"]
+
+[node name="RetireFiles" type="Node"]
+script = ExtResource("1")

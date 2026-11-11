@@ -1,13 +1,60 @@
 {
-  "version": 1,
-  "max_alive": 10,
-  "spawn_interval": 0.8,
-  "wave_delay": 4.0,
-  "reset_after_clear_seconds": 30,
-  "waves": [
-    {"chaser": 3},
-    {"chaser": 4, "shooter": 2},
-    {"chaser": 4, "shooter": 4},
-    {"boss": 1, "chaser": 4}
-  ]
+ "version": 1,
+ "max_alive": 10,
+ "spawn_interval": 0.8,
+ "wave_delay": 4.0,
+ "reset_after_clear_seconds": 30,
+ "waves": [
+  {
+   "chaser": 3
+  },
+  {
+   "chaser": 4,
+   "shooter": 2
+  },
+  {
+   "raider": 3,
+   "feral": 3
+  },
+  {
+   "boss": 1,
+   "chaser": 4
+  },
+  {
+   "raider": 4,
+   "scav_gunner": 3
+  },
+  {
+   "boss_butcher": 1,
+   "feral": 4
+  },
+  {
+   "brute": 1,
+   "shooter": 3,
+   "marksman": 2
+  },
+  {
+   "boss_tyrant": 1,
+   "raider": 4
+  },
+  {
+   "feral": 6,
+   "scav_gunner": 3,
+   "brute": 1
+  },
+  {
+   "boss_dome_beast": 1,
+   "marksman": 2
+  },
+  {
+   "boss_warlord": 1,
+   "brute": 2,
+   "scav_gunner": 3
+  },
+  {
+   "boss_overseer": 1,
+   "raider": 4,
+   "marksman": 3
+  }
+ ]
 }

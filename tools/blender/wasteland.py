@@ -1,4 +1,4 @@
-# Purpose: developer-time script. Models the original Omaha wasteland enemies with tools/blender/kit.py into
+# Purpose: developer-time script. Models the original wasteland enemies (the later arena waves) with tools/blender/kit.py into
 # assets/models/creatures/<enemy model id>.gltf: five regular types (raider, feral, scav_gunner, marksman, brute) and
 # five bosses (boss_butcher, boss_tyrant, boss_dome_beast, boss_warlord, boss_overseer). All come from one jointed
 # humanoid builder (smooth lofted trunk, limbs and head) driven by the SPEC table below (build, head, gear, weapon),

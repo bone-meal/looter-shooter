@@ -23,10 +23,9 @@ const Colosseum = preload("res://game/colosseum.gd")
 const WaveDirector = preload("res://game/wave_director.gd")
 const DebugOverlay = preload("res://game/debug_overlay.gd")
 const ScopeOverlay = preload("res://game/scope_overlay.gd")
+const LoadClock = preload("res://game/load_clock.gd")
 const PlayerHud = preload("res://game/player_hud.gd")
 const EnemyBars = preload("res://game/enemy_bars.gd")
-const OmahaWorld = preload("res://game/omaha_world.gd")
-const OmahaSpawner = preload("res://game/omaha_spawner.gd")
 const PaintingArt = preload("res://game/painting_art.gd")
 const SettingsState = preload("res://core/settings_state.gd")
 const ProfileIO = preload("res://game/profile_io.gd")
@@ -50,7 +49,6 @@ const FantasyWorld = preload("res://game/fantasy_world.gd")
 const HUD_REFRESH := 0.25
 const ARENA_SPAWN := Vector3(0, 0.1, 10)
 const PAINTING_RANGE := 4.5
-const OMAHA_FOG := 0.0035
 const REWARD_RANGE := 3.0
 const CROW_RANGE := 6.0
 const LIFEGUARD_RANGE := 3.2
@@ -80,8 +78,6 @@ var _bars := EnemyBars.new()
 var _cross := Label.new()
 var _hud_timer := 0.0
 var _painting := Vector3.ZERO
-var _painting_omaha := Vector3.ZERO
-var _in_omaha := false
 var _painting_fantasy := Vector3.ZERO
 var _in_fantasy := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
@@ -90,10 +86,6 @@ var _fantasy_exit := Vector3.ZERO
 var _fantasy_dirty := false  # something changed in there: saved at most every 20 s
 var _fantasy_saved_at := 0.0
 var _hud_layer: CanvasLayer
-var _omaha: OmahaWorld  # built the first time the player enters
-var _spawner: OmahaSpawner
-var _omaha_exit := Vector3.ZERO
-var _env_saved: Dictionary = {}
 var _in_arena := false
 var _island_spawn := Vector3.ZERO
 var _reward: RewardArea
@@ -147,16 +139,20 @@ var _chat_closed_at := -1.0  # engine time the chat input last closed (the same 
 
 func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	LoadClock.mark("engine, menu and scripts")
 	_build_environment()
+	LoadClock.mark("sky and light")
 	var gates := Colosseum.build(self)
+	LoadClock.mark("colosseum")
 	var island := Island.build(self)
+	LoadClock.mark("island")
 	_painting = island["painting"]
-	_painting_omaha = island["painting_omaha"]
 	_painting_fantasy = island["painting_fantasy"]
 	_island_spawn = island["spawn"]
 	_loot_tables = DataStore.load_json("res://data/loot_tables.json")["tables"]
 	_rng.randomize()
 	var club := ClubIsland.build(self)
+	LoadClock.mark("club island and casino")
 	_club_spawn = club["spawn"]
 	_casino_cfg = DataStore.load_json("res://data/casino.json")
 	_wallet = Wallet.new(int(_casino_cfg["starting_coins"]))
@@ -184,12 +180,15 @@ func _ready() -> void:
 	add_child(_numbers)
 	add_child(_explosives)
 	add_child(_skill_fx)
+	LoadClock.mark("crows, lifeguard, effects")
 	_build_hud()
+	LoadClock.mark("hud")
 
 	_player = Player.new()
 	_player.settings = settings
 	_player.position = island["spawn"]
 	add_child(_player)
+	LoadClock.mark("player (body, guns)")
 	_player.damaged.connect(_player_hud.flash)
 	_player.died.connect(_on_player_died)
 	_player.blocked.connect(_player_hud.notice.bind("Blocked!"))
@@ -478,17 +477,13 @@ func refresh_after_command() -> void:
 # Command /tp: leaves whatever painting world the player is in and goes to a named place. Returns what to tell them.
 func travel(place: String) -> String:
 	if place == "fantasy" or (_fantasy != null and _fantasy.place_names().has(place)):
-		if _in_omaha:
-			_leave_omaha()
-		elif _in_arena:
+		if _in_arena:
 			_leave_arena()
 		if not _in_fantasy:
 			_enter_fantasy()
 		return "Moved to Aurelind." if place == "fantasy" else _fantasy.travel(place)
-	if place in ["island", "club", "arena", "omaha"]:
-		if _in_omaha:
-			_leave_omaha()
-		elif _in_arena:
+	if place in ["island", "club", "arena"]:
+		if _in_arena:
 			_leave_arena()
 		elif _in_fantasy:
 			_leave_fantasy()
@@ -499,10 +494,8 @@ func travel(place: String) -> String:
 			_player.teleport(_club_spawn, 0.0)
 		"arena":
 			_enter_arena()
-		"omaha":
-			_enter_omaha()
 		_:
-			return "Unknown place %s. Places: island, club, arena, omaha, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
+			return "Unknown place %s. Places: island, club, arena, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
 	return "Moved to %s." % place
 
 
@@ -582,23 +575,15 @@ func _near(point: Vector3, range_m: float) -> bool:
 
 
 func _near_painting() -> bool:
-	return not _in_arena and not _in_omaha and not _in_fantasy and _near(_painting, PAINTING_RANGE)
-
-
-func _near_painting_omaha() -> bool:
-	return not _in_arena and not _in_omaha and not _in_fantasy and _near(_painting_omaha, PAINTING_RANGE)
+	return not _in_arena and not _in_fantasy and _near(_painting, PAINTING_RANGE)
 
 
 func _near_painting_fantasy() -> bool:
-	return not _in_arena and not _in_omaha and not _in_fantasy and _near(_painting_fantasy, PAINTING_RANGE)
+	return not _in_arena and not _in_fantasy and _near(_painting_fantasy, PAINTING_RANGE)
 
 
 func _near_fantasy_exit() -> bool:
 	return _in_fantasy and _near(_fantasy_exit, PAINTING_RANGE)
-
-
-func _near_omaha_exit() -> bool:
-	return _in_omaha and _near(_omaha_exit, PAINTING_RANGE)
 
 
 # Text for the E prompt, or "" when nothing is in reach.
@@ -631,9 +616,7 @@ func _prompt() -> String:
 		return "[%s] Ride the crow home" % key
 	if _near_painting():
 		return "[%s] Enter the colosseum" % key
-	if _near_painting_omaha():
-		return "[%s] Enter the wasteland: Omaha, Nebraska" % key
-	if _near_omaha_exit() or _near_fantasy_exit():
+	if _near_fantasy_exit():
 		return "[%s] Return to the island" % key
 	if _near_painting_fantasy():
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
@@ -664,10 +647,6 @@ func _interact() -> void:
 		_feed_crow()
 	elif _near(_crow_b_pos, CROW_RANGE):
 		_start_flight(_crow_b, _crow_b_pos, _crow_a_pos, _island_spawn)
-	elif _near_painting_omaha():
-		_enter_omaha()
-	elif _near_omaha_exit():
-		_leave_omaha()
 	elif _near_painting_fantasy():
 		_enter_fantasy()
 	elif _near_fantasy_exit():
@@ -942,9 +921,6 @@ func _on_player_died() -> void:
 	_progress_notices(0)
 	if _in_arena:
 		_leave_arena()
-	elif _in_omaha:
-		_player.teleport(_omaha.spawn_world(), 0.0)  # you wake up back at the Old Market haven
-		_player_hud.play_fade()
 	elif _in_fantasy:
 		_player.teleport(_fantasy.haven_world(), 0.0)  # you wake up in the nearest town
 		_fantasy.enter(_player.global_position)
@@ -953,35 +929,17 @@ func _on_player_died() -> void:
 		_player.teleport(_island_spawn, 0.0)
 
 
-# The second painting: a streamed wasteland Omaha (game/omaha_world.gd) with district enemies and bosses (game/omaha_spawner.gd).
-func _enter_omaha() -> void:
-	if _omaha == null:
-		_omaha = OmahaWorld.new()
-		add_child(_omaha)
-		_omaha.setup(_player)
-		_spawner = OmahaSpawner.new()
-		add_child(_spawner)
-		_spawner.setup(_director, _player, _omaha, _drops_cfg)
-		_spawner.notice.connect(_player_hud.notice)
-		_omaha_exit = _omaha.spawn_world() + Vector3(3.0, 0.0, 0.0)
-		Island.build_painting(self, _omaha_exit, PaintingArt.island_texture())
-	var spawn := _omaha.spawn_world()
-	_omaha.load_around(spawn)
-	_in_omaha = true
-	_player.teleport(spawn, 0.0)
-	_wasteland_env(true)
-	_spawner.start()
-	_player_hud.play_fade()
-
-
 # The third painting: the fantasy world Aurelind (game/fantasy_world.gd), a streamed open land with its own magic,
 # skills and quests.
 func _enter_fantasy() -> void:
+	LoadClock.mark("(play until the fantasy world was entered)")
 	_build_fantasy()
+	LoadClock.mark("fantasy: world built")
 	_in_fantasy = true
 	_player.teleport(_fantasy.spawn_world(), 0.0)
 	_player.look_at_point(_fantasy.farm_world() + Vector3(0.0, 3.0, 0.0))  # you arrive facing the farmhouse
 	apply_settings()  # switches to the painted look and loads the land around the player
+	LoadClock.mark("fantasy: look applied, land around the player")
 	_player_hud.play_fade()
 
 
@@ -1022,32 +980,6 @@ func _fantasy_detail() -> void:
 			tier = entry
 	var detail: Dictionary = tier.get("fantasy", {})
 	_fantasy.set_detail(detail)
-
-
-func _leave_omaha() -> void:
-	_spawner.stop()
-	_director.reset()
-	_field.clear()
-	_in_omaha = false
-	_wasteland_env(false)
-	_player.teleport(_island_spawn, 0.0)
-	_player_hud.play_fade()
-
-
-# Dusty orange haze while in Omaha; the saved values come back when leaving.
-func _wasteland_env(on: bool) -> void:
-	var env := _render_style.env
-	if on:
-		_env_saved = {"fog": env.fog_enabled, "density": env.fog_density, "color": env.fog_light_color, "ambient": env.ambient_light_color}
-		env.fog_enabled = true
-		env.fog_density = OMAHA_FOG
-		env.fog_light_color = Color(0.74, 0.60, 0.44)
-		env.ambient_light_color = Color(0.62, 0.55, 0.48)
-	elif not _env_saved.is_empty():
-		env.fog_enabled = _env_saved["fog"]
-		env.fog_density = _env_saved["density"]
-		env.fog_light_color = _env_saved["color"]
-		env.ambient_light_color = _env_saved["ambient"]
 
 
 func _leave_arena() -> void:
@@ -1094,7 +1026,8 @@ func _process(delta: float) -> void:
 			_director.reset()
 			_director.start()
 			_player_hud.notice("Round 1")
-	var scope: float = _player.scope_amount()
+	var scope: float = _player.sight_amount()
+	_scope.kind = _player.sight_kind()
 	_scope.amount = scope
 	_cross.visible = scope < ScopeOverlay.SHOW_FROM
 	if settings.show_debug:

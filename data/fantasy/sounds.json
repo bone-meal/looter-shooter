@@ -45,11 +45,11 @@
     0.92,
     1.08
    ],
-   "range": 120
+   "range": 90
   },
   "boss_wake": {
    "volume": 4,
-   "range": 120
+   "range": 90
   },
   "boss_warn": {
    "volume": 0
@@ -60,7 +60,7 @@
     0.92,
     1.08
    ],
-   "range": 120
+   "range": 80
   },
   "cast_blob": {
    "volume": -4,

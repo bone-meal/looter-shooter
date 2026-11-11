@@ -26,11 +26,10 @@ const CROW_POS := CENTER + Vector3(-7, 0, 3)
 const SAND := Color(0.9, 0.8, 0.55)
 const SECTORS := 96
 const PAINTING := Vector3(0, 0, -8)
-const PAINTING_OMAHA := Vector3(9, 0, -6)
 const PAINTING_FANTASY := Vector3(-9, 0, -6)
 
 
-# Returns {"spawn": Vector3, "painting": Vector3, "painting_omaha": Vector3, "painting_fantasy": Vector3} (world positions).
+# Returns {"spawn": Vector3, "painting": Vector3, "painting_fantasy": Vector3} (world positions).
 static func build(parent: Node3D) -> Dictionary:
 	_ocean(parent)
 	_ground(parent)
@@ -39,11 +38,9 @@ static func build(parent: Node3D) -> Dictionary:
 	_plants(parent)
 	var painting := CENTER + PAINTING
 	build_painting(parent, painting, PaintingArt.texture())
-	var painting_omaha := CENTER + PAINTING_OMAHA
-	build_painting(parent, painting_omaha, PaintingArt.omaha_texture())
 	var painting_fantasy := CENTER + PAINTING_FANTASY
 	build_painting(parent, painting_fantasy, PaintingArt.wheat_texture())
-	return {"spawn": CENTER + Vector3(0, 0.1, 4), "painting": painting, "painting_omaha": painting_omaha, "painting_fantasy": painting_fantasy}
+	return {"spawn": CENTER + Vector3(0, 0.1, 4), "painting": painting, "painting_fantasy": painting_fantasy}
 
 
 # Ground height at a point given relative to CENTER.
@@ -194,7 +191,7 @@ static func _rocks(parent: Node3D) -> void:
 			var r := rng.randf_range(RADIUS - 1.6, RADIUS + 2.2)
 			var big := rng.randf_range(float(kind[3]), float(kind[4]))
 			var spot := Vector3(cos(angle) * r, 0.0, sin(angle) * r)
-			if spot.distance_to(PAINTING) < 5.0 or spot.distance_to(PAINTING_OMAHA) < 5.0:
+			if spot.distance_to(PAINTING) < 5.0 or spot.distance_to(PAINTING_FANTASY) < 5.0:
 				continue
 			spot.y = height_at(spot.x, spot.z) - 0.25 * big * reach  # sunk into the sand a little
 			var turn := Basis.from_euler(Vector3(rng.randf_range(-0.2, 0.2), rng.randf_range(0.0, TAU), rng.randf_range(-0.2, 0.2)))
@@ -227,7 +224,7 @@ static func _plants(parent: Node3D) -> void:
 					var angle := rng.randf_range(0.0, TAU)
 					var r := rng.randf_range(GRASS_RADIUS - 2.5, GRASS_RADIUS + 1.5)
 					spot = Vector3(cos(angle) * r, 0.0, sin(angle) * r)
-				if spot.distance_to(PAINTING) < 3.5 or spot.distance_to(PAINTING_OMAHA) < 3.5 or spot.length() > FLAT_RADIUS:
+				if spot.distance_to(PAINTING) < 3.5 or spot.distance_to(PAINTING_FANTASY) < 3.5 or spot.length() > FLAT_RADIUS:
 					continue
 				var big := rng.randf_range(float(kind[2]), float(kind[3]))
 				var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU)) * Basis.from_scale(Vector3(big, big, big))
@@ -252,7 +249,7 @@ static func _field(parent: Node3D, mesh: Mesh, xforms: Array[Transform3D], surfa
 	return inst
 
 
-# A framed painting on two posts at `at` (also used for the way home inside Omaha).
+# A framed painting on two posts at `at` (also used for the way home inside a painting's world).
 static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D) -> void:
 	var post_wood := SurfaceLibrary.material("painting_post", Color(0.4, 0.28, 0.15))
 	for side: float in [-1.0, 1.0]:

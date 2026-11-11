@@ -1,4 +1,4 @@
-# Purpose: one enemy (skeleton swordsman, skeleton archer, clockwork bear boss, a modelled Omaha wastelander or a fantasy creature): chases the player and attacks using stats from data/enemies.json.
+# Purpose: one enemy (skeleton swordsman, skeleton archer, clockwork bear boss, a modelled wastelander or a fantasy creature): chases the player and attacks using stats from data/enemies.json.
 # Dependencies: core/health_state.gd, core/enemy_brain.gd, game/character_models.gd, game/fantasy_models.gd. Projectile pool, blood effects and target are passed in by game/wave_director.gd.
 extends CharacterBody3D
 
@@ -89,7 +89,7 @@ func configure(id: String, stats: Dictionary, target: Node3D, pool: Node3D, bloo
 	_accent = Color(c[0], c[1], c[2])
 
 
-# Optional "body_color" in the enemy data re-skins a model (Omaha raiders, ferals, bosses).
+# Optional "body_color" in the enemy data re-skins a model (raiders, ferals, the wasteland bosses).
 func _body_color(default: Color) -> Color:
 	if _stats.has("body_color"):
 		var c: Array = _stats["body_color"]
@@ -310,9 +310,9 @@ func apply_vulnerable(mult: float, seconds: float) -> void:
 
 # Skills: sets a knockback or pull velocity (m/s, flat) that fades quickly. Bosses and puppets ignore it.
 func push(v: Vector3) -> void:
-	if puppet and enemy_id != "boss":
+	if puppet and not enemy_id.begins_with("boss"):
 		puppet_effect.emit("push", v.x, v.z)
-	if puppet or enemy_id == "boss":
+	if puppet or enemy_id.begins_with("boss"):
 		return
 	_push = Vector3(v.x, 0.0, v.z)
 
@@ -329,7 +329,8 @@ func take_damage(amount: float, _element: String = "physical") -> void:
 	if puppet or _falling or health.is_dead():
 		return
 	set_meta("feud_hit", true)
-	if amount < health.hp:
+	var blow := amount * (_vuln_mult if Time.get_ticks_msec() / 1000.0 < _vuln_until else 1.0)  # as on_hit will count it
+	if blow < health.hp:
 		on_hit(amount)
 		return
 	health.take_damage(amount)
