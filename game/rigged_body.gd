@@ -3,18 +3,20 @@
 # skeleton; skin tone and hair colour are set; the clips baked for that skeleton by tools/anim_bake.tscn are blended by
 # speed (idle / walk / run), with an arms-only weapon pose on top. Code written for the old code-built bodies (dances,
 # dealer and lifeguard poses, NPC head-turn) keeps working through the handle nodes of game/rigged_pose.gd.
-# There is no outfit-less character.
+# There is no outfit-less character. An outfit may leave off pieces of its model, take pieces of the pack's other
+# outfit, and wear pieces of our own: skinned ones sewn by tools/tailor.py and rigid ones (hats) from tools/blender/wear.py.
 # The character faces -Z like every other body in the game.
 # Use: RiggedBody.build(appearance) (null when the packs are not on this machine: callers then use game/body_builder.gd),
 # then animate() every frame; head_anchor(), hand_anchor(), support(), grip(), attach(), tint_outfit(), third_person_hold(), hold() as needed.
 # Dependencies: data/characters.json, assets/cc0/packs/ (tools/pack_fetch.tscn), assets/anim/*.res (tools/anim_bake.tscn),
-# game/appearance_data.gd (skin tone list).
+# game/appearance_data.gd (skin tone list), game/fantasy_models.gd (materials and models of our own pieces).
 extends Node3D
 
 const AppearanceData = preload("res://game/appearance_data.gd")
 const RiggedPose = preload("res://game/rigged_pose.gd")
 const BodyShape = preload("res://game/body_shape.gd")
 const RiggedJiggle = preload("res://game/rigged_jiggle.gd")
+const FantasyModels = preload("res://game/fantasy_models.gd")
 
 const DATA_PATH := "res://data/characters.json"
 
@@ -113,6 +115,17 @@ func setup(look: Dictionary) -> bool:
 	_model.rotation.y = PI  # the packs face +Z, the game's bodies face -Z
 	add_child(_model)
 	_skeleton = _find_skeleton(_model)
+	for fragment: String in outfit.get("hide", []):  # pieces of the model this outfit leaves off (hood down, no pauldrons)
+		for child in _skeleton.get_children():
+			if child is MeshInstance3D and String(child.name).contains(fragment):
+				child.free()
+	for file: String in (outfit.get("parts", {}) as Dictionary).get(body_id, []):  # pieces of the pack's other outfit
+		_add_pieces(packs + file, false)
+	var wear: Dictionary = d.get("wear", {})
+	for id: String in outfit.get("wear", []):  # pieces sewn from the model's own surface (tools/tailor.py)
+		var sewn := String((wear.get(id, {}) as Dictionary).get("sewn", ""))
+		if sewn != "":
+			_add_pieces(sewn % [String(outfit.get("base", "peasant")), body_id], true)
 	var skin := _skin_material(body_id, body, Color.html(String(look.get("skin_color", d["skin_reference"]))))
 	var shape: Dictionary = body.get("shape", {}) if bool(look.get("soft", false)) else {}
 	var clothes: Array = []
@@ -165,6 +178,13 @@ func setup(look: Dictionary) -> bool:
 	var at: Array = body.get("head_anchor", [0.0, 1.55, 0.0])
 	_anchor.transform = _skeleton.get_bone_global_rest(_skeleton.find_bone("Head")).affine_inverse() * Transform3D(Basis(Vector3.UP, PI), Vector3(float(at[0]), float(at[1]), float(at[2])))
 	socket.add_child(_anchor)
+	for id: String in outfit.get("wear", []):  # rigid things on the head (tools/blender/wear.py)
+		var thing: Dictionary = wear.get(id, {})
+		var made := FantasyModels.scene(String(thing["model"])) if thing.has("model") else null
+		if made != null:
+			var lift: Array = thing.get("at", [0.0, 0.0, 0.0])
+			made.position = Vector3(float(lift[0]), float(lift[1]), float(lift[2]))
+			_anchor.add_child(made)
 	_hand = Node3D.new()
 	var palm := BoneAttachment3D.new()
 	_skeleton.add_child(palm)
@@ -206,7 +226,7 @@ func attach(bone: String) -> Node3D:
 func tint_outfit(color: Color) -> void:
 	for child in _skeleton.get_children():
 		var piece := child as MeshInstance3D
-		if piece == null or piece.material_override != null or piece.skin == null:
+		if piece == null or piece.material_override != null or piece.skin == null or piece.has_meta("own_colours"):
 			continue
 		for surface in piece.mesh.get_surface_count():
 			var material := piece.mesh.surface_get_material(surface) as BaseMaterial3D
@@ -361,6 +381,26 @@ func _add_head_piece(model_file: String, texture_id: String, color: Color) -> vo
 	var from := _find_skeleton(scene)
 	for child in from.get_children():
 		_adopt(child as MeshInstance3D, _hair_material(texture_id, color), from, false)
+	scene.free()
+
+
+# Puts on every skinned piece of another model that stands on the same skeleton. `ours` = sewn by tools/tailor.py:
+# its surfaces are named after what they are made of and take the fantasy props' materials. Such pieces keep their
+# own colours when the outfit is tinted or given another colour texture.
+func _add_pieces(path: String, ours: bool) -> void:
+	var scene := _open(path)
+	if scene == null:
+		return
+	var from := _find_skeleton(scene)
+	for child in from.get_children() if from != null else []:
+		var piece := child as MeshInstance3D
+		if piece == null:
+			continue
+		if ours:
+			FantasyModels.dress(piece.mesh)
+		_adopt(piece, null, from, false)
+		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
+		piece.set_meta("own_colours", true)
 	scene.free()
 
 

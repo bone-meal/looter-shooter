@@ -41,6 +41,12 @@ static func mesh(id: String) -> Mesh:
 	return out
 
 
+# Gives a mesh made by our model scripts the materials its surfaces are named after (clothes pieces of the rigged
+# characters, game/rigged_body.gd).
+static func dress(target: Mesh) -> void:
+	_fix(target)
+
+
 static func has_creature(id: String) -> bool:
 	return ResourceLoader.exists(FOLDER + "creatures/" + id + ".gltf")
 

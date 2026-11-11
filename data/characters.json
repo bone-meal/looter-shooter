@@ -1,5 +1,5 @@
 {
- "_about": "Rigged characters (realistic look). Everything is built from the CC0 Quaternius packs unpacked by tools/pack_fetch.tscn into assets/cc0/packs/. A character is an outfit model (its skeleton is the character's skeleton) plus the head cut from a base body, eyes, eyebrows and a hairstyle. Animations are baked onto each skeleton by tools/anim_bake.tscn into assets/anim/<skeleton>.res. Adult bodies only. Characters are always clothed: there is no outfit-less option. A player's look picks 'rig_outfit' and 'rig_hair' from the ids below (core/appearance_db.gd checks them; 'defaults' is used for anything else). 'hood_hair' = the hairstyle shown under that outfit's hood whatever the player picked. 'head_anchor' = where the old head centre would be on this body (model space, metres): things worn on the face (cigarette) hang from it. 'motion' names the clips the game plays: idle, walk and run are blended by speed ('walk_at' = the speed fraction that is a pure walk), 'hold' is the arms pose while a weapon is out (only 'upper_body' bones take it). 'hand_grip' = where a held weapon's origin sits from the right wrist (metres: x to the character's right, y along the hand, z up). 'third_person_hold' = where the local player's own weapon sits from the camera pivot in third person so it meets those hands. 'npc' = what staff and the lifeguard wear on rigged bodies (game/npc_body.gd): outfit, how strongly their old uniform colour tints it, and which rigged hairstyle stands in for each old hairstyle id. An outfit's 'albedo' swaps in the pack's alternative colour texture for the same clothes. An 'albedo' starting with res:// is one of our own recoloured textures (assets/models/outfits/, made from the pack's texture: washed out, drab, dirty). A body's 'shape' = the slider areas in the clothes (game/body_shape.gd; model space metres, y up, +z front, mirrored left/right): 'weight' widens everything between heights 'from' and 'to' by 'amount' at slider 1.4; 'bust' / 'glutes' move the area around 'at' (radius) by 'push' at the top of the slider, 'bounce' is how far the area travels when it jiggles; 'neutral' is the slider value that leaves the clothes as modelled.",
+ "_about": "Rigged characters (realistic look). Everything is built from the CC0 Quaternius packs unpacked by tools/pack_fetch.tscn into assets/cc0/packs/. A character is an outfit model (its skeleton is the character's skeleton) plus the head cut from a base body, eyes, eyebrows and a hairstyle. Animations are baked onto each skeleton by tools/anim_bake.tscn into assets/anim/<skeleton>.res. Adult bodies only. Characters are always clothed: there is no outfit-less option. A player's look picks 'rig_outfit' and 'rig_hair' from the ids below (core/appearance_db.gd checks them; 'defaults' is used for anything else). 'hood_hair' = the hairstyle shown under that outfit's hood whatever the player picked. 'head_anchor' = where the old head centre would be on this body (model space, metres): things worn on the face (cigarette) hang from it. 'motion' names the clips the game plays: idle, walk and run are blended by speed ('walk_at' = the speed fraction that is a pure walk), 'hold' is the arms pose while a weapon is out (only 'upper_body' bones take it). 'hand_grip' = where a held weapon's origin sits from the right wrist (metres: x to the character's right, y along the hand, z up). 'third_person_hold' = where the local player's own weapon sits from the camera pivot in third person so it meets those hands. 'npc' = what staff and the lifeguard wear on rigged bodies (game/npc_body.gd): outfit, how strongly their old uniform colour tints it, and which rigged hairstyle stands in for each old hairstyle id. An outfit's 'albedo' swaps in the pack's alternative colour texture for the same clothes. An 'albedo' starting with res:// is one of our own recoloured textures (assets/models/outfits/, made from the pack's texture: washed out, drab, dirty). A body's 'shape' = the slider areas in the clothes (game/body_shape.gd; model space metres, y up, +z front, mirrored left/right): 'weight' widens everything between heights 'from' and 'to' by 'amount' at slider 1.4; 'bust' / 'glutes' move the area around 'at' (radius) by 'push' at the top of the slider, 'bounce' is how far the area travels when it jiggles; 'neutral' is the slider value that leaves the clothes as modelled. ROUND 4 (item 28), more outfits from the same two models: an outfit may have 'base' (peasant or ranger: which model its sewn pieces were cut from), 'hide' (name fragments of the base model's own pieces to leave off, e.g. Head_Hood, Acc_Pauldron, Bracer, Belt), 'parts' (per body: pieces of the pack's other outfit to put on, paths under 'packs') and 'wear' (ids from the 'wear' table). A 'wear' entry is EITHER 'sewn' = a skinned piece made by tools/tailor.py from data/wear.json (path with two %s: base, body) OR 'model' = a rigid thing made by tools/blender/wear.py (under assets/models/fantasy/), hung at the head anchor, moved by 'at' [x, y, z]. 'npc.outfits' = which rigged outfit stands in for a person's old outfit id (anything not listed wears 'npc.outfit').",
  "packs": "res://assets/cc0/packs/",
  "skeletons": {
   "female": {
@@ -223,6 +223,208 @@
     "male": "buzzed"
    },
    "albedo": "res://assets/models/outfits/ranger_wasteland_albedo.png"
+  },
+  "scout_open": {
+   "name": "Scout (hood down)",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "base": "ranger",
+   "hide": [
+    "Head_Hood"
+   ]
+  },
+  "woodsman": {
+   "name": "Woodsman",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "base": "ranger",
+   "hide": [
+    "Head_Hood",
+    "Acc_Pauldron",
+    "Bracer"
+   ],
+   "albedo": "modular_character_outfits_fantasy_standard/textures_ranger/T_Ranger_3_BaseColor.png",
+   "wear": [
+    "gloves"
+   ]
+  },
+  "traveller": {
+   "name": "Traveller",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "base": "ranger",
+   "hide": [
+    "Head_Hood",
+    "Acc_Pauldron"
+   ],
+   "wear": [
+    "cloak",
+    "scarf"
+   ]
+  },
+  "guard": {
+   "name": "Town guard",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "base": "ranger",
+   "hide": [
+    "Head_Hood"
+   ],
+   "wear": [
+    "tabard",
+    "kettle_helmet",
+    "gloves"
+   ],
+   "hood_hair": {
+    "female": "parted",
+    "male": "buzzed"
+   }
+  },
+  "man_at_arms": {
+   "name": "Man-at-arms",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "base": "ranger",
+   "hide": [
+    "Head_Hood",
+    "Belt"
+   ],
+   "wear": [
+    "breastplate",
+    "kettle_helmet",
+    "belt"
+   ],
+   "hood_hair": {
+    "female": "parted",
+    "male": "buzzed"
+   }
+  },
+  "farmer": {
+   "name": "Farmer",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "wear": [
+    "apron",
+    "straw_hat"
+   ],
+   "hood_hair": {
+    "female": "long",
+    "male": "parted"
+   }
+  },
+  "cook": {
+   "name": "Cook",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "albedo": "modular_character_outfits_fantasy_standard/textures_peasant/T_Peasant_2_BaseColor.png",
+   "wear": [
+    "apron",
+    "cook_cap"
+   ],
+   "hood_hair": {
+    "female": "parted",
+    "male": "buzzed"
+   }
+  },
+  "smith": {
+   "name": "Smith",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "albedo": "res://assets/models/outfits/peasant_wasteland_albedo.png",
+   "wear": [
+    "smith_apron",
+    "gloves",
+    "bracers"
+   ]
+  },
+  "merchant": {
+   "name": "Merchant",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "albedo": "modular_character_outfits_fantasy_standard/textures_peasant/T_Peasant_2_BaseColor.png",
+   "wear": [
+    "vest",
+    "sash",
+    "cap"
+   ],
+   "hood_hair": {
+    "female": "long",
+    "male": "parted"
+   }
+  },
+  "townsfolk": {
+   "name": "Townsfolk",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "wear": [
+    "vest",
+    "belt",
+    "scarf"
+   ]
+  },
+  "long_skirt": {
+   "name": "Long skirt",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "wear": [
+    "skirt",
+    "sash"
+   ]
+  },
+  "robed": {
+   "name": "Robed",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "wear": [
+    "robe"
+   ]
+  },
+  "mage": {
+   "name": "Hedge mage",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "base": "peasant",
+   "wear": [
+    "robe",
+    "pointed_hat"
+   ],
+   "hood_hair": {
+    "female": "long",
+    "male": "parted"
+   }
   }
  },
  "animation_sources": [
@@ -375,6 +577,79 @@
    "bun": "buns",
    "twin_tails": "buns",
    "braids": "buns"
+  },
+  "outfits": {
+   "farmer": "farmer",
+   "fisher": "townsfolk",
+   "druid": "traveller",
+   "monk": "robed",
+   "witch": "mage",
+   "dwarf_smith": "smith",
+   "desert_nomad": "traveller",
+   "winter_explorer": "traveller",
+   "sailor": "townsfolk",
+   "ranger": "scout_open",
+   "pirate_captain": "merchant",
+   "ice_mage": "mage",
+   "fire_mage": "mage",
+   "french_artist": "merchant",
+   "chef": "cook"
+  }
+ },
+ "wear": {
+  "gloves": {
+   "sewn": "res://assets/models/outfits/wear/gloves_%s_%s.gltf"
+  },
+  "bracers": {
+   "sewn": "res://assets/models/outfits/wear/bracers_%s_%s.gltf"
+  },
+  "belt": {
+   "sewn": "res://assets/models/outfits/wear/belt_%s_%s.gltf"
+  },
+  "sash": {
+   "sewn": "res://assets/models/outfits/wear/sash_%s_%s.gltf"
+  },
+  "vest": {
+   "sewn": "res://assets/models/outfits/wear/vest_%s_%s.gltf"
+  },
+  "breastplate": {
+   "sewn": "res://assets/models/outfits/wear/breastplate_%s_%s.gltf"
+  },
+  "scarf": {
+   "sewn": "res://assets/models/outfits/wear/scarf_%s_%s.gltf"
+  },
+  "apron": {
+   "sewn": "res://assets/models/outfits/wear/apron_%s_%s.gltf"
+  },
+  "smith_apron": {
+   "sewn": "res://assets/models/outfits/wear/smith_apron_%s_%s.gltf"
+  },
+  "robe": {
+   "sewn": "res://assets/models/outfits/wear/robe_%s_%s.gltf"
+  },
+  "skirt": {
+   "sewn": "res://assets/models/outfits/wear/skirt_%s_%s.gltf"
+  },
+  "cloak": {
+   "sewn": "res://assets/models/outfits/wear/cloak_%s_%s.gltf"
+  },
+  "tabard": {
+   "sewn": "res://assets/models/outfits/wear/tabard_%s_%s.gltf"
+  },
+  "straw_hat": {
+   "model": "wear/straw_hat"
+  },
+  "kettle_helmet": {
+   "model": "wear/kettle_helmet"
+  },
+  "cap": {
+   "model": "wear/cap"
+  },
+  "pointed_hat": {
+   "model": "wear/pointed_hat"
+  },
+  "cook_cap": {
+   "model": "wear/cook_cap"
   }
  }
 }

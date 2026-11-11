@@ -453,6 +453,7 @@ func _check_round_two(all: Dictionary) -> void:
 	_lines.append("layout: %d things in %d places, %d roadside sites, fishing spots %s, %d bosses with special attacks" % [total, (world["places"] as Array).size(), sites, str(spots), bosses])
 	_need(int(spots["fresh"]) > 0 and int(spots["salt"]) > 0, "no fishing spots were placed on fresh or salt water")
 	_check_ways(all, layout)
+	_check_outfits(world)
 	# every fantasy sound can be found (and muted) on the Sounds page of the settings
 	var listed := {}
 	for group: Dictionary in (JSON.parse_string(FileAccess.get_file_as_string("res://data/sound_list.json")) as Dictionary)["groups"]:
@@ -477,6 +478,35 @@ func _check_round_two(all: Dictionary) -> void:
 		_need(game_sounds.has(String(arena[id].get("attack_sound", ""))), "enemy %s has no attack sound" % id)
 	for id: String in enemies:
 		_need(game_sounds.has(String(enemies[id].get("attack_sound", ""))), "creature %s has no attack sound" % id)
+
+
+# Round 4, item 28: every rigged outfit's pieces exist for both bodies, and every person of the world has clothes.
+func _check_outfits(world: Dictionary) -> void:
+	var rig: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/characters.json"))
+	var outfits: Dictionary = rig["outfits"]
+	var wear: Dictionary = rig.get("wear", {})
+	var pieces := 0
+	for id: String in outfits:
+		var outfit: Dictionary = outfits[id]
+		for piece: String in outfit.get("wear", []):
+			_need(wear.has(piece), "outfit %s wears '%s', which is not in the wear table" % [id, piece])
+			var entry: Dictionary = wear.get(piece, {})
+			if entry.has("sewn"):
+				for body: String in ["female", "male"]:
+					pieces += 1
+					var file := String(entry["sewn"]) % [String(outfit.get("base", "peasant")), body]
+					_need(FileAccess.file_exists(file), "outfit %s: the sewn piece %s is missing (run tools/tailor.py)" % [id, file])
+			elif entry.has("model"):
+				_need(FileAccess.file_exists("res://assets/models/fantasy/%s.gltf" % String(entry["model"])), "outfit %s: the model of %s is missing (run tools/blender/wear.py)" % [id, piece])
+	var roles: Dictionary = (rig["npc"] as Dictionary).get("outfits", {})
+	for old: String in roles:
+		_need(outfits.has(String(roles[old])), "people in '%s' are given the outfit '%s', which does not exist" % [old, roles[old]])
+	var plain := {}
+	for person: Dictionary in world.get("npcs", []):
+		var old := String((person.get("look", {}) as Dictionary).get("outfit", ""))
+		if not roles.has(old):
+			plain[old] = true
+	_lines.append("outfits: %d rigged outfits, %d sewn pieces checked, %d trades with clothes of their own; plain settler clothes for: %s" % [outfits.size(), pieces, roles.size(), ", ".join(PackedStringArray(plain.keys()))])
 
 
 # Round 4: what can be bumped into. Every gate of a walled place can be walked through and there is no other way

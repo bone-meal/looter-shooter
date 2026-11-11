@@ -1,0 +1,537 @@
+{
+ "_about": "Clothes pieces sewn onto the rigged characters by tools/tailor.py (run it after editing this file; it writes assets/models/outfits/wear/<piece>_<base>_<body>.gltf). An outfit in data/characters.json lists the pieces it wears. Each piece is a list of parts; a part has a material 'kind' (cloth, leather, metal, thatch ...: the fantasy props' materials), a 'color' (r, g, b as seen on screen) and EITHER a 'shell' OR a 'sheet'. shell = faces of the clothes copied and pushed out by 'grow' metres: 'bones' = the faces that follow these bones (left and right together; fingers by their plain names), 'band' = only between two heights, each [bone, metres above it], 'along' = only this stretch of a limb bone (0 = its joint, 1 = the next joint), 'no_arms' = leave out the arms, 'front' = 1 only what faces forward, -1 backward. sheet = a new panel round the body: 'arc' = from and to bearing in degrees (0 = straight ahead, 90 = the body's left, -180..180 = all round), 'top' and 'bottom' heights as [bone, metres above it], 'fit' = how close it sits at the top, 'loose' = how far out further down, 'flare' = how much each row widens, 'taper' = how much a row may come back in under a wider one (0 = cloth hangs straight down from the widest place), 'stiff' = how much of the lower rows follows 'stiff_bone' (default pelvis) instead of the legs. 'bases' = make it only for these base outfits (default both). Bones: Head, neck_01, spine_03 (chest), spine_02, spine_01 (waist), pelvis (hips), thigh, calf (knee), foot (ankle), clavicle, upperarm, lowerarm, hand.",
+ "pieces": {
+  "gloves": {
+   "parts": [
+    {
+     "kind": "leather",
+     "color": [
+      0.3,
+      0.2,
+      0.12
+     ],
+     "shell": {
+      "bones": [
+       "hand",
+       "index",
+       "middle",
+       "ring",
+       "pinky",
+       "thumb"
+      ],
+      "grow": 0.003
+     }
+    }
+   ]
+  },
+  "bracers": {
+   "parts": [
+    {
+     "kind": "leather",
+     "color": [
+      0.33,
+      0.22,
+      0.13
+     ],
+     "shell": {
+      "bones": [
+       "lowerarm"
+      ],
+      "along": [
+       0.3,
+       0.92
+      ],
+      "grow": 0.007
+     }
+    }
+   ]
+  },
+  "belt": {
+   "parts": [
+    {
+     "kind": "leather",
+     "color": [
+      0.28,
+      0.18,
+      0.1
+     ],
+     "shell": {
+      "band": [
+       [
+        "pelvis",
+        0.03
+       ],
+       [
+        "pelvis",
+        0.1
+       ]
+      ],
+      "no_arms": true,
+      "grow": 0.009
+     }
+    }
+   ]
+  },
+  "sash": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.62,
+      0.14,
+      0.14
+     ],
+     "shell": {
+      "band": [
+       [
+        "pelvis",
+        0.02
+       ],
+       [
+        "pelvis",
+        0.14
+       ]
+      ],
+      "no_arms": true,
+      "grow": 0.008
+     }
+    }
+   ]
+  },
+  "vest": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.2,
+      0.3,
+      0.42
+     ],
+     "shell": {
+      "bones": [
+       "spine_01",
+       "spine_02",
+       "spine_03"
+      ],
+      "band": [
+       [
+        "pelvis",
+        0.1
+       ],
+       [
+        "neck_01",
+        -0.02
+       ]
+      ],
+      "grow": 0.007
+     }
+    }
+   ]
+  },
+  "breastplate": {
+   "parts": [
+    {
+     "kind": "metal",
+     "color": [
+      0.42,
+      0.44,
+      0.48
+     ],
+     "shell": {
+      "bones": [
+       "spine_02",
+       "spine_03"
+      ],
+      "band": [
+       [
+        "spine_01",
+        0.04
+       ],
+       [
+        "neck_01",
+        -0.03
+       ]
+      ],
+      "grow": 0.013
+     }
+    }
+   ]
+  },
+  "scarf": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.7,
+      0.55,
+      0.2
+     ],
+     "shell": {
+      "bones": [
+       "neck_01",
+       "spine_03",
+       "clavicle"
+      ],
+      "band": [
+       [
+        "neck_01",
+        -0.06
+       ],
+       [
+        "neck_01",
+        0.07
+       ]
+      ],
+      "grow": 0.012
+     }
+    }
+   ]
+  },
+  "apron": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.86,
+      0.82,
+      0.72
+     ],
+     "sheet": {
+      "arc": [
+       -58,
+       58
+      ],
+      "top": [
+       "spine_01",
+       0.02
+      ],
+      "bottom": [
+       "calf",
+       0.06
+      ],
+      "fit": 0.012,
+      "loose": 0.03,
+      "stiff": 0.3
+     }
+    },
+    {
+     "kind": "cloth",
+     "color": [
+      0.78,
+      0.74,
+      0.64
+     ],
+     "shell": {
+      "band": [
+       [
+        "spine_01",
+        -0.02
+       ],
+       [
+        "spine_01",
+        0.04
+       ]
+      ],
+      "no_arms": true,
+      "grow": 0.014
+     }
+    }
+   ]
+  },
+  "smith_apron": {
+   "parts": [
+    {
+     "kind": "leather",
+     "color": [
+      0.3,
+      0.2,
+      0.13
+     ],
+     "sheet": {
+      "arc": [
+       -50,
+       50
+      ],
+      "top": [
+       "spine_03",
+       0.02
+      ],
+      "bottom": [
+       "calf",
+       0.02
+      ],
+      "fit": 0.014,
+      "loose": 0.03,
+      "stiff": 0.3
+     }
+    },
+    {
+     "kind": "leather",
+     "color": [
+      0.2,
+      0.13,
+      0.08
+     ],
+     "shell": {
+      "band": [
+       [
+        "spine_01",
+        -0.02
+       ],
+       [
+        "spine_01",
+        0.04
+       ]
+      ],
+      "no_arms": true,
+      "grow": 0.016
+     }
+    }
+   ]
+  },
+  "robe": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.16,
+      0.2,
+      0.4
+     ],
+     "sheet": {
+      "arc": [
+       -180,
+       180
+      ],
+      "top": [
+       "spine_01",
+       0.0
+      ],
+      "bottom": [
+       "foot",
+       0.07
+      ],
+      "fit": 0.01,
+      "loose": 0.05,
+      "flare": 0.008,
+      "stiff": 0.15
+     }
+    },
+    {
+     "kind": "cloth",
+     "color": [
+      0.16,
+      0.2,
+      0.4
+     ],
+     "shell": {
+      "bones": [
+       "spine_01",
+       "spine_02",
+       "spine_03",
+       "clavicle",
+       "upperarm"
+      ],
+      "band": [
+       [
+        "spine_01",
+        -0.02
+       ],
+       [
+        "neck_01",
+        -0.01
+       ]
+      ],
+      "grow": 0.008
+     }
+    },
+    {
+     "kind": "cloth",
+     "color": [
+      0.7,
+      0.58,
+      0.2
+     ],
+     "shell": {
+      "band": [
+       [
+        "spine_01",
+        -0.03
+       ],
+       [
+        "spine_01",
+        0.03
+       ]
+      ],
+      "no_arms": true,
+      "grow": 0.016
+     }
+    }
+   ]
+  },
+  "skirt": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.45,
+      0.2,
+      0.22
+     ],
+     "sheet": {
+      "arc": [
+       -180,
+       180
+      ],
+      "top": [
+       "spine_01",
+       -0.02
+      ],
+      "bottom": [
+       "calf",
+       -0.12
+      ],
+      "fit": 0.01,
+      "loose": 0.04,
+      "flare": 0.007,
+      "stiff": 0.15
+     }
+    }
+   ]
+  },
+  "cloak": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.2,
+      0.26,
+      0.18
+     ],
+     "sheet": {
+      "arc": [
+       112,
+       248
+      ],
+      "top": [
+       "neck_01",
+       -0.03
+      ],
+      "bottom": [
+       "calf",
+       -0.1
+      ],
+      "fit": 0.015,
+      "loose": 0.04,
+      "flare": 0.0,
+      "taper": 0.014,
+      "stiff": 0.6,
+      "stiff_bone": "spine_02"
+     }
+    },
+    {
+     "kind": "cloth",
+     "color": [
+      0.2,
+      0.26,
+      0.18
+     ],
+     "shell": {
+      "bones": [
+       "clavicle",
+       "neck_01",
+       "spine_03"
+      ],
+      "band": [
+       [
+        "neck_01",
+        -0.08
+       ],
+       [
+        "neck_01",
+        0.05
+       ]
+      ],
+      "grow": 0.018
+     }
+    }
+   ]
+  },
+  "tabard": {
+   "parts": [
+    {
+     "kind": "cloth",
+     "color": [
+      0.6,
+      0.14,
+      0.12
+     ],
+     "sheet": {
+      "arc": [
+       -42,
+       42
+      ],
+      "top": [
+       "neck_01",
+       -0.07
+      ],
+      "bottom": [
+       "thigh",
+       -0.22
+      ],
+      "fit": 0.016,
+      "loose": 0.022,
+      "stiff": 0.3
+     }
+    },
+    {
+     "kind": "cloth",
+     "color": [
+      0.6,
+      0.14,
+      0.12
+     ],
+     "sheet": {
+      "arc": [
+       138,
+       222
+      ],
+      "top": [
+       "neck_01",
+       -0.07
+      ],
+      "bottom": [
+       "thigh",
+       -0.22
+      ],
+      "fit": 0.016,
+      "loose": 0.022,
+      "stiff": 0.3
+     }
+    },
+    {
+     "kind": "leather",
+     "color": [
+      0.25,
+      0.16,
+      0.09
+     ],
+     "shell": {
+      "band": [
+       [
+        "pelvis",
+        0.04
+       ],
+       [
+        "pelvis",
+        0.1
+       ]
+      ],
+      "no_arms": true,
+      "grow": 0.026
+     }
+    }
+   ]
+  }
+ }
+}

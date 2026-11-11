@@ -18,7 +18,7 @@ static func build(look: Dictionary) -> Node3D:
 		return BodyBuilder.build(look)
 	var npc: Dictionary = RiggedBody.data().get("npc", {})
 	var rig_look := look.duplicate()
-	rig_look["rig_outfit"] = String(npc.get("outfit", "peasant"))
+	rig_look["rig_outfit"] = String((npc.get("outfits", {}) as Dictionary).get(String(look.get("outfit", "")), npc.get("outfit", "peasant")))  # a person's trade decides the clothes
 	rig_look["rig_hair"] = String((npc.get("hair", {}) as Dictionary).get(String(look.get("hair", "")), npc.get("default_hair", "long")))
 	var body := RiggedBody.build(AppearanceData.db().sanitize(rig_look), false)
 	if body == null:
