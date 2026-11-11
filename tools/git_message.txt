@@ -1,8 +1,1 @@
-Plain building models for the low graphics tiers
-
-- fantasy_house.PLAIN + fantasy_kit.Maker.plain_pass: every building is built a second time as assets/models/fantasy/plain/<id> (same size and shape, about 30 % of the triangles)
-- data/graphics.json fantasy plain_buildings: 1 on potato and low; game/fantasy_places.gd uses the plain model there
-- tools/dev_boot.gd steps !tier and !buildings to measure one against the other; fantasy_check checks the plain set
-
-Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.03
