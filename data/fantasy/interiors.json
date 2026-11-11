@@ -1,0 +1,1763 @@
+{
+ "version": 1,
+ "_about": "What is inside the fantasy world's buildings (core/fantasy_interiors.gd, game/fantasy_rooms.gd). buildings: the start of a model's name -> the kinds of interior it can be (several = picked per building from where it stands, so the same building is always the same thing). A model whose entry in props.json has \"walls\" is a WALK-IN house (main story): its furniture stands in the open world. Every other listed building is entered through its door into a room of its own (fade). rooms: per kind the floor and wall material (wood, stone, plaster, cloth, dirt), the wall colour and the furniture: model, at = [across, along] from -1 to 1 (across: -1 left, 1 right; along: -1 back wall, 1 the door's wall), turn in degrees (0 = facing the door), loot = a table below (a container to search), station = fire / forge / workbench / cauldron (usable like the ones outside). loot: rolls = [fewest, most] items a search gives, refill_s = seconds until it can be searched again, items = item id -> weight. Names of buildings and containers are in data/fantasy/writing/buildings.txt.",
+ "door_reach": 2.6,
+ "reach": 2.3,
+ "offset": [
+  0,
+  300,
+  4000
+ ],
+ "room_height": 3.0,
+ "smallest": [
+  4.5,
+  4.5
+ ],
+ "largest": [
+  11.0,
+  10.0
+ ],
+ "buildings": {
+  "open_farmhouse": [
+   "farmhouse"
+  ],
+  "open_house": [
+   "story"
+  ],
+  "farmhouse": [
+   "farmhouse"
+  ],
+  "townhouse": [
+   "home"
+  ],
+  "cottage": [
+   "home"
+  ],
+  "shop": [
+   "smithy",
+   "bakery",
+   "alchemist",
+   "store",
+   "tavern"
+  ],
+  "hall": [
+   "hall"
+  ],
+  "barn": [
+   "barn"
+  ],
+  "granary": [
+   "granary"
+  ],
+  "chapel": [
+   "chapel"
+  ],
+  "log_cabin": [
+   "cabin"
+  ],
+  "tent_red": [
+   "tent"
+  ],
+  "tent_blue": [
+   "tent"
+  ],
+  "shed": [
+   "shed"
+  ],
+  "windmill": [
+   "mill"
+  ]
+ },
+ "rooms": {
+  "home": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.86,
+    0.8,
+    0.68
+   ],
+   "items": [
+    {
+     "model": "bed",
+     "at": [
+      -0.72,
+      -0.6
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      -0.72,
+      0.25
+     ],
+     "turn": 90,
+     "loot": "home_chest"
+    },
+    {
+     "model": "hearth",
+     "at": [
+      0.1,
+      -0.9
+     ],
+     "turn": 0,
+     "station": "fire"
+    },
+    {
+     "model": "cupboard",
+     "at": [
+      0.8,
+      -0.75
+     ],
+     "turn": 0,
+     "loot": "home_cupboard"
+    },
+    {
+     "model": "table",
+     "at": [
+      0.15,
+      0.0
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.15,
+      0.35
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      -0.2,
+      -0.05
+     ],
+     "turn": 0
+    },
+    {
+     "model": "shelf",
+     "at": [
+      0.92,
+      0.2
+     ],
+     "turn": -90
+    },
+    {
+     "model": "rug",
+     "at": [
+      -0.25,
+      0.45
+     ],
+     "turn": 0
+    },
+    {
+     "model": "barrel",
+     "at": [
+      -0.85,
+      0.85
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "farmhouse": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.88,
+    0.82,
+    0.68
+   ],
+   "items": [
+    {
+     "model": "hearth",
+     "at": [
+      0.0,
+      -0.9
+     ],
+     "turn": 0,
+     "station": "fire"
+    },
+    {
+     "model": "bed",
+     "at": [
+      -0.82,
+      -0.6
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bed",
+     "at": [
+      -0.55,
+      -0.6
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      -0.82,
+      0.1
+     ],
+     "turn": 90,
+     "loot": "home_chest"
+    },
+    {
+     "model": "cupboard",
+     "at": [
+      0.85,
+      -0.75
+     ],
+     "turn": 0,
+     "loot": "home_cupboard"
+    },
+    {
+     "model": "table",
+     "at": [
+      0.2,
+      0.05
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bench",
+     "at": [
+      0.2,
+      0.3
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.0,
+      -0.1
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.42,
+      -0.1
+     ],
+     "turn": 0
+    },
+    {
+     "model": "shelf",
+     "at": [
+      0.94,
+      0.1
+     ],
+     "turn": -90
+    },
+    {
+     "model": "keg",
+     "at": [
+      0.8,
+      0.75
+     ],
+     "turn": 180,
+     "loot": "tavern_keg"
+    },
+    {
+     "model": "sacks",
+     "at": [
+      -0.85,
+      0.8
+     ],
+     "turn": 0,
+     "loot": "larder"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      -0.6,
+      0.85
+     ],
+     "turn": 0
+    },
+    {
+     "model": "rug",
+     "at": [
+      -0.25,
+      0.35
+     ],
+     "turn": 0
+    },
+    {
+     "model": "tool_rack",
+     "at": [
+      0.5,
+      0.88
+     ],
+     "turn": 180
+    }
+   ]
+  },
+  "story": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.86,
+    0.8,
+    0.68
+   ],
+   "items": [
+    {
+     "model": "hearth",
+     "at": [
+      0.0,
+      -0.9
+     ],
+     "turn": 0,
+     "station": "fire"
+    },
+    {
+     "model": "bed",
+     "at": [
+      -0.75,
+      -0.6
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bookcase",
+     "at": [
+      0.82,
+      -0.82
+     ],
+     "turn": 0,
+     "loot": "hall_books"
+    },
+    {
+     "model": "table",
+     "at": [
+      0.3,
+      0.0
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.3,
+      0.32
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.0,
+      0.0
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      -0.75,
+      0.3
+     ],
+     "turn": 90,
+     "loot": "home_chest"
+    },
+    {
+     "model": "shelf",
+     "at": [
+      0.93,
+      0.25
+     ],
+     "turn": -90
+    },
+    {
+     "model": "rug",
+     "at": [
+      -0.2,
+      0.4
+     ],
+     "turn": 0
+    },
+    {
+     "model": "cupboard",
+     "at": [
+      -0.8,
+      0.85
+     ],
+     "turn": 180,
+     "loot": "home_cupboard"
+    }
+   ]
+  },
+  "smithy": {
+   "floor": "stone",
+   "wall": "stone",
+   "wall_color": [
+    0.55,
+    0.52,
+    0.48
+   ],
+   "items": [
+    {
+     "model": "forge",
+     "at": [
+      0.0,
+      -0.8
+     ],
+     "turn": 0,
+     "station": "forge"
+    },
+    {
+     "model": "anvil",
+     "at": [
+      0.0,
+      -0.25
+     ],
+     "turn": 0
+    },
+    {
+     "model": "workbench",
+     "at": [
+      0.75,
+      -0.3
+     ],
+     "turn": -90,
+     "station": "workbench"
+    },
+    {
+     "model": "weapon_rack",
+     "at": [
+      -0.88,
+      -0.4
+     ],
+     "turn": 90
+    },
+    {
+     "model": "tool_rack",
+     "at": [
+      -0.88,
+      0.3
+     ],
+     "turn": 90
+    },
+    {
+     "model": "crate",
+     "at": [
+      0.8,
+      0.75
+     ],
+     "turn": 0,
+     "loot": "smithy_crate"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.55,
+      0.82
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      -0.7,
+      0.82
+     ],
+     "turn": 180,
+     "loot": "smithy_chest"
+    },
+    {
+     "model": "slag_heap",
+     "at": [
+      0.8,
+      -0.85
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "bakery": {
+   "floor": "stone",
+   "wall": "plaster",
+   "wall_color": [
+    0.88,
+    0.84,
+    0.74
+   ],
+   "items": [
+    {
+     "model": "oven",
+     "at": [
+      0.0,
+      -0.8
+     ],
+     "turn": 0,
+     "station": "fire"
+    },
+    {
+     "model": "counter",
+     "at": [
+      0.0,
+      0.3
+     ],
+     "turn": 0
+    },
+    {
+     "model": "shelf",
+     "at": [
+      0.93,
+      -0.2
+     ],
+     "turn": -90
+    },
+    {
+     "model": "shelf",
+     "at": [
+      0.93,
+      0.4
+     ],
+     "turn": -90
+    },
+    {
+     "model": "sacks",
+     "at": [
+      -0.82,
+      -0.75
+     ],
+     "turn": 0,
+     "loot": "bakery_sacks"
+    },
+    {
+     "model": "table",
+     "at": [
+      -0.7,
+      0.0
+     ],
+     "turn": 0
+    },
+    {
+     "model": "barrel",
+     "at": [
+      -0.85,
+      0.8
+     ],
+     "turn": 0
+    },
+    {
+     "model": "cupboard",
+     "at": [
+      0.75,
+      -0.82
+     ],
+     "turn": 0,
+     "loot": "bakery_cupboard"
+    }
+   ]
+  },
+  "alchemist": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.74,
+    0.76,
+    0.7
+   ],
+   "items": [
+    {
+     "model": "cauldron",
+     "at": [
+      0.0,
+      -0.55
+     ],
+     "turn": 0,
+     "station": "cauldron"
+    },
+    {
+     "model": "shelf",
+     "at": [
+      -0.93,
+      -0.3
+     ],
+     "turn": 90
+    },
+    {
+     "model": "shelf",
+     "at": [
+      -0.93,
+      0.35
+     ],
+     "turn": 90
+    },
+    {
+     "model": "bookcase",
+     "at": [
+      0.8,
+      -0.85
+     ],
+     "turn": 0
+    },
+    {
+     "model": "table",
+     "at": [
+      0.6,
+      0.1
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.6,
+      0.42
+     ],
+     "turn": 0
+    },
+    {
+     "model": "cupboard",
+     "at": [
+      -0.6,
+      -0.85
+     ],
+     "turn": 0,
+     "loot": "alchemist_cupboard"
+    },
+    {
+     "model": "crate",
+     "at": [
+      0.82,
+      0.8
+     ],
+     "turn": 0,
+     "loot": "herb_crate"
+    },
+    {
+     "model": "rug",
+     "at": [
+      0.0,
+      0.3
+     ],
+     "turn": 0
+    },
+    {
+     "model": "pottery",
+     "at": [
+      -0.8,
+      0.8
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "store": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.84,
+    0.8,
+    0.7
+   ],
+   "items": [
+    {
+     "model": "counter",
+     "at": [
+      0.0,
+      -0.1
+     ],
+     "turn": 0
+    },
+    {
+     "model": "shelf",
+     "at": [
+      -0.5,
+      -0.9
+     ],
+     "turn": 0
+    },
+    {
+     "model": "shelf",
+     "at": [
+      0.5,
+      -0.9
+     ],
+     "turn": 0
+    },
+    {
+     "model": "crate",
+     "at": [
+      -0.82,
+      0.2
+     ],
+     "turn": 0,
+     "loot": "store_crate"
+    },
+    {
+     "model": "crate",
+     "at": [
+      -0.82,
+      0.55
+     ],
+     "turn": 0
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.82,
+      0.3
+     ],
+     "turn": 0,
+     "loot": "store_barrel"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.82,
+      0.62
+     ],
+     "turn": 0
+    },
+    {
+     "model": "sacks",
+     "at": [
+      0.8,
+      -0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      0.0,
+      -0.6
+     ],
+     "turn": 0,
+     "loot": "store_chest"
+    },
+    {
+     "model": "pottery",
+     "at": [
+      -0.8,
+      -0.5
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "tavern": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.8,
+    0.72,
+    0.58
+   ],
+   "items": [
+    {
+     "model": "counter",
+     "at": [
+      0.0,
+      -0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "keg",
+     "at": [
+      -0.5,
+      -0.88
+     ],
+     "turn": 0,
+     "loot": "tavern_keg"
+    },
+    {
+     "model": "keg",
+     "at": [
+      0.5,
+      -0.88
+     ],
+     "turn": 0
+    },
+    {
+     "model": "hearth",
+     "at": [
+      -0.92,
+      0.0
+     ],
+     "turn": 90,
+     "station": "fire"
+    },
+    {
+     "model": "table",
+     "at": [
+      0.5,
+      0.2
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bench",
+     "at": [
+      0.5,
+      0.48
+     ],
+     "turn": 0
+    },
+    {
+     "model": "table",
+     "at": [
+      -0.3,
+      0.45
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      -0.3,
+      0.75
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      -0.6,
+      0.45
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.0,
+      -0.25
+     ],
+     "turn": 0
+    },
+    {
+     "model": "cupboard",
+     "at": [
+      0.85,
+      -0.82
+     ],
+     "turn": 0,
+     "loot": "tavern_cupboard"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.85,
+      0.82
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "barn": {
+   "floor": "dirt",
+   "wall": "wood",
+   "wall_color": [
+    0.5,
+    0.38,
+    0.26
+   ],
+   "items": [
+    {
+     "model": "haystack",
+     "at": [
+      -0.6,
+      -0.6
+     ],
+     "turn": 0
+    },
+    {
+     "model": "haystack",
+     "at": [
+      0.55,
+      -0.7
+     ],
+     "turn": 0
+    },
+    {
+     "model": "cart",
+     "at": [
+      0.45,
+      0.1
+     ],
+     "turn": 30
+    },
+    {
+     "model": "sacks",
+     "at": [
+      -0.8,
+      0.1
+     ],
+     "turn": 0,
+     "loot": "barn_sacks"
+    },
+    {
+     "model": "trough",
+     "at": [
+      -0.8,
+      0.6
+     ],
+     "turn": 90
+    },
+    {
+     "model": "tool_rack",
+     "at": [
+      0.9,
+      -0.2
+     ],
+     "turn": -90
+    },
+    {
+     "model": "crate",
+     "at": [
+      0.8,
+      0.75
+     ],
+     "turn": 0,
+     "loot": "barn_crate"
+    },
+    {
+     "model": "wheelbarrow",
+     "at": [
+      -0.3,
+      0.7
+     ],
+     "turn": 200
+    },
+    {
+     "model": "plough",
+     "at": [
+      0.0,
+      -0.2
+     ],
+     "turn": 80
+    }
+   ]
+  },
+  "granary": {
+   "floor": "wood",
+   "wall": "wood",
+   "wall_color": [
+    0.55,
+    0.42,
+    0.28
+   ],
+   "items": [
+    {
+     "model": "sacks",
+     "at": [
+      -0.7,
+      -0.7
+     ],
+     "turn": 0,
+     "loot": "granary_sacks"
+    },
+    {
+     "model": "sacks",
+     "at": [
+      0.7,
+      -0.7
+     ],
+     "turn": 40,
+     "loot": "granary_sacks"
+    },
+    {
+     "model": "sacks",
+     "at": [
+      -0.75,
+      0.2
+     ],
+     "turn": 90
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.75,
+      0.2
+     ],
+     "turn": 0,
+     "loot": "granary_barrel"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.75,
+      0.6
+     ],
+     "turn": 0
+    },
+    {
+     "model": "crate",
+     "at": [
+      0.0,
+      -0.8
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "chapel": {
+   "floor": "stone",
+   "wall": "stone",
+   "wall_color": [
+    0.7,
+    0.68,
+    0.64
+   ],
+   "items": [
+    {
+     "model": "altar",
+     "at": [
+      0.0,
+      -0.8
+     ],
+     "turn": 0
+    },
+    {
+     "model": "pew",
+     "at": [
+      -0.45,
+      -0.2
+     ],
+     "turn": 0
+    },
+    {
+     "model": "pew",
+     "at": [
+      0.45,
+      -0.2
+     ],
+     "turn": 0
+    },
+    {
+     "model": "pew",
+     "at": [
+      -0.45,
+      0.25
+     ],
+     "turn": 0
+    },
+    {
+     "model": "pew",
+     "at": [
+      0.45,
+      0.25
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bookcase",
+     "at": [
+      -0.88,
+      -0.75
+     ],
+     "turn": 0,
+     "loot": "chapel_books"
+    },
+    {
+     "model": "chest",
+     "at": [
+      0.82,
+      -0.82
+     ],
+     "turn": 0,
+     "loot": "chapel_chest"
+    },
+    {
+     "model": "rug",
+     "at": [
+      0.0,
+      0.05
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "cabin": {
+   "floor": "wood",
+   "wall": "wood",
+   "wall_color": [
+    0.45,
+    0.34,
+    0.22
+   ],
+   "items": [
+    {
+     "model": "hearth",
+     "at": [
+      0.0,
+      -0.88
+     ],
+     "turn": 0,
+     "station": "fire"
+    },
+    {
+     "model": "bed",
+     "at": [
+      -0.7,
+      -0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "table",
+     "at": [
+      0.5,
+      0.1
+     ],
+     "turn": 0
+    },
+    {
+     "model": "stool",
+     "at": [
+      0.5,
+      0.45
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      -0.7,
+      0.45
+     ],
+     "turn": 90,
+     "loot": "cabin_chest"
+    },
+    {
+     "model": "woodpile",
+     "at": [
+      0.8,
+      -0.75
+     ],
+     "turn": 0
+    },
+    {
+     "model": "drying_rack",
+     "at": [
+      0.8,
+      0.75
+     ],
+     "turn": 180
+    },
+    {
+     "model": "rug",
+     "at": [
+      -0.1,
+      0.3
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "tent": {
+   "floor": "dirt",
+   "wall": "cloth",
+   "wall_color": [
+    0.72,
+    0.62,
+    0.45
+   ],
+   "items": [
+    {
+     "model": "bedroll",
+     "at": [
+      -0.6,
+      -0.4
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bedroll",
+     "at": [
+      0.6,
+      -0.4
+     ],
+     "turn": 0
+    },
+    {
+     "model": "rug",
+     "at": [
+      0.0,
+      0.2
+     ],
+     "turn": 0
+    },
+    {
+     "model": "pottery",
+     "at": [
+      -0.7,
+      0.6
+     ],
+     "turn": 0,
+     "loot": "tent_pots"
+    },
+    {
+     "model": "crate",
+     "at": [
+      0.7,
+      0.6
+     ],
+     "turn": 0,
+     "loot": "tent_crate"
+    },
+    {
+     "model": "weapon_rack",
+     "at": [
+      0.0,
+      -0.85
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "shed": {
+   "floor": "dirt",
+   "wall": "wood",
+   "wall_color": [
+    0.48,
+    0.37,
+    0.25
+   ],
+   "items": [
+    {
+     "model": "tool_rack",
+     "at": [
+      0.0,
+      -0.85
+     ],
+     "turn": 0
+    },
+    {
+     "model": "woodpile",
+     "at": [
+      -0.7,
+      -0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "crate",
+     "at": [
+      0.7,
+      -0.5
+     ],
+     "turn": 0,
+     "loot": "shed_crate"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.75,
+      0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "wheelbarrow",
+     "at": [
+      -0.5,
+      0.5
+     ],
+     "turn": 160
+    }
+   ]
+  },
+  "hall": {
+   "floor": "wood",
+   "wall": "plaster",
+   "wall_color": [
+    0.86,
+    0.8,
+    0.66
+   ],
+   "items": [
+    {
+     "model": "hearth",
+     "at": [
+      0.0,
+      -0.9
+     ],
+     "turn": 0,
+     "station": "fire"
+    },
+    {
+     "model": "table",
+     "at": [
+      -0.4,
+      0.0
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bench",
+     "at": [
+      -0.4,
+      0.3
+     ],
+     "turn": 0
+    },
+    {
+     "model": "table",
+     "at": [
+      0.4,
+      0.0
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bench",
+     "at": [
+      0.4,
+      0.3
+     ],
+     "turn": 0
+    },
+    {
+     "model": "bookcase",
+     "at": [
+      -0.85,
+      -0.85
+     ],
+     "turn": 0,
+     "loot": "hall_books"
+    },
+    {
+     "model": "bookcase",
+     "at": [
+      0.85,
+      -0.85
+     ],
+     "turn": 0
+    },
+    {
+     "model": "chest",
+     "at": [
+      0.85,
+      0.2
+     ],
+     "turn": -90,
+     "loot": "hall_chest"
+    },
+    {
+     "model": "rug",
+     "at": [
+      0.0,
+      0.55
+     ],
+     "turn": 0
+    },
+    {
+     "model": "counter",
+     "at": [
+      0.0,
+      -0.5
+     ],
+     "turn": 0
+    }
+   ]
+  },
+  "mill": {
+   "floor": "wood",
+   "wall": "stone",
+   "wall_color": [
+    0.7,
+    0.68,
+    0.62
+   ],
+   "items": [
+    {
+     "model": "sacks",
+     "at": [
+      -0.6,
+      -0.6
+     ],
+     "turn": 0,
+     "loot": "mill_sacks"
+    },
+    {
+     "model": "sacks",
+     "at": [
+      0.6,
+      -0.6
+     ],
+     "turn": 60,
+     "loot": "mill_sacks"
+    },
+    {
+     "model": "barrel",
+     "at": [
+      0.7,
+      0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "crate",
+     "at": [
+      -0.7,
+      0.5
+     ],
+     "turn": 0
+    },
+    {
+     "model": "table",
+     "at": [
+      0.0,
+      0.2
+     ],
+     "turn": 0
+    }
+   ]
+  }
+ },
+ "loot": {
+  "home_chest": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "bread": 4,
+    "wheat": 2,
+    "straw_bundle": 2,
+    "meadowmint": 1,
+    "mana_tonic": 1
+   }
+  },
+  "home_cupboard": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "bread": 5,
+    "fried_minnow": 2,
+    "grilled_trout": 1,
+    "health_draught": 1
+   }
+  },
+  "larder": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1200,
+   "items": {
+    "bread": 4,
+    "wheat": 4,
+    "grilled_trout": 2,
+    "fried_minnow": 2
+   }
+  },
+  "smithy_crate": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1500,
+   "items": {
+    "copper_ore": 4,
+    "iron_ore": 3,
+    "copper_bar": 2,
+    "iron_bar": 1
+   }
+  },
+  "smithy_chest": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1800,
+   "items": {
+    "copper_bar": 3,
+    "iron_bar": 2,
+    "obsidian": 1,
+    "skysteel_ore": 1
+   }
+  },
+  "bakery_sacks": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1200,
+   "items": {
+    "wheat": 6,
+    "bread": 2
+   }
+  },
+  "bakery_cupboard": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "bread": 6,
+    "grilled_sprat": 1
+   }
+  },
+  "alchemist_cupboard": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1800,
+   "items": {
+    "mana_tonic": 4,
+    "health_draught": 3,
+    "sun_elixir": 1,
+    "frost_ward": 1,
+    "cinder_draught": 1
+   }
+  },
+  "herb_crate": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1500,
+   "items": {
+    "meadowmint": 4,
+    "glowcap": 3,
+    "sunpetal": 2,
+    "frostbloom": 1,
+    "cinderroot": 1,
+    "slime_jelly": 2
+   }
+  },
+  "store_crate": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1500,
+   "items": {
+    "ash_log": 3,
+    "oak_log": 2,
+    "copper_ore": 2,
+    "straw_bundle": 2,
+    "wolf_pelt": 1
+   }
+  },
+  "store_barrel": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "minnow": 3,
+    "trout": 2,
+    "sprat": 2,
+    "wheat": 2
+   }
+  },
+  "store_chest": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1800,
+   "items": {
+    "mana_tonic": 2,
+    "health_draught": 2,
+    "bread": 2,
+    "copper_bar": 1
+   }
+  },
+  "tavern_keg": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "bread": 3,
+    "grilled_trout": 2,
+    "fried_minnow": 2,
+    "health_draught": 1
+   }
+  },
+  "tavern_cupboard": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1500,
+   "items": {
+    "bread": 4,
+    "seared_silverfin": 1,
+    "mana_tonic": 1
+   }
+  },
+  "barn_sacks": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1200,
+   "items": {
+    "wheat": 6,
+    "straw_bundle": 4
+   }
+  },
+  "barn_crate": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "straw_bundle": 3,
+    "ash_log": 2,
+    "wheat": 2
+   }
+  },
+  "granary_sacks": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1200,
+   "items": {
+    "wheat": 8,
+    "bread": 1
+   }
+  },
+  "granary_barrel": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "wheat": 4,
+    "meadowmint": 1
+   }
+  },
+  "chapel_books": {
+   "rolls": [
+    1,
+    1
+   ],
+   "refill_s": 1800,
+   "items": {
+    "mana_tonic": 3,
+    "glowcap": 2,
+    "frost_ward": 1
+   }
+  },
+  "chapel_chest": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1800,
+   "items": {
+    "health_draught": 3,
+    "bread": 2,
+    "mana_tonic": 2
+   }
+  },
+  "cabin_chest": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1500,
+   "items": {
+    "wolf_pelt": 3,
+    "oak_log": 3,
+    "grilled_trout": 2,
+    "health_draught": 1
+   }
+  },
+  "tent_pots": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1500,
+   "items": {
+    "sunpetal": 3,
+    "sandskipper": 2,
+    "spiced_sandskipper": 1
+   }
+  },
+  "tent_crate": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1800,
+   "items": {
+    "sunstone": 2,
+    "scorpion_sting": 2,
+    "palm_log": 3,
+    "sun_elixir": 1
+   }
+  },
+  "shed_crate": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1200,
+   "items": {
+    "ash_log": 4,
+    "oak_log": 2,
+    "copper_ore": 2,
+    "straw_bundle": 2
+   }
+  },
+  "hall_books": {
+   "rolls": [
+    1,
+    1
+   ],
+   "refill_s": 1800,
+   "items": {
+    "mana_tonic": 3,
+    "sun_elixir": 1,
+    "frost_ward": 1,
+    "cinder_draught": 1
+   }
+  },
+  "hall_chest": {
+   "rolls": [
+    1,
+    2
+   ],
+   "refill_s": 1800,
+   "items": {
+    "iron_bar": 2,
+    "health_draught": 2,
+    "mana_tonic": 2,
+    "bread": 2
+   }
+  },
+  "mill_sacks": {
+   "rolls": [
+    2,
+    3
+   ],
+   "refill_s": 1200,
+   "items": {
+    "wheat": 8,
+    "bread": 2
+   }
+  }
+ }
+}

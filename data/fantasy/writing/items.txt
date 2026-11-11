@@ -1,0 +1,113 @@
+# ITEMS: everything that can be in the bag
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[items staff]
+# WHAT: the names of every staff. Read a line as  item id: Name .
+ash_staff: Ash Staff
+oak_staff: Oakheart Staff
+coral_staff: Coral Staff
+sunstone_staff: Sunstone Staff
+frostpine_staff: Frostpine Staff
+obsidian_staff: Obsidian Staff
+stormcall_staff: Stormcall Staff
+prism_staff: Prism Staff
+
+[items robe]
+# WHAT: the names of every robe. Read a line as  item id: Name .
+traveller_robe: Traveller's Robe
+woodland_robe: Woodland Robe
+tidecloth_robe: Tidecloth Robe
+sunweave_robe: Sunweave Robe
+rimefur_robe: Rimefur Robe
+cinder_robe: Cinder Robe
+stormsilk_robe: Stormsilk Robe
+
+[items tool]
+# WHAT: the names of every tool. Read a line as  item id: Name .
+copper_axe: Copper Axe
+iron_axe: Iron Axe
+steel_axe: Steel Axe
+skysteel_axe: Skysteel Axe
+copper_pickaxe: Copper Pickaxe
+iron_pickaxe: Iron Pickaxe
+steel_pickaxe: Steel Pickaxe
+skysteel_pickaxe: Skysteel Pickaxe
+reed_rod: Reed Rod
+oak_rod: Oak Rod
+frostpine_rod: Frostpine Rod
+ember_rod: Ember Rod
+
+[items food]
+# WHAT: the names of every food. Read a line as  item id: Name .
+bread: Bread
+fried_minnow: Fried Minnow
+grilled_trout: Grilled Trout
+seared_silverfin: Seared Silverfin
+spiced_sandskipper: Spiced Sandskipper
+icefin_stew: Icefin Stew
+charred_eel: Charred Eel
+grilled_sprat: Grilled Sprat
+seared_stormfin: Seared Stormfin
+
+[items potion]
+# WHAT: the names of every potion. Read a line as  item id: Name .
+mana_tonic: Mana Tonic
+health_draught: Health Draught
+sun_elixir: Sun Elixir
+frost_ward: Frost Ward
+cinder_draught: Cinder Draught
+
+[items material]
+# WHAT: the names of every material. Read a line as  item id: Name .
+ash_log: Ash Log
+oak_log: Oak Log
+palm_log: Driftpalm Log
+frostpine_log: Frostpine Log
+emberwood_log: Emberwood Log
+copper_ore: Copper Ore
+iron_ore: Iron Ore
+sunstone: Sunstone
+frost_crystal: Frost Crystal
+obsidian: Obsidian
+skysteel_ore: Skysteel Ore
+copper_bar: Copper Bar
+iron_bar: Iron Bar
+skysteel_bar: Skysteel Bar
+minnow: Minnow
+trout: Trout
+silverfin: Silverfin
+sandskipper: Sandskipper
+icefin: Icefin
+lava_eel: Lava Eel
+wheat: Wheat
+meadowmint: Meadowmint
+glowcap: Glowcap
+sunpetal: Sunpetal
+frostbloom: Frostbloom
+cinderroot: Cinderroot
+straw_bundle: Straw Bundle
+slime_jelly: Slime Jelly
+wolf_pelt: Wolf Pelt
+crab_shell: Crab Shell
+scorpion_sting: Scorpion Sting
+sprat: Sprat
+stormfin: Stormfin
+
+[items pigment]
+# WHAT: the names of every pigment. Read a line as  item id: Name .
+amber_pigment: Amber Pigment
+verdant_pigment: Verdant Pigment
+azure_pigment: Azure Pigment
+ochre_pigment: Ochre Pigment
+white_pigment: White Pigment
+crimson_pigment: Crimson Pigment
+storm_pigment: Storm Pigment

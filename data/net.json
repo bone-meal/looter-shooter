@@ -1,0 +1,26 @@
+{
+ "version": 1,
+ "app_id": "k4rH8u3C426dyPX",
+ "max_players": 6,
+ "send_rate_hz": 15,
+ "join_timeout_seconds": 5,
+ "trackers": [
+  "wss://tracker.webtorrent.dev",
+  "wss://tracker.openwebtorrent.com",
+  "wss://open.ftorrent.com",
+  "wss://tracker.androodev.com"
+ ],
+ "stun": [
+  "stun:stun.l.google.com:19302",
+  "stun:stun.cloudflare.com:3478"
+ ],
+ "pvp": true,
+ "boss_cooldown_seconds": 25,
+ "boss_state_hz": 15,
+ "spirit_rate_hz": 10,
+ "spirit_cap": 16,
+ "spirit_kinds": [
+  "chaser",
+  "shooter"
+ ]
+}

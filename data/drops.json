@@ -1,0 +1,118 @@
+{
+ "version": 1,
+ "luck_per_wave": 0.15,
+ "max_world_drops": 24,
+ "despawn_seconds": 120,
+ "despawn_seconds_gold_up": 300,
+ "pickup_range": 2.2,
+ "enemies": {
+  "chaser": {
+   "chance": 0.08,
+   "min_tier": "grey",
+   "count": 1
+  },
+  "shooter": {
+   "chance": 0.12,
+   "min_tier": "grey",
+   "count": 1
+  },
+  "boss": {
+   "chance": 1.0,
+   "min_tier": "purple",
+   "count": 1
+  },
+  "raider": {
+   "chance": 0.1,
+   "min_tier": "grey",
+   "count": 1
+  },
+  "feral": {
+   "chance": 0.06,
+   "min_tier": "grey",
+   "count": 1
+  },
+  "scav_gunner": {
+   "chance": 0.12,
+   "min_tier": "grey",
+   "count": 1
+  },
+  "marksman": {
+   "chance": 0.15,
+   "min_tier": "green",
+   "count": 1
+  },
+  "brute": {
+   "chance": 0.3,
+   "min_tier": "green",
+   "count": 1
+  },
+  "boss_butcher": {
+   "chance": 1.0,
+   "min_tier": "purple",
+   "count": 1
+  },
+  "boss_tyrant": {
+   "chance": 1.0,
+   "min_tier": "purple",
+   "count": 1
+  },
+  "boss_dome_beast": {
+   "chance": 1.0,
+   "min_tier": "purple",
+   "count": 1
+  },
+  "boss_warlord": {
+   "chance": 1.0,
+   "min_tier": "purple",
+   "count": 1
+  },
+  "boss_overseer": {
+   "chance": 1.0,
+   "min_tier": "purple",
+   "count": 1
+  }
+ },
+ "elite": {
+  "chance": 0.12,
+  "min_wave": 2,
+  "drop": {
+   "chance": 1.0,
+   "min_tier": "blue",
+   "count": 1
+  },
+  "affixes": [
+   {
+    "id": "tough",
+    "name": "Tough",
+    "hp_mult": 2.5,
+    "speed_mult": 1.0,
+    "damage_mult": 1.0,
+    "size_mult": 1.15
+   },
+   {
+    "id": "swift",
+    "name": "Swift",
+    "hp_mult": 1.4,
+    "speed_mult": 1.6,
+    "damage_mult": 1.0,
+    "size_mult": 1.0
+   },
+   {
+    "id": "brutal",
+    "name": "Brutal",
+    "hp_mult": 1.5,
+    "speed_mult": 1.0,
+    "damage_mult": 1.8,
+    "size_mult": 1.1
+   },
+   {
+    "id": "giant",
+    "name": "Giant",
+    "hp_mult": 2.0,
+    "speed_mult": 0.9,
+    "damage_mult": 1.4,
+    "size_mult": 1.4
+   }
+  ]
+ }
+}

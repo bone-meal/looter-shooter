@@ -1,0 +1,10 @@
+{
+ "version": 1,
+ "makers": {
+  "kestrel": {"name": "Kestrel Works",   "color": "#5fd0ff", "flavor": "Tight groups, steady hands.",     "part_boost": {"spread": 1.3, "recoil": 1.2},      "roll_weights": {"spread": 3, "recoil": 2, "crit_chance": 2},     "buff_pool": ["crit_damage", "free_shot"]},
+  "brawn":   {"name": "Brawn & Sons",    "color": "#ff6b4a", "flavor": "Hits like a truck, reloads like one.", "part_boost": {"damage": 1.3},                  "roll_weights": {"damage": 4, "reload_time": 0.5},                  "buff_pool": ["explosive_chance", "burn_chance"]},
+  "zephyr":  {"name": "Zephyr Labs",     "color": "#b6ff6a", "flavor": "Everything faster.",             "part_boost": {"fire_rate": 1.3, "reload_time": 1.2}, "roll_weights": {"fire_rate": 4, "reload_time": 2},                "buff_pool": ["reload_on_kill", "shock_chance"]},
+  "moss":    {"name": "Moss Dynamics",   "color": "#7bd88f", "flavor": "Grows on you. Big mags, slow bloom.", "part_boost": {"mag_size": 1.4},                "roll_weights": {"mag_size": 4, "damage": 1},                       "buff_pool": ["lifesteal", "slow_on_hit"]},
+  "vantor":  {"name": "Vantor Ordnance", "color": "#d9a7ff", "flavor": "Plain, balanced, reliable.",     "part_boost": {},                                   "roll_weights": {},                                              "buff_pool": []}
+ }
+}

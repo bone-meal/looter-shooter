@@ -1,0 +1,133 @@
+# STORMCROWN HIGHLANDS  (region 7 of 8, creature levels 39-45)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[region stormcrown]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: Stormcrown Highlands
+about: A high moor of standing stones where the wind never stops. Lightning walks here even when the sky is clear.
+
+# ---------------- PLACES AND WATERS OF STORMCROWN HIGHLANDS ----------------
+
+[place skyrest]
+# WHAT: a town.
+name: Skyrest
+
+[place roc_aerie]
+# WHAT: the ground where this region's boss waits.
+name: The Roc's Aerie
+
+[place high_cairn]
+# WHAT: a farming village.
+name: High Cairn
+
+[lake sky_mirror]
+# WHAT: a lake (fresh water: its own fish).
+name: The Sky Mirror
+
+# ---------------- PEOPLE OF STORMCROWN HIGHLANDS ----------------
+
+[folk stormcrown]
+# WHO: the ordinary people of Stormcrown Highlands, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: Pilgrim
+says: Ring the bell if the wind takes you. Someone will come.
+says: Up here the weather has opinions.
+says: The Roc's shadow crosses the yard at noon. We set clocks by it.
+says: Tie down what you love.
+
+[person abbot_wen]
+# WHO: quest giver at Skyrest. Gives: The Shouting Wind (m28), The Hurricane Sutra (m29), The Tempest Roc (m31).
+name: Abbot Wen
+# Abbot Wen says this when a player walks up and talks:
+greeting: We came up here to listen to the wind. Lately it has been shouting.
+
+[person bellringer_ilse]
+# WHO: quest giver at Skyrest. Gives: Bells of Skyrest (m30), Skysteel (s07).
+name: Bellringer Ilse
+# Bellringer Ilse says this when a player walks up and talks:
+greeting: When the big bell rings by itself, something is circling.
+
+# ---------------- QUESTS GIVEN IN STORMCROWN HIGHLANDS ----------------
+
+[quest m28]
+# CHAPTER 7 of the main story. GIVEN BY: Abbot Wen. NEEDS FIRST: m27. REWARD: 500 Magic xp.
+title: The Shouting Wind
+# Abbot Wen says this when offering the quest:
+offer: You have brought back six colours. The seventh is the colour of a storm about to break, and it is circling over our heads.
+# Step 1 shows this in the quest list. The player must: arrive at Skyrest.
+step 1: Climb west to Skyrest in the Stormcrown Highlands
+# Step 2 shows this in the quest list. The player must: defeat 10 x Storm Harpy.
+step 2: Ground the storm harpies
+# Abbot Wen says this when the quest is finished:
+done: The bells have stopped ringing by themselves.
+
+[quest m29]
+# CHAPTER 7 of the main story. GIVEN BY: Abbot Wen. NEEDS FIRST: m28. REWARD: 500 Magic xp, teaches the long spell Katrina.
+title: The Hurricane Sutra
+# Abbot Wen says this when offering the quest:
+offer: Show the wind you can speak plainly to it. Then I will teach you to shout back.
+# Step 1 shows this in the quest list. The player must: cast exactly Air + Air + Air + Air + Air, 3 time(s).
+step 1: Cast Tempest (five Air) three times on the moor
+# Abbot Wen says this when the quest is finished:
+done: The sutra has a name older than the abbey: Katrina. Air, Water, Air, Air, Water, Air, Water, Water, Air. Nine. Miss one and it is only rain.
+
+[quest m30]
+# CHAPTER 7 of the main story. GIVEN BY: Bellringer Ilse. NEEDS FIRST: m29. REWARD: 500 Magic xp, teaches the long spell Judgement.
+title: Bells of Skyrest
+# Bellringer Ilse says this when offering the quest:
+offer: The spirits ride the gusts. Give them a bigger wind than their own.
+# Step 1 shows this in the quest list. The player must: defeat 8 x Gale Spirit.
+step 1: Still the gale spirits
+# Step 2 shows this in the quest list. The player must: cast the long spell Katrina, 1 time(s).
+step 2: Call Katrina
+# Bellringer Ilse says this when the quest is finished:
+done: I've rung these bells forty years and never heard thunder answer. Here is how: Judgement. Fire, Air, Fire, Air, Air, Fire, Air, Fire, Air.
+
+[quest m31]
+# CHAPTER 7 of the main story. GIVEN BY: Abbot Wen. NEEDS FIRST: m30. REWARD: 2000 Magic xp, 1 x Storm Pigment, one more element slot, teaches the long spell Worldbreaker.
+title: The Tempest Roc
+# Abbot Wen says this when offering the quest:
+offer: The great bird carried the storms from sea to field. Bleached, it only circles and screams.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Tempest Roc.
+step 1: Defeat the Tempest Roc at its aerie
+# Abbot Wen says this when the quest is finished:
+done: Storm-violet. Seven. One more gift, for the ground you are about to walk on: Worldbreaker. Earth, Earth, Fire, Earth, Earth, Air, Earth, Earth, Earth.
+
+[quest s07]
+# SIDE QUEST. GIVEN BY: Bellringer Ilse. NEEDS FIRST: m28. REWARD: 1500 Mining xp, 1500 Smithing xp.
+title: Skysteel
+# Bellringer Ilse says this when offering the quest:
+offer: The old bell cracked. Skysteel rings truer. The lodes are up on the tops, where the lightning likes to stand.
+# Step 1 shows this in the quest list. The player must: hold 4 x Skysteel Bar.
+step 1: Mine skysteel and smelt four bars
+# Bellringer Ilse says this when the quest is finished:
+done: You've a miner's hands and a smith's patience.
+
+# ---------------- CREATURES OF STORMCROWN HIGHLANDS ----------------
+
+[creature storm_harpy]
+# WHAT: a common creature, level 39.
+name: Storm Harpy
+
+[creature gale_spirit]
+# WHAT: a common creature, level 43.
+name: Gale Spirit
+
+[creature tempest_roc]
+# WHO: the BOSS of this region, level 45.
+name: The Tempest Roc
+# One of its own attacks (a charge); the name flashes on screen as a warning:
+move dive: Dive
+# One of its own attacks (a pull); the name flashes on screen as a warning:
+move gale: Gale
+# One of its own attacks (a volley); the name flashes on screen as a warning:
+move feather_storm: Feather Storm

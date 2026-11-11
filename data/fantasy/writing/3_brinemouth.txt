@@ -1,0 +1,133 @@
+# BRINEMOUTH COAST  (region 3 of 8, creature levels 12-18)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[region brinemouth]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: Brinemouth Coast
+about: White harbour walls, blue roofs, gulls. The tide has been coming in further every night.
+
+# ---------------- PLACES AND WATERS OF BRINEMOUTH COAST ----------------
+
+[place brinemouth_town]
+# WHAT: a town.
+name: Brinemouth
+
+[place tidal_flats]
+# WHAT: the ground where this region's boss waits.
+name: The Tidal Flats
+
+[place saltmarsh]
+# WHAT: a farming village.
+name: Saltmarsh
+
+[lake brine_lagoon]
+# WHAT: a lake (fresh water: its own fish).
+name: The Lagoon
+
+# ---------------- PEOPLE OF BRINEMOUTH COAST ----------------
+
+[folk brinemouth]
+# WHO: the ordinary people of Brinemouth Coast, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: Dockhand
+says: Salt fish from the sea, sweet fish from the lagoon. Don't mix the barrels.
+says: Tide's wrong again. The Warden's sulking.
+says: My nets come up grey some mornings. No fish, no colour.
+says: A boat is a promise you make to the weather.
+
+[person captain_ysolde]
+# WHO: quest giver at Brinemouth. Gives: Salt Air (m12), The Drowned Crew (m14), The Tidewarden (m15).
+name: Captain Ysolde
+# Captain Ysolde says this when a player walks up and talks:
+greeting: My crew won't sail. Says the flats are walking. I've seen it too.
+
+[person netmender_brill]
+# WHO: quest giver at Brinemouth. Gives: Nets and Needles (m13), Driftwood (s05).
+name: Netmender Brill
+# Netmender Brill says this when a player walks up and talks:
+greeting: Silverfin run past the breakwater at this hour.
+
+# ---------------- QUESTS GIVEN IN BRINEMOUTH COAST ----------------
+
+[quest m12]
+# CHAPTER 3 of the main story. GIVEN BY: Captain Ysolde. NEEDS FIRST: m11. REWARD: 1200 Magic xp.
+title: Salt Air
+# Captain Ysolde says this when offering the quest:
+offer: Word travels by water. They say you mend lands. Mine is drowning an inch a night.
+# Step 1 shows this in the quest list. The player must: arrive at Brinemouth.
+step 1: Travel to Brinemouth on the south-east coast
+# Step 2 shows this in the quest list. The player must: defeat 8 x Reef Crab.
+step 2: Break reef crabs on the shore
+# Captain Ysolde says this when the quest is finished:
+done: Shells that thick, and you cracked them. Good.
+
+[quest m13]
+# CHAPTER 3 of the main story. GIVEN BY: Netmender Brill. NEEDS FIRST: m12. REWARD: 1200 Magic xp, 500 Fishing xp, 1 x Oak Rod.
+title: Nets and Needles
+# Netmender Brill says this when offering the quest:
+offer: Nobody will sail, so nobody eats. Unless you can fish from the breakwater.
+# Step 1 shows this in the quest list. The player must: reach Fishing level 13.
+step 1: Reach Fishing 13
+# Step 2 shows this in the quest list. The player must: hold 6 x Silverfin and hand them over.
+step 2: Catch silverfin at sea shoals
+# Netmender Brill says this when the quest is finished:
+done: Six! Have my best rod. I was only using it to prop the door.
+
+[quest m14]
+# CHAPTER 3 of the main story. GIVEN BY: Captain Ysolde. NEEDS FIRST: m12. REWARD: 1600 Magic xp.
+title: The Drowned Crew
+# Captain Ysolde says this when offering the quest:
+offer: Those are my own lads walking the flats. Soaked through, every one. You know what runs through wet rope in a storm.
+# Step 1 shows this in the quest list. The player must: defeat 10 x Drowned Sailor.
+step 1: Lay the drowned crew to rest
+# Step 2 shows this in the quest list. The player must: cast any spell mixing Air + Fire, 6 time(s).
+step 2: Cast Lightning (Fire and Air) six times: wet things carry it
+# Captain Ysolde says this when the quest is finished:
+done: Rest now, the lot of you.
+
+[quest m15]
+# CHAPTER 3 of the main story. GIVEN BY: Captain Ysolde. NEEDS FIRST: m13, m14. REWARD: 1500 Magic xp, 1 x Azure Pigment, one more element slot.
+title: The Tidewarden
+# Captain Ysolde says this when offering the quest:
+offer: The warden of the tide kept the sea where it belongs. It has gone white as salt and it is dragging the water in after it.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Tidewarden.
+step 1: Defeat the Tidewarden on the Tidal Flats
+# Captain Ysolde says this when the quest is finished:
+done: The tide's going out. Azure is yours.
+
+[quest s05]
+# SIDE QUEST. GIVEN BY: Netmender Brill. NEEDS FIRST: m12. REWARD: 700 Woodcutting xp.
+title: Driftwood
+# Netmender Brill says this when offering the quest:
+offer: The breakwater wants mending and palm is the only wood that laughs at salt.
+# Step 1 shows this in the quest list. The player must: hold 10 x Driftpalm Log and hand them over.
+step 1: Chop driftpalms
+# Netmender Brill says this when the quest is finished:
+done: That'll hold a winter.
+
+# ---------------- CREATURES OF BRINEMOUTH COAST ----------------
+
+[creature reef_crab]
+# WHAT: a common creature, level 12.
+name: Reef Crab
+
+[creature drowned_sailor]
+# WHAT: a common creature, level 15.
+name: Drowned Sailor
+
+[creature tidewarden]
+# WHO: the BOSS of this region, level 18.
+name: The Tidewarden
+# One of its own attacks (a pull); the name flashes on screen as a warning:
+move undertow: Undertow
+# One of its own attacks (a charge); the name flashes on screen as a warning:
+move breaker: Breaker

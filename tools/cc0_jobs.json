@@ -1,0 +1,146 @@
+{
+ "_about": "Jobs for tools/cc0_fetch.tscn. Already downloaded files are skipped. Done so far: textures sand_01 coast_sand_01 leafy_grass large_sandstone_blocks_01 sandstone_blocks_08 sandstone_cracks gravelly_sand weathered_brown_planks palm_tree_bark (1k+2k); hdri kloofendal_48d_partly_cloudy_puresky 2k; models rock_09 namaqualand_boulder_04 fern_02 calathea_orbifolia_01 anthurium_botany_01 large_iron_gate (1k); fantasy world 2026-11-10 (1k): withered_grass forest_floor snow_02 burned_ground_01 cliff_side aerial_grass_rock dry_ground_01 gravel_ground_01 cobblestone_floor_04 stony_dirt_path medieval_wood white_plaster_rough_01 clay_roof_tiles_02 thatch_roof_angled roof_slates_02 medieval_blocks_02 sandstone_brick_wall_01 hessian_230 brown_leather rusty_metal_02 pine_bark bark_brown_02 clay_plaster.",
+ "index": [],
+ "textures": [
+  {
+   "id": "withered_grass",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "forest_floor",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "snow_02",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "burned_ground_01",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "cliff_side",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "aerial_grass_rock",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "dry_ground_01",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "gravel_ground_01",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "cobblestone_floor_04",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "stony_dirt_path",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "medieval_wood",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "white_plaster_rough_01",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "clay_roof_tiles_02",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "thatch_roof_angled",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "roof_slates_02",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "medieval_blocks_02",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "sandstone_brick_wall_01",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "hessian_230",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "brown_leather",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "rusty_metal_02",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "pine_bark",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "bark_brown_02",
+   "res": [
+    "1k"
+   ]
+  },
+  {
+   "id": "clay_plaster",
+   "res": [
+    "1k"
+   ]
+  }
+ ],
+ "hdris": [],
+ "models": []
+}

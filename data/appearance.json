@@ -1,0 +1,147 @@
+{
+ "version": 1,
+ "genders": [
+  "female",
+  "male"
+ ],
+ "skin_tones": [
+  "#fde4d0",
+  "#f7d0b5",
+  "#f1c27d",
+  "#e0ac69",
+  "#c68642",
+  "#a86f3c",
+  "#8d5524",
+  "#6b4226",
+  "#4a2c17",
+  "#3a2012",
+  "#f3d6e4",
+  "#c9e4d4"
+ ],
+ "hair_styles": [
+  {
+   "id": "buzz",
+   "name": "Buzz Cut"
+  },
+  {
+   "id": "crop",
+   "name": "Short Crop"
+  },
+  {
+   "id": "sidepart",
+   "name": "Side Part"
+  },
+  {
+   "id": "pompadour",
+   "name": "Pompadour"
+  },
+  {
+   "id": "spiky",
+   "name": "Spiky"
+  },
+  {
+   "id": "mohawk",
+   "name": "Mohawk"
+  },
+  {
+   "id": "afro",
+   "name": "Afro"
+  },
+  {
+   "id": "curly",
+   "name": "Curly Top"
+  },
+  {
+   "id": "undercut",
+   "name": "Undercut"
+  },
+  {
+   "id": "mullet",
+   "name": "Mullet"
+  },
+  {
+   "id": "bob",
+   "name": "Bob"
+  },
+  {
+   "id": "long_straight",
+   "name": "Long Straight"
+  },
+  {
+   "id": "long_wavy",
+   "name": "Long Wavy"
+  },
+  {
+   "id": "ponytail",
+   "name": "Ponytail"
+  },
+  {
+   "id": "high_ponytail",
+   "name": "High Ponytail"
+  },
+  {
+   "id": "twin_tails",
+   "name": "Twin Tails"
+  },
+  {
+   "id": "twin_buns",
+   "name": "Twin Buns"
+  },
+  {
+   "id": "bun",
+   "name": "Top Bun"
+  },
+  {
+   "id": "braids",
+   "name": "Braids"
+  },
+  {
+   "id": "bangs",
+   "name": "Long Bangs"
+  }
+ ],
+ "ranges": {
+  "height": [
+   0.85,
+   1.15
+  ],
+  "weight": [
+   0.8,
+   1.4
+  ],
+  "bust": [
+   0.0,
+   1.0
+  ],
+  "glutes": [
+   0.0,
+   1.0
+  ]
+ },
+ "defaults": {
+  "female": {
+   "gender": "female",
+   "height": 1.0,
+   "weight": 1.0,
+   "bust": 0.35,
+   "glutes": 0.35,
+   "skin": 2,
+   "hair": "long_straight",
+   "hair_color": "#7a4a2a",
+   "face": "gentle_smile",
+   "outfit": "street_casual"
+  },
+  "male": {
+   "gender": "male",
+   "height": 1.0,
+   "weight": 1.0,
+   "bust": 0.0,
+   "glutes": 0.0,
+   "skin": 2,
+   "hair": "crop",
+   "hair_color": "#3b2a1a",
+   "face": "gentle_smile",
+   "outfit": "street_casual"
+  }
+ }
+}

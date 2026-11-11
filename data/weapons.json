@@ -1,0 +1,181 @@
+{
+  "version": 5,
+  "weapons": {
+    "pistol_basic": {
+      "damage": 12,
+      "fire_rate": 4.0,
+      "mag_size": 12,
+      "reload_time": 1.2,
+      "spread": 0.02,
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.075,
+          -0.4
+        ],
+        "ads_fov": 60,
+        "ads_speed": 9.0,
+        "recoil_back": 0.06,
+        "recoil_pitch": 7.0,
+        "ads_spread_mult": 0.4,
+        "scope": false
+      }
+    },
+    "sniper_basic": {
+      "damage": 80,
+      "fire_rate": 0.8,
+      "mag_size": 5,
+      "reload_time": 2.5,
+      "spread": 0.03,
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.055,
+          -0.3
+        ],
+        "ads_fov": 15,
+        "ads_speed": 6.0,
+        "recoil_back": 0.1,
+        "recoil_pitch": 10.0,
+        "ads_spread_mult": 0.05,
+        "scope_kick": 2.5,
+        "scope": true
+      }
+    },
+    "ak47": {
+      "damage": 14,
+      "fire_rate": 9.0,
+      "mag_size": 30,
+      "reload_time": 2.2,
+      "spread": 0.035,
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.075,
+          -0.4
+        ],
+        "ads_fov": 55,
+        "ads_speed": 8.0,
+        "recoil_back": 0.05,
+        "recoil_pitch": 5.0,
+        "ads_spread_mult": 0.5,
+        "scope": false
+      }
+    },
+    "m16": {
+      "damage": 11,
+      "fire_rate": 11.0,
+      "mag_size": 30,
+      "reload_time": 2.0,
+      "spread": 0.02,
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.075,
+          -0.4
+        ],
+        "ads_fov": 55,
+        "ads_speed": 8.5,
+        "recoil_back": 0.04,
+        "recoil_pitch": 4.0,
+        "ads_spread_mult": 0.45,
+        "scope": false
+      }
+    },
+    "m60": {
+      "damage": 10,
+      "fire_rate": 12.0,
+      "mag_size": 100,
+      "reload_time": 5.0,
+      "spread": 0.06,
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.08,
+          -0.4
+        ],
+        "ads_fov": 60,
+        "ads_speed": 6.0,
+        "recoil_back": 0.07,
+        "recoil_pitch": 6.0,
+        "ads_spread_mult": 0.6,
+        "scope": false
+      }
+    },
+    "shotgun_double": {
+      "damage": 9,
+      "pellets": 10,
+      "fire_rate": 2.5,
+      "mag_size": 2,
+      "reload_time": 2.2,
+      "spread": 0.07,
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.07,
+          -0.4
+        ],
+        "ads_fov": 65,
+        "ads_speed": 8.0,
+        "recoil_back": 0.12,
+        "recoil_pitch": 12.0,
+        "ads_spread_mult": 0.8,
+        "scope": false
+      }
+    },
+    "rocket_launcher": {
+      "damage": 120,
+      "fire_rate": 0.6,
+      "mag_size": 1,
+      "reload_time": 3.0,
+      "spread": 0.01,
+      "projectile": {
+        "kind": "rocket",
+        "speed": 38.0,
+        "gravity": 0.0,
+        "splash_radius": 5.0,
+        "splash_damage": 120
+      },
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.09,
+          -0.4
+        ],
+        "ads_fov": 65,
+        "ads_speed": 6.0,
+        "recoil_back": 0.15,
+        "recoil_pitch": 10.0,
+        "ads_spread_mult": 1.0,
+        "scope": false
+      }
+    },
+    "grenade_launcher": {
+      "damage": 80,
+      "fire_rate": 1.5,
+      "mag_size": 6,
+      "reload_time": 3.5,
+      "spread": 0.01,
+      "projectile": {
+        "kind": "grenade",
+        "speed": 24.0,
+        "gravity": 14.0,
+        "splash_radius": 4.0,
+        "splash_damage": 80
+      },
+      "view": {
+        "ads_position": [
+          0.0,
+          -0.08,
+          -0.4
+        ],
+        "ads_fov": 65,
+        "ads_speed": 7.0,
+        "recoil_back": 0.1,
+        "recoil_pitch": 8.0,
+        "ads_spread_mult": 1.0,
+        "scope": false
+      }
+    }
+  }
+}

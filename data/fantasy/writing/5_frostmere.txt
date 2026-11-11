@@ -1,0 +1,137 @@
+# FROSTMERE  (region 5 of 8, creature levels 25-32)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[region frostmere]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: Frostmere
+about: Snow to the knee and a town of blue ice roofs under the peaks. The lake has not thawed in three summers.
+
+# ---------------- PLACES AND WATERS OF FROSTMERE ----------------
+
+[place rimegate]
+# WHAT: a town.
+name: Rimegate
+
+[place colossus_steps]
+# WHAT: the ground where this region's boss waits.
+name: The Colossus Steps
+
+[place hollin]
+# WHAT: a farming village.
+name: Hollin
+
+[lake mirror_tarn]
+# WHAT: a lake (fresh water: its own fish).
+name: Mirror Tarn
+
+[lake white_eye]
+# WHAT: a pond (fresh water: its own fish).
+name: The White Eye
+
+# ---------------- PEOPLE OF FROSTMERE ----------------
+
+[folk frostmere]
+# WHO: the ordinary people of Frostmere, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: Trapper
+says: Keep your fire fed and your door shut.
+says: The tarn is a mirror until something looks back.
+says: Frostpine burns slow. That's the point of it.
+says: The Colossus walks when the cold is angry.
+
+[person archivist_solenne]
+# WHO: quest giver at Rimegate. Gives: The Archive (m21), The Rime Colossus (m23).
+name: Archivist Solenne
+# Archivist Solenne says this when a player walks up and talks:
+greeting: The long spells are all still in the archive. Nobody alive can say them from memory. You might.
+
+[person trapper_hakon]
+# WHO: quest giver at Rimegate. Gives: The Frozen Road (m20), Cracks in the Ice (m22), Cold Catch (s06).
+name: Trapper Hakon
+# Trapper Hakon says this when a player walks up and talks:
+greeting: Wolves I understand. The thing on the steps is not a wolf.
+
+# ---------------- QUESTS GIVEN IN FROSTMERE ----------------
+
+[quest m20]
+# CHAPTER 5 of the main story. GIVEN BY: Trapper Hakon. NEEDS FIRST: m19. REWARD: 800 Magic xp.
+title: The Frozen Road
+# Trapper Hakon says this when offering the quest:
+offer: You're a long way from the wheat. Road's shut by wolves. Open it and the gate will open for you.
+# Step 1 shows this in the quest list. The player must: arrive at Rimegate.
+step 1: Climb north to Rimegate in Frostmere
+# Step 2 shows this in the quest list. The player must: defeat 10 x Frost Wolf.
+step 2: Hunt frost wolves on the road
+# Trapper Hakon says this when the quest is finished:
+done: Pelts for the town and a road for the traders.
+
+[quest m21]
+# CHAPTER 5 of the main story. GIVEN BY: Archivist Solenne. NEEDS FIRST: m20. REWARD: 700 Magic xp, teaches the long spell Phoenix Rite.
+title: The Archive
+# Archivist Solenne says this when offering the quest:
+offer: The long spells are written here. They are exact: one element out of place and you get a puddle. Light my lamps and I will read you the first.
+# Step 1 shows this in the quest list. The player must: hold 5 x Frost Crystal and hand them over.
+step 1: Mine frost crystals for the archive lamps
+# Archivist Solenne says this when the quest is finished:
+done: Phoenix Rite: Fire, Fire, Air, Water, Fire, Fire, Air. Say it back. Again. It is in your quest log, but the log will not be open in a fight.
+
+[quest m22]
+# CHAPTER 5 of the main story. GIVEN BY: Trapper Hakon. NEEDS FIRST: m21. REWARD: 1000 Magic xp.
+title: Cracks in the Ice
+# Trapper Hakon says this when offering the quest:
+offer: The golems come off the steps at night. Heat's the answer, and the archivist says you carry a lot of it now.
+# Step 1 shows this in the quest list. The player must: defeat 8 x Ice Golem.
+step 1: Shatter ice golems
+# Step 2 shows this in the quest list. The player must: cast the long spell Phoenix Rite, 1 time(s).
+step 2: Cast the Phoenix Rite from memory
+# Trapper Hakon says this when the quest is finished:
+done: I felt that from here.
+
+[quest m23]
+# CHAPTER 5 of the main story. GIVEN BY: Archivist Solenne. NEEDS FIRST: m22. REWARD: 3000 Magic xp, 1 x White Pigment, one more element slot, teaches the long spell Absolute Zero.
+title: The Rime Colossus
+# Archivist Solenne says this when offering the quest:
+offer: White was a colour here, once: clean snow, not this dead frost. The Colossus held it. Bring it back.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Rime Colossus.
+step 1: Defeat the Rime Colossus on the Colossus Steps
+# Archivist Solenne says this when the quest is finished:
+done: Snow that sparkles. And for you, the cold itself: Absolute Zero. Water, Air, Water, Air, Air, Water, Air, Water.
+
+[quest s06]
+# SIDE QUEST. GIVEN BY: Trapper Hakon. NEEDS FIRST: m20. REWARD: 900 Fishing xp, 900 Cooking xp.
+title: Cold Catch
+# Trapper Hakon says this when offering the quest:
+offer: Cut a hole, drop a line, don't fall in.
+# Step 1 shows this in the quest list. The player must: hold 5 x Icefin and hand them over.
+step 1: Catch icefin through the lake ice
+# Step 2 shows this in the quest list. The player must: hold 2 x Icefin Stew.
+step 2: Cook Icefin Stew
+# Trapper Hakon says this when the quest is finished:
+done: Stew like that keeps a man alive up here.
+
+# ---------------- CREATURES OF FROSTMERE ----------------
+
+[creature frost_wolf]
+# WHAT: a common creature, level 25.
+name: Frost Wolf
+
+[creature ice_golem]
+# WHAT: a common creature, level 29.
+name: Ice Golem
+
+[creature rime_colossus]
+# WHO: the BOSS of this region, level 32.
+name: The Rime Colossus
+# One of its own attacks (a zones); the name flashes on screen as a warning:
+move frozen_ground: Frozen Ground
+# One of its own attacks (a slam); the name flashes on screen as a warning:
+move shatter: Shatter

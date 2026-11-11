@@ -1,0 +1,47 @@
+{
+ "version": 1,
+ "skills": {
+  "nova_burst": {
+   "name": "Nova Burst",
+   "desc": "Ring blast around you: radius {radius} m, x{damage} gun damage, knocks enemies back.",
+   "tags": ["CROWD"],
+   "cooldown": [28, 20],
+   "params": {"radius": [6, 9], "damage": [3, 5], "knock": [8, 14]}
+  },
+  "chain_lightning": {
+   "name": "Chain Lightning",
+   "desc": "Lightning hits your target and jumps to {jumps} more enemies, x{damage} gun damage, shocked enemies take +{vuln}% damage for 4 s.",
+   "tags": ["SHOCK"],
+   "cooldown": [20, 14],
+   "params": {"jumps": [6, 10], "damage": [2, 3], "keep": [0.8, 0.9], "jump_range": [8, 10], "vuln": [10, 20]}
+  },
+  "gravity_well": {
+   "name": "Gravity Well",
+   "desc": "Throw an orb: pulls enemies within {radius} m for {seconds} s, then detonates for x{damage} gun damage.",
+   "tags": ["CROWD", "EXPLOSIVE"],
+   "cooldown": [34, 26],
+   "params": {"radius": [6, 8], "seconds": [3, 5], "pull": [6, 9], "damage": [4, 6]}
+  },
+  "frost_pulse": {
+   "name": "Frost Pulse",
+   "desc": "Freezes enemies within {radius} m for {seconds} s (bosses are only slowed). Frozen enemies take +{vuln}% damage.",
+   "tags": ["FROST", "CROWD"],
+   "cooldown": [38, 28],
+   "params": {"radius": [8, 12], "seconds": [2.5, 4], "vuln": [25, 40], "boss_slow": [0.5, 0.7]}
+  },
+  "swarm_drones": {
+   "name": "Swarm Drones",
+   "desc": "{drones} drones shoot the nearest enemies for {seconds} s, each shot {damage} of your gun damage.",
+   "tags": ["SUMMON"],
+   "cooldown": [36, 26],
+   "params": {"drones": [3, 4], "seconds": [10, 14], "damage": [0.2, 0.3], "shots_per_second": [2, 2], "range": [25, 25]}
+  },
+  "rally_cry": {
+   "name": "Rally Cry",
+   "desc": "For {seconds} s you deal +{damage}% damage and heal {regen}% max health per second.",
+   "tags": ["TEAM", "HEAL"],
+   "cooldown": [45, 34],
+   "params": {"seconds": [8, 8], "damage": [20, 30], "regen": [2, 4]}
+  }
+ }
+}

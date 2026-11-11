@@ -1,0 +1,540 @@
+{
+ "version": 2,
+ "slots": [
+  "barrel",
+  "mag",
+  "sight",
+  "muzzle",
+  "grip"
+ ],
+ "bodies": {
+  "pistol_basic": {
+   "name": "Pistol",
+   "slots": [
+    "barrel",
+    "mag",
+    "sight",
+    "muzzle"
+   ],
+   "part_scale": 0.6
+  },
+  "sniper_basic": {
+   "name": "Sniper Rifle",
+   "slots": [
+    "barrel",
+    "mag",
+    "sight",
+    "muzzle",
+    "grip"
+   ]
+  },
+  "ak47": {
+   "name": "AK-47",
+   "slots": [
+    "barrel",
+    "mag",
+    "sight",
+    "muzzle",
+    "grip"
+   ]
+  },
+  "m16": {
+   "name": "M16",
+   "slots": [
+    "barrel",
+    "mag",
+    "sight",
+    "muzzle",
+    "grip"
+   ]
+  },
+  "m60": {
+   "name": "M60",
+   "slots": [
+    "barrel",
+    "mag",
+    "sight",
+    "muzzle",
+    "grip"
+   ]
+  },
+  "shotgun_double": {
+   "name": "Double Shotgun",
+   "slots": [
+    "barrel",
+    "muzzle",
+    "grip"
+   ]
+  },
+  "rocket_launcher": {
+   "name": "Rocket Launcher",
+   "slots": [
+    "sight",
+    "grip"
+   ],
+   "part_scale": 1.3
+  },
+  "grenade_launcher": {
+   "name": "Grenade Launcher",
+   "slots": [
+    "sight",
+    "grip"
+   ]
+  }
+ },
+ "parts": {
+  "barrel": {
+   "long": {
+    "name": "Long Barrel",
+    "model": "barrel_long",
+    "mods": {
+     "spread": -0.25,
+     "damage": 0.05,
+     "fire_rate": -0.05
+    },
+    "view": {
+     "barrel_scale": [
+      1.0,
+      1.22
+     ]
+    }
+   },
+   "short": {
+    "name": "Short Barrel",
+    "model": "barrel_short",
+    "mods": {
+     "spread": 0.15,
+     "fire_rate": 0.1
+    },
+    "view": {
+     "barrel_scale": [
+      1.0,
+      0.78
+     ]
+    }
+   },
+   "heavy": {
+    "name": "Heavy Barrel",
+    "model": "barrel_heavy",
+    "mods": {
+     "damage": 0.15,
+     "fire_rate": -0.1,
+     "spread": -0.1
+    },
+    "view": {
+     "barrel_scale": [
+      1.45,
+      1.0
+     ]
+    }
+   }
+  },
+  "mag": {
+   "extended": {
+    "name": "Extended Mag",
+    "model": "mag_extended",
+    "mods": {
+     "mag_size": 0.5,
+     "reload_time": 0.1
+    },
+    "view": {
+     "model": "mag_extended"
+    }
+   },
+   "drum": {
+    "name": "Drum Mag",
+    "model": "mag_drum",
+    "mods": {
+     "mag_size": 1.0,
+     "reload_time": 0.3,
+     "fire_rate": -0.05
+    },
+    "view": {
+     "model": "mag_drum"
+    }
+   },
+   "fast": {
+    "name": "Fast Mag",
+    "model": "mag_fast",
+    "mods": {
+     "reload_time": -0.3,
+     "mag_size": -0.1
+    },
+    "view": {
+     "model": "mag_fast"
+    }
+   }
+  },
+  "sight": {
+   "red_dot": {
+    "name": "Red Dot",
+    "model": "sight_red_dot",
+    "mods": {
+     "spread": -0.1,
+     "ads_fov": -0.1
+    },
+    "view": {
+     "model": "sight_red_dot",
+     "eye": 0.04
+    }
+   },
+   "acog": {
+    "name": "ACOG",
+    "model": "sight_acog",
+    "mods": {
+     "spread": -0.2,
+     "ads_fov": -0.35
+    },
+    "view": {
+     "model": "sight_acog",
+     "eye": 0.042
+    }
+   },
+   "holo": {
+    "name": "Holo",
+    "model": "sight_holo",
+    "mods": {
+     "spread": -0.15,
+     "crit_chance": 0.03,
+     "ads_fov": -0.15
+    },
+    "view": {
+     "model": "sight_holo",
+     "eye": 0.038
+    }
+   }
+  },
+  "muzzle": {
+   "silencer": {
+    "name": "Silencer",
+    "model": "muzzle_silencer",
+    "mods": {
+     "damage": -0.05,
+     "spread": -0.1
+    },
+    "view": {
+     "model": "muzzle_silencer"
+    }
+   },
+   "compensator": {
+    "name": "Compensator",
+    "model": "muzzle_comp",
+    "mods": {
+     "recoil": -0.3
+    },
+    "view": {
+     "model": "muzzle_comp"
+    }
+   },
+   "flash_hider": {
+    "name": "Flash Hider",
+    "model": "muzzle_flash_hider",
+    "mods": {
+     "spread": -0.05,
+     "recoil": -0.1
+    },
+    "view": {
+     "model": "muzzle_flash_hider"
+    }
+   }
+  },
+  "grip": {
+   "vertical": {
+    "name": "Vertical Grip",
+    "model": "grip_vertical",
+    "mods": {
+     "recoil": -0.25,
+     "spread": -0.05
+    },
+    "view": {
+     "model": "grip_vertical"
+    }
+   },
+   "angled": {
+    "name": "Angled Grip",
+    "model": "grip_angled",
+    "mods": {
+     "spread": -0.05,
+     "reload_time": -0.05
+    },
+    "view": {
+     "model": "grip_angled"
+    }
+   },
+   "stubby": {
+    "name": "Stubby Grip",
+    "model": "grip_stubby",
+    "mods": {
+     "fire_rate": 0.05,
+     "recoil": -0.1
+    },
+    "view": {
+     "model": "grip_stubby"
+    }
+   }
+  }
+ },
+ "_about": "Parts change stats on their own ('mods': fractions added to the stat multiplier; a part's maker strengthens its focus stats, data/manufacturers.json part_boost). 'combos' = what certain parts do TOGETHER on one gun (core/gun_combos.gd): 'needs' lists slot -> kind, 'mods' are extra stat changes, 'buffs' give a buff effect of data/gun_loot.json at that value (added to a rolled buff of the same kind), 'name' is put into the gun's name. 'matched' = bonus when that many parts come from the gun's own manufacturer. All numbers are placeholders to tune. 'view' on a part: how it is shown on the gun model (game/gun_parts_view.gd): 'model' file in assets/models/weapons/parts/, or 'barrel_scale' [thickness, length] for barrels. A body's 'part_scale' sizes attached parts.",
+ "combos": [
+  {
+   "id": "marksmans_dream",
+   "name": "Deadeye",
+   "needs": {
+    "barrel": "long",
+    "sight": "acog",
+    "muzzle": "silencer"
+   },
+   "mods": {
+    "crit_chance": 0.08,
+    "spread": -0.2
+   },
+   "buffs": {
+    "crit_damage": 40
+   },
+   "desc": "Long barrel, ACOG and silencer: a precision build. +8% crit chance, tighter spread, critical hits deal +40% damage."
+  },
+  {
+   "id": "wall_of_lead",
+   "name": "Bulwark",
+   "needs": {
+    "barrel": "heavy",
+    "mag": "drum",
+    "grip": "vertical"
+   },
+   "mods": {
+    "mag_size": 0.5,
+    "damage": 0.1,
+    "recoil": -0.2,
+    "reload_time": 0.1
+   },
+   "desc": "Heavy barrel, drum and vertical grip: sustained fire. Bigger magazine, +10% damage, steadier, slower reload."
+  },
+  {
+   "id": "buzzsaw",
+   "name": "Buzzsaw",
+   "needs": {
+    "barrel": "short",
+    "mag": "drum",
+    "grip": "stubby"
+   },
+   "mods": {
+    "fire_rate": 0.25,
+    "spread": 0.2
+   },
+   "buffs": {
+    "free_shot": 12
+   },
+   "desc": "Short barrel, drum and stubby grip: spray. +25% fire rate, wider spread, 12% of shots cost no ammo."
+  },
+  {
+   "id": "sharpshooter",
+   "name": "Sharpshooter",
+   "needs": {
+    "barrel": "long",
+    "sight": "acog"
+   },
+   "mods": {
+    "spread": -0.15,
+    "crit_chance": 0.05
+   },
+   "desc": "Long barrel with an ACOG: tighter spread, +5% crit chance."
+  },
+  {
+   "id": "bullet_hose",
+   "name": "Hosepipe",
+   "needs": {
+    "barrel": "short",
+    "mag": "drum"
+   },
+   "mods": {
+    "fire_rate": 0.15,
+    "spread": 0.1
+   },
+   "desc": "Short barrel with a drum: +15% fire rate, wider spread."
+  },
+  {
+   "id": "whisper",
+   "name": "Whisper",
+   "needs": {
+    "muzzle": "silencer",
+    "sight": "red_dot"
+   },
+   "mods": {
+    "crit_chance": 0.06,
+    "recoil": -0.1
+   },
+   "desc": "Silencer with a red dot: +6% crit chance, less recoil."
+  },
+  {
+   "id": "anvil",
+   "name": "Anvil",
+   "needs": {
+    "barrel": "heavy",
+    "muzzle": "compensator"
+   },
+   "mods": {
+    "damage": 0.1,
+    "recoil": -0.15
+   },
+   "desc": "Heavy barrel with a compensator: +10% damage, less recoil."
+  },
+  {
+   "id": "quickdraw",
+   "name": "Quickdraw",
+   "needs": {
+    "mag": "fast",
+    "grip": "angled"
+   },
+   "mods": {
+    "reload_time": -0.15,
+    "fire_rate": 0.05
+   },
+   "desc": "Fast mag with an angled grip: much faster reload, +5% fire rate."
+  },
+  {
+   "id": "ghost",
+   "name": "Ghost",
+   "needs": {
+    "barrel": "long",
+    "muzzle": "silencer"
+   },
+   "mods": {
+    "damage": 0.08,
+    "spread": -0.1
+   },
+   "desc": "Long barrel with a silencer: +8% damage, tighter spread."
+  },
+  {
+   "id": "storm",
+   "name": "Storm",
+   "needs": {
+    "barrel": "short",
+    "grip": "stubby"
+   },
+   "mods": {
+    "fire_rate": 0.12,
+    "reload_time": -0.05
+   },
+   "desc": "Short barrel with a stubby grip: +12% fire rate, slightly faster reload."
+  },
+  {
+   "id": "overwatch",
+   "name": "Overwatch",
+   "needs": {
+    "sight": "acog",
+    "grip": "vertical"
+   },
+   "mods": {
+    "spread": -0.1,
+    "ads_fov": -0.1,
+    "crit_chance": 0.03
+   },
+   "desc": "ACOG with a vertical grip: steadier aim, more zoom, +3% crit chance."
+  },
+  {
+   "id": "firestarter",
+   "name": "Firestarter",
+   "needs": {
+    "barrel": "heavy",
+    "muzzle": "flash_hider"
+   },
+   "mods": {
+    "damage": 0.04
+   },
+   "buffs": {
+    "burn_chance": 10
+   },
+   "desc": "Heavy barrel with a flash hider: hot loads. +4% damage, 10% chance to set enemies on fire."
+  },
+  {
+   "id": "leech",
+   "name": "Leech",
+   "needs": {
+    "mag": "extended",
+    "sight": "holo"
+   },
+   "mods": {
+    "mag_size": 0.1
+   },
+   "buffs": {
+    "lifesteal": 1.5
+   },
+   "desc": "Extended mag with a holo sight: heal 1.5% of damage dealt, slightly bigger magazine."
+  },
+  {
+   "id": "shock_trooper",
+   "name": "Shocktrooper",
+   "needs": {
+    "mag": "fast",
+    "muzzle": "compensator"
+   },
+   "mods": {
+    "reload_time": -0.05
+   },
+   "buffs": {
+    "shock_chance": 10
+   },
+   "desc": "Fast mag with a compensator: 10% chance to shock nearby enemies, slightly faster reload."
+  },
+  {
+   "id": "scavenger",
+   "name": "Scavenger",
+   "needs": {
+    "mag": "extended",
+    "grip": "angled"
+   },
+   "mods": {
+    "reload_time": -0.05
+   },
+   "buffs": {
+    "reload_on_kill": 20
+   },
+   "desc": "Extended mag with an angled grip: kills refill 20% of the magazine."
+  },
+  {
+   "id": "brawler",
+   "name": "Brawler",
+   "needs": {
+    "sight": "holo",
+    "grip": "stubby"
+   },
+   "mods": {
+    "fire_rate": 0.06,
+    "crit_chance": 0.03
+   },
+   "buffs": {
+    "slow_on_hit": 12
+   },
+   "desc": "Holo sight with a stubby grip: close work. Hits slow enemies by 12%, +6% fire rate, +3% crit chance."
+  }
+ ],
+ "matched": [
+  {
+   "id": "matched_3",
+   "name": "",
+   "count": 3,
+   "mods": {
+    "damage": 0.04,
+    "fire_rate": 0.04,
+    "reload_time": -0.04,
+    "spread": -0.04,
+    "recoil": -0.04
+   },
+   "desc": "Factory matched (3 parts by the gun's maker): 4% better across the board."
+  },
+  {
+   "id": "matched_5",
+   "name": "",
+   "count": 5,
+   "mods": {
+    "damage": 0.08,
+    "fire_rate": 0.08,
+    "reload_time": -0.08,
+    "spread": -0.08,
+    "recoil": -0.08,
+    "crit_chance": 0.02
+   },
+   "desc": "Factory perfect (every part by the gun's maker): 8% better across the board, +2% crit chance."
+  }
+ ]
+}

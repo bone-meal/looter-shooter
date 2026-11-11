@@ -1,0 +1,37 @@
+{
+ "_about": "Jobs for tools/pack_fetch.tscn. 'downloads' are packs with a plain zip link on a web page (the zip is saved as assets/cc0/_zips/<id>.zip). Packs behind a click-through page (itch.io) are downloaded by hand and dropped into assets/cc0/_zips/. Every zip in that folder is unpacked into assets/cc0/packs/<name>/, keeping only 'unpack_extensions' and never a path containing one of 'skip_paths_containing' (lower case). FBX files are kept only outside the Unity folders (the first animation library has its Unreal-named skeleton only as FBX, which Godot 4.6 imports itself).",
+ "downloads": [
+  {
+   "id": "universal_animation_library",
+   "page": "https://opengameart.org/content/universal-animation-library",
+   "match": "universal_animation_library"
+  },
+  {
+   "id": "universal_animation_library_2",
+   "page": "https://opengameart.org/content/universal-animation-library-2",
+   "match": "universal_animation_library_2"
+  }
+ ],
+ "unpack_extensions": [
+  "glb",
+  "gltf",
+  "bin",
+  "png",
+  "jpg",
+  "jpeg",
+  "txt",
+  "fbx"
+ ],
+ "skip_paths_containing": [
+  "fbx (unity)",
+  "/unity/",
+  "normals-unrealengine",
+  "unreal-engine-readme",
+  "_setup.png",
+  "preview.",
+  "__macosx",
+  "fbx (unreal engine)"
+ ],
+ "texture_size_limit": 2048,
+ "bundle_path": "res://assets/cc0/_zips/_packs_bundle.zip"
+}

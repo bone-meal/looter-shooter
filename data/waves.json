@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "max_alive": 10,
+  "spawn_interval": 0.8,
+  "wave_delay": 4.0,
+  "reset_after_clear_seconds": 30,
+  "waves": [
+    {"chaser": 3},
+    {"chaser": 4, "shooter": 2},
+    {"chaser": 4, "shooter": 4},
+    {"boss": 1, "chaser": 4}
+  ]
+}

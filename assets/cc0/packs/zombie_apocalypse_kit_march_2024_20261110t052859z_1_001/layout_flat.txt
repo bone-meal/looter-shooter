@@ -1,0 +1,1 @@
+Unpacked by tools/pack_fetch.tscn: one flat folder per folder of the zip.

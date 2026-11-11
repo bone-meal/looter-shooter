@@ -1,0 +1,702 @@
+{
+ "version": 1,
+ "_about": "Staff magic of the fantasy world (rules: core/spell_book.gd). Hold the shoot key with a staff to channel; each element key adds one element to the box; releasing casts. The FIRST element decides the form (how the magic travels), the SET of elements decides the substance (what it is made of), the AMOUNT decides the size. Secrets are exact long sequences that override all of that. Every number and name here is a placeholder for the director. caster: the mana pool and its refill per second, and the health each Magic level adds. Names and descriptions are in data/fantasy/writing/spells.txt. look = how a substance's or secret's flying bits appear (game/spell_motes.gd): shape (drop, flame, rock, gust, puff, shard, leaf, spark, grain, prism, blob), second = the colour they fade into, size = how large against the default; a secret's also = a second shape mixed in.",
+ "elements": {
+  "W": {
+   "action": "element_water",
+   "color": [
+    0.25,
+    0.6,
+    1.0
+   ],
+   "mana": 6
+  },
+  "F": {
+   "action": "element_fire",
+   "color": [
+    1.0,
+    0.42,
+    0.12
+   ],
+   "mana": 6
+  },
+  "E": {
+   "action": "element_earth",
+   "color": [
+    0.55,
+    0.42,
+    0.22
+   ],
+   "mana": 6
+  },
+  "A": {
+   "action": "element_air",
+   "color": [
+    0.82,
+    0.95,
+    1.0
+   ],
+   "mana": 6
+  }
+ },
+ "base_slots": 3,
+ "max_slots": 12,
+ "damage_power": 1.25,
+ "forms": {
+  "W": {
+   "id": "jet",
+   "damage_mult": 1.0,
+   "range": 24.0,
+   "seconds": 0.6,
+   "seconds_per_element": 0.15,
+   "width": 0.5
+  },
+  "F": {
+   "id": "bolt",
+   "damage_mult": 1.15,
+   "speed": 26.0,
+   "range": 60.0,
+   "radius": 1.6,
+   "radius_per_element": 0.6
+  },
+  "E": {
+   "id": "ground",
+   "damage_mult": 1.3,
+   "range": 40.0,
+   "radius": 2.2,
+   "radius_per_element": 0.5,
+   "seconds": 2.0
+  },
+  "A": {
+   "id": "wave",
+   "damage_mult": 0.85,
+   "radius": 6.0,
+   "radius_per_element": 1.2,
+   "angle": 70.0
+  }
+ },
+ "substances": {
+  "W": {
+   "color": [
+    0.25,
+    0.6,
+    1.0
+   ],
+   "damage": 9,
+   "effects": {
+    "push": 4.0,
+    "wet": 4.0
+   },
+   "look": {
+    "shape": "drop",
+    "second": [
+     0.75,
+     0.9,
+     1.0
+    ],
+    "size": 1.0
+   }
+  },
+  "F": {
+   "color": [
+    1.0,
+    0.42,
+    0.12
+   ],
+   "damage": 11,
+   "effects": {
+    "burn": 3.0
+   },
+   "look": {
+    "shape": "flame",
+    "second": [
+     0.9,
+     0.1,
+     0.02
+    ],
+    "size": 1.0
+   }
+  },
+  "E": {
+   "color": [
+    0.6,
+    0.5,
+    0.36
+   ],
+   "damage": 14,
+   "effects": {
+    "stagger": 0.35
+   },
+   "look": {
+    "shape": "rock",
+    "second": [
+     0.3,
+     0.24,
+     0.18
+    ],
+    "size": 1.1
+   }
+  },
+  "A": {
+   "color": [
+    0.85,
+    0.96,
+    1.0
+   ],
+   "damage": 6,
+   "effects": {
+    "push": 9.0
+   },
+   "look": {
+    "shape": "gust",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.2
+   }
+  },
+  "FW": {
+   "color": [
+    0.95,
+    0.75,
+    0.7
+   ],
+   "damage": 12,
+   "effects": {
+    "burn": 2.0,
+    "wet": 4.0
+   },
+   "look": {
+    "shape": "puff",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.1
+   }
+  },
+  "AW": {
+   "color": [
+    0.7,
+    0.9,
+    1.0
+   ],
+   "damage": 10,
+   "effects": {
+    "slow": 0.45,
+    "freeze_at": 3
+   },
+   "look": {
+    "shape": "shard",
+    "second": [
+     0.3,
+     0.6,
+     1.0
+    ],
+    "size": 1.0
+   }
+  },
+  "EW": {
+   "color": [
+    0.35,
+    0.7,
+    0.3
+   ],
+   "damage": 9,
+   "effects": {
+    "slow": 0.6,
+    "leech": 0.25
+   },
+   "look": {
+    "shape": "leaf",
+    "second": [
+     0.75,
+     0.85,
+     0.2
+    ],
+    "size": 0.9
+   }
+  },
+  "AF": {
+   "color": [
+    1.0,
+    0.95,
+    0.5
+   ],
+   "damage": 13,
+   "effects": {
+    "chain": 2,
+    "shock": 1.0
+   },
+   "look": {
+    "shape": "spark",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.3
+   }
+  },
+  "EF": {
+   "color": [
+    1.0,
+    0.3,
+    0.05
+   ],
+   "damage": 13,
+   "effects": {
+    "burn": 4.0,
+    "pool": 3.0
+   },
+   "look": {
+    "shape": "blob",
+    "second": [
+     0.5,
+     0.04,
+     0.0
+    ],
+    "size": 1.0
+   }
+  },
+  "AE": {
+   "color": [
+    0.9,
+    0.78,
+    0.5
+   ],
+   "damage": 8,
+   "effects": {
+    "slow": 0.3,
+    "weaken": 1.35
+   },
+   "look": {
+    "shape": "grain",
+    "second": [
+     0.6,
+     0.45,
+     0.25
+    ],
+    "size": 0.5
+   }
+  },
+  "AFW": {
+   "color": [
+    0.92,
+    0.92,
+    0.95
+   ],
+   "damage": 14,
+   "effects": {
+    "burn": 2.5,
+    "weaken": 1.25,
+    "cloud": 3.0
+   },
+   "look": {
+    "shape": "puff",
+    "second": [
+     0.55,
+     0.55,
+     0.6
+    ],
+    "size": 1.5
+   }
+  },
+  "EFW": {
+   "color": [
+    0.6,
+    0.85,
+    0.95
+   ],
+   "damage": 16,
+   "effects": {
+    "launch": 7.0,
+    "burn": 2.0
+   },
+   "look": {
+    "shape": "drop",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.3
+   }
+  },
+  "AEW": {
+   "color": [
+    0.6,
+    1.0,
+    0.6
+   ],
+   "damage": 0,
+   "heal": 14,
+   "effects": {
+    "regen": 4.0
+   },
+   "look": {
+    "shape": "leaf",
+    "second": [
+     1.0,
+     0.95,
+     0.7
+    ],
+    "size": 0.8
+   }
+  },
+  "AEF": {
+   "color": [
+    1.0,
+    0.55,
+    0.2
+   ],
+   "damage": 18,
+   "effects": {
+    "burn": 3.0,
+    "stagger": 0.5
+   },
+   "look": {
+    "shape": "rock",
+    "second": [
+     1.0,
+     0.35,
+     0.05
+    ],
+    "size": 1.4
+   }
+  },
+  "AEFW": {
+   "color": [
+    1.0,
+    0.8,
+    1.0
+   ],
+   "damage": 20,
+   "effects": {
+    "burn": 2.0,
+    "slow": 0.3,
+    "weaken": 1.2,
+    "chain": 1
+   },
+   "look": {
+    "shape": "prism",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.0
+   }
+  }
+ },
+ "tiers": [
+  {
+   "count": 1
+  },
+  {
+   "count": 2
+  },
+  {
+   "count": 3
+  },
+  {
+   "count": 4
+  },
+  {
+   "count": 5
+  },
+  {
+   "count": 7
+  },
+  {
+   "count": 9
+  }
+ ],
+ "secrets": [
+  {
+   "id": "katrina",
+   "sequence": "AWAAWAWWA",
+   "kind": "storm",
+   "color": [
+    0.6,
+    0.75,
+    0.9
+   ],
+   "damage": 40,
+   "radius": 22.0,
+   "seconds": 14.0,
+   "effects": {
+    "pull": 6.0,
+    "wet": 6.0,
+    "chain": 3,
+    "slow": 0.4
+   },
+   "look": {
+    "shape": "gust",
+    "second": [
+     0.5,
+     0.7,
+     1.0
+    ],
+    "size": 1.6,
+    "also": "drop"
+   }
+  },
+  {
+   "id": "starfall",
+   "sequence": "FEFEAFEF",
+   "kind": "meteors",
+   "color": [
+    1.0,
+    0.5,
+    0.15
+   ],
+   "damage": 120,
+   "radius": 18.0,
+   "seconds": 6.0,
+   "count": 14,
+   "effects": {
+    "burn": 4.0,
+    "stagger": 0.6
+   },
+   "look": {
+    "shape": "rock",
+    "second": [
+     1.0,
+     0.4,
+     0.05
+    ],
+    "size": 1.6,
+    "also": "flame"
+   }
+  },
+  {
+   "id": "leviathan",
+   "sequence": "WWAWWEWW",
+   "kind": "tsunami",
+   "color": [
+    0.2,
+    0.5,
+    0.95
+   ],
+   "damage": 150,
+   "radius": 9.0,
+   "range": 60.0,
+   "effects": {
+    "push": 16.0,
+    "wet": 8.0
+   },
+   "look": {
+    "shape": "drop",
+    "second": [
+     0.9,
+     1.0,
+     1.0
+    ],
+    "size": 1.8,
+    "also": "puff"
+   }
+  },
+  {
+   "id": "worldbreaker",
+   "sequence": "EEFEEAEEE",
+   "kind": "quake",
+   "color": [
+    0.6,
+    0.45,
+    0.25
+   ],
+   "damage": 180,
+   "radius": 20.0,
+   "seconds": 3.0,
+   "effects": {
+    "stagger": 2.0,
+    "weaken": 1.4
+   },
+   "look": {
+    "shape": "rock",
+    "second": [
+     0.25,
+     0.2,
+     0.15
+    ],
+    "size": 1.8,
+    "also": "grain"
+   }
+  },
+  {
+   "id": "absolute_zero",
+   "sequence": "WAWAAWAW",
+   "kind": "nova",
+   "color": [
+    0.75,
+    0.93,
+    1.0
+   ],
+   "damage": 90,
+   "radius": 18.0,
+   "effects": {
+    "freeze": 6.0,
+    "weaken": 1.5
+   },
+   "look": {
+    "shape": "shard",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.5,
+    "also": "puff"
+   }
+  },
+  {
+   "id": "judgement",
+   "sequence": "FAFAAFAFA",
+   "kind": "barrage",
+   "color": [
+    1.0,
+    0.97,
+    0.6
+   ],
+   "damage": 85,
+   "radius": 30.0,
+   "count": 12,
+   "effects": {
+    "shock": 2.0
+   },
+   "look": {
+    "shape": "spark",
+    "second": [
+     1.0,
+     1.0,
+     0.7
+    ],
+    "size": 1.8,
+    "also": "spark"
+   }
+  },
+  {
+   "id": "phoenix_rite",
+   "sequence": "FFAWFFA",
+   "kind": "nova",
+   "color": [
+    1.0,
+    0.6,
+    0.2
+   ],
+   "damage": 100,
+   "radius": 12.0,
+   "heal": 1000,
+   "effects": {
+    "burn": 5.0
+   },
+   "look": {
+    "shape": "flame",
+    "second": [
+     1.0,
+     0.85,
+     0.2
+    ],
+    "size": 1.6,
+    "also": "leaf"
+   }
+  },
+  {
+   "id": "genesis_rain",
+   "sequence": "WEAWEAWE",
+   "kind": "storm",
+   "color": [
+    0.55,
+    1.0,
+    0.65
+   ],
+   "damage": 0,
+   "heal": 60,
+   "radius": 16.0,
+   "seconds": 10.0,
+   "effects": {
+    "regen": 10.0
+   },
+   "look": {
+    "shape": "leaf",
+    "second": [
+     0.6,
+     1.0,
+     0.7
+    ],
+    "size": 1.2,
+    "also": "drop"
+   }
+  },
+  {
+   "id": "prism_lance",
+   "sequence": "WFEAWFEA",
+   "kind": "lance",
+   "color": [
+    1.0,
+    0.85,
+    1.0
+   ],
+   "damage": 420,
+   "range": 90.0,
+   "radius": 2.0,
+   "effects": {
+    "burn": 3.0,
+    "slow": 0.5,
+    "weaken": 1.3
+   },
+   "look": {
+    "shape": "prism",
+    "second": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "size": 1.5,
+    "also": "prism"
+   }
+  },
+  {
+   "id": "eclipse",
+   "sequence": "AEFWWFEAAEFW",
+   "kind": "storm",
+   "color": [
+    0.5,
+    0.25,
+    0.7
+   ],
+   "damage": 110,
+   "radius": 34.0,
+   "seconds": 12.0,
+   "effects": {
+    "pull": 3.0,
+    "burn": 4.0,
+    "slow": 0.5,
+    "weaken": 1.5,
+    "chain": 4
+   },
+   "look": {
+    "shape": "blob",
+    "second": [
+     0.25,
+     0.0,
+     0.4
+    ],
+    "size": 1.4,
+    "also": "grain"
+   }
+  }
+ ],
+ "caster": {
+  "mana_base": 60,
+  "mana_per_level": 4,
+  "regen": 5.0,
+  "regen_per_level": 0.2,
+  "hp_per_level": 20,
+  "damage_per_level": 0.06
+ }
+}

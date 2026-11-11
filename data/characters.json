@@ -1,0 +1,380 @@
+{
+ "_about": "Rigged characters (realistic look). Everything is built from the CC0 Quaternius packs unpacked by tools/pack_fetch.tscn into assets/cc0/packs/. A character is an outfit model (its skeleton is the character's skeleton) plus the head cut from a base body, eyes, eyebrows and a hairstyle. Animations are baked onto each skeleton by tools/anim_bake.tscn into assets/anim/<skeleton>.res. Adult bodies only. Characters are always clothed: there is no outfit-less option. A player's look picks 'rig_outfit' and 'rig_hair' from the ids below (core/appearance_db.gd checks them; 'defaults' is used for anything else). 'hood_hair' = the hairstyle shown under that outfit's hood whatever the player picked. 'head_anchor' = where the old head centre would be on this body (model space, metres): things worn on the face (cigarette) hang from it. 'motion' names the clips the game plays: idle, walk and run are blended by speed ('walk_at' = the speed fraction that is a pure walk), 'hold' is the arms pose while a weapon is out (only 'upper_body' bones take it). 'hand_grip' = where a held weapon's origin sits from the right wrist (metres: x to the character's right, y along the hand, z up). 'third_person_hold' = where the local player's own weapon sits from the camera pivot in third person so it meets those hands. 'npc' = what staff and the lifeguard wear on rigged bodies (game/npc_body.gd): outfit, how strongly their old uniform colour tints it, and which rigged hairstyle stands in for each old hairstyle id. An outfit's 'albedo' swaps in the pack's alternative colour texture for the same clothes. An 'albedo' starting with res:// is one of our own recoloured textures (assets/models/outfits/, made from the pack's texture: washed out, drab, dirty). A body's 'shape' = the slider areas in the clothes (game/body_shape.gd; model space metres, y up, +z front, mirrored left/right): 'weight' widens everything between heights 'from' and 'to' by 'amount' at slider 1.4; 'bust' / 'glutes' move the area around 'at' (radius) by 'push' at the top of the slider, 'bounce' is how far the area travels when it jiggles; 'neutral' is the slider value that leaves the clothes as modelled.",
+ "packs": "res://assets/cc0/packs/",
+ "skeletons": {
+  "female": {
+   "model": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+   "library": "res://assets/anim/female.res"
+  },
+  "male": {
+   "model": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf",
+   "library": "res://assets/anim/male.res"
+  }
+ },
+ "bodies": {
+  "female": {
+   "skeleton": "female",
+   "model": "universal_base_characters_standard/base_characters_godot_ue/Superhero_Female_FullBody.gltf",
+   "body_mesh": "Superhero_Female",
+   "head_bones": [
+    "Head",
+    "neck_01"
+   ],
+   "skin": "universal_base_characters_standard/base_characters_textures/T_Superhero_Female_Light_BaseColor.png",
+   "normal": "universal_base_characters_standard/base_characters_godot_ue/T_Superhero_Female_Normal.png",
+   "roughness": "universal_base_characters_standard/base_characters_godot_ue/T_Superhero_Female_Roughness.png",
+   "head_anchor": [
+    0.0,
+    1.535,
+    -0.028
+   ],
+   "shape": {
+    "neutral": 0.35,
+    "weight": {
+     "from": 0.45,
+     "to": 1.42,
+     "amount": 0.035
+    },
+    "bust": {
+     "at": [
+      0.08,
+      1.25,
+      0.1
+     ],
+     "radius": 0.1,
+     "push": [
+      0.008,
+      -0.006,
+      0.05
+     ],
+     "bounce": 0.035
+    },
+    "glutes": {
+     "at": [
+      0.085,
+      0.92,
+      -0.1
+     ],
+     "radius": 0.12,
+     "push": [
+      0.01,
+      0.0,
+      -0.05
+     ],
+     "bounce": 0.03
+    }
+   }
+  },
+  "male": {
+   "skeleton": "male",
+   "model": "universal_base_characters_standard/base_characters_godot_ue/Superhero_Male_FullBody.gltf",
+   "body_mesh": "SuperHero_Male",
+   "head_bones": [
+    "Head",
+    "neck_01"
+   ],
+   "skin": "universal_base_characters_standard/base_characters_textures/T_Superhero_Male_Ligh.png",
+   "normal": "universal_base_characters_standard/base_characters_godot_ue/T_Superhero_Male_Normal.png",
+   "roughness": "universal_base_characters_standard/base_characters_godot_ue/T_Superhero_Male_Roughness.png",
+   "head_anchor": [
+    0.0,
+    1.575,
+    -0.023
+   ],
+   "shape": {
+    "neutral": 0.0,
+    "weight": {
+     "from": 0.45,
+     "to": 1.48,
+     "amount": 0.04
+    },
+    "bust": {
+     "at": [
+      0.1,
+      1.33,
+      0.1
+     ],
+     "radius": 0.12,
+     "push": [
+      0.008,
+      0.0,
+      0.03
+     ],
+     "bounce": 0.015
+    },
+    "glutes": {
+     "at": [
+      0.09,
+      0.95,
+      -0.1
+     ],
+     "radius": 0.12,
+     "push": [
+      0.008,
+      0.0,
+      -0.035
+     ],
+     "bounce": 0.015
+    }
+   }
+  }
+ },
+ "eyes": {
+  "texture": "universal_base_characters_standard/base_characters_godot_ue/T_Eye_Brown.png"
+ },
+ "hair_folder": "universal_base_characters_standard/hairstyles_rigged_to_head_bone_gltf_godot_unreal/",
+ "hair_textures": {
+  "1": "universal_base_characters_standard/base_characters_godot_ue/T_Hair_1_BaseColor.png",
+  "2": "universal_base_characters_standard/base_characters_godot_ue/T_Hair_2_BaseColor.png"
+ },
+ "hair": {
+  "long": {
+   "name": "Long",
+   "models": {
+    "female": "Hair_Long.gltf",
+    "male": "Hair_Long.gltf"
+   },
+   "texture": "2"
+  },
+  "buns": {
+   "name": "Buns",
+   "models": {
+    "female": "Hair_Buns.gltf",
+    "male": "Hair_Buns.gltf"
+   },
+   "texture": "2"
+  },
+  "parted": {
+   "name": "Parted",
+   "models": {
+    "female": "Hair_SimpleParted.gltf",
+    "male": "Hair_SimpleParted.gltf"
+   },
+   "texture": "1"
+  },
+  "buzzed": {
+   "name": "Buzzed",
+   "models": {
+    "female": "Hair_BuzzedFemale.gltf",
+    "male": "Hair_Buzzed.gltf"
+   },
+   "texture": "1"
+  },
+  "none": {
+   "name": "Bald",
+   "models": {}
+  }
+ },
+ "outfits": {
+  "peasant": {
+   "name": "Settler",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   }
+  },
+  "peasant_2": {
+   "name": "Settler (second colours)",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "albedo": "modular_character_outfits_fantasy_standard/textures_peasant/T_Peasant_2_BaseColor.png"
+  },
+  "ranger": {
+   "name": "Scout",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "hood_hair": {
+    "female": "parted",
+    "male": "buzzed"
+   }
+  },
+  "ranger_3": {
+   "name": "Scout (second colours)",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "hood_hair": {
+    "female": "parted",
+    "male": "buzzed"
+   },
+   "albedo": "modular_character_outfits_fantasy_standard/textures_ranger/T_Ranger_3_BaseColor.png"
+  },
+  "peasant_wasteland": {
+   "name": "Wastelander",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Peasant.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Peasant.gltf"
+   },
+   "albedo": "res://assets/models/outfits/peasant_wasteland_albedo.png"
+  },
+  "ranger_wasteland": {
+   "name": "Drifter",
+   "models": {
+    "female": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Female_Ranger.gltf",
+    "male": "modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/Male_Ranger.gltf"
+   },
+   "hood_hair": {
+    "female": "parted",
+    "male": "buzzed"
+   },
+   "albedo": "res://assets/models/outfits/ranger_wasteland_albedo.png"
+  }
+ },
+ "animation_sources": [
+  {
+   "model": "universal_animation_library/godot/AnimationLibrary_Godot_Standard.glb",
+   "bones": "rigify",
+   "reference_clip": "A_TPose",
+   "clips": [
+    "Idle",
+    "Idle_Talking",
+    "Walk",
+    "Jog_Fwd",
+    "Sprint",
+    "Crouch_Idle",
+    "Crouch_Fwd",
+    "Jump_Start",
+    "Jump",
+    "Jump_Land",
+    "Roll",
+    "Pistol_Idle",
+    "Pistol_Aim_Neutral",
+    "Pistol_Aim_Up",
+    "Pistol_Aim_Down",
+    "Pistol_Shoot",
+    "Pistol_Reload",
+    "Hit_Chest",
+    "Hit_Head",
+    "Death01",
+    "Dance",
+    "Interact",
+    "Sitting_Idle",
+    "Swim_Idle",
+    "Swim_Fwd",
+    "Punch_Jab",
+    "Punch_Cross"
+   ]
+  },
+  {
+   "model": "universal_animation_library_2/unreal_godot/UAL2_Standard.glb",
+   "bones": "same",
+   "reference_clip": "A_TPose",
+   "clips": [
+    "Idle_FoldArms",
+    "Yes",
+    "Idle_No",
+    "Consume",
+    "OverhandThrow",
+    "Slide",
+    "Hit_Knockback",
+    "Melee_Hook",
+    "Chest_Open",
+    "Zombie_Idle",
+    "Zombie_Walk_Fwd",
+    "Zombie_Scratch"
+   ]
+  }
+ ],
+ "rigify_bones": {
+  "pelvis": "DEF-hips",
+  "spine_01": "DEF-spine.001",
+  "spine_02": "DEF-spine.002",
+  "spine_03": "DEF-spine.003",
+  "neck_01": "DEF-neck",
+  "Head": "DEF-head",
+  "clavicle": "DEF-shoulder",
+  "upperarm": "DEF-upper_arm",
+  "lowerarm": "DEF-forearm",
+  "hand": "DEF-hand",
+  "thigh": "DEF-thigh",
+  "calf": "DEF-shin",
+  "foot": "DEF-foot",
+  "ball": "DEF-toe",
+  "index": "DEF-f_index",
+  "middle": "DEF-f_middle",
+  "ring": "DEF-f_ring",
+  "pinky": "DEF-f_pinky",
+  "thumb": "DEF-thumb"
+ },
+ "bake_fps": 30,
+ "skin_reference": "#f1c27d",
+ "eyebrows": {
+  "female": {
+   "model": "Eyebrows_Female.gltf",
+   "texture": "2"
+  },
+  "male": {
+   "model": "Eyebrows_Regular.gltf",
+   "texture": "1"
+  }
+ },
+ "defaults": {
+  "female": {
+   "rig_outfit": "peasant",
+   "rig_hair": "long"
+  },
+  "male": {
+   "rig_outfit": "peasant",
+   "rig_hair": "parted"
+  }
+ },
+ "motion": {
+  "idle": "Idle",
+  "walk": "Walk",
+  "run": "Jog_Fwd",
+  "hold": "Pistol_Aim_Neutral",
+  "blend_seconds": 0.2,
+  "upper_body": [
+   "spine_02",
+   "spine_03",
+   "clavicle",
+   "upperarm",
+   "lowerarm",
+   "hand",
+   "index",
+   "middle",
+   "ring",
+   "pinky",
+   "thumb"
+  ],
+  "walk_at": 0.4,
+  "hand_grip": [
+   0.0,
+   0.02,
+   0.07
+  ],
+  "third_person_hold": [
+   0.12,
+   -0.15,
+   -0.37
+  ]
+ },
+ "npc": {
+  "outfit": "peasant",
+  "default_hair": "long",
+  "tint": 0.5,
+  "hair": {
+   "buzz": "buzzed",
+   "crop": "buzzed",
+   "undercut": "buzzed",
+   "sidepart": "parted",
+   "pompadour": "parted",
+   "spiky": "parted",
+   "mohawk": "parted",
+   "curly": "parted",
+   "mullet": "parted",
+   "bob": "parted",
+   "bangs": "parted",
+   "afro": "buns",
+   "twin_buns": "buns",
+   "bun": "buns",
+   "twin_tails": "buns",
+   "braids": "buns"
+  }
+ }
+}

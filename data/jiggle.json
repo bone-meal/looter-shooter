@@ -1,0 +1,11 @@
+{
+ "version": 1,
+ "frequency_hz": 6.0,
+ "damping": 0.1,
+ "gain": 40.0,
+ "max_offset": 0.07,
+ "max_accel": 120.0,
+ "squash": 0.35,
+ "amount_min": 0.8,
+ "amount_max": 1.8
+}

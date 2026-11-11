@@ -1,0 +1,405 @@
+{
+ "version": 1,
+ "expressions": [
+  {
+   "id": "neutral",
+   "name": "Neutral",
+   "eyes": "open",
+   "brows": "neutral",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "gentle_smile",
+   "name": "Gentle Smile",
+   "eyes": "open",
+   "brows": "neutral",
+   "mouth": "smile",
+   "extra": "none"
+  },
+  {
+   "id": "big_grin",
+   "name": "Big Grin",
+   "eyes": "open",
+   "brows": "raised",
+   "mouth": "grin",
+   "extra": "none"
+  },
+  {
+   "id": "happy",
+   "name": "Happy",
+   "eyes": "happy",
+   "brows": "neutral",
+   "mouth": "smile",
+   "extra": "none"
+  },
+  {
+   "id": "beaming",
+   "name": "Beaming",
+   "eyes": "happy",
+   "brows": "raised",
+   "mouth": "grin",
+   "extra": "blush"
+  },
+  {
+   "id": "laughing",
+   "name": "Laughing",
+   "eyes": "happy",
+   "brows": "raised",
+   "mouth": "open",
+   "extra": "none"
+  },
+  {
+   "id": "giggle",
+   "name": "Giggle",
+   "eyes": "happy",
+   "brows": "neutral",
+   "mouth": "cat",
+   "extra": "blush"
+  },
+  {
+   "id": "wink",
+   "name": "Wink",
+   "eyes": "wink",
+   "brows": "neutral",
+   "mouth": "smirk",
+   "extra": "none"
+  },
+  {
+   "id": "flirty_wink",
+   "name": "Flirty Wink",
+   "eyes": "wink",
+   "brows": "raised",
+   "mouth": "smile",
+   "extra": "blush"
+  },
+  {
+   "id": "smirk",
+   "name": "Smirk",
+   "eyes": "open",
+   "brows": "neutral",
+   "mouth": "smirk",
+   "extra": "none"
+  },
+  {
+   "id": "smug",
+   "name": "Smug",
+   "eyes": "half",
+   "brows": "raised",
+   "mouth": "smirk",
+   "extra": "none"
+  },
+  {
+   "id": "cool",
+   "name": "Cool",
+   "eyes": "half",
+   "brows": "neutral",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "sleepy",
+   "name": "Sleepy",
+   "eyes": "sleepy",
+   "brows": "neutral",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "yawn",
+   "name": "Yawn",
+   "eyes": "closed",
+   "brows": "neutral",
+   "mouth": "open",
+   "extra": "none"
+  },
+  {
+   "id": "dreamy",
+   "name": "Dreamy",
+   "eyes": "closed",
+   "brows": "neutral",
+   "mouth": "smile",
+   "extra": "blush"
+  },
+  {
+   "id": "content",
+   "name": "Content",
+   "eyes": "closed",
+   "brows": "neutral",
+   "mouth": "smile",
+   "extra": "none"
+  },
+  {
+   "id": "peaceful",
+   "name": "Peaceful",
+   "eyes": "closed",
+   "brows": "neutral",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "surprised",
+   "name": "Surprised",
+   "eyes": "wide",
+   "brows": "raised",
+   "mouth": "o",
+   "extra": "none"
+  },
+  {
+   "id": "shocked",
+   "name": "Shocked",
+   "eyes": "wide",
+   "brows": "raised",
+   "mouth": "open",
+   "extra": "sweat"
+  },
+  {
+   "id": "scared",
+   "name": "Scared",
+   "eyes": "wide",
+   "brows": "sad",
+   "mouth": "open",
+   "extra": "sweat"
+  },
+  {
+   "id": "terrified",
+   "name": "Terrified",
+   "eyes": "dot",
+   "brows": "sad",
+   "mouth": "open",
+   "extra": "sweat"
+  },
+  {
+   "id": "nervous",
+   "name": "Nervous",
+   "eyes": "open",
+   "brows": "sad",
+   "mouth": "wobble",
+   "extra": "sweat"
+  },
+  {
+   "id": "awkward",
+   "name": "Awkward",
+   "eyes": "side",
+   "brows": "neutral",
+   "mouth": "wobble",
+   "extra": "sweat"
+  },
+  {
+   "id": "confused",
+   "name": "Confused",
+   "eyes": "open",
+   "brows": "tilt",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "curious",
+   "name": "Curious",
+   "eyes": "wide",
+   "brows": "tilt",
+   "mouth": "o",
+   "extra": "none"
+  },
+  {
+   "id": "thinking",
+   "name": "Thinking",
+   "eyes": "side",
+   "brows": "tilt",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "skeptical",
+   "name": "Skeptical",
+   "eyes": "half",
+   "brows": "tilt",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "worried",
+   "name": "Worried",
+   "eyes": "open",
+   "brows": "sad",
+   "mouth": "frown",
+   "extra": "none"
+  },
+  {
+   "id": "sad",
+   "name": "Sad",
+   "eyes": "sad",
+   "brows": "sad",
+   "mouth": "frown",
+   "extra": "none"
+  },
+  {
+   "id": "crying",
+   "name": "Crying",
+   "eyes": "sad",
+   "brows": "sad",
+   "mouth": "open",
+   "extra": "tear"
+  },
+  {
+   "id": "sobbing",
+   "name": "Sobbing",
+   "eyes": "closed",
+   "brows": "sad",
+   "mouth": "open",
+   "extra": "tear"
+  },
+  {
+   "id": "pouting",
+   "name": "Pouting",
+   "eyes": "open",
+   "brows": "sad",
+   "mouth": "pout",
+   "extra": "none"
+  },
+  {
+   "id": "sulking",
+   "name": "Sulking",
+   "eyes": "half",
+   "brows": "sad",
+   "mouth": "frown",
+   "extra": "none"
+  },
+  {
+   "id": "grumpy",
+   "name": "Grumpy",
+   "eyes": "half",
+   "brows": "angry",
+   "mouth": "frown",
+   "extra": "none"
+  },
+  {
+   "id": "angry",
+   "name": "Angry",
+   "eyes": "angry",
+   "brows": "angry",
+   "mouth": "frown",
+   "extra": "none"
+  },
+  {
+   "id": "furious",
+   "name": "Furious",
+   "eyes": "angry",
+   "brows": "angry",
+   "mouth": "teeth",
+   "extra": "none"
+  },
+  {
+   "id": "snarl",
+   "name": "Snarl",
+   "eyes": "angry",
+   "brows": "angry",
+   "mouth": "teeth",
+   "extra": "sweat"
+  },
+  {
+   "id": "determined",
+   "name": "Determined",
+   "eyes": "open",
+   "brows": "angry",
+   "mouth": "flat",
+   "extra": "none"
+  },
+  {
+   "id": "battle_ready",
+   "name": "Battle Ready",
+   "eyes": "angry",
+   "brows": "angry",
+   "mouth": "grin",
+   "extra": "none"
+  },
+  {
+   "id": "evil_grin",
+   "name": "Evil Grin",
+   "eyes": "angry",
+   "brows": "angry",
+   "mouth": "grin",
+   "extra": "blush"
+  },
+  {
+   "id": "mischief",
+   "name": "Mischief",
+   "eyes": "wink",
+   "brows": "angry",
+   "mouth": "smirk",
+   "extra": "none"
+  },
+  {
+   "id": "cheeky",
+   "name": "Cheeky",
+   "eyes": "wink",
+   "brows": "neutral",
+   "mouth": "tongue",
+   "extra": "none"
+  },
+  {
+   "id": "silly",
+   "name": "Silly",
+   "eyes": "side",
+   "brows": "raised",
+   "mouth": "tongue",
+   "extra": "none"
+  },
+  {
+   "id": "goofy",
+   "name": "Goofy",
+   "eyes": "dot",
+   "brows": "raised",
+   "mouth": "tongue",
+   "extra": "blush"
+  },
+  {
+   "id": "starstruck",
+   "name": "Starstruck",
+   "eyes": "star",
+   "brows": "raised",
+   "mouth": "open",
+   "extra": "none"
+  },
+  {
+   "id": "love_struck",
+   "name": "Love Struck",
+   "eyes": "heart",
+   "brows": "raised",
+   "mouth": "smile",
+   "extra": "blush"
+  },
+  {
+   "id": "kiss",
+   "name": "Kiss",
+   "eyes": "closed",
+   "brows": "neutral",
+   "mouth": "kiss",
+   "extra": "blush"
+  },
+  {
+   "id": "excited",
+   "name": "Excited",
+   "eyes": "star",
+   "brows": "raised",
+   "mouth": "grin",
+   "extra": "none"
+  },
+  {
+   "id": "dizzy",
+   "name": "Dizzy",
+   "eyes": "x",
+   "brows": "neutral",
+   "mouth": "wobble",
+   "extra": "none"
+  },
+  {
+   "id": "embarrassed",
+   "name": "Embarrassed",
+   "eyes": "closed",
+   "brows": "sad",
+   "mouth": "wobble",
+   "extra": "blush"
+  }
+ ]
+}

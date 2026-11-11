@@ -1,0 +1,431 @@
+{
+ "version": 1,
+ "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt.",
+ "start": {
+  "equip": {
+   "staff": "ash_staff",
+   "axe": "copper_axe",
+   "pickaxe": "copper_pickaxe",
+   "rod": "reed_rod",
+   "robe": "traveller_robe"
+  },
+  "bag": {
+   "bread": 3
+  }
+ },
+ "items": {
+  "ash_staff": {
+   "kind": "staff",
+   "power": 1.0,
+   "slots": 0,
+   "mana": 0,
+   "color": [
+    0.75,
+    0.7,
+    0.6
+   ]
+  },
+  "oak_staff": {
+   "kind": "staff",
+   "power": 1.4,
+   "slots": 0,
+   "mana": 20,
+   "color": [
+    0.45,
+    0.7,
+    0.3
+   ]
+  },
+  "coral_staff": {
+   "kind": "staff",
+   "power": 1.9,
+   "slots": 1,
+   "mana": 40,
+   "color": [
+    1.0,
+    0.55,
+    0.5
+   ]
+  },
+  "sunstone_staff": {
+   "kind": "staff",
+   "power": 2.6,
+   "slots": 1,
+   "mana": 60,
+   "color": [
+    1.0,
+    0.8,
+    0.3
+   ]
+  },
+  "frostpine_staff": {
+   "kind": "staff",
+   "power": 3.5,
+   "slots": 2,
+   "mana": 85,
+   "color": [
+    0.7,
+    0.9,
+    1.0
+   ]
+  },
+  "obsidian_staff": {
+   "kind": "staff",
+   "power": 4.7,
+   "slots": 2,
+   "mana": 110,
+   "color": [
+    0.9,
+    0.25,
+    0.15
+   ]
+  },
+  "stormcall_staff": {
+   "kind": "staff",
+   "power": 6.2,
+   "slots": 3,
+   "mana": 140,
+   "color": [
+    0.6,
+    0.7,
+    1.0
+   ]
+  },
+  "prism_staff": {
+   "kind": "staff",
+   "power": 8.5,
+   "slots": 3,
+   "mana": 180,
+   "color": [
+    1.0,
+    0.8,
+    1.0
+   ]
+  },
+  "traveller_robe": {
+   "kind": "robe",
+   "hp": 0,
+   "armor": 0.0,
+   "regen": 0.0,
+   "color": [
+    0.55,
+    0.45,
+    0.35
+   ]
+  },
+  "woodland_robe": {
+   "kind": "robe",
+   "hp": 40,
+   "armor": 0.08,
+   "regen": 0.5,
+   "color": [
+    0.3,
+    0.5,
+    0.25
+   ]
+  },
+  "tidecloth_robe": {
+   "kind": "robe",
+   "hp": 90,
+   "armor": 0.14,
+   "regen": 1.0,
+   "color": [
+    0.25,
+    0.5,
+    0.75
+   ]
+  },
+  "sunweave_robe": {
+   "kind": "robe",
+   "hp": 160,
+   "armor": 0.2,
+   "regen": 1.6,
+   "color": [
+    0.9,
+    0.7,
+    0.3
+   ]
+  },
+  "rimefur_robe": {
+   "kind": "robe",
+   "hp": 250,
+   "armor": 0.26,
+   "regen": 2.3,
+   "color": [
+    0.85,
+    0.92,
+    1.0
+   ]
+  },
+  "cinder_robe": {
+   "kind": "robe",
+   "hp": 360,
+   "armor": 0.32,
+   "regen": 3.1,
+   "color": [
+    0.6,
+    0.15,
+    0.1
+   ]
+  },
+  "stormsilk_robe": {
+   "kind": "robe",
+   "hp": 500,
+   "armor": 0.38,
+   "regen": 4.0,
+   "color": [
+    0.5,
+    0.45,
+    0.8
+   ]
+  },
+  "copper_axe": {
+   "kind": "tool",
+   "slot": "axe",
+   "tier": 1
+  },
+  "iron_axe": {
+   "kind": "tool",
+   "slot": "axe",
+   "tier": 2
+  },
+  "steel_axe": {
+   "kind": "tool",
+   "slot": "axe",
+   "tier": 3
+  },
+  "skysteel_axe": {
+   "kind": "tool",
+   "slot": "axe",
+   "tier": 4
+  },
+  "copper_pickaxe": {
+   "kind": "tool",
+   "slot": "pickaxe",
+   "tier": 1
+  },
+  "iron_pickaxe": {
+   "kind": "tool",
+   "slot": "pickaxe",
+   "tier": 2
+  },
+  "steel_pickaxe": {
+   "kind": "tool",
+   "slot": "pickaxe",
+   "tier": 3
+  },
+  "skysteel_pickaxe": {
+   "kind": "tool",
+   "slot": "pickaxe",
+   "tier": 4
+  },
+  "reed_rod": {
+   "kind": "tool",
+   "slot": "rod",
+   "tier": 1
+  },
+  "oak_rod": {
+   "kind": "tool",
+   "slot": "rod",
+   "tier": 2
+  },
+  "frostpine_rod": {
+   "kind": "tool",
+   "slot": "rod",
+   "tier": 3
+  },
+  "ember_rod": {
+   "kind": "tool",
+   "slot": "rod",
+   "tier": 4
+  },
+  "bread": {
+   "kind": "food",
+   "heal": 30
+  },
+  "fried_minnow": {
+   "kind": "food",
+   "heal": 40
+  },
+  "grilled_trout": {
+   "kind": "food",
+   "heal": 80
+  },
+  "seared_silverfin": {
+   "kind": "food",
+   "heal": 140
+  },
+  "spiced_sandskipper": {
+   "kind": "food",
+   "heal": 220
+  },
+  "icefin_stew": {
+   "kind": "food",
+   "heal": 320
+  },
+  "charred_eel": {
+   "kind": "food",
+   "heal": 450
+  },
+  "mana_tonic": {
+   "kind": "potion",
+   "mana": 60
+  },
+  "health_draught": {
+   "kind": "potion",
+   "heal": 120
+  },
+  "sun_elixir": {
+   "kind": "potion",
+   "mana": 150,
+   "buff": {
+    "power": 1.2,
+    "seconds": 60
+   }
+  },
+  "frost_ward": {
+   "kind": "potion",
+   "heal": 200,
+   "buff": {
+    "armor": 0.2,
+    "seconds": 60
+   }
+  },
+  "cinder_draught": {
+   "kind": "potion",
+   "mana": 300,
+   "buff": {
+    "power": 1.35,
+    "seconds": 60
+   }
+  },
+  "ash_log": {
+   "kind": "material"
+  },
+  "oak_log": {
+   "kind": "material"
+  },
+  "palm_log": {
+   "kind": "material"
+  },
+  "frostpine_log": {
+   "kind": "material"
+  },
+  "emberwood_log": {
+   "kind": "material"
+  },
+  "copper_ore": {
+   "kind": "material"
+  },
+  "iron_ore": {
+   "kind": "material"
+  },
+  "sunstone": {
+   "kind": "material"
+  },
+  "frost_crystal": {
+   "kind": "material"
+  },
+  "obsidian": {
+   "kind": "material"
+  },
+  "skysteel_ore": {
+   "kind": "material"
+  },
+  "copper_bar": {
+   "kind": "material"
+  },
+  "iron_bar": {
+   "kind": "material"
+  },
+  "skysteel_bar": {
+   "kind": "material"
+  },
+  "minnow": {
+   "kind": "material"
+  },
+  "trout": {
+   "kind": "material"
+  },
+  "silverfin": {
+   "kind": "material"
+  },
+  "sandskipper": {
+   "kind": "material"
+  },
+  "icefin": {
+   "kind": "material"
+  },
+  "lava_eel": {
+   "kind": "material"
+  },
+  "wheat": {
+   "kind": "material"
+  },
+  "meadowmint": {
+   "kind": "material"
+  },
+  "glowcap": {
+   "kind": "material"
+  },
+  "sunpetal": {
+   "kind": "material"
+  },
+  "frostbloom": {
+   "kind": "material"
+  },
+  "cinderroot": {
+   "kind": "material"
+  },
+  "straw_bundle": {
+   "kind": "material"
+  },
+  "slime_jelly": {
+   "kind": "material"
+  },
+  "wolf_pelt": {
+   "kind": "material"
+  },
+  "crab_shell": {
+   "kind": "material"
+  },
+  "scorpion_sting": {
+   "kind": "material"
+  },
+  "amber_pigment": {
+   "kind": "pigment"
+  },
+  "verdant_pigment": {
+   "kind": "pigment"
+  },
+  "azure_pigment": {
+   "kind": "pigment"
+  },
+  "ochre_pigment": {
+   "kind": "pigment"
+  },
+  "white_pigment": {
+   "kind": "pigment"
+  },
+  "crimson_pigment": {
+   "kind": "pigment"
+  },
+  "storm_pigment": {
+   "kind": "pigment"
+  },
+  "sprat": {
+   "kind": "material"
+  },
+  "grilled_sprat": {
+   "kind": "food",
+   "heal": 35
+  },
+  "stormfin": {
+   "kind": "material"
+  },
+  "seared_stormfin": {
+   "kind": "food",
+   "heal": 380
+  }
+ }
+}

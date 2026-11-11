@@ -1,0 +1,1669 @@
+{
+ "version": 1,
+ "outfits": [
+  {
+   "id": "street_casual",
+   "name": "Street Casual",
+   "top": "tee",
+   "bottom": "jeans",
+   "head": "cap",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#3a7bd5",
+    "#2b3a55",
+    "#f2f2f2"
+   ]
+  },
+  {
+   "id": "gym_rat",
+   "name": "Gym Rat",
+   "top": "tank",
+   "bottom": "shorts",
+   "head": "headband",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#e63946",
+    "#1d1d1d",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "hoodie_kid",
+   "name": "Hoodie Kid",
+   "top": "hoodie",
+   "bottom": "baggy",
+   "head": "beanie",
+   "back": "backpack",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#6c5ce7",
+    "#2d3436",
+    "#fdcb6e"
+   ]
+  },
+  {
+   "id": "knight",
+   "name": "Knight",
+   "top": "plate",
+   "bottom": "greaves",
+   "head": "knight",
+   "back": "cape",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#b8bcc4",
+    "#8a8f98",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "astronaut",
+   "name": "Astronaut",
+   "top": "spacesuit",
+   "bottom": "spacepants",
+   "head": "spacehelm",
+   "back": "jetpack",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#eceff4",
+    "#cfd3dc",
+    "#ff6a2a"
+   ]
+  },
+  {
+   "id": "pirate_captain",
+   "name": "Pirate Captain",
+   "top": "pirate",
+   "bottom": "baggy",
+   "head": "piratehat",
+   "back": "sword",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#f5f0e1",
+    "#3b2a1a",
+    "#b71c1c"
+   ]
+  },
+  {
+   "id": "wizard",
+   "name": "Wizard",
+   "top": "robe",
+   "bottom": "longskirt",
+   "head": "wizard",
+   "back": "none",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#4834d4",
+    "#30336b",
+    "#f9ca24"
+   ]
+  },
+  {
+   "id": "chef",
+   "name": "Chef",
+   "top": "labcoat",
+   "bottom": "baggy",
+   "head": "chef",
+   "back": "none",
+   "feet": "clogs",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#ffffff",
+    "#2d2d2d",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "samurai",
+   "name": "Samurai",
+   "top": "kimono",
+   "bottom": "hakama",
+   "head": "headband",
+   "back": "sword",
+   "feet": "geta",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#2c3e50",
+    "#1b1b1b",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "cowboy",
+   "name": "Cowboy",
+   "top": "vest",
+   "bottom": "chaps",
+   "head": "cowboy",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#8d5524",
+    "#4b3621",
+    "#e1b12c"
+   ]
+  },
+  {
+   "id": "lifeguard",
+   "name": "Lifeguard",
+   "top": "sporty",
+   "bottom": "shorts",
+   "head": "bunnyears",
+   "back": "foxtail",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#e53935",
+    "#ffffff",
+    "#fdd835"
+   ]
+  },
+  {
+   "id": "tuxedo",
+   "name": "Tuxedo",
+   "top": "tux",
+   "bottom": "baggy",
+   "head": "tophat",
+   "back": "none",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "colors": [
+    "#16161a",
+    "#16161a",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "scientist",
+   "name": "Scientist",
+   "top": "labcoat",
+   "bottom": "jeans",
+   "head": "none",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "tie",
+   "hands": "gloves",
+   "colors": [
+    "#f4f4f4",
+    "#34495e",
+    "#2ecc71"
+   ]
+  },
+  {
+   "id": "viking",
+   "name": "Viking",
+   "top": "vest",
+   "bottom": "kilt",
+   "head": "viking",
+   "back": "cape",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#8e6e53",
+    "#5d4037",
+    "#cfd8dc"
+   ]
+  },
+  {
+   "id": "shadow_ninja",
+   "name": "Shadow Ninja",
+   "top": "hoodie",
+   "bottom": "leggings",
+   "head": "bandana",
+   "back": "sword",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#1a1a1a",
+    "#212121",
+    "#d32f2f"
+   ]
+  },
+  {
+   "id": "angel",
+   "name": "Angel",
+   "top": "robe",
+   "bottom": "longskirt",
+   "head": "halo",
+   "back": "wings",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#ffffff",
+    "#f1f2f6",
+    "#ffd700"
+   ]
+  },
+  {
+   "id": "imp",
+   "name": "Imp",
+   "top": "jacket",
+   "bottom": "leggings",
+   "head": "horns",
+   "back": "foxtail",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#b71c1c",
+    "#1b1b1b",
+    "#ff5252"
+   ]
+  },
+  {
+   "id": "bunny_casual",
+   "name": "Bunny Casual",
+   "top": "hoodie",
+   "bottom": "shorts",
+   "head": "bunnyears",
+   "back": "foxtail",
+   "feet": "sneakers",
+   "neck": "bowtie",
+   "hands": "none",
+   "colors": [
+    "#ff9ff3",
+    "#f368e0",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "cat_cafe",
+   "name": "Cat Cafe",
+   "top": "sweater",
+   "bottom": "skirt",
+   "head": "catears",
+   "back": "foxtail",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "none",
+   "colors": [
+    "#ffeaa7",
+    "#fab1a0",
+    "#e17055"
+   ]
+  },
+  {
+   "id": "party_animal",
+   "name": "Party Animal",
+   "top": "sporty",
+   "bottom": "jeans",
+   "head": "party",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#ff9ff3",
+    "#54a0ff",
+    "#feca57"
+   ]
+  },
+  {
+   "id": "rockstar",
+   "name": "Rockstar",
+   "top": "jacket",
+   "bottom": "leggings",
+   "head": "none",
+   "back": "guitar",
+   "feet": "boots",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#111111",
+    "#2d3436",
+    "#e84393"
+   ]
+  },
+  {
+   "id": "punk",
+   "name": "Punk",
+   "top": "vest",
+   "bottom": "cargo",
+   "head": "none",
+   "back": "none",
+   "feet": "boots",
+   "neck": "necklace",
+   "hands": "gauntlets",
+   "colors": [
+    "#d63031",
+    "#1e272e",
+    "#fdcb6e"
+   ]
+  },
+  {
+   "id": "skater",
+   "name": "Skater",
+   "top": "tee",
+   "bottom": "baggy",
+   "head": "cap",
+   "back": "backpack",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#00b894",
+    "#2d3436",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "beach_day",
+   "name": "Beach Day",
+   "top": "tank",
+   "bottom": "trunks",
+   "head": "sunhat",
+   "back": "none",
+   "feet": "geta",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#ffbe76",
+    "#22a6b3",
+    "#ff7979"
+   ]
+  },
+  {
+   "id": "winter_explorer",
+   "name": "Winter Explorer",
+   "top": "jacket",
+   "bottom": "cargo",
+   "head": "beanie",
+   "back": "backpack",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#0984e3",
+    "#2d3436",
+    "#ffeaa7"
+   ]
+  },
+  {
+   "id": "farmer",
+   "name": "Farmer",
+   "top": "overalls",
+   "bottom": "jeans",
+   "head": "sunhat",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#2980b9",
+    "#34495e",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "mechanic",
+   "name": "Mechanic",
+   "top": "overalls",
+   "bottom": "cargo",
+   "head": "cap",
+   "back": "none",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#7f8c8d",
+    "#2c3e50",
+    "#e67e22"
+   ]
+  },
+  {
+   "id": "detective",
+   "name": "Detective",
+   "top": "vest",
+   "bottom": "baggy",
+   "head": "cowboy",
+   "back": "none",
+   "feet": "flats",
+   "neck": "tie",
+   "hands": "none",
+   "colors": [
+    "#7f6a4d",
+    "#3d3427",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "royalty",
+   "name": "Royalty",
+   "top": "robe",
+   "bottom": "longskirt",
+   "head": "crown",
+   "back": "cape",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#8e44ad",
+    "#6c3483",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "pharaoh",
+   "name": "Pharaoh",
+   "top": "kimono",
+   "bottom": "kilt",
+   "head": "crown",
+   "back": "none",
+   "feet": "geta",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#f9e79f",
+    "#d4ac0d",
+    "#2e86c1"
+   ]
+  },
+  {
+   "id": "greek_hero",
+   "name": "Greek Hero",
+   "top": "plate",
+   "bottom": "kilt",
+   "head": "headband",
+   "back": "cape",
+   "feet": "geta",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#ecf0f1",
+    "#c0392b",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "gladiator",
+   "name": "Gladiator",
+   "top": "plate",
+   "bottom": "kilt",
+   "head": "knight",
+   "back": "none",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#a04000",
+    "#6e2c00",
+    "#d5d8dc"
+   ]
+  },
+  {
+   "id": "archer",
+   "name": "Archer",
+   "top": "vest",
+   "bottom": "leggings",
+   "head": "hood",
+   "back": "quiver",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#27ae60",
+    "#1e8449",
+    "#7d6608"
+   ]
+  },
+  {
+   "id": "ranger",
+   "name": "Ranger",
+   "top": "jacket",
+   "bottom": "cargo",
+   "head": "hood",
+   "back": "quiver",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#556b2f",
+    "#3b3b2a",
+    "#a0522d"
+   ]
+  },
+  {
+   "id": "druid",
+   "name": "Druid",
+   "top": "poncho",
+   "bottom": "longskirt",
+   "head": "hood",
+   "back": "none",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#2e7d32",
+    "#4e342e",
+    "#aed581"
+   ]
+  },
+  {
+   "id": "witch",
+   "name": "Witch",
+   "top": "robe",
+   "bottom": "skirt",
+   "head": "wizard",
+   "back": "foxtail",
+   "feet": "boots",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#4a235a",
+    "#1b1b1b",
+    "#e67e22"
+   ]
+  },
+  {
+   "id": "vampire",
+   "name": "Vampire",
+   "top": "tux",
+   "bottom": "baggy",
+   "head": "none",
+   "back": "cape",
+   "feet": "boots",
+   "neck": "tie",
+   "hands": "gloves",
+   "colors": [
+    "#1c1c28",
+    "#101018",
+    "#b71c1c"
+   ]
+  },
+  {
+   "id": "zombie_chic",
+   "name": "Zombie Chic",
+   "top": "jacket",
+   "bottom": "jeans",
+   "head": "none",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#7d8f69",
+    "#4a4a4a",
+    "#a93226"
+   ]
+  },
+  {
+   "id": "chrome_robot",
+   "name": "Chrome Robot",
+   "top": "spacesuit",
+   "bottom": "spacepants",
+   "head": "none",
+   "back": "jetpack",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#b2bec3",
+    "#636e72",
+    "#00cec9"
+   ]
+  },
+  {
+   "id": "cyber_runner",
+   "name": "Cyber Runner",
+   "top": "sporty",
+   "bottom": "leggings",
+   "head": "headphones",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#0be881",
+    "#1e272e",
+    "#ff3f34"
+   ]
+  },
+  {
+   "id": "disco_fever",
+   "name": "Disco Fever",
+   "top": "jacket",
+   "bottom": "baggy",
+   "head": "none",
+   "back": "none",
+   "feet": "boots",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#ff00aa",
+    "#7d00ff",
+    "#ffe600"
+   ]
+  },
+  {
+   "id": "hip_hop",
+   "name": "Hip Hop",
+   "top": "hoodie",
+   "bottom": "baggy",
+   "head": "cap",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#f5cd79",
+    "#303952",
+    "#e15f41"
+   ]
+  },
+  {
+   "id": "idol_stage",
+   "name": "Idol Stage",
+   "top": "jacket",
+   "bottom": "skirt",
+   "head": "headphones",
+   "back": "none",
+   "feet": "boots",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "colors": [
+    "#ff6b81",
+    "#2f3542",
+    "#eccc68"
+   ]
+  },
+  {
+   "id": "ballerina",
+   "name": "Ballerina",
+   "top": "bodice",
+   "bottom": "skirt",
+   "head": "none",
+   "back": "none",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#fab1d6",
+    "#f8c8e0",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "tennis_pro",
+   "name": "Tennis Pro",
+   "top": "sporty",
+   "bottom": "skirt",
+   "head": "headband",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#ffffff",
+    "#2ecc71",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "soccer_star",
+   "name": "Soccer Star",
+   "top": "sporty",
+   "bottom": "shorts",
+   "head": "none",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#e74c3c",
+    "#ffffff",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "hoops_player",
+   "name": "Hoops Player",
+   "top": "tank",
+   "bottom": "shorts",
+   "head": "none",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#f39c12",
+    "#2c3e50",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "boxer",
+   "name": "Boxer",
+   "top": "tank",
+   "bottom": "trunks",
+   "head": "none",
+   "back": "none",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#c0392b",
+    "#1a1a1a",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "surfer",
+   "name": "Surfer",
+   "top": "tee",
+   "bottom": "trunks",
+   "head": "none",
+   "back": "none",
+   "feet": "geta",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#00cec9",
+    "#0984e3",
+    "#ffeaa7"
+   ]
+  },
+  {
+   "id": "snowboarder",
+   "name": "Snowboarder",
+   "top": "jacket",
+   "bottom": "baggy",
+   "head": "beanie",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#e84118",
+    "#2f3640",
+    "#fbc531"
+   ]
+  },
+  {
+   "id": "hiker",
+   "name": "Hiker",
+   "top": "vest",
+   "bottom": "cargo",
+   "head": "sunhat",
+   "back": "backpack",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#6ab04c",
+    "#4b4b4b",
+    "#f9ca24"
+   ]
+  },
+  {
+   "id": "camper",
+   "name": "Camper",
+   "top": "sweater",
+   "bottom": "jeans",
+   "head": "beanie",
+   "back": "backpack",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#e17055",
+    "#2d3436",
+    "#fab1a0"
+   ]
+  },
+  {
+   "id": "fisher",
+   "name": "Fisher",
+   "top": "vest",
+   "bottom": "cargo",
+   "head": "sunhat",
+   "back": "none",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#badc58",
+    "#535c68",
+    "#f0932b"
+   ]
+  },
+  {
+   "id": "pilot",
+   "name": "Pilot",
+   "top": "jacket",
+   "bottom": "cargo",
+   "head": "cap",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#7f8fa6",
+    "#353b48",
+    "#fbc531"
+   ]
+  },
+  {
+   "id": "race_driver",
+   "name": "Race Driver",
+   "top": "spacesuit",
+   "bottom": "baggy",
+   "head": "none",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#e84118",
+    "#dcdde1",
+    "#fbc531"
+   ]
+  },
+  {
+   "id": "firefighter",
+   "name": "Firefighter",
+   "top": "jacket",
+   "bottom": "cargo",
+   "head": "knight",
+   "back": "backpack",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#f1c40f",
+    "#2d3436",
+    "#e74c3c"
+   ]
+  },
+  {
+   "id": "doctor",
+   "name": "Doctor",
+   "top": "labcoat",
+   "bottom": "jeans",
+   "head": "none",
+   "back": "none",
+   "feet": "clogs",
+   "neck": "tie",
+   "hands": "none",
+   "colors": [
+    "#ecf0f1",
+    "#2980b9",
+    "#e74c3c"
+   ]
+  },
+  {
+   "id": "student",
+   "name": "Student",
+   "top": "sweater",
+   "bottom": "skirt",
+   "head": "none",
+   "back": "backpack",
+   "feet": "sneakers",
+   "neck": "tie",
+   "hands": "none",
+   "colors": [
+    "#273c75",
+    "#2f3640",
+    "#dcdde1"
+   ]
+  },
+  {
+   "id": "office_worker",
+   "name": "Office Worker",
+   "top": "tux",
+   "bottom": "baggy",
+   "head": "none",
+   "back": "none",
+   "feet": "flats",
+   "neck": "tie",
+   "hands": "none",
+   "colors": [
+    "#b2bec3",
+    "#2d3436",
+    "#d63031"
+   ]
+  },
+  {
+   "id": "barista",
+   "name": "Barista",
+   "top": "vest",
+   "bottom": "jeans",
+   "head": "beret",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "tie",
+   "hands": "none",
+   "colors": [
+    "#6d4c41",
+    "#2d3436",
+    "#d7ccc8"
+   ]
+  },
+  {
+   "id": "bartender",
+   "name": "Bartender",
+   "top": "vest",
+   "bottom": "baggy",
+   "head": "none",
+   "back": "none",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "none",
+   "colors": [
+    "#2c2c34",
+    "#1c1c24",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "sailor",
+   "name": "Sailor",
+   "top": "pirate",
+   "bottom": "baggy",
+   "head": "cap",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#ffffff",
+    "#1e3799",
+    "#e74c3c"
+   ]
+  },
+  {
+   "id": "mad_hatter",
+   "name": "Mad Hatter",
+   "top": "tux",
+   "bottom": "jeans",
+   "head": "tophat",
+   "back": "none",
+   "feet": "boots",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "colors": [
+    "#6c5ce7",
+    "#2d3436",
+    "#fd79a8"
+   ]
+  },
+  {
+   "id": "fairy",
+   "name": "Fairy",
+   "top": "bodice",
+   "bottom": "skirt",
+   "head": "headband",
+   "back": "wings",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#a29bfe",
+    "#81ecec",
+    "#ffeaa7"
+   ]
+  },
+  {
+   "id": "dragon_knight",
+   "name": "Dragon Knight",
+   "top": "plate",
+   "bottom": "greaves",
+   "head": "horns",
+   "back": "cape",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#c0392b",
+    "#641e16",
+    "#f39c12"
+   ]
+  },
+  {
+   "id": "paladin",
+   "name": "Paladin",
+   "top": "plate",
+   "bottom": "kilt",
+   "head": "crown",
+   "back": "cape",
+   "feet": "plateboots",
+   "neck": "necklace",
+   "hands": "gauntlets",
+   "colors": [
+    "#f7f1e3",
+    "#f1c40f",
+    "#3498db"
+   ]
+  },
+  {
+   "id": "dark_knight",
+   "name": "Dark Knight",
+   "top": "plate",
+   "bottom": "greaves",
+   "head": "horns",
+   "back": "cape",
+   "feet": "plateboots",
+   "neck": "scarf",
+   "hands": "gauntlets",
+   "colors": [
+    "#2d3436",
+    "#1e272e",
+    "#8e44ad"
+   ]
+  },
+  {
+   "id": "ice_mage",
+   "name": "Ice Mage",
+   "top": "robe",
+   "bottom": "longskirt",
+   "head": "hood",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#74b9ff",
+    "#0984e3",
+    "#dff9fb"
+   ]
+  },
+  {
+   "id": "fire_mage",
+   "name": "Fire Mage",
+   "top": "robe",
+   "bottom": "longskirt",
+   "head": "wizard",
+   "back": "none",
+   "feet": "boots",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#e55039",
+    "#b71540",
+    "#fad390"
+   ]
+  },
+  {
+   "id": "forest_elf",
+   "name": "Forest Elf",
+   "top": "poncho",
+   "bottom": "leggings",
+   "head": "headband",
+   "back": "quiver",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#78e08f",
+    "#38ada9",
+    "#f6b93b"
+   ]
+  },
+  {
+   "id": "dwarf_smith",
+   "name": "Dwarf Smith",
+   "top": "vest",
+   "bottom": "overalls",
+   "head": "viking",
+   "back": "none",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#a1887f",
+    "#4e342e",
+    "#ff9f43"
+   ]
+  },
+  {
+   "id": "orc_warrior",
+   "name": "Orc Warrior",
+   "top": "plate",
+   "bottom": "kilt",
+   "head": "horns",
+   "back": "none",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#5b8c3a",
+    "#3b3b2a",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "space_marine",
+   "name": "Space Marine",
+   "top": "plate",
+   "bottom": "spacepants",
+   "head": "spacehelm",
+   "back": "backpack",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#273c75",
+    "#192a56",
+    "#fbc531"
+   ]
+  },
+  {
+   "id": "alien_explorer",
+   "name": "Alien Explorer",
+   "top": "spacesuit",
+   "bottom": "leggings",
+   "head": "none",
+   "back": "jetpack",
+   "feet": "boots",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#55efc4",
+    "#00b894",
+    "#fd79a8"
+   ]
+  },
+  {
+   "id": "time_traveler",
+   "name": "Time Traveler",
+   "top": "jacket",
+   "bottom": "cargo",
+   "head": "tophat",
+   "back": "backpack",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#cd6133",
+    "#40407a",
+    "#ffda79"
+   ]
+  },
+  {
+   "id": "steampunk",
+   "name": "Steampunk",
+   "top": "vest",
+   "bottom": "baggy",
+   "head": "tophat",
+   "back": "jetpack",
+   "feet": "boots",
+   "neck": "tie",
+   "hands": "gloves",
+   "colors": [
+    "#b8860b",
+    "#4b3621",
+    "#cd7f32"
+   ]
+  },
+  {
+   "id": "cyberpunk",
+   "name": "Cyberpunk",
+   "top": "jacket",
+   "bottom": "leggings",
+   "head": "hood",
+   "back": "none",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#00d8d6",
+    "#1e272e",
+    "#ff3f34"
+   ]
+  },
+  {
+   "id": "outlaw",
+   "name": "Outlaw",
+   "top": "vest",
+   "bottom": "chaps",
+   "head": "bandana",
+   "back": "none",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#7b241c",
+    "#2c2c2c",
+    "#d4ac0d"
+   ]
+  },
+  {
+   "id": "mariachi",
+   "name": "Mariachi",
+   "top": "poncho",
+   "bottom": "baggy",
+   "head": "cowboy",
+   "back": "guitar",
+   "feet": "boots",
+   "neck": "bowtie",
+   "hands": "none",
+   "colors": [
+    "#c0392b",
+    "#1b1b1b",
+    "#f1c40f"
+   ]
+  },
+  {
+   "id": "highlander",
+   "name": "Highlander",
+   "top": "sweater",
+   "bottom": "kilt",
+   "head": "beret",
+   "back": "none",
+   "feet": "boots",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#145a32",
+    "#7b241c",
+    "#d4ac0d"
+   ]
+  },
+  {
+   "id": "french_artist",
+   "name": "French Artist",
+   "top": "vest",
+   "bottom": "baggy",
+   "head": "beret",
+   "back": "none",
+   "feet": "flats",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#2c3e50",
+    "#ecf0f1",
+    "#e74c3c"
+   ]
+  },
+  {
+   "id": "noir_trench",
+   "name": "Noir Trench",
+   "top": "jacket",
+   "bottom": "baggy",
+   "head": "cowboy",
+   "back": "none",
+   "feet": "flats",
+   "neck": "tie",
+   "hands": "none",
+   "colors": [
+    "#5d5d5d",
+    "#2f2f2f",
+    "#c9c9c9"
+   ]
+  },
+  {
+   "id": "gentleman",
+   "name": "Gentleman",
+   "top": "tux",
+   "bottom": "baggy",
+   "head": "tophat",
+   "back": "none",
+   "feet": "flats",
+   "neck": "tie",
+   "hands": "gloves",
+   "colors": [
+    "#1e272e",
+    "#2d3436",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "monk",
+   "name": "Monk",
+   "top": "robe",
+   "bottom": "hakama",
+   "head": "none",
+   "back": "none",
+   "feet": "geta",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#e67e22",
+    "#d35400",
+    "#f5cd79"
+   ]
+  },
+  {
+   "id": "crimson_ninja",
+   "name": "Crimson Ninja",
+   "top": "sporty",
+   "bottom": "leggings",
+   "head": "bandana",
+   "back": "sword",
+   "feet": "geta",
+   "neck": "none",
+   "hands": "gauntlets",
+   "colors": [
+    "#c0392b",
+    "#1a1a1a",
+    "#ecf0f1"
+   ]
+  },
+  {
+   "id": "kung_fu_master",
+   "name": "Kung Fu Master",
+   "top": "kimono",
+   "bottom": "baggy",
+   "head": "headband",
+   "back": "none",
+   "feet": "flats",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#f1c40f",
+    "#2d3436",
+    "#c0392b"
+   ]
+  },
+  {
+   "id": "festival",
+   "name": "Festival",
+   "top": "kimono",
+   "bottom": "hakama",
+   "head": "headband",
+   "back": "none",
+   "feet": "geta",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#e84393",
+    "#273c75",
+    "#ffeaa7"
+   ]
+  },
+  {
+   "id": "retro_arcade",
+   "name": "Retro Arcade",
+   "top": "tee",
+   "bottom": "jeans",
+   "head": "headphones",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "necklace",
+   "hands": "none",
+   "colors": [
+    "#fd79a8",
+    "#0984e3",
+    "#ffeaa7"
+   ]
+  },
+  {
+   "id": "garden_party",
+   "name": "Garden Party",
+   "top": "bodice",
+   "bottom": "longskirt",
+   "head": "sunhat",
+   "back": "none",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#f8a5c2",
+    "#f7d794",
+    "#78e08f"
+   ]
+  },
+  {
+   "id": "sunday_picnic",
+   "name": "Sunday Picnic",
+   "top": "sweater",
+   "bottom": "overalls",
+   "head": "sunhat",
+   "back": "backpack",
+   "feet": "flats",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#f19066",
+    "#546de5",
+    "#f5cd79"
+   ]
+  },
+  {
+   "id": "moonlight_gala",
+   "name": "Moonlight Gala",
+   "top": "bodice",
+   "bottom": "longskirt",
+   "head": "none",
+   "back": "cape",
+   "feet": "flats",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#192a56",
+    "#273c75",
+    "#dcdde1"
+   ]
+  },
+  {
+   "id": "jungle_explorer",
+   "name": "Jungle Explorer",
+   "top": "vest",
+   "bottom": "cargo",
+   "head": "sunhat",
+   "back": "backpack",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#6ab04c",
+    "#7d6608",
+    "#f9ca24"
+   ]
+  },
+  {
+   "id": "desert_nomad",
+   "name": "Desert Nomad",
+   "top": "poncho",
+   "bottom": "baggy",
+   "head": "hood",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#e1b12c",
+    "#a0522d",
+    "#f5e6ca"
+   ]
+  },
+  {
+   "id": "deep_sea_diver",
+   "name": "Deep Sea Diver",
+   "top": "spacesuit",
+   "bottom": "spacepants",
+   "head": "spacehelm",
+   "back": "backpack",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#f9ca24",
+    "#2c3e50",
+    "#00a8ff"
+   ]
+  },
+  {
+   "id": "arctic_fox",
+   "name": "Arctic Fox",
+   "top": "poncho",
+   "bottom": "leggings",
+   "head": "hood",
+   "back": "foxtail",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "gloves",
+   "colors": [
+    "#ecf0f1",
+    "#b2bec3",
+    "#e67e22"
+   ]
+  },
+  {
+   "id": "sakura_spring",
+   "name": "Sakura Spring",
+   "top": "kimono",
+   "bottom": "skirt",
+   "head": "headband",
+   "back": "none",
+   "feet": "geta",
+   "neck": "none",
+   "hands": "none",
+   "colors": [
+    "#fd79a8",
+    "#fab1d6",
+    "#ffffff"
+   ]
+  },
+  {
+   "id": "autumn_walk",
+   "name": "Autumn Walk",
+   "top": "sweater",
+   "bottom": "jeans",
+   "head": "beret",
+   "back": "none",
+   "feet": "boots",
+   "neck": "scarf",
+   "hands": "none",
+   "colors": [
+    "#d35400",
+    "#4a3728",
+    "#f39c12"
+   ]
+  },
+  {
+   "id": "midnight_racer",
+   "name": "Midnight Racer",
+   "top": "jacket",
+   "bottom": "leggings",
+   "head": "none",
+   "back": "none",
+   "feet": "plateboots",
+   "neck": "none",
+   "hands": "gloves",
+   "colors": [
+    "#000000",
+    "#1e1e2f",
+    "#00ffd5"
+   ]
+  },
+  {
+   "id": "neon_raver",
+   "name": "Neon Raver",
+   "top": "sporty",
+   "bottom": "baggy",
+   "head": "headphones",
+   "back": "wings",
+   "feet": "sneakers",
+   "neck": "necklace",
+   "hands": "gloves",
+   "colors": [
+    "#39ff14",
+    "#ff00ff",
+    "#00e5ff"
+   ]
+  },
+  {
+   "id": "pastel_dream",
+   "name": "Pastel Dream",
+   "top": "hoodie",
+   "bottom": "skirt",
+   "head": "bunnyears",
+   "back": "none",
+   "feet": "sneakers",
+   "neck": "bowtie",
+   "hands": "none",
+   "colors": [
+    "#c7ecee",
+    "#dff9fb",
+    "#ffbe76"
+   ]
+  },
+  {
+   "top": "bodice",
+   "bottom": "leggings",
+   "head": "bunnyears",
+   "back": "foxtail",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "id": "casino_pink",
+   "name": "Casino Staff Pink",
+   "colors": [
+    "#d81b60",
+    "#2b1b2e",
+    "#ffffff"
+   ]
+  },
+  {
+   "top": "bodice",
+   "bottom": "leggings",
+   "head": "bunnyears",
+   "back": "foxtail",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "id": "casino_cyan",
+   "name": "Casino Staff Cyan",
+   "colors": [
+    "#00acc1",
+    "#1b2a2e",
+    "#ffffff"
+   ]
+  },
+  {
+   "top": "bodice",
+   "bottom": "leggings",
+   "head": "bunnyears",
+   "back": "foxtail",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "id": "casino_purple",
+   "name": "Casino Staff Purple",
+   "colors": [
+    "#7e3ff2",
+    "#241b2e",
+    "#ffffff"
+   ]
+  },
+  {
+   "top": "bodice",
+   "bottom": "leggings",
+   "head": "bunnyears",
+   "back": "foxtail",
+   "feet": "flats",
+   "neck": "bowtie",
+   "hands": "gloves",
+   "id": "casino_gold",
+   "name": "Casino Staff Gold",
+   "colors": [
+    "#d4a017",
+    "#2e271b",
+    "#ffffff"
+   ]
+  }
+ ]
+}

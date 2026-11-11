@@ -1,0 +1,24 @@
+{
+ "version": 1,
+ "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director.",
+ "drop_chance": 0.25,
+ "bonus": {"damage": 0.15, "fire_rate": 0.1, "mag_size": 0.25, "reload_time": -0.15, "spread": -0.2, "recoil": -0.2, "crit_chance": 0.05},
+ "uniques": {
+  "little_hoof": {"name": "Little Hoof", "body": "pistol_basic", "maker": "kestrel", "parts": {"barrel": "long", "mag": "extended", "sight": "red_dot", "muzzle": "silencer"},
+   "buffs": ["crit_damage", "free_shot", "slayer_mark"], "skills": ["frost_pulse", "rally_cry"], "flavor": "Small. Fast. Kicks like something ten times its size."},
+  "stampede": {"name": "Stampede", "body": "ak47", "maker": "zephyr", "parts": {"barrel": "short", "mag": "drum", "sight": "holo", "muzzle": "compensator", "grip": "stubby"},
+   "buffs": ["free_shot", "berserker_chain", "reload_on_kill"], "skills": ["swarm_drones", "rally_cry"], "flavor": "You hear it before you see it. Then you stop hearing anything."},
+  "thoroughbred": {"name": "Thoroughbred", "body": "m16", "maker": "kestrel", "parts": {"barrel": "long", "mag": "fast", "sight": "acog", "muzzle": "silencer", "grip": "angled"},
+   "buffs": ["crit_damage", "slayer_mark", "cooldown_siphon"], "skills": ["chain_lightning", "gravity_well"], "flavor": "Bred for one thing. It was never second."},
+  "clydesdale": {"name": "Clydesdale", "body": "m60", "maker": "moss", "parts": {"barrel": "heavy", "mag": "drum", "sight": "holo", "muzzle": "compensator", "grip": "vertical"},
+   "buffs": ["lifesteal", "overkill_splash", "slow_on_hit"], "skills": ["gravity_well", "nova_burst"], "flavor": "Pulls the whole fight behind it and does not notice the weight."},
+  "dark_horse": {"name": "Dark Horse", "body": "sniper_basic", "maker": "brawn", "parts": {"barrel": "long", "mag": "fast", "sight": "acog", "muzzle": "silencer", "grip": "vertical"},
+   "buffs": ["crit_damage", "glass_cannon", "explosive_chance"], "skills": ["frost_pulse", "chain_lightning"], "flavor": "Nobody bet on it. Nobody saw the shot either."},
+  "buckaroo": {"name": "Buckaroo", "body": "shotgun_double", "maker": "brawn", "parts": {"barrel": "heavy", "muzzle": "compensator", "grip": "stubby"},
+   "buffs": ["overkill_splash", "burn_chance", "reload_on_kill"], "skills": ["nova_burst", "rally_cry"], "flavor": "Two barrels. Both of them throw you."},
+  "carousel": {"name": "Carousel", "body": "rocket_launcher", "maker": "vantor", "parts": {"sight": "holo", "grip": "stubby"},
+   "buffs": ["explosive_chance", "free_shot", "skill_echo"], "skills": ["gravity_well", "swarm_drones"], "flavor": "Round and round it goes. Where it lands, everybody knows."},
+  "rodeo_clown": {"name": "Rodeo Clown", "body": "grenade_launcher", "maker": "zephyr", "parts": {"sight": "acog", "grip": "vertical"},
+   "buffs": ["shock_chance", "burn_chance", "skill_echo"], "skills": ["chain_lightning", "nova_burst"], "flavor": "Its whole job is to make the angry thing look the other way."}
+ }
+}

@@ -1,0 +1,127 @@
+# CINDERREACH  (region 6 of 8, creature levels 32-39)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[region cinderreach]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: Cinderreach
+about: Black rock, red rivers and a town built around one enormous forge. The mountain has started answering the hammers.
+
+# ---------------- PLACES AND WATERS OF CINDERREACH ----------------
+
+[place anvilgate]
+# WHAT: a town.
+name: Anvilgate
+
+[place caldera]
+# WHAT: the ground where this region's boss waits.
+name: The Caldera
+
+[place slagside]
+# WHAT: a farming village.
+name: Slagside
+
+[lake ember_pool]
+# WHAT: a lake (lava water: only the lava eel lives here).
+name: The Ember Pool
+
+[lake cinder_sink]
+# WHAT: a pond (lava water: only the lava eel lives here).
+name: Cinder Sink
+
+# ---------------- PEOPLE OF CINDERREACH ----------------
+
+[folk cinderreach]
+# WHO: the ordinary people of Cinderreach, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: Miner
+says: Don't drink from anything that glows.
+says: Good iron, bad air.
+says: The Wyrm keeps the forges hot. Nobody thanks it.
+says: Slag today, ploughshare tomorrow.
+
+[person forgemaster_brann]
+# WHO: quest giver at Anvilgate. Gives: The Stoked Mountain (m24), Hammer and Glass (m25), The Cinderwyrm (m27).
+name: Forgemaster Brann
+# Forgemaster Brann says this when a player walks up and talks:
+greeting: The mountain's been stoking itself. I don't like a forge I can't bank.
+
+[person ashwife_coral]
+# WHO: quest giver at Anvilgate. Gives: Ash on the Wind (m26).
+name: Ashwife Coral
+# Ashwife Coral says this when a player walks up and talks:
+greeting: Cinderroot only grows where the ground is still warm. Mind your boots.
+
+# ---------------- QUESTS GIVEN IN CINDERREACH ----------------
+
+[quest m24]
+# CHAPTER 6 of the main story. GIVEN BY: Forgemaster Brann. NEEDS FIRST: m23. REWARD: 500 Magic xp.
+title: The Stoked Mountain
+# Forgemaster Brann says this when offering the quest:
+offer: Archivist's raven got here before you. Imps in my coal, imps in my quench tank. Start there.
+# Step 1 shows this in the quest list. The player must: arrive at Anvilgate.
+step 1: Travel east to Anvilgate in Cinderreach
+# Step 2 shows this in the quest list. The player must: defeat 10 x Magma Imp.
+step 2: Stamp out magma imps
+# Forgemaster Brann says this when the quest is finished:
+done: That's the small fires out.
+
+[quest m25]
+# CHAPTER 6 of the main story. GIVEN BY: Forgemaster Brann. NEEDS FIRST: m24. REWARD: 500 Magic xp, teaches the long spell Starfall.
+title: Hammer and Glass
+# Forgemaster Brann says this when offering the quest:
+offer: You'll not face the wyrm with a pine twig. Obsidian, emberwood, and the White you carry. Forge it yourself or it won't know you.
+# Step 1 shows this in the quest list. The player must: reach Smithing level 34.
+step 1: Reach Smithing 34
+# Step 2 shows this in the quest list. The player must: hold 1 x Obsidian Staff.
+step 2: Forge an Obsidian Staff
+# Forgemaster Brann says this when the quest is finished:
+done: Now that is a staff. Here is a spell worthy of it: Starfall. Fire, Earth, Fire, Earth, Air, Fire, Earth, Fire.
+
+[quest m26]
+# CHAPTER 6 of the main story. GIVEN BY: Ashwife Coral. NEEDS FIRST: m24. REWARD: 500 Magic xp, 900 Alchemy xp, 3 x Cinder Draught.
+title: Ash on the Wind
+# Ashwife Coral says this when offering the quest:
+offer: Drakes foul the root beds. Root makes the draught that lets you stand near the caldera. You see the problem.
+# Step 1 shows this in the quest list. The player must: hold 8 x Cinderroot and hand them over.
+step 1: Dig cinderroot from warm ground
+# Step 2 shows this in the quest list. The player must: defeat 8 x Ash Drake.
+step 2: Bring down ash drakes
+# Ashwife Coral says this when the quest is finished:
+done: Three draughts. Drink one before you look at the wyrm, not after.
+
+[quest m27]
+# CHAPTER 6 of the main story. GIVEN BY: Forgemaster Brann. NEEDS FIRST: m25, m26. REWARD: 2000 Magic xp, 1 x Crimson Pigment, one more element slot, teaches the long spell Leviathan's Wake.
+title: The Cinderwyrm
+# Forgemaster Brann says this when offering the quest:
+offer: The wyrm was the forge's heart: crimson, a fire that makes. It burns white now and makes nothing.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Cinderwyrm.
+step 1: Defeat the Cinderwyrm in the Caldera
+# Forgemaster Brann says this when the quest is finished:
+done: Crimson. My fire's red again. Take the sea with you, for the next fire you meet: Leviathan's Wake. Water, Water, Air, Water, Water, Earth, Water, Water.
+
+# ---------------- CREATURES OF CINDERREACH ----------------
+
+[creature magma_imp]
+# WHAT: a common creature, level 32.
+name: Magma Imp
+
+[creature ash_drake]
+# WHAT: a common creature, level 36.
+name: Ash Drake
+
+[creature cinderwyrm]
+# WHO: the BOSS of this region, level 39.
+name: The Cinderwyrm
+# One of its own attacks (a beam); the name flashes on screen as a warning:
+move fire_breath: Fire Breath
+# One of its own attacks (a rain); the name flashes on screen as a warning:
+move eruption: Eruption

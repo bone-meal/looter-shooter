@@ -1,0 +1,6 @@
+{
+ "starting_coins": 1000,
+ "blackjack": {"decks": 6, "reshuffle_at": 0.25, "bets": [5, 10, 25, 50, 100], "table_max": 500},
+ "roulette": {"chips": [1, 5, 10, 25, 100], "table_max": 500},
+ "free_refill": {"below": 10, "to": 100}
+}

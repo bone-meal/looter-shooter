@@ -1,0 +1,111 @@
+# THE HOLLOW CROWN  (region 8 of 8, creature levels 45-50)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[region hollow_crown]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: The Hollow Crown
+about: Everything here is the colour of unpainted canvas. In the middle sits the one who took the colours and means to keep them.
+
+# ---------------- PLACES AND WATERS OF THE HOLLOW CROWN ----------------
+
+[place pale_gate]
+# WHAT: a camp.
+name: The Pale Gate
+
+[place pale_throne]
+# WHAT: the ground where this region's boss waits.
+name: The Pale Throne
+
+[place the_unpainted]
+# WHAT: a ruined village.
+name: The Unpainted Village
+
+[lake pale_basin]
+# WHAT: a pond (fresh water: its own fish).
+name: The Pale Basin
+
+# ---------------- PEOPLE OF THE HOLLOW CROWN ----------------
+
+[folk hollow_crown]
+# WHO: the ordinary people of The Hollow Crown, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: The Faded
+says: I had a name. It was a colour, I think.
+says: Paint over me if I stop moving.
+says: He is not cruel. He is only finished.
+says: Do you remember what red was for?
+
+[person last_painter]
+# WHO: quest giver at The Pale Gate. Gives: Seven Colours (m32), Knights of Nothing (m33), The Pallid King (m34).
+name: The Last Painter
+# The Last Painter says this when a player walks up and talks:
+greeting: I mixed every colour this land has. He took them back to white. Bring me seven and I will open the gate.
+
+# ---------------- QUESTS GIVEN IN THE HOLLOW CROWN ----------------
+
+[quest m32]
+# CHAPTER 8 of the main story. GIVEN BY: The Last Painter. NEEDS FIRST: m31. REWARD: 1000 Magic xp, teaches the long spell Prism Lance.
+title: Seven Colours
+# The Last Painter says this when offering the quest:
+offer: I painted this land. He was my first figure, and I left him unfinished: no colour at all. He has been taking everyone else's ever since.
+# Step 1 shows this in the quest list. The player must: arrive at The Pale Gate.
+step 1: Go to the Pale Gate at the heart of the land
+# Step 2 shows this in the quest list. The player must: hold 1 x Amber Pigment.
+step 2: Carry all seven pigments
+# Step 3 shows this in the quest list. The player must: hold 1 x Storm Pigment.
+step 3: ... the Storm Pigment among them
+# The Last Painter says this when the quest is finished:
+done: All seven. Put them together and you get what he cannot stand: Prism Lance. Water, Fire, Earth, Air, Water, Fire, Earth, Air.
+
+[quest m33]
+# CHAPTER 8 of the main story. GIVEN BY: The Last Painter. NEEDS FIRST: m32. REWARD: 1000 Magic xp, teaches the long spell Genesis Rain.
+title: Knights of Nothing
+# The Last Painter says this when offering the quest:
+offer: His court is made of what he has erased. Clear it, and make the last staff: skysteel, with every stone you have carried.
+# Step 1 shows this in the quest list. The player must: defeat 10 x Pale Knight.
+step 1: Break the pale knights
+# Step 2 shows this in the quest list. The player must: defeat 10 x Hollow Shade.
+step 2: Unmake the hollow shades
+# Step 3 shows this in the quest list. The player must: hold 1 x Prism Staff.
+step 3: Forge the Prism Staff
+# The Last Painter says this when the quest is finished:
+done: You will need to stay standing in there. Genesis Rain: Water, Earth, Air, Water, Earth, Air, Water, Earth.
+
+[quest m34]
+# CHAPTER 8 of the main story. GIVEN BY: The Last Painter. NEEDS FIRST: m33. REWARD: 20000 Magic xp, teaches the long spell Eclipse, guns work in this world.
+title: The Pallid King
+# The Last Painter says this when offering the quest:
+offer: Finish him. I mean that as a painter: finish him.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Pallid King.
+step 1: Defeat the Pallid King on the Pale Throne
+# The Last Painter says this when the quest is finished:
+done: Look. The Crown has a sky again. The land is yours to walk as you like, with whatever you like in your hands. And the last spell, which I never dared write down until now: Eclipse.
+
+# ---------------- CREATURES OF THE HOLLOW CROWN ----------------
+
+[creature pale_knight]
+# WHAT: a common creature, level 46.
+name: Pale Knight
+
+[creature hollow_shade]
+# WHAT: a common creature, level 48.
+name: Hollow Shade
+
+[creature pallid_king]
+# WHO: the BOSS of this region, level 50.
+name: The Pallid King
+# One of its own attacks (a blink); the name flashes on screen as a warning:
+move erase: Erase
+# One of its own attacks (a summon); the name flashes on screen as a warning:
+move court: Summon the Court
+# One of its own attacks (a rain); the name flashes on screen as a warning:
+move white_out: White-Out

@@ -1,0 +1,235 @@
+# AMBERFIELD  (region 1 of 8, creature levels 1-6)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[world aurelind]
+# WHAT: the name of the whole painted world.
+name: Aurelind
+# WHAT: the line in the quest card before the player has met anyone (points them to the first quest giver).
+first hint: Find Farmer Hale at the farmhouse (look for the ! above his head)
+
+[region amberfield]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: Amberfield
+about: Golden wheat as far as you can see, a mill on every stream, and scarecrows that should not be walking.
+
+# ---------------- PLACES AND WATERS OF AMBERFIELD ----------------
+
+[place hale_farm]
+# WHAT: a farm.
+name: Hale Farm
+
+[place millbrook]
+# WHAT: a town.
+name: Millbrook
+
+[place threshing_floor]
+# WHAT: the ground where this region's boss waits.
+name: The Old Threshing Floor
+
+[place southfield]
+# WHAT: a farming village.
+name: Southfield
+
+[place barleywick]
+# WHAT: a farming village.
+name: Barleywick
+
+[lake hale_pond]
+# WHAT: a pond (fresh water: its own fish).
+name: Hale Pond
+
+[lake mill_water]
+# WHAT: a lake (fresh water: its own fish).
+name: The Mill Water
+
+# ---------------- PEOPLE OF AMBERFIELD ----------------
+
+[folk amberfield]
+# WHO: the ordinary people of Amberfield, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: Farmhand
+says: Mind the wheat. Something in it minds you back.
+says: Hale's mill has turned since my grandmother's day.
+says: The colour's coming back to the fields, have you seen?
+says: If you're headed to Millbrook, the cobbles start past the pond.
+
+[person farmer_hale]
+# WHO: quest giver at Hale Farm. Gives: Out of the Wheat (m01), A Proper Fire (s03).
+name: Farmer Hale
+# Farmer Hale says this when a player walks up and talks:
+greeting: You came out of the wheat like you'd been painted there. Never mind. Can you swing a scythe?
+
+[person mirren]
+# WHO: quest giver at Hale Farm. Gives: First Lessons (m02), Mixing Colours (m03), The Harvest King (m06), Mint for the Pot (s04).
+name: Mirren the Hedge-witch
+# Mirren the Hedge-witch says this when a player walks up and talks:
+greeting: Hold the staff out. Let it fill. Then tell it what to be.
+
+[person miller_oswin]
+# WHO: quest giver at Millbrook. Gives: The Miller's Flour (m04), Walking Straw (m05).
+name: Miller Oswin
+# Miller Oswin says this when a player walks up and talks:
+greeting: Flour's short. The fields past the brook are full of walking straw.
+
+[person smith_edda]
+# WHO: quest giver at Millbrook. Gives: Edda's Forge (s02).
+name: Smith Edda
+# Smith Edda says this when a player walks up and talks:
+greeting: Bring me ore and I'll show you what a forge is for.
+
+[person angler_pim]
+# WHO: quest giver at Millbrook. Gives: Something Biting (s01).
+name: Old Pim
+# Old Pim says this when a player walks up and talks:
+greeting: Pond's biting. Nothing else is, lately.
+
+# ---------------- QUESTS GIVEN IN AMBERFIELD ----------------
+
+[quest m01]
+# CHAPTER 1 of the main story. GIVEN BY: Farmer Hale. NEEDS FIRST: nothing. REWARD: 60 Magic xp.
+title: Out of the Wheat
+# Farmer Hale says this when offering the quest:
+offer: You look lost and you're holding a stick like it owes you money. Go and see Mirren before you put an eye out.
+# Step 1 shows this in the quest list. The player must: talk to Mirren the Hedge-witch.
+step 1: Speak to Mirren the Hedge-witch by the farmhouse
+# Step 2 shows this in the quest list. The player must: cast exactly Water, 3 time(s).
+step 2: Hold the cast key, add one Water, release: cast Water Jet
+# Farmer Hale says this when the quest is finished:
+done: There. You asked the staff for water and it gave you water. That is all magic is.
+
+[quest m02]
+# CHAPTER 1 of the main story. GIVEN BY: Mirren the Hedge-witch. NEEDS FIRST: m01. REWARD: 120 Magic xp, 2 x Mana Tonic.
+title: First Lessons
+# Mirren the Hedge-witch says this when offering the quest:
+offer: Four colours: water, fire, earth, air. The first one you add decides the shape. Try each, then try them on the straw-men.
+# Step 1 shows this in the quest list. The player must: cast exactly Fire, 2 time(s).
+step 1: Cast Ember (one Fire)
+# Step 2 shows this in the quest list. The player must: cast exactly Earth, 1 time(s).
+step 2: Cast Stone Spike (one Earth)
+# Step 3 shows this in the quest list. The player must: cast exactly Air, 1 time(s).
+step 3: Cast Gust (one Air)
+# Step 4 shows this in the quest list. The player must: defeat 4 x Strawling.
+step 4: Put down strawlings in the wheat
+# Mirren the Hedge-witch says this when the quest is finished:
+done: Jet, bolt, eruption, wave. Remember which element leads to which.
+
+[quest m03]
+# CHAPTER 1 of the main story. GIVEN BY: Mirren the Hedge-witch. NEEDS FIRST: m02. REWARD: 150 Magic xp.
+title: Mixing Colours
+# Mirren the Hedge-witch says this when offering the quest:
+offer: Now put two colours in the same cast. Water and fire scald. Add air and you have steam. The amount matters as much as the mix.
+# Step 1 shows this in the quest list. The player must: cast any spell mixing Fire + Water, 2 time(s).
+step 1: Mix Water and Fire in one cast
+# Step 2 shows this in the quest list. The player must: cast any spell mixing Air + Fire + Water, 1 time(s).
+step 2: Mix Water, Fire and Air: steam
+# Step 3 shows this in the quest list. The player must: defeat 4 x Field Slime.
+step 3: Burst field slimes
+# Mirren the Hedge-witch says this when the quest is finished:
+done: Good. Every mix is its own thing. Nobody has ever found them all.
+
+[quest m04]
+# CHAPTER 1 of the main story. GIVEN BY: Miller Oswin. NEEDS FIRST: m01. REWARD: 80 Magic xp, 120 Farming xp, 5 x Bread.
+title: The Miller's Flour
+# Miller Oswin says this when offering the quest:
+offer: I've a mill and no grain. The fields are right there, if you don't mind what's standing in them.
+# Step 1 shows this in the quest list. The player must: hold 10 x Wheat and hand them over.
+step 1: Reap ripe wheat (walk up to it and use it)
+# Miller Oswin says this when the quest is finished:
+done: That will do for a week of loaves. Take some.
+
+[quest m05]
+# CHAPTER 1 of the main story. GIVEN BY: Miller Oswin. NEEDS FIRST: m03, m04. REWARD: 200 Magic xp.
+title: Walking Straw
+# Miller Oswin says this when offering the quest:
+offer: They come down from the old threshing floor at dusk. Somebody ought to look. Not me.
+# Step 1 shows this in the quest list. The player must: defeat 10 x Strawling.
+step 1: Clear strawlings from the far fields
+# Step 2 shows this in the quest list. The player must: arrive at The Old Threshing Floor.
+step 2: Find where they come from: the Old Threshing Floor, north-west
+# Miller Oswin says this when the quest is finished:
+done: A king of straw. Of course there is.
+
+[quest m06]
+# CHAPTER 1 of the main story. GIVEN BY: Mirren the Hedge-witch. NEEDS FIRST: m05. REWARD: 400 Magic xp, 1 x Amber Pigment, one more element slot.
+title: The Harvest King
+# Mirren the Hedge-witch says this when offering the quest:
+offer: He was the field's own colour once: amber, the colour of ripe wheat. Something bleached him and left him angry. Burn him: straw remembers fire.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Harvest King.
+step 1: Defeat the Harvest King at the Old Threshing Floor
+# Mirren the Hedge-witch says this when the quest is finished:
+done: Amber is back in the wheat. Hold on to that pigment. Your staff can hold one more element now.
+
+[quest s01]
+# SIDE QUEST. GIVEN BY: Old Pim. NEEDS FIRST: m01. REWARD: 150 Fishing xp, 3 x Fried Minnow.
+title: Something Biting
+# Old Pim says this when offering the quest:
+offer: Take my spare rod. Ripples mean fish. Bring me five and I'll show you what to do with them.
+# Step 1 shows this in the quest list. The player must: hold 5 x Minnow and hand them over.
+step 1: Catch minnows at a rippling pond
+# Old Pim says this when the quest is finished:
+done: Fresh ones! A fire and a stick is all a minnow wants.
+
+[quest s02]
+# SIDE QUEST. GIVEN BY: Smith Edda. NEEDS FIRST: m01. REWARD: 120 Mining xp, 120 Smithing xp.
+title: Edda's Forge
+# Smith Edda says this when offering the quest:
+offer: Copper's in the red rocks on the hills. Six lumps. Then use my forge, and try not to set your sleeves alight.
+# Step 1 shows this in the quest list. The player must: hold 6 x Copper Ore and hand them over.
+step 1: Mine copper veins (red-brown rocks)
+# Step 2 shows this in the quest list. The player must: hold 2 x Copper Bar.
+step 2: Smelt bars at the Millbrook forge
+# Smith Edda says this when the quest is finished:
+done: Two bars and both hands still on. You'll do.
+
+[quest s03]
+# SIDE QUEST. GIVEN BY: Farmer Hale. NEEDS FIRST: m02. REWARD: 100 Woodcutting xp, 150 Firemaking xp, 80 Cooking xp.
+title: A Proper Fire
+# Farmer Hale says this when offering the quest:
+offer: Nights are cold and you'll want something hot. Logs, a spark, and whatever you've got to cook.
+# Step 1 shows this in the quest list. The player must: hold 5 x Ash Log.
+step 1: Chop ash trees for logs
+# Step 2 shows this in the quest list. The player must: light 1 fire(s).
+step 2: Light a fire: drop logs with the use key near open ground, or cast Fire at them
+# Step 3 shows this in the quest list. The player must: hold 1 x Bread.
+step 3: Bake bread at your fire (3 wheat)
+# Farmer Hale says this when the quest is finished:
+done: Sit by it a while. A fire puts the strength back in your casting arm.
+
+[quest s04]
+# SIDE QUEST. GIVEN BY: Mirren the Hedge-witch. NEEDS FIRST: m03. REWARD: 160 Alchemy xp.
+title: Mint for the Pot
+# Mirren the Hedge-witch says this when offering the quest:
+offer: A hedge-witch who buys her tonics is no hedge-witch. Mint, a cauldron, patience.
+# Step 1 shows this in the quest list. The player must: hold 6 x Meadowmint.
+step 1: Pick meadowmint in the fields
+# Step 2 shows this in the quest list. The player must: hold 2 x Mana Tonic.
+step 2: Brew Mana Tonic at the cauldron in Millbrook
+# Mirren the Hedge-witch says this when the quest is finished:
+done: Smell that? That's what a full staff smells like.
+
+# ---------------- CREATURES OF AMBERFIELD ----------------
+
+[creature strawling]
+# WHAT: a common creature, level 1.
+name: Strawling
+
+[creature field_slime]
+# WHAT: a common creature, level 2.
+name: Field Slime
+
+[creature harvest_king]
+# WHO: the BOSS of this region, level 6.
+name: The Harvest King
+# One of its own attacks (a slam); the name flashes on screen as a warning:
+move reap: Reap
+# One of its own attacks (a summon); the name flashes on screen as a warning:
+move sow: Sow the Field

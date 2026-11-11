@@ -1,0 +1,24 @@
+{
+ "version": 1,
+ "_about": "Chat commands (type / in chat). scope: self = changes only your own character and runs on your machine; world = changes the shared world and runs on the host; host = only the host may use it. A client may use commands only after the host typed /op <name>. Commands are a developer switch: settings `dev_commands` (default on in debug builds, off in release exports).",
+ "commands": [
+  {"name": "help", "usage": "/help [command]", "help": "Lists the commands, or explains one.", "scope": "self"},
+  {"name": "give", "usage": "/give gun [tier] [body] | unique <id|all> | item <id> [count] | coins <amount>", "help": "Puts a rolled gun, a pony unique, an item or casino coins in your inventory. Tiers: grey green blue purple gold orange rainbow pony.", "scope": "self"},
+  {"name": "tp", "usage": "/tp <island|club|arena|omaha|fantasy|place name> | <x> <y> <z>", "help": "Moves you to a place or to coordinates. In the fantasy world, place = a region or town name.", "scope": "self"},
+  {"name": "heal", "usage": "/heal", "help": "Fills your health and mana.", "scope": "self"},
+  {"name": "god", "usage": "/god", "help": "Switches taking damage off or on.", "scope": "self"},
+  {"name": "fly", "usage": "/fly", "help": "Switches free flight off or on: you move where you look, no gravity.", "scope": "self"},
+  {"name": "speed", "usage": "/speed <0.2-10>", "help": "Movement speed multiplier (1 = normal).", "scope": "self"},
+  {"name": "level", "usage": "/level <1-50>", "help": "Sets your player level.", "scope": "self"},
+  {"name": "xp", "usage": "/xp <amount>", "help": "Gives player experience.", "scope": "self"},
+  {"name": "skill", "usage": "/skill <skill|all> <level>", "help": "Sets a fantasy skill (woodcutting, fishing, ...) to a level.", "scope": "self"},
+  {"name": "spells", "usage": "/spells [element letters]", "help": "Lists the spells you can cast with your current channel size, or shows what a sequence such as WFA makes.", "scope": "self"},
+  {"name": "slots", "usage": "/slots <1-12>", "help": "Sets how many elements your staff can hold in one cast.", "scope": "self"},
+  {"name": "gear", "usage": "/gear <item id|list>", "help": "Gives fantasy gear or materials (staffs, tools, robes, logs, fish, ore ...).", "scope": "self"},
+  {"name": "quest", "usage": "/quest list | start <id> | finish <id|all> | reset", "help": "Shows or changes the party's quest log.", "scope": "world"},
+  {"name": "spawn", "usage": "/spawn <enemy id> [count]", "help": "Spawns enemies in front of you.", "scope": "world"},
+  {"name": "kill", "usage": "/kill", "help": "Removes every enemy.", "scope": "world"},
+  {"name": "op", "usage": "/op <player name>", "help": "Lets that player use commands in your session.", "scope": "host"},
+  {"name": "deop", "usage": "/deop <player name>", "help": "Takes commands away from that player again.", "scope": "host"}
+ ]
+}

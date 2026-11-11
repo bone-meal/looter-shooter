@@ -1,0 +1,143 @@
+# THE GREENWALD  (region 2 of 8, creature levels 6-12)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[region greenwald]
+# WHAT: the region's name (shown when the player walks in and on the map) and a line about it for the map.
+name: The Greenwald
+about: Old oaks close overhead. The light is green, the paths are few, and something large is awake under the roots.
+
+# ---------------- PLACES AND WATERS OF THE GREENWALD ----------------
+
+[place fernhollow]
+# WHAT: a town.
+name: Fernhollow
+
+[place rootmother_hollow]
+# WHAT: the ground where this region's boss waits.
+name: Rootmother's Hollow
+
+[place mossford]
+# WHAT: a farming village.
+name: Mossford
+
+[lake fern_mere]
+# WHAT: a lake (fresh water: its own fish).
+name: Fern Mere
+
+[lake heron_pool]
+# WHAT: a pond (fresh water: its own fish).
+name: Heron Pool
+
+# ---------------- PEOPLE OF THE GREENWALD ----------------
+
+[folk greenwald]
+# WHO: the ordinary people of The Greenwald, who have no quests. `name` floats over each of them;
+# each `says` line is one thing one of them tells a player who talks to them. Add or remove `says` lines freely.
+name: Woodsfolk
+says: Stay on the path after dark. The trees walk.
+says: Good ash for staves, better oak for doors.
+says: The Rootmother was gentle once. Everyone says so.
+says: Glowcaps only grow where nobody's looking.
+
+[person warden_oska]
+# WHO: quest giver at Fernhollow. Gives: Under the Oaks (m07), A Better Staff (m08), Bark That Walks (m10), The Rootmother (m11).
+name: Warden Oska
+# Warden Oska says this when a player walks up and talks:
+greeting: Mind the roots. They moved again last night.
+
+[person herbalist_wynn]
+# WHO: quest giver at Fernhollow. Gives: Goblins in the Glowcaps (m09).
+name: Herbalist Wynn
+# Herbalist Wynn says this when a player walks up and talks:
+greeting: Glowcaps only open in the dark of the wood. Bring a basketful.
+
+# ---------------- QUESTS GIVEN IN THE GREENWALD ----------------
+
+[quest m07]
+# CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m06. REWARD: 500 Magic xp.
+title: Under the Oaks
+# Warden Oska says this when offering the quest:
+offer: You're the one who put the straw king down. The wood needs the same favour. Start with the wolves: they're hungry, not wicked.
+# Step 1 shows this in the quest list. The player must: arrive at Fernhollow.
+step 1: Travel west to Fernhollow in the Greenwald
+# Step 2 shows this in the quest list. The player must: defeat 8 x Forest Wolf.
+step 2: Thin the wolf packs around Fernhollow
+# Warden Oska says this when the quest is finished:
+done: Quieter already. That was the easy part.
+
+[quest m08]
+# CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m07. REWARD: 400 Magic xp.
+title: A Better Staff
+# Warden Oska says this when offering the quest:
+offer: That ash stick won't carry what the wood will ask of you. Oak holds more. You have the pigment to wake it.
+# Step 1 shows this in the quest list. The player must: reach Woodcutting level 8.
+step 1: Reach Woodcutting 8
+# Step 2 shows this in the quest list. The player must: hold 1 x Oakheart Staff.
+step 2: Craft an Oakheart Staff at a workbench (oak logs, copper bars, Amber Pigment)
+# Warden Oska says this when the quest is finished:
+done: Feel the difference? Every land here has a wood or a stone that holds magic better than the last.
+
+[quest m09]
+# CHAPTER 2 of the main story. GIVEN BY: Herbalist Wynn. NEEDS FIRST: m07. REWARD: 500 Magic xp, 300 Farming xp, 3 x Health Draught.
+title: Goblins in the Glowcaps
+# Herbalist Wynn says this when offering the quest:
+offer: They pelt my pickers with stones. Chase them off and bring me what they've been trampling.
+# Step 1 shows this in the quest list. The player must: defeat 10 x Mossgoblin.
+step 1: Drive mossgoblins out of the mushroom glades
+# Step 2 shows this in the quest list. The player must: hold 8 x Glowcap and hand them over.
+step 2: Gather glowcaps
+# Herbalist Wynn says this when the quest is finished:
+done: These will brew. Take three draughts for the trouble.
+
+[quest m10]
+# CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m08, m09. REWARD: 600 Magic xp.
+title: Bark That Walks
+# Warden Oska says this when offering the quest:
+offer: The big ones shrug off water. Earth and fire together make something that sticks and burns. Use it.
+# Step 1 shows this in the quest list. The player must: defeat 6 x Barkhide.
+step 1: Fell barkhides
+# Step 2 shows this in the quest list. The player must: cast any spell mixing Earth + Fire, 5 time(s).
+step 2: Cast Magma (Earth and Fire together) five times
+# Warden Oska says this when the quest is finished:
+done: Magma on bark. Ugly, and it works.
+
+[quest m11]
+# CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m10. REWARD: 800 Magic xp, 1 x Verdant Pigment, one more element slot.
+title: The Rootmother
+# Warden Oska says this when offering the quest:
+offer: She was green once: the first tree, mother of the wood. Now she's bleached to bone and strangling her own children.
+# Step 1 shows this in the quest list. The player must: defeat 1 x The Rootmother.
+step 1: Defeat the Rootmother in her hollow, far west
+# Warden Oska says this when the quest is finished:
+done: Look at the leaves. Verdant. You carry it now.
+
+# ---------------- CREATURES OF THE GREENWALD ----------------
+
+[creature forest_wolf]
+# WHAT: a common creature, level 6.
+name: Forest Wolf
+
+[creature mossgoblin]
+# WHAT: a common creature, level 8.
+name: Mossgoblin
+
+[creature barkhide]
+# WHAT: a common creature, level 10.
+name: Barkhide
+
+[creature rootmother]
+# WHO: the BOSS of this region, level 12.
+name: The Rootmother
+# One of its own attacks (a zones); the name flashes on screen as a warning:
+move root_snare: Root Snare
+# One of its own attacks (a volley); the name flashes on screen as a warning:
+move seed_burst: Seed Burst

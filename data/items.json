@@ -1,0 +1,258 @@
+{
+  "version": 3,
+  "items": {
+    "pistol_basic": {
+      "name": "Hand Cannon",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Loud, heavy, and convinced every problem is just a hole waiting to happen."
+    },
+    "sniper_basic": {
+      "name": "Quiet Regret",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Patience is a virtue. So is a very long barrel."
+    },
+    "worm": {
+      "name": "Pink Earthworm",
+      "kind": "loot",
+      "stack_max": 16,
+      "flavor": "Small, pink and mildly offended. It wriggles whenever you stare at it."
+    },
+    "ak47": {
+      "name": "AK-47",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Older than most of the skeletons, and a lot more reliable."
+    },
+    "m16": {
+      "name": "M16",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Light, accurate and disappointingly well-behaved."
+    },
+    "m60": {
+      "name": "M60",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Heavy, hungry, and generous with its ammunition. Mostly toward other people."
+    },
+    "shotgun_double": {
+      "name": "Double-Barrel Shotgun",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Two chances to be loud. It takes both of them."
+    },
+    "rocket_launcher": {
+      "name": "Rocket Launcher",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "For when a bullet feels like too polite a suggestion."
+    },
+    "grenade_launcher": {
+      "name": "Grenade Launcher",
+      "kind": "weapon",
+      "stack_max": 1,
+      "flavor": "Lobs your problems at somebody else. Gift-wrapping not included."
+    },
+    "tin_hat": {
+      "name": "Tin Hat",
+      "kind": "armor",
+      "slot": "hat",
+      "stack_max": 1,
+      "defense": 2,
+      "block": 0,
+      "resist": {},
+      "flavor": "Keeps the signals out. The skeletons never had any."
+    },
+    "iron_helm": {
+      "name": "Iron Helm",
+      "kind": "armor",
+      "slot": "head",
+      "stack_max": 1,
+      "defense": 6,
+      "block": 0,
+      "resist": {},
+      "flavor": "Smells like a blacksmith's regret. Fits like it too."
+    },
+    "gold_hoops": {
+      "name": "Gold Hoops",
+      "kind": "armor",
+      "slot": "earrings",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0.0,
+      "resist": {
+        "fire": 0.05
+      },
+      "flavor": "Shiny enough to distract exactly nobody."
+    },
+    "frost_amulet": {
+      "name": "Frost Amulet",
+      "kind": "armor",
+      "slot": "necklace",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0,
+      "resist": {
+        "ice": 0.15
+      },
+      "flavor": "Cold to the touch and mildly smug about it."
+    },
+    "cool_shades": {
+      "name": "Cool Shades",
+      "kind": "armor",
+      "slot": "glasses",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0.02,
+      "resist": {},
+      "flavor": "You cannot be hit if you look this good. Mostly."
+    },
+    "cigarette": {
+      "name": "Lit Cigarette",
+      "kind": "armor",
+      "slot": "mouth",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0,
+      "resist": {},
+      "flavor": "Smoldering with attitude. Left click reloads an empty gun for you.",
+      "ability": "auto_reload"
+    },
+    "band_shirt": {
+      "name": "Band Shirt",
+      "kind": "armor",
+      "slot": "shirt",
+      "stack_max": 1,
+      "defense": 1,
+      "block": 0,
+      "resist": {},
+      "flavor": "Faded from a concert nobody remembers."
+    },
+    "steel_chestplate": {
+      "name": "Steel Chestplate",
+      "kind": "armor",
+      "slot": "chestplate",
+      "stack_max": 1,
+      "defense": 12,
+      "block": 0.03,
+      "resist": {},
+      "flavor": "Heavy, shiny and politely dented."
+    },
+    "iron_gauntlets": {
+      "name": "Iron Gauntlets",
+      "kind": "armor",
+      "slot": "gauntlets",
+      "stack_max": 1,
+      "defense": 4,
+      "block": 0.05,
+      "resist": {},
+      "flavor": "For punching problems back into their coffins."
+    },
+    "ember_ring": {
+      "name": "Ember Ring",
+      "kind": "armor",
+      "slot": "ring",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0,
+      "resist": {
+        "fire": 0.15
+      },
+      "flavor": "Warm to the touch. Do not wear while handling marshmallows."
+    },
+    "venom_ring": {
+      "name": "Venom Ring",
+      "kind": "armor",
+      "slot": "ring",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0,
+      "resist": {
+        "toxic": 0.15
+      },
+      "flavor": "Hisses faintly when nobody is listening."
+    },
+    "charm_bracelet": {
+      "name": "Charm Bracelet",
+      "kind": "armor",
+      "slot": "bracelet",
+      "stack_max": 1,
+      "defense": 0,
+      "block": 0.04,
+      "resist": {},
+      "flavor": "Each charm is a tiny lucky escape."
+    },
+    "cargo_pants": {
+      "name": "Cargo Pants",
+      "kind": "armor",
+      "slot": "pants",
+      "stack_max": 1,
+      "defense": 2,
+      "block": 0,
+      "resist": {},
+      "flavor": "Eleven pockets, all empty."
+    },
+    "iron_greaves": {
+      "name": "Iron Greaves",
+      "kind": "armor",
+      "slot": "leg_armor",
+      "stack_max": 1,
+      "defense": 6,
+      "block": 0,
+      "resist": {},
+      "flavor": "Clanks with every step, so stealth is out."
+    },
+    "tattered_cape": {
+      "name": "Tattered Cape",
+      "kind": "armor",
+      "slot": "cape",
+      "stack_max": 1,
+      "defense": 1,
+      "block": 0,
+      "resist": {
+        "toxic": 0.1
+      },
+      "flavor": "Flaps dramatically even with no wind."
+    },
+    "leather_belt": {
+      "name": "Leather Belt",
+      "kind": "armor",
+      "slot": "waist",
+      "stack_max": 1,
+      "defense": 2,
+      "block": 0.02,
+      "resist": {},
+      "flavor": "Holds up your trousers and your confidence."
+    },
+    "work_boots": {
+      "name": "Work Boots",
+      "kind": "armor",
+      "slot": "boots",
+      "stack_max": 1,
+      "defense": 2,
+      "block": 0,
+      "resist": {},
+      "flavor": "Steel toes. Old socks. Good vibes."
+    },
+    "iron_sabatons": {
+      "name": "Iron Sabatons",
+      "kind": "armor",
+      "slot": "foot_armor",
+      "stack_max": 1,
+      "defense": 5,
+      "block": 0,
+      "resist": {
+        "ice": 0.05
+      },
+      "flavor": "Stomps are now a legitimate fighting style."
+    },
+    "gun": {
+      "name": "Rolled Gun",
+      "kind": "gun",
+      "stack_max": 1,
+      "flavor": "Built from parts. No two are alike."
+    }
+  }
+}

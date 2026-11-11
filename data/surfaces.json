@@ -1,0 +1,347 @@
+{
+ "_about": "Named surfaces used by the world builders. set = CC0 texture folder in assets/cc0/textures/, tile = metres per texture repeat, tint = colour multiplied onto the texture, uv = true when the mesh carries its own UVs in metres (otherwise the texture is projected in world space). gain = [r, g, b] multiplier that brings the texture's average to white, for surfaces whose colour comes from the model or the land (fantasy world: fx_ = building and prop parts, g_ = ground kinds); it replaces tint. grain = true: the surface takes its colour from the model alone; it uses the set's grey <set>_grain_1k.jpg (made by tools/make_grain.py, average one half) times two, so the texture adds only its grain.",
+ "surfaces": [
+  {
+   "id": "island_sand",
+   "set": "sand_01",
+   "tile": 2.2,
+   "tint": "#fff3d6"
+  },
+  {
+   "id": "island_grass",
+   "set": "leafy_grass",
+   "tile": 2.4,
+   "tint": "#9cc878"
+  },
+  {
+   "id": "island_shore",
+   "set": "coast_sand_01",
+   "tile": 4.0,
+   "tint": "#ffffff"
+  },
+  {
+   "id": "palm_bark",
+   "set": "palm_tree_bark",
+   "tile": 1.3,
+   "tint": "#d9c9b0"
+  },
+  {
+   "id": "painting_post",
+   "set": "weathered_brown_planks",
+   "tile": 1.8,
+   "tint": "#ffffff"
+  },
+  {
+   "id": "painting_frame",
+   "set": "weathered_brown_planks",
+   "tile": 1.2,
+   "tint": "#ffe9b8"
+  },
+  {
+   "id": "arena_sand",
+   "set": "sand_01",
+   "tile": 3.0,
+   "tint": "#f7e3bd"
+  },
+  {
+   "id": "arena_center",
+   "set": "gravelly_sand",
+   "tile": 2.5,
+   "tint": "#f0dcc0"
+  },
+  {
+   "id": "arena_wall",
+   "set": "large_sandstone_blocks_01",
+   "tile": 2.6,
+   "tint": "#ffffff",
+   "uv": true
+  },
+  {
+   "id": "arena_tier",
+   "set": "large_sandstone_blocks_01",
+   "tile": 3.2,
+   "tint": "#fff1d6",
+   "uv": true
+  },
+  {
+   "id": "arena_column",
+   "set": "sandstone_blocks_08",
+   "tile": 1.6,
+   "tint": "#fff6e6"
+  },
+  {
+   "id": "arena_portal",
+   "set": "large_sandstone_blocks_01",
+   "tile": 2.2,
+   "tint": "#fff4e0"
+  },
+  {
+   "id": "arena_gate_recess",
+   "set": "large_sandstone_blocks_01",
+   "tile": 2.2,
+   "tint": "#8a7f74"
+  },
+  {
+   "id": "arena_pillar",
+   "set": "large_sandstone_blocks_01",
+   "tile": 2.0,
+   "tint": "#f2e4cc"
+  },
+  {
+   "id": "fx_plaster",
+   "set": "white_plaster_rough_01",
+   "tile": 2.6,
+   "grain": true
+  },
+  {
+   "id": "fx_adobe",
+   "set": "clay_plaster",
+   "tile": 2.6,
+   "grain": true
+  },
+  {
+   "id": "fx_timber",
+   "set": "medieval_wood",
+   "tile": 1.8,
+   "grain": true
+  },
+  {
+   "id": "fx_wood",
+   "set": "weathered_brown_planks",
+   "tile": 1.6,
+   "grain": true
+  },
+  {
+   "id": "fx_roof",
+   "set": "clay_roof_tiles_02",
+   "tile": 2.2,
+   "grain": true
+  },
+  {
+   "id": "fx_thatch",
+   "set": "thatch_roof_angled",
+   "tile": 2.2,
+   "grain": true
+  },
+  {
+   "id": "fx_slate",
+   "set": "roof_slates_02",
+   "tile": 2.0,
+   "grain": true
+  },
+  {
+   "id": "fx_stone",
+   "set": "medieval_blocks_02",
+   "tile": 2.4,
+   "grain": true
+  },
+  {
+   "id": "fx_sandstone",
+   "set": "sandstone_brick_wall_01",
+   "tile": 2.4,
+   "grain": true
+  },
+  {
+   "id": "fx_cloth",
+   "set": "hessian_230",
+   "tile": 0.9,
+   "grain": true
+  },
+  {
+   "id": "fx_leather",
+   "set": "brown_leather",
+   "tile": 1.0,
+   "grain": true
+  },
+  {
+   "id": "fx_metal",
+   "set": "rusty_metal_02",
+   "tile": 1.2,
+   "grain": true
+  },
+  {
+   "id": "fx_bark",
+   "set": "bark_brown_02",
+   "tile": 1.4,
+   "grain": true
+  },
+  {
+   "id": "fx_pinebark",
+   "set": "pine_bark",
+   "tile": 1.4,
+   "grain": true
+  },
+  {
+   "id": "fx_leaf",
+   "set": "leafy_grass",
+   "tile": 1.6,
+   "grain": true
+  },
+  {
+   "id": "fx_rock",
+   "set": "cliff_side",
+   "tile": 3.0,
+   "grain": true
+  },
+  {
+   "id": "g_wheat",
+   "set": "withered_grass",
+   "tile": 3.0,
+   "gain": [
+    2.35,
+    3.289,
+    4.954
+   ]
+  },
+  {
+   "id": "g_grass",
+   "set": "leafy_grass",
+   "tile": 3.0,
+   "gain": [
+    3.126,
+    4.237,
+    9.416
+   ]
+  },
+  {
+   "id": "g_forest",
+   "set": "forest_floor",
+   "tile": 3.2,
+   "gain": [
+    2.615,
+    4.22,
+    8.979
+   ]
+  },
+  {
+   "id": "g_coast",
+   "set": "coast_sand_01",
+   "tile": 3.5,
+   "gain": [
+    4.395,
+    5.746,
+    9.109
+   ]
+  },
+  {
+   "id": "g_sand",
+   "set": "sand_01",
+   "tile": 3.0,
+   "gain": [
+    2.619,
+    3.264,
+    6.161
+   ]
+  },
+  {
+   "id": "g_dry",
+   "set": "dry_ground_01",
+   "tile": 3.4,
+   "gain": [
+    4.18,
+    4.991,
+    6.771
+   ]
+  },
+  {
+   "id": "g_snow",
+   "set": "snow_02",
+   "tile": 3.5,
+   "gain": [
+    2.639,
+    2.643,
+    2.574
+   ]
+  },
+  {
+   "id": "g_burnt",
+   "set": "burned_ground_01",
+   "tile": 3.4,
+   "gain": [
+    6.38,
+    8.573,
+    11.991
+   ]
+  },
+  {
+   "id": "g_highland",
+   "set": "aerial_grass_rock",
+   "tile": 6.0,
+   "gain": [
+    5.857,
+    8.143,
+    35.544
+   ]
+  },
+  {
+   "id": "g_pale",
+   "set": "gravel_ground_01",
+   "tile": 3.0,
+   "gain": [
+    3.354,
+    4.232,
+    6.617
+   ]
+  },
+  {
+   "id": "g_rock",
+   "set": "cliff_side",
+   "tile": 5.0,
+   "gain": [
+    4.697,
+    10.895,
+    29.356
+   ]
+  },
+  {
+   "id": "g_cobble",
+   "set": "cobblestone_floor_04",
+   "tile": 2.6,
+   "gain": [
+    3.557,
+    4.35,
+    6.626
+   ]
+  },
+  {
+   "id": "g_dirt",
+   "set": "stony_dirt_path",
+   "tile": 3.0,
+   "gain": [
+    12.542,
+    20.673,
+    37.021
+   ]
+  },
+  {
+   "id": "fx_fur",
+   "set": "withered_grass",
+   "tile": 0.7,
+   "grain": true
+  },
+  {
+   "id": "fx_scale",
+   "set": "clay_roof_tiles_02",
+   "tile": 0.45,
+   "grain": true
+  },
+  {
+   "id": "fx_ice",
+   "set": "snow_02",
+   "tile": 1.2,
+   "grain": true
+  },
+  {
+   "id": "fx_bone",
+   "set": "white_plaster_rough_01",
+   "tile": 1.0,
+   "grain": true
+  },
+  {
+   "id": "fx_feather",
+   "set": "thatch_roof_angled",
+   "tile": 0.6,
+   "grain": true
+  }
+ ]
+}

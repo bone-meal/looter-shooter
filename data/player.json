@@ -1,0 +1,46 @@
+{
+  "version": 5,
+  "max_hp": 100,
+  "sprint_multiplier": 1.6,
+  "starting_items": [
+    [
+      "pistol_basic",
+      1
+    ],
+    [
+      "sniper_basic",
+      1
+    ]
+  ],
+  "status": {
+    "fire": {
+      "dps": 3.0,
+      "seconds": 3.0
+    },
+    "toxic": {
+      "dps": 2.0,
+      "seconds": 5.0
+    },
+    "ice": {
+      "slow": 0.6,
+      "seconds": 2.0
+    }
+  },
+  "name_loadouts": {
+    "notch": {
+      "items": [
+        [
+          "m16",
+          1
+        ],
+        [
+          "rocket_launcher",
+          1
+        ]
+      ],
+      "equip": {
+        "mouth": "cigarette"
+      }
+    }
+  }
+}

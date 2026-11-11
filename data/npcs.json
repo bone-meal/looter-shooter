@@ -1,0 +1,36 @@
+{
+ "version": 1,
+ "greet_range": 4.0,
+ "look_range": 6.0,
+ "chatter_range": 14.0,
+ "bubble_seconds": 4.5,
+ "greet_cooldown": 45.0,
+ "idle_gap": [14.0, 28.0],
+ "npcs": {
+  "lifeguard": {
+   "name": "Marina", "title": "Lifeguard",
+   "greet": ["Hey {player}! Want a new look? Press F.", "Welcome back, {player}. Looking good out there."],
+   "idle": ["Come on, just one bite...", "Nobody drowns on my shift.", "The sea is calm today.", "I caught a boot last week. Still proud."]
+  },
+  "dealer_blackjack": {
+   "name": "Cherry", "title": "Blackjack dealer",
+   "greet": ["Take a seat, {player}. The cards are warm.", "Feeling lucky, {player}?"],
+   "idle": ["Place your bets!", "Twenty-one or bust, darlings.", "The house always smiles."]
+  },
+  "dealer_roulette": {
+   "name": "Violet", "title": "Roulette dealer",
+   "greet": ["Round and round, {player}. Pick a number.", "Red or black, {player}?"],
+   "idle": ["Round she goes...", "No more bets!", "Zero is always watching."]
+  },
+  "waitress_mint": {
+   "name": "Mint", "title": "Waitress",
+   "greet": ["Drinks, {player}? On the house. Almost.", "Hi {player}! Mind the jackpot crowd."],
+   "idle": ["My feet hurt.", "Table four wants more ice.", "Somebody won big earlier!"]
+  },
+  "waitress_goldie": {
+   "name": "Goldie", "title": "Waitress",
+   "greet": ["Oh, {player}! You look like a winner.", "Hello {player}, need a lucky charm?"],
+   "idle": ["Tips are how I pay for shoes.", "The pachinko wall is loud tonight.", "Try the vendor kiosks - guns!"]
+  }
+ }
+}

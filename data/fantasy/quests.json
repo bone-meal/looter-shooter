@@ -1,0 +1,1026 @@
+{
+ "version": 1,
+ "_about": "The fantasy world's quests (rules: core/quest_log.gd). chapter 1-8 = the main line (one region each, ending in its boss), 0 = side quests. requires = quests that must be finished first; level = Magic level advised (shown, not enforced: the boss enforces it). steps are done in order. step types: talk (npc), kill (enemy, count), have (item, count; take = handed in), skill (skill, level), reach (place), cast (sequence = exact elements, or substance = element set, or secret = id; count), fire (count). rewards: xp (Magic), skill_xp, items, pigment (one more element slot for the party), secret (a long spell is taught), unlock_guns. Text and numbers are placeholders for the director. Titles, spoken lines and step texts are in data/fantasy/writing/<region>.txt.",
+ "quests": [
+  {
+   "id": "m01",
+   "chapter": 1,
+   "giver": "farmer_hale",
+   "requires": [],
+   "steps": [
+    {
+     "type": "talk",
+     "npc": "mirren"
+    },
+    {
+     "type": "cast",
+     "sequence": "W",
+     "count": 3
+    }
+   ],
+   "rewards": {
+    "xp": 60
+   }
+  },
+  {
+   "id": "m02",
+   "chapter": 1,
+   "giver": "mirren",
+   "requires": [
+    "m01"
+   ],
+   "steps": [
+    {
+     "type": "cast",
+     "sequence": "F",
+     "count": 2
+    },
+    {
+     "type": "cast",
+     "sequence": "E",
+     "count": 1
+    },
+    {
+     "type": "cast",
+     "sequence": "A",
+     "count": 1
+    },
+    {
+     "type": "kill",
+     "enemy": "strawling",
+     "count": 4
+    }
+   ],
+   "rewards": {
+    "xp": 120,
+    "items": {
+     "mana_tonic": 2
+    }
+   }
+  },
+  {
+   "id": "m03",
+   "chapter": 1,
+   "giver": "mirren",
+   "requires": [
+    "m02"
+   ],
+   "steps": [
+    {
+     "type": "cast",
+     "substance": "FW",
+     "count": 2
+    },
+    {
+     "type": "cast",
+     "substance": "AFW",
+     "count": 1
+    },
+    {
+     "type": "kill",
+     "enemy": "field_slime",
+     "count": 4
+    }
+   ],
+   "rewards": {
+    "xp": 150
+   }
+  },
+  {
+   "id": "m04",
+   "chapter": 1,
+   "giver": "miller_oswin",
+   "requires": [
+    "m01"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "wheat",
+     "count": 10,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "xp": 80,
+    "skill_xp": {
+     "farming": 120
+    },
+    "items": {
+     "bread": 5
+    }
+   }
+  },
+  {
+   "id": "m05",
+   "chapter": 1,
+   "giver": "miller_oswin",
+   "requires": [
+    "m03",
+    "m04"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "strawling",
+     "count": 10
+    },
+    {
+     "type": "reach",
+     "place": "threshing_floor"
+    }
+   ],
+   "rewards": {
+    "xp": 200
+   }
+  },
+  {
+   "id": "m06",
+   "chapter": 1,
+   "giver": "mirren",
+   "requires": [
+    "m05"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "harvest_king",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 400,
+    "items": {
+     "amber_pigment": 1
+    },
+    "pigment": true
+   },
+   "level": 5
+  },
+  {
+   "id": "s01",
+   "chapter": 0,
+   "giver": "angler_pim",
+   "requires": [
+    "m01"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "minnow",
+     "count": 5,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "fishing": 150
+    },
+    "items": {
+     "fried_minnow": 3
+    }
+   }
+  },
+  {
+   "id": "s02",
+   "chapter": 0,
+   "giver": "smith_edda",
+   "requires": [
+    "m01"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "copper_ore",
+     "count": 6,
+     "take": true
+    },
+    {
+     "type": "have",
+     "item": "copper_bar",
+     "count": 2,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "mining": 120,
+     "smithing": 120
+    }
+   }
+  },
+  {
+   "id": "s03",
+   "chapter": 0,
+   "giver": "farmer_hale",
+   "requires": [
+    "m02"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "ash_log",
+     "count": 5,
+     "take": false
+    },
+    {
+     "type": "fire",
+     "count": 1
+    },
+    {
+     "type": "have",
+     "item": "bread",
+     "count": 1,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "woodcutting": 100,
+     "firemaking": 150,
+     "cooking": 80
+    }
+   }
+  },
+  {
+   "id": "s04",
+   "chapter": 0,
+   "giver": "mirren",
+   "requires": [
+    "m03"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "meadowmint",
+     "count": 6,
+     "take": false
+    },
+    {
+     "type": "have",
+     "item": "mana_tonic",
+     "count": 2,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "alchemy": 160
+    }
+   }
+  },
+  {
+   "id": "m07",
+   "chapter": 2,
+   "giver": "warden_oska",
+   "requires": [
+    "m06"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "fernhollow"
+    },
+    {
+     "type": "kill",
+     "enemy": "forest_wolf",
+     "count": 8
+    }
+   ],
+   "rewards": {
+    "xp": 500
+   }
+  },
+  {
+   "id": "m08",
+   "chapter": 2,
+   "giver": "warden_oska",
+   "requires": [
+    "m07"
+   ],
+   "steps": [
+    {
+     "type": "skill",
+     "skill": "woodcutting",
+     "level": 8
+    },
+    {
+     "type": "have",
+     "item": "oak_staff",
+     "count": 1,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "xp": 400
+   }
+  },
+  {
+   "id": "m09",
+   "chapter": 2,
+   "giver": "herbalist_wynn",
+   "requires": [
+    "m07"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "mossgoblin",
+     "count": 10
+    },
+    {
+     "type": "have",
+     "item": "glowcap",
+     "count": 8,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "xp": 500,
+    "skill_xp": {
+     "farming": 300
+    },
+    "items": {
+     "health_draught": 3
+    }
+   }
+  },
+  {
+   "id": "m10",
+   "chapter": 2,
+   "giver": "warden_oska",
+   "requires": [
+    "m08",
+    "m09"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "barkhide",
+     "count": 6
+    },
+    {
+     "type": "cast",
+     "substance": "EF",
+     "count": 5
+    }
+   ],
+   "rewards": {
+    "xp": 600
+   }
+  },
+  {
+   "id": "m11",
+   "chapter": 2,
+   "giver": "warden_oska",
+   "requires": [
+    "m10"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "rootmother",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 800,
+    "items": {
+     "verdant_pigment": 1
+    },
+    "pigment": true
+   },
+   "level": 11
+  },
+  {
+   "id": "m12",
+   "chapter": 3,
+   "giver": "captain_ysolde",
+   "requires": [
+    "m11"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "brinemouth_town"
+    },
+    {
+     "type": "kill",
+     "enemy": "reef_crab",
+     "count": 8
+    }
+   ],
+   "rewards": {
+    "xp": 1200
+   }
+  },
+  {
+   "id": "m13",
+   "chapter": 3,
+   "giver": "netmender_brill",
+   "requires": [
+    "m12"
+   ],
+   "steps": [
+    {
+     "type": "skill",
+     "skill": "fishing",
+     "level": 13
+    },
+    {
+     "type": "have",
+     "item": "silverfin",
+     "count": 6,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "xp": 1200,
+    "skill_xp": {
+     "fishing": 500
+    },
+    "items": {
+     "oak_rod": 1
+    }
+   }
+  },
+  {
+   "id": "m14",
+   "chapter": 3,
+   "giver": "captain_ysolde",
+   "requires": [
+    "m12"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "drowned_sailor",
+     "count": 10
+    },
+    {
+     "type": "cast",
+     "substance": "AF",
+     "count": 6
+    }
+   ],
+   "rewards": {
+    "xp": 1600
+   }
+  },
+  {
+   "id": "m15",
+   "chapter": 3,
+   "giver": "captain_ysolde",
+   "requires": [
+    "m13",
+    "m14"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "tidewarden",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 1500,
+    "items": {
+     "azure_pigment": 1
+    },
+    "pigment": true
+   },
+   "level": 17
+  },
+  {
+   "id": "m16",
+   "chapter": 4,
+   "giver": "tarek",
+   "requires": [
+    "m15"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "dunehaven"
+    },
+    {
+     "type": "kill",
+     "enemy": "dune_scorpion",
+     "count": 8
+    }
+   ],
+   "rewards": {
+    "xp": 2000
+   }
+  },
+  {
+   "id": "m17",
+   "chapter": 4,
+   "giver": "glasswright_noor",
+   "requires": [
+    "m16"
+   ],
+   "steps": [
+    {
+     "type": "skill",
+     "skill": "mining",
+     "level": 20
+    },
+    {
+     "type": "have",
+     "item": "sunstone",
+     "count": 8,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "xp": 2000,
+    "skill_xp": {
+     "smithing": 600
+    },
+    "items": {
+     "sun_elixir": 2
+    }
+   }
+  },
+  {
+   "id": "m18",
+   "chapter": 4,
+   "giver": "tarek",
+   "requires": [
+    "m16"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "sand_wraith",
+     "count": 10
+    },
+    {
+     "type": "cast",
+     "substance": "AW",
+     "count": 6
+    }
+   ],
+   "rewards": {
+    "xp": 3000
+   }
+  },
+  {
+   "id": "m19",
+   "chapter": 4,
+   "giver": "tarek",
+   "requires": [
+    "m17",
+    "m18"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "glassmaw",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 3000,
+    "items": {
+     "ochre_pigment": 1
+    },
+    "pigment": true
+   },
+   "level": 24
+  },
+  {
+   "id": "m20",
+   "chapter": 5,
+   "giver": "trapper_hakon",
+   "requires": [
+    "m19"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "rimegate"
+    },
+    {
+     "type": "kill",
+     "enemy": "frost_wolf",
+     "count": 10
+    }
+   ],
+   "rewards": {
+    "xp": 800
+   }
+  },
+  {
+   "id": "m21",
+   "chapter": 5,
+   "giver": "archivist_solenne",
+   "requires": [
+    "m20"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "frost_crystal",
+     "count": 5,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "xp": 700,
+    "secret": "phoenix_rite"
+   }
+  },
+  {
+   "id": "m22",
+   "chapter": 5,
+   "giver": "trapper_hakon",
+   "requires": [
+    "m21"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "ice_golem",
+     "count": 8
+    },
+    {
+     "type": "cast",
+     "secret": "phoenix_rite",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 1000
+   }
+  },
+  {
+   "id": "m23",
+   "chapter": 5,
+   "giver": "archivist_solenne",
+   "requires": [
+    "m22"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "rime_colossus",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 3000,
+    "items": {
+     "white_pigment": 1
+    },
+    "pigment": true,
+    "secret": "absolute_zero"
+   },
+   "level": 31
+  },
+  {
+   "id": "m24",
+   "chapter": 6,
+   "giver": "forgemaster_brann",
+   "requires": [
+    "m23"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "anvilgate"
+    },
+    {
+     "type": "kill",
+     "enemy": "magma_imp",
+     "count": 10
+    }
+   ],
+   "rewards": {
+    "xp": 500
+   }
+  },
+  {
+   "id": "m25",
+   "chapter": 6,
+   "giver": "forgemaster_brann",
+   "requires": [
+    "m24"
+   ],
+   "steps": [
+    {
+     "type": "skill",
+     "skill": "smithing",
+     "level": 34
+    },
+    {
+     "type": "have",
+     "item": "obsidian_staff",
+     "count": 1,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "xp": 500,
+    "secret": "starfall"
+   }
+  },
+  {
+   "id": "m26",
+   "chapter": 6,
+   "giver": "ashwife_coral",
+   "requires": [
+    "m24"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "cinderroot",
+     "count": 8,
+     "take": true
+    },
+    {
+     "type": "kill",
+     "enemy": "ash_drake",
+     "count": 8
+    }
+   ],
+   "rewards": {
+    "xp": 500,
+    "skill_xp": {
+     "alchemy": 900
+    },
+    "items": {
+     "cinder_draught": 3
+    }
+   }
+  },
+  {
+   "id": "m27",
+   "chapter": 6,
+   "giver": "forgemaster_brann",
+   "requires": [
+    "m25",
+    "m26"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "cinderwyrm",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 2000,
+    "items": {
+     "crimson_pigment": 1
+    },
+    "pigment": true,
+    "secret": "leviathan"
+   },
+   "level": 38
+  },
+  {
+   "id": "m28",
+   "chapter": 7,
+   "giver": "abbot_wen",
+   "requires": [
+    "m27"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "skyrest"
+    },
+    {
+     "type": "kill",
+     "enemy": "storm_harpy",
+     "count": 10
+    }
+   ],
+   "rewards": {
+    "xp": 500
+   }
+  },
+  {
+   "id": "m29",
+   "chapter": 7,
+   "giver": "abbot_wen",
+   "requires": [
+    "m28"
+   ],
+   "steps": [
+    {
+     "type": "cast",
+     "sequence": "AAAAA",
+     "count": 3
+    }
+   ],
+   "rewards": {
+    "xp": 500,
+    "secret": "katrina"
+   }
+  },
+  {
+   "id": "m30",
+   "chapter": 7,
+   "giver": "bellringer_ilse",
+   "requires": [
+    "m29"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "gale_spirit",
+     "count": 8
+    },
+    {
+     "type": "cast",
+     "secret": "katrina",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 500,
+    "secret": "judgement"
+   }
+  },
+  {
+   "id": "m31",
+   "chapter": 7,
+   "giver": "abbot_wen",
+   "requires": [
+    "m30"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "tempest_roc",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 2000,
+    "items": {
+     "storm_pigment": 1
+    },
+    "pigment": true,
+    "secret": "worldbreaker"
+   },
+   "level": 44
+  },
+  {
+   "id": "m32",
+   "chapter": 8,
+   "giver": "last_painter",
+   "requires": [
+    "m31"
+   ],
+   "steps": [
+    {
+     "type": "reach",
+     "place": "pale_gate"
+    },
+    {
+     "type": "have",
+     "item": "amber_pigment",
+     "count": 1,
+     "take": false
+    },
+    {
+     "type": "have",
+     "item": "storm_pigment",
+     "count": 1,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "xp": 1000,
+    "secret": "prism_lance"
+   }
+  },
+  {
+   "id": "m33",
+   "chapter": 8,
+   "giver": "last_painter",
+   "requires": [
+    "m32"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "pale_knight",
+     "count": 10
+    },
+    {
+     "type": "kill",
+     "enemy": "hollow_shade",
+     "count": 10
+    },
+    {
+     "type": "have",
+     "item": "prism_staff",
+     "count": 1,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "xp": 1000,
+    "secret": "genesis_rain"
+   }
+  },
+  {
+   "id": "m34",
+   "chapter": 8,
+   "giver": "last_painter",
+   "requires": [
+    "m33"
+   ],
+   "steps": [
+    {
+     "type": "kill",
+     "enemy": "pallid_king",
+     "count": 1
+    }
+   ],
+   "rewards": {
+    "xp": 20000,
+    "secret": "eclipse",
+    "unlock_guns": true
+   },
+   "level": 49
+  },
+  {
+   "id": "s05",
+   "chapter": 0,
+   "giver": "netmender_brill",
+   "requires": [
+    "m12"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "palm_log",
+     "count": 10,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "woodcutting": 700
+    }
+   }
+  },
+  {
+   "id": "s06",
+   "chapter": 0,
+   "giver": "trapper_hakon",
+   "requires": [
+    "m20"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "icefin",
+     "count": 5,
+     "take": true
+    },
+    {
+     "type": "have",
+     "item": "icefin_stew",
+     "count": 2,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "fishing": 900,
+     "cooking": 900
+    }
+   }
+  },
+  {
+   "id": "s07",
+   "chapter": 0,
+   "giver": "bellringer_ilse",
+   "requires": [
+    "m28"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "skysteel_bar",
+     "count": 4,
+     "take": false
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "mining": 1500,
+     "smithing": 1500
+    }
+   }
+  }
+ ]
+}

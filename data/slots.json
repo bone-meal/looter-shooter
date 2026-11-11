@@ -1,0 +1,8 @@
+{
+ "strip": ["cherry","lemon","plum","bell","cherry","bar","lemon","cherry","plum","seven","cherry","lemon","bell","cherry","plum","bar","lemon","wild","bell","jackpot"],
+ "lines": [[0,0,0],[1,1,1],[2,2,2],[0,1,2],[2,1,0]],
+ "pays": {"cherry": 5, "lemon": 9, "plum": 13, "bell": 22, "bar": 45, "seven": 100, "wild": 50, "jackpot": 200},
+ "two_cherries_pay": 2,
+ "bets": [1, 2, 5, 10, 20],
+ "jackpot": {"symbol": "jackpot", "seed": 500, "contribution": 0.05, "needs_bet_per_line": 20}
+}

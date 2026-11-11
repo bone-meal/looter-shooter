@@ -1,0 +1,929 @@
+{
+ "version": 1,
+ "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt.",
+ "max_level": 50,
+ "xp_base": 30,
+ "xp_power": 2.2,
+ "skills": {
+  "magic": {
+   "color": [
+    0.7,
+    0.5,
+    1.0
+   ]
+  },
+  "woodcutting": {
+   "color": [
+    0.45,
+    0.75,
+    0.35
+   ]
+  },
+  "firemaking": {
+   "color": [
+    1.0,
+    0.55,
+    0.2
+   ]
+  },
+  "fishing": {
+   "color": [
+    0.35,
+    0.65,
+    1.0
+   ]
+  },
+  "cooking": {
+   "color": [
+    0.95,
+    0.75,
+    0.45
+   ]
+  },
+  "mining": {
+   "color": [
+    0.65,
+    0.65,
+    0.7
+   ]
+  },
+  "smithing": {
+   "color": [
+    0.8,
+    0.45,
+    0.3
+   ]
+  },
+  "farming": {
+   "color": [
+    0.9,
+    0.8,
+    0.3
+   ]
+  },
+  "alchemy": {
+   "color": [
+    0.4,
+    0.9,
+    0.75
+   ]
+  }
+ },
+ "nodes": {
+  "ash_tree": {
+   "skill": "woodcutting",
+   "level": 1,
+   "xp": 18,
+   "tool": "axe",
+   "tool_tier": 1,
+   "gives": "ash_log",
+   "seconds": 2.4,
+   "respawn": 30,
+   "model": "tree_ash"
+  },
+  "oak_tree": {
+   "skill": "woodcutting",
+   "level": 8,
+   "xp": 40,
+   "tool": "axe",
+   "tool_tier": 1,
+   "gives": "oak_log",
+   "seconds": 3.0,
+   "respawn": 45,
+   "model": "tree_oak"
+  },
+  "palm_tree": {
+   "skill": "woodcutting",
+   "level": 15,
+   "xp": 70,
+   "tool": "axe",
+   "tool_tier": 2,
+   "gives": "palm_log",
+   "seconds": 3.2,
+   "respawn": 50,
+   "model": "tree_palm"
+  },
+  "frostpine_tree": {
+   "skill": "woodcutting",
+   "level": 25,
+   "xp": 120,
+   "tool": "axe",
+   "tool_tier": 3,
+   "gives": "frostpine_log",
+   "seconds": 3.6,
+   "respawn": 60,
+   "model": "tree_pine"
+  },
+  "emberwood_tree": {
+   "skill": "woodcutting",
+   "level": 34,
+   "xp": 190,
+   "tool": "axe",
+   "tool_tier": 4,
+   "gives": "emberwood_log",
+   "seconds": 4.0,
+   "respawn": 75,
+   "model": "tree_ember"
+  },
+  "copper_rock": {
+   "skill": "mining",
+   "level": 1,
+   "xp": 20,
+   "tool": "pickaxe",
+   "tool_tier": 1,
+   "gives": "copper_ore",
+   "seconds": 2.6,
+   "respawn": 40,
+   "model": "rock_copper"
+  },
+  "iron_rock": {
+   "skill": "mining",
+   "level": 10,
+   "xp": 48,
+   "tool": "pickaxe",
+   "tool_tier": 1,
+   "gives": "iron_ore",
+   "seconds": 3.2,
+   "respawn": 55,
+   "model": "rock_iron"
+  },
+  "sunstone_rock": {
+   "skill": "mining",
+   "level": 20,
+   "xp": 95,
+   "tool": "pickaxe",
+   "tool_tier": 2,
+   "gives": "sunstone",
+   "seconds": 3.6,
+   "respawn": 70,
+   "model": "rock_sunstone"
+  },
+  "frostcrystal_rock": {
+   "skill": "mining",
+   "level": 27,
+   "xp": 140,
+   "tool": "pickaxe",
+   "tool_tier": 3,
+   "gives": "frost_crystal",
+   "seconds": 3.8,
+   "respawn": 80,
+   "model": "rock_crystal"
+  },
+  "obsidian_rock": {
+   "skill": "mining",
+   "level": 34,
+   "xp": 200,
+   "tool": "pickaxe",
+   "tool_tier": 3,
+   "gives": "obsidian",
+   "seconds": 4.0,
+   "respawn": 90,
+   "model": "rock_obsidian"
+  },
+  "skysteel_rock": {
+   "skill": "mining",
+   "level": 41,
+   "xp": 280,
+   "tool": "pickaxe",
+   "tool_tier": 4,
+   "gives": "skysteel_ore",
+   "seconds": 4.4,
+   "respawn": 110,
+   "model": "rock_skysteel"
+  },
+  "pond_spot": {
+   "skill": "fishing",
+   "level": 1,
+   "xp": 16,
+   "tool": "rod",
+   "tool_tier": 1,
+   "gives": "minnow",
+   "seconds": 3.0,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "fresh"
+  },
+  "river_spot": {
+   "skill": "fishing",
+   "level": 7,
+   "xp": 36,
+   "tool": "rod",
+   "tool_tier": 1,
+   "gives": "trout",
+   "seconds": 3.4,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "fresh"
+  },
+  "sea_spot": {
+   "skill": "fishing",
+   "level": 13,
+   "xp": 65,
+   "tool": "rod",
+   "tool_tier": 2,
+   "gives": "silverfin",
+   "seconds": 3.6,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "salt"
+  },
+  "oasis_spot": {
+   "skill": "fishing",
+   "level": 20,
+   "xp": 100,
+   "tool": "rod",
+   "tool_tier": 2,
+   "gives": "sandskipper",
+   "seconds": 3.8,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "fresh"
+  },
+  "ice_spot": {
+   "skill": "fishing",
+   "level": 27,
+   "xp": 150,
+   "tool": "rod",
+   "tool_tier": 3,
+   "gives": "icefin",
+   "seconds": 4.0,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "fresh"
+  },
+  "lava_spot": {
+   "skill": "fishing",
+   "level": 35,
+   "xp": 215,
+   "tool": "rod",
+   "tool_tier": 4,
+   "gives": "lava_eel",
+   "seconds": 4.2,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "lava"
+  },
+  "wheat": {
+   "skill": "farming",
+   "level": 1,
+   "xp": 10,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "wheat",
+   "seconds": 1.2,
+   "respawn": 40,
+   "model": "wheat_sheaf"
+  },
+  "meadowmint": {
+   "skill": "farming",
+   "level": 4,
+   "xp": 22,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "meadowmint",
+   "seconds": 1.4,
+   "respawn": 50,
+   "model": "herb_green"
+  },
+  "glowcap": {
+   "skill": "farming",
+   "level": 10,
+   "xp": 45,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "glowcap",
+   "seconds": 1.6,
+   "respawn": 60,
+   "model": "herb_mushroom"
+  },
+  "sunpetal": {
+   "skill": "farming",
+   "level": 19,
+   "xp": 85,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "sunpetal",
+   "seconds": 1.6,
+   "respawn": 70,
+   "model": "herb_yellow"
+  },
+  "frostbloom": {
+   "skill": "farming",
+   "level": 27,
+   "xp": 130,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "frostbloom",
+   "seconds": 1.8,
+   "respawn": 80,
+   "model": "herb_blue"
+  },
+  "cinderroot": {
+   "skill": "farming",
+   "level": 35,
+   "xp": 190,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "cinderroot",
+   "seconds": 2.0,
+   "respawn": 90,
+   "model": "herb_red"
+  },
+  "shallows_spot": {
+   "skill": "fishing",
+   "level": 1,
+   "xp": 18,
+   "tool": "rod",
+   "tool_tier": 1,
+   "gives": "sprat",
+   "seconds": 3.0,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "salt"
+  },
+  "deepsea_spot": {
+   "skill": "fishing",
+   "level": 30,
+   "xp": 180,
+   "tool": "rod",
+   "tool_tier": 3,
+   "gives": "stormfin",
+   "seconds": 4.0,
+   "respawn": 8,
+   "model": "ripples",
+   "water": "salt"
+  }
+ },
+ "fire": {
+  "seconds": 90,
+  "xp_per_log": {
+   "ash_log": 22,
+   "oak_log": 48,
+   "palm_log": 80,
+   "frostpine_log": 135,
+   "emberwood_log": 210
+  },
+  "level": {
+   "ash_log": 1,
+   "oak_log": 8,
+   "palm_log": 15,
+   "frostpine_log": 25,
+   "emberwood_log": 34
+  },
+  "mana_regen_mult": 3.0,
+  "radius": 5.0
+ },
+ "recipes": [
+  {
+   "id": "cook_minnow",
+   "skill": "cooking",
+   "level": 1,
+   "xp": 20,
+   "station": "fire",
+   "in": {
+    "minnow": 1
+   },
+   "out": {
+    "fried_minnow": 1
+   }
+  },
+  {
+   "id": "bake_bread",
+   "skill": "cooking",
+   "level": 3,
+   "xp": 30,
+   "station": "fire",
+   "in": {
+    "wheat": 3
+   },
+   "out": {
+    "bread": 1
+   }
+  },
+  {
+   "id": "cook_trout",
+   "skill": "cooking",
+   "level": 7,
+   "xp": 44,
+   "station": "fire",
+   "in": {
+    "trout": 1
+   },
+   "out": {
+    "grilled_trout": 1
+   }
+  },
+  {
+   "id": "cook_silverfin",
+   "skill": "cooking",
+   "level": 13,
+   "xp": 76,
+   "station": "fire",
+   "in": {
+    "silverfin": 1
+   },
+   "out": {
+    "seared_silverfin": 1
+   }
+  },
+  {
+   "id": "cook_sandskipper",
+   "skill": "cooking",
+   "level": 20,
+   "xp": 115,
+   "station": "fire",
+   "in": {
+    "sandskipper": 1
+   },
+   "out": {
+    "spiced_sandskipper": 1
+   }
+  },
+  {
+   "id": "cook_icefin",
+   "skill": "cooking",
+   "level": 27,
+   "xp": 170,
+   "station": "fire",
+   "in": {
+    "icefin": 1
+   },
+   "out": {
+    "icefin_stew": 1
+   }
+  },
+  {
+   "id": "cook_lava_eel",
+   "skill": "cooking",
+   "level": 35,
+   "xp": 240,
+   "station": "fire",
+   "in": {
+    "lava_eel": 1
+   },
+   "out": {
+    "charred_eel": 1
+   }
+  },
+  {
+   "id": "smelt_copper",
+   "skill": "smithing",
+   "level": 1,
+   "xp": 24,
+   "station": "forge",
+   "in": {
+    "copper_ore": 2
+   },
+   "out": {
+    "copper_bar": 1
+   }
+  },
+  {
+   "id": "smelt_iron",
+   "skill": "smithing",
+   "level": 10,
+   "xp": 56,
+   "station": "forge",
+   "in": {
+    "iron_ore": 2
+   },
+   "out": {
+    "iron_bar": 1
+   }
+  },
+  {
+   "id": "smelt_skysteel",
+   "skill": "smithing",
+   "level": 41,
+   "xp": 320,
+   "station": "forge",
+   "in": {
+    "skysteel_ore": 2,
+    "obsidian": 1
+   },
+   "out": {
+    "skysteel_bar": 1
+   }
+  },
+  {
+   "id": "forge_iron_axe",
+   "skill": "smithing",
+   "level": 12,
+   "xp": 120,
+   "station": "forge",
+   "in": {
+    "iron_bar": 3,
+    "oak_log": 1
+   },
+   "out": {
+    "iron_axe": 1
+   }
+  },
+  {
+   "id": "forge_iron_pickaxe",
+   "skill": "smithing",
+   "level": 12,
+   "xp": 120,
+   "station": "forge",
+   "in": {
+    "iron_bar": 3,
+    "oak_log": 1
+   },
+   "out": {
+    "iron_pickaxe": 1
+   }
+  },
+  {
+   "id": "forge_steel_axe",
+   "skill": "smithing",
+   "level": 24,
+   "xp": 260,
+   "station": "forge",
+   "in": {
+    "iron_bar": 5,
+    "sunstone": 2,
+    "palm_log": 1
+   },
+   "out": {
+    "steel_axe": 1
+   }
+  },
+  {
+   "id": "forge_steel_pickaxe",
+   "skill": "smithing",
+   "level": 24,
+   "xp": 260,
+   "station": "forge",
+   "in": {
+    "iron_bar": 5,
+    "sunstone": 2,
+    "palm_log": 1
+   },
+   "out": {
+    "steel_pickaxe": 1
+   }
+  },
+  {
+   "id": "forge_skysteel_axe",
+   "skill": "smithing",
+   "level": 42,
+   "xp": 520,
+   "station": "forge",
+   "in": {
+    "skysteel_bar": 3,
+    "emberwood_log": 1
+   },
+   "out": {
+    "skysteel_axe": 1
+   }
+  },
+  {
+   "id": "forge_skysteel_pickaxe",
+   "skill": "smithing",
+   "level": 42,
+   "xp": 520,
+   "station": "forge",
+   "in": {
+    "skysteel_bar": 3,
+    "emberwood_log": 1
+   },
+   "out": {
+    "skysteel_pickaxe": 1
+   }
+  },
+  {
+   "id": "make_oak_rod",
+   "skill": "woodcutting",
+   "level": 12,
+   "xp": 90,
+   "station": "workbench",
+   "in": {
+    "oak_log": 3,
+    "copper_bar": 1
+   },
+   "out": {
+    "oak_rod": 1
+   }
+  },
+  {
+   "id": "make_frostpine_rod",
+   "skill": "woodcutting",
+   "level": 26,
+   "xp": 220,
+   "station": "workbench",
+   "in": {
+    "frostpine_log": 3,
+    "iron_bar": 2
+   },
+   "out": {
+    "frostpine_rod": 1
+   }
+  },
+  {
+   "id": "make_ember_rod",
+   "skill": "woodcutting",
+   "level": 35,
+   "xp": 380,
+   "station": "workbench",
+   "in": {
+    "emberwood_log": 3,
+    "obsidian": 2
+   },
+   "out": {
+    "ember_rod": 1
+   }
+  },
+  {
+   "id": "staff_oak",
+   "skill": "woodcutting",
+   "level": 8,
+   "xp": 150,
+   "station": "workbench",
+   "in": {
+    "oak_log": 6,
+    "copper_bar": 2,
+    "amber_pigment": 1
+   },
+   "out": {
+    "oak_staff": 1
+   }
+  },
+  {
+   "id": "staff_coral",
+   "skill": "woodcutting",
+   "level": 15,
+   "xp": 300,
+   "station": "workbench",
+   "in": {
+    "palm_log": 6,
+    "iron_bar": 3,
+    "verdant_pigment": 1
+   },
+   "out": {
+    "coral_staff": 1
+   }
+  },
+  {
+   "id": "staff_sunstone",
+   "skill": "smithing",
+   "level": 20,
+   "xp": 480,
+   "station": "forge",
+   "in": {
+    "palm_log": 4,
+    "sunstone": 6,
+    "azure_pigment": 1
+   },
+   "out": {
+    "sunstone_staff": 1
+   }
+  },
+  {
+   "id": "staff_frostpine",
+   "skill": "woodcutting",
+   "level": 26,
+   "xp": 700,
+   "station": "workbench",
+   "in": {
+    "frostpine_log": 8,
+    "frost_crystal": 5,
+    "ochre_pigment": 1
+   },
+   "out": {
+    "frostpine_staff": 1
+   }
+  },
+  {
+   "id": "staff_obsidian",
+   "skill": "smithing",
+   "level": 34,
+   "xp": 980,
+   "station": "forge",
+   "in": {
+    "emberwood_log": 6,
+    "obsidian": 8,
+    "white_pigment": 1
+   },
+   "out": {
+    "obsidian_staff": 1
+   }
+  },
+  {
+   "id": "staff_stormcall",
+   "skill": "smithing",
+   "level": 42,
+   "xp": 1400,
+   "station": "forge",
+   "in": {
+    "emberwood_log": 6,
+    "skysteel_bar": 5,
+    "crimson_pigment": 1
+   },
+   "out": {
+    "stormcall_staff": 1
+   }
+  },
+  {
+   "id": "staff_prism",
+   "skill": "smithing",
+   "level": 46,
+   "xp": 2200,
+   "station": "forge",
+   "in": {
+    "skysteel_bar": 8,
+    "frost_crystal": 4,
+    "sunstone": 4,
+    "storm_pigment": 1
+   },
+   "out": {
+    "prism_staff": 1
+   }
+  },
+  {
+   "id": "robe_woodland",
+   "skill": "farming",
+   "level": 8,
+   "xp": 140,
+   "station": "workbench",
+   "in": {
+    "meadowmint": 8,
+    "oak_log": 2
+   },
+   "out": {
+    "woodland_robe": 1
+   }
+  },
+  {
+   "id": "robe_tidecloth",
+   "skill": "farming",
+   "level": 15,
+   "xp": 280,
+   "station": "workbench",
+   "in": {
+    "glowcap": 8,
+    "silverfin": 4
+   },
+   "out": {
+    "tidecloth_robe": 1
+   }
+  },
+  {
+   "id": "robe_sunweave",
+   "skill": "farming",
+   "level": 21,
+   "xp": 440,
+   "station": "workbench",
+   "in": {
+    "sunpetal": 10,
+    "sunstone": 3
+   },
+   "out": {
+    "sunweave_robe": 1
+   }
+  },
+  {
+   "id": "robe_rimefur",
+   "skill": "farming",
+   "level": 28,
+   "xp": 640,
+   "station": "workbench",
+   "in": {
+    "frostbloom": 10,
+    "frost_crystal": 3
+   },
+   "out": {
+    "rimefur_robe": 1
+   }
+  },
+  {
+   "id": "robe_cinder",
+   "skill": "farming",
+   "level": 36,
+   "xp": 900,
+   "station": "workbench",
+   "in": {
+    "cinderroot": 10,
+    "obsidian": 4
+   },
+   "out": {
+    "cinder_robe": 1
+   }
+  },
+  {
+   "id": "robe_stormsilk",
+   "skill": "farming",
+   "level": 43,
+   "xp": 1300,
+   "station": "workbench",
+   "in": {
+    "cinderroot": 6,
+    "frostbloom": 6,
+    "skysteel_bar": 3
+   },
+   "out": {
+    "stormsilk_robe": 1
+   }
+  },
+  {
+   "id": "brew_mana_tonic",
+   "skill": "alchemy",
+   "level": 1,
+   "xp": 26,
+   "station": "cauldron",
+   "in": {
+    "meadowmint": 2
+   },
+   "out": {
+    "mana_tonic": 1
+   }
+  },
+  {
+   "id": "brew_health_draught",
+   "skill": "alchemy",
+   "level": 6,
+   "xp": 48,
+   "station": "cauldron",
+   "in": {
+    "meadowmint": 1,
+    "glowcap": 1
+   },
+   "out": {
+    "health_draught": 1
+   }
+  },
+  {
+   "id": "brew_sun_elixir",
+   "skill": "alchemy",
+   "level": 19,
+   "xp": 120,
+   "station": "cauldron",
+   "in": {
+    "sunpetal": 2,
+    "glowcap": 1
+   },
+   "out": {
+    "sun_elixir": 1
+   }
+  },
+  {
+   "id": "brew_frost_ward",
+   "skill": "alchemy",
+   "level": 27,
+   "xp": 180,
+   "station": "cauldron",
+   "in": {
+    "frostbloom": 2,
+    "icefin": 1
+   },
+   "out": {
+    "frost_ward": 1
+   }
+  },
+  {
+   "id": "brew_cinder_draught",
+   "skill": "alchemy",
+   "level": 35,
+   "xp": 260,
+   "station": "cauldron",
+   "in": {
+    "cinderroot": 2,
+    "lava_eel": 1
+   },
+   "out": {
+    "cinder_draught": 1
+   }
+  },
+  {
+   "id": "cook_sprat",
+   "skill": "cooking",
+   "level": 1,
+   "xp": 22,
+   "station": "fire",
+   "in": {
+    "sprat": 1
+   },
+   "out": {
+    "grilled_sprat": 1
+   }
+  },
+  {
+   "id": "cook_stormfin",
+   "skill": "cooking",
+   "level": 30,
+   "xp": 190,
+   "station": "fire",
+   "in": {
+    "stormfin": 1
+   },
+   "out": {
+    "seared_stormfin": 1
+   }
+  }
+ ],
+ "gather": {
+  "reach": 3.2,
+  "deplete_chance": 0.35,
+  "tool_speed": 0.25,
+  "reach_water": 7.5
+ }
+}

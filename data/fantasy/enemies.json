@@ -1,0 +1,1310 @@
+{
+ "version": 1,
+ "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt.",
+ "spawn": {
+  "max_alive": 14,
+  "per_second": 0.35,
+  "min_dist": 28,
+  "max_dist": 55,
+  "despawn_dist": 95,
+  "group_max": 3,
+  "safe_radius": 40,
+  "boss_trigger_m": 45,
+  "boss_leash_m": 80,
+  "boss_respawn_s": 600
+ },
+ "enemies": {
+  "strawling": {
+   "model": "strawling",
+   "level": 1,
+   "max_hp": 26,
+   "speed": 3.4,
+   "attack_type": "melee",
+   "damage": 3,
+   "attack_range": 1.5,
+   "attack_interval": 1.3,
+   "size": [
+    0.8,
+    1.3,
+    0.8
+   ],
+   "color": [
+    1.0,
+    0.7,
+    0.1
+   ],
+   "body_color": [
+    0.85,
+    0.72,
+    0.35
+   ],
+   "xp": 12,
+   "drops": {
+    "straw_bundle": 0.6,
+    "wheat": 0.3
+   },
+   "walks": "land",
+   "debris": [
+    0.9,
+    0.78,
+    0.35
+   ]
+  },
+  "field_slime": {
+   "model": "field_slime",
+   "level": 2,
+   "max_hp": 40,
+   "speed": 2.6,
+   "attack_type": "melee",
+   "damage": 4,
+   "attack_range": 1.4,
+   "attack_interval": 1.5,
+   "size": [
+    1.0,
+    0.8,
+    1.0
+   ],
+   "color": [
+    0.4,
+    1.0,
+    0.5
+   ],
+   "body_color": [
+    0.55,
+    0.85,
+    0.35
+   ],
+   "xp": 16,
+   "drops": {
+    "slime_jelly": 0.6,
+    "meadowmint": 0.2
+   },
+   "walks": "land",
+   "debris": [
+    0.5,
+    0.85,
+    0.3
+   ]
+  },
+  "harvest_king": {
+   "model": "harvest_king",
+   "level": 6,
+   "max_hp": 700,
+   "speed": 3.2,
+   "attack_type": "melee",
+   "damage": 16,
+   "attack_range": 3.2,
+   "attack_interval": 1.2,
+   "size": [
+    2.4,
+    4.2,
+    2.4
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.05
+   ],
+   "body_color": [
+    0.8,
+    0.62,
+    0.25
+   ],
+   "xp": 400,
+   "drops": {
+    "amber_pigment": 1.0
+   },
+   "boss": true,
+   "walks": "land",
+   "debris": [
+    0.9,
+    0.7,
+    0.3
+   ],
+   "moves": [
+    {
+     "id": "reap",
+     "kind": "slam",
+     "every": 9,
+     "windup": 1.2,
+     "radius": 6.5,
+     "damage": 1.6,
+     "color": [
+      1.0,
+      0.75,
+      0.2
+     ]
+    },
+    {
+     "id": "sow",
+     "kind": "summon",
+     "every": 24,
+     "windup": 1.0,
+     "count": 3,
+     "enemy": "strawling",
+     "color": [
+      0.9,
+      0.8,
+      0.3
+     ]
+    }
+   ]
+  },
+  "forest_wolf": {
+   "model": "forest_wolf",
+   "level": 6,
+   "max_hp": 90,
+   "speed": 6.2,
+   "attack_type": "melee",
+   "damage": 11,
+   "attack_range": 1.6,
+   "attack_interval": 0.9,
+   "size": [
+    0.9,
+    1.0,
+    1.6
+   ],
+   "color": [
+    0.9,
+    0.9,
+    0.3
+   ],
+   "body_color": [
+    0.38,
+    0.36,
+    0.34
+   ],
+   "xp": 40,
+   "drops": {
+    "wolf_pelt": 0.6
+   },
+   "walks": "land",
+   "debris": [
+    0.4,
+    0.36,
+    0.33
+   ]
+  },
+  "mossgoblin": {
+   "model": "mossgoblin",
+   "level": 8,
+   "max_hp": 110,
+   "speed": 4.4,
+   "attack_type": "ranged",
+   "damage": 9,
+   "attack_range": 20.0,
+   "attack_interval": 1.6,
+   "size": [
+    0.8,
+    1.3,
+    0.8
+   ],
+   "color": [
+    0.6,
+    1.0,
+    0.3
+   ],
+   "body_color": [
+    0.3,
+    0.45,
+    0.22
+   ],
+   "xp": 52,
+   "drops": {
+    "glowcap": 0.4,
+    "oak_log": 0.3
+   },
+   "preferred_range": 11.0,
+   "projectile_speed": 15.0,
+   "burst": 1,
+   "burst_spread": 0.05,
+   "walks": "land",
+   "debris": [
+    0.4,
+    0.55,
+    0.25
+   ]
+  },
+  "barkhide": {
+   "model": "barkhide",
+   "level": 10,
+   "max_hp": 260,
+   "speed": 2.8,
+   "attack_type": "melee",
+   "damage": 20,
+   "attack_range": 2.2,
+   "attack_interval": 1.5,
+   "size": [
+    1.4,
+    2.6,
+    1.4
+   ],
+   "color": [
+    0.5,
+    1.0,
+    0.4
+   ],
+   "body_color": [
+    0.36,
+    0.27,
+    0.18
+   ],
+   "xp": 90,
+   "drops": {
+    "oak_log": 0.9
+   },
+   "walks": "land",
+   "debris": [
+    0.4,
+    0.3,
+    0.2
+   ]
+  },
+  "rootmother": {
+   "model": "rootmother",
+   "level": 12,
+   "max_hp": 2600,
+   "speed": 2.6,
+   "attack_type": "melee",
+   "damage": 38,
+   "attack_range": 4.0,
+   "attack_interval": 1.4,
+   "size": [
+    3.2,
+    5.6,
+    3.2
+   ],
+   "color": [
+    0.4,
+    1.0,
+    0.3
+   ],
+   "body_color": [
+    0.3,
+    0.24,
+    0.16
+   ],
+   "xp": 1200,
+   "drops": {
+    "verdant_pigment": 1.0
+   },
+   "boss": true,
+   "walks": "land",
+   "debris": [
+    0.35,
+    0.26,
+    0.18
+   ],
+   "moves": [
+    {
+     "id": "root_snare",
+     "kind": "zones",
+     "every": 11,
+     "windup": 1.3,
+     "count": 4,
+     "radius": 3.2,
+     "linger": 4.0,
+     "damage": 0.6,
+     "color": [
+      0.3,
+      0.6,
+      0.2
+     ],
+     "element": "toxic"
+    },
+    {
+     "id": "seed_burst",
+     "kind": "volley",
+     "every": 8,
+     "windup": 0.8,
+     "count": 7,
+     "arc": 100,
+     "speed": 16,
+     "damage": 0.5,
+     "color": [
+      0.6,
+      0.9,
+      0.3
+     ]
+    }
+   ]
+  },
+  "reef_crab": {
+   "model": "reef_crab",
+   "level": 12,
+   "max_hp": 280,
+   "speed": 3.8,
+   "attack_type": "melee",
+   "damage": 26,
+   "attack_range": 1.8,
+   "attack_interval": 1.1,
+   "size": [
+    1.6,
+    0.9,
+    1.6
+   ],
+   "color": [
+    1.0,
+    0.4,
+    0.3
+   ],
+   "body_color": [
+    0.8,
+    0.4,
+    0.3
+   ],
+   "xp": 120,
+   "drops": {
+    "crab_shell": 0.6
+   },
+   "walks": "swim",
+   "debris": [
+    0.85,
+    0.45,
+    0.35
+   ]
+  },
+  "drowned_sailor": {
+   "model": "drowned_sailor",
+   "level": 15,
+   "max_hp": 320,
+   "speed": 3.6,
+   "attack_type": "ranged",
+   "damage": 22,
+   "attack_range": 22.0,
+   "attack_interval": 1.7,
+   "size": [
+    0.9,
+    1.85,
+    0.9
+   ],
+   "color": [
+    0.3,
+    0.9,
+    0.9
+   ],
+   "body_color": [
+    0.3,
+    0.42,
+    0.45
+   ],
+   "xp": 150,
+   "drops": {
+    "silverfin": 0.3,
+    "iron_ore": 0.3
+   },
+   "preferred_range": 12.0,
+   "projectile_speed": 17.0,
+   "burst": 1,
+   "burst_spread": 0.05,
+   "walks": "swim",
+   "debris": [
+    0.35,
+    0.5,
+    0.55
+   ]
+  },
+  "tidewarden": {
+   "model": "tidewarden",
+   "level": 18,
+   "max_hp": 7000,
+   "speed": 3.4,
+   "attack_type": "melee",
+   "damage": 70,
+   "attack_range": 4.4,
+   "attack_interval": 1.3,
+   "size": [
+    5.0,
+    3.0,
+    5.0
+   ],
+   "color": [
+    0.2,
+    0.7,
+    1.0
+   ],
+   "body_color": [
+    0.25,
+    0.45,
+    0.65
+   ],
+   "xp": 3000,
+   "drops": {
+    "azure_pigment": 1.0
+   },
+   "boss": true,
+   "walks": "swim",
+   "debris": [
+    0.3,
+    0.5,
+    0.6
+   ],
+   "moves": [
+    {
+     "id": "undertow",
+     "kind": "pull",
+     "every": 14,
+     "windup": 1.5,
+     "radius": 16,
+     "pull": 10,
+     "slam": 7.0,
+     "damage": 1.4,
+     "color": [
+      0.2,
+      0.5,
+      0.95
+     ],
+     "seconds": 3.0
+    },
+    {
+     "id": "breaker",
+     "kind": "charge",
+     "every": 10,
+     "windup": 1.0,
+     "distance": 22,
+     "speed": 20,
+     "width": 3.0,
+     "damage": 1.3,
+     "color": [
+      0.4,
+      0.7,
+      1.0
+     ]
+    }
+   ]
+  },
+  "dune_scorpion": {
+   "model": "dune_scorpion",
+   "level": 18,
+   "max_hp": 620,
+   "speed": 4.6,
+   "attack_type": "melee",
+   "damage": 44,
+   "attack_range": 2.0,
+   "attack_interval": 1.0,
+   "size": [
+    1.6,
+    1.0,
+    2.0
+   ],
+   "color": [
+    1.0,
+    0.8,
+    0.2
+   ],
+   "body_color": [
+    0.75,
+    0.55,
+    0.3
+   ],
+   "xp": 240,
+   "drops": {
+    "scorpion_sting": 0.5,
+    "sunstone": 0.2
+   },
+   "walks": "land",
+   "debris": [
+    0.75,
+    0.6,
+    0.35
+   ]
+  },
+  "sand_wraith": {
+   "model": "sand_wraith",
+   "level": 22,
+   "max_hp": 700,
+   "speed": 4.0,
+   "attack_type": "ranged",
+   "damage": 40,
+   "attack_range": 24.0,
+   "attack_interval": 1.5,
+   "size": [
+    0.9,
+    1.95,
+    0.9
+   ],
+   "color": [
+    1.0,
+    0.9,
+    0.4
+   ],
+   "body_color": [
+    0.85,
+    0.72,
+    0.5
+   ],
+   "xp": 300,
+   "drops": {
+    "sunpetal": 0.4,
+    "sunstone": 0.3
+   },
+   "preferred_range": 13.0,
+   "projectile_speed": 19.0,
+   "burst": 2,
+   "burst_spread": 0.08,
+   "walks": "fly",
+   "debris": [
+    0.85,
+    0.75,
+    0.5
+   ]
+  },
+  "glassmaw": {
+   "model": "glassmaw",
+   "level": 25,
+   "max_hp": 16000,
+   "speed": 3.8,
+   "attack_type": "melee",
+   "damage": 120,
+   "attack_range": 5.0,
+   "attack_interval": 1.2,
+   "size": [
+    4.0,
+    5.0,
+    4.0
+   ],
+   "color": [
+    1.0,
+    0.85,
+    0.3
+   ],
+   "body_color": [
+    0.85,
+    0.7,
+    0.45
+   ],
+   "xp": 7000,
+   "drops": {
+    "ochre_pigment": 1.0
+   },
+   "boss": true,
+   "walks": "land",
+   "debris": [
+    0.7,
+    0.9,
+    0.9
+   ],
+   "moves": [
+    {
+     "id": "burrow",
+     "kind": "blink",
+     "every": 12,
+     "windup": 1.4,
+     "radius": 5.5,
+     "damage": 1.5,
+     "color": [
+      0.85,
+      0.75,
+      0.45
+     ]
+    },
+    {
+     "id": "glass_rain",
+     "kind": "rain",
+     "every": 15,
+     "windup": 1.2,
+     "count": 10,
+     "spread": 14,
+     "radius": 2.6,
+     "damage": 0.9,
+     "color": [
+      0.6,
+      0.95,
+      0.9
+     ]
+    }
+   ]
+  },
+  "frost_wolf": {
+   "model": "frost_wolf",
+   "level": 25,
+   "max_hp": 1100,
+   "speed": 6.8,
+   "attack_type": "melee",
+   "damage": 70,
+   "attack_range": 1.8,
+   "attack_interval": 0.85,
+   "size": [
+    1.0,
+    1.1,
+    1.8
+   ],
+   "color": [
+    0.5,
+    0.9,
+    1.0
+   ],
+   "body_color": [
+    0.88,
+    0.92,
+    1.0
+   ],
+   "xp": 480,
+   "drops": {
+    "wolf_pelt": 0.6,
+    "frostbloom": 0.2
+   },
+   "walks": "land",
+   "debris": [
+    0.85,
+    0.92,
+    1.0
+   ]
+  },
+  "ice_golem": {
+   "model": "ice_golem",
+   "level": 29,
+   "max_hp": 2600,
+   "speed": 2.6,
+   "attack_type": "melee",
+   "damage": 110,
+   "attack_range": 2.6,
+   "attack_interval": 1.6,
+   "size": [
+    1.8,
+    3.0,
+    1.8
+   ],
+   "color": [
+    0.5,
+    0.9,
+    1.0
+   ],
+   "body_color": [
+    0.7,
+    0.86,
+    1.0
+   ],
+   "xp": 760,
+   "drops": {
+    "frost_crystal": 0.7
+   },
+   "walks": "land",
+   "debris": [
+    0.7,
+    0.88,
+    1.0
+   ]
+  },
+  "rime_colossus": {
+   "model": "rime_colossus",
+   "level": 32,
+   "max_hp": 36000,
+   "speed": 2.6,
+   "attack_type": "melee",
+   "damage": 210,
+   "attack_range": 5.5,
+   "attack_interval": 1.5,
+   "size": [
+    4.4,
+    7.5,
+    4.4
+   ],
+   "color": [
+    0.4,
+    0.85,
+    1.0
+   ],
+   "body_color": [
+    0.78,
+    0.9,
+    1.0
+   ],
+   "xp": 15000,
+   "drops": {
+    "white_pigment": 1.0
+   },
+   "boss": true,
+   "walks": "land",
+   "debris": [
+    0.75,
+    0.9,
+    1.0
+   ],
+   "moves": [
+    {
+     "id": "frozen_ground",
+     "kind": "zones",
+     "every": 13,
+     "windup": 1.2,
+     "count": 5,
+     "radius": 4.0,
+     "linger": 8.0,
+     "damage": 0.35,
+     "color": [
+      0.7,
+      0.9,
+      1.0
+     ],
+     "element": "ice"
+    },
+    {
+     "id": "shatter",
+     "kind": "slam",
+     "every": 11,
+     "windup": 2.0,
+     "radius": 9.5,
+     "damage": 2.2,
+     "color": [
+      0.85,
+      0.95,
+      1.0
+     ],
+     "element": "ice"
+    }
+   ]
+  },
+  "magma_imp": {
+   "model": "magma_imp",
+   "level": 32,
+   "max_hp": 1900,
+   "speed": 5.4,
+   "attack_type": "ranged",
+   "damage": 95,
+   "attack_range": 24.0,
+   "attack_interval": 1.3,
+   "size": [
+    0.8,
+    1.2,
+    0.8
+   ],
+   "color": [
+    1.0,
+    0.5,
+    0.1
+   ],
+   "body_color": [
+    0.45,
+    0.14,
+    0.1
+   ],
+   "xp": 600,
+   "drops": {
+    "cinderroot": 0.4,
+    "obsidian": 0.2
+   },
+   "preferred_range": 12.0,
+   "projectile_speed": 20.0,
+   "burst": 1,
+   "burst_spread": 0.05,
+   "walks": "land",
+   "debris": [
+    1.0,
+    0.45,
+    0.1
+   ]
+  },
+  "ash_drake": {
+   "model": "ash_drake",
+   "level": 36,
+   "max_hp": 4200,
+   "speed": 4.6,
+   "attack_type": "melee",
+   "damage": 160,
+   "attack_range": 2.6,
+   "attack_interval": 1.2,
+   "size": [
+    1.6,
+    1.5,
+    3.0
+   ],
+   "color": [
+    1.0,
+    0.4,
+    0.1
+   ],
+   "body_color": [
+    0.3,
+    0.26,
+    0.26
+   ],
+   "xp": 900,
+   "drops": {
+    "obsidian": 0.6,
+    "emberwood_log": 0.3
+   },
+   "walks": "fly",
+   "debris": [
+    0.35,
+    0.3,
+    0.3
+   ]
+  },
+  "cinderwyrm": {
+   "model": "cinderwyrm",
+   "level": 39,
+   "max_hp": 75000,
+   "speed": 4.2,
+   "attack_type": "ranged",
+   "damage": 230,
+   "attack_range": 40.0,
+   "attack_interval": 1.6,
+   "size": [
+    5.0,
+    5.0,
+    8.0
+   ],
+   "color": [
+    1.0,
+    0.35,
+    0.05
+   ],
+   "body_color": [
+    0.35,
+    0.12,
+    0.1
+   ],
+   "xp": 12000,
+   "drops": {
+    "crimson_pigment": 1.0
+   },
+   "preferred_range": 16.0,
+   "projectile_speed": 24.0,
+   "burst": 5,
+   "burst_spread": 0.2,
+   "boss": true,
+   "walks": "fly",
+   "debris": [
+    1.0,
+    0.4,
+    0.1
+   ],
+   "moves": [
+    {
+     "id": "fire_breath",
+     "kind": "beam",
+     "every": 12,
+     "windup": 1.0,
+     "seconds": 3.0,
+     "arc": 130,
+     "range": 18,
+     "damage": 0.5,
+     "color": [
+      1.0,
+      0.45,
+      0.1
+     ],
+     "element": "fire",
+     "width": 3.5
+    },
+    {
+     "id": "eruption",
+     "kind": "rain",
+     "every": 16,
+     "windup": 1.4,
+     "count": 14,
+     "spread": 18,
+     "radius": 3.0,
+     "linger": 3.0,
+     "damage": 0.8,
+     "color": [
+      1.0,
+      0.3,
+      0.05
+     ],
+     "element": "fire"
+    }
+   ]
+  },
+  "storm_harpy": {
+   "model": "storm_harpy",
+   "level": 39,
+   "max_hp": 3600,
+   "speed": 6.4,
+   "attack_type": "ranged",
+   "damage": 150,
+   "attack_range": 28.0,
+   "attack_interval": 1.2,
+   "size": [
+    1.0,
+    1.8,
+    1.0
+   ],
+   "color": [
+    0.6,
+    0.7,
+    1.0
+   ],
+   "body_color": [
+    0.5,
+    0.5,
+    0.65
+   ],
+   "xp": 800,
+   "drops": {
+    "skysteel_ore": 0.25,
+    "frostbloom": 0.2
+   },
+   "preferred_range": 14.0,
+   "projectile_speed": 24.0,
+   "burst": 2,
+   "burst_spread": 0.1,
+   "walks": "fly",
+   "debris": [
+    0.5,
+    0.5,
+    0.7
+   ]
+  },
+  "gale_spirit": {
+   "model": "gale_spirit",
+   "level": 43,
+   "max_hp": 5200,
+   "speed": 5.6,
+   "attack_type": "melee",
+   "damage": 240,
+   "attack_range": 2.4,
+   "attack_interval": 0.9,
+   "size": [
+    1.4,
+    2.2,
+    1.4
+   ],
+   "color": [
+    0.7,
+    0.8,
+    1.0
+   ],
+   "body_color": [
+    0.72,
+    0.78,
+    0.95
+   ],
+   "xp": 1100,
+   "drops": {
+    "skysteel_ore": 0.4
+   },
+   "walks": "fly",
+   "debris": [
+    0.8,
+    0.9,
+    1.0
+   ]
+  },
+  "tempest_roc": {
+   "model": "tempest_roc",
+   "level": 45,
+   "max_hp": 150000,
+   "speed": 5.4,
+   "attack_type": "ranged",
+   "damage": 320,
+   "attack_range": 44.0,
+   "attack_interval": 1.4,
+   "size": [
+    6.0,
+    5.0,
+    6.0
+   ],
+   "color": [
+    0.6,
+    0.7,
+    1.0
+   ],
+   "body_color": [
+    0.4,
+    0.42,
+    0.6
+   ],
+   "xp": 12000,
+   "drops": {
+    "storm_pigment": 1.0
+   },
+   "preferred_range": 18.0,
+   "projectile_speed": 28.0,
+   "burst": 4,
+   "burst_spread": 0.22,
+   "boss": true,
+   "walks": "fly",
+   "debris": [
+    0.4,
+    0.4,
+    0.6
+   ],
+   "moves": [
+    {
+     "id": "dive",
+     "kind": "charge",
+     "every": 9,
+     "windup": 1.2,
+     "distance": 28,
+     "speed": 30,
+     "width": 3.5,
+     "damage": 1.5,
+     "color": [
+      0.6,
+      0.6,
+      0.9
+     ]
+    },
+    {
+     "id": "gale",
+     "kind": "pull",
+     "every": 14,
+     "windup": 1.0,
+     "radius": 18,
+     "pull": -14,
+     "color": [
+      0.85,
+      0.95,
+      1.0
+     ],
+     "seconds": 3.0
+    },
+    {
+     "id": "feather_storm",
+     "kind": "volley",
+     "every": 7,
+     "windup": 0.6,
+     "count": 9,
+     "arc": 140,
+     "speed": 22,
+     "damage": 0.4,
+     "color": [
+      1.0,
+      1.0,
+      0.6
+     ]
+    }
+   ]
+  },
+  "pale_knight": {
+   "model": "pale_knight",
+   "level": 46,
+   "max_hp": 8000,
+   "speed": 4.4,
+   "attack_type": "melee",
+   "damage": 330,
+   "attack_range": 2.4,
+   "attack_interval": 1.0,
+   "size": [
+    1.0,
+    2.1,
+    1.0
+   ],
+   "color": [
+    0.95,
+    0.95,
+    1.0
+   ],
+   "body_color": [
+    0.82,
+    0.82,
+    0.84
+   ],
+   "xp": 700,
+   "drops": {
+    "skysteel_ore": 0.3
+   },
+   "walks": "land",
+   "debris": [
+    0.85,
+    0.85,
+    0.88
+   ]
+  },
+  "hollow_shade": {
+   "model": "hollow_shade",
+   "level": 48,
+   "max_hp": 6500,
+   "speed": 5.2,
+   "attack_type": "ranged",
+   "damage": 290,
+   "attack_range": 30.0,
+   "attack_interval": 1.3,
+   "size": [
+    0.9,
+    2.0,
+    0.9
+   ],
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "body_color": [
+    0.9,
+    0.9,
+    0.92
+   ],
+   "xp": 800,
+   "drops": {
+    "cinderroot": 0.2,
+    "frostbloom": 0.2
+   },
+   "preferred_range": 15.0,
+   "projectile_speed": 26.0,
+   "burst": 3,
+   "burst_spread": 0.12,
+   "walks": "fly",
+   "debris": [
+    0.25,
+    0.25,
+    0.3
+   ]
+  },
+  "pallid_king": {
+   "model": "pallid_king",
+   "level": 50,
+   "max_hp": 320000,
+   "speed": 4.0,
+   "attack_type": "ranged",
+   "damage": 420,
+   "attack_range": 50.0,
+   "attack_interval": 1.2,
+   "size": [
+    2.6,
+    5.2,
+    2.6
+   ],
+   "color": [
+    1.0,
+    1.0,
+    1.0
+   ],
+   "body_color": [
+    0.93,
+    0.93,
+    0.95
+   ],
+   "xp": 20000,
+   "drops": {},
+   "preferred_range": 14.0,
+   "projectile_speed": 30.0,
+   "burst": 6,
+   "burst_spread": 0.25,
+   "boss": true,
+   "walks": "land",
+   "debris": [
+    0.95,
+    0.95,
+    0.95
+   ],
+   "moves": [
+    {
+     "id": "erase",
+     "kind": "blink",
+     "every": 10,
+     "windup": 1.0,
+     "radius": 5.0,
+     "damage": 1.4,
+     "color": [
+      1.0,
+      1.0,
+      1.0
+     ]
+    },
+    {
+     "id": "court",
+     "kind": "summon",
+     "every": 40,
+     "windup": 1.5,
+     "count": 3,
+     "enemy": "pale_knight",
+     "color": [
+      0.9,
+      0.9,
+      0.95
+     ]
+    },
+    {
+     "id": "white_out",
+     "kind": "rain",
+     "every": 18,
+     "windup": 1.5,
+     "count": 16,
+     "spread": 20,
+     "radius": 3.0,
+     "damage": 1.0,
+     "color": [
+      0.95,
+      0.95,
+      1.0
+     ]
+    }
+   ]
+  },
+  "red_warrior": {
+   "model": "red_warrior",
+   "level": 20,
+   "max_hp": 560,
+   "speed": 4.4,
+   "attack_type": "melee",
+   "damage": 42,
+   "attack_range": 2.1,
+   "attack_interval": 1.1,
+   "size": [
+    0.9,
+    1.85,
+    0.9
+   ],
+   "color": [
+    1.0,
+    0.3,
+    0.2
+   ],
+   "body_color": [
+    0.7,
+    0.2,
+    0.15
+   ],
+   "xp": 230,
+   "drops": {
+    "sunstone": 0.12
+   },
+   "walks": "land",
+   "debris": [
+    0.75,
+    0.6,
+    0.4
+   ],
+   "tribe": "red"
+  },
+  "blue_warrior": {
+   "model": "blue_warrior",
+   "level": 20,
+   "max_hp": 560,
+   "speed": 4.4,
+   "attack_type": "melee",
+   "damage": 42,
+   "attack_range": 2.1,
+   "attack_interval": 1.1,
+   "size": [
+    0.9,
+    1.85,
+    0.9
+   ],
+   "color": [
+    0.3,
+    0.5,
+    1.0
+   ],
+   "body_color": [
+    0.15,
+    0.3,
+    0.6
+   ],
+   "xp": 230,
+   "drops": {
+    "sunstone": 0.12
+   },
+   "walks": "land",
+   "debris": [
+    0.75,
+    0.6,
+    0.4
+   ],
+   "tribe": "blue"
+  }
+ },
+ "tribes": {
+  "field": "the_reddening",
+  "camps": {
+   "red": "red_camp",
+   "blue": "blue_camp"
+  },
+  "per_side": 4,
+  "wake_m": 140,
+  "turn_on_player_m": 11,
+  "respawn_s": 6
+ }
+}

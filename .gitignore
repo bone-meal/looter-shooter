@@ -1,0 +1,16 @@
+# Godot cache (rebuilt on import). Keep the *.import files.
+.godot/
+.mono/
+# Exported builds go to GitHub Releases, not the repo
+versions/
+*.exe
+*.pck
+# Dev downloads and check-scene output
+assets/cc0/_zips/
+data/omaha/raw/
+tools/userdata/
+tools/inbox/
+tools/*.log
+tools/*.png
+tools/*.jpg
+*.tmp

@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "food_item": "worm",
+  "worms_needed": 3,
+  "flight_seconds": 7.0,
+  "altitude": 30.0
+}

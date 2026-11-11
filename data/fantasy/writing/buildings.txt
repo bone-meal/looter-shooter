@@ -1,0 +1,99 @@
+# BUILDINGS AND WHAT STANDS IN THEM
+# Lines starting with # are notes and are never shown in the game. Change only the text after the colon.
+
+[building farmhouse]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Farmhouse
+
+[building story]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: House
+
+[building home]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Home
+
+[building smithy]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Smithy
+
+[building bakery]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Bakery
+
+[building alchemist]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Alchemist's Shop
+
+[building store]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: General Store
+
+[building tavern]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Tavern
+
+[building hall]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Town Hall
+
+[building barn]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Barn
+
+[building granary]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Granary
+
+[building chapel]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Chapel
+
+[building cabin]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Cabin
+
+[building tent]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Tent
+
+[building shed]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Shed
+
+[building mill]
+# WHAT: the name of this kind of building, shown at its door ("Enter ...") and on the screen once inside.
+name: Mill
+
+[container chest]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Chest
+
+[container cupboard]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Cupboard
+
+[container crate]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Crate
+
+[container barrel]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Barrel
+
+[container sacks]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Sacks
+
+[container bookcase]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Bookcase
+
+[container keg]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Keg
+
+[container pottery]
+# WHAT: the name of this thing when it can be searched ("Search ...").
+name: Pots
+

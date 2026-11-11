@@ -1,0 +1,23 @@
+{
+ "version": 1,
+ "max_level": 50,
+ "xp_base": 100,
+ "xp_growth": 1.16,
+ "points_per_level": 1,
+ "trait_slot_levels": [1, 12],
+ "callsign_max": 12,
+ "xp": {"kill": 10, "elite": 40, "boss": 300, "chest": 50},
+ "stats": {
+  "vitality": {"name": "Vitality", "desc": "+{v}% max health", "per_point": 3.0, "cap": 15, "effect": "max_hp_pct"},
+  "power": {"name": "Power", "desc": "+{v}% damage", "per_point": 2.0, "cap": 15, "effect": "damage_pct"},
+  "agility": {"name": "Agility", "desc": "+{v}% move speed", "per_point": 1.0, "cap": 15, "effect": "speed_pct"},
+  "fortune": {"name": "Fortune", "desc": "+{v}% gun drop luck", "per_point": 3.0, "cap": 15, "effect": "luck_pct"}
+ },
+ "traits": {
+  "thick_skin": {"name": "Thick Skin", "desc": "+10% max health", "effect": "max_hp_pct", "value": 10.0},
+  "gunslinger": {"name": "Gunslinger", "desc": "+8% damage", "effect": "damage_pct", "value": 8.0},
+  "fleet_foot": {"name": "Fleet Foot", "desc": "+6% move speed", "effect": "speed_pct", "value": 6.0},
+  "lucky_find": {"name": "Lucky Find", "desc": "+12% gun drop luck", "effect": "luck_pct", "value": 12.0},
+  "scholar": {"name": "Scholar", "desc": "+20% XP earned", "effect": "xp_pct", "value": 20.0}
+ }
+}

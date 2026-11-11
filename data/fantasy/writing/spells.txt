@@ -1,0 +1,237 @@
+# SPELLS: elements, shapes, mixes, sizes, named spells and the long secret spells
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
+#   * Change only the words AFTER the first colon of a line.   name: Farmer Hale   ->   name: Old Hale
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed.
+#   * A "says:" line may be repeated: each one is another thing that person may say.
+# The rules behind the texts (levels, rewards, what a quest step checks) are NOT here: they live in
+# data/fantasy/*.json and are the designers' job. tools/fantasy_check.tscn lists any text that is missing.
+# ----------------------------------------------------------------------------------------------
+
+[element W]
+# WHAT: one of the four elements a staff gathers.
+name: Water
+
+[element F]
+# WHAT: one of the four elements a staff gathers.
+name: Fire
+
+[element E]
+# WHAT: one of the four elements a staff gathers.
+name: Earth
+
+[element A]
+# WHAT: one of the four elements a staff gathers.
+name: Air
+
+[form W]
+# WHAT: the shape a spell takes when Water is the FIRST element. `about` is shown in the spell book.
+name: Jet
+about: a stream that follows your aim
+
+[form F]
+# WHAT: the shape a spell takes when Fire is the FIRST element. `about` is shown in the spell book.
+name: Bolt
+about: a thrown ball that bursts
+
+[form E]
+# WHAT: the shape a spell takes when Earth is the FIRST element. `about` is shown in the spell book.
+name: Eruption
+about: bursts from the ground where you aim and lingers
+
+[form A]
+# WHAT: the shape a spell takes when Air is the FIRST element. `about` is shown in the spell book.
+name: Wave
+about: a fan in front of you that throws things back
+
+[substance W]
+# WHAT: what a spell is made of when it mixes Water.
+name: Water
+
+[substance F]
+# WHAT: what a spell is made of when it mixes Fire.
+name: Fire
+
+[substance E]
+# WHAT: what a spell is made of when it mixes Earth.
+name: Stone
+
+[substance A]
+# WHAT: what a spell is made of when it mixes Air.
+name: Wind
+
+[substance FW]
+# WHAT: what a spell is made of when it mixes Fire + Water.
+name: Scald
+
+[substance AW]
+# WHAT: what a spell is made of when it mixes Air + Water.
+name: Frost
+
+[substance EW]
+# WHAT: what a spell is made of when it mixes Earth + Water.
+name: Bramble
+
+[substance AF]
+# WHAT: what a spell is made of when it mixes Air + Fire.
+name: Lightning
+
+[substance EF]
+# WHAT: what a spell is made of when it mixes Earth + Fire.
+name: Magma
+
+[substance AE]
+# WHAT: what a spell is made of when it mixes Air + Earth.
+name: Sand
+
+[substance AFW]
+# WHAT: what a spell is made of when it mixes Air + Fire + Water.
+name: Steam
+
+[substance EFW]
+# WHAT: what a spell is made of when it mixes Earth + Fire + Water.
+name: Geyser
+
+[substance AEW]
+# WHAT: what a spell is made of when it mixes Air + Earth + Water.
+name: Bloom
+
+[substance AEF]
+# WHAT: what a spell is made of when it mixes Air + Earth + Fire.
+name: Meteor
+
+[substance AEFW]
+# WHAT: what a spell is made of when it mixes Air + Earth + Fire + Water.
+name: Prism
+
+[sizes all]
+# WHAT: the word put in front of a spell's name by how many elements it holds (a blank after the colon = no word).
+1: Minor
+2: Lesser
+3: 
+4: Greater
+5: Grand
+7: Master
+9: Mythic
+
+[spell names]
+# WHAT: spells with a name of their own. Read a line as  shape:mix:amount: Name . Any spell not listed here is named
+# from its size word + mix + shape, e.g. Greater Steam Jet.
+jet:W:1: Water Jet
+jet:W:2: Water Lance
+jet:W:3: Water Cannon
+jet:W:4: Riptide
+jet:W:5: Tidebreaker
+bolt:F:1: Ember
+bolt:F:2: Fire Bolt
+bolt:F:3: Fireball
+bolt:F:4: Conflagration
+bolt:F:5: Sunburst
+ground:E:1: Stone Spike
+ground:E:2: Rock Fang
+ground:E:3: Boulder Crash
+ground:E:4: Landslide
+ground:E:5: Earthshatter
+wave:A:1: Gust
+wave:A:2: Wind Blade
+wave:A:3: Gale
+wave:A:4: Cyclone
+wave:A:5: Tempest
+jet:AFW:3: Steam Jet
+bolt:AFW:3: Steam Burst
+wave:AFW:3: Steam Veil
+ground:AFW:3: Steam Vent
+jet:AW:2: Frost Ray
+bolt:AW:2: Ice Shard
+wave:AW:2: Chill Wind
+ground:AW:2: Ice Patch
+wave:AW:4: Blizzard
+ground:AW:4: Glacier Spikes
+bolt:AW:3: Ice Lance
+bolt:AF:2: Spark
+bolt:AF:3: Thunderbolt
+wave:AF:3: Thunderclap
+jet:AF:3: Arc Stream
+ground:AF:3: Lightning Rod
+bolt:AF:4: Chain Lightning
+ground:EF:2: Lava Pool
+bolt:EF:2: Magma Bomb
+ground:EF:4: Eruption
+wave:EF:3: Ash Wave
+ground:EW:2: Bramble Snare
+jet:EW:2: Mud Stream
+wave:EW:3: Thorn Wave
+bolt:EW:2: Seed Pod
+wave:AE:2: Dust Devil
+wave:AE:4: Sandstorm
+bolt:AE:2: Sand Blast
+ground:AE:2: Quicksand
+ground:EFW:3: Geyser
+jet:EFW:3: Boiling Mud
+wave:AEW:3: Healing Breeze
+ground:AEW:3: Blooming Circle
+jet:AEW:3: Mending Rain
+bolt:AEW:3: Life Seed
+bolt:AEF:3: Meteor
+ground:AEF:3: Cinder Rain
+wave:AEF:3: Ash Storm
+bolt:AEFW:4: Prism Orb
+jet:AEFW:4: Rainbow Ray
+wave:AEFW:4: Prism Nova
+ground:AEFW:4: Aether Well
+jet:FW:2: Scalding Jet
+bolt:FW:2: Boiling Orb
+wave:FW:2: Scald Mist
+ground:FW:2: Hot Spring
+
+[secret katrina]
+# WHAT: a long spell cast by the exact sequence Air Water Air Air Water Air Water Water Air. `about` is shown in the spell book once it is taught.
+name: Katrina
+about: A hurricane that drags everything in, soaks it and strikes it with lightning.
+
+[secret starfall]
+# WHAT: a long spell cast by the exact sequence Fire Earth Fire Earth Air Fire Earth Fire. `about` is shown in the spell book once it is taught.
+name: Starfall
+about: Burning stones fall across a wide field.
+
+[secret leviathan]
+# WHAT: a long spell cast by the exact sequence Water Water Air Water Water Earth Water Water. `about` is shown in the spell book once it is taught.
+name: Leviathan's Wake
+about: A wall of water rolls forward and carries everything with it.
+
+[secret worldbreaker]
+# WHAT: a long spell cast by the exact sequence Earth Earth Fire Earth Earth Air Earth Earth Earth. `about` is shown in the spell book once it is taught.
+name: Worldbreaker
+about: The ground around you splits. Everything on it stops moving.
+
+[secret absolute_zero]
+# WHAT: a long spell cast by the exact sequence Water Air Water Air Air Water Air Water. `about` is shown in the spell book once it is taught.
+name: Absolute Zero
+about: Everything near you freezes solid and breaks more easily.
+
+[secret judgement]
+# WHAT: a long spell cast by the exact sequence Fire Air Fire Air Air Fire Air Fire Air. `about` is shown in the spell book once it is taught.
+name: Judgement
+about: Twelve bolts from a clear sky, one for each enemy that deserves it.
+
+[secret phoenix_rite]
+# WHAT: a long spell cast by the exact sequence Fire Fire Air Water Fire Fire Air. `about` is shown in the spell book once it is taught.
+name: Phoenix Rite
+about: You burn away your wounds. Everything close burns with them.
+
+[secret genesis_rain]
+# WHAT: a long spell cast by the exact sequence Water Earth Air Water Earth Air Water Earth. `about` is shown in the spell book once it is taught.
+name: Genesis Rain
+about: Warm rain that closes wounds for everyone standing in it.
+
+[secret prism_lance]
+# WHAT: a long spell cast by the exact sequence Water Fire Earth Air Water Fire Earth Air. `about` is shown in the spell book once it is taught.
+name: Prism Lance
+about: One line of every colour. It does not stop at the first thing it meets.
+
+[secret eclipse]
+# WHAT: a long spell cast by the exact sequence Air Earth Fire Water Water Fire Earth Air Air Earth Fire Water. `about` is shown in the spell book once it is taught.
+name: Eclipse
+about: The sky goes dark over the whole field. Nothing under it is spared.

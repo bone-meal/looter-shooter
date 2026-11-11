@@ -1,0 +1,352 @@
+{
+ "version": 3,
+ "stats": {
+  "damage": {
+   "max": 0.35,
+   "mode": "mult",
+   "name": "Damage"
+  },
+  "fire_rate": {
+   "max": 0.25,
+   "mode": "mult",
+   "name": "Fire rate"
+  },
+  "mag_size": {
+   "max": 0.5,
+   "mode": "mult",
+   "name": "Magazine"
+  },
+  "reload_time": {
+   "max": -0.3,
+   "mode": "mult",
+   "name": "Reload time"
+  },
+  "spread": {
+   "max": -0.4,
+   "mode": "mult",
+   "name": "Spread"
+  },
+  "recoil": {
+   "max": -0.4,
+   "mode": "mult",
+   "name": "Recoil"
+  },
+  "crit_chance": {
+   "max": 0.1,
+   "mode": "add",
+   "name": "Crit chance"
+  }
+ },
+ "base_crit_chance": 0.05,
+ "tiers": [
+  {
+   "id": "grey",
+   "name": "Common",
+   "color": "#9a9a9a",
+   "weight": 50.0,
+   "stat_rolls": 1,
+   "buffs": 0,
+   "quality": [
+    0.0,
+    0.4
+   ],
+   "part_fill": 0.5,
+   "animated": "none",
+   "skills": 0,
+   "skill_quality": [
+    0.0,
+    0.0
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "green",
+   "name": "Uncommon",
+   "color": "#4caf50",
+   "weight": 25.0,
+   "stat_rolls": 2,
+   "buffs": 0,
+   "quality": [
+    0.1,
+    0.55
+   ],
+   "part_fill": 0.7,
+   "animated": "none",
+   "skills": 1,
+   "skill_quality": [
+    0.1,
+    0.55
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "blue",
+   "name": "Rare",
+   "color": "#3d8bff",
+   "weight": 13.0,
+   "stat_rolls": 3,
+   "buffs": 1,
+   "quality": [
+    0.25,
+    0.7
+   ],
+   "part_fill": 0.85,
+   "animated": "none",
+   "skills": 1,
+   "skill_quality": [
+    0.25,
+    0.7
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "purple",
+   "name": "Epic",
+   "color": "#a24bff",
+   "weight": 7.0,
+   "stat_rolls": 4,
+   "buffs": 1,
+   "quality": [
+    0.4,
+    0.8
+   ],
+   "part_fill": 0.9,
+   "animated": "none",
+   "skills": 1,
+   "skill_quality": [
+    0.4,
+    0.8
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "gold",
+   "name": "Legendary",
+   "color": "#ffc83d",
+   "weight": 3.5,
+   "stat_rolls": 4,
+   "buffs": 2,
+   "quality": [
+    0.55,
+    0.9
+   ],
+   "part_fill": 1.0,
+   "animated": "none",
+   "skills": 1,
+   "skill_quality": [
+    0.55,
+    0.9
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "orange",
+   "name": "Mythic",
+   "color": "#ff7a1a",
+   "weight": 1.2,
+   "stat_rolls": 5,
+   "buffs": 2,
+   "quality": [
+    0.7,
+    1.0
+   ],
+   "part_fill": 1.0,
+   "animated": "none",
+   "skills": 2,
+   "skill_quality": [
+    0.7,
+    1.0
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "rainbow",
+   "name": "Prismatic",
+   "color": "#ffffff",
+   "weight": 0.25,
+   "stat_rolls": 6,
+   "buffs": 3,
+   "quality": [
+    0.85,
+    1.0
+   ],
+   "part_fill": 1.0,
+   "animated": "rainbow",
+   "skills": 2,
+   "skill_quality": [
+    0.85,
+    1.0
+   ],
+   "skill_cd": 1.0
+  },
+  {
+   "id": "pony",
+   "name": "Pony",
+   "color": "#ff9ad5",
+   "weight": 0.05,
+   "stat_rolls": 6,
+   "buffs": 3,
+   "quality": [
+    0.85,
+    1.0
+   ],
+   "part_fill": 1.0,
+   "animated": "pony",
+   "skin": "pony",
+   "tag": "** PONY **",
+   "uniques": [],
+   "skills": 2,
+   "skill_quality": [
+    0.95,
+    1.0
+   ],
+   "skill_cd": 0.75
+  }
+ ],
+ "buffs": [
+  {
+   "id": "lifesteal",
+   "name": "Leech",
+   "desc": "Heal %s%% of damage dealt",
+   "min": 1.0,
+   "max": 4.0,
+   "scale": 1.0
+  },
+  {
+   "id": "crit_damage",
+   "name": "Executioner",
+   "desc": "Critical hits deal +%s%% damage",
+   "min": 25.0,
+   "max": 100.0,
+   "scale": 1.0
+  },
+  {
+   "id": "burn_chance",
+   "name": "Smoulder",
+   "desc": "%s%% chance to set enemies on fire",
+   "min": 5.0,
+   "max": 25.0,
+   "scale": 1.0
+  },
+  {
+   "id": "shock_chance",
+   "name": "Static",
+   "desc": "%s%% chance to shock nearby enemies",
+   "min": 5.0,
+   "max": 25.0,
+   "scale": 1.0
+  },
+  {
+   "id": "explosive_chance",
+   "name": "Boomer",
+   "desc": "%s%% chance for an explosive hit",
+   "min": 4.0,
+   "max": 18.0,
+   "scale": 1.0
+  },
+  {
+   "id": "reload_on_kill",
+   "name": "Bloodlust",
+   "desc": "Kills refill %s%% of the magazine",
+   "min": 10.0,
+   "max": 60.0,
+   "scale": 1.0
+  },
+  {
+   "id": "free_shot",
+   "name": "Thrifty",
+   "desc": "%s%% chance a shot costs no ammo",
+   "min": 5.0,
+   "max": 30.0,
+   "scale": 1.0
+  },
+  {
+   "id": "slow_on_hit",
+   "name": "Mire",
+   "desc": "Hits slow enemies by %s%%",
+   "min": 10.0,
+   "max": 40.0,
+   "scale": 1.0
+  },
+  {
+   "id": "berserker_chain",
+   "name": "Berserker Chain",
+   "desc": "Each kill adds +%s%% damage (10 stacks, fades after 3 s)",
+   "min": 4.0,
+   "max": 6.0,
+   "scale": 1.0
+  },
+  {
+   "id": "cooldown_siphon",
+   "name": "Cooldown Siphon",
+   "desc": "Kills take %s s off skill cooldowns (elites 3 s, boss 5 s)",
+   "min": 0.3,
+   "max": 0.6,
+   "scale": 1.0
+  },
+  {
+   "id": "skill_echo",
+   "name": "Skill Echo",
+   "desc": "%s%% chance a skill refunds its cooldown",
+   "min": 12.0,
+   "max": 22.0,
+   "scale": 1.0
+  },
+  {
+   "id": "overkill_splash",
+   "name": "Overkill Splash",
+   "desc": "%s%% of damage past a kill spills to a nearby enemy",
+   "min": 50.0,
+   "max": 100.0,
+   "scale": 1.0
+  },
+  {
+   "id": "glass_cannon",
+   "name": "Glass Cannon",
+   "desc": "+%s%% damage, 35%% less max health",
+   "min": 40.0,
+   "max": 60.0,
+   "scale": 1.0
+  },
+  {
+   "id": "slayer_mark",
+   "name": "Slayer's Mark",
+   "desc": "Critical hits mark enemies: +%s%% damage taken for 6 s",
+   "min": 15.0,
+   "max": 25.0,
+   "scale": 1.0
+  }
+ ],
+ "chest": {
+  "guns": 2,
+  "luck": 0.5,
+  "min_tier": "purple",
+  "extra_luck_per_gun": 0.0
+ },
+ "vendor": [
+  {
+   "id": "bronze",
+   "name": "Bronze Crate",
+   "price": 300,
+   "luck": 0.0,
+   "min_tier": "grey",
+   "color": "#c07a3a"
+  },
+  {
+   "id": "silver",
+   "name": "Silver Crate",
+   "price": 1500,
+   "luck": 0.3,
+   "min_tier": "blue",
+   "color": "#c0c8d0"
+  },
+  {
+   "id": "gold",
+   "name": "Gold Crate",
+   "price": 6000,
+   "luck": 0.6,
+   "min_tier": "purple",
+   "color": "#ffc83d"
+  }
+ ]
+}

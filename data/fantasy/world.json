@@ -1,0 +1,1705 @@
+{
+ "version": 1,
+ "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads).",
+ "size": 2000,
+ "seed": 7411,
+ "chunk": 50,
+ "sea_level": 0.0,
+ "blend": 90.0,
+ "spawn": [
+  4,
+  566
+ ],
+ "exit_painting": [
+  14,
+  558
+ ],
+ "regions": [
+  {
+   "id": "amberfield",
+   "center": [
+    0,
+    470
+   ],
+   "radius": 340,
+   "level": [
+    1,
+    6
+   ],
+   "height": {
+    "base": 6,
+    "amp": 5,
+    "rough": 140
+   },
+   "ground": [
+    [
+     0.5,
+     0.62,
+     0.24
+    ],
+    [
+     0.74,
+     0.64,
+     0.26
+    ],
+    [
+     0.5,
+     0.42,
+     0.3
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.95,
+     0.86,
+     0.62
+    ],
+    "density": 0.0016,
+    "sky_top": [
+     0.25,
+     0.5,
+     0.9
+    ],
+    "sky_horizon": [
+     0.98,
+     0.86,
+     0.62
+    ],
+    "ambient": [
+     0.95,
+     0.9,
+     0.78
+    ],
+    "sun": [
+     1.0,
+     0.93,
+     0.78
+    ]
+   },
+   "trees": {
+    "tree_ash": 1.2
+   },
+   "nodes": {
+    "ash_tree": 0.7,
+    "copper_rock": 0.25,
+    "wheat": 2.2,
+    "meadowmint": 0.5
+   },
+   "enemies": [
+    "strawling",
+    "field_slime"
+   ],
+   "pigment": "amber_pigment",
+   "tuft": {
+    "color": [
+     0.62,
+     0.47,
+     0.14
+    ],
+    "tip": [
+     0.95,
+     0.8,
+     0.36
+    ],
+    "count": 700,
+    "height": 0.9
+   },
+   "scheme": "amber",
+   "surface": "g_wheat",
+   "fish": {
+    "fresh": "pond_spot",
+    "salt": "shallows_spot"
+   }
+  },
+  {
+   "id": "greenwald",
+   "center": [
+    -620,
+    330
+   ],
+   "radius": 330,
+   "level": [
+    6,
+    12
+   ],
+   "height": {
+    "base": 14,
+    "amp": 12,
+    "rough": 110
+   },
+   "ground": [
+    [
+     0.2,
+     0.42,
+     0.18
+    ],
+    [
+     0.3,
+     0.52,
+     0.22
+    ],
+    [
+     0.36,
+     0.32,
+     0.26
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.5,
+     0.72,
+     0.5
+    ],
+    "density": 0.0042,
+    "sky_top": [
+     0.2,
+     0.5,
+     0.6
+    ],
+    "sky_horizon": [
+     0.6,
+     0.82,
+     0.62
+    ],
+    "ambient": [
+     0.6,
+     0.8,
+     0.6
+    ],
+    "sun": [
+     0.85,
+     1.0,
+     0.8
+    ]
+   },
+   "trees": {
+    "tree_oak": 6.5,
+    "tree_ash": 1.5
+   },
+   "nodes": {
+    "oak_tree": 1.3,
+    "ash_tree": 0.4,
+    "iron_rock": 0.2,
+    "glowcap": 0.6,
+    "meadowmint": 0.4
+   },
+   "enemies": [
+    "forest_wolf",
+    "mossgoblin",
+    "barkhide"
+   ],
+   "pigment": "verdant_pigment",
+   "tuft": {
+    "color": [
+     0.14,
+     0.36,
+     0.14
+    ],
+    "tip": [
+     0.4,
+     0.66,
+     0.3
+    ],
+    "count": 110,
+    "height": 0.55
+   },
+   "scheme": "green",
+   "surface": "g_forest",
+   "fish": {
+    "fresh": "river_spot",
+    "salt": "shallows_spot"
+   }
+  },
+  {
+   "id": "brinemouth",
+   "center": [
+    580,
+    640
+   ],
+   "radius": 330,
+   "level": [
+    12,
+    18
+   ],
+   "height": {
+    "base": 3,
+    "amp": 4,
+    "rough": 160
+   },
+   "ground": [
+    [
+     0.74,
+     0.688,
+     0.516
+    ],
+    [
+     0.43,
+     0.602,
+     0.344
+    ],
+    [
+     0.516,
+     0.499,
+     0.447
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.7,
+     0.86,
+     0.95
+    ],
+    "density": 0.002,
+    "sky_top": [
+     0.15,
+     0.45,
+     0.95
+    ],
+    "sky_horizon": [
+     0.75,
+     0.9,
+     1.0
+    ],
+    "ambient": [
+     0.8,
+     0.9,
+     1.0
+    ],
+    "sun": [
+     1.0,
+     0.98,
+     0.9
+    ]
+   },
+   "trees": {
+    "tree_palm": 1.6
+   },
+   "nodes": {
+    "palm_tree": 0.8,
+    "iron_rock": 0.25,
+    "glowcap": 0.2
+   },
+   "enemies": [
+    "reef_crab",
+    "drowned_sailor"
+   ],
+   "pigment": "azure_pigment",
+   "tuft": {
+    "color": [
+     0.42,
+     0.6,
+     0.3
+    ],
+    "tip": [
+     0.75,
+     0.82,
+     0.5
+    ],
+    "count": 60,
+    "height": 0.5
+   },
+   "scheme": "brine",
+   "surface": "g_coast",
+   "fish": {
+    "fresh": "river_spot",
+    "salt": "sea_spot"
+   }
+  },
+  {
+   "id": "sunscar",
+   "center": [
+    700,
+    20
+   ],
+   "radius": 330,
+   "level": [
+    18,
+    25
+   ],
+   "height": {
+    "base": 10,
+    "amp": 14,
+    "rough": 90
+   },
+   "ground": [
+    [
+     0.93,
+     0.78,
+     0.48
+    ],
+    [
+     0.88,
+     0.62,
+     0.36
+    ],
+    [
+     0.72,
+     0.46,
+     0.3
+    ]
+   ],
+   "mood": {
+    "fog": [
+     1.0,
+     0.82,
+     0.55
+    ],
+    "density": 0.0022,
+    "sky_top": [
+     0.2,
+     0.42,
+     0.85
+    ],
+    "sky_horizon": [
+     1.0,
+     0.85,
+     0.6
+    ],
+    "ambient": [
+     1.0,
+     0.9,
+     0.72
+    ],
+    "sun": [
+     1.0,
+     0.9,
+     0.7
+    ]
+   },
+   "trees": {
+    "tree_palm": 0.25
+   },
+   "nodes": {
+    "palm_tree": 0.15,
+    "sunstone_rock": 0.35,
+    "sunpetal": 0.5
+   },
+   "enemies": [
+    "dune_scorpion",
+    "sand_wraith"
+   ],
+   "pigment": "ochre_pigment",
+   "tuft": {
+    "color": [
+     0.7,
+     0.56,
+     0.3
+    ],
+    "tip": [
+     0.85,
+     0.75,
+     0.45
+    ],
+    "count": 22,
+    "height": 0.4
+   },
+   "scheme": "sun",
+   "surface": "g_dry",
+   "fish": {
+    "fresh": "oasis_spot",
+    "salt": "sea_spot"
+   }
+  },
+  {
+   "id": "frostmere",
+   "center": [
+    -140,
+    -660
+   ],
+   "radius": 330,
+   "level": [
+    25,
+    32
+   ],
+   "height": {
+    "base": 42,
+    "amp": 26,
+    "rough": 120
+   },
+   "ground": [
+    [
+     0.74,
+     0.8,
+     0.88
+    ],
+    [
+     0.84,
+     0.88,
+     0.94
+    ],
+    [
+     0.5,
+     0.56,
+     0.66
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.86,
+     0.92,
+     1.0
+    ],
+    "density": 0.003,
+    "sky_top": [
+     0.3,
+     0.5,
+     0.85
+    ],
+    "sky_horizon": [
+     0.9,
+     0.95,
+     1.0
+    ],
+    "ambient": [
+     0.72,
+     0.8,
+     0.95
+    ],
+    "sun": [
+     0.92,
+     0.96,
+     1.0
+    ]
+   },
+   "trees": {
+    "tree_pine": 3.0
+   },
+   "nodes": {
+    "frostpine_tree": 0.9,
+    "frostcrystal_rock": 0.35,
+    "frostbloom": 0.5
+   },
+   "enemies": [
+    "frost_wolf",
+    "ice_golem"
+   ],
+   "pigment": "white_pigment",
+   "tuft": {
+    "color": [
+     0.7,
+     0.8,
+     0.9
+    ],
+    "tip": [
+     1.0,
+     1.0,
+     1.0
+    ],
+    "count": 14,
+    "height": 0.3
+   },
+   "scheme": "frost",
+   "surface": "g_snow",
+   "fish": {
+    "fresh": "ice_spot",
+    "salt": "deepsea_spot"
+   }
+  },
+  {
+   "id": "cinderreach",
+   "center": [
+    620,
+    -620
+   ],
+   "radius": 330,
+   "level": [
+    32,
+    39
+   ],
+   "height": {
+    "base": 30,
+    "amp": 30,
+    "rough": 100
+   },
+   "ground": [
+    [
+     0.24,
+     0.2,
+     0.2
+    ],
+    [
+     0.4,
+     0.22,
+     0.16
+    ],
+    [
+     0.14,
+     0.12,
+     0.13
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.55,
+     0.26,
+     0.16
+    ],
+    "density": 0.0045,
+    "sky_top": [
+     0.3,
+     0.14,
+     0.14
+    ],
+    "sky_horizon": [
+     0.95,
+     0.42,
+     0.18
+    ],
+    "ambient": [
+     0.9,
+     0.55,
+     0.4
+    ],
+    "sun": [
+     1.0,
+     0.6,
+     0.4
+    ]
+   },
+   "trees": {
+    "tree_ember": 1.0
+   },
+   "nodes": {
+    "emberwood_tree": 0.7,
+    "obsidian_rock": 0.4,
+    "cinderroot": 0.5
+   },
+   "enemies": [
+    "magma_imp",
+    "ash_drake"
+   ],
+   "pigment": "crimson_pigment",
+   "tuft": {
+    "color": [
+     0.3,
+     0.1,
+     0.08
+    ],
+    "tip": [
+     0.95,
+     0.4,
+     0.1
+    ],
+    "count": 30,
+    "height": 0.4
+   },
+   "scheme": "cinder",
+   "surface": "g_burnt",
+   "fish": {
+    "fresh": "lava_spot",
+    "salt": "deepsea_spot"
+   }
+  },
+  {
+   "id": "stormcrown",
+   "center": [
+    -700,
+    -360
+   ],
+   "radius": 330,
+   "level": [
+    39,
+    45
+   ],
+   "height": {
+    "base": 60,
+    "amp": 22,
+    "rough": 150
+   },
+   "ground": [
+    [
+     0.42,
+     0.5,
+     0.42
+    ],
+    [
+     0.55,
+     0.56,
+     0.6
+    ],
+    [
+     0.36,
+     0.36,
+     0.42
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.55,
+     0.58,
+     0.7
+    ],
+    "density": 0.0036,
+    "sky_top": [
+     0.2,
+     0.22,
+     0.4
+    ],
+    "sky_horizon": [
+     0.6,
+     0.62,
+     0.78
+    ],
+    "ambient": [
+     0.7,
+     0.72,
+     0.9
+    ],
+    "sun": [
+     0.8,
+     0.82,
+     1.0
+    ]
+   },
+   "trees": {
+    "tree_pine": 0.8
+   },
+   "nodes": {
+    "frostpine_tree": 0.3,
+    "skysteel_rock": 0.35,
+    "frostbloom": 0.2,
+    "cinderroot": 0.2
+   },
+   "enemies": [
+    "storm_harpy",
+    "gale_spirit"
+   ],
+   "pigment": "storm_pigment",
+   "tuft": {
+    "color": [
+     0.3,
+     0.34,
+     0.3
+    ],
+    "tip": [
+     0.6,
+     0.45,
+     0.75
+    ],
+    "count": 90,
+    "height": 0.4
+   },
+   "scheme": "storm",
+   "surface": "g_highland",
+   "fish": {
+    "fresh": "ice_spot",
+    "salt": "deepsea_spot"
+   }
+  },
+  {
+   "id": "hollow_crown",
+   "center": [
+    0,
+    -150
+   ],
+   "radius": 270,
+   "level": [
+    45,
+    50
+   ],
+   "height": {
+    "base": 24,
+    "amp": 8,
+    "rough": 80
+   },
+   "ground": [
+    [
+     0.74,
+     0.74,
+     0.74
+    ],
+    [
+     0.6,
+     0.6,
+     0.62
+    ],
+    [
+     0.42,
+     0.42,
+     0.45
+    ]
+   ],
+   "mood": {
+    "fog": [
+     0.78,
+     0.78,
+     0.8
+    ],
+    "density": 0.006,
+    "sky_top": [
+     0.5,
+     0.5,
+     0.52
+    ],
+    "sky_horizon": [
+     0.82,
+     0.82,
+     0.84
+    ],
+    "ambient": [
+     0.8,
+     0.8,
+     0.82
+    ],
+    "sun": [
+     0.9,
+     0.9,
+     0.9
+    ]
+   },
+   "trees": {
+    "tree_dead": 1.4
+   },
+   "nodes": {},
+   "enemies": [
+    "pale_knight",
+    "hollow_shade"
+   ],
+   "pigment": "",
+   "tuft": {
+    "color": [
+     0.6,
+     0.6,
+     0.6
+    ],
+    "tip": [
+     0.85,
+     0.85,
+     0.85
+    ],
+    "count": 40,
+    "height": 0.4
+   },
+   "scheme": "pale",
+   "surface": "g_pale",
+   "fish": {
+    "fresh": "ice_spot",
+    "salt": "deepsea_spot"
+   }
+  }
+ ],
+ "places": [
+  {
+   "id": "hale_farm",
+   "region": "amberfield",
+   "pos": [
+    -26,
+    560
+   ],
+   "kind": "farm",
+   "flat": 34,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "millbrook",
+   "region": "amberfield",
+   "pos": [
+    70,
+    420
+   ],
+   "kind": "town",
+   "flat": 55,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "threshing_floor",
+   "region": "amberfield",
+   "pos": [
+    -190,
+    330
+   ],
+   "kind": "arena",
+   "flat": 30,
+   "boss": "harvest_king",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "fernhollow",
+   "region": "greenwald",
+   "pos": [
+    -540,
+    360
+   ],
+   "kind": "town_palisade",
+   "flat": 45,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "rootmother_hollow",
+   "region": "greenwald",
+   "pos": [
+    -790,
+    240
+   ],
+   "kind": "arena",
+   "flat": 30,
+   "boss": "rootmother",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "brinemouth_town",
+   "region": "brinemouth",
+   "pos": [
+    520,
+    690
+   ],
+   "kind": "town",
+   "flat": 55,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "tidal_flats",
+   "region": "brinemouth",
+   "pos": [
+    740,
+    770
+   ],
+   "kind": "arena",
+   "flat": 32,
+   "boss": "tidewarden",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "dunehaven",
+   "region": "sunscar",
+   "pos": [
+    640,
+    70
+   ],
+   "kind": "town",
+   "flat": 50,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "glassmaw_pit",
+   "region": "sunscar",
+   "pos": [
+    850,
+    -110
+   ],
+   "kind": "arena",
+   "flat": 32,
+   "boss": "glassmaw",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "rimegate",
+   "region": "frostmere",
+   "pos": [
+    -110,
+    -600
+   ],
+   "kind": "town_palisade",
+   "flat": 50,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "colossus_steps",
+   "region": "frostmere",
+   "pos": [
+    -310,
+    -810
+   ],
+   "kind": "arena",
+   "flat": 32,
+   "boss": "rime_colossus",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "anvilgate",
+   "region": "cinderreach",
+   "pos": [
+    540,
+    -560
+   ],
+   "kind": "town",
+   "flat": 50,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "caldera",
+   "region": "cinderreach",
+   "pos": [
+    770,
+    -770
+   ],
+   "kind": "arena",
+   "flat": 34,
+   "boss": "cinderwyrm",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "skyrest",
+   "region": "stormcrown",
+   "pos": [
+    -650,
+    -330
+   ],
+   "kind": "town_open",
+   "flat": 45,
+   "yard": "g_cobble"
+  },
+  {
+   "id": "roc_aerie",
+   "region": "stormcrown",
+   "pos": [
+    -860,
+    -510
+   ],
+   "kind": "arena",
+   "flat": 34,
+   "boss": "tempest_roc",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "pale_gate",
+   "region": "hollow_crown",
+   "pos": [
+    0,
+    60
+   ],
+   "kind": "camp",
+   "flat": 26,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "pale_throne",
+   "region": "hollow_crown",
+   "pos": [
+    0,
+    -170
+   ],
+   "kind": "arena",
+   "flat": 40,
+   "boss": "pallid_king",
+   "yard": "g_cobble"
+  },
+  {
+   "id": "southfield",
+   "region": "amberfield",
+   "pos": [
+    170,
+    650
+   ],
+   "kind": "village",
+   "flat": 38,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "barleywick",
+   "region": "amberfield",
+   "pos": [
+    -185,
+    520
+   ],
+   "kind": "village",
+   "flat": 34,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "mossford",
+   "region": "greenwald",
+   "pos": [
+    -420,
+    480
+   ],
+   "kind": "village",
+   "flat": 32,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "saltmarsh",
+   "region": "brinemouth",
+   "pos": [
+    690,
+    545
+   ],
+   "kind": "village",
+   "flat": 32,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "red_camp",
+   "region": "sunscar",
+   "pos": [
+    545,
+    -95
+   ],
+   "kind": "tribe_red",
+   "flat": 30,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "blue_camp",
+   "region": "sunscar",
+   "pos": [
+    800,
+    55
+   ],
+   "kind": "tribe_blue",
+   "flat": 30,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "the_reddening",
+   "region": "sunscar",
+   "pos": [
+    690,
+    -45
+   ],
+   "kind": "battlefield",
+   "flat": 34,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "hollin",
+   "region": "frostmere",
+   "pos": [
+    40,
+    -730
+   ],
+   "kind": "village",
+   "flat": 30,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "slagside",
+   "region": "cinderreach",
+   "pos": [
+    465,
+    -700
+   ],
+   "kind": "village",
+   "flat": 30,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "high_cairn",
+   "region": "stormcrown",
+   "pos": [
+    -560,
+    -455
+   ],
+   "kind": "village",
+   "flat": 28,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "the_unpainted",
+   "region": "hollow_crown",
+   "pos": [
+    -125,
+    -45
+   ],
+   "kind": "ruins",
+   "flat": 30,
+   "yard": "g_dirt"
+  }
+ ],
+ "npcs": [
+  {
+   "id": "farmer_hale",
+   "place": "hale_farm",
+   "offset": [
+    6,
+    8
+   ],
+   "color": [
+    0.5,
+    0.36,
+    0.2
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "farmer",
+    "hair": "crop",
+    "hair_color": "#6b5a45",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "mirren",
+   "place": "hale_farm",
+   "offset": [
+    -8,
+    4
+   ],
+   "color": [
+    0.4,
+    0.25,
+    0.5
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "witch",
+    "hair": "long_straight",
+    "hair_color": "#c9c2d6",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "miller_oswin",
+   "place": "millbrook",
+   "offset": [
+    10,
+    -6
+   ],
+   "color": [
+    0.8,
+    0.78,
+    0.7
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "chef",
+    "hair": "buzz",
+    "hair_color": "#3b2a1a",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "smith_edda",
+   "place": "millbrook",
+   "offset": [
+    -12,
+    8
+   ],
+   "color": [
+    0.35,
+    0.3,
+    0.3
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "dwarf_smith",
+    "hair": "ponytail",
+    "hair_color": "#a04a20",
+    "skin": 5
+   }
+  },
+  {
+   "id": "angler_pim",
+   "place": "millbrook",
+   "offset": [
+    18,
+    14
+   ],
+   "color": [
+    0.3,
+    0.45,
+    0.55
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "fisher",
+    "hair": "curly",
+    "hair_color": "#7a4a2a",
+    "skin": 0
+   }
+  },
+  {
+   "id": "warden_oska",
+   "place": "fernhollow",
+   "offset": [
+    6,
+    6
+   ],
+   "color": [
+    0.25,
+    0.4,
+    0.2
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "ranger",
+    "hair": "bob",
+    "hair_color": "#2e2a22",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "herbalist_wynn",
+   "place": "fernhollow",
+   "offset": [
+    -10,
+    4
+   ],
+   "color": [
+    0.5,
+    0.7,
+    0.4
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "druid",
+    "hair": "long_straight",
+    "hair_color": "#5a7a3a",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "captain_ysolde",
+   "place": "brinemouth_town",
+   "offset": [
+    8,
+    4
+   ],
+   "color": [
+    0.2,
+    0.3,
+    0.6
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "pirate_captain",
+    "hair": "ponytail",
+    "hair_color": "#1e1e24",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "netmender_brill",
+   "place": "brinemouth_town",
+   "offset": [
+    -10,
+    -8
+   ],
+   "color": [
+    0.7,
+    0.75,
+    0.8
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "sailor",
+    "hair": "crop",
+    "hair_color": "#8a8a8a",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "tarek",
+   "place": "dunehaven",
+   "offset": [
+    6,
+    -6
+   ],
+   "color": [
+    0.8,
+    0.6,
+    0.3
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "desert_nomad",
+    "hair": "buzz",
+    "hair_color": "#1c1612",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "glasswright_noor",
+   "place": "dunehaven",
+   "offset": [
+    -9,
+    7
+   ],
+   "color": [
+    0.9,
+    0.75,
+    0.4
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "desert_nomad",
+    "hair": "bob",
+    "hair_color": "#3b2a1a",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "archivist_solenne",
+   "place": "rimegate",
+   "offset": [
+    5,
+    8
+   ],
+   "color": [
+    0.75,
+    0.85,
+    1.0
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "ice_mage",
+    "hair": "long_straight",
+    "hair_color": "#e8eef5",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "trapper_hakon",
+   "place": "rimegate",
+   "offset": [
+    -10,
+    -5
+   ],
+   "color": [
+    0.6,
+    0.62,
+    0.7
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "winter_explorer",
+    "hair": "mullet",
+    "hair_color": "#b98a4a",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "forgemaster_brann",
+   "place": "anvilgate",
+   "offset": [
+    7,
+    5
+   ],
+   "color": [
+    0.5,
+    0.2,
+    0.15
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "dwarf_smith",
+    "hair": "buzz",
+    "hair_color": "#4a2a1a",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "ashwife_coral",
+   "place": "anvilgate",
+   "offset": [
+    -8,
+    9
+   ],
+   "color": [
+    0.35,
+    0.3,
+    0.32
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "fire_mage",
+    "hair": "ponytail",
+    "hair_color": "#c0392b",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "abbot_wen",
+   "place": "skyrest",
+   "offset": [
+    6,
+    6
+   ],
+   "color": [
+    0.55,
+    0.5,
+    0.7
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "monk",
+    "hair": "buzz",
+    "hair_color": "#888888",
+    "skin": 5
+   },
+   "indoors": true
+  },
+  {
+   "id": "bellringer_ilse",
+   "place": "skyrest",
+   "offset": [
+    -9,
+    -6
+   ],
+   "color": [
+    0.6,
+    0.65,
+    0.75
+   ],
+   "look": {
+    "gender": "female",
+    "outfit": "monk",
+    "hair": "bob",
+    "hair_color": "#d8c89a",
+    "skin": 0
+   },
+   "indoors": true
+  },
+  {
+   "id": "last_painter",
+   "place": "pale_gate",
+   "offset": [
+    4,
+    4
+   ],
+   "color": [
+    0.85,
+    0.85,
+    0.85
+   ],
+   "look": {
+    "gender": "male",
+    "outfit": "french_artist",
+    "hair": "sidepart",
+    "hair_color": "#dddddd",
+    "skin": 5
+   },
+   "indoors": true
+  }
+ ],
+ "lakes": [
+  {
+   "id": "hale_pond",
+   "pos": [
+    30,
+    600
+   ],
+   "radius": 14,
+   "depth": 2.2,
+   "water": "fresh"
+  },
+  {
+   "id": "mill_water",
+   "pos": [
+    150,
+    470
+   ],
+   "radius": 26,
+   "depth": 3.0,
+   "water": "fresh"
+  },
+  {
+   "id": "fern_mere",
+   "pos": [
+    -600,
+    440
+   ],
+   "radius": 34,
+   "depth": 3.5,
+   "water": "fresh"
+  },
+  {
+   "id": "heron_pool",
+   "pos": [
+    -470,
+    250
+   ],
+   "radius": 18,
+   "depth": 2.5,
+   "water": "fresh"
+  },
+  {
+   "id": "brine_lagoon",
+   "pos": [
+    610,
+    610
+   ],
+   "radius": 24,
+   "depth": 2.5,
+   "water": "fresh"
+  },
+  {
+   "id": "last_oasis",
+   "pos": [
+    720,
+    140
+   ],
+   "radius": 16,
+   "depth": 2.2,
+   "water": "fresh"
+  },
+  {
+   "id": "mirror_tarn",
+   "pos": [
+    -200,
+    -640
+   ],
+   "radius": 36,
+   "depth": 4.0,
+   "water": "fresh"
+  },
+  {
+   "id": "white_eye",
+   "pos": [
+    60,
+    -800
+   ],
+   "radius": 18,
+   "depth": 3.0,
+   "water": "fresh"
+  },
+  {
+   "id": "ember_pool",
+   "pos": [
+    620,
+    -680
+   ],
+   "radius": 22,
+   "depth": 2.5,
+   "water": "lava"
+  },
+  {
+   "id": "cinder_sink",
+   "pos": [
+    690,
+    -520
+   ],
+   "radius": 14,
+   "depth": 2.0,
+   "water": "lava"
+  },
+  {
+   "id": "sky_mirror",
+   "pos": [
+    -740,
+    -300
+   ],
+   "radius": 22,
+   "depth": 3.0,
+   "water": "fresh"
+  },
+  {
+   "id": "pale_basin",
+   "pos": [
+    90,
+    -90
+   ],
+   "radius": 18,
+   "depth": 2.5,
+   "water": "fresh"
+  }
+ ],
+ "roads": [
+  [
+   "hale_farm",
+   "millbrook"
+  ],
+  [
+   "hale_farm",
+   "southfield"
+  ],
+  [
+   "hale_farm",
+   "barleywick"
+  ],
+  [
+   "millbrook",
+   "threshing_floor"
+  ],
+  [
+   "millbrook",
+   "fernhollow"
+  ],
+  [
+   "fernhollow",
+   "mossford"
+  ],
+  [
+   "fernhollow",
+   "rootmother_hollow"
+  ],
+  [
+   "millbrook",
+   "brinemouth_town"
+  ],
+  [
+   "brinemouth_town",
+   "saltmarsh"
+  ],
+  [
+   "brinemouth_town",
+   "tidal_flats"
+  ],
+  [
+   "saltmarsh",
+   "dunehaven"
+  ],
+  [
+   "dunehaven",
+   "blue_camp"
+  ],
+  [
+   "dunehaven",
+   "red_camp"
+  ],
+  [
+   "dunehaven",
+   "glassmaw_pit"
+  ],
+  [
+   "dunehaven",
+   "anvilgate"
+  ],
+  [
+   "anvilgate",
+   "slagside"
+  ],
+  [
+   "anvilgate",
+   "caldera"
+  ],
+  [
+   "slagside",
+   "hollin"
+  ],
+  [
+   "hollin",
+   "rimegate"
+  ],
+  [
+   "rimegate",
+   "colossus_steps"
+  ],
+  [
+   "rimegate",
+   "high_cairn"
+  ],
+  [
+   "high_cairn",
+   "skyrest"
+  ],
+  [
+   "skyrest",
+   "roc_aerie"
+  ],
+  [
+   "skyrest",
+   "fernhollow"
+  ],
+  [
+   "millbrook",
+   "pale_gate"
+  ],
+  [
+   "pale_gate",
+   "pale_throne"
+  ]
+ ]
+}

@@ -1,0 +1,53 @@
+{
+ "version": 1,
+ "default_emblem": "chevron_grey",
+ "default_title": "newcomer",
+ "emblems": {
+  "chevron_grey": {"name": "Chevron", "shape": "chevron", "c1": "#8a8f98", "c2": "#3d4148"},
+  "target_red": {"name": "Bullseye", "shape": "target", "c1": "#e04848", "c2": "#fff1f1"},
+  "flame_orange": {"name": "Inferno", "shape": "flame", "c1": "#ff8a2a", "c2": "#ffd34d"},
+  "shield_blue": {"name": "Bulwark", "shape": "shield", "c1": "#4a8cf0", "c2": "#dbe9ff"},
+  "crown_gold": {"name": "Crown", "shape": "crown", "c1": "#ffc933", "c2": "#a8731a"},
+  "star_gold": {"name": "Star", "shape": "star", "c1": "#ffd23f", "c2": "#b3801a"},
+  "diamond_cyan": {"name": "Diamond", "shape": "diamond", "c1": "#4de3ff", "c2": "#1b6f94"},
+  "coin_gold": {"name": "High Roller", "shape": "coin", "c1": "#ffcf40", "c2": "#a8731a"},
+  "bolt_yellow": {"name": "Lightning", "shape": "bolt", "c1": "#ffe94a", "c2": "#a8861a"},
+  "clover_green": {"name": "Clover", "shape": "clover", "c1": "#46d36b", "c2": "#1a7a38"},
+  "heart_pink": {"name": "Heart", "shape": "heart", "c1": "#ff5c8a", "c2": "#a8244a"},
+  "bunny_white": {"name": "Bunny", "shape": "bunny", "c1": "#f4f4f8", "c2": "#f48fb1"},
+  "crown_rainbow": {"name": "Legend Crown", "shape": "crown", "c1": "#c46bff", "c2": "#4de3ff"}
+ },
+ "titles": {
+  "newcomer": "Newcomer",
+  "rookie": "Rookie",
+  "slayer": "Slayer",
+  "exterminator": "Exterminator",
+  "elite_hunter": "Elite Hunter",
+  "bear_slayer": "Bear Slayer",
+  "clockbreaker": "Clockbreaker",
+  "treasure_hunter": "Treasure Hunter",
+  "high_roller": "High Roller",
+  "gun_nut": "Gun Nut",
+  "lucky": "Lucky",
+  "resilient": "Resilient",
+  "veteran": "Veteran",
+  "elite": "Elite",
+  "legend": "Legend"
+ },
+ "achievements": {
+  "first_blood": {"name": "First Blood", "desc": "Defeat 1 enemy", "counter": "kills", "goal": 1, "emblem": "chevron_grey", "title": "rookie"},
+  "slayer_100": {"name": "Slayer", "desc": "Defeat 100 enemies", "counter": "kills", "goal": 100, "emblem": "target_red", "title": "slayer"},
+  "slayer_1000": {"name": "Exterminator", "desc": "Defeat 1000 enemies", "counter": "kills", "goal": 1000, "emblem": "flame_orange", "title": "exterminator"},
+  "elite_10": {"name": "Elite Hunter", "desc": "Defeat 10 elite enemies", "counter": "elite_kills", "goal": 10, "emblem": "shield_blue", "title": "elite_hunter"},
+  "boss_1": {"name": "Bear Slayer", "desc": "Defeat the clockwork bear", "counter": "boss_kills", "goal": 1, "emblem": "crown_gold", "title": "bear_slayer"},
+  "boss_10": {"name": "Clockbreaker", "desc": "Defeat the clockwork bear 10 times", "counter": "boss_kills", "goal": 10, "emblem": "star_gold", "title": "clockbreaker"},
+  "chest_5": {"name": "Treasure Hunter", "desc": "Open 5 reward chests", "counter": "chests", "goal": 5, "emblem": "diamond_cyan", "title": "treasure_hunter"},
+  "jackpot_1": {"name": "High Roller", "desc": "Win a slot jackpot", "counter": "jackpots", "goal": 1, "emblem": "coin_gold", "title": "high_roller"},
+  "vendor_5": {"name": "Gun Nut", "desc": "Buy 5 guns from the vendor", "counter": "vendor_buys", "goal": 5, "emblem": "bolt_yellow", "title": "gun_nut"},
+  "rare_1": {"name": "Lucky", "desc": "See a rainbow or pony gun drop", "counter": "rare_drops", "goal": 1, "emblem": "clover_green", "title": "lucky"},
+  "deaths_10": {"name": "Resilient", "desc": "Fall 10 times and get back up", "counter": "deaths", "goal": 10, "emblem": "heart_pink", "title": "resilient"},
+  "level_10": {"name": "Veteran", "desc": "Reach level 10", "counter": "level", "goal": 10, "emblem": "bunny_white", "title": "veteran"},
+  "level_25": {"name": "Elite", "desc": "Reach level 25", "counter": "level", "goal": 25, "emblem": "", "title": "elite"},
+  "level_50": {"name": "Legend", "desc": "Reach level 50", "counter": "level", "goal": 50, "emblem": "crown_rainbow", "title": "legend"}
+ }
+}

@@ -1,0 +1,287 @@
+{
+ "version": 1,
+ "_about": "Sounds of the fantasy world (game/fantasy_sounds.gd). Every id is a file assets/audio/fantasy/<id>.wav made by tools/make_fantasy_sounds.py. volume = decibels (0 = as recorded, negative = quieter), pitch = [lowest, highest] speed picked at random each time (left out = always the same), range = metres at which a sound placed in the world is still heard (left out = 40). master = decibels added to everything. ambience = one looping file per region with its volume; it cross-fades over fade_seconds when the player walks into another region.",
+ "master": -4.0,
+ "fade_seconds": 2.5,
+ "voices": 10,
+ "ambience": {
+  "amberfield": {
+   "file": "amb_amberfield",
+   "volume": -14
+  },
+  "greenwald": {
+   "file": "amb_greenwald",
+   "volume": -14
+  },
+  "brinemouth": {
+   "file": "amb_brinemouth",
+   "volume": -14
+  },
+  "sunscar": {
+   "file": "amb_sunscar",
+   "volume": -14
+  },
+  "frostmere": {
+   "file": "amb_frostmere",
+   "volume": -14
+  },
+  "cinderreach": {
+   "file": "amb_cinderreach",
+   "volume": -14
+  },
+  "stormcrown": {
+   "file": "amb_stormcrown",
+   "volume": -14
+  },
+  "hollow_crown": {
+   "file": "amb_hollow_crown",
+   "volume": -14
+  }
+ },
+ "sounds": {
+  "boss_hit": {
+   "volume": 3,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 120
+  },
+  "boss_wake": {
+   "volume": 4,
+   "range": 120
+  },
+  "boss_warn": {
+   "volume": 0
+  },
+  "cast_big": {
+   "volume": 2,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 120
+  },
+  "cast_blob": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_drop": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_flame": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_grain": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_gust": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_leaf": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_prism": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_puff": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_rock": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_shard": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "cast_spark": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "clash": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "craft_cauldron": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "craft_fire": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "craft_forge": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "craft_workbench": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "creature_fall": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "drink": {
+   "volume": -6
+  },
+  "element_a": {
+   "volume": -6
+  },
+  "element_e": {
+   "volume": -6
+  },
+  "element_f": {
+   "volume": -6
+  },
+  "element_w": {
+   "volume": -6
+  },
+  "fire_light": {
+   "volume": -6
+  },
+  "gather_alchemy": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "gather_farming": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "gather_fishing": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "gather_mining": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "gather_woodcutting": {
+   "volume": -6,
+   "pitch": [
+    0.92,
+    1.08
+   ]
+  },
+  "impact": {
+   "volume": 0,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "item": {
+   "volume": -10
+  },
+  "level_up": {
+   "volume": -2
+  },
+  "quest_accept": {
+   "volume": -6
+  },
+  "quest_done": {
+   "volume": -1
+  },
+  "quest_step": {
+   "volume": -6
+  },
+  "refuse": {
+   "volume": -8
+  },
+  "ui_click": {
+   "volume": -12
+  },
+  "ui_close": {
+   "volume": -10
+  },
+  "ui_map": {
+   "volume": -8
+  },
+  "ui_open": {
+   "volume": -10
+  }
+ }
+}
