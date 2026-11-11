@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt. weak / strong: the element (letter of data/fantasy/spells.json) a creature breaks under and the one it shrugs off (numbers: data/fantasy/combat.json weakness). role: how the creature fights in a squad (front, flank, swarm, ranged, air: data/fantasy/squad.json). attack_windup: seconds a melee creature rears back before its blow lands; it stands still meanwhile, and the blow misses if the target has got out of reach (0 or missing = it hits at once). moves: a creature's own special attacks (game/boss_moves.gd explains the kinds; `every` seconds apart, used when the target is between min_range and range metres away, `damage` multiplies the creature's own damage, `element` fire / ice / toxic sets the player burning, slowed or poisoned). Every ordinary creature has ONE; bosses have several. splits: {into, count} = when it dies it bursts into that many of another creature.",
+ "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt. weak / strong: the element (letter of data/fantasy/spells.json) a creature breaks under and the one it shrugs off (numbers: data/fantasy/combat.json weakness). role: how the creature fights in a squad (front, flank, swarm, ranged, air: data/fantasy/squad.json). attack_windup: seconds a melee creature rears back before its blow lands; it stands still meanwhile, and the blow misses if the target has got out of reach (0 or missing = it hits at once). moves: a creature's own special attacks (game/boss_moves.gd explains the kinds; `every` seconds apart, used when the target is between min_range and range metres away, `damage` multiplies the creature's own damage, `element` fire / ice / toxic sets the player burning, slowed or poisoned). Every ordinary creature has ONE; bosses have several. splits: {into, count} = when it dies it bursts into that many of another creature. attack_sound: the sound of its ordinary attack (data/sounds.json).",
  "spawn": {
   "max_alive": 14,
   "per_second": 0.35,
@@ -69,7 +69,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_swipe"
   },
   "field_slime": {
    "model": "field_slime",
@@ -113,7 +114,8 @@
    "splits": {
     "into": "slimelet",
     "count": 2
-   }
+   },
+   "attack_sound": "atk_squelch"
   },
   "harvest_king": {
    "model": "harvest_king",
@@ -180,7 +182,8 @@
    ],
    "weak": "F",
    "strong": "E",
-   "attack_windup": 0.6
+   "attack_windup": 0.6,
+   "attack_sound": "atk_slam"
   },
   "forest_wolf": {
    "model": "forest_wolf",
@@ -238,7 +241,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_bite"
   },
   "mossgoblin": {
    "model": "mossgoblin",
@@ -301,7 +305,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_dart"
   },
   "barkhide": {
    "model": "barkhide",
@@ -360,7 +365,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_slam"
   },
   "rootmother": {
    "model": "rootmother",
@@ -432,7 +438,8 @@
    ],
    "weak": "F",
    "strong": "W",
-   "attack_windup": 0.6
+   "attack_windup": 0.6,
+   "attack_sound": "atk_slam"
   },
   "reef_crab": {
    "model": "reef_crab",
@@ -488,7 +495,8 @@
       0.35
      ]
     }
-   ]
+   ],
+   "attack_sound": "atk_claw"
   },
   "drowned_sailor": {
    "model": "drowned_sailor",
@@ -549,7 +557,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_dart"
   },
   "tidewarden": {
    "model": "tidewarden",
@@ -621,7 +630,8 @@
    ],
    "weak": "A",
    "strong": "W",
-   "attack_windup": 0.6
+   "attack_windup": 0.6,
+   "attack_sound": "atk_slam"
   },
   "dune_scorpion": {
    "model": "dune_scorpion",
@@ -680,7 +690,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_claw"
   },
   "sand_wraith": {
    "model": "sand_wraith",
@@ -742,7 +753,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_hex"
   },
   "glassmaw": {
    "model": "glassmaw",
@@ -811,7 +823,8 @@
    ],
    "weak": "W",
    "strong": "F",
-   "attack_windup": 0.6
+   "attack_windup": 0.6,
+   "attack_sound": "atk_bite"
   },
   "frost_wolf": {
    "model": "frost_wolf",
@@ -870,7 +883,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_bite"
   },
   "ice_golem": {
    "model": "ice_golem",
@@ -930,7 +944,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_slam"
   },
   "rime_colossus": {
    "model": "rime_colossus",
@@ -1001,7 +1016,8 @@
    ],
    "weak": "F",
    "strong": "W",
-   "attack_windup": 0.6
+   "attack_windup": 0.6,
+   "attack_sound": "atk_slam"
   },
   "magma_imp": {
    "model": "magma_imp",
@@ -1064,7 +1080,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_firebolt"
   },
   "ash_drake": {
    "model": "ash_drake",
@@ -1124,7 +1141,8 @@
       0.2
      ]
     }
-   ]
+   ],
+   "attack_sound": "atk_claw"
   },
   "cinderwyrm": {
    "model": "cinderwyrm",
@@ -1202,7 +1220,8 @@
     }
    ],
    "weak": "W",
-   "strong": "F"
+   "strong": "F",
+   "attack_sound": "atk_firebolt"
   },
   "storm_harpy": {
    "model": "storm_harpy",
@@ -1264,7 +1283,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_hex"
   },
   "gale_spirit": {
    "model": "gale_spirit",
@@ -1322,7 +1342,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_gust"
   },
   "tempest_roc": {
    "model": "tempest_roc",
@@ -1410,7 +1431,8 @@
     }
    ],
    "weak": "G",
-   "strong": "A"
+   "strong": "A",
+   "attack_sound": "atk_gust"
   },
   "pale_knight": {
    "model": "pale_knight",
@@ -1467,7 +1489,8 @@
       1.0
      ]
     }
-   ]
+   ],
+   "attack_sound": "atk_blade"
   },
   "hollow_shade": {
    "model": "hollow_shade",
@@ -1525,7 +1548,8 @@
       0.7
      ]
     }
-   ]
+   ],
+   "attack_sound": "atk_hex"
   },
   "pallid_king": {
    "model": "pallid_king",
@@ -1608,7 +1632,8 @@
     }
    ],
    "weak": "F",
-   "strong": "G"
+   "strong": "G",
+   "attack_sound": "atk_blade"
   },
   "red_warrior": {
    "model": "red_warrior",
@@ -1667,7 +1692,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_blade"
   },
   "blue_warrior": {
    "model": "blue_warrior",
@@ -1727,7 +1753,8 @@
      ],
      "hold": true
     }
-   ]
+   ],
+   "attack_sound": "atk_blade"
   },
   "slimelet": {
    "model": "field_slime",
@@ -1766,7 +1793,8 @@
    "weak": "A",
    "strong": "W",
    "role": "swarm",
-   "attack_windup": 0.3
+   "attack_windup": 0.3,
+   "attack_sound": "atk_squelch"
   }
  },
  "tribes": {

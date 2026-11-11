@@ -400,6 +400,21 @@ func _check_round_two(all: Dictionary) -> void:
 		_need(listed.has(id), "sound %s is missing from data/sound_list.json" % id)
 	for id: String in all["sounds"]["ambience"]:
 		_need(listed.has("ambience_" + id), "ambience %s is missing from data/sound_list.json" % id)
+	# the gun side's sounds: each has its file and its line on the Sounds page; every gun and enemy names one that exists
+	var game_sounds: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sounds.json")) as Dictionary)["sounds"]
+	for id: String in game_sounds:
+		_need(listed.has(id), "sound %s is missing from data/sound_list.json" % id)
+		_need(ResourceLoader.exists("res://assets/audio/game/%s.wav" % id), "sound %s has no file in assets/audio/game" % id)
+	for id: String in ["dry_fire", "explosion", "atk_windup"]:
+		_need(game_sounds.has(id), "data/sounds.json has no %s (named in code)" % id)
+	var guns: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/weapons.json")) as Dictionary)["weapons"]
+	for id: String in guns:
+		_need(game_sounds.has(String(guns[id].get("sound", ""))) and game_sounds.has(String(guns[id].get("reload_sound", ""))), "weapon %s has no shot or reload sound" % id)
+	var arena: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]
+	for id: String in arena:
+		_need(game_sounds.has(String(arena[id].get("attack_sound", ""))), "enemy %s has no attack sound" % id)
+	for id: String in enemies:
+		_need(game_sounds.has(String(enemies[id].get("attack_sound", ""))), "creature %s has no attack sound" % id)
 
 
 # Round 4: what can be bumped into. Every gate of a walled place can be walked through and there is no other way

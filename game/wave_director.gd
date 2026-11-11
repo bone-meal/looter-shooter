@@ -24,6 +24,7 @@ var _boss: Enemy
 var _waves_data: Dictionary
 var _elements: Dictionary  # data/elements.json
 var boss_handler: Callable  # online: called instead of spawning the boss locally (see game/net_boss.gd)
+var sounds: Node  # the game's sound player (enemy attack sounds), set by game/game_session.gd
 var _drops_cfg: Dictionary  # data/drops.json
 var _rng := RandomNumberGenerator.new()
 var _active := false  # waves wait until start() (the player enters the colosseum)
@@ -116,6 +117,7 @@ func _spawn(id: String) -> void:
 		stats = DropRules.apply_affix(stats, affix)
 		enemy.elite = String(affix["name"])
 	enemy.configure(id, stats, _player, _pool, _blood)
+	enemy.sounds = sounds
 	var element := _roll_element(id)
 	if element != "":
 		enemy.element = element
@@ -161,6 +163,7 @@ func spawn_custom(id: String, stats: Dictionary, pos: Vector3, affix: Dictionary
 		stats = DropRules.apply_affix(stats, affix)
 		enemy.elite = String(affix["name"])
 	enemy.configure(id, stats, _player, _pool, _blood)
+	enemy.sounds = sounds
 	if not id.begins_with("boss"):
 		var element := _roll_element(id)
 		if element != "":
@@ -203,6 +206,7 @@ func boss_spawn_position() -> Vector3:
 func create_shared_boss(as_puppet: bool, pos: Vector3) -> Enemy:
 	var boss := Enemy.new()
 	boss.configure("boss", _enemy_stats["boss"], _player, _pool, _blood)
+	boss.sounds = sounds
 	boss.puppet = as_puppet
 	boss.position = pos
 	boss.net_pos = pos

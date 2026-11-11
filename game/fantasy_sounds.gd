@@ -1,4 +1,5 @@
-# Purpose: plays the fantasy world's sounds. Which file, how loud, how much its pitch varies and how far it carries is
+# Purpose: plays the fantasy world's sounds (and, as a second copy made by game/game_session.gd with `folder` and
+# data/sounds.json, the gun side's shots, reloads, explosions and every enemy's attack). Which file, how loud, how much its pitch varies and how far it carries is
 # data (data/fantasy/sounds.json); callers only name a sound and, if it happens somewhere, the place. A fixed set of
 # players is reused in turn, and each region's ambience loop cross-fades into the next as the player walks.
 # Every sound asks game/sound_board.gd whether the player muted it and tells it when it is audible.
@@ -7,7 +8,7 @@ extends Node3D
 
 const SoundBoard = preload("res://game/sound_board.gd")
 
-const FOLDER := "res://assets/audio/fantasy/"
+var folder := "res://assets/audio/fantasy/"  # where the <id>.wav files lie (set before the first sound)
 
 var _data: Dictionary
 var _streams := {}  # id -> AudioStream (loaded the first time it is needed)
@@ -46,7 +47,7 @@ func setup(data: Dictionary) -> void:
 
 func _stream(id: String) -> AudioStream:
 	if not _streams.has(id):
-		var path := FOLDER + id + ".wav"
+		var path := folder + id + ".wav"
 		_streams[id] = load(path) if ResourceLoader.exists(path) else null
 	return _streams[id]
 

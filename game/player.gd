@@ -68,6 +68,7 @@ var carried := false  # true while the crow carries the player (movement is driv
 var controls_enabled := true  # false while the inventory screen is open
 var damage_numbers: DamageNumbers  # optional; game/damage_numbers.gd
 var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
+var sounds: Node  # the game's sound player (data/sounds.json), set by game/game_session.gd
 var skill_fx: Node3D  # world effects of gun skills (game/skill_effects.gd), set by game/game_session.gd
 var skills := SkillState.new()  # cooldowns of the Q/E gun skills
 
@@ -228,7 +229,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_apply_view()
 	elif event.is_action_pressed("reload"):
 		if _holding:
-			weapon.start_reload(_now())
+			_reload()
 	elif event.is_action_pressed("skill_1"):
 		use_skill(0)
 	elif event.is_action_pressed("skill_2"):
@@ -339,10 +340,12 @@ func _move_and_shoot(delta: float) -> void:
 
 	if _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
-			weapon.start_reload(_now())  # the equipped cigarette reloads for you
+			_reload()  # the equipped cigarette reloads for you
 		if weapon.try_fire(_now()):
 			_shoot()
 			_motion.fire()
+		elif weapon.ammo <= 0 and not weapon.is_reloading() and Input.is_action_just_pressed("shoot"):
+			_gun_sound("dry_fire")
 	else:
 		weapon.update(_now())
 
@@ -679,7 +682,27 @@ func _update_view_kick(delta: float) -> void:
 	_camera.rotation_degrees = Vector3(_view_kick.x, _view_kick.y, 0.0)
 
 
+# The data/weapons.json entry of the gun in hand ({} when the hands hold something else).
+func _weapon_data() -> Dictionary:
+	return _weapon_stats.get(held_id(), {})
+
+
+# Starts a reload, with its sound if one really starts.
+func _reload() -> void:
+	var was := weapon.is_reloading()
+	weapon.start_reload(_now())
+	if weapon.is_reloading() and not was:
+		_gun_sound(String(_weapon_data().get("reload_sound", "")))
+
+
+# One of the held gun's own sounds, in both ears (it is in the player's hands).
+func _gun_sound(id: String) -> void:
+	if sounds != null and id != "":
+		sounds.call("play", id)
+
+
 func _shoot() -> void:
+	_gun_sound(String(_weapon_data().get("sound", "")))
 	var origin := _camera.global_position
 	var forward := -_camera.global_transform.basis.z
 	var right := _camera.global_transform.basis.x

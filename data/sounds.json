@@ -1,0 +1,217 @@
+{
+ "version": 1,
+ "_about": "The gun side's sounds and every enemy's attack sound (files assets/audio/game/<id>.wav, made by tools/make_game_sounds.py, played by game/fantasy_sounds.gd with this file). volume: decibels; pitch: [lowest, highest] picked at random each time; range: metres at which a placed sound is gone. Which gun or enemy uses which sound: data/weapons.json `sound` / `reload_sound`, `attack_sound` in data/enemies.json and data/fantasy/enemies.json; dry_fire, explosion and atk_windup (an enemy rearing back for a wound-up blow) are named in code. Every id must also be listed in data/sound_list.json (the Sounds page).",
+ "master": 0.0,
+ "voices": 14,
+ "ambience": {},
+ "sounds": {
+  "shot_pistol": {
+   "volume": -6,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_rifle": {
+   "volume": -5,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_carbine": {
+   "volume": -6,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_lmg": {
+   "volume": -5,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_sniper": {
+   "volume": -3,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_shotgun": {
+   "volume": -3,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_rocket": {
+   "volume": -4,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "shot_grenade": {
+   "volume": -5,
+   "pitch": [
+    0.94,
+    1.06
+   ],
+   "range": 70
+  },
+  "reload_mag": {
+   "volume": -10,
+   "pitch": [
+    0.97,
+    1.03
+   ],
+   "range": 20
+  },
+  "reload_shells": {
+   "volume": -10,
+   "pitch": [
+    0.97,
+    1.03
+   ],
+   "range": 20
+  },
+  "reload_tube": {
+   "volume": -10,
+   "pitch": [
+    0.97,
+    1.03
+   ],
+   "range": 20
+  },
+  "dry_fire": {
+   "volume": -12,
+   "pitch": [
+    0.95,
+    1.05
+   ],
+   "range": 15
+  },
+  "explosion": {
+   "volume": 0,
+   "pitch": [
+    0.9,
+    1.1
+   ],
+   "range": 110
+  },
+  "atk_windup": {
+   "volume": -10,
+   "pitch": [
+    0.85,
+    1.2
+   ],
+   "range": 30
+  },
+  "atk_blade": {
+   "volume": -6,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 35
+  },
+  "atk_bite": {
+   "volume": -6,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 35
+  },
+  "atk_claw": {
+   "volume": -6,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 35
+  },
+  "atk_slam": {
+   "volume": -3,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 50
+  },
+  "atk_squelch": {
+   "volume": -7,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 30
+  },
+  "atk_swipe": {
+   "volume": -7,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 30
+  },
+  "atk_gust": {
+   "volume": -6,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 40
+  },
+  "atk_gun": {
+   "volume": -8,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 60
+  },
+  "atk_rifle": {
+   "volume": -6,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 70
+  },
+  "atk_dart": {
+   "volume": -9,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 35
+  },
+  "atk_firebolt": {
+   "volume": -6,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 40
+  },
+  "atk_hex": {
+   "volume": -7,
+   "pitch": [
+    0.9,
+    1.12
+   ],
+   "range": 40
+  }
+ }
+}

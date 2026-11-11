@@ -20,7 +20,9 @@
     "ads_spread_mult": 0.4,
     "scope": false,
     "ads_drop": 0.026
-   }
+   },
+   "sound": "shot_pistol",
+   "reload_sound": "reload_mag"
   },
   "sniper_basic": {
    "damage": 80,
@@ -41,7 +43,9 @@
     "ads_spread_mult": 0.05,
     "scope_kick": 2.5,
     "scope": true
-   }
+   },
+   "sound": "shot_sniper",
+   "reload_sound": "reload_mag"
   },
   "ak47": {
    "damage": 14,
@@ -62,7 +66,9 @@
     "ads_spread_mult": 0.5,
     "scope": false,
     "ads_drop": 0.02
-   }
+   },
+   "sound": "shot_rifle",
+   "reload_sound": "reload_mag"
   },
   "m16": {
    "damage": 11,
@@ -83,7 +89,9 @@
     "ads_spread_mult": 0.45,
     "scope": false,
     "ads_drop": 0.02
-   }
+   },
+   "sound": "shot_carbine",
+   "reload_sound": "reload_mag"
   },
   "m60": {
    "damage": 10,
@@ -104,7 +112,9 @@
     "ads_spread_mult": 0.6,
     "scope": false,
     "ads_drop": 0.022
-   }
+   },
+   "sound": "shot_lmg",
+   "reload_sound": "reload_mag"
   },
   "shotgun_double": {
    "damage": 9,
@@ -126,7 +136,9 @@
     "ads_spread_mult": 0.8,
     "scope": false,
     "ads_drop": 0.014
-   }
+   },
+   "sound": "shot_shotgun",
+   "reload_sound": "reload_shells"
   },
   "rocket_launcher": {
    "damage": 120,
@@ -164,7 +176,9 @@
      -0.16,
      0.0
     ]
-   }
+   },
+   "sound": "shot_rocket",
+   "reload_sound": "reload_tube"
   },
   "grenade_launcher": {
    "damage": 80,
@@ -202,7 +216,9 @@
      -0.09,
      0.06
     ]
-   }
+   },
+   "sound": "shot_grenade",
+   "reload_sound": "reload_tube"
   }
  }
 }

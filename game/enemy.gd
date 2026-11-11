@@ -31,6 +31,7 @@ var net_pos := Vector3.ZERO
 var net_yaw := 0.0
 var walker: Callable  # fantasy world: (from, step) -> where the body ends up. When set the enemy moves by it without physics: around houses, trees and deep water, the same on every machine
 var feud := ""  # fantasy tribes: the banner this warrior fights for ("" = none)
+var sounds: Node  # the game's sound player (game/fantasy_sounds.gd with data/sounds.json), set by game/wave_director.gd; null = silent
 var order_goal := Vector3.INF  # squad order (game/squad_command.gd): walk to this spot instead of straight at the target
 var order_attack := true  # squad order: it may strike now (false = it waits its turn)
 var order_until := 0.0  # engine time the order stops counting (orders are renewed a few times a second)
@@ -450,6 +451,7 @@ func _attack() -> void:
 		if _windup > 0.0:  # it rears back first; the blow lands when the wind-up is over, if the target is still there
 			_strike_at = Time.get_ticks_msec() / 1000.0 + _windup
 			_set_tint(Color(1.5, 1.35, 0.9))
+			_say("atk_windup")
 		else:
 			_land_blow(0.0)
 		return
@@ -459,11 +461,17 @@ func _attack() -> void:
 	shoot_burst(origin, aim)
 
 
+func _say(id: String) -> void:
+	if sounds != null and id != "":
+		sounds.call("play", id, global_position + Vector3(0.0, _size.y * 0.6, 0.0))
+
+
 # The melee blow itself. `distance` = how far the target is now (it may have stepped away during the wind-up).
 func _land_blow(distance: float) -> void:
 	if _windup > 0.0:
 		_reset_color()
 		_lunge = 1.0
+	_say(String(_stats.get("attack_sound", "")))
 	if not is_instance_valid(_target) or distance > float(_stats["attack_range"]) * 1.3 + 0.3:
 		return  # a miss
 	var damage := float(_stats["damage"]) * (_rally_damage if Time.get_ticks_msec() / 1000.0 < _rally_until else 1.0)
@@ -496,6 +504,7 @@ func shoot(origin: Vector3, aim: Vector3, speed: float, damage: float) -> void:
 
 # Fires this enemy's projectile burst (also used to show the boss's attacks decided on the host).
 func shoot_burst(origin: Vector3, aim: Vector3) -> void:
+	_say(String(_stats.get("attack_sound", "")))
 	var damage := float(_stats["damage"])
 	var side := aim.cross(Vector3.UP).normalized()
 	var burst := int(_stats["burst"])

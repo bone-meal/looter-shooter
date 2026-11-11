@@ -113,6 +113,7 @@ var _games := CasinoGames.new()
 var _reset_left := 0.0  # seconds until a cleared arena starts over at round 1
 var _numbers := DamageNumbers.new()
 var _explosives := Explosives.new()
+var _sounds: Node3D = preload("res://game/fantasy_sounds.gd").new()  # guns, explosions and enemy attacks (data/sounds.json)
 var _skill_fx := SkillEffects.new()
 var _inventory_screen := InventoryScreen.new()
 var _rng := RandomNumberGenerator.new()
@@ -180,6 +181,10 @@ func _ready() -> void:
 	add_child(_ride_crow)
 	add_child(_numbers)
 	add_child(_explosives)
+	_sounds.set("folder", "res://assets/audio/game/")
+	add_child(_sounds)
+	_sounds.call("setup", DataStore.load_json("res://data/sounds.json"))
+	_explosives.sounds = _sounds
 	add_child(_skill_fx)
 	LoadClock.mark("crows, lifeguard, effects")
 	_build_hud()
@@ -195,6 +200,7 @@ func _ready() -> void:
 	_player.blocked.connect(_player_hud.notice.bind("Blocked!"))
 	_player.damage_numbers = _numbers
 	_player.explosives = _explosives
+	_player.sounds = _sounds
 	_player.skill_fx = _skill_fx
 	_skill_fx.explosives = _explosives
 	_skill_fx.numbers = _numbers
@@ -230,6 +236,7 @@ func _ready() -> void:
 	_update_pots()
 
 	_director = WaveDirector.new()
+	_director.sounds = _sounds
 	_director.setup(_player, gates)
 	add_child(_director)
 	_bars.source = _director

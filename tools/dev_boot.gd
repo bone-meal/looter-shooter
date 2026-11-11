@@ -57,7 +57,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !heard [seconds] (the sounds audible in the last seconds into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -181,6 +181,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				list_file.store_string(JSON.stringify(listed, " "))
 				list_file.close()
 			_lines.append("photo %s" % words[1])
+		"heard":  # which sounds were audible in the last seconds (default 3), for the log
+			var board: GDScript = load("res://game/sound_board.gd")
+			var list: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sound_list.json"))
+			var lately := PackedStringArray()
+			for group: Dictionary in list["groups"]:
+				for sound: Dictionary in group["sounds"]:
+					if bool(board.call("hearing", String(sound["id"]), Time.get_ticks_msec(), int(float(words[1]) * 1000.0) if words.size() > 1 and words[1].is_valid_float() else 3000)):
+						lately.append(String(sound["id"]))
+			_lines.append("heard %s: %s" % [" ".join(words.slice(1)), ", ".join(lately)])
 		"sounds":  # opens the Sounds page of the settings (as Settings > Sounds does); "!sounds off" closes it
 			get_parent().call("_show_only", null if words.size() > 1 else get_parent().get("_sound_menu"))
 		"loading":  # shows the loading picture as a session start does; "!loading off" lets it fade

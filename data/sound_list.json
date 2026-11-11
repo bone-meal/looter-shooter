@@ -3,6 +3,120 @@
  "_about": "Every sound of the game for the Sounds page of the settings (game/sound_menu.gd): groups in the order shown, each sound with the id the code plays (game/sound_board.gd) and the label the player reads. Fantasy sounds = the ids of data/fantasy/sounds.json; ambience_<region id>; chime_<gun tier id>. A sound that is not listed here still plays, it just cannot be muted: tools/fantasy_check.tscn reports any that are missing.",
  "groups": [
   {
+   "name": "Guns",
+   "sounds": [
+    {
+     "id": "shot_pistol",
+     "label": "Pistol shot"
+    },
+    {
+     "id": "shot_rifle",
+     "label": "Rifle shot (AK)"
+    },
+    {
+     "id": "shot_carbine",
+     "label": "Carbine shot (M16)"
+    },
+    {
+     "id": "shot_lmg",
+     "label": "Machine gun shot"
+    },
+    {
+     "id": "shot_sniper",
+     "label": "Sniper shot"
+    },
+    {
+     "id": "shot_shotgun",
+     "label": "Shotgun blast"
+    },
+    {
+     "id": "shot_rocket",
+     "label": "Rocket launch"
+    },
+    {
+     "id": "shot_grenade",
+     "label": "Grenade launch"
+    },
+    {
+     "id": "reload_mag",
+     "label": "Reload: magazine"
+    },
+    {
+     "id": "reload_shells",
+     "label": "Reload: shells"
+    },
+    {
+     "id": "reload_tube",
+     "label": "Reload: launcher"
+    },
+    {
+     "id": "dry_fire",
+     "label": "Empty gun click"
+    },
+    {
+     "id": "explosion",
+     "label": "Explosion"
+    }
+   ]
+  },
+  {
+   "name": "Enemy attacks",
+   "sounds": [
+    {
+     "id": "atk_windup",
+     "label": "Enemy rears back for a blow"
+    },
+    {
+     "id": "atk_blade",
+     "label": "Enemy blade"
+    },
+    {
+     "id": "atk_bite",
+     "label": "Enemy bite"
+    },
+    {
+     "id": "atk_claw",
+     "label": "Enemy claws"
+    },
+    {
+     "id": "atk_slam",
+     "label": "Heavy enemy blow"
+    },
+    {
+     "id": "atk_squelch",
+     "label": "Slime hit"
+    },
+    {
+     "id": "atk_swipe",
+     "label": "Straw swipe"
+    },
+    {
+     "id": "atk_gust",
+     "label": "Wind strike"
+    },
+    {
+     "id": "atk_gun",
+     "label": "Enemy gunshot"
+    },
+    {
+     "id": "atk_rifle",
+     "label": "Enemy rifle shot"
+    },
+    {
+     "id": "atk_dart",
+     "label": "Enemy dart or arrow"
+    },
+    {
+     "id": "atk_firebolt",
+     "label": "Enemy fire shot"
+    },
+    {
+     "id": "atk_hex",
+     "label": "Enemy spell shot"
+    }
+   ]
+  },
+  {
    "name": "Spells",
    "sounds": [
     {

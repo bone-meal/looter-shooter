@@ -18,7 +18,8 @@
     0.8,
     0.25,
     0.25
-   ]
+   ],
+   "attack_sound": "atk_blade"
   },
   "shooter": {
    "model": "skeleton_archer",
@@ -41,7 +42,8 @@
     0.9,
     0.55,
     0.15
-   ]
+   ],
+   "attack_sound": "atk_dart"
   },
   "boss": {
    "model": "clockwork_bear",
@@ -64,7 +66,8 @@
     0.75,
     0.55,
     0.2
-   ]
+   ],
+   "attack_sound": "atk_gun"
   },
   "raider": {
    "model": "raider",
@@ -88,7 +91,8 @@
     0.55,
     0.38,
     0.28
-   ]
+   ],
+   "attack_sound": "atk_blade"
   },
   "feral": {
    "model": "feral",
@@ -112,7 +116,8 @@
     0.45,
     0.6,
     0.35
-   ]
+   ],
+   "attack_sound": "atk_bite"
   },
   "scav_gunner": {
    "model": "scav_gunner",
@@ -140,7 +145,8 @@
     0.6,
     0.55,
     0.4
-   ]
+   ],
+   "attack_sound": "atk_gun"
   },
   "marksman": {
    "model": "marksman",
@@ -168,7 +174,8 @@
     0.35,
     0.4,
     0.5
-   ]
+   ],
+   "attack_sound": "atk_rifle"
   },
   "brute": {
    "model": "brute",
@@ -192,7 +199,8 @@
     0.5,
     0.3,
     0.3
-   ]
+   ],
+   "attack_sound": "atk_slam"
   },
   "boss_butcher": {
    "model": "boss_butcher",
@@ -216,7 +224,8 @@
     0.45,
     0.2,
     0.18
-   ]
+   ],
+   "attack_sound": "atk_slam"
   },
   "boss_tyrant": {
    "model": "boss_tyrant",
@@ -244,7 +253,8 @@
     0.35,
     0.45,
     0.55
-   ]
+   ],
+   "attack_sound": "atk_gun"
   },
   "boss_dome_beast": {
    "model": "boss_dome_beast",
@@ -268,7 +278,8 @@
     0.3,
     0.5,
     0.3
-   ]
+   ],
+   "attack_sound": "atk_slam"
   },
   "boss_warlord": {
    "model": "boss_warlord",
@@ -296,7 +307,8 @@
     0.55,
     0.4,
     0.25
-   ]
+   ],
+   "attack_sound": "atk_rifle"
   },
   "boss_overseer": {
    "model": "boss_overseer",
@@ -324,7 +336,8 @@
     0.35,
     0.25,
     0.4
-   ]
+   ],
+   "attack_sound": "atk_gun"
   }
  }
 }

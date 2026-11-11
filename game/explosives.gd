@@ -9,6 +9,7 @@ const FLASH_TIME := 0.35
 const MIN_DAMAGE_FRACTION := 0.35  # damage at the very edge of the blast
 
 var source  # has enemy_list()
+var sounds: Node  # the game's sound player, set by game/game_session.gd
 var numbers  # DamageNumbers or null
 var ignore: RID  # the player's body, so shots don't hit their owner
 
@@ -131,6 +132,8 @@ func _process(delta: float) -> void:
 
 
 func _explode(i: int, point: Vector3) -> void:
+	if sounds != null:
+		sounds.call("play", "explosion", point)
 	var radius := _radius[i]
 	var damage := _damage[i]
 	_life[i] = 0.0

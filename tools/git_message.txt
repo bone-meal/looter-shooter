@@ -1,4 +1,4 @@
-Round 4 part 3 (D): squad AI (roles, turns, pincer, fear of elements), wound-up melee blows, an own attack for every fantasy creature (7 new move kinds), slime splits
+Round 4 part 3 (E): gun sounds (8 shots, reloads, dry click, explosion) and enemy attack sounds, all on the Sounds page
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
