@@ -57,7 +57,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -217,6 +217,13 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			get_parent().call("_show_only", null if words.size() > 1 else get_parent().get("_sound_menu"))
 		"loading":  # shows the loading picture as a session start does; "!loading off" lets it fade
 			get_parent().get("_loading").call("finish" if words.size() > 1 else "begin", 4)
+		"tier":  # "!tier low": the graphics tier for the rest of the run (the settings FILE is not touched)
+			(session.get("settings") as RefCounted).set("graphics", words[1])
+			session.call("apply_settings")
+			_lines.append("graphics tier %s" % words[1])
+		"buildings":  # "!buildings full" / "!buildings plain": which building models places built from now on use, whatever the tier says (to measure one against the other)
+			(session.call("fantasy").get("places") as Node).set("plain", words[1] == "plain")
+			_lines.append("buildings %s" % words[1])
 		"where":  # fantasy world: the player's spot in map metres, for the log
 			var here: Vector3 = session.call("fantasy").call("player_local")
 			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])

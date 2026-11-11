@@ -1,1 +1,1 @@
-/tp fantasy;!wait 12;/god;!look 0 -8;!snap u1_farm;/tp millbrook;!wait 10;!look 240 0;!snap u2_plaza;!look 120 0;!snap u3_plaza;!third;!wait 1;!snap u4_third;/tp dunehaven;!wait 10;!look 0 0;!snap u5_dune;!look 180 0;!snap u6_dune
+!tier low;/tp fantasy;!wait 12;/god;/tp rimegate;!wait 6;!buildings full;/tp millbrook;!wait 10;!look 240 0;!snap v1_low_full;!state;/tp rimegate;!wait 6;!buildings plain;/tp millbrook;!wait 10;!look 240 0;!snap v2_low_plain

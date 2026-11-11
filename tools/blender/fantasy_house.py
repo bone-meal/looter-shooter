@@ -6,6 +6,9 @@
 # corner stones and string courses instead of the frame; the desert's flat-roofed houses get buttresses, roof beam
 # ends and a parapet. Used by fantasy_kit.house (cottages, halls, townhouses, shops, the farmhouse) and by the
 # walk-in houses of fantasy_inside.py. Model space: x right, y up, f forward (the front, where the door is).
+# PLAIN = True builds the same houses for the low graphics tiers (fantasy_kit.Maker.plain_pass): same size and
+# shape, but only every other stud and no braces, panels, lattice, joists, courses, straps or pots: about a
+# quarter of the triangles.
 import math
 
 import fantasy_kit as fk
@@ -18,6 +21,12 @@ POT = (0.66, 0.36, 0.24)
 FLOWERS = [(0.86, 0.2, 0.22), (0.95, 0.8, 0.25), (0.92, 0.9, 0.92), (0.75, 0.35, 0.7)]
 PLINTH = 0.6
 STOREY = 2.5
+PLAIN = False  # set by fantasy_kit.Maker.plain_pass while it builds the low graphics tiers' models
+
+
+def soft(bevel):
+    """A rounded edge costs about a hundred triangles a block: plain models have none."""
+    return 0.0 if PLAIN else bevel
 
 
 def tone(mat, k):
@@ -48,6 +57,10 @@ def window(face, s, u, y, ww=0.95, wh=1.15, shutters=False, flowers=False, stone
     timber = S(s, "stone") if stone else S(s, "timber")
     face.box(timber, ww + 0.24, wh + 0.24, 0.12, u, y, 0.05)
     face.box(c(GLASS), ww, wh, 0.1, u, y, 0.075)
+    if PLAIN:  # frame and glass; shutters as bare boards
+        for side in (-1, 1) if shutters else ():
+            face.box(S(s, "trim"), 0.44, wh + 0.1, 0.05, u + side * (ww / 2 + 0.37), y, 0.06)
+        return
     face.box(S(s, "timber"), 0.07, wh, 0.12, u, y, 0.085)
     face.box(S(s, "timber"), ww, 0.06, 0.12, u, y + wh * 0.2, 0.085)
     for k in range(3):  # three crossings of lead make the diamonds
@@ -76,6 +89,8 @@ def timber_face(face, s, y0, height, gap=None, panels=True):
     wide = face.name in ("front", "back")
     for side in (-1, 1):
         face.box(timber, 0.24, height, 0.1, side * (long - 0.1), y0 + height / 2, 0.03)
+        if PLAIN:
+            continue
         if wide:  # a foot brace, clear of the windows
             face.rod(timber, 0.075, (side * (long - 0.22), y0 + 0.95), (side * (long - 1.0), y0 + 0.22), 0.075)
         else:
@@ -93,15 +108,15 @@ def timber_face(face, s, y0, height, gap=None, panels=True):
         open_here = gap is not None and abs(mid - gap[0]) < gap[1] / 2 + 0.3
         if not open_here:
             shade = 0.8 + 0.2 * ((k * 37 + int(y0 * 10) + len(face.name) * 11) % 10) / 10.0
-            if panels:
+            if panels and not PLAIN:
                 face.box(tone(S(s, "wall"), shade), edges[k + 1] - edges[k] - 0.12, height - 0.4, 0.03, mid, y0 + height / 2, 0.012)
-        if 0 < k and not (gap is not None and abs(edges[k] - gap[0]) < gap[1] / 2 + 0.05):
+        if 0 < k and (not PLAIN or k % 2 == 0) and not (gap is not None and abs(edges[k] - gap[0]) < gap[1] / 2 + 0.05):
             face.box(timber, 0.13, height - 0.4, 0.08, edges[k], y0 + height / 2, 0.028)
 
 
 def stone_face(face, s, y0, height):
     """A stone wall of one floor: corner stones by turns long and short, and a course along its top."""
-    for side in (-1, 1):
+    for side in () if PLAIN else (-1, 1):
         for q in range(int(height / 0.5)):
             long = 0.56 if q % 2 == 0 else 0.36
             face.box(tone(S(s, "stone"), 1.18 if q % 2 == 0 else 1.08), long, 0.44, 0.07, side * (face.half - long / 2 + 0.03), y0 + 0.27 + q * 0.5, 0.03)
@@ -113,13 +128,15 @@ def door(face, s, u, stone=False):
     frame = S(s, "stone") if stone else S(s, "timber")
     face.box(frame, 1.42, 2.36, 0.16, u, 1.26, 0.16)
     face.box(S(s, "trim"), 1.02, 2.04, 0.1, u, 1.16, 0.22)
+    face.box(frame, 1.75, 0.26, 0.22, u, 2.5, 0.19)
+    face.box(S(s, "stone"), 1.8, 0.14, 0.62, u, 0.07, 0.3, bevel=soft(0.03))
+    if PLAIN:
+        return
     for k in (-1, 0, 1):
         face.box(tone(S(s, "trim"), 0.6), 0.025, 1.96, 0.11, u + k * 0.26, 1.16, 0.22)
     for dy in (0.55, 1.75):
         face.box(K("metal", IRON), 0.82, 0.07, 0.03, u - 0.06, dy, 0.285)
     face.m.ball(K("metal", IRON), 0.065, face.at(u + 0.33, 1.15, 0.31), u=6, v=4)
-    face.box(frame, 1.75, 0.26, 0.22, u, 2.5, 0.19)
-    face.box(S(s, "stone"), 1.8, 0.14, 0.62, u, 0.07, 0.3, bevel=0.03)
 
 
 def great_doors(face, s, u, y0, wide, high):
@@ -127,6 +144,8 @@ def great_doors(face, s, u, y0, wide, high):
     leaf = wide / 2 - 0.04
     for side in (-1, 1):
         face.box(S(s, "trim"), leaf, high, 0.1, u + side * (leaf / 2 + 0.02), y0 + high / 2, 0.07)
+        if PLAIN:
+            continue
         face.rod(S(s, "timber"), 0.06, (u + side * 0.1, y0 + 0.15), (u + side * (leaf - 0.05), y0 + high - 0.1), 0.14)
         for y in (0.45, high - 0.4):
             face.box(K("metal", IRON), leaf - 0.14, 0.08, 0.03, u + side * (leaf / 2 + 0.02), y0 + y, 0.135)
@@ -135,8 +154,10 @@ def great_doors(face, s, u, y0, wide, high):
 
 def chimney_stack(m, s, x, f, top):
     """A stone stack with a shoulder, a cap course and two clay pots."""
-    m.box(S(s, "stone"), (0.95, top * 0.55, 0.9), (x, top * 0.275, f), bevel=0.04)
-    m.box(S(s, "stone"), (0.74, top - 0.2, 0.7), (x, (top - 0.2) / 2 + 0.2, f), bevel=0.035)
+    m.box(S(s, "stone"), (0.95, top * 0.55, 0.9), (x, top * 0.275, f), bevel=soft(0.04))
+    m.box(S(s, "stone"), (0.74, top - 0.2, 0.7), (x, (top - 0.2) / 2 + 0.2, f), bevel=soft(0.035))
+    if PLAIN:
+        return
     m.box(tone(S(s, "stone"), 0.8), (0.96, 0.16, 0.92), (x, top - 0.3, f), bevel=0.0)
     m.box(S(s, "stone"), (0.84, 0.16, 0.8), (x, top - 0.12, f), bevel=0.0)
     for dx in (-0.18, 0.18):
@@ -169,6 +190,8 @@ def gable_roof(m, s, hw, hd, wall_h, roof_h, dormers=0, timbered=True, front=Fal
 
     for way in (-1, 1):
         m.prof(roof, 2 * (along + verge), [(way * half, low), (0, top), (0, top - deep), (way * half, low - deep)], x=0, bevel=0.0, across=across)
+        if PLAIN:
+            continue
         bar(S(s, "timber"), 2 * (along + verge), 0.13, 0.08, 0, low - deep * 0.5, way * (half - 0.03))
         for k in range(1, 4 if thatch else 6):  # courses, so the big sheets are not blank
             b = way * half * k / (4.0 if thatch else 6.0)
@@ -180,14 +203,15 @@ def gable_roof(m, s, hw, hd, wall_h, roof_h, dormers=0, timbered=True, front=Fal
             post = roof_h - deep - 0.25
             bar(S(s, "timber"), 0.1, 0.22, 2 * span, out, wall_h + 0.02, 0)
             bar(S(s, "timber"), 0.1, post, 0.2, out, wall_h + post / 2, 0)
-            bar(S(s, "timber"), 0.1, 0.16, span * 0.9, out, wall_h + roof_h * 0.5, 0)
-            for way in (-1, 1):
+            for way in () if PLAIN else (-1, 1):
                 m.rod(S(s, "timber"), 0.07, at(out, wall_h + 0.1, way * span * 0.72), at(out, wall_h + roof_h * 0.5, way * 0.12), segs=4)
+            if not PLAIN:
+                bar(S(s, "timber"), 0.1, 0.16, span * 0.9, out, wall_h + roof_h * 0.5, 0)
         edge = side * (along + verge - 0.05)
         for way in (-1, 1):  # bargeboards along the gable's two edges
             m.rod(S(s, "timber"), 0.085, at(edge, low - 0.02, way * half), at(edge, top + 0.02, 0), segs=4)
     if thatch:
-        m.rod(tone(roof, 0.8), 0.24, at(-(along + verge), top + 0.02, 0), at(along + verge, top + 0.02, 0), segs=7)
+        m.rod(tone(roof, 0.8), 0.24, at(-(along + verge), top + 0.02, 0), at(along + verge, top + 0.02, 0), segs=4 if PLAIN else 7)
     else:
         bar(tone(roof, 0.75), 2 * (along + verge) + 0.06, 0.14, 0.26, 0, top + 0.07, 0)
     if front and gable_window and roof_h >= 2.6:  # a little window in the street gable
@@ -200,22 +224,22 @@ def gable_roof(m, s, hw, hd, wall_h, roof_h, dormers=0, timbered=True, front=Fal
         m.box(S(s, "wall"), (1.2, 1.05, 0.06), (x, base + 0.55, f + half * 0.37), bevel=0.0)
         window(Face(m, "front", f + half * 0.37, 0.65), s, x, base + 0.58, ww=0.7, wh=0.7)
         m.prof(roof, half * 0.62, [(x - 0.95, base + 1.05), (x, base + 1.6), (x + 0.95, base + 1.05)], x=f + half * 0.14, bevel=0.0, across="f")
-        for way in (-1, 1):
+        for way in () if PLAIN else (-1, 1):
             m.rod(S(s, "timber"), 0.06, (x + way * 0.95, base + 1.03, f + half * 0.455), (x, base + 1.6, f + half * 0.455), segs=4)
 
 
 def flat_roof(m, s, hw, hd, wall_h):
     """The desert's roof: a slab, a parapet with raised corners, beam ends through the front wall, an awning."""
-    m.box(S(s, "roof"), (2 * hw + 0.4, 0.3, 2 * hd + 0.4), (0, wall_h + 0.15, 0), bevel=0.04)
+    m.box(S(s, "roof"), (2 * hw + 0.4, 0.3, 2 * hd + 0.4), (0, wall_h + 0.15, 0), bevel=soft(0.04))
     for side in (-1, 1):
-        m.box(S(s, "wall"), (0.3, 0.5, 2 * hd + 0.4), (side * (hw + 0.05), wall_h + 0.5, 0), bevel=0.05)
-        m.box(S(s, "wall"), (2 * hw + 0.4, 0.5, 0.3), (0, wall_h + 0.5, side * (hd + 0.05)), bevel=0.05)
+        m.box(S(s, "wall"), (0.3, 0.5, 2 * hd + 0.4), (side * (hw + 0.05), wall_h + 0.5, 0), bevel=soft(0.05))
+        m.box(S(s, "wall"), (2 * hw + 0.4, 0.5, 0.3), (0, wall_h + 0.5, side * (hd + 0.05)), bevel=soft(0.05))
         for way in (-1, 1):  # raised corners and a buttress under each
-            m.box(S(s, "wall"), (0.6, 0.85, 0.6), (side * (hw - 0.05), wall_h + 0.62, way * (hd - 0.05)), bevel=0.08)
+            m.box(S(s, "wall"), (0.6, 0.85, 0.6), (side * (hw - 0.05), wall_h + 0.62, way * (hd - 0.05)), bevel=soft(0.08))
             m.prof(tone(S(s, "wall"), 0.94), 0.7, [(way * hd, 0.0), (way * (hd + 0.75), 0.0), (way * (hd + 0.1), wall_h * 0.7), (way * hd, wall_h * 0.7)] if way > 0 else
-                [(way * hd, 0.0), (way * hd, wall_h * 0.7), (way * (hd + 0.1), wall_h * 0.7), (way * (hd + 0.75), 0.0)], x=side * (hw - 0.3), bevel=0.03)
+                [(way * hd, 0.0), (way * hd, wall_h * 0.7), (way * (hd + 0.1), wall_h * 0.7), (way * (hd + 0.75), 0.0)], x=side * (hw - 0.3), bevel=soft(0.03))
     count = max(3, int(2 * hw / 1.1))
-    for k in range(count):  # roof beams poke through the front and back walls
+    for k in range(0 if PLAIN else count):  # roof beams poke through the front and back walls
         x = -hw + 0.6 + (2 * hw - 1.2) * k / (count - 1)
         m.rod(K("wood", (0.42, 0.3, 0.2)), 0.1, (x, wall_h - 0.25, -hd - 0.45), (x, wall_h - 0.25, hd + 0.45), segs=6)
     m.strip(S(s, "trim"), hw * 1.5, 0.05, [(hd + 0.3, wall_h - 0.55), (hd + 1.9, wall_h - 1.05)], x=0)
@@ -234,8 +258,9 @@ def build(m, s, w, d, floors, roof_h, chimney=True, frame=True, door_x=0.0, gabl
     wall_h = PLINTH + STOREY * floors
     m.walls = getattr(m, "walls", []) + [[0.0, 0.0, round(w + 0.3, 2), round(d + 0.3, 2)]]
     with fk.weathered():
-        m.box(S(s, "stone"), (w + 0.3, PLINTH, d + 0.3), (0, PLINTH / 2, 0), bevel=0.05)
-        m.box(tone(S(s, "stone"), 0.8), (w + 0.36, 0.1, d + 0.36), (0, PLINTH - 0.05, 0), bevel=0.0)
+        m.box(S(s, "stone"), (w + 0.3, PLINTH, d + 0.3), (0, PLINTH / 2, 0), bevel=soft(0.05))
+        if not PLAIN:
+            m.box(tone(S(s, "stone"), 0.8), (w + 0.36, 0.1, d + 0.36), (0, PLINTH - 0.05, 0), bevel=0.0)
         hw, hd = w / 2, d / 2
         for i in range(floors):
             y0 = PLINTH + STOREY * i
@@ -259,7 +284,7 @@ def build(m, s, w, d, floors, roof_h, chimney=True, frame=True, door_x=0.0, gabl
                     if ground_front and abs(u - door_x) < 1.45:
                         continue
                     window(face, s, u, y0 + 1.6, shutters=i == 0 and not flat, flowers=i > 0 and name == "front", stone=stone or flat)
-                if i > 0 and timbered and name in ("front", "back"):  # the jetty: joist ends and brackets under the overhang
+                if i > 0 and timbered and not PLAIN and name in ("front", "back"):  # the jetty: joist ends and brackets under the overhang
                     count = max(3, int(2 * half / 0.7))
                     for k in range(count + 1):
                         u = -half + 0.12 + (2 * half - 0.24) * k / count

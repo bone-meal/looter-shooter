@@ -447,6 +447,8 @@ func leave() -> void:
 # Graphics tier: how much land, trees and grass are kept around the player.
 # Lower tiers give up detail and movement step by step. `motion`: 0 nothing moves on its own, 1 creatures' limbs and
 # windmill sails, 2 people breathe too, 3 grass sways and the staff's ring turns as well. `bits`: share of spell bits.
+# `plain_buildings`: 1 = towns are built from the plain building models (a place already standing keeps the models
+# it was built with until the player has been away from it).
 func set_detail(detail: Dictionary) -> void:
 	land.radius = int(detail.get("chunks", 4))
 	scatter.tree_radius = int(detail.get("trees", 3))
@@ -456,6 +458,7 @@ func set_detail(detail: Dictionary) -> void:
 	places.prop_share = float(detail.get("props", 1.0))
 	places.folk_share = float(detail.get("folk", 1.0))
 	places.small_m = float(detail.get("small_m", 100.0))
+	places.plain = int(detail.get("plain_buildings", 0)) > 0
 	rooms.prop_share = float(detail.get("props", 1.0))
 	rooms.real_views = int(detail.get("views", 1)) > 0
 	var motion := int(detail.get("motion", 3))

@@ -28,7 +28,8 @@
     "motion": 0,
     "bits": 0.35,
     "small_m": 60,
-    "views": 0
+    "views": 0,
+    "plain_buildings": 1
    }
   },
   {
@@ -59,7 +60,8 @@
     "motion": 1,
     "bits": 0.5,
     "small_m": 80,
-    "views": 1
+    "views": 1,
+    "plain_buildings": 1
    }
   },
   {
@@ -90,7 +92,8 @@
     "motion": 2,
     "bits": 0.75,
     "small_m": 100,
-    "views": 1
+    "views": 1,
+    "plain_buildings": 0
    }
   },
   {
@@ -129,7 +132,8 @@
     "motion": 3,
     "bits": 1.0,
     "small_m": 110,
-    "views": 1
+    "views": 1,
+    "plain_buildings": 0
    }
   },
   {
@@ -168,7 +172,8 @@
     "motion": 3,
     "bits": 1.0,
     "small_m": 130,
-    "views": 1
+    "views": 1,
+    "plain_buildings": 0
    }
   }
  ],

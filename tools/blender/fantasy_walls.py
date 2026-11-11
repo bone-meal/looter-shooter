@@ -4,7 +4,8 @@
 # inside. The gate is two towers with courses, arrow slits, battlements and slate caps, a pointed arch with a
 # raised portcullis and open doors, and a timber-framed guard room over the way through. The chapel is a buttressed
 # nave with pointed windows and a west tower with louvres, battlements and a spire. Used by fantasy_life.py.
-# Model space: x right, y up, f forward (out of the town).
+# Model space: x right, y up, f forward (out of the town). With fantasy_house.PLAIN set (the low graphics tiers'
+# models) each keeps its shape and loses the small things: odd stones, caps, louvres, portcullis, rails.
 import math
 
 import fantasy_kit as fk
@@ -39,9 +40,14 @@ def town_wall(m):
             tall(m, stone(0.9), (0.26, 3.2, 1.06), (side * 3.0, 0, 0))
             m.prof(stone(0.84), 0.26, [(0.5, 0.0), (1.04, 0.0), (0.5, 1.26)], x=side * 3.0, bevel=0.0)
         for k, x in enumerate((-2.0, 0.0, 2.0)):  # the teeth, each under a cap stone
-            m.box(stone(1.0 if k != 1 else 0.93, PALE), (1.1, 0.75, 0.38), (x, 4.325, 0.31), bevel=0.03)
-            m.box(stone(1.12, PALE), (1.22, 0.1, 0.5), (x, 4.75, 0.31), bevel=0.0)
+            m.box(stone(1.0 if k != 1 else 0.93, PALE), (1.1, 0.75, 0.38), (x, 4.325, 0.31), bevel=fh.soft(0.03))
+            if not fh.PLAIN:
+                m.box(stone(1.12, PALE), (1.22, 0.1, 0.5), (x, 4.75, 0.31), bevel=0.0)
         m.box(c(HOLE), (0.1, 0.5, 0.4), (0.0, 4.3, 0.31), bevel=0.0)  # arrow slit
+        m.box(K("wood", WOOD), (6.0, 0.08, 0.95), (0, 3.36, -0.95), bevel=0.0)  # the wall walk, widened in timber
+        if fh.PLAIN:
+            m.walls = [[0.0, 0.0, 6.0, 1.0]]
+            return
         spots = [(-2.4, 0.9, 0.7, 1.12), (-1.2, 2.5, 0.55, 0.9), (1.5, 1.9, 0.8, 1.1), (2.3, 2.9, 0.6, 0.88), (-0.9, 1.6, 0.5, 0.85), (1.0, 0.7, 0.65, 1.15),
             (-2.5, 2.1, 0.5, 0.92), (2.5, 1.2, 0.5, 1.08)]
         for x, y, wide, shade in spots:  # odd stones standing a little proud of the face
@@ -50,7 +56,6 @@ def town_wall(m):
             m.box(stone(shade), (wide, 0.3, 0.06), (-x, y + 0.2 - 0.9 * (k % 2), -0.51), bevel=0.0)
         for x in (-1.6, 1.6):  # holes the builders' scaffold left
             m.box(c(HOLE), (0.14, 0.14, 0.05), (x, 2.25, 0.5), bevel=0.0)
-        m.box(K("wood", WOOD), (6.0, 0.08, 0.95), (0, 3.36, -0.95), bevel=0.0)  # the wall walk, widened in timber
         for k in (-1, 1):
             m.box(K("wood", tuple(v * 0.8 for v in WOOD)), (6.0, 0.09, 0.02), (0, 3.36, -0.95 + k * 0.3), bevel=0.0)
         for x in (-2.0, 0.0, 2.0):
@@ -70,34 +75,41 @@ def town_gate(m):
     with fk.weathered(1.4, moss=1.0):
         for sx in (-1, 1):
             x = sx * 3.6
-            m.box(stone(0.86), (2.9, 1.0, 2.9), (x, 0.5, 0), bevel=0.08)
+            m.box(stone(0.86), (2.9, 1.0, 2.9), (x, 0.5, 0), bevel=fh.soft(0.08))
             tall(m, stone(), (2.6, 6.0, 2.6), (x, 0, 0))
-            for y in (2.3, 4.5):
+            for y in (4.5,) if fh.PLAIN else (2.3, 4.5):
                 m.box(stone(0.78), (2.72, 0.16, 2.72), (x, y, 0), bevel=0.0)
             m.box(stone(0.8), (3.0, 0.3, 3.0), (x, 6.0, 0), bevel=0.0)  # the battlement stands out on a corbel course
             for a in range(4):
                 dx, df = (1, 0, -1, 0)[a], (0, 1, 0, -1)[a]
                 size = (0.3, 0.5, 3.0) if dx else (3.0, 0.5, 0.3)
                 m.box(stone(0.95), size, (x + dx * 1.35, 6.4, df * 1.35), bevel=0.0)
-                for side in (-1, 1):
+                for side in () if fh.PLAIN else (-1, 1):
                     at = (x + dx * 1.35 + (0 if dx else side * 1.1), 6.95, df * 1.35 + (side * 1.1 if dx else 0))
                     m.box(stone(1.05, PALE), (0.3, 0.6, 0.8) if dx else (0.8, 0.6, 0.3), at, bevel=0.0)
-            m.lathe(K("slate", (0.35, 0.36, 0.42)), [(1.3, 6.3), (1.15, 6.6), (0.6, 7.9), (0.06, 9.3)], (x, 0, 0), segs=8)
-            m.rod(K("metal", IRON), 0.03, (x, 9.2, 0), (x, 10.2, 0), segs=4)
-            m.box(K("cloth", (0.6, 0.16, 0.14)), (0.7, 0.36, 0.02), (x + 0.38, 9.95, 0), bevel=0.0)  # pennant
-            for y in (1.7, 3.4):
-                m.box(c(HOLE), (0.12, 0.9, 0.06), (x, y, 1.3), bevel=0.0)  # arrow slits to the front
-                m.box(c(HOLE), (0.06, 0.9, 0.12), (x + sx * 1.3, y, 0), bevel=0.0)  # and to the side
-            m.box(stone(1.1, PALE), (0.62, 1.04, 0.08), (x, 5.2, 1.3), bevel=0.0)
-            m.box(glow, (0.4, 0.8, 0.1), (x, 5.2, 1.32), bevel=0.0)
-            m.strip(K("cloth", (0.6, 0.16, 0.14)), 0.8, 0.03, [(1.34, 4.4), (1.36, 2.6)], x=x)  # a banner down the tower
-            m.box(K("cloth", (0.9, 0.78, 0.4)), (0.5, 0.5, 0.02), (x, 3.6, 1.385), bevel=0.0)
+            if fh.PLAIN:
+                m.lathe(K("slate", (0.35, 0.36, 0.42)), [(1.3, 6.3), (0.06, 9.3)], (x, 0, 0), segs=6)
+                m.box(c(HOLE), (0.12, 0.9, 0.06), (x, 3.4, 1.3), bevel=0.0)
+                m.box(glow, (0.4, 0.8, 0.1), (x, 5.2, 1.32), bevel=0.0)
+                m.box(K("cloth", (0.6, 0.16, 0.14)), (0.8, 1.8, 0.03), (x, 3.5, 1.35), bevel=0.0)
+            else:
+                m.lathe(K("slate", (0.35, 0.36, 0.42)), [(1.3, 6.3), (1.15, 6.6), (0.6, 7.9), (0.06, 9.3)], (x, 0, 0), segs=8)
+                m.rod(K("metal", IRON), 0.03, (x, 9.2, 0), (x, 10.2, 0), segs=4)
+                m.box(K("cloth", (0.6, 0.16, 0.14)), (0.7, 0.36, 0.02), (x + 0.38, 9.95, 0), bevel=0.0)  # pennant
+                for y in (1.7, 3.4):
+                    m.box(c(HOLE), (0.12, 0.9, 0.06), (x, y, 1.3), bevel=0.0)  # arrow slits to the front
+                    m.box(c(HOLE), (0.06, 0.9, 0.12), (x + sx * 1.3, y, 0), bevel=0.0)  # and to the side
+                m.box(stone(1.1, PALE), (0.62, 1.04, 0.08), (x, 5.2, 1.3), bevel=0.0)
+                m.box(glow, (0.4, 0.8, 0.1), (x, 5.2, 1.32), bevel=0.0)
+                m.strip(K("cloth", (0.6, 0.16, 0.14)), 0.8, 0.03, [(1.34, 4.4), (1.36, 2.6)], x=x)  # a banner down the tower
+                m.box(K("cloth", (0.9, 0.78, 0.4)), (0.5, 0.5, 0.02), (x, 3.6, 1.385), bevel=0.0)
             tall(m, stone(0.92), (0.3, 2.6, 1.6), (sx * 2.15, 0, 0))  # the arch's jambs
         curve = [(2.0 * math.cos(math.pi * k / 10.0), 0.0) for k in range(11)]
         curve = [(x, _arch_y(x)) for x, _unused in curve]
         m.prof(stone(), 1.6, [(-2.3, 2.6), (-2.3, 5.4), (2.3, 5.4), (2.3, 2.6)] + curve, x=0, bevel=0.0, across="f")
         ring = curve + [(x * 1.16, 2.6 + (y - 2.6) * 1.16) for x, y in reversed(curve)]
-        m.prof(stone(1.15, PALE), 1.72, ring, x=0, bevel=0.0, across="f")  # the arch's own ring of cut stone
+        if not fh.PLAIN:
+            m.prof(stone(1.15, PALE), 1.72, ring, x=0, bevel=0.0, across="f")  # the arch's own ring of cut stone
         m.box(stone(0.78), (4.6, 0.18, 1.72), (0, 5.35, 0), bevel=0.0)
         # the guard room over the way through: timber-framed, jutting out a little, under its own roof
         m.box(fk.S(GUARD, "wall"), (4.6, 2.0, 2.0), (0, 6.4, 0), bevel=0.0)
@@ -106,10 +118,14 @@ def town_gate(m):
             fh.timber_face(face, GUARD, 5.4, 2.0)
             for u in (-1.15, 1.15):
                 fh.window(face, GUARD, u, 6.55, ww=0.7, wh=0.85)
-            for k in range(6):
+            for k in range(0 if fh.PLAIN else 6):
                 face.box(K("timber", DARK), 0.14, 0.18, 0.3, -2.0 + k * 0.8, 5.36, -0.08)
         fh.gable_roof(m, GUARD, 1.85, 1.0, 7.4, 1.5, timbered=False)
         m.box(c((0.62, 0.16, 0.14)), (0.7, 0.8, 0.08), (0, 4.95, 0.84), bevel=0.0)  # a painted shield over the arch
+        if fh.PLAIN:  # the doors standing open, and nothing smaller
+            for sx in (-1, 1):
+                m.box(K("wood", DARK), (0.12, 2.9, 1.9), (sx * 1.94, 1.5, 1.75), bevel=0.0)
+            return
         m.box(c((0.92, 0.8, 0.42)), (0.35, 0.4, 0.09), (-0.175, 5.15, 0.84), bevel=0.0)
         m.box(c((0.92, 0.8, 0.42)), (0.35, 0.4, 0.09), (0.175, 4.75, 0.84), bevel=0.0)
         for k in range(9):  # the portcullis, drawn up
@@ -135,20 +151,22 @@ def _lancet(m, glow, at, low, high, wide, side=None, f=None, x=None):
     def shape(mid, grow):
         return [(mid - wide / 2 - grow, low - grow), (mid + wide / 2 + grow, low - grow), (mid + wide / 2 + grow, high - wide * 0.8), (mid, high + grow * 1.6), (mid - wide / 2 - grow, high - wide * 0.8)]
     if side is not None:
-        m.prof(stone(1.12, PALE), 0.1, shape(f, 0.14), x=at, bevel=0.0)
         m.prof(glow, 0.1, shape(f, 0.0), x=at + side * 0.03, bevel=0.0)
-        m.box(c(HOLE), (0.12, high - low - 0.2, 0.05), (at + side * 0.03, (low + high) / 2 - 0.1, f), bevel=0.0)
+        if not fh.PLAIN:
+            m.prof(stone(1.12, PALE), 0.1, shape(f, 0.14), x=at, bevel=0.0)
+            m.box(c(HOLE), (0.12, high - low - 0.2, 0.05), (at + side * 0.03, (low + high) / 2 - 0.1, f), bevel=0.0)
     else:
         way = 1 if at > 0 else -1
-        m.prof(stone(1.12, PALE), 0.1, shape(x, 0.14), x=at, bevel=0.0, across="f")
         m.prof(glow, 0.1, shape(x, 0.0), x=at + way * 0.03, bevel=0.0, across="f")
-        m.box(c(HOLE), (0.05, high - low - 0.2, 0.12), (x, (low + high) / 2 - 0.1, at + way * 0.03), bevel=0.0)
+        if not fh.PLAIN:
+            m.prof(stone(1.12, PALE), 0.1, shape(x, 0.14), x=at, bevel=0.0, across="f")
+            m.box(c(HOLE), (0.05, high - low - 0.2, 0.12), (x, (low + high) / 2 - 0.1, at + way * 0.03), bevel=0.0)
 
 
 def chapel(m):
     glow = fk.GLOW
     with fk.weathered(1.2, moss=0.6):
-        m.box(stone(0.86), (6.3, 0.5, 10.3), (0, 0.25, 0), bevel=0.04)
+        m.box(stone(0.86), (6.3, 0.5, 10.3), (0, 0.25, 0), bevel=fh.soft(0.04))
         tall(m, stone(), (6.0, 5.0, 10.0), (0, 0, 0))
         m.box(stone(0.78), (6.12, 0.16, 10.12), (0, 4.9, 0), bevel=0.0)
         fh.gable_roof(m, CHAPEL, 3.0, 5.0, 5.0, 3.2, front=True, timbered=False, gable_window=False)
@@ -160,29 +178,32 @@ def chapel(m):
         for x in (-1.3, 0.0, 1.3):  # three lights in the east wall
             _lancet(m, glow, -5.0, 1.9, 4.3 if x == 0.0 else 3.8, 0.7, x=x)
         # the tower at the west end, over the door
-        m.box(stone(0.86), (4.4, 0.8, 4.4), (0, 0.4, 6.6), bevel=0.06)
+        m.box(stone(0.86), (4.4, 0.8, 4.4), (0, 0.4, 6.6), bevel=fh.soft(0.06))
         tall(m, stone(1.0, PALE), (4.0, 11.0, 4.0), (0, 0, 6.6))
-        for y in (4.2, 7.9, 10.7):
+        for y in (10.7,) if fh.PLAIN else (4.2, 7.9, 10.7):
             m.box(stone(0.78), (4.12, 0.16, 4.12), (0, y, 6.6), bevel=0.0)
         for a in range(4):
             dx, df = (1, 0, -1, 0)[a], (0, 1, 0, -1)[a]
             m.box(stone(0.95), (0.3, 0.5, 4.3) if dx else (4.3, 0.5, 0.3), (dx * 2.0, 11.25, 6.6 + df * 2.0), bevel=0.0)
             m.box(c(HOLE), (0.08, 1.5, 1.0) if dx else (1.0, 1.5, 0.08), (dx * 2.0, 9.3, 6.6 + df * 2.0), bevel=0.0)  # belfry openings
+            if fh.PLAIN:
+                continue
             for k in range(4):  # louvre boards across them
                 m.box(K("wood", DARK), (0.12, 0.07, 1.0) if dx else (1.0, 0.07, 0.12), (dx * 2.02, 8.75 + k * 0.36, 6.6 + df * 2.02), bevel=0.0)
             cx, cf = (1, -1, -1, 1)[a] * 2.0, (1, 1, -1, -1)[a] * 2.0
             m.lathe(stone(1.05, PALE), [(0.3, 11.0), (0.3, 11.9), (0.03, 12.9)], (cx, 0, 6.6 + cf), segs=4)  # a pinnacle on each corner
-        m.lathe(K("slate", (0.3, 0.31, 0.38)), [(1.8, 11.1), (1.65, 11.5), (0.85, 14.4), (0.06, 17.6)], (0, 0, 6.6), segs=8)
-        m.rod(K("metal", IRON), 0.03, (0, 17.5, 6.6), (0, 18.6, 6.6), segs=4)
-        m.ball(K("metal", (0.8, 0.7, 0.3)), 0.12, (0, 18.1, 6.6), u=6, v=4)
+        m.lathe(K("slate", (0.3, 0.31, 0.38)), [(1.8, 11.1), (1.65, 11.5), (0.85, 14.4), (0.06, 17.6)], (0, 0, 6.6), segs=6 if fh.PLAIN else 8)
+        if not fh.PLAIN:
+            m.rod(K("metal", IRON), 0.03, (0, 17.5, 6.6), (0, 18.6, 6.6), segs=4)
+            m.ball(K("metal", (0.8, 0.7, 0.3)), 0.12, (0, 18.1, 6.6), u=6, v=4)
         _lancet(m, glow, 8.6, 5.0, 7.2, 0.8, x=0.0)
         door = [(-0.8, 0.3), (0.8, 0.3), (0.8, 2.2), (0.0, 3.1), (-0.8, 2.2)]
         m.prof(stone(1.12, PALE), 0.1, [(x * 1.2, 0.3 + (y - 0.3) * 1.08) for x, y in door], x=8.6, bevel=0.0, across="f")
         m.prof(K("wood", DARK), 0.1, door, x=8.64, bevel=0.0, across="f")
-        for x in (-0.4, 0.0, 0.4):
+        for x in () if fh.PLAIN else (-0.4, 0.0, 0.4):
             m.box(K("wood", tuple(v * 0.7 for v in DARK)), (0.03, 1.9, 0.03), (x, 1.25, 8.7), bevel=0.0)
-        for y in (0.8, 1.8):
+        for y in () if fh.PLAIN else (0.8, 1.8):
             m.box(K("metal", IRON), (1.4, 0.08, 0.03), (0, y, 8.705), bevel=0.0)
-        m.box(stone(0.9), (2.4, 0.15, 1.0), (0, 0.075, 9.2), bevel=0.03)
-        m.box(stone(0.95), (2.0, 0.3, 0.6), (0, 0.15, 8.95), bevel=0.03)
+        m.box(stone(0.9), (2.4, 0.15, 1.0), (0, 0.075, 9.2), bevel=fh.soft(0.03))
+        m.box(stone(0.95), (2.0, 0.3, 0.6), (0, 0.15, 8.95), bevel=fh.soft(0.03))
     m.walls = [[0.0, -6.6, 4.4, 4.4], [0.0, 0.0, 6.3, 10.3]]  # the tower first: the door is in it

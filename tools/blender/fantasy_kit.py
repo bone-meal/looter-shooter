@@ -85,8 +85,11 @@ class Maker:
 
     def __init__(self):
         self.sizes = {}
+        self.plain = []  # [(name, build, uv)]: buildings that get a second, plain model for the low graphics tiers
 
-    def model(self, name, build, solid=True, uv=0.5):
+    def model(self, name, build, solid=True, uv=0.5, plain=False):
+        if plain:
+            self.plain.append((name, build, uv))
         m = kit.Model(name, uv_scale=uv, colored=True)
         build(m)
         lo, hi = [1e9] * 3, [-1e9] * 3
@@ -99,6 +102,21 @@ class Maker:
         if getattr(m, "walls", None):  # the builder named its solid parts itself ([x, z, width, depth] each, game axes): roofs and overhangs stop nobody
             self.sizes[name].update({"walls": m.walls, "wall_h": round(hi[2], 2)})
         print(name, m.export(OUT), self.sizes[name])
+
+    def plain_pass(self):
+        """Builds every model marked `plain` once more with fantasy_house.PLAIN set, as plain/<name>: the same building
+        with about a quarter of the triangles, shown by the low graphics tiers (game/fantasy_places.gd). Footprints
+        are not written for them: a plain building stands exactly where the full one does."""
+        import fantasy_house
+        os.makedirs(os.path.join(OUT, "plain"), exist_ok=True)
+        fantasy_house.PLAIN = True
+        try:
+            for name, build, uv in self.plain:
+                m = kit.Model("plain/" + name, uv_scale=uv, colored=True)
+                build(m)
+                print("plain/" + name, m.export(OUT))
+        finally:
+            fantasy_house.PLAIN = False
 
     def save(self):
         known = {}

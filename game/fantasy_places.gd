@@ -29,6 +29,7 @@ var prop_share := 1.0  # share of the small loose things that are placed (graphi
 var folk_share := 1.0  # share of the ordinary folk that are placed (graphics tier)
 var small_m := 100.0  # small loose things are drawn within this distance and cast no shadows (graphics tier)
 var motion := 3  # graphics tier: 0 nothing moves, 1 windmill sails, 2 people breathe too
+var plain := false  # graphics tier: buildings are shown as their plain models (assets/models/fantasy/plain/, about 30 % of the triangles)
 var _merges: Array = []  # places whose buildings are still being folded into one mesh: {"holder", "list", "next", "tools"}
 var stations: Array = []  # {"kind": workbench|forge|cauldron|fire, "at": Vector3, "place": id, "until": engine time or 0}
 var people: Array = []  # {"id", "name", "at": Vector3, "place", "greet", "look", "folk": bool, "node", "mark"}
@@ -288,9 +289,10 @@ func _unbuild(id: String) -> void:
 
 
 func _mesh(model: String) -> Mesh:
-	if not _meshes.has(model):
-		_meshes[model] = FantasyModels.mesh(model)
-	return _meshes[model]
+	var id := "plain/" + model if plain and FantasyModels.has_model("plain/" + model) else model
+	if not _meshes.has(id):
+		_meshes[id] = FantasyModels.mesh(id)
+	return _meshes[id]
 
 
 # Builds one place or site from its list of items.

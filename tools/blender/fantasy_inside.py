@@ -101,7 +101,7 @@ def open_house(m, s, w, d, wall_h=3.2, roof_h=2.6, chimney=True):
             face = fh.Face(m, name, plane, half)
             door = name == "front"
             for a, b in ([(-half, -DOOR_W / 2 - 0.1), (DOOR_W / 2 + 0.1, half)] if door else [(-half - 0.14, half + 0.14)]):
-                face.box(S(s, "stone"), b - a, 0.5, 0.14, (a + b) / 2, 0.25, 0.07, bevel=0.03)  # footing
+                face.box(S(s, "stone"), b - a, 0.5, 0.14, (a + b) / 2, 0.25, 0.07, bevel=fh.soft(0.03))  # footing
             if kind == "plaster" and not flat:
                 fh.timber_face(face, s, 0.5, wall_h - 0.5, gap=(0.0, DOOR_W + 0.3) if door else None)
             elif kind == "stone":
@@ -111,9 +111,9 @@ def open_house(m, s, w, d, wall_h=3.2, roof_h=2.6, chimney=True):
                 fh.window(face, s, u, 1.95, shutters=not flat and not door, stone=kind == "stone" or flat)
         front = fh.Face(m, "front", d / 2, w / 2)
         front.box(S(s, "trim"), 1.0, 2.15, 0.08, -DOOR_W / 2 - 0.62, 1.15, 0.13)  # the door, swung back against the wall
-        for dy in (0.55, 1.75):
+        for dy in () if fh.PLAIN else (0.55, 1.75):
             front.box(K("metal", fh.IRON), 0.9, 0.07, 0.03, -DOOR_W / 2 - 0.62, dy, 0.185)
-        front.box(S(s, "stone"), DOOR_W + 0.3, 0.1, 0.5, 0.0, 0.05, 0.2, bevel=0.03)
+        front.box(S(s, "stone"), DOOR_W + 0.3, 0.1, 0.5, 0.0, 0.05, 0.2, bevel=fh.soft(0.03))
         if flat:
             fh.flat_roof(m, s, w / 2, d / 2, wall_h)
         else:
@@ -232,13 +232,14 @@ def build_all():
         extra["open_house_" + scheme_name] = None
         def house(m, s=scheme, key="open_house_" + scheme_name):
             extra[key] = open_house(m, s, 9.0, 8.0)
-        mk.model("open_house_" + scheme_name, house)
+        mk.model("open_house_" + scheme_name, house, plain=True)
     def farm(m):
         extra["open_farmhouse"] = open_house(m, fk.SCHEMES["amber"], 15.0, 10.0, wall_h=3.6, roof_h=3.8)
-    mk.model("open_farmhouse", farm)
+    mk.model("open_farmhouse", farm, plain=True)
     for name, more in extra.items():
         mk.sizes[name].update(more)
     furniture(mk)
+    mk.plain_pass()
     mk.save()
 
 

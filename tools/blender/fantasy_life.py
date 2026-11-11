@@ -47,8 +47,8 @@ def build_all():
     glow = fantasy_kit.GLOW
     SOFT = ("laundry", "rug", "veg_patch", "prayer_flags", "bone_pile", "nets", "banner_", "crop_rows", "path_stones")
 
-    def model(name, build):
-        maker.model(name, build, solid=not name.startswith(SOFT))
+    def model(name, build, plain=False):  # plain: a building, which also gets its plain model for the low graphics tiers
+        maker.model(name, build, solid=not name.startswith(SOFT), plain=plain)
 
     # ---------- town houses and shops, one per region scheme ----------
     def townhouse(m, s):  # tall and narrow, its gable to the street, each floor jutting out over the one below
@@ -68,14 +68,15 @@ def build_all():
         m.rod(K("metal", IRON), 0.03, (-3.4, 4.6, 3.15), (-3.4, 4.6, 4.15), segs=4)  # sign bracket
         m.box(S(s, "trim"), (0.08, 0.7, 0.9), (-3.4, 4.15, 3.7), bevel=0.0)
         m.box(K("paint", (0.95, 0.85, 0.5)), (0.1, 0.4, 0.5), (-3.4, 4.15, 3.7), bevel=0.0)
-        barrel_at(m, 3.3, 3.5)
-        crate_at(m, 0.5, 4.0, s=0.6)
-        sack_at(m, 2.4, 4.1, seed=3)
+        if not fantasy_house.PLAIN:  # the plain model keeps the counter and awning, not the goods
+            barrel_at(m, 3.3, 3.5)
+            crate_at(m, 0.5, 4.0, s=0.6)
+            sack_at(m, 2.4, 4.1, seed=3)
         m.walls.append([1.75, -3.7, 3.6, 1.5])  # the goods under the awning are in the way too
 
     for scheme, s in SCHEMES.items():
-        model("townhouse_" + scheme, lambda m, s=s: townhouse(m, s))
-        model("shop_" + scheme, lambda m, s=s: shop(m, s))
+        model("townhouse_" + scheme, lambda m, s=s: townhouse(m, s), plain=True)
+        model("shop_" + scheme, lambda m, s=s: shop(m, s), plain=True)
 
     amber = SCHEMES["amber"]
 
@@ -95,9 +96,10 @@ def build_all():
             front.box(K("timber", DARK), 1.5, 0.14, 0.12, 0.0, 6.62, 0.08)
             m.box(K("timber", DARK), (0.2, 0.22, 1.5), (0, 7.05, 6.6), bevel=0.0)  # hoist beam
             m.rod(K("cloth", ROPE), 0.02, (0, 6.95, 7.25), (0, 5.6, 7.25), segs=4)
-        blob(m, K("thatch", STRAW), (1.4, 0.9, 1.2), (3.2, 0.7, 7.2), seed=5)
+        if not fantasy_house.PLAIN:
+            blob(m, K("thatch", STRAW), (1.4, 0.9, 1.2), (3.2, 0.7, 7.2), seed=5)
         m.walls = [[0.0, 0.0, 9.2, 12.2]]
-    model("barn", barn)
+    model("barn", barn, plain=True)
 
     def granary(m):
         m.lathe(K("stone", GREY), [(2.3, 0.0), (2.2, 1.0)], (0, 0, 0), segs=12)
@@ -108,7 +110,7 @@ def build_all():
             m.box(K("wood", WOOD), (1.0, 0.08, 0.5), (0, 0.2 + k * 0.2, 2.5 + (4 - k) * 0.25), bevel=0.01)  # steps
     model("granary", granary)
 
-    model("chapel", fantasy_walls.chapel)
+    model("chapel", fantasy_walls.chapel, plain=True)
 
     def shed(m):  # open-sided: smithy, stable, market cover
         for sx in (-1, 1):
@@ -133,9 +135,9 @@ def build_all():
             m.box(K("wood", WOOD), (0.6, 0.05, 0.05), (0, 0.5 + k * 0.8, 1.8 - k * 0.06), bevel=0)
     model("watchtower", watchtower)
 
-    model("town_wall", fantasy_walls.town_wall)  # one 6 m stretch with a walk and teeth along the top
+    model("town_wall", fantasy_walls.town_wall, plain=True)  # one 6 m stretch with a walk and teeth along the top
     maker.sizes["town_wall"]["w"] = 6.0  # stretches stand 6 m apart; the end piers reach a little further so a curve closes up
-    model("town_gate", fantasy_walls.town_gate)
+    model("town_gate", fantasy_walls.town_gate, plain=True)
     maker.sizes["town_gate"].update({"walls": [[3.6, 0, 2.6, 2.6], [-3.6, 0, 2.6, 2.6]], "wall_h": 6.0})  # only the two towers are solid: the arch is open
 
     # ---------- what stands in yards and streets ----------
@@ -531,6 +533,7 @@ def build_all():
         for k in range(6):
             blob(m, K("stone", (0.6, 0.58, 0.55)), (0.35, 0.05, 0.3), (0.25 * (k % 2) - 0.12, 0.03, -1.6 + k * 0.65), seed=k + 90, rough=0.12, cuts=1)
     model("path_stones", path_stones)
+    maker.plain_pass()
     maker.save()
 
 

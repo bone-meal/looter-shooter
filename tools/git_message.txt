@@ -1,9 +1,8 @@
-Round 4 part 4 D: thirteen new outfits sewn from the two character models, people dressed by trade
+Plain building models for the low graphics tiers
 
-- tools/tailor.py + data/wear.json: skinned pieces cut from the Quaternius outfits' own surfaces (gloves, bracers, belt, sash, vest, breastplate, scarf as shells; apron, smith's apron, robe, skirt, cloak, tabard as hung sheets)
-- tools/blender/wear.py: straw hat, kettle helmet, feathered cap, pointed hat, cook's cap
-- data/characters.json: outfits may hide pieces, take parts of the other outfit and wear our own; npc.outfits maps a person's trade to an outfit
-- game/rigged_body.gd puts the pieces on; tools/outfit_shot shows every outfit on both bodies; fantasy_check checks the pieces exist
+- fantasy_house.PLAIN + fantasy_kit.Maker.plain_pass: every building is built a second time as assets/models/fantasy/plain/<id> (same size and shape, about 30 % of the triangles)
+- data/graphics.json fantasy plain_buildings: 1 on potato and low; game/fantasy_places.gd uses the plain model there
+- tools/dev_boot.gd steps !tier and !buildings to measure one against the other; fantasy_check checks the plain set
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

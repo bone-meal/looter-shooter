@@ -581,4 +581,15 @@ func _check_ways(all: Dictionary, layout: FantasyLayout) -> void:
 				shut += 1
 				_lines.append("  door of %s in %s cannot be reached" % [model, place["id"]])
 	_need(shut == 0, "%d doors cannot be reached" % shut)
+	var plain := 0  # the low graphics tiers' building models: each must be the plain form of a model that exists
+	for file in DirAccess.get_files_at("res://assets/models/fantasy/plain"):
+		if file.ends_with(".gltf"):
+			plain += 1
+			_need(props.has(file.trim_suffix(".gltf")), "plain model %s has no full model" % file)
+	var tiers := PackedStringArray()
+	for tier: Dictionary in (JSON.parse_string(FileAccess.get_file_as_string("res://data/graphics.json")) as Dictionary)["graphics"]:
+		if int((tier["fantasy"] as Dictionary).get("plain_buildings", 0)) > 0:
+			tiers.append(String(tier["id"]))
+	_need(plain > 0 or tiers.is_empty(), "graphics tiers ask for plain buildings but there are none (run the three tools/blender/fantasy_*.py scripts)")
+	_lines.append("plain buildings: %d models, shown on the tiers %s" % [plain, ", ".join(tiers)])
 	_lines.append("doors: %d buildings are entered from a spot in front of their own wall; %d of the spots are out of reach" % [doors, shut])

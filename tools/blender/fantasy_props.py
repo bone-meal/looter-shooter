@@ -75,8 +75,8 @@ def build_all():
     glow = fantasy_kit.GLOW
     SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples")  # things you can walk through or step over
 
-    def model(name, build, uv=0.5):
-        maker.model(name, build, solid=not name.startswith(SOFT), uv=uv)
+    def model(name, build, uv=0.5, plain=False):  # plain: a building, which also gets its plain model for the low graphics tiers
+        maker.model(name, build, solid=not name.startswith(SOFT), uv=uv, plain=plain)
 
     amber = SCHEMES["amber"]
     # --- the painting's farmhouse: L-shaped, two floors, with a barn wing ---
@@ -94,7 +94,7 @@ def build_all():
         m.shift = None
         m.walls.append([8.4, -2.5, 6.2, 9.2])
         m.cyl(S(amber, "timber"), 0.5, 3.9, 4.8, y=0.5, x=3.2, segs=10)  # rain barrel on its side... a trough
-    model("farmhouse", farmhouse)
+    model("farmhouse", farmhouse, plain=True)
 
     def windmill(m):
         m.lathe(S(amber, "stone"), [(2.6, 0.0), (2.5, 1.2)], (0, 0, 0), segs=12)
@@ -117,8 +117,8 @@ def build_all():
     model("windmill", windmill)
 
     for scheme, s in SCHEMES.items():
-        model("cottage_" + scheme, lambda m, s=s: house(m, s, 6.0, 5.0, 1, 2.6))
-        model("hall_" + scheme, lambda m, s=s: house(m, s, 10.0, 6.5, 2, 3.2, door_x=1.5))
+        model("cottage_" + scheme, lambda m, s=s: house(m, s, 6.0, 5.0, 1, 2.6), plain=True)
+        model("hall_" + scheme, lambda m, s=s: house(m, s, 10.0, 6.5, 2, 3.2, door_x=1.5), plain=True)
 
     def well(m):
         m.lathe(S(amber, "stone"), [(1.0, 0.0), (1.0, 0.9), (0.8, 0.9), (0.8, 0.1)], (0, 0, 0), segs=10)
@@ -255,6 +255,7 @@ def build_all():
         for r in (0.35, 0.7, 1.05):
             m.lathe(c((0.85, 0.95, 1.0)), [(r, 0.0), (r + 0.05, 0.012), (r + 0.1, 0.0)], (0.0, 0, 0.0), segs=14)
     model("ripples", ripples)
+    maker.plain_pass()
     maker.save()
 
 
