@@ -42,6 +42,7 @@ var _land: Node3D
 var _dressed := {}  # Vector2i -> Node3D holding that chunk's scatter
 var _node_data: Dictionary
 var _meshes := {}
+var _clutter := {}  # model id -> {"many": MultiMesh, "at": Array of Transform3D, "of": Array of chunk keys}
 var _tuft_mesh: ArrayMesh
 var _wind := true
 var _center := Vector2i(9999, 9999)
@@ -103,6 +104,55 @@ func _undress(key: Vector2i) -> void:
 		(_dressed[key] as Node3D).queue_free()
 		_dressed.erase(key)
 		gather.drop_chunk(key)
+		_clutter_drop(key)
+
+
+# Clutter is drawn by ONE MultiMesh per model for the whole dressed land (a draw call per kind of boulder, however
+# many chunks are in range); a chunk adds its pieces when it is dressed and takes them out when it is stripped.
+func _clutter_add(key: Vector2i, id: String, where: Transform3D) -> void:
+	if not _clutter.has(id):
+		var mesh := _mesh(id)
+		if mesh == null:
+			return
+		var fresh := MultiMesh.new()
+		fresh.transform_format = MultiMesh.TRANSFORM_3D
+		fresh.mesh = mesh
+		fresh.instance_count = 64
+		fresh.visible_instance_count = 0
+		var drawn := MultiMeshInstance3D.new()
+		drawn.multimesh = fresh
+		drawn.custom_aabb = AABB(Vector3(-1100.0, -60.0, -1100.0), Vector3(2200.0, 500.0, 2200.0))  # pieces come and go: never culled as a whole
+		add_child(drawn)
+		_clutter[id] = {"many": fresh, "at": [], "of": []}
+	var pool: Dictionary = _clutter[id]
+	var many: MultiMesh = pool["many"]
+	var at: Array = pool["at"]
+	if at.size() >= many.instance_count:  # full: twice the room (a MultiMesh forgets its instances when resized)
+		many.instance_count = at.size() * 2
+		for i in at.size():
+			many.set_instance_transform(i, at[i])
+	many.set_instance_transform(at.size(), where)
+	at.append(where)
+	(pool["of"] as Array).append(key)
+	many.visible_instance_count = at.size()
+
+
+func _clutter_drop(key: Vector2i) -> void:
+	for id: String in _clutter:
+		var pool: Dictionary = _clutter[id]
+		var many: MultiMesh = pool["many"]
+		var at: Array = pool["at"]
+		var of: Array = pool["of"]
+		for i in range(at.size() - 1, -1, -1):
+			if of[i] == key:  # the last piece takes the place of the one that goes
+				var last := at.size() - 1
+				if i != last:
+					at[i] = at[last]
+					of[i] = of[last]
+					many.set_instance_transform(i, at[i])
+				at.pop_back()
+				of.pop_back()
+		many.visible_instance_count = at.size()
 
 
 func _mesh(id: String) -> Mesh:
@@ -122,6 +172,9 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 	for tree: Array in layout.trees(key):  # scenery: [model, x, z, grow, turn]
 		_place(by_model, String(tree[0]), float(tree[1]), terrain.height(float(tree[1]), float(tree[2])), float(tree[2]), float(tree[3]), float(tree[4]))
 		_trunk(trunks, float(tree[1]), float(tree[2]), 0.3 * float(tree[3]))
+	for thing: Array in layout.clutter(key):  # boulders, logs, bushes: [model, x, z, grow, turn, radius]
+		_clutter_add(key, String(thing[0]), Transform3D(Basis(Vector3.UP, float(thing[4])).scaled(Vector3.ONE * float(thing[3])), Vector3(float(thing[1]), terrain.height(float(thing[1]), float(thing[2])) - 0.12, float(thing[2]))))
+		_trunk(trunks, float(thing[1]), float(thing[2]), float(thing[5]))
 	for node: Array in layout.nodes(key):  # things to work on: [slot, node id, x, y, z, turn]
 		var def: Dictionary = _node_data[String(node[1])]
 		var index := _place(by_model, String(def["model"]), float(node[2]), float(node[3]), float(node[4]), 1.0, float(node[5]))

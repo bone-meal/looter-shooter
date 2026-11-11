@@ -366,7 +366,12 @@ func walk_world(from: Vector3, step: Vector3, pad: float, mode: int, hover: floa
 		z += step.z
 		return Vector3(x + OFFSET.x, maxf(terrain.height(x, z), terrain.sea) + hover, z + OFFSET.z)
 	var to := layout.walk(x, z, step.x, step.z, pad, mode == WALK_SWIM)
-	return Vector3(to.x + OFFSET.x, maxf(terrain.height(to.x, to.y), terrain.sea - 0.5), to.y + OFFSET.z)
+	var ground := terrain.height(to.x, to.y)
+	if mode != WALK_SWIM and ground - from.y > 0.9 * Vector2(to.x - x, to.y - z).length() + 0.02:
+		# steeper than a creature can run up: it scrambles, at a third of its pace
+		to = Vector2(x, z).lerp(to, 0.35)
+		ground = terrain.height(to.x, to.y)
+	return Vector3(to.x + OFFSET.x, maxf(ground, terrain.sea - 0.5), to.y + OFFSET.z)
 
 
 # The sky photo takes the region's colour. Changing it re-lights the scene from the sky, so it moves in a few steps

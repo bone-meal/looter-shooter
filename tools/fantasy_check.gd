@@ -163,6 +163,11 @@ func _ready() -> void:
 			lo = minf(lo, h)
 			hi = maxf(hi, h)
 		_lines.append("terrain %-13s height %.1f .. %.1f m, level at heart %d" % [region["id"], lo, hi, terrain.level_at(float(region["center"][0]), float(region["center"][1]))])
+	_check_walkable(terrain, world)
+	for region: Dictionary in world["regions"]:  # every region has solid clutter, and every piece of it is a real model
+		_need(not (region.get("clutter", {}) as Dictionary).is_empty(), "region %s has no clutter" % region["id"])
+		for id: String in region.get("clutter", {}):
+			_need(all["props"].has(id) and ResourceLoader.exists("res://assets/models/fantasy/%s.gltf" % id), "clutter %s of %s has no model or no size" % [id, region["id"]])
 	var spawn: Array = world["spawn"]
 	_lines.append("spawn height %.1f m in %s; corner of the map %.1f m (sea level %.1f)" % [terrain.height(float(spawn[0]), float(spawn[1])), terrain.region_at(float(spawn[0]), float(spawn[1]))["id"], terrain.height(990, 990), terrain.sea])
 	_lines.append("FANTASY_CHECK_DONE problems=%d" % _problems)
@@ -245,6 +250,63 @@ func _split_from(enemies: Dictionary, id: String) -> bool:
 		if String((enemies[other].get("splits", {}) as Dictionary).get("into", "")) == id:
 			return true
 	return false
+
+
+# The sculpted land can still be walked: on a 5 m grid, starting at the spawn and never stepping onto water or up or
+# down anything steeper than a player can walk (45 degrees), every place is reached and little dry land is cut off.
+# Also says how much of each region is cliff.
+func _check_walkable(terrain: FantasyTerrain, world: Dictionary) -> void:
+	var cell := 5.0
+	var side := int(terrain.size / cell)
+	var half := terrain.size * 0.5
+	var started := Time.get_ticks_msec()
+	var heights := PackedFloat32Array()
+	heights.resize(side * side)
+	for gz in side:
+		for gx in side:
+			heights[gz * side + gx] = terrain.height(-half + (float(gx) + 0.5) * cell, -half + (float(gz) + 0.5) * cell)
+	var took := Time.get_ticks_msec() - started
+	_lines.append("terrain: %d height samples in %d ms (%.1f microseconds each)" % [side * side, took, float(took) * 1000.0 / float(side * side)])
+	var seen := PackedByteArray()
+	seen.resize(side * side)
+	var spawn: Array = world["spawn"]
+	var first := int((float(spawn[1]) + half) / cell) * side + int((float(spawn[0]) + half) / cell)
+	var open := PackedInt32Array([first])
+	seen[first] = 1
+	while not open.is_empty():
+		var at := open[open.size() - 1]
+		open.remove_at(open.size() - 1)
+		var gx := at % side
+		for next: int in [at - 1 if gx > 0 else -1, at + 1 if gx < side - 1 else -1, at - side, at + side]:
+			if next < 0 or next >= side * side or seen[next] == 1:
+				continue
+			if heights[next] < terrain.sea - 0.3 or absf(heights[next] - heights[at]) > cell:
+				continue
+			seen[next] = 1
+			open.append(next)
+	for p: Dictionary in world["places"]:
+		var i := int((float(p["pos"][1]) + half) / cell) * side + int((float(p["pos"][0]) + half) / cell)
+		_need(seen[i] == 1, "terrain: %s cannot be walked to from the spawn" % p["id"])
+	var dry := PackedInt32Array()
+	var reached := PackedInt32Array()
+	var cliff := PackedInt32Array()
+	dry.resize(terrain.regions.size())
+	reached.resize(terrain.regions.size())
+	cliff.resize(terrain.regions.size())
+	for gz in range(1, side - 1, 2):
+		for gx in range(1, side - 1, 2):
+			var i := gz * side + gx
+			if heights[i] < terrain.sea - 0.3:
+				continue
+			var region := terrain.region_index(-half + (float(gx) + 0.5) * cell, -half + (float(gz) + 0.5) * cell)
+			dry[region] += 1
+			reached[region] += int(seen[i])
+			if maxf(maxf(absf(heights[i - 1] - heights[i]), absf(heights[i + 1] - heights[i])), maxf(absf(heights[i - side] - heights[i]), absf(heights[i + side] - heights[i]))) > cell:
+				cliff[region] += 1
+	for r in terrain.regions.size():
+		var share := float(reached[r]) / maxf(float(dry[r]), 1.0)
+		_lines.append("terrain %-13s %2.0f %% cliff, %3.0f %% of its dry land can be walked to" % [terrain.regions[r]["id"], 100.0 * float(cliff[r]) / maxf(float(dry[r]), 1.0), 100.0 * share])
+		_need(share > 0.8, "terrain: only %.0f %% of %s can be walked to" % [100.0 * share, terrain.regions[r]["id"]])
 
 
 # Squad rules: a mixed pack round one target is planned the way data/fantasy/squad.json says.

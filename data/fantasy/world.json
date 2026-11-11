@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads).",
+ "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills), then the region's LANDFORMS (core/fantasy_terrain.gd `_landforms`; all fade out at places, along paths and round lakes): ridge {amp, rough, sharp} = mountain ridges; mesa {height, rough, level (higher = less table land), edge (smaller = steeper cliff)} = table land, with a small rough stone pillars; gorge {depth, rough, width} = winding cuts; dunes {amp, length} = waves of sand; terrace {step, soft} = the slope in steps; cone {place, open_to, crater, rim, radius, height} = a volcano round that place with its way in facing the other. After changing any of it raise RULES_VERSION in core/fantasy_terrain.gd (saved charts). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. clutter: {model: how many per chunk} = solid boulders, rock spires, logs, stumps and bushes scattered through the open country (models tools/blender/fantasy_clutter.py; at most 12 a chunk). nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads).",
  "size": 2000,
  "seed": 7411,
  "chunk": 50,
@@ -27,9 +27,29 @@
     6
    ],
    "height": {
-    "base": 6,
-    "amp": 5,
-    "rough": 140
+    "base": 9,
+    "amp": 9,
+    "rough": 120,
+    "ridge": {
+     "amp": 12,
+     "rough": 190,
+     "sharp": 2.5
+    },
+    "mesa": {
+     "height": 7,
+     "rough": 55,
+     "level": 0.5,
+     "edge": 0.09
+    },
+    "terrace": {
+     "step": 2.5,
+     "soft": 0.65
+    },
+    "gorge": {
+     "depth": 6,
+     "rough": 180,
+     "width": 0.1
+    }
    },
    "ground": [
     [
@@ -109,6 +129,13 @@
    "fish": {
     "fresh": "pond_spot",
     "salt": "shallows_spot"
+   },
+   "clutter": {
+    "boulder_grey": 1.2,
+    "bush_gold": 2.6,
+    "bush_green": 1.2,
+    "stump": 0.6,
+    "fallen_log": 0.6
    }
   },
   {
@@ -124,8 +151,18 @@
    ],
    "height": {
     "base": 14,
-    "amp": 12,
-    "rough": 110
+    "amp": 14,
+    "rough": 110,
+    "ridge": {
+     "amp": 18,
+     "rough": 180,
+     "sharp": 2.0
+    },
+    "gorge": {
+     "depth": 12,
+     "rough": 170,
+     "width": 0.11
+    }
    },
    "ground": [
     [
@@ -208,6 +245,12 @@
    "fish": {
     "fresh": "river_spot",
     "salt": "shallows_spot"
+   },
+   "clutter": {
+    "boulder_moss": 1.8,
+    "bush_green": 3.4,
+    "fallen_log": 1.8,
+    "stump": 1.4
    }
   },
   {
@@ -224,7 +267,18 @@
    "height": {
     "base": 3,
     "amp": 4,
-    "rough": 160
+    "rough": 160,
+    "mesa": {
+     "height": 11,
+     "rough": 120,
+     "level": 0.12,
+     "edge": 0.05
+    },
+    "gorge": {
+     "depth": 4,
+     "rough": 140,
+     "width": 0.08
+    }
    },
    "ground": [
     [
@@ -303,6 +357,12 @@
    "fish": {
     "fresh": "river_spot",
     "salt": "sea_spot"
+   },
+   "clutter": {
+    "boulder_grey": 1.6,
+    "bush_dry": 1.6,
+    "fallen_log": 1.0,
+    "bush_green": 0.8
    }
   },
   {
@@ -318,8 +378,23 @@
    ],
    "height": {
     "base": 10,
-    "amp": 14,
-    "rough": 90
+    "amp": 8,
+    "rough": 110,
+    "mesa": {
+     "height": 24,
+     "rough": 130,
+     "level": 0.24,
+     "edge": 0.045
+    },
+    "dunes": {
+     "amp": 3.5,
+     "length": 34
+    },
+    "gorge": {
+     "depth": 9,
+     "rough": 150,
+     "width": 0.08
+    }
    },
    "ground": [
     [
@@ -398,6 +473,11 @@
    "fish": {
     "fresh": "oasis_spot",
     "salt": "sea_spot"
+   },
+   "clutter": {
+    "boulder_sand": 2.6,
+    "spire_sand": 1.0,
+    "bush_dry": 2.4
    }
   },
   {
@@ -412,9 +492,19 @@
     32
    ],
    "height": {
-    "base": 42,
-    "amp": 26,
-    "rough": 120
+    "base": 40,
+    "amp": 20,
+    "rough": 130,
+    "ridge": {
+     "amp": 42,
+     "rough": 300,
+     "sharp": 1.6
+    },
+    "gorge": {
+     "depth": 14,
+     "rough": 220,
+     "width": 0.12
+    }
    },
    "ground": [
     [
@@ -493,6 +583,12 @@
    "fish": {
     "fresh": "ice_spot",
     "salt": "deepsea_spot"
+   },
+   "clutter": {
+    "boulder_ice": 2.4,
+    "ice_shards": 1.8,
+    "fallen_log": 0.8,
+    "stump": 0.6
    }
   },
   {
@@ -507,9 +603,27 @@
     39
    ],
    "height": {
-    "base": 30,
-    "amp": 30,
-    "rough": 100
+    "base": 28,
+    "amp": 16,
+    "rough": 110,
+    "ridge": {
+     "amp": 20,
+     "rough": 200,
+     "sharp": 2.2
+    },
+    "gorge": {
+     "depth": 6,
+     "rough": 120,
+     "width": 0.07
+    },
+    "cone": {
+     "place": "caldera",
+     "open_to": "anvilgate",
+     "crater": 52,
+     "rim": 100,
+     "radius": 280,
+     "height": 55
+    }
    },
    "ground": [
     [
@@ -588,6 +702,11 @@
    "fish": {
     "fresh": "lava_spot",
     "salt": "deepsea_spot"
+   },
+   "clutter": {
+    "boulder_basalt": 2.8,
+    "spire_basalt": 1.6,
+    "bush_ash": 1.6
    }
   },
   {
@@ -602,9 +721,25 @@
     45
    ],
    "height": {
-    "base": 60,
-    "amp": 22,
-    "rough": 150
+    "base": 58,
+    "amp": 18,
+    "rough": 150,
+    "ridge": {
+     "amp": 55,
+     "rough": 340,
+     "sharp": 1.5
+    },
+    "mesa": {
+     "height": 22,
+     "rough": 70,
+     "level": 0.42,
+     "edge": 0.06
+    },
+    "gorge": {
+     "depth": 18,
+     "rough": 220,
+     "width": 0.13
+    }
    },
    "ground": [
     [
@@ -684,6 +819,11 @@
    "fish": {
     "fresh": "ice_spot",
     "salt": "deepsea_spot"
+   },
+   "clutter": {
+    "boulder_grey": 2.6,
+    "spire_grey": 1.8,
+    "bush_dry": 1.0
    }
   },
   {
@@ -700,7 +840,16 @@
    "height": {
     "base": 24,
     "amp": 8,
-    "rough": 80
+    "rough": 80,
+    "terrace": {
+     "step": 3.5,
+     "soft": 0.6
+    },
+    "gorge": {
+     "depth": 7,
+     "rough": 90,
+     "width": 0.12
+    }
    },
    "ground": [
     [
@@ -775,6 +924,11 @@
    "fish": {
     "fresh": "ice_spot",
     "salt": "deepsea_spot"
+   },
+   "clutter": {
+    "boulder_pale": 2.6,
+    "bush_ash": 2.0,
+    "spire_grey": 0.8
    }
   }
  ],

@@ -57,7 +57,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !heard [seconds] (the sounds audible in the last seconds into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -153,6 +153,29 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for recipe: Dictionary in land.get("skilling")["recipes"]:
 				if String(recipe["id"]) == words[1]:
 					_lines.append("make %s -> '%s'" % [words[1], str(land.get("work").call("make", recipe))])
+		"above":  # a picture from the air: "!above name [height] [yaw degrees]" looks down at the player's spot from that height and side (no HUD)
+			var was := get_viewport().get_camera_3d()
+			var high := Camera3D.new()
+			get_tree().root.add_child(high)
+			var up := float(words[2]) if words.size() > 2 else 60.0
+			var turn := deg_to_rad(float(words[3])) if words.size() > 3 else 0.0
+			high.global_position = player.global_position + Vector3(sin(turn) * up * 1.3, up, cos(turn) * up * 1.3)
+			high.look_at(player.global_position, Vector3.UP)
+			high.fov = 60.0
+			high.far = was.far
+			high.current = true
+			var layers: Array = []
+			for found in get_tree().root.find_children("*", "CanvasLayer", true, false):
+				if (found as CanvasLayer).visible:
+					(found as CanvasLayer).visible = false
+					layers.append(found)
+			for i in 4:
+				await RenderingServer.frame_post_draw
+			get_viewport().get_texture().get_image().save_jpg(OUT + "boot_%s_%s.jpg" % ["forward_plus" if RenderingServer.get_rendering_device() != null else "compatibility", words[1]], 0.9)
+			for layer: CanvasLayer in layers:
+				layer.visible = true
+			was.current = true
+			high.queue_free()
 		"photo":  # a clean picture for the loading screens (no HUD, no held gun): assets/ui/loading/<name>.jpg, listed in data/loading.json
 			var old := get_viewport().get_camera_3d()
 			var eye := Camera3D.new()

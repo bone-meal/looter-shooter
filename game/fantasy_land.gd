@@ -14,7 +14,24 @@ signal chunk_loaded(key: Vector2i, origin: Vector3)
 signal chunk_unloaded(key: Vector2i)
 
 const CELLS := 12  # squares along one side of a chunk
-const FAR_CELLS := 56  # squares along one side of the whole-land mesh
+const FAR_CELLS := 80  # squares along one side of the whole-land mesh
+# The whole-land mesh is coarse: where real ground chunks are shown it is cut away (uniform `hole`), or it would lie
+# over gorges and hollows it knows nothing about.
+const FAR_CODE := """shader_type spatial;
+render_mode cull_back;
+uniform vec4 hole = vec4(0.0, 0.0, -1.0, 0.0);
+varying vec3 spot;
+void vertex() {
+	spot = VERTEX;
+}
+void fragment() {
+	if (abs(spot.x - hole.x) < hole.z && abs(spot.z - hole.y) < hole.z) {
+		discard;
+	}
+	ALBEDO = mix(pow((COLOR.rgb + vec3(0.055)) * (1.0 / 1.055), vec3(2.4)), COLOR.rgb * (1.0 / 12.92), lessThan(COLOR.rgb, vec3(0.04045)));
+	ROUGHNESS = 1.0;
+	SPECULAR = 0.1;
+}"""
 const FAR_DROP := 5.0  # the far mesh sits this much lower so near ground always covers it
 const APPLY_PER_FRAME := 2
 
@@ -28,6 +45,7 @@ var _grids := {}  # Vector2i -> [vertices, blend] of a shown chunk's mesh: cheap
 var _ready_list: Array = []  # [key, arrays, faces] from the threads
 var _lock := Mutex.new()
 var _center := Vector2i(9999, 9999)
+var _far_mat := ShaderMaterial.new()
 
 
 func setup(land: FantasyTerrain) -> void:
@@ -127,6 +145,25 @@ func follow(local: Vector3) -> void:
 	for key in wanted:
 		_chunks[key] = null
 		WorkerThreadPool.add_task(_work.bind(key), true)  # high priority: every pool thread may take them (low priority gets very few)
+	_cut_far()
+
+
+# Cuts the whole-land mesh away where real chunks are shown all round the player.
+func _cut_far() -> void:
+	var rings := -1
+	for k in range(0, radius + 1):
+		var whole := true
+		for dz in range(-k, k + 1):
+			for dx in range(-k, k + 1):
+				if maxi(absi(dx), absi(dz)) != k:
+					continue
+				var key := Vector2i(_center.x + dx, _center.y + dz)
+				if absi(key.x) <= _half and absi(key.y) <= _half and _chunks.get(key) == null:
+					whole = false
+		if not whole:
+			break
+		rings = k
+	_far_mat.set_shader_parameter("hole", Vector4((float(_center.x) + 0.5) * _chunk, (float(_center.y) + 0.5) * _chunk, (float(rings) + 0.5) * _chunk - 1.0 if rings >= 1 else -1.0, 0.0))
 
 
 # The player arrives (behind the fade): waits only for the ground under and right around the point. Everything
@@ -185,6 +222,7 @@ func _apply(limit: int) -> void:
 		_chunks[key] = holder
 		_grids[key] = [job[1][Mesh.ARRAY_VERTEX], job[1][Mesh.ARRAY_CUSTOM0]]
 		chunk_loaded.emit(key, holder.position)
+		_cut_far()
 
 
 # Runs on a worker thread: heights, normals and colours of one chunk.
@@ -265,11 +303,23 @@ func _arrays(x0: float, z0: float, cell: float, cells: int, drop: float, relativ
 	return arrays
 
 
+# The whole land as one coarse mesh for the distance. Its heights are worked out on a worker thread (it is not needed
+# for the first steps: the chunks under the player come first).
 func _add_far_mesh() -> void:
-	var cell := terrain.size / float(FAR_CELLS)
+	var shader := Shader.new()
+	shader.code = FAR_CODE
+	_far_mat.shader = shader
+	WorkerThreadPool.add_task(_far_work, true)
+
+
+func _far_work() -> void:
+	_show_far.call_deferred(_arrays(-terrain.size / 2.0, -terrain.size / 2.0, terrain.size / float(FAR_CELLS), FAR_CELLS, FAR_DROP, false))
+
+
+func _show_far(arrays: Array) -> void:
 	var mesh := ArrayMesh.new()
-	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, _arrays(-terrain.size / 2.0, -terrain.size / 2.0, cell, FAR_CELLS, FAR_DROP, false))
-	mesh.surface_set_material(0, FantasyModels.paint())
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	mesh.surface_set_material(0, _far_mat)
 	var far := MeshInstance3D.new()
 	far.mesh = mesh
 	far.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF

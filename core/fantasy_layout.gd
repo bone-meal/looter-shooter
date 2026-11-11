@@ -11,6 +11,7 @@ extends RefCounted
 const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
 
 const TREE_SLOTS := 10
+const CLUTTER_SLOTS := 12  # the most pieces of solid clutter on one piece of land
 const NODE_SLOTS := 8
 const GRID := 12.0  # metres: side of one square of the obstacle grid
 const WADE := 0.5  # creatures do not go into water deeper than this
@@ -25,6 +26,7 @@ var interiors: RefCounted  # core/fantasy_interiors.gd, set by whoever builds th
 var _places := {}  # place id -> Array of items
 var _sites := {}  # Vector2i cell -> site ({} = nothing there)
 var _trees := {}  # chunk key -> Array of [model, x, z, grow, turn]
+var _clutter := {}  # chunk key -> Array of [model, x, z, grow, turn, radius]
 var _grid := {}  # Vector2i square -> Array of [x, z, half width, half depth, cos, sin]
 var _walk_over := {}  # models nobody bumps into (rugs, crop rows ...): rules "walk_over"
 var _plugs := {}  # place or site id -> Array of [x, z, radius]
@@ -283,6 +285,34 @@ func trees(key: Vector2i) -> Array:
 	return out
 
 
+# The solid clutter of one piece of land (boulders, logs, bushes ...: data/fantasy/world.json regions.clutter,
+# {model: how many per chunk}): [model, x, z, grow, turn, radius]. It is why nobody walks backwards across the land
+# for ever. Like trees it keeps off steep ground, water, paths, places and sites.
+func clutter(key: Vector2i) -> Array:
+	if _clutter.has(key):
+		return _clutter[key]
+	var out: Array = []
+	for slot in CLUTTER_SLOTS:
+		var x := (float(key.x) + FantasyTerrain.hash01(key.x, key.y, slot * 3 + 301)) * _chunk
+		var z := (float(key.y) + FantasyTerrain.hash01(key.x, key.y, slot * 3 + 302)) * _chunk
+		var kinds: Dictionary = terrain.region_at(x, z).get("clutter", {})
+		var total := 0.0
+		for id: String in kinds:
+			total += float(kinds[id])
+		var pick := FantasyTerrain.hash01(key.x, key.y, slot * 3 + 303) * float(CLUTTER_SLOTS)
+		if pick >= total or not _free_ground(x, z):
+			continue
+		for id: String in kinds:
+			pick -= float(kinds[id])
+			if pick <= 0.0:
+				var grow := 0.75 + 0.6 * FantasyTerrain.hash01(key.x, key.y, slot + 340)
+				var size: Dictionary = props.get(id, {})
+				out.append([id, x, z, grow, FantasyTerrain.hash01(key.x, key.y, slot + 370) * TAU, 0.21 * (float(size.get("w", 1.0)) + float(size.get("d", 1.0))) * grow])
+				break
+	_clutter[key] = out
+	return out
+
+
 # The things to gather on one piece of land: [slot, node id, x, y, z, turn]. Fishing spots sit ON the water of a lake,
 # a pond or the sea, a rod's cast from the bank, and give that region's fresh or salt water fish.
 func nodes(key: Vector2i) -> Array:
@@ -476,6 +506,11 @@ func push_out(x: float, z: float, pad: float) -> Vector2:
 		var reach := 0.35 * float(tree[3]) + pad
 		if away.length() < reach:
 			at = Vector2(tree[1], tree[2]) + (away.normalized() if away.length() > 0.01 else Vector2.RIGHT) * reach
+	for thing: Array in clutter(Vector2i(floori(at.x / _chunk), floori(at.y / _chunk))):
+		var away := at - Vector2(thing[1], thing[2])
+		var reach := float(thing[5]) + pad
+		if away.length() < reach:
+			at = Vector2(thing[1], thing[2]) + (away.normalized() if away.length() > 0.01 else Vector2.RIGHT) * reach
 	return at
 
 

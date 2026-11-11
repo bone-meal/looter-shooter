@@ -1,4 +1,4 @@
-Round 4 part 3 (E): gun sounds (8 shots, reloads, dry click, explosion) and enemy attack sounds, all on the Sounds page
+Round 4 part 4 (A+B): sculpted terrain (ridges, mesas, gorges, dunes, terraces, volcano; calm at places and paths), far ground cut away under loaded chunks, solid clutter (16 models), faster terrain rules
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
