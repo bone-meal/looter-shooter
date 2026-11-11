@@ -117,10 +117,14 @@ done: Ochre. The dunes will settle. Go well.
 [creature dune_scorpion]
 # WHAT: a common creature, level 18.
 name: Dune Scorpion
+# Its own attack (a fan). The name is not shown on screen today, it is here for the writers:
+move sting: Sting
 
 [creature sand_wraith]
 # WHAT: a common creature, level 22.
 name: Sand Wraith
+# Its own attack (a crawler). The name is not shown on screen today, it is here for the writers:
+move dust_devil: Dust Devil
 
 [creature glassmaw]
 # WHO: the BOSS of this region, level 25.
@@ -133,7 +137,12 @@ move glass_rain: Glass Rain
 [creature red_warrior]
 # WHAT: a warrior of the Red Banner tribe (the two tribes fight each other), level 20.
 name: Red Banner Warrior
+# Its own attack (a cry). The name is not shown on screen today, it is here for the writers:
+move war_cry: War Cry
 
 [creature blue_warrior]
 # WHAT: a warrior of the Blue Banner tribe (the two tribes fight each other), level 20.
 name: Blue Banner Warrior
+
+# Its own attack (a volley). The name is not shown on screen today, it is here for the writers:
+move spear_cast: Spear Cast

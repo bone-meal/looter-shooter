@@ -11,10 +11,10 @@ const TextBook = preload("res://core/text_book.gd")
 const FOLDER := "res://data/fantasy/"
 
 
-# {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "combat", "ground", "props", "text", "problems": PackedStringArray}
+# {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "combat", "ground", "squad", "props", "text", "problems": PackedStringArray}
 static func load_all() -> Dictionary:
 	var d := {}
-	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground"]:
+	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad"]:
 		d[part] = DataStore.load_json(FOLDER + part + ".json")
 	d["props"] = DataStore.load_json(FOLDER + "props.json")["props"]
 	var files := PackedStringArray([FOLDER + "writing/spells.txt", FOLDER + "writing/items.txt", FOLDER + "writing/skills.txt", FOLDER + "writing/buildings.txt"])

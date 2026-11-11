@@ -26,6 +26,7 @@ const StaffCaster = preload("res://game/staff_caster.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
 const CombatTools = preload("res://game/combat_tools.gd")
 const GroundMarks = preload("res://game/ground_marks.gd")
+const SquadCommand = preload("res://game/squad_command.gd")
 const FantasySpawner = preload("res://game/fantasy_spawner.gd")
 const BossMoves = preload("res://game/boss_moves.gd")
 const FantasySounds = preload("res://game/fantasy_sounds.gd")
@@ -70,6 +71,7 @@ var caster := StaffCaster.new()
 var effects := SpellEffects.new()
 var combat := CombatTools.new()  # dodge, ward, staff strike
 var marks := GroundMarks.new()  # what spells leave on the ground
+var squads := SquadCommand.new()  # the creatures' orders: who presses, who circles, who shoots from where
 var spawner := FantasySpawner.new()
 var moves := BossMoves.new()
 var panel := FantasyPanel.new()
@@ -160,6 +162,9 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	marks.effects = effects
 	marks.setup(data["ground"])
 	effects.touched.connect(marks.touch)
+	add_child(squads)
+	squads.source = director
+	squads.setup(self, player, data["squad"])
 	add_child(caster)
 	caster.setup(self, player, effects)
 	caster.cast_done.connect(_on_cast)
@@ -182,6 +187,8 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	moves.bodies = spawner.bodies
 	moves.reach_m = float(data["enemies"]["spawn"]["boss_leash_m"])
 	spawner.boss_woke.connect(moves.watch)
+	spawner.armed.connect(moves.watch)
+	moves.allies = Callable(director, "enemy_list")
 	spawner.boss_woke.connect(func(boss: Node3D, _moves: Array) -> void: sound("boss_wake", boss.global_position))
 	moves.started.connect(_on_move_started)
 	moves.summoned.connect(func(id: String, x: float, z: float) -> void: spawner.spawn_local(id, x, z, _player))
@@ -260,6 +267,7 @@ func interact() -> void:
 
 func _on_cast(spell: Dictionary, sequence: String, origin: Vector3, aim: Vector3) -> void:
 	panel.note_cast(spell, sequence)
+	squads.note_cast(sequence)
 	sound("cast_" + String((spell.get("look", {}) as Dictionary).get("shape", "puff")), origin)
 	if String(spell.get("secret", "")) != "":
 		sound("cast_big", origin)
@@ -283,7 +291,7 @@ func _on_move_started(boss: Node3D, index: int, at: Vector3, roll: int) -> void:
 # The name of a boss's special attack flashes on the HUD in the attack's own colour.
 func show_move(boss: Node3D, index: int) -> void:
 	var list: Array = spawner.stats_of(String(boss.get("enemy_id"))).get("moves", [])
-	if index >= 0 and index < list.size():
+	if index >= 0 and index < list.size() and bool(spawner.stats_of(String(boss.get("enemy_id"))).get("boss", false)):  # only a boss's attack is announced by name
 		var c: Array = list[index].get("color", [1.0, 0.6, 0.3])
 		boss_move.emit(String(list[index]["name"]), Color(c[0], c[1], c[2]))
 
@@ -420,6 +428,7 @@ func leave() -> void:
 		spawner.stop()  # online the host keeps running them for whoever is still in there
 	effects.clear()
 	marks.clear()
+	squads.clear()
 	moves.clear()
 	combat.set_active(false)
 	rooms.reset()
@@ -810,15 +819,15 @@ func set_indoors(on: bool) -> void:
 
 
 func refresh_marks() -> void:
-	var marks := {}
+	var over_heads := {}
 	for id in quests.active:
 		var step := quests.step(id)
 		if String(step.get("type", "")) == "talk":
-			marks[String(step["npc"])] = "..."
+			over_heads[String(step["npc"])] = "..."
 	for person: Dictionary in places.people:
 		if not quests.offers(String(person["id"])).is_empty():
-			marks[String(person["id"])] = "!"
-	places.set_marks(marks)
+			over_heads[String(person["id"])] = "!"
+	places.set_marks(over_heads)
 
 
 # --- travel and commands ---

@@ -119,10 +119,14 @@ done: That'll hold a winter.
 [creature reef_crab]
 # WHAT: a common creature, level 12.
 name: Reef Crab
+# Its own attack (a blink). The name is not shown on screen today, it is here for the writers:
+move burrow: Burrow
 
 [creature drowned_sailor]
 # WHAT: a common creature, level 15.
 name: Drowned Sailor
+# Its own attack (a hook). The name is not shown on screen today, it is here for the writers:
+move anchor_haul: Anchor Haul
 
 [creature tidewarden]
 # WHO: the BOSS of this region, level 18.

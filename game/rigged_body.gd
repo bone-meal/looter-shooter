@@ -169,9 +169,9 @@ func setup(look: Dictionary) -> bool:
 	var palm := BoneAttachment3D.new()
 	_skeleton.add_child(palm)
 	palm.bone_name = "hand_r"
-	var grip: Array = (d["motion"] as Dictionary).get("hand_grip", [0.0, 0.09, 0.02])
+	var hand_grip: Array = (d["motion"] as Dictionary).get("hand_grip", [0.0, 0.09, 0.02])
 	# the hand bone points along its +Y with +Z up; weapon models point along -Z with +Y up
-	_hand.transform = Transform3D(Basis(Vector3.RIGHT, Vector3.BACK, Vector3.DOWN), Vector3(float(grip[0]), float(grip[1]), float(grip[2])))
+	_hand.transform = Transform3D(Basis(Vector3.RIGHT, Vector3.BACK, Vector3.DOWN), Vector3(float(hand_grip[0]), float(hand_grip[1]), float(hand_grip[2])))
 	palm.add_child(_hand)
 	_handles = RiggedPose.new()
 	_skeleton.add_child(_handles)

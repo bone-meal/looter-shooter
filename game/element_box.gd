@@ -65,7 +65,7 @@ func _draw() -> void:
 	if _flash > 0.0:
 		draw_rect(box, Color(_flash_color, _flash * 2.0), false, 3.0)
 	for i in slots:
-		var center := box.position + Vector2(4.0 + GAP + float(i % PER_ROW) * (CELL + GAP) + CELL * 0.5, 4.0 + GAP + float(i / PER_ROW) * (CELL + GAP) + CELL * 0.5)
+		var center := box.position + Vector2(4.0 + GAP + float(i % PER_ROW) * (CELL + GAP) + CELL * 0.5, 4.0 + GAP + floorf(float(i) / float(PER_ROW)) * (CELL + GAP) + CELL * 0.5)
 		if i < sequence.length():
 			var c: Array = elements[sequence[i]]["color"]
 			Style.element_sign(self, sequence[i], center, CELL * 0.5, Color(c[0], c[1], c[2]))

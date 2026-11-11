@@ -95,10 +95,14 @@ done: Look. The Crown has a sky again. The land is yours to walk as you like, wi
 [creature pale_knight]
 # WHAT: a common creature, level 46.
 name: Pale Knight
+# Its own attack (a guard). The name is not shown on screen today, it is here for the writers:
+move shield_wall: Shield Wall
 
 [creature hollow_shade]
 # WHAT: a common creature, level 48.
 name: Hollow Shade
+# Its own attack (a step). The name is not shown on screen today, it is here for the writers:
+move shadow_step: Shadow Step
 
 [creature pallid_king]
 # WHO: the BOSS of this region, level 50.

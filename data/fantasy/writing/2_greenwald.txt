@@ -125,14 +125,20 @@ done: Look at the leaves. Verdant. You carry it now.
 [creature forest_wolf]
 # WHAT: a common creature, level 6.
 name: Forest Wolf
+# Its own attack (a leap). The name is not shown on screen today, it is here for the writers:
+move pounce: Pounce
 
 [creature mossgoblin]
 # WHAT: a common creature, level 8.
 name: Mossgoblin
+# Its own attack (a zones). The name is not shown on screen today, it is here for the writers:
+move spore_pot: Spore Pot
 
 [creature barkhide]
 # WHAT: a common creature, level 10.
 name: Barkhide
+# Its own attack (a pull). The name is not shown on screen today, it is here for the writers:
+move root_grasp: Root Grasp
 
 [creature rootmother]
 # WHO: the BOSS of this region, level 12.

@@ -12,9 +12,9 @@ var _order: Array[String] = []
 
 
 func _init(quest_data: Dictionary) -> void:
-	for quest: Dictionary in quest_data["quests"]:
-		_quests[String(quest["id"])] = quest
-		_order.append(String(quest["id"]))
+	for entry: Dictionary in quest_data["quests"]:
+		_quests[String(entry["id"])] = entry
+		_order.append(String(entry["id"]))
 
 
 func ids() -> Array[String]:

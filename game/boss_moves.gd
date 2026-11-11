@@ -1,11 +1,16 @@
-# Purpose: the special attacks of the fantasy bosses. Each boss's list is data (data/fantasy/enemies.json "moves"):
-# every move has a kind, how often it comes, a warning time and its numbers. A move first paints its warning on the
+# Purpose: the special attacks of the fantasy world's bosses AND of its ordinary creatures (every creature has one
+# of its own). Each list is data (data/fantasy/enemies.json "moves"): every move has a kind, how often it comes
+# ("every"), how near the target must be ("range", "min_range"), a warning time and its numbers. A move first paints its warning on the
 # ground in its own colour (a circle or a lane that fills up), then strikes. The host decides who is hit; the other
 # machines are told which move started where and draw the same thing (replay) without deciding anything.
 # Kinds: slam (circle around the boss), charge (a lane, then the boss rushes down it), summon (helpers appear),
 # zones (circles under the players that stay and burn), volley (a fan of shots), pull (drags everyone in, or blows
 # them away), rain (many small circles falling one after another), beam (a lane that stays lit), blink (the boss
-# vanishes and comes down where the player stood).
+# vanishes and comes down where the player stood), leap (it jumps to where the player stood), hook (a lane; whoever
+# stands in it is hit and hauled to the creature), fan (a wedge in front of it: a breath or a sting), crawler (a
+# circle that travels away from it), guard (it takes only a share of every hit for a while, then lashes out), step
+# (it appears on the far side of the player), cry (creatures near it get faster and stronger).
+# "hold": true = the creature stands still while it winds the move up (bosses keep walking, as before).
 # Dependencies: game/fantasy_world.gd (terrain heights, walk_world, sound), game/enemy.gd (position, shoot, stats).
 # Marks are pooled; nothing is allocated while a move runs.
 extends Node3D
@@ -13,7 +18,7 @@ extends Node3D
 signal started(boss: Node3D, index: int, at: Vector3, roll: int)  # host: tell the HUD and the other machines
 signal summoned(enemy_id: String, x: float, z: float)  # host: a helper should appear at this spot of the map
 
-const MARKS := 24
+const MARKS := 40
 const TICK := 0.4  # seconds between hits of something that stays (zones, beam)
 const MARK_CODE := """shader_type spatial;
 render_mode unshaded, cull_disabled, depth_draw_never, blend_mix, shadows_disabled;
@@ -21,6 +26,7 @@ uniform vec4 tint : source_color = vec4(1.0);
 uniform float fill = 0.0;
 uniform float strip = 0.0;
 uniform float hot = 0.0;
+uniform float wedge = 4.0;
 void fragment() {
 	vec2 p = UV * 2.0 - 1.0;
 	float d = mix(length(p), max(abs(p.x), abs(p.y)), strip);
@@ -30,11 +36,12 @@ void fragment() {
 	float warn = max(edge * 0.95, body);
 	float strike = step(d, 1.0) * (0.85 - 0.45 * d);
 	ALBEDO = tint.rgb * (1.0 + hot * 1.5);
-	ALPHA = mix(warn, strike, hot) * tint.a;
+	ALPHA = mix(warn, strike, hot) * tint.a * step(abs(atan(p.x, p.y)), wedge);
 }"""
 
 var bodies: Callable  # everyone a boss can hit (the spawner's list); used on the host only
 var reach_m := 80.0  # a boss uses a special attack only on somebody this close (it reached across the whole map before)
+var allies: Callable  # every creature alive (the director's list): whom a war cry reaches; host only
 
 var _world: Node3D
 var _player: Node3D
@@ -138,8 +145,9 @@ func _process(delta: float) -> void:
 			for body: Node3D in all:
 				if body.global_position.distance_to(boss.global_position) < target.global_position.distance_to(boss.global_position):
 					target = body
-			if target.global_position.distance_to(boss.global_position) > reach_m:
-				wait[ready] = 2.0  # nobody near: look again shortly
+			var gap := target.global_position.distance_to(boss.global_position)
+			if gap > minf(reach_m, float(entry["moves"][ready].get("range", reach_m))) or gap < float(entry["moves"][ready].get("min_range", 0.0)):
+				wait[ready] = 1.0 + randf()  # nobody at the right distance: look again shortly
 			else:
 				wait[ready] = float(entry["moves"][ready]["every"])
 				var roll := randi() & 0xFFFF
@@ -174,6 +182,7 @@ func _mark(at: Vector3, radius: float, color: Color, seconds: float) -> int:
 			_mats[i].set_shader_parameter("strip", 0.0)
 			_mats[i].set_shader_parameter("fill", 0.0)
 			_mats[i].set_shader_parameter("hot", 0.0)
+			_mats[i].set_shader_parameter("wedge", 4.0)
 			_mark_until[i] = now + seconds
 			return i
 	return -1
@@ -186,6 +195,20 @@ func _lane(from: Vector3, dir: Vector3, length: float, width: float, color: Colo
 		_marks[i].global_transform = Transform3D(basis, _ground(from + dir * length * 0.5))
 		_mats[i].set_shader_parameter("strip", 1.0)
 	return i
+
+
+# A wedge in front of `from`, `arc_deg` wide and `radius` long.
+func _fan(from: Vector3, dir: Vector3, radius: float, arc_deg: float, color: Color, seconds: float) -> int:
+	var i := _mark(from, radius, color, seconds)
+	if i >= 0:
+		_marks[i].global_transform = Transform3D(Basis(Vector3.UP, atan2(dir.x, dir.z)).scaled_local(Vector3(radius, 1.0, radius)), _ground(from))
+		_mats[i].set_shader_parameter("wedge", deg_to_rad(arc_deg) * 0.5)
+	return i
+
+
+func _move_mark(i: int, at: Vector3, radius: float) -> void:
+	if i >= 0:
+		_marks[i].global_transform = Transform3D(Basis.IDENTITY.scaled(Vector3(radius, 1.0, radius)), _ground(at))
 
 
 func _fill(i: int, share: float) -> void:
@@ -229,6 +252,27 @@ func _hit_lane(run: Dictionary, from: Vector3, dir: Vector3, length: float, widt
 		if along > -1.0 and along < length and side < width * 0.5:
 			body.set("struck_by", run["boss"])
 			body.call("take_damage", _damage(run) * share, String(run["move"].get("element", "physical")))
+
+
+func _hit_fan(run: Dictionary, from: Vector3, dir: Vector3, radius: float, arc_deg: float) -> void:
+	if bool(run["show"]) or not bodies.is_valid():
+		return
+	var half := deg_to_rad(arc_deg) * 0.5
+	for body: Node3D in bodies.call():
+		var rel := Vector2(body.global_position.x - from.x, body.global_position.z - from.z)
+		if rel.length() < radius and (rel.length() < 1.0 or absf(Vector2(dir.x, dir.z).angle_to(rel)) < half):
+			body.set("struck_by", run["boss"])
+			body.call("take_damage", _damage(run), String(run["move"].get("element", "physical")))
+
+
+# Where a creature of this size can stand nearest to (x, z).
+func _standing(boss: Node3D, x: float, z: float) -> Vector3:
+	return _world.call("walk_world", Vector3(x, 0.0, z), Vector3.ZERO, float(boss.get("_size").x) * 0.5, 0, 0.0)
+
+
+func _sound(boss: Node3D, strikes: bool, at: Vector3) -> void:
+	var big := bool((boss.get("_stats") as Dictionary).get("boss", false))
+	_world.call("sound", ("boss_hit" if strikes else "boss_warn") if big else ("creature_hit" if strikes else "creature_warn"), at)
 
 
 # --- running a move ---
@@ -275,10 +319,27 @@ func _begin(boss: Node3D, move: Dictionary, at: Vector3, roll: int, show_only: b
 			marks.append(_mark(at, float(move["radius"]), color, windup + 0.35))
 		"volley":
 			marks.append(_mark(from, float(boss.get("_size").x) * 0.5 + 1.0, color, windup))
+		"leap":
+			marks.append(_mark(at, float(move["radius"]), color, windup + float(move.get("air", 0.3)) + 0.35))
+		"hook":
+			marks.append(_lane(from, dir, float(move["range"]), float(move["width"]), color, windup + 0.3))
+		"fan":
+			marks.append(_fan(from, dir, float(move["radius"]), float(move["arc"]), color, windup + 0.3))
+		"crawler":
+			marks.append(_mark(from, float(move["radius"]), color, windup + float(move["seconds"])))
+		"guard":
+			marks.append(_mark(from, float(boss.get("_size").x) * 0.5 + 1.2, color, windup + float(move["seconds"])))
+		"step":
+			run["at"] = at + dir * float(move["distance"])  # the far side of the target
+			marks.append(_mark(run["at"], 1.2, color, windup + 0.3))
+		"cry":
+			marks.append(_mark(from, float(move["radius"]), color, windup + 0.4))
 	run["marks"] = marks
 	run["spots"] = spots
 	_running.append(run)
-	_world.call("sound", "boss_warn", from)
+	if not show_only and bool(move.get("hold", false)):
+		boss.call("hold", windup + float(move.get("air", 0.0)))
+	_sound(boss, false, from)
 
 
 # Advances one running move. Returns true when it is over.
@@ -299,8 +360,41 @@ func _step(run: Dictionary, delta: float) -> bool:
 			return false
 		run["stage"] = 1
 		run["next"] = t
-		_world.call("sound", "boss_hit", boss.global_position)
+		_sound(boss, true, boss.global_position)
 		match kind:
+			"leap":
+				run["from"] = boss.global_position  # where it takes off
+			"hook":
+				_strike(marks[0], 0.3)
+				_hit_lane(run, from, dir, float(move["range"]), float(move["width"]))
+				var mine := _player.global_position - from  # every machine hauls its own player
+				var along := mine.x * dir.x + mine.z * dir.z
+				if along > 1.5 and along < float(move["range"]) and absf(mine.x * dir.z - mine.z * dir.x) < float(move["width"]) * 0.5:
+					_player.call("shove", -dir * float(move["pull"]))
+				return true
+			"fan":
+				_strike(marks[0], 0.3)
+				_hit_fan(run, from, dir, float(move["radius"]), float(move["arc"]))
+				return true
+			"crawler":
+				_strike(marks[0], float(move["seconds"]))
+			"guard":
+				_strike(marks[0], float(move["seconds"]))
+				if not bool(run["show"]):
+					boss.call("guard", float(move["taken"]), float(move["seconds"]))
+			"step":
+				if not bool(run["show"]):
+					var there: Vector3 = run["at"]
+					boss.global_position = _standing(boss, there.x, there.z)
+				_strike(marks[0], 0.25)
+				return true
+			"cry":
+				_strike(marks[0], 0.4)
+				if not bool(run["show"]) and allies.is_valid():
+					for ally: Variant in allies.call():
+						if is_instance_valid(ally) and (ally as Node3D).global_position.distance_to(from) < float(move["radius"]) and (ally as Node).has_method("rally"):
+							(ally as Node).call("rally", float(move["speed"]), float(move["power"]), float(move["seconds"]))
+				return true
 			"slam":
 				_strike(marks[0], 0.3)
 				_hit_circle(run, from, float(move["radius"]))
@@ -332,6 +426,39 @@ func _step(run: Dictionary, delta: float) -> bool:
 			"beam":
 				_strike(marks[0], float(move["seconds"]))
 	match kind:
+		"leap":
+			# through the air to where the target stood, then it comes down on whoever is still there
+			var k := clampf((t - windup) / maxf(float(move.get("air", 0.3)), 0.05), 0.0, 1.0)
+			var landing: Vector3 = run["at"]
+			if not bool(run["show"]):
+				var down := _standing(boss, landing.x, landing.z)
+				boss.global_position = from.lerp(down, k) + Vector3(0.0, sin(k * PI) * 2.2, 0.0)
+			if k >= 1.0:
+				_strike(marks[0], 0.3)
+				_hit_circle(run, landing, float(move["radius"]))
+				return true
+			return false
+		"crawler":
+			var gone := (t - windup) * float(move["speed"])
+			var sway := dir.cross(Vector3.UP) * sin(gone * 0.6 + float(run["rng"].seed % 7)) * 1.5  # it wanders a little from side to side
+			var here := from + dir * gone + sway
+			_move_mark(marks[0], here, float(move["radius"]))
+			if not bool(run["show"]) and bodies.is_valid():
+				for body: Node3D in bodies.call():
+					if not (run["hit"] as Dictionary).has(body) and Vector2(body.global_position.x - here.x, body.global_position.z - here.z).length() < float(move["radius"]):
+						(run["hit"] as Dictionary)[body] = true
+						body.set("struck_from", here)
+						body.call("take_damage", _damage(run), String(move.get("element", "physical")))
+			return t >= windup + float(move["seconds"])
+		"guard":
+			_move_mark(marks[0], boss.global_position, float(boss.get("_size").x) * 0.5 + 1.2)
+			if t >= windup + float(move["seconds"]):
+				if float(move.get("slam", 0.0)) > 0.0:  # the guard ends with a blow all round
+					var m := _mark(boss.global_position, float(move["slam"]), _color(move), 0.3)
+					_strike(m, 0.3)
+					_hit_circle(run, boss.global_position, float(move["slam"]))
+				return true
+			return false
 		"charge":
 			var travelled := (t - windup) * float(move["speed"])
 			if not bool(run["show"]):
@@ -394,7 +521,7 @@ func _step(run: Dictionary, delta: float) -> bool:
 					(run["hit"] as Dictionary)[i] = true
 					_strike(marks[i], maxf(0.25, linger))
 					_hit_circle(run, spots[i], radius)
-					_world.call("sound", "boss_hit", spots[i])
+					_sound(boss, true, spots[i])
 				elif age < windup + linger and t >= float(run["next"]):
 					_hit_circle(run, spots[i], radius, TICK * 0.5)
 				if age >= windup + linger:

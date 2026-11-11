@@ -9,6 +9,8 @@ const OUT := "res://tools/userdata/"
 
 var _lines := PackedStringArray()
 var _counting := false  # !fight has hooked the ward's signal
+var _listening := false  # !moves has hooked the special attacks' signal
+var _used := PackedStringArray()  # "creature:move" for every special attack started since the last !moves
 var _wards := [0, 0]  # blows the ward stopped: [held, just in time]
 
 
@@ -19,6 +21,10 @@ func _ready() -> void:
 	var renderer := "forward_plus" if RenderingServer.get_rendering_device() != null else "compatibility"
 	_lines.append("renderer=%s adapter=%s" % [renderer, RenderingServer.get_video_adapter_name()])
 	_lines.append("the game was ready to play %d ms after the program started" % Time.get_ticks_msec())
+	var screen: Variant = _find_with(get_tree().root, "run_chat").get("loading")
+	while screen is Control and (screen as Control).visible:  # the first frames are drawn under the loading picture
+		await get_tree().process_frame
+	_lines.append("the loading picture was gone %d ms after the program started" % Time.get_ticks_msec())
 	await _stage(renderer, "first_person", 3.0)
 	for arg in OS.get_cmdline_user_args():  # --cmd=/tp club;/give unique all  runs chat lines, then one more picture
 		if arg.begins_with("--cmd="):
@@ -51,7 +57,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -182,6 +188,30 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"where":  # fantasy world: the player's spot in map metres, for the log
 			var here: Vector3 = session.call("fantasy").call("player_local")
 			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])
+		"usemove":  # fantasy world: the nearest creature starts its own attack at the player right now (to picture its warning)
+			var nearest_one: Node3D = null
+			for enemy: Variant in session.call("director").call("enemy_list"):
+				if is_instance_valid(enemy) and ((enemy as Node).get("_stats") as Dictionary).has("moves") and (nearest_one == null or (enemy as Node3D).global_position.distance_to(player.global_position) < nearest_one.global_position.distance_to(player.global_position)):
+					nearest_one = enemy
+			if nearest_one != null:
+				session.call("fantasy").get("moves").call("_begin", nearest_one, ((nearest_one.get("_stats") as Dictionary)["moves"] as Array)[0], player.global_position, 7, false)
+		"moves":  # fantasy world: which creatures have used their own attack since the last !moves (the first call only starts listening)
+			var special: Node = session.call("fantasy").get("moves")
+			if not _listening:
+				_listening = true
+				special.connect("started", func(who: Node3D, index: int, _at: Vector3, _roll: int) -> void:
+					_used.append("%s:%s" % [String(who.get("enemy_id")), String(((who.get("_stats") as Dictionary)["moves"] as Array)[index]["id"])]))
+			_lines.append("moves %s: %s" % [" ".join(words.slice(1)), ", ".join(_used)])
+			_used.clear()
+		"squad":  # fantasy world: every creature's order, how far it is and where it stands round the player (0 = dead ahead, 180 = behind)
+			var command: Node = session.call("fantasy").get("squads")
+			var ahead: Vector3 = player.call("view_forward")
+			var told := PackedStringArray()
+			for enemy: Variant in session.call("director").call("enemy_list"):
+				if is_instance_valid(enemy):
+					var off: Vector3 = (enemy as Node3D).global_position - player.global_position
+					told.append("%s [%s]%s %.0f m at %.0f deg" % [String((enemy as Node).get("enemy_id")), String(command.call("order_of", enemy)), " winding up" if float((enemy as Node).get("_strike_at")) > 0.0 else "", Vector2(off.x, off.z).length(), absf(rad_to_deg(Vector2(ahead.x, ahead.z).angle_to(Vector2(off.x, off.z))))])
+			_lines.append("squad %s: %s" % [" ".join(words.slice(1)), "; ".join(told)])
 		"marks":  # fantasy world: what lies on the ground, for the log
 			var lying: Node = session.call("fantasy").get("marks")
 			_lines.append("marks %s: spikes=%d fire=%d water=%d widest water %.1f m" % [" ".join(words.slice(1)), int(lying.call("count_of", "spikes")), int(lying.call("count_of", "fire")), int(lying.call("count_of", "water")), float(lying.call("widest", "water"))])

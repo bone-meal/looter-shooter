@@ -12,6 +12,7 @@ extends Node
 const SpellBook = preload("res://core/spell_book.gd")
 const CombatRules = preload("res://core/combat_rules.gd")
 const GroundRules = preload("res://core/ground_rules.gd")
+const SquadRules = preload("res://core/squad_rules.gd")
 const SkillLevels = preload("res://core/skill_levels.gd")
 const FantasyBag = preload("res://core/fantasy_bag.gd")
 const QuestLog = preload("res://core/quest_log.gd")
@@ -238,6 +239,64 @@ func _check_ground(ground: Dictionary, spells: Dictionary) -> void:
 	print("ground: %d of %d secret spells leave something on the ground" % [leaving, (spells["secrets"] as Array).size()])
 
 
+# True when some creature bursts into this one (it is the other's special attack, and needs none itself).
+func _split_from(enemies: Dictionary, id: String) -> bool:
+	for other: String in enemies:
+		if String((enemies[other].get("splits", {}) as Dictionary).get("into", "")) == id:
+			return true
+	return false
+
+
+# Squad rules: a mixed pack round one target is planned the way data/fantasy/squad.json says.
+func _check_squad(squad: Dictionary, enemies: Dictionary) -> void:
+	for id: String in enemies:
+		if not bool(enemies[id].get("boss", false)):
+			_need(String(enemies[id].get("role", "")) in ["front", "flank", "swarm", "ranged", "air"], "enemy %s has no squad role" % id)
+	var target := SquadRules.Target.new()
+	var pack: Array = []
+	var roles := ["front", "flank", "flank", "swarm", "swarm", "ranged", "ranged"]
+	for i in roles.size():
+		var m := SquadRules.Member.new()
+		m.role = roles[i]
+		m.pos = Vector2(float(i) - 3.0, 20.0)  # all coming from the south, side by side
+		m.reach = 2.0
+		m.prefer = 12.0 if roles[i] == "ranged" else 0.0
+		m.weak = "F"
+		m.strong = "W"
+		pack.append(m)
+	var base := Vector2(0, 1).angle()
+	SquadRules.plan(squad, pack, target, base, [], 0.0)
+	var striking := 0
+	for m: SquadRules.Member in pack:
+		if m.role != "ranged" and m.attack:
+			striking += 1
+	_need(striking == int(squad["engaged_melee"]), "squad: %d melee creatures strike at once, the data says %d" % [striking, int(squad["engaged_melee"])])
+	_need((pack[0] as SquadRules.Member).mode == "press", "squad: the front creature waits")
+	_need(is_equal_approx((pack[5] as SquadRules.Member).goal.length(), 12.0) and (pack[5] as SquadRules.Member).mode == "shoot", "squad: a shooter does not keep its distance")
+	var flank_a: Vector2 = (pack[1] as SquadRules.Member).goal
+	var flank_b: Vector2 = (pack[2] as SquadRules.Member).goal
+	_need(flank_a.x * flank_b.x < 0.0 and flank_a.y < 0.5 and flank_b.y < 0.5, "squad: the two flankers do not take opposite sides (%s, %s)" % [str(flank_a), str(flank_b)])
+	target.busy = true
+	SquadRules.plan(squad, pack, target, base, [], 0.0)
+	striking = 0
+	for m: SquadRules.Member in pack:
+		if m.role != "ranged" and m.attack:
+			striking += 1
+	_need(striking == mini(int(squad["engaged_melee_low"]), 5), "squad: a busy target is not rushed")
+	target.busy = false
+	target.letters = "F"  # everybody here fears fire
+	SquadRules.plan(squad, pack, target, base, [], 0.0)
+	_need(not (pack[1] as SquadRules.Member).attack and (pack[1] as SquadRules.Member).goal.length() > float(squad["circle_range"]) + 1.0, "squad: a creature does not shy from the element it is weak to")
+	_need((pack[0] as SquadRules.Member).attack, "squad: the front gives way to fear")
+	var afraid: Array = [pack[1], pack[2]]  # two flankers alone, both afraid: they still come, or the player could hold them off for ever
+	SquadRules.plan(squad, afraid, target, base, [], 0.0)
+	_need((pack[1] as SquadRules.Member).attack or (pack[2] as SquadRules.Member).attack, "squad: a pack that fears the element stops fighting altogether")
+	target.letters = ""
+	var fire := Vector3((pack[0] as SquadRules.Member).goal.x, (pack[0] as SquadRules.Member).goal.y, 3.0)
+	SquadRules.plan(squad, pack, target, base, [fire], 0.0)
+	_need((pack[0] as SquadRules.Member).goal.distance_to(Vector2(fire.x, fire.y)) >= 3.0, "squad: a creature is sent to stand in fire")
+
+
 # Fishing waters, boss moves, tribes, layouts.
 func _check_round_two(all: Dictionary) -> void:
 	var world: Dictionary = all["world"]
@@ -249,7 +308,7 @@ func _check_round_two(all: Dictionary) -> void:
 			if id != "":
 				_need(nodes.has(id), "region %s fishes unknown node %s" % [region["id"], id])
 				_need(not nodes.has(id) or String(nodes[id].get("water", "")) in [water, "lava"], "region %s: %s is not a %s water spot" % [region["id"], id, water])
-	var kinds := ["slam", "charge", "summon", "zones", "volley", "pull", "rain", "beam", "blink"]
+	var kinds := ["slam", "charge", "summon", "zones", "volley", "pull", "rain", "beam", "blink", "leap", "hook", "fan", "crawler", "guard", "step", "cry"]
 	var bosses := 0
 	for id: String in enemies:
 		var moves: Array = enemies[id].get("moves", [])
@@ -259,12 +318,16 @@ func _check_round_two(all: Dictionary) -> void:
 		for move: Dictionary in moves:
 			_need(String(move["kind"]) in kinds, "%s: unknown move kind %s" % [id, move["kind"]])
 			_need(String(move["kind"]) != "summon" or enemies.has(String(move.get("enemy", ""))), "%s summons an unknown creature" % id)
+		if not bool(enemies[id].get("boss", false)):
+			_need(moves.size() == 1 or enemies[id].has("splits") or enemies.has(id) and _split_from(enemies, id), "creature %s has no attack of its own" % id)
+		_need(not enemies[id].has("splits") or enemies.has(String(enemies[id]["splits"]["into"])), "%s splits into an unknown creature" % id)
 		_need(String(enemies[id].get("walks", "")) in ["land", "swim", "fly"], "enemy %s has no way of moving" % id)
 		var weak := String(enemies[id].get("weak", ""))
 		var strong := String(enemies[id].get("strong", ""))
 		_need(all["spells"]["elements"].has(weak) and all["spells"]["elements"].has(strong) and weak != strong, "enemy %s needs a weak and a different strong element" % id)
 	_check_combat(all["combat"])
 	_check_ground(all["ground"], all["spells"])
+	_check_squad(all["squad"], enemies)
 	var tribes: Dictionary = all["enemies"]["tribes"]
 	for banner: String in tribes["camps"]:
 		_need(enemies.has(banner + "_warrior"), "tribe %s has no warrior" % banner)

@@ -1,0 +1,23 @@
+{
+ "version": 1,
+ "_about": "How creatures that hunt the same player fight TOGETHER (rules: core/squad_rules.gd, play: game/squad_command.gd). Placeholders for the director. Every creature has a `role` in data/fantasy/enemies.json: front (tough melee: walks straight in and holds your eyes), flank (fast melee: goes for your sides and back), swarm (weak melee: comes from every side), ranged (keeps its distance behind the melee line, spread along an arc), air (flying melee: circles overhead and dives). tick: seconds between orders. radius: creatures within this of their target belong to its squad (farther ones just walk up). engaged_melee: how many melee creatures may strike at the same time; the rest wait in a ring at circle_range and take over every token_seconds (front creatures never wait). engaged_melee_low: that number while the target is below low_hp of its health or is busy (holding a ward or gathering a spell). front_spread_deg / flank_angle_deg / swarm_angle_deg / side_step_deg: where each role stands, in degrees off the line the squad came from (flankers and swarmers keep to the side they are already on; each further one stands side_step_deg farther round). ranged_arc_deg: shooters spread over this arc behind the front. air_ring / air_turn: flyers circle at this distance, this many degrees a second. fear: a creature WEAK to an element the target cast within fear_seconds hangs back by fear_back_m and loses its turn; one STRONG against it pushes to the front of the queue. retreat_hp: a wounded creature (not a front one) falls back by retreat_m behind the ring while at least two healthy ones still fight. behind_bonus: while the target is busy, creatures at its back get the next turn (a ward only covers the front). hazard_pad: nobody is sent to stand in burning ground or among spikes (game/ground_marks.gd); they stop this far outside.",
+ "tick": 0.4,
+ "radius": 45.0,
+ "engaged_melee": 2,
+ "engaged_melee_low": 4,
+ "low_hp": 0.35,
+ "circle_range": 6.0,
+ "token_seconds": 3.0,
+ "front_spread_deg": 28.0,
+ "flank_angle_deg": 110.0,
+ "swarm_angle_deg": 55.0,
+ "side_step_deg": 32.0,
+ "ranged_arc_deg": 100.0,
+ "air_ring": 7.5,
+ "air_turn_deg": 40.0,
+ "fear_seconds": 5.0,
+ "fear_back_m": 5.0,
+ "retreat_hp": 0.25,
+ "retreat_m": 8.0,
+ "hazard_pad": 1.0
+}

@@ -221,10 +221,16 @@ done: Smell that? That's what a full staff smells like.
 [creature strawling]
 # WHAT: a common creature, level 1.
 name: Strawling
+# Its own attack (a slam). The name is not shown on screen today, it is here for the writers:
+move flail: Flail
 
 [creature field_slime]
 # WHAT: a common creature, level 2.
 name: Field Slime
+
+[creature slimelet]
+# WHAT: what a Field Slime bursts into when it dies (two of them), level 1.
+name: Slimelet
 
 [creature harvest_king]
 # WHO: the BOSS of this region, level 6.

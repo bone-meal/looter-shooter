@@ -66,10 +66,10 @@ func setup(land_terrain: FantasyTerrain, world_layout: FantasyLayout, folk: Dict
 			for item: Dictionary in things:
 				if bool(layout.interiors.call("walk_in", String(item["model"]))):
 					var n := 0
-					for person: Dictionary in people:
-						if bool(person.get("indoors", false)) and String(person["place"]) == String(place["id"]):
+					for who: Dictionary in people:
+						if bool(who.get("indoors", false)) and String(who["place"]) == String(place["id"]):
 							var inside: Vector2 = layout.interiors.call("standing_spot", item, n)
-							person["at"] = Vector3(inside.x, terrain.height(inside.x, inside.y) + 0.02, inside.y)
+							who["at"] = Vector3(inside.x, terrain.height(inside.x, inside.y) + 0.02, inside.y)
 							n += 1
 					break
 		var words: Dictionary = folk.get(String(place["region"]), {})
@@ -123,15 +123,15 @@ func follow(local: Vector3) -> void:
 			if Vector2(local.x - float(site["x"]), local.z - float(site["z"])).length() > show_at + HIDE_EXTRA:
 				_unbuild(id)
 	for i in people.size():
-		var person: Dictionary = people[i]
-		var d := Vector2(local.x - person["at"].x, local.z - person["at"].z).length()
-		var wanted := d < PEOPLE_AT and (not bool(person["folk"]) or FantasyTerrain.hash01(i, 7, 3) < folk_share)
-		if wanted and person["node"] == null:
-			_stand(person)
-		elif person["node"] != null and d > PEOPLE_AT + 30.0:
-			(person["node"] as Node3D).queue_free()
-			person["node"] = null
-			person["mark"] = null
+		var who: Dictionary = people[i]
+		var d := Vector2(local.x - who["at"].x, local.z - who["at"].z).length()
+		var wanted := d < PEOPLE_AT and (not bool(who["folk"]) or FantasyTerrain.hash01(i, 7, 3) < folk_share)
+		if wanted and who["node"] == null:
+			_stand(who)
+		elif who["node"] != null and d > PEOPLE_AT + 30.0:
+			(who["node"] as Node3D).queue_free()
+			who["node"] = null
+			who["mark"] = null
 
 
 func station_near(local: Vector3, reach: float) -> Dictionary:
@@ -155,11 +155,11 @@ func fire_near(local: Vector3, reach: float) -> bool:
 func person_near(local: Vector3, reach: float) -> Dictionary:
 	var best := {}
 	var best_d := reach
-	for person: Dictionary in people:
-		var d := Vector2(local.x - person["at"].x, local.z - person["at"].z).length()
-		if d < best_d and person["node"] != null:
+	for who: Dictionary in people:
+		var d := Vector2(local.x - who["at"].x, local.z - who["at"].z).length()
+		if d < best_d and who["node"] != null:
 			best_d = d
-			best = person
+			best = who
 	return best
 
 

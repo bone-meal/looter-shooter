@@ -117,10 +117,14 @@ done: You've a miner's hands and a smith's patience.
 [creature storm_harpy]
 # WHAT: a common creature, level 39.
 name: Storm Harpy
+# Its own attack (a leap). The name is not shown on screen today, it is here for the writers:
+move dive: Dive
 
 [creature gale_spirit]
 # WHAT: a common creature, level 43.
 name: Gale Spirit
+# Its own attack (a pull). The name is not shown on screen today, it is here for the writers:
+move gust: Gust
 
 [creature tempest_roc]
 # WHO: the BOSS of this region, level 45.

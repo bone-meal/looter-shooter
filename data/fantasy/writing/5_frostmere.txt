@@ -123,10 +123,14 @@ done: Stew like that keeps a man alive up here.
 [creature frost_wolf]
 # WHAT: a common creature, level 25.
 name: Frost Wolf
+# Its own attack (a fan). The name is not shown on screen today, it is here for the writers:
+move frost_breath: Frost Breath
 
 [creature ice_golem]
 # WHAT: a common creature, level 29.
 name: Ice Golem
+# Its own attack (a rain). The name is not shown on screen today, it is here for the writers:
+move icefall: Icefall
 
 [creature rime_colossus]
 # WHO: the BOSS of this region, level 32.

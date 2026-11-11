@@ -134,6 +134,14 @@
     {
      "id": "clash",
      "label": "Tribes clashing"
+    },
+    {
+     "id": "creature_warn",
+     "label": "Creature winds up its own attack"
+    },
+    {
+     "id": "creature_hit",
+     "label": "Creature's own attack strikes"
     }
    ]
   },

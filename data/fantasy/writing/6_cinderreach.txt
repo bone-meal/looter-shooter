@@ -113,10 +113,14 @@ done: Crimson. My fire's red again. Take the sea with you, for the next fire you
 [creature magma_imp]
 # WHAT: a common creature, level 32.
 name: Magma Imp
+# Its own attack (a volley). The name is not shown on screen today, it is here for the writers:
+move lava_spit: Lava Spit
 
 [creature ash_drake]
 # WHAT: a common creature, level 36.
 name: Ash Drake
+# Its own attack (a charge). The name is not shown on screen today, it is here for the writers:
+move strafing_run: Strafing Run
 
 [creature cinderwyrm]
 # WHO: the BOSS of this region, level 39.

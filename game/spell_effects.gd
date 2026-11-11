@@ -36,7 +36,6 @@ var _jobs: Array = []  # running spells, see _run
 var _wet := {}  # enemy instance id -> engine time it dries
 var _said := {}  # creature -> engine time its next WEAK / RESISTS word may show
 var _broken := {}  # creature -> engine time a weak element may stagger it again
-var _hit_once := {}  # scratch: enemy instance id -> true
 
 
 func _ready() -> void:

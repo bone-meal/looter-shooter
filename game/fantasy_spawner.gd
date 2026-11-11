@@ -12,6 +12,7 @@ signal notice(text: String)
 signal spawned(enemy: Node3D)  # online: the host tells the other machines
 signal slain(enemy_id: String, where: Vector3)  # paid out on every machine
 signal boss_woke(enemy: Node3D, moves: Array)  # its special attacks start (game/boss_moves.gd)
+signal armed(enemy: Node3D, moves: Array)  # an ordinary creature with an attack of its own appeared (game/boss_moves.gd)
 
 const WALKS := {"land": 0, "swim": 1, "fly": 2}  # game/fantasy_world.gd WALK_*
 
@@ -193,6 +194,8 @@ func _spawn(id: String, x: float, z: float, near: Node3D) -> Node3D:
 	enemy.set_meta("tier", int(stats["level"]))
 	if bool(stats.get("boss", false)):
 		enemy.set_meta("fantasy_boss", true)
+	elif stats.has("moves"):
+		armed.emit(enemy, stats["moves"])
 	enemy.call("set_target", near)
 	spawned.emit(enemy)
 	return enemy
@@ -318,6 +321,12 @@ func _on_killed(where: Vector3, enemy_id: String, _elite: String, _wave: int) ->
 			boss["enemy"] = null
 			boss["respawn_at"] = Time.get_ticks_msec() / 1000.0 + float(_cfg["boss_respawn_s"])
 			notice.emit("%s DEFEATED" % String(_enemies[enemy_id]["name"]).to_upper())
+	var splits: Dictionary = _enemies[enemy_id].get("splits", {})
+	if not splits.is_empty():  # it bursts into smaller ones
+		var local: Vector3 = _world.local_of(where)
+		for i in int(splits["count"]):
+			var a := TAU * float(i) / float(splits["count"]) + _rng.randf()
+			_spawn(String(splits["into"]), local.x + cos(a) * 1.2, local.z + sin(a) * 1.2, _nearest(_bodies(), where))
 	slain.emit(enemy_id, where)
 
 

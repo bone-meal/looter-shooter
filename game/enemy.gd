@@ -31,6 +31,9 @@ var net_pos := Vector3.ZERO
 var net_yaw := 0.0
 var walker: Callable  # fantasy world: (from, step) -> where the body ends up. When set the enemy moves by it without physics: around houses, trees and deep water, the same on every machine
 var feud := ""  # fantasy tribes: the banner this warrior fights for ("" = none)
+var order_goal := Vector3.INF  # squad order (game/squad_command.gd): walk to this spot instead of straight at the target
+var order_attack := true  # squad order: it may strike now (false = it waits its turn)
+var order_until := 0.0  # engine time the order stops counting (orders are renewed a few times a second)
 var health: HealthState
 var _slow_until := 0.0  # gun buff: seconds (engine time) until the slow ends
 var _slow_amount := 0.0
@@ -71,6 +74,15 @@ var _chips := Color(0, 0, 0, 0)  # what flies off a fantasy creature when hit (s
 var _falling := false
 static var limbs_move := true  # graphics tier: on the lowest one fantasy creatures glide without swinging limbs or beating wings
 var _swing_left := 0.0
+var _strike_at := 0.0  # a wound-up melee blow lands at this engine time (0 = none coming); stats "attack_windup"
+var _windup := 0.0  # how long that wind-up is (for the tell: the body rears back)
+var _lunge := 0.0  # 1 right after the blow, fades: the body throws itself forward
+var _hold_until := 0.0  # winding up a special attack (game/boss_moves.gd): stands still, no ordinary attacks
+var _rally_until := 0.0  # a war cry: faster and harder until this engine time
+var _rally_speed := 1.0
+var _rally_damage := 1.0
+var _guard_until := 0.0  # behind its shield: takes only _guard_mult of every hit until this engine time (a stagger ends it)
+var _guard_mult := 1.0
 
 
 # Call before add_child.
@@ -229,8 +241,21 @@ func _physics_process(delta: float) -> void:
 	var frozen := now < _freeze_until
 	if frozen:
 		move = 0.0
-	velocity.x = dir.x * move + _push.x
-	velocity.z = dir.z * move + _push.z
+		_strike_at = 0.0  # a stagger breaks off the blow it was winding up
+	if now < _rally_until:
+		move *= _rally_speed
+	var walk := dir * move
+	var ordered := now < order_until
+	if ordered and not frozen:  # a squad order: go where the squad wants this one, still facing the target
+		var to_goal := order_goal - global_position
+		to_goal.y = 0.0
+		var pace := _speed * (1.0 - _slow_amount if now < _slow_until else 1.0) * (_rally_speed if now < _rally_until else 1.0)
+		walk = to_goal.normalized() * pace if to_goal.length() > 0.4 else Vector3.ZERO
+	var busy := _strike_at > 0.0 or now < _hold_until
+	if busy:
+		walk = Vector3.ZERO  # rooted while it winds up: the moment to step aside
+	velocity.x = walk.x + _push.x
+	velocity.z = walk.z + _push.z
 	_push = _push.move_toward(Vector3.ZERO, PUSH_DECAY * delta)
 	if walker.is_valid():
 		var before := position
@@ -243,7 +268,10 @@ func _physics_process(delta: float) -> void:
 	if frozen:
 		return
 	_animate(delta)
-	if _brain.try_attack(distance, Time.get_ticks_msec() / 1000.0):
+	if _strike_at > 0.0 and now >= _strike_at:
+		_strike_at = 0.0
+		_land_blow(distance)
+	elif not busy and (order_attack or not ordered) and _brain.try_attack(distance, now):
 		_attack()
 
 
@@ -260,6 +288,8 @@ func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vect
 		return
 	if Time.get_ticks_msec() / 1000.0 < _vuln_until:
 		damage *= _vuln_mult
+	if Time.get_ticks_msec() / 1000.0 < _guard_until:
+		damage *= _guard_mult
 	health.take_damage(damage)
 	if health.is_dead():
 		_blood.burst(spot, normal, true, _chips)
@@ -294,6 +324,7 @@ func apply_freeze(seconds: float) -> void:
 		puppet_effect.emit("freeze", 0.0, seconds)
 		return
 	_freeze_until = maxf(_freeze_until, Time.get_ticks_msec() / 1000.0 + seconds)
+	_guard_until = 0.0  # a stagger knocks its guard down
 	_set_tint(Color(0.6, 0.85, 1.0))
 	get_tree().create_timer(seconds).timeout.connect(_reset_color)
 
@@ -375,7 +406,11 @@ func _animate(delta: float) -> void:
 	var speed := Vector2(velocity.x, velocity.z).length()
 	if _model != null:
 		_flinch = move_toward(_flinch, 0.0, delta * 5.0)
-		_model.rotation.x = 0.2 * _flinch
+		_lunge = move_toward(_lunge, 0.0, delta * 6.0)
+		var tell := 0.0  # winding up a blow: it rears back, then throws itself forward
+		if _strike_at > 0.0 and _windup > 0.0:
+			tell = 1.0 - clampf((_strike_at - Time.get_ticks_msec() / 1000.0) / _windup, 0.0, 1.0)
+		_model.rotation.x = 0.2 * _flinch + 0.4 * tell - 0.55 * _lunge
 	_walk_phase += speed * delta * 1.6
 	if _leg_l != null:
 		var swing := sin(_walk_phase) * WALK_SWING * clampf(speed / 3.0, 0.0, 1.0)
@@ -411,14 +446,47 @@ func _attack() -> void:
 	var damage := float(_stats["damage"])
 	if _stats["attack_type"] == "melee":
 		_swing_left = SWING_TIME
-		if is_instance_valid(_target):
-			_target.set("struck_by", self)  # a ward needs to know where the blow comes from (and whom to throw it back at)
-			_target.take_damage(damage, element)
+		_windup = float(_stats.get("attack_windup", 0.0))
+		if _windup > 0.0:  # it rears back first; the blow lands when the wind-up is over, if the target is still there
+			_strike_at = Time.get_ticks_msec() / 1000.0 + _windup
+			_set_tint(Color(1.5, 1.35, 0.9))
+		else:
+			_land_blow(0.0)
 		return
 	var origin := global_position + Vector3(0, _size.y * 0.7, 0)
 	var aim := (_target.global_position + Vector3(0, AIM_HEIGHT, 0) - origin).normalized()
 	attacked.emit(origin, aim)
 	shoot_burst(origin, aim)
+
+
+# The melee blow itself. `distance` = how far the target is now (it may have stepped away during the wind-up).
+func _land_blow(distance: float) -> void:
+	if _windup > 0.0:
+		_reset_color()
+		_lunge = 1.0
+	if not is_instance_valid(_target) or distance > float(_stats["attack_range"]) * 1.3 + 0.3:
+		return  # a miss
+	var damage := float(_stats["damage"]) * (_rally_damage if Time.get_ticks_msec() / 1000.0 < _rally_until else 1.0)
+	_target.set("struck_by", self)  # a ward needs to know where the blow comes from (and whom to throw it back at)
+	_target.take_damage(damage, element)
+
+
+# A special attack is being wound up: stand still and leave ordinary attacks for `seconds`.
+func hold(seconds: float) -> void:
+	_hold_until = maxf(_hold_until, Time.get_ticks_msec() / 1000.0 + seconds)
+
+
+# It raises its guard: only `taken` of every hit gets through for `seconds`, unless something staggers it.
+func guard(taken: float, seconds: float) -> void:
+	_guard_until = Time.get_ticks_msec() / 1000.0 + seconds
+	_guard_mult = taken
+
+
+# A war cry reached it: faster and harder for `seconds`.
+func rally(speed_mult: float, damage_mult: float, seconds: float) -> void:
+	_rally_until = Time.get_ticks_msec() / 1000.0 + seconds
+	_rally_speed = speed_mult
+	_rally_damage = damage_mult
 
 
 # One shot of this enemy's projectile kind with its own speed and damage (a boss's special volley).

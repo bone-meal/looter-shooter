@@ -170,9 +170,9 @@ func _apply(limit: int) -> void:
 		var mesh := ArrayMesh.new()
 		mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, job[1], [], {}, Mesh.ARRAY_CUSTOM_RGBA_FLOAT << Mesh.ARRAY_FORMAT_CUSTOM0_SHIFT)
 		mesh.surface_set_material(0, FantasyGround.material(job[3], job[4], job[5]))
-		var ground := MeshInstance3D.new()
-		ground.mesh = mesh
-		holder.add_child(ground)
+		var shown := MeshInstance3D.new()
+		shown.mesh = mesh
+		holder.add_child(shown)
 		var body := StaticBody3D.new()
 		var shape := CollisionShape3D.new()
 		var faces := ConcavePolygonShape3D.new()

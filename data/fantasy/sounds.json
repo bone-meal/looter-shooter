@@ -308,6 +308,18 @@
   },
   "strike_hit": {
    "volume": -5
+  },
+  "creature_warn": {
+   "volume": -6,
+   "range": 35
+  },
+  "creature_hit": {
+   "volume": -3,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 35
   }
  }
 }

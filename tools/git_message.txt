@@ -1,4 +1,4 @@
-Round 4 part 3 (C): spells mark the ground - spikes stay, fire keeps burning, water pools into floods and carries lightning; first frames drawn under the loading picture
+Round 4 part 3 (D): squad AI (roles, turns, pincer, fear of elements), wound-up melee blows, an own attack for every fantasy creature (7 new move kinds), slime splits
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

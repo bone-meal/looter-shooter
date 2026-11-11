@@ -139,6 +139,9 @@ def main():
     for name, f in (("element_w", 392), ("element_f", 523), ("element_e", 262), ("element_a", 659), ("element_g", 196)):
         save(name, mix(tone(f, 0.25), 0.4 * tone(f * 2, 0.25), 0.2 * tone(f * 3, 0.25)) * env(int(RATE * 0.25), 0.003, 3), 0.7)
     save("refuse", tone(glide(160, 110, 0.18), 0.18, "square") * env(int(RATE * 0.18), 0.005, 1.5) * 0.5, 0.5)
+    # --- an ordinary creature's own attack: the warning and the strike (bosses have boss_warn / boss_hit) ---
+    save("creature_warn", tone(glide(520, 760, 0.22), 0.22, "saw") * env(int(RATE * 0.22), 0.03, 1.4) * 0.5, 0.5)
+    save("creature_hit", mix(tone(glide(240, 90, 0.2), 0.2) * env(int(RATE * 0.2), 0.002, 3), 0.7 * band(noise(0.12), 300, 2400) * env(int(RATE * 0.12), 0.001, 3)), 0.7)
     # --- combat tools: the dodge step, the ward stopping a blow, the ward throwing one back, the staff strike ---
     save("dodge", band(noise(0.22), 500, glide(1200, 4500, 0.22)) * env(int(RATE * 0.22), 0.04, 1.3), 0.6)
     save("ward_block", mix(sum(tone(f, 0.3) for f in (330, 495, 742)) * env(int(RATE * 0.3), 0.002, 3) * 0.3, 0.5 * lowpass(noise(0.12), 1800) * env(int(RATE * 0.12), 0.001, 3)), 0.7)

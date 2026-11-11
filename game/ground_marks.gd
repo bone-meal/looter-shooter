@@ -103,6 +103,14 @@ func widest(kind: String) -> float:
 	return best
 
 
+# Ground nobody wants to stand on (burning, spiked): Vector3(x, z, radius) appended to `out` (game/squad_command.gd).
+func hazards(out: Array) -> void:
+	for mark: Dictionary in _marks:
+		if String(mark["kind"]) != "water":
+			var at: Vector3 = mark["at"]
+			out.append(Vector3(at.x, at.z, float(mark["radius"])))
+
+
 # A spell touched the world at `at` (game/spell_effects.gd signal `touched`).
 func touch(at: Vector3, spell_radius: float, damage: float, spell: Dictionary, show_only: bool) -> void:
 	var kinds := GroundRules.leaves(cfg, spell)

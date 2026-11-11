@@ -82,7 +82,7 @@ static func _wheat_pixel(x: int, y: int) -> Color:
 		elif fy < 92.0:
 			return Color(0.62, 0.3, 0.18).lerp(Color(0.45, 0.2, 0.13), fposmod(fy, 5.0) / 5.0)  # roof tiles in rows
 		elif fy > 116.0:
-			return Color(0.55, 0.52, 0.48) if (x / 6 + y / 4) % 2 == 0 else Color(0.48, 0.45, 0.42)  # stone foot
+			return Color(0.55, 0.52, 0.48) if (floori(x / 6.0) + floori(y / 4.0)) % 2 == 0 else Color(0.48, 0.45, 0.42)  # stone foot
 		else:
 			var beam: bool = x % 16 < 2 or y == 92 or y == 104 or absi((x % 16) - (y - 92)) < 1
 			if x >= 76 and x <= 86 and y >= 102:
