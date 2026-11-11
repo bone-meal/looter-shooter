@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt.",
+ "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt. weak / strong: the element (letter of data/fantasy/spells.json) a creature breaks under and the one it shrugs off (numbers: data/fantasy/combat.json weakness).",
  "spawn": {
   "max_alive": 14,
   "per_second": 0.35,
@@ -48,7 +48,9 @@
     0.9,
     0.78,
     0.35
-   ]
+   ],
+   "weak": "F",
+   "strong": "E"
   },
   "field_slime": {
    "model": "field_slime",
@@ -84,7 +86,9 @@
     0.5,
     0.85,
     0.3
-   ]
+   ],
+   "weak": "A",
+   "strong": "W"
   },
   "harvest_king": {
    "model": "harvest_king",
@@ -148,7 +152,9 @@
       0.3
      ]
     }
-   ]
+   ],
+   "weak": "F",
+   "strong": "E"
   },
   "forest_wolf": {
    "model": "forest_wolf",
@@ -183,7 +189,9 @@
     0.4,
     0.36,
     0.33
-   ]
+   ],
+   "weak": "F",
+   "strong": "E"
   },
   "mossgoblin": {
    "model": "mossgoblin",
@@ -223,7 +231,9 @@
     0.4,
     0.55,
     0.25
-   ]
+   ],
+   "weak": "A",
+   "strong": "W"
   },
   "barkhide": {
    "model": "barkhide",
@@ -258,7 +268,9 @@
     0.4,
     0.3,
     0.2
-   ]
+   ],
+   "weak": "F",
+   "strong": "E"
   },
   "rootmother": {
    "model": "rootmother",
@@ -327,7 +339,9 @@
       0.3
      ]
     }
-   ]
+   ],
+   "weak": "F",
+   "strong": "W"
   },
   "reef_crab": {
    "model": "reef_crab",
@@ -362,7 +376,9 @@
     0.85,
     0.45,
     0.35
-   ]
+   ],
+   "weak": "E",
+   "strong": "W"
   },
   "drowned_sailor": {
    "model": "drowned_sailor",
@@ -402,7 +418,9 @@
     0.35,
     0.5,
     0.55
-   ]
+   ],
+   "weak": "A",
+   "strong": "W"
   },
   "tidewarden": {
    "model": "tidewarden",
@@ -471,7 +489,9 @@
       1.0
      ]
     }
-   ]
+   ],
+   "weak": "A",
+   "strong": "W"
   },
   "dune_scorpion": {
    "model": "dune_scorpion",
@@ -507,7 +527,9 @@
     0.75,
     0.6,
     0.35
-   ]
+   ],
+   "weak": "W",
+   "strong": "F"
   },
   "sand_wraith": {
    "model": "sand_wraith",
@@ -547,7 +569,9 @@
     0.85,
     0.75,
     0.5
-   ]
+   ],
+   "weak": "G",
+   "strong": "A"
   },
   "glassmaw": {
    "model": "glassmaw",
@@ -613,7 +637,9 @@
       0.9
      ]
     }
-   ]
+   ],
+   "weak": "W",
+   "strong": "F"
   },
   "frost_wolf": {
    "model": "frost_wolf",
@@ -649,7 +675,9 @@
     0.85,
     0.92,
     1.0
-   ]
+   ],
+   "weak": "F",
+   "strong": "W"
   },
   "ice_golem": {
    "model": "ice_golem",
@@ -684,7 +712,9 @@
     0.7,
     0.88,
     1.0
-   ]
+   ],
+   "weak": "E",
+   "strong": "W"
   },
   "rime_colossus": {
    "model": "rime_colossus",
@@ -752,7 +782,9 @@
      ],
      "element": "ice"
     }
-   ]
+   ],
+   "weak": "F",
+   "strong": "W"
   },
   "magma_imp": {
    "model": "magma_imp",
@@ -792,7 +824,9 @@
     1.0,
     0.45,
     0.1
-   ]
+   ],
+   "weak": "W",
+   "strong": "F"
   },
   "ash_drake": {
    "model": "ash_drake",
@@ -828,7 +862,9 @@
     0.35,
     0.3,
     0.3
-   ]
+   ],
+   "weak": "G",
+   "strong": "F"
   },
   "cinderwyrm": {
    "model": "cinderwyrm",
@@ -904,7 +940,9 @@
      ],
      "element": "fire"
     }
-   ]
+   ],
+   "weak": "W",
+   "strong": "F"
   },
   "storm_harpy": {
    "model": "storm_harpy",
@@ -944,7 +982,9 @@
     0.5,
     0.5,
     0.7
-   ]
+   ],
+   "weak": "G",
+   "strong": "A"
   },
   "gale_spirit": {
    "model": "gale_spirit",
@@ -979,7 +1019,9 @@
     0.8,
     0.9,
     1.0
-   ]
+   ],
+   "weak": "E",
+   "strong": "A"
   },
   "tempest_roc": {
    "model": "tempest_roc",
@@ -1065,7 +1107,9 @@
       0.6
      ]
     }
-   ]
+   ],
+   "weak": "G",
+   "strong": "A"
   },
   "pale_knight": {
    "model": "pale_knight",
@@ -1100,7 +1144,9 @@
     0.85,
     0.85,
     0.88
-   ]
+   ],
+   "weak": "A",
+   "strong": "E"
   },
   "hollow_shade": {
    "model": "hollow_shade",
@@ -1140,7 +1186,9 @@
     0.25,
     0.25,
     0.3
-   ]
+   ],
+   "weak": "F",
+   "strong": "G"
   },
   "pallid_king": {
    "model": "pallid_king",
@@ -1221,7 +1269,9 @@
       1.0
      ]
     }
-   ]
+   ],
+   "weak": "F",
+   "strong": "G"
   },
   "red_warrior": {
    "model": "red_warrior",
@@ -1257,7 +1307,9 @@
     0.6,
     0.4
    ],
-   "tribe": "red"
+   "tribe": "red",
+   "weak": "W",
+   "strong": "F"
   },
   "blue_warrior": {
    "model": "blue_warrior",
@@ -1293,7 +1345,9 @@
     0.6,
     0.4
    ],
-   "tribe": "blue"
+   "tribe": "blue",
+   "weak": "F",
+   "strong": "W"
   }
  },
  "tribes": {

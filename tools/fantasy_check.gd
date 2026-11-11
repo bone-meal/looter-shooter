@@ -10,6 +10,7 @@
 extends Node
 
 const SpellBook = preload("res://core/spell_book.gd")
+const CombatRules = preload("res://core/combat_rules.gd")
 const SkillLevels = preload("res://core/skill_levels.gd")
 const FantasyBag = preload("res://core/fantasy_bag.gd")
 const QuestLog = preload("res://core/quest_log.gd")
@@ -196,6 +197,25 @@ func _count_sections(text: Dictionary) -> int:
 	return n
 
 
+# The combat tools: the numbers are all there and the rules do what the data file says.
+func _check_combat(combat: Dictionary) -> void:
+	for part: String in ["dodge", "ward", "weakness", "strike", "words"]:
+		_need(combat.has(part), "combat.json has no %s" % part)
+	var ward: Dictionary = combat["ward"]
+	var late := CombatRules.ward(ward, 20.0, 5.0, true, 100.0)
+	_need(is_equal_approx(float(late["taken"]), 20.0 * (1.0 - float(ward["block"]))) and is_equal_approx(float(late["mana"]), 20.0 * float(ward["block"]) * float(ward["mana_per_damage"])), "a held ward does not block what the data says")
+	var timed := CombatRules.ward(ward, 20.0, 0.0, true, 0.0)
+	_need(bool(timed["perfect"]) and float(timed["taken"]) == 0.0 and float(timed["mana"]) == 0.0, "a just-in-time ward is not free and whole")
+	_need(float(CombatRules.ward(ward, 20.0, 5.0, false, 100.0)["taken"]) == 20.0, "a ward stops a hit from behind")
+	_need(float(CombatRules.ward(ward, 20.0, 5.0, true, 0.0)["taken"]) == 20.0, "a ward with no mana still blocks")
+	_need(CombatRules.in_front(Vector2(0, -1), Vector2(0.2, -1), float(ward["arc_deg"])) and not CombatRules.in_front(Vector2(0, -1), Vector2(0, 1), float(ward["arc_deg"])), "the ward's arc is wrong")
+	var weakness: Dictionary = combat["weakness"]
+	_need(String(CombatRules.elements(weakness, "FW", "F", "W")["kind"]) == "weak", "a weak element in the mix does not count")
+	_need(String(CombatRules.elements(weakness, "W", "F", "W")["kind"]) == "strong" and String(CombatRules.elements(weakness, "E", "F", "W")["kind"]) == "", "strong / plain elements are judged wrong")
+	for key: String in ["weak", "strong", "perfect"]:
+		_need(String(combat["words"].get(key, "")) != "", "no combat word for %s" % key)
+
+
 # Fishing waters, boss moves, tribes, layouts.
 func _check_round_two(all: Dictionary) -> void:
 	var world: Dictionary = all["world"]
@@ -218,6 +238,10 @@ func _check_round_two(all: Dictionary) -> void:
 			_need(String(move["kind"]) in kinds, "%s: unknown move kind %s" % [id, move["kind"]])
 			_need(String(move["kind"]) != "summon" or enemies.has(String(move.get("enemy", ""))), "%s summons an unknown creature" % id)
 		_need(String(enemies[id].get("walks", "")) in ["land", "swim", "fly"], "enemy %s has no way of moving" % id)
+		var weak := String(enemies[id].get("weak", ""))
+		var strong := String(enemies[id].get("strong", ""))
+		_need(all["spells"]["elements"].has(weak) and all["spells"]["elements"].has(strong) and weak != strong, "enemy %s needs a weak and a different strong element" % id)
+	_check_combat(all["combat"])
 	var tribes: Dictionary = all["enemies"]["tribes"]
 	for banner: String in tribes["camps"]:
 		_need(enemies.has(banner + "_warrior"), "tribe %s has no warrior" % banner)

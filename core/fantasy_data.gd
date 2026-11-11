@@ -11,10 +11,10 @@ const TextBook = preload("res://core/text_book.gd")
 const FOLDER := "res://data/fantasy/"
 
 
-# {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "props", "text", "problems": PackedStringArray}
+# {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "combat", "props", "text", "problems": PackedStringArray}
 static func load_all() -> Dictionary:
 	var d := {}
-	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors"]:
+	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat"]:
 		d[part] = DataStore.load_json(FOLDER + part + ".json")
 	d["props"] = DataStore.load_json(FOLDER + "props.json")["props"]
 	var files := PackedStringArray([FOLDER + "writing/spells.txt", FOLDER + "writing/items.txt", FOLDER + "writing/skills.txt", FOLDER + "writing/buildings.txt"])
@@ -62,6 +62,10 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 		var steps: Array = quest["steps"]
 		for i in steps.size():
 			steps[i]["text"] = _line(text, "quest", id, "step %d" % (i + 1), missing)
+	var words := {}
+	for key: String in ["weak", "strong", "perfect"]:
+		words[key] = _line(text, "combat", "words", key, missing)
+	d["combat"]["words"] = words
 	var enemies: Dictionary = d["enemies"]["enemies"]
 	for id: String in enemies:
 		enemies[id]["name"] = _line(text, "creature", id, "name", missing)

@@ -26,6 +26,18 @@ name: Earth
 # WHAT: one of the four elements a staff gathers.
 name: Air
 
+
+[element G]
+# WHAT: the fifth element a staff gathers (key R while channelling).
+name: Gravity
+
+[combat words]
+# WHAT: the short words that pop up over a creature in a fight. weak = the spell held the element it breaks under,
+# strong = the element it shrugs off, perfect = a ward raised just in time threw the blow back.
+weak: WEAK!
+strong: RESISTS
+perfect: THROWN BACK
+
 [form W]
 # WHAT: the shape a spell takes when Water is the FIRST element. `about` is shown in the spell book.
 name: Jet
@@ -45,6 +57,12 @@ about: bursts from the ground where you aim and lingers
 # WHAT: the shape a spell takes when Air is the FIRST element. `about` is shown in the spell book.
 name: Wave
 about: a fan in front of you that throws things back
+
+
+[form G]
+# WHAT: the shape a spell takes when Gravity is the FIRST element. `about` is shown in the spell book.
+name: Rift
+about: a tear in the air that drags everything in, then collapses
 
 [substance W]
 # WHAT: what a spell is made of when it mixes Water.
@@ -106,6 +124,71 @@ name: Meteor
 # WHAT: what a spell is made of when it mixes Air + Earth + Fire + Water.
 name: Prism
 
+
+[substance G]
+# WHAT: what a spell is made of when it mixes Gravity.
+name: Gravity
+
+[substance GW]
+# WHAT: what a spell is made of when it mixes Gravity + Water.
+name: Tide
+
+[substance FG]
+# WHAT: what a spell is made of when it mixes Fire + Gravity.
+name: Starfire
+
+[substance EG]
+# WHAT: what a spell is made of when it mixes Earth + Gravity.
+name: Crush
+
+[substance AG]
+# WHAT: what a spell is made of when it mixes Air + Gravity.
+name: Void
+
+[substance FGW]
+# WHAT: what a spell is made of when it mixes Fire + Gravity + Water.
+name: Nebula
+
+[substance EGW]
+# WHAT: what a spell is made of when it mixes Earth + Gravity + Water.
+name: Quicksand
+
+[substance AGW]
+# WHAT: what a spell is made of when it mixes Air + Gravity + Water.
+name: Maelstrom
+
+[substance EFG]
+# WHAT: what a spell is made of when it mixes Earth + Fire + Gravity.
+name: Core
+
+[substance AFG]
+# WHAT: what a spell is made of when it mixes Air + Fire + Gravity.
+name: Plasma
+
+[substance AEG]
+# WHAT: what a spell is made of when it mixes Air + Earth + Gravity.
+name: Comet
+
+[substance EFGW]
+# WHAT: what a spell is made of when it mixes Earth + Fire + Gravity + Water.
+name: Geyser Storm
+
+[substance AFGW]
+# WHAT: what a spell is made of when it mixes Air + Fire + Gravity + Water.
+name: Aurora
+
+[substance AEGW]
+# WHAT: what a spell is made of when it mixes Air + Earth + Gravity + Water.
+name: Sanctuary
+
+[substance AEFG]
+# WHAT: what a spell is made of when it mixes Air + Earth + Fire + Gravity.
+name: Cataclysm
+
+[substance AEFGW]
+# WHAT: what a spell is made of when it mixes Air + Earth + Fire + Gravity + Water.
+name: Singularity
+
 [sizes all]
 # WHAT: the word put in front of a spell's name by how many elements it holds (a blank after the colon = no word).
 1: Minor
@@ -113,8 +196,13 @@ name: Prism
 3: 
 4: Greater
 5: Grand
+6: High
 7: Master
+8: Arch
 9: Mythic
+10: Titanic
+12: Celestial
+14: World-ending
 
 [spell names]
 # WHAT: spells with a name of their own. Read a line as  shape:mix:amount: Name . Any spell not listed here is named
@@ -235,3 +323,38 @@ about: One line of every colour. It does not stop at the first thing it meets.
 # WHAT: a long spell cast by the exact sequence Air Earth Fire Water Water Fire Earth Air Air Earth Fire Water. `about` is shown in the spell book once it is taught.
 name: Eclipse
 about: The sky goes dark over the whole field. Nothing under it is spared.
+
+[secret cinder_ring]
+# WHAT: a long spell cast by the exact sequence Fire Earth Fire Earth Fire. `about` is shown in the spell book once it has been cast.
+name: Cinder Ring
+about: A ring of fire and stone bursts out around you.
+
+[secret weightless]
+# WHAT: a long spell cast by the exact sequence Gravity Air Gravity Air Gravity. `about` is shown in the spell book once it has been cast.
+name: Weightless
+about: Everything near you loses its footing and drifts up.
+
+[secret thunderhead]
+# WHAT: a long spell cast by the exact sequence Air Fire Water Air Fire Water. `about` is shown in the spell book once it has been cast.
+name: Thunderhead
+about: Six bolts fall from a wet sky.
+
+[secret tidal_lock]
+# WHAT: a long spell cast by the exact sequence Gravity Water Gravity Water Water Gravity Water. `about` is shown in the spell book once it has been cast.
+name: Tidal Lock
+about: A wave that pulls instead of pushes.
+
+[secret event_horizon]
+# WHAT: a long spell cast by the exact sequence Gravity Gravity Air Gravity Gravity Earth Gravity Gravity. `about` is shown in the spell book once it has been cast.
+name: Event Horizon
+about: A dark point that nothing nearby can walk away from.
+
+[secret moonfall]
+# WHAT: a long spell cast by the exact sequence Gravity Earth Gravity Earth Fire Gravity Earth Gravity. `about` is shown in the spell book once it has been cast.
+name: Moonfall
+about: Pieces of the sky are pulled down on one spot.
+
+[secret the_unmaking]
+# WHAT: a long spell cast by the exact sequence Gravity Air Earth Fire Water Gravity Air Earth Fire Water Gravity. `about` is shown in the spell book once it has been cast.
+name: The Unmaking
+about: All five elements folded into one storm.

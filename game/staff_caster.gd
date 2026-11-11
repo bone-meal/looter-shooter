@@ -9,6 +9,7 @@ extends Node3D
 signal sequence_changed(sequence: String)
 signal refused(why: String)  # "full" or "mana": the element box flashes
 signal cast_done(spell: Dictionary, sequence: String, origin: Vector3, aim: Vector3)
+signal swung  # the cast key was let go with nothing gathered: a staff strike (game/combat_tools.gd)
 
 const FantasyModels = preload("res://game/fantasy_models.gd")
 var world: Node3D  # game/fantasy_world.gd
@@ -26,6 +27,7 @@ var _glow: MeshInstance3D
 var _glow_mat := StandardMaterial3D.new()
 var _shown_staff := ""
 var _time := 0.0
+var _swing := 0.0  # 1 -> 0 while a staff strike is shown
 
 
 func setup(fantasy_world: Node3D, player: Node3D, fx: Node3D) -> void:
@@ -66,7 +68,9 @@ func _process(delta: float) -> void:
 	else:  # first person: low on the right, leaning away so the stone sits right of the crosshair
 		_staff.position = Vector3(0.36, -0.82 + raise + sin(_time * 1.7) * 0.008, -0.55)
 		_staff.rotation_degrees = Vector3(-36.0 - (12.0 if channelling else 0.0), 0.0, -4.0)
-	var want: bool = bool(_player.get("controls_enabled")) and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var want: bool = bool(_player.get("controls_enabled")) and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not bool(world.combat.warding)
+	_swing = maxf(_swing - delta * 4.0, 0.0)
+	_staff.rotation_degrees.x -= 55.0 * sin(_swing * PI)  # the strike: the head dips forward and comes back
 	if want and not channelling:
 		channelling = true
 		_player.set("channelling", true)
@@ -75,7 +79,11 @@ func _process(delta: float) -> void:
 	elif not want and channelling:
 		var built := sequence
 		_stop()
-		_cast(built)
+		if built == "":
+			swung.emit()
+			_swing = 1.0
+		else:
+			_cast(built)
 	_glow.visible = channelling
 	if channelling:
 		var size := 0.22 + 0.06 * float(sequence.length()) + sin(_time * 18.0) * 0.014

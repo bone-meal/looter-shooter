@@ -24,6 +24,7 @@ const FantasyPlaces = preload("res://game/fantasy_places.gd")
 const FantasyWork = preload("res://game/fantasy_work.gd")
 const StaffCaster = preload("res://game/staff_caster.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
+const CombatTools = preload("res://game/combat_tools.gd")
 const FantasySpawner = preload("res://game/fantasy_spawner.gd")
 const BossMoves = preload("res://game/boss_moves.gd")
 const FantasySounds = preload("res://game/fantasy_sounds.gd")
@@ -66,6 +67,7 @@ var places := FantasyPlaces.new()
 var work := FantasyWork.new()
 var caster := StaffCaster.new()
 var effects := SpellEffects.new()
+var combat := CombatTools.new()  # dodge, ward, staff strike
 var spawner := FantasySpawner.new()
 var moves := BossMoves.new()
 var panel := FantasyPanel.new()
@@ -146,6 +148,8 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	effects.source = director
 	effects.numbers = numbers
 	effects.caster = player
+	effects.weakness = data["combat"]["weakness"]
+	effects.words = data["combat"]["words"]
 	effects.healed.connect(func(amount: float) -> void: _player.health.heal(amount))
 	effects.landed.connect(_on_spell_landed)
 	add_child(effects)
@@ -156,6 +160,11 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 		if sequence != "":
 			sound("element_" + sequence.right(1).to_lower()))
 	caster.refused.connect(func(_why: String) -> void: sound("refuse"))
+	add_child(combat)
+	combat.source = director
+	combat.numbers = numbers
+	combat.setup(self, player, data["combat"])
+	caster.swung.connect(combat.strike)
 	add_child(spawner)
 	spawner.setup(self, director, player)
 	LoadClock.mark("fantasy: work, rooms, spells, spawner")
@@ -393,6 +402,7 @@ func enter(world_pos: Vector3) -> void:
 	_place = ""
 	apply_stats()
 	refresh_marks()
+	combat.set_active(true)
 	if party == null or not party.call("is_client"):
 		spawner.start()  # online only the host runs creatures (game/net_fantasy.gd)
 
@@ -403,6 +413,7 @@ func leave() -> void:
 		spawner.stop()  # online the host keeps running them for whoever is still in there
 	effects.clear()
 	moves.clear()
+	combat.set_active(false)
 	rooms.reset()
 	sounds.call("set_region", "")
 	panel.close_panel()
@@ -506,7 +517,7 @@ func mana_regen() -> float:
 
 # How many elements one cast can hold: the staff's own, plus one for each pigment the story has returned.
 func slots() -> int:
-	return spells.slots(int(bag.staff().get("slots", 0)), quests.pigments())
+	return spells.slots(int(bag.staff().get("slots", 0)), quests.pigments(), magic_level())
 
 
 # Spell damage after staff, Magic level and potions.

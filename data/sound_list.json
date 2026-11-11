@@ -22,6 +22,10 @@
      "label": "Element added: air"
     },
     {
+     "id": "element_g",
+     "label": "Element added: gravity"
+    },
+    {
      "id": "cast_flame",
      "label": "Spell cast: flame"
     },
@@ -66,6 +70,10 @@
      "label": "Spell cast: sparks"
     },
     {
+     "id": "cast_orb",
+     "label": "Spell cast: gravity rings"
+    },
+    {
      "id": "cast_big",
      "label": "Spell cast: the boom of a long combo"
     },
@@ -76,6 +84,31 @@
     {
      "id": "refuse",
      "label": "Spell refused"
+    }
+   ]
+  },
+  {
+   "name": "Dodge, ward and staff strike",
+   "sounds": [
+    {
+     "id": "dodge",
+     "label": "Dodge step"
+    },
+    {
+     "id": "ward_block",
+     "label": "Ward stops a blow"
+    },
+    {
+     "id": "ward_perfect",
+     "label": "Ward throws a blow back"
+    },
+    {
+     "id": "strike_hit",
+     "label": "Staff strike hits"
+    },
+    {
+     "id": "strike_miss",
+     "label": "Staff strike misses"
     }
    ]
   },

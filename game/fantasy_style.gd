@@ -76,6 +76,10 @@ static func element_sign(canvas: CanvasItem, letter: String, center: Vector2, ra
 		"E":
 			canvas.draw_colored_polygon(PackedVector2Array([center + Vector2(-r * 0.2, -r * 0.9), center + Vector2(r * 0.7, -r * 0.35), center + Vector2(r * 0.9, r * 0.5), center + Vector2(r * 0.1, r * 0.9), center + Vector2(-r * 0.85, r * 0.45), center + Vector2(-r * 0.75, -r * 0.3)]), color)
 			canvas.draw_line(center + Vector2(-r * 0.2, -r * 0.9), center + Vector2(r * 0.1, r * 0.9), Color(0, 0, 0, 0.35), 1.5)
+		"G":  # gravity: a dark heart with a ring falling into it
+			canvas.draw_arc(center, r * 0.95, PI * 0.15, PI * 1.75, 16, color, 2.0, true)
+			canvas.draw_arc(center, r * 0.55, PI * 1.1, PI * 2.6, 12, color.lerp(Color.WHITE, 0.35), 1.5, true)
+			canvas.draw_circle(center, r * 0.26, color.lerp(Color.WHITE, 0.6))
 		_:
 			canvas.draw_arc(center + Vector2(-r * 0.15, -r * 0.3), r * 0.55, PI * 0.9, PI * 2.3, 12, color, 2.5, true)
 			canvas.draw_arc(center + Vector2(r * 0.15, r * 0.4), r * 0.5, -PI * 0.1, PI * 1.3, 12, color, 2.5, true)

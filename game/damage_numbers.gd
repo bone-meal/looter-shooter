@@ -35,10 +35,20 @@ func spawn(at: Vector3, amount: float) -> void:
 	_starts[_next] = at + Vector3(randf_range(-0.3, 0.3), 0.2, randf_range(-0.3, 0.3))
 	_ages[_next] = 0.0
 	label.text = str(roundi(amount))
+	label.offset = Vector2.ZERO
 	label.modulate = Color(1.0, 0.95, 0.5, 1.0)
 	label.global_position = _starts[_next]
 	label.visible = true
 	_next = (_next + 1) % POOL_SIZE
+
+
+# A short word over a creature ("WEAK!") from the same pool.
+func say(at: Vector3, words: String, color: Color) -> void:
+	spawn(at, 0.0)
+	var label := _labels[(_next + POOL_SIZE - 1) % POOL_SIZE]
+	label.text = words
+	label.modulate = color
+	label.offset = Vector2(0.0, 48.0)  # a line above the number it belongs to
 
 
 func _process(delta: float) -> void:

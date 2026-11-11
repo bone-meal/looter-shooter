@@ -22,9 +22,12 @@ func mana_cost(sequence: String) -> float:
 	return total
 
 
-# How many elements fit in one cast: the base, plus what the staff and the story have added, never above the cap.
-func slots(staff_bonus: int, story_bonus: int) -> int:
-	return clampi(int(data["base_slots"]) + staff_bonus + story_bonus, 1, int(data["max_slots"]))
+# How many elements fit in one cast: the base, plus what the staff, the story and the caster's Magic level have
+# added (one more for every "slot_every_levels" levels), never above the cap.
+func slots(staff_bonus: int, story_bonus: int, magic_level: int = 1) -> int:
+	var every := int(data.get("slot_every_levels", 0))
+	var from_level := floori(float(magic_level) / float(every)) if every > 0 else 0
+	return clampi(int(data["base_slots"]) + staff_bonus + story_bonus + from_level, 1, int(data["max_slots"]))
 
 
 # The sorted set of different elements in a sequence, e.g. "WFWA" -> "AFW" (the key into "substances").
@@ -84,7 +87,7 @@ func resolve(sequence: String) -> Dictionary:
 	var spell := {"secret": "", "kind": String(form["id"]), "count": count, "mana": mana_cost(sequence), "color": substance["color"],
 		"damage": float(substance["damage"]) * grow * float(form["damage_mult"]), "heal": float(substance.get("heal", 0.0)) * grow,
 		"effects": (substance["effects"] as Dictionary).duplicate(), "substance": key, "look": substance.get("look", {}),
-		"range": float(form.get("range", 0.0)), "speed": float(form.get("speed", 0.0)), "angle": float(form.get("angle", 0.0)), "width": float(form.get("width", 0.0)),
+		"pull": float(form.get("pull", 0.0)), "range": float(form.get("range", 0.0)), "speed": float(form.get("speed", 0.0)), "angle": float(form.get("angle", 0.0)), "width": float(form.get("width", 0.0)),
 		"radius": float(form.get("radius", 0.0)) + float(form.get("radius_per_element", 0.0)) * float(count - 1),
 		"seconds": float(form.get("seconds", 0.0)) + float(form.get("seconds_per_element", 0.0)) * float(count - 1)}
 	spell["name"] = _name(String(form["id"]), String(form["name"]), key, String(substance["name"]), count)

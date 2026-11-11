@@ -69,6 +69,7 @@ func _physics_process(delta: float) -> void:
 		if not hit.is_empty():
 			var target: Object = hit.collider
 			if target.has_method("take_damage"):
+				target.set("struck_from", from - _velocity[i].normalized() * 4.0)  # for a ward: the side the shot came from
 				target.take_damage(_damage[i], _element[i])
 			_deactivate(i)
 			continue

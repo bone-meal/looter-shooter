@@ -8,6 +8,8 @@ extends Node
 const OUT := "res://tools/userdata/"
 
 var _lines := PackedStringArray()
+var _counting := false  # !fight has hooked the ward's signal
+var _wards := [0, 0]  # blows the ward stopped: [held, just in time]
 
 
 func _ready() -> void:
@@ -49,7 +51,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -180,6 +182,24 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"where":  # fantasy world: the player's spot in map metres, for the log
 			var here: Vector3 = session.call("fantasy").call("player_local")
 			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])
+		"face":  # turn to the nearest creature
+			var nearest: Node3D = null
+			for enemy: Variant in session.call("director").call("enemy_list"):
+				if is_instance_valid(enemy) and (nearest == null or (enemy as Node3D).global_position.distance_to(player.global_position) < nearest.global_position.distance_to(player.global_position)):
+					nearest = enemy
+			if nearest != null:
+				player.call("look_at_point", nearest.global_position + Vector3(0, float(nearest.call("head_height")) * 0.55, 0))
+		"fight":  # fantasy world: health, mana, ward and the creatures around, for the log
+			var hub: Node = session.call("fantasy")
+			if not _counting:  # from the first !fight on: how many blows the ward stopped, and how many it threw back
+				_counting = true
+				hub.get("combat").connect("warded", func(perfect: bool) -> void:
+					_wards[1 if perfect else 0] += 1)
+			var left := PackedStringArray()
+			for enemy: Variant in session.call("director").call("enemy_list"):
+				if is_instance_valid(enemy):
+					left.append("%s %d (%.0f m)" % [String((enemy as Node).get("enemy_id")), int((enemy as Node).get("health").hp), (enemy as Node3D).global_position.distance_to(player.global_position)])
+			_lines.append("fight %s: health=%d mana=%d warding=%s dodge_ready=%.2f blocked=%d thrown_back=%d creatures=[%s]" % [" ".join(words.slice(1)), int(player.get("health").hp), int(hub.get("mana")), str(hub.get("combat").get("warding")), float(hub.get("combat").call("dodge_ready")), _wards[0], _wards[1], ", ".join(left)])
 		"state":  # fantasy world: what the player has, for the log
 			var land: Node = session.call("fantasy")
 			_lines.append("bag=%s levels=%s active=%s done=%s mana=%d slots=%d" % [str(land.get("bag").items), str(land.get("skills").levels()), str(land.get("quests").active), str(land.get("quests").done), int(land.get("mana")), int(land.call("slots"))])

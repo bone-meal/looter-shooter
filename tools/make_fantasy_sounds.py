@@ -132,12 +132,19 @@ def main():
     save("cast_blob", mix(bub, 0.5 * lowpass(noise(0.5), 400) * env(int(RATE * 0.5), 0.05, 1.5)))
     save("cast_grain", band(noise(0.6), 1800, 6000) * env(int(RATE * 0.6), 0.1, 1.3) * (0.6 + 0.4 * tone(18, 0.6)))
     save("cast_prism", sum(tone(f, 0.9) * env(int(RATE * 0.9), 0.05 + 0.03 * i, 2) for i, f in enumerate((523, 659, 784, 988, 1175))) * 0.2)
+    save("cast_orb", mix(tone(glide(420, 55, 0.8), 0.8) * env(int(RATE * 0.8), 0.25, 1.2) * 0.7, 0.35 * tone(glide(840, 110, 0.8), 0.8, "saw") * env(int(RATE * 0.8), 0.3, 1.5), 0.3 * lowpass(noise(0.8), glide(2500, 200, 0.8)) * env(int(RATE * 0.8), 0.3, 1.5)))
     save("cast_big", mix(tone(glide(50, 140, 1.4), 1.4, "saw") * env(int(RATE * 1.4), 0.5, 1.2) * 0.5, lowpass(noise(1.6), glide(300, 4000, 1.6)) * env(int(RATE * 1.6), 0.7, 1.5)))
     save("impact", mix(tone(glide(160, 40, 0.4), 0.4) * env(int(RATE * 0.4), 0.002, 2.5), 0.7 * lowpass(noise(0.3), 1500) * env(int(RATE * 0.3), 0.001, 3)))
     # --- channelling: one pluck per element, a dull knock when the box is full or mana is out ---
-    for name, f in (("element_w", 392), ("element_f", 523), ("element_e", 262), ("element_a", 659)):
+    for name, f in (("element_w", 392), ("element_f", 523), ("element_e", 262), ("element_a", 659), ("element_g", 196)):
         save(name, mix(tone(f, 0.25), 0.4 * tone(f * 2, 0.25), 0.2 * tone(f * 3, 0.25)) * env(int(RATE * 0.25), 0.003, 3), 0.7)
     save("refuse", tone(glide(160, 110, 0.18), 0.18, "square") * env(int(RATE * 0.18), 0.005, 1.5) * 0.5, 0.5)
+    # --- combat tools: the dodge step, the ward stopping a blow, the ward throwing one back, the staff strike ---
+    save("dodge", band(noise(0.22), 500, glide(1200, 4500, 0.22)) * env(int(RATE * 0.22), 0.04, 1.3), 0.6)
+    save("ward_block", mix(sum(tone(f, 0.3) for f in (330, 495, 742)) * env(int(RATE * 0.3), 0.002, 3) * 0.3, 0.5 * lowpass(noise(0.12), 1800) * env(int(RATE * 0.12), 0.001, 3)), 0.7)
+    save("ward_perfect", mix(sum(tone(f, 0.7) * env(int(RATE * 0.7), 0.002, 2.2) for f in (880, 1320, 1760, 2640)) * 0.25, at(tone(glide(300, 1500, 0.2), 0.2, "saw") * env(int(RATE * 0.2), 0.02, 1.5) * 0.4, 0.03), 0.4 * highpass(noise(0.1), 3000) * env(int(RATE * 0.1), 0.001, 2)))
+    save("strike_miss", band(noise(0.2), 300, glide(900, 2600, 0.2)) * env(int(RATE * 0.2), 0.06, 1.2), 0.5)
+    save("strike_hit", mix(tone(glide(190, 70, 0.22), 0.22) * env(int(RATE * 0.22), 0.002, 3), 0.8 * band(noise(0.1), 400, 3000) * env(int(RATE * 0.1), 0.001, 3), at(tone(1568, 0.3) * env(int(RATE * 0.3), 0.005, 3) * 0.25, 0.04)), 0.8)
     # --- gathering and crafting ---
     save("gather_woodcutting", mix(band(noise(0.12), 300, 2500) * env(int(RATE * 0.12), 0.001, 3), 0.7 * tone(glide(220, 150, 0.12), 0.12) * env(int(RATE * 0.12), 0.001, 3)))
     save("gather_mining", mix(sum(tone(f, 0.3) for f in (1760, 2637, 3951)) * env(int(RATE * 0.3), 0.001, 4) * 0.3, band(noise(0.06), 800, 5000) * env(int(RATE * 0.06), 0.001, 2)))

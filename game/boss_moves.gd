@@ -215,6 +215,7 @@ func _hit_circle(run: Dictionary, at: Vector3, radius: float, share: float = 1.0
 		return
 	for body: Node3D in bodies.call():
 		if Vector2(body.global_position.x - at.x, body.global_position.z - at.z).length() < radius:
+			body.set("struck_by", run["boss"])
 			body.call("take_damage", _damage(run) * share, String(run["move"].get("element", "physical")))
 
 
@@ -226,6 +227,7 @@ func _hit_lane(run: Dictionary, from: Vector3, dir: Vector3, length: float, widt
 		var along := rel.x * dir.x + rel.z * dir.z
 		var side := absf(rel.x * dir.z - rel.z * dir.x)
 		if along > -1.0 and along < length and side < width * 0.5:
+			body.set("struck_by", run["boss"])
 			body.call("take_damage", _damage(run) * share, String(run["move"].get("element", "physical")))
 
 
@@ -337,6 +339,7 @@ func _step(run: Dictionary, delta: float) -> bool:
 				for body: Node3D in bodies.call():
 					if not (run["hit"] as Dictionary).has(body) and Vector2(body.global_position.x - boss.global_position.x, body.global_position.z - boss.global_position.z).length() < float(move["width"]) * 0.5 + 0.6:
 						(run["hit"] as Dictionary)[body] = true
+						body.set("struck_by", run["boss"])
 						body.call("take_damage", _damage(run), String(move.get("element", "physical")))
 			return travelled >= float(move["distance"])
 		"zones":

@@ -9,6 +9,7 @@
 extends Node3D
 
 const SpellMotes = preload("res://game/spell_motes.gd")
+const CombatRules = preload("res://core/combat_rules.gd")
 
 const MAX_PUFFS := 180
 const BALL := 0
@@ -22,6 +23,8 @@ signal healed(amount: float)  # the caster healed (the world tops up health)
 signal landed(local_kind: String, at: Vector3, spell: Dictionary)  # a spell reached the ground (fires get lit there)
 
 var source: Node  # has enemy_list()
+var weakness := {}  # data/fantasy/combat.json "weakness" (empty = creatures have no weak or strong element)
+var words := {}  # "weak" / "strong": what pops up over the creature
 var numbers: Node  # game/damage_numbers.gd, optional
 var caster: Node3D  # the local player
 var motes := SpellMotes.new()
@@ -30,6 +33,8 @@ var _meshes: Array[Mesh] = []
 var _puffs: Array = []  # {"node", "mat", "left", "life", "from", "to", "pos", "move", "color"}
 var _jobs: Array = []  # running spells, see _run
 var _wet := {}  # enemy instance id -> engine time it dries
+var _said := {}  # creature -> engine time its next WEAK / RESISTS word may show
+var _broken := {}  # creature -> engine time a weak element may stagger it again
 var _hit_once := {}  # scratch: enemy instance id -> true
 
 
@@ -84,6 +89,12 @@ func cast(spell: Dictionary, origin: Vector3, aim: Vector3, tip: Vector3, damage
 		"wave":
 			_wave(job)
 			return
+		"rift":  # gravity first: a point at the aim that drags everything in, then collapses
+			job["at"] = _aim_point(origin, aim, float(spell["range"]))
+			job["left"] = float(spell["seconds"])
+			var dragging: Dictionary = (spell["effects"] as Dictionary).duplicate()
+			dragging["pull"] = maxf(float(dragging.get("pull", 0.0)), float(spell.get("pull", 6.0)))
+			job["effects"] = dragging
 		"storm":
 			job["at"] = _aim_point(origin, aim, 45.0)
 			job["left"] = float(spell["seconds"])
@@ -225,6 +236,23 @@ func _run(job: Dictionary, delta: float) -> void:
 					var za := randf() * TAU
 					_mote(job, at + Vector3(cos(za), 0.1, sin(za)) * randf() * float(job["radius"]), Vector3(0.0, randf_range(1.0, 3.0), 0.0), 0.7, 0.36)
 				_burst(at, float(job["radius"]), float(job["damage"]), job, Vector3.ZERO, false)
+		"rift":
+			var at: Vector3 = job["at"]
+			var radius := float(spell["radius"])
+			var heart := at + Vector3(0.0, 1.4, 0.0)
+			for n in 2:  # bits fall into the heart from all round
+				var a := randf() * TAU
+				var from := heart + Vector3(cos(a) * radius, randf_range(-0.8, 2.2), sin(a) * radius)
+				_mote(job, from, (heart - from) * 1.6, 0.6, 0.4)
+			if float(job["t"]) >= float(job["next"]):
+				job["next"] = float(job["t"]) + TICK
+				_shape(BALL, heart, Vector3.ONE * 1.6, Vector3.ONE * 0.5, Color(color.darkened(0.75), 0.85), TICK + 0.05)
+				_shape(RING, at + Vector3(0, 0.2, 0), Vector3(1, 0.2, 1) * radius, Vector3(1, 0.2, 1) * 0.6, Color(color, 0.45), TICK)
+				_burst(at, radius, float(job["damage"]), job, Vector3.ZERO, false)
+			if float(job["left"]) <= 0.0:  # the collapse: one last full hit close to the heart
+				_shape(BALL, heart, Vector3.ONE * 0.4, Vector3.ONE * radius * 1.2, Color(color, 0.7), 0.4)
+				_burst(at, radius * 0.6, float(job["damage"]) * 2.5, job, Vector3.ZERO, true)
+				landed.emit("rift", at, spell)
 		"storm":
 			var at: Vector3 = job["at"]
 			var radius := float(spell["radius"])
@@ -431,14 +459,31 @@ func _hurt(enemy: Node3D, damage: float, job: Dictionary, dir: Vector3) -> void:
 	var hold := BOSS_HOLD if boss else 1.0
 	if wet and (effects.has("chain") or effects.has("shock")):
 		damage *= 1.5  # water carries lightning
+	var found := ""  # "weak" | "strong": what the spell's elements are to this creature
+	if damage > 0.0 and not weakness.is_empty():
+		var stats: Dictionary = enemy.get("_stats")
+		var spell: Dictionary = job["spell"]
+		var hit := CombatRules.elements(weakness, String(spell.get("substance", spell.get("sequence", ""))), String(stats.get("weak", "")), String(stats.get("strong", "")))
+		damage *= float(hit["mult"])
+		found = String(hit["kind"])
 	if damage > 0.0:
 		var at := _center(enemy)
 		enemy.call("on_hit", damage, at, Vector3.UP)
 		if numbers != null:
 			numbers.call("spawn", at, damage)
+			if found != "" and float(_said.get(id, 0.0)) < now:
+				_said[id] = now + 1.0
+				numbers.call("say", at, String(words.get(found, "")), Color(1.0, 0.55, 0.2) if found == "weak" else Color(0.65, 0.7, 0.8))
 	if not is_instance_valid(enemy) or enemy.is_queued_for_deletion():
 		_wet.erase(id)
+		_said.erase(id)
+		_broken.erase(id)
 		return
+	if found == "weak":
+		enemy.call("apply_vulnerable", float(weakness["open_mult"]), float(weakness["open_seconds"]))
+		if float(_broken.get(id, 0.0)) < now:  # the break: it reels, but not again right away
+			_broken[id] = now + float(weakness["stagger_cooldown"])
+			enemy.call("apply_freeze", float(weakness["stagger_seconds"]) * hold)
 	if effects.has("wet"):
 		_wet[id] = now + float(effects["wet"])
 		enemy.call("apply_slow", 0.15, float(effects["wet"]))

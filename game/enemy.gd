@@ -412,6 +412,7 @@ func _attack() -> void:
 	if _stats["attack_type"] == "melee":
 		_swing_left = SWING_TIME
 		if is_instance_valid(_target):
+			_target.set("struck_by", self)  # a ward needs to know where the blow comes from (and whom to throw it back at)
 			_target.take_damage(damage, element)
 		return
 	var origin := global_position + Vector3(0, _size.y * 0.7, 0)

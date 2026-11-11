@@ -126,6 +126,10 @@ var cheat_god := false  # admin commands (game/admin_commands.gd): no damage
 var cheat_fly := false  # free flight: move where the camera looks, no gravity
 var cheat_speed := 1.0  # movement speed multiplier
 var _shove := Vector3.ZERO  # see shove()
+var damage_gate: Callable  # fantasy world (game/combat_tools.gd): every hit is passed through it first: (amount, element) -> what is left
+var struck_by: Node3D  # whoever is about to hurt us: set by the attacker just before take_damage (may stay null)
+var struck_from := Vector3.INF  # where a hit without an attacker node comes from (a projectile)
+var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
 var channelling := false  # a staff spell is being built (game/staff_caster.gd): the element keys are not gun keys now
 var _world_hp := 0.0  # extra max health from the fantasy world's Magic level and robe
@@ -321,8 +325,8 @@ func _move_and_shoot(delta: float) -> void:
 	var dir := (Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, input.y)).normalized()
 	var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not Input.is_action_pressed("aim")
 	var speed := SPEED * (_sprint_multiplier if sprinting else 1.0) * status.speed_multiplier() * (1.0 + bonus_speed_pct / 100.0) * cheat_speed
-	velocity.x = dir.x * speed + _shove.x
-	velocity.z = dir.z * speed + _shove.z
+	velocity.x = dir.x * speed * _pace + _shove.x
+	velocity.z = dir.z * speed * _pace + _shove.z
 	_shove = _shove.move_toward(Vector3.ZERO, 30.0 * delta)
 	if cheat_fly:  # the whole movement follows the view, up and down included
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * speed * 2.0
@@ -380,8 +384,16 @@ func shove(v: Vector3) -> void:
 	_shove = Vector3(v.x, 0.0, v.z)
 
 
+func set_pace(mult: float) -> void:
+	_pace = mult
+
+
 func take_damage(amount: float, element: String = "physical") -> void:
-	if cheat_god:
+	if damage_gate.is_valid():
+		amount = float(damage_gate.call(amount, element))
+	struck_by = null
+	struck_from = Vector3.INF
+	if cheat_god or amount <= 0.0:
 		return
 	var taken := ArmorMath.incoming(amount * _world_damage, element, armor, randf())
 	if taken <= 0.0:

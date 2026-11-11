@@ -1,1 +1,4 @@
-Loading screens with the game's own screenshots, sound options (master volume, a page to mute each sound, hearing-now highlight), chat commands on in releases
+Round 4 part 3 (A+B): gravity element on R, slots grow with Magic level, 7 new long spells; dodge step, ward, staff strike, weak and strong elements, mana pressure
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

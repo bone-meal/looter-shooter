@@ -282,6 +282,32 @@
   },
   "ui_open": {
    "volume": -10
+  },
+  "cast_orb": {
+   "volume": -4,
+   "pitch": [
+    0.92,
+    1.08
+   ],
+   "range": 60
+  },
+  "element_g": {
+   "volume": -6
+  },
+  "dodge": {
+   "volume": -9
+  },
+  "ward_block": {
+   "volume": -6
+  },
+  "ward_perfect": {
+   "volume": -3
+  },
+  "strike_miss": {
+   "volume": -10
+  },
+  "strike_hit": {
+   "volume": -5
   }
  }
 }

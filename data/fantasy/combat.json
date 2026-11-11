@@ -1,0 +1,33 @@
+{
+ "version": 1,
+ "_about": "Combat tools of the fantasy world (rules: core/combat_rules.gd, play: game/combat_tools.gd). Every number is a placeholder for the director. dodge: a quick step in the direction being walked (or backwards when standing): it starts at `speed` m/s and fades by 30 m/s each second, so it covers about speed x speed / 60 metres (15 -> 3.75 m); nothing can hurt you for safe_seconds, usable again after cooldown. ward: hold the aim key with the staff out; hits from inside arc_deg in front lose `block` of their damage and cost mana_per_damage mana for each point stopped (no mana = no ward); a ward raised no more than perfect_seconds before the hit stops all of it for free, throws `reflect` x the hit back at the attacker and staggers it for stagger_seconds; move_mult = how fast you walk while warding. weakness: every creature has a weak and a strong element (data/fantasy/enemies.json weak / strong, element letters): a spell that holds the weak element does weak_mult damage, staggers the creature for stagger_seconds (not more often than stagger_cooldown) and leaves it open (open_mult damage taken for open_seconds); a spell that holds the strong element and not the weak one does strong_mult. strike: letting go of the cast key with an empty element box swings the staff: everything within reach and arc_deg takes `damage` (grown by staff and Magic level like a spell) and each creature hit gives mana_per_hit mana back; cooldown seconds between swings. Mana pressure = these strike numbers together with the element costs and caster.regen in data/fantasy/spells.json.",
+ "dodge": {
+  "speed": 15.0,
+  "safe_seconds": 0.35,
+  "cooldown": 1.1
+ },
+ "ward": {
+  "block": 0.8,
+  "arc_deg": 150.0,
+  "mana_per_damage": 0.5,
+  "perfect_seconds": 0.25,
+  "reflect": 1.5,
+  "stagger_seconds": 1.2,
+  "move_mult": 0.5
+ },
+ "weakness": {
+  "weak_mult": 1.5,
+  "strong_mult": 0.25,
+  "stagger_seconds": 0.7,
+  "stagger_cooldown": 4.0,
+  "open_mult": 1.3,
+  "open_seconds": 3.0
+ },
+ "strike": {
+  "reach": 2.8,
+  "arc_deg": 120.0,
+  "damage": 8.0,
+  "mana_per_hit": 10.0,
+  "cooldown": 0.55
+ }
+}

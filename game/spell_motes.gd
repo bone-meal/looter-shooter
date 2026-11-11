@@ -22,6 +22,7 @@ const RULES := {
 	"grain": [-5.0, 0.8, 1.0, 0.8, 4.0, false, 0.9],
 	"prism": [0.0, 0.5, 1.8, 1.0, 6.0, true, 0.9],
 	"blob": [-18.0, 0.3, 1.2, 0.8, 0.0, true, 0.95],
+	"orb": [0.0, 1.0, 1.0, 0.45, 2.5, true, 0.95],  # gravity: a ring that tumbles and shrinks away
 }
 
 var share := 1.0  # graphics tier: the share of bits that are really thrown
@@ -201,6 +202,13 @@ func _mesh(shape: String, glows: bool) -> Mesh:
 			mesh = grain
 		"prism":
 			mesh = _cone(0.35, 1.0, 3, 0.35)
+		"orb":
+			var ring := TorusMesh.new()
+			ring.inner_radius = 0.3
+			ring.outer_radius = 0.5
+			ring.rings = 10
+			ring.ring_segments = 4
+			mesh = ring
 		_:
 			var blob := SphereMesh.new()
 			blob.radius = 0.5

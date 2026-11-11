@@ -10,7 +10,7 @@ const SpellBook = preload("res://core/spell_book.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
 
 # first letter = the form (W jet, F bolt, E eruption, A wave), all letters together = the substance
-const CASTS := ["W", "WWW", "WF", "WA", "WE", "WFA", "F", "FFF", "FA", "FE", "FW", "E", "EEE", "EW", "EF", "EFA", "A", "AAA", "AE", "AW", "AEW", "WFEA", "AWAAWAWWA", "FEFEEFFEF"]
+const CASTS := ["W", "WWW", "WF", "WA", "WE", "WFA", "F", "FFF", "FA", "FE", "FW", "E", "EEE", "EW", "EF", "EFA", "A", "AAA", "AE", "AW", "AEW", "WFEA", "AWAAWAWWA", "FEFEEFFEF", "G", "GGG", "GW", "AG", "FG", "GAGAG", "GGAGGEGG"]
 
 
 class Stand extends Node3D:
