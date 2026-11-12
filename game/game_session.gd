@@ -121,6 +121,7 @@ var _loot_tables: Dictionary
 var _crow_a: Node3D  # home-island crow (feed it worms to fly to the club island)
 var _crow_b: Node3D  # club-island crow (flies you home for free)
 var _ride_crow: Node3D  # the crow that actually flies
+var _gun_side: Array[Node] = []  # the colosseum, both islands, the crows and the lifeguard: asleep while the player is in Aurelind (_rest_gun_side)
 var _crow_cfg: Dictionary
 var _club_spawn := Vector3.ZERO
 var _crow_a_pos := Vector3.ZERO
@@ -144,6 +145,7 @@ func _ready() -> void:
 	LoadClock.mark("session created")
 	_build_environment()
 	LoadClock.mark("sky and light")
+	var first_gun_side := get_child_count()
 	var gates := Colosseum.build(self)
 	LoadClock.mark("colosseum")
 	var island := Island.build(self)
@@ -176,6 +178,8 @@ func _ready() -> void:
 	lifeguard.position = Lifeguard.POS
 	add_child(lifeguard)
 	lifeguard.look_at(Lifeguard.POS + (Lifeguard.POS - Island.CENTER), Vector3.UP)
+	for index in range(first_gun_side, get_child_count()):
+		_gun_side.append(get_child(index))
 	_ride_crow = CrowModel.build()
 	_ride_crow.visible = false
 	add_child(_ride_crow)
@@ -955,6 +959,8 @@ func _enter_fantasy() -> void:
 	_build_fantasy()
 	LoadClock.mark("fantasy: world built")
 	_in_fantasy = true
+	_rest_gun_side(true)
+	_rest_fantasy()
 	_player.teleport(_fantasy.spawn_world(), 0.0)
 	_player.look_at_point(_fantasy.farm_world() + Vector3(0.0, 3.0, 0.0))  # you arrive facing the farmhouse
 	apply_settings()  # switches to the painted look and loads the land around the player
@@ -987,10 +993,31 @@ func _leave_fantasy() -> void:
 	_fantasy.leave()
 	_director.reset()
 	_in_fantasy = false
+	_rest_gun_side(false)
+	get_tree().create_timer(3.0).timeout.connect(_rest_fantasy)  # after its sounds have faded out
 	apply_settings()
 	save_profile()
 	_player.teleport(_island_spawn, 0.0)
 	_player_hud.play_fade()
+
+
+# Aurelind lies 20 km from the islands, yet their ~1500 nodes (staff, machines, neon, animated bodies) kept running
+# and cost 0.6 ms a frame there (round 5). Asleep = not processed and out of the physics world; nothing is freed.
+# Not done online: the host runs the shared boss in the colosseum for players who are still on the gun side.
+func _rest_gun_side(asleep: bool) -> void:
+	if asleep and net != null and net.is_active():
+		return
+	for part in _gun_side:
+		part.process_mode = Node.PROCESS_MODE_DISABLED if asleep else Node.PROCESS_MODE_INHERIT
+
+
+# The other way round: Aurelind's own ~2000 nodes sleep while the player is on the gun side (awake at once on entry).
+# Not done online: the host runs that world for whoever of the party is still in it.
+func _rest_fantasy() -> void:
+	if _fantasy == null:
+		return
+	var asleep: bool = not _in_fantasy and (net == null or not net.is_active())
+	_fantasy.process_mode = Node.PROCESS_MODE_DISABLED if asleep else Node.PROCESS_MODE_INHERIT
 
 
 # How much of the land is kept around the player, by graphics tier (data/graphics.json "fantasy").

@@ -112,10 +112,15 @@
     "props": 1.0,
     "water": 2,
     "lod": 1.0,
+    "shadow_splits": 2,
+    "shadow_far": 70.0,
     "forward": {
      "render_scale": 1.0,
      "msaa": 2,
      "sdfgi": true,
+     "gi_half": true,
+     "gi_update": 4,
+     "gi_cascades": 3,
      "ssil": false,
      "volumetric": 0.001,
      "ssr": true

@@ -1,9 +1,10 @@
-Round 5 batch 1: dithered shadow veil fixed (twice the frame rate), release text, drop guns, Shift compare
+Round 5 batch 2: frame rate on the High tier (Millbrook 74 -> 90 fps at 1080p Forward+)
 
-- render_style: the sun's shadow edges are no longer widened with distance on Forward+ (it turned every shadow into one dithered veil over the view and cost half the frame)
-- export_presets: the writers' text files are packed; tools/export_cover.gd + fantasy_check + git_release refuse a release that would lack data files
-- inventory: drop a rolled gun with the drop key (G) or by carrying it out of the window; hold Shift over a gun to see the gun in hand beside it
-- dev tools: !uncap, !lighting, !fx, !sun, !measure, !inv; boot_opts.txt runs the boot check fullscreen
+Only the world the player is in runs: the islands and colosseum sleep while
+in Aurelind, Aurelind sleeps on the gun side (offline only). High tier:
+shadows in 2 splits to 70 m, bounce light at half resolution over 16 frames
+with 3 cascades (tier numbers in data/graphics.json). Measuring steps
+!nodes, !cut, !gi in tools/dev_boot.gd; !where works outside Aurelind.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -283,6 +283,64 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				else:
 					light.set(words[1], int(words[2]))
 			_lines.append("sun %s = %s" % [words[1], words[2]])
+		"nodes":  # where the scene's nodes are: per part of the session and of the fantasy world, and the commonest kinds
+			var kinds := {}
+			_count_kinds(get_tree().root, kinds)
+			var names: Array = kinds.keys()
+			names.sort_custom(func(x: String, y: String) -> bool: return int(kinds[x]) > int(kinds[y]))
+			var top := PackedStringArray()
+			for kind: String in names.slice(0, 14):
+				top.append("%s %d" % [kind, int(kinds[kind])])
+			_lines.append("NODES by kind: " + ", ".join(top))
+			for holder: Variant in [session, session.call("fantasy")]:
+				if holder == null:
+					continue
+				var parts := PackedStringArray()
+				for child in (holder as Node).get_children():
+					var inside := child.find_children("*", "", true, false).size()
+					if inside >= 20:
+						parts.append("%s %d" % [child.name, inside])
+				_lines.append("NODES under %s: %s" % [(holder as Node).name, ", ".join(parts)])
+		"cut":  # "!cut places freeze|hide|off|on": one part of the fantasy world (a field of game/fantasy_world.gd, or "enemies") stops running, stops being drawn, both, or comes back: what does it cost?
+			var targets: Array = []
+			if words[1] == "enemies":
+				targets = session.call("director").call("enemy_list")
+			elif words[1] == "others":  # everything of the session that is not the fantasy world or the player: island, club, colosseum ...
+				for child in session.get_children():
+					if child is Node3D and child != session.call("fantasy") and child != player:
+						targets.append(child)
+			elif words[1] == "hud":
+				targets = session.find_children("*", "CanvasLayer", true, false)
+			else:
+				targets = [session.call("fantasy").get(words[1])]
+			for target: Variant in targets:
+				if not is_instance_valid(target):
+					continue
+				var part := target as Node
+				if words[2] == "freeze" or words[2] == "off":
+					part.process_mode = Node.PROCESS_MODE_DISABLED
+				if (words[2] == "hide" or words[2] == "off") and (part is Node3D or part is CanvasItem):
+					part.set("visible", false)
+				if words[2] == "on":
+					part.process_mode = Node.PROCESS_MODE_INHERIT
+					part.set("visible", true)
+			_lines.append("cut %s %s (%d)" % [words[1], words[2], targets.size()])
+		"gi":  # the bounce light's cost knobs: "!gi half on|off" (half resolution), "!gi rays 0-6", "!gi converge 0-5", "!gi update 0-4" (engine quality steps), "!gi cascades n", "!gi cell metres"
+			var mood: Environment = (session.get("_render_style") as Object).get("env")
+			match words[1]:
+				"half":
+					RenderingServer.gi_set_use_half_resolution(words[2] == "on")
+				"rays":
+					RenderingServer.environment_set_sdfgi_ray_count(int(words[2]) as RenderingServer.EnvironmentSDFGIRayCount)
+				"converge":
+					RenderingServer.environment_set_sdfgi_frames_to_converge(int(words[2]) as RenderingServer.EnvironmentSDFGIFramesToConverge)
+				"update":
+					RenderingServer.environment_set_sdfgi_frames_to_update_light(int(words[2]) as RenderingServer.EnvironmentSDFGIFramesToUpdateLight)
+				"cascades":
+					mood.sdfgi_cascades = int(words[2])
+				"cell":
+					mood.sdfgi_min_cell_size = float(words[2])
+			_lines.append("gi %s %s" % [words[1], words[2]])
 		"measure":  # "!measure note": 90 frames of this view into the log: whole frame, GPU, main thread split into drawing and the rest, physics
 			var view := get_viewport().get_viewport_rid()
 			RenderingServer.viewport_set_measure_render_time(view, true)
@@ -316,8 +374,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"buildings":  # "!buildings full" / "!buildings plain": which building models places built from now on use, whatever the tier says (to measure one against the other)
 			(session.call("fantasy").get("places") as Node).set("plain", words[1] == "plain")
 			_lines.append("buildings %s" % words[1])
-		"where":  # fantasy world: the player's spot in map metres, for the log
-			var here: Vector3 = session.call("fantasy").call("player_local")
+		"where":  # the player's spot for the log: map metres in the fantasy world, world metres elsewhere
+			var here: Vector3 = player.global_position
+			if session.call("fantasy") != null:
+				here = session.call("fantasy").call("player_local")
 			_lines.append("at %.1f %.1f (height %.1f) %s" % [here.x, here.z, here.y, " ".join(words.slice(1))])
 		"usemove":  # fantasy world: the nearest creature starts its own attack at the player right now (to picture its warning)
 			var nearest_one: Node3D = null
@@ -386,6 +446,12 @@ func _stage(renderer: String, stage: String, seconds: float) -> void:
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
 		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0])
+
+
+func _count_kinds(node: Node, into: Dictionary) -> void:
+	into[node.get_class()] = int(into.get(node.get_class(), 0)) + 1
+	for child in node.get_children():
+		_count_kinds(child, into)
 
 
 func _find_player(node: Node) -> Node:

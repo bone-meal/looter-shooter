@@ -233,8 +233,13 @@ func _apply_environment() -> void:
 	sun.shadow_enabled = shadow_size > 0
 	if shadow_size > 0:
 		RenderingServer.directional_shadow_atlas_set_size(shadow_size, true)
-		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if shadow_size >= 4096 else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
-		sun.directional_shadow_max_distance = 120.0 if shadow_size >= 4096 else 70.0
+		var splits := 4 if shadow_size >= 4096 else 2
+		var reach := 120.0 if shadow_size >= 4096 else 70.0
+		if _textured():  # a graphics tier may name its own (round 5: High draws 2 splits to 70 m, a third fewer shadow draws, same picture)
+			splits = int(_tier().get("shadow_splits", splits))
+			reach = float(_tier().get("shadow_far", reach))
+		sun.directional_shadow_mode = DirectionalLight3D.SHADOW_PARALLEL_4_SPLITS if splits >= 4 else DirectionalLight3D.SHADOW_PARALLEL_2_SPLITS
+		sun.directional_shadow_max_distance = reach
 		sun.shadow_blur = float(s.get("shadow_blur", 1.0))
 		sun.shadow_bias = 0.05
 		sun.shadow_normal_bias = 1.5
@@ -253,7 +258,10 @@ func _apply_forward_extras() -> void:
 	var on := _textured() and not forward.is_empty()
 	env.sdfgi_enabled = on and bool(forward.get("sdfgi", false))
 	env.sdfgi_use_occlusion = true
-	env.sdfgi_cascades = 4
+	env.sdfgi_cascades = int(forward.get("gi_cascades", 4))
+	# These two are engine-wide switches, so every tier sets them (missing key = the engine's own default).
+	RenderingServer.gi_set_use_half_resolution(bool(forward.get("gi_half", false)))
+	RenderingServer.environment_set_sdfgi_frames_to_update_light(int(forward.get("gi_update", 2)) as RenderingServer.EnvironmentSDFGIFramesToUpdateLight)  # 2 = over 4 frames, 4 = over 16
 	env.sdfgi_min_cell_size = 0.4
 	env.ssil_enabled = on and bool(forward.get("ssil", false))
 	env.ssr_enabled = on and bool(forward.get("ssr", false))
