@@ -21,7 +21,7 @@ var graphics := "medium"
 var shaders := "realistic"
 var renderer := "compatibility"  # applied at the next start (game/renderer_switch.gd)
 var picks := {}  # the player's own choices over the graphics preset: option id -> choice id (data/graphics.json "options"); missing = "preset"
-var bindings := {}  # action -> "key:87" / "mouse:1"; missing = default (see game/input_setup.gd)
+var bindings := {}  # action -> up to three codes ["key:87", "mouse:4"]; missing = the default (see game/input_setup.gd)
 var dev_commands := true  # chat commands such as /give (game/admin_commands.gd). Director 2026-11-10: ON IN RELEASE BUILDS TOO for now (was: debug builds only)
 var volume := 1.0  # master volume 0..1
 var muted_sounds: Array = []  # sound ids switched off on the Sounds page (data/sound_list.json, game/sound_board.gd)
@@ -69,8 +69,14 @@ func from_dict(d: Dictionary) -> void:
 	if saved is Dictionary:
 		bindings = {}
 		for action in saved:
-			if saved[action] is String:
-				bindings[String(action)] = saved[action]
+			if saved[action] is String:  # settings written before a control could take three
+				bindings[String(action)] = [saved[action]]
+			elif saved[action] is Array:
+				var kept: Array = []
+				for code: Variant in saved[action]:
+					if code is String and kept.size() < 3 and not kept.has(code):
+						kept.append(code)
+				bindings[String(action)] = kept
 	clamp_values()
 
 

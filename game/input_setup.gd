@@ -1,5 +1,6 @@
-# Purpose: all input actions, their default keys, and rebinding. Bindings are saved in settings as strings like "key:87" or "mouse:1".
-# Dependencies: core/settings_state.gd (its `bindings` dictionary; an action with no entry uses its default).
+# Purpose: all input actions, their default keys, and rebinding. A control can have up to SLOTS bindings (keys, mouse
+# buttons, wheel directions), saved in settings as codes like "key:87" or "mouse:4" (wheel up).
+# Dependencies: core/settings_state.gd (its `bindings` dictionary: action -> list of codes; no entry = the default).
 extends RefCounted
 
 # [action, label shown in the controls menu]
@@ -79,36 +80,85 @@ static func default_code(action: String) -> String:
 	return ""
 
 
+const SLOTS := 3  # how many keys, mouse buttons or wheel directions one control can have
+
+
+# What is bound to an action, first slot first (none = unbound; nothing saved = its default).
+static func codes(settings: RefCounted, action: String) -> PackedStringArray:
+	var saved: Variant = settings.bindings.get(action)
+	if saved is Array:
+		return PackedStringArray(saved)
+	var default := default_code(action)
+	return PackedStringArray([default]) if default != "" else PackedStringArray()
+
+
+# The first of them ("" = unbound): what prompts and hints show.
 static func current_code(settings: RefCounted, action: String) -> String:
-	return settings.bindings.get(action, default_code(action))
+	var all := codes(settings, action)
+	return all[0] if not all.is_empty() else ""
 
 
-# Creates every action and applies the saved (or default) binding. Call once at startup after settings load.
+# True when some control uses this code (the player's wheel stops switching weapons in a direction that is bound).
+static func used(settings: RefCounted, code: String) -> bool:
+	for entry in ACTIONS:
+		if codes(settings, entry[0]).has(code):
+			return true
+	return false
+
+
+# Creates every action and applies the saved (or default) bindings. Call once at startup after settings load.
 static func register(settings: RefCounted) -> void:
 	for entry in ACTIONS:
 		var action: String = entry[0]
 		if not InputMap.has_action(action):
 			InputMap.add_action(action)
-		apply(action, current_code(settings, action))
+		apply(action, codes(settings, action))
 
 
-static func apply(action: String, code: String) -> void:
+static func apply(action: String, bound: PackedStringArray) -> void:
 	InputMap.action_erase_events(action)
-	var event := _event_from_code(code)
-	if event != null:
-		InputMap.action_add_event(action, event)
+	for code in bound:
+		var event := _event_from_code(code)
+		if event != null:
+			InputMap.action_add_event(action, event)
 
 
-# Binds `code` to `action`; if another action already uses it, that action gets this action's old binding (swap).
-static func bind(settings: RefCounted, action: String, code: String) -> void:
-	var old := current_code(settings, action)
+# Puts `code` into slot `slot` (0-based) of `action`. A code another control already has MOVES here and leaves that
+# control; returns that control's label ("" = it was free). The magic element keys are a group of their own: they may
+# share keys with the rest (they only act while a spell is gathered).
+static func bind(settings: RefCounted, action: String, slot: int, code: String) -> String:
+	var taken := ""
 	for entry in ACTIONS:
 		var other: String = entry[0]
-		if other != action and current_code(settings, other) == code and other.begins_with("element_") == action.begins_with("element_"):
-			settings.bindings[other] = old
-			apply(other, old)
-	settings.bindings[action] = code
-	apply(action, code)
+		if other.begins_with("element_") != action.begins_with("element_"):
+			continue
+		var theirs := codes(settings, other)
+		var at := theirs.find(code)
+		if at >= 0:
+			theirs.remove_at(at)
+			_store(settings, other, theirs)
+			if other != action:
+				taken = String(entry[1])
+	var mine := codes(settings, action)
+	if slot < mine.size():
+		mine[slot] = code
+	elif mine.size() < SLOTS:
+		mine.append(code)
+	_store(settings, action, mine)
+	return taken
+
+
+# Empties one slot of an action (the later ones move up).
+static func unbind(settings: RefCounted, action: String, slot: int) -> void:
+	var mine := codes(settings, action)
+	if slot < mine.size():
+		mine.remove_at(slot)
+		_store(settings, action, mine)
+
+
+static func _store(settings: RefCounted, action: String, bound: PackedStringArray) -> void:
+	settings.bindings[action] = Array(bound)
+	apply(action, bound)
 
 
 static func reset_to_defaults(settings: RefCounted) -> void:
@@ -138,11 +188,18 @@ static func describe(code: String) -> String:
 		MOUSE_BUTTON_LEFT: return "Left Mouse"
 		MOUSE_BUTTON_RIGHT: return "Right Mouse"
 		MOUSE_BUTTON_MIDDLE: return "Middle Mouse"
+		MOUSE_BUTTON_WHEEL_UP: return "Wheel Up"
+		MOUSE_BUTTON_WHEEL_DOWN: return "Wheel Down"
+		MOUSE_BUTTON_WHEEL_LEFT: return "Wheel Left"
+		MOUSE_BUTTON_WHEEL_RIGHT: return "Wheel Right"
+		MOUSE_BUTTON_XBUTTON1: return "Mouse 4"
+		MOUSE_BUTTON_XBUTTON2: return "Mouse 5"
 	return "Mouse %d" % value
 
 
 static func label(settings: RefCounted, action: String) -> String:
-	return describe(current_code(settings, action))
+	var code := current_code(settings, action)
+	return describe(code) if code != "" else "unbound"
 
 
 static func _event_from_code(code: String) -> InputEvent:

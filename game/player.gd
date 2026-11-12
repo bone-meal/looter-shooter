@@ -36,6 +36,7 @@ const BodyMotion = preload("res://game/body_motion.gd")
 const EmoteWheel = preload("res://game/emote_wheel.gd")
 
 const MoveRules = preload("res://core/move_rules.gd")
+const InputSetup = preload("res://game/input_setup.gd")
 
 const STAND_HEIGHT := 1.8  # the body's capsule, standing (Counter-Strike's 72 units)
 const STEP_HEIGHT := 0.45  # ledges up to this high are stepped onto (_step_up); a house's plinth is 0.6
@@ -236,6 +237,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _handle_emote_input(event):
 		return
+	if event.is_action_pressed("jump"):  # every press counts, a wheel tick too (it is down and up again within one frame)
+		_jump_until = _now() + move.tick + float(_move_cfg["jump_buffer"])
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		var sens := settings.mouse_sens * (_camera.fov / settings.fov)  # slower look while zoomed
 		_yaw -= event.relative.x * sens
@@ -253,9 +256,9 @@ func _unhandled_input(event: InputEvent) -> void:
 		use_skill(0)
 	elif event.is_action_pressed("skill_2"):
 		use_skill(1)
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP:
-		select_hotbar((_hotbar + InventoryState.HOTBAR - 1) % InventoryState.HOTBAR)
-	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN:
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP and not InputSetup.used(settings, "mouse:%d" % MOUSE_BUTTON_WHEEL_UP):
+		select_hotbar((_hotbar + InventoryState.HOTBAR - 1) % InventoryState.HOTBAR)  # the wheel switches guns only in a direction no control is bound to
+	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN and not InputSetup.used(settings, "mouse:%d" % MOUSE_BUTTON_WHEEL_DOWN):
 		select_hotbar((_hotbar + 1) % InventoryState.HOTBAR)
 	else:
 		for i in InventoryState.HOTBAR:

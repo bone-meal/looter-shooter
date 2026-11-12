@@ -375,9 +375,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			((session.get("settings") as RefCounted).get("picks") as Dictionary)[words[1]] = words[2]
 			session.call("apply_settings")
 			_lines.append("pick %s = %s" % [words[1], words[2]])
-		"menu":  # "!menu settings" shows the settings page (for a picture), "!menu none" hides the menus again
+		"menu":  # "!menu settings" / "!menu controls" shows that page (for a picture), "!menu none" hides the menus again
 			var main_scene: Node = session.get_parent()
-			main_scene.call("_show_only", main_scene.get("_settings_menu") if words[1] == "settings" else null)
+			main_scene.call("_show_only", main_scene.get("_settings_menu") if words[1] == "settings" else (main_scene.get("_controls_menu") if words[1] == "controls" else null))
 		"buildings":  # "!buildings full" / "!buildings plain": which building models places built from now on use, whatever the tier says (to measure one against the other)
 			(session.call("fantasy").get("places") as Node).set("plain", words[1] == "plain")
 			_lines.append("buildings %s" % words[1])
@@ -392,6 +392,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var forward: Vector3 = -player.global_transform.basis.z
 			block.global_position = player.global_position + Vector3(forward.x, 0.0, forward.z).normalized() * 4.3 + Vector3.UP * (float(words[1]) * 0.5 - 0.05)
 			_lines.append("ledge %s m ahead, player at height %.2f" % [words[1], player.global_position.y])
+		"bind":  # "!bind jump 1 mouse:5": a binding for the rest of the run (slot 0-2; mouse:4 / mouse:5 = wheel up / down), not saved
+			var InputSetup: GDScript = load("res://game/input_setup.gd")
+			_lines.append("bind %s slot %s = %s (taken from \"%s\")" % [words[1], words[2], words[3], InputSetup.call("bind", session.get("settings"), words[1], int(words[2]), words[3])])
 		"place":  # "!place x y z [yaw]": puts the player at a WORLD spot without starting anything (the empty colosseum floor is 0 0.1 10)
 			player.call("teleport", Vector3(float(words[1]), float(words[2]), float(words[3])), deg_to_rad(float(words[4])) if words.size() > 4 else 0.0)
 		"speed":  # "!speed <note>": ground speed in Source units, what is in hand, fatigue
@@ -402,10 +405,14 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var ground := player.global_position.y
 			var top := ground
 			var began := Time.get_ticks_msec()
-			var tap := InputEventAction.new()
-			tap.action = "jump"
-			tap.pressed = true
-			Input.parse_input_event(tap)
+			if words.has("wheel"):  # "!jumptest <note> wheel": the jump comes from one tick of the wheel (down and up in the same frame)
+				for pressed: bool in [true, false]:
+					var roll := InputEventMouseButton.new()
+					roll.button_index = MOUSE_BUTTON_WHEEL_DOWN
+					roll.pressed = pressed
+					Input.parse_input_event(roll)
+			else:
+				_tap("jump", true)
 			var frames := 0
 			while Time.get_ticks_msec() - began < 60000:
 				await get_tree().process_frame
