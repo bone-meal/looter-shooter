@@ -940,7 +940,7 @@ func _knife_blow(attack: Dictionary) -> void:
 	best.collider.on_hit(dealt, best.position, best.normal)
 	if score != null:
 		score.blow = ""
-		if enemy and not best.collider.health.is_dead():
+		if enemy and not best.collider.health.is_dead() and not best.collider.has_meta("host_pays"):
 			score.hit()
 	_gun_sound(String(attack.get("hit_sound", "")))
 	if damage_numbers != null:
@@ -1033,7 +1033,7 @@ func _shoot() -> void:
 	if score != null:
 		score.blow = ""
 		for collider in totals:
-			if collider.has_method("head_hit") and not collider.health.is_dead():
+			if collider.has_method("head_hit") and not collider.health.is_dead() and not collider.has_meta("host_pays"):
 				score.hit()  # one hit per enemy per shot, however many pellets landed; the killing shot is paid as the kill
 	if damage_numbers != null:
 		for collider in totals:

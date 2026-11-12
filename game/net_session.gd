@@ -19,6 +19,7 @@ const NetFantasy = preload("res://game/net_fantasy.gd")
 const NetTrade = preload("res://game/net_trade.gd")
 const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
+const NetRounds = preload("res://game/net_rounds.gd")
 
 signal hosted(id: String)
 signal joined
@@ -55,6 +56,7 @@ var fantasy: Node  # the fantasy world's creatures and party quests (game/net_fa
 var trade: Node  # trading between players (game/net_trade.gd)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
+var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
 
 
 func _ready() -> void:
@@ -94,6 +96,10 @@ func _ready() -> void:
 	scores.name = "Scores"
 	scores.net = self
 	add_child(scores)
+	rounds = NetRounds.new()
+	rounds.name = "Rounds"
+	rounds.net = self
+	add_child(rounds)
 
 
 func is_active() -> bool:
@@ -245,6 +251,7 @@ func _clear_remote() -> void:
 func unbind_world() -> void:
 	_boss.unbind()
 	fantasy.unbind()
+	rounds.unbind()
 	_spirits.director = null
 	_clear_remote()
 	_world = null
@@ -412,6 +419,7 @@ func _become_host(wanted: String) -> bool:
 	if _mig_ok:
 		_boss.adopt_as_host()
 		fantasy.adopt_as_host()
+		rounds.adopt_as_host()
 	return _mig_ok
 
 

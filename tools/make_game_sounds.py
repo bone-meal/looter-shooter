@@ -1,5 +1,5 @@
 # Purpose: developer-time script. Synthesises the gun side's sounds and every enemy's attack sound (no recordings)
-# into assets/audio/game/<name>.wav: one shot per kind of gun, reloads, the dry click, explosions, and the blows,
+# into assets/audio/game/<name>.wav: the round stings, one shot per kind of gun, reloads, the dry click, explosions, and the blows,
 # bites, shots and wind-up of enemies and fantasy creatures. Which sound belongs to which gun or enemy is data
 # (data/weapons.json "sound" / "reload_sound", "attack_sound" in data/enemies.json and data/fantasy/enemies.json);
 # how loud and how far it carries is data/sounds.json. Uses the helpers of tools/make_fantasy_sounds.py.
@@ -30,9 +30,19 @@ def click(hz, seconds=0.03):
     return band(noise(seconds), hz * 0.6, hz * 1.6) * env(n(seconds), 0.0005, 3)
 
 
+def note(hz, seconds, wave="sine", vol=1.0, soft=2200):
+    """One held note that dies away (the round stings are built from these)."""
+    return lowpass(tone(hz, seconds, wave), soft) * env(n(seconds), 0.012, 1.6) * vol
+
+
 def main():
     os.makedirs(F.OUT, exist_ok=True)
     save = F.save
+    # --- the island's rounds: short musical stings ---
+    save("sting_round", mix(note(196, 1.4, "saw", 0.5), at(note(233, 1.3, "saw", 0.5), 0.18), at(note(294, 1.7, "saw", 0.6), 0.36), lowpass(noise(2.0), 500) * env(n(2.0), 0.3, 1.2) * 0.2), 0.6)
+    save("sting_round_end", mix(note(294, 1.2), at(note(370, 1.2), 0.12), at(note(440, 1.6), 0.24), at(note(587, 2.0), 0.36)), 0.55)
+    save("sting_boss", mix(lowpass(tone(glide(55, 49, 2.4), 2.4, "saw"), 700) * env(n(2.4), 0.05, 1.0), at(note(98, 1.9, "saw", 0.7, 900), 0.3), at(note(104, 1.9, "saw", 0.6, 900), 0.3), lowpass(noise(2.4), 300) * env(n(2.4), 0.2, 1.0) * 0.5), 0.8)
+    save("sting_special", mix(lowpass(tone(glide(440, 880, 0.9), 0.9, "saw"), 3000) * (0.5 + 0.5 * np.sin(2 * np.pi * 14 * np.arange(n(0.9)) / RATE)) * env(n(0.9), 0.02, 1.0) * 0.5, at(note(659, 1.1, "saw", 0.4), 0.5), band(noise(1.3), 2000, 6000) * env(n(1.3), 0.1, 1.5) * 0.15), 0.6)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

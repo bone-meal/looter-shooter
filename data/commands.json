@@ -18,6 +18,7 @@
   {"name": "quest", "usage": "/quest list | start <id> | finish <id|all> | reset", "help": "Shows or changes the party's quest log.", "scope": "world"},
   {"name": "spawn", "usage": "/spawn <enemy id> [count]", "help": "Spawns enemies in front of you.", "scope": "world"},
   {"name": "kill", "usage": "/kill", "help": "Removes every enemy.", "scope": "world"},
+  {"name": "round", "usage": "/round <number>", "help": "The island's rounds jump to that round (it starts a few seconds later).", "scope": "world"},
   {"name": "trade", "usage": "/trade <player name>", "help": "Asks that player to trade guns and armour. Anyone may use it; the same as looking at them and holding the interact key.", "scope": "self"},
   {"name": "op", "usage": "/op <player name>", "help": "Lets that player use commands in your session.", "scope": "host"},
   {"name": "deop", "usage": "/deop <player name>", "help": "Takes commands away from that player again.", "scope": "host"}

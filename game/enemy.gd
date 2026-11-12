@@ -21,6 +21,7 @@ const AIM_HEIGHT := 1.2  # aim at the player's chest
 const SWING_TIME := 0.3
 const WALK_SWING := 0.7
 const PUSH_DECAY := 14.0  # m/s lost per second by a knockback
+const DODGE_TURN := 1.25  # radians it turns aside to get round something
 
 var enemy_id := ""
 var elite := ""  # affix name when this is an elite (set by game/wave_director.gd before add_child), else ""
@@ -85,6 +86,10 @@ var _rally_speed := 1.0
 var _rally_damage := 1.0
 var _guard_until := 0.0  # behind its shield: takes only _guard_mult of every hit until this engine time (a stagger ends it)
 var _guard_mult := 1.0
+var _crawling := false  # see cripple()
+var _blocked := 0.0  # seconds it has been walking without getting anywhere
+var _dodge_until := 0.0  # it walks turned aside until this engine time ...
+var _dodge_side := 1.0  # ... to this side (+1 / -1)
 
 
 # Call before add_child.
@@ -118,6 +123,19 @@ func set_target(target: Node3D) -> void:
 
 func head_height() -> float:
 	return _size.y
+
+
+# Left crawling (a blast took a good part of it, data/island_rounds.json "cripple"): from now on it drags itself
+# along at `pace` times its speed, bent to the ground.
+func cripple(pace: float) -> void:
+	if _crawling or puppet:
+		return
+	_crawling = true
+	_speed *= pace
+
+
+func crawling() -> bool:
+	return _crawling
 
 
 # True when a hit at `point` landed on the head: the top `share` of the height (the enemy's own "head_share" in
@@ -263,6 +281,8 @@ func _physics_process(delta: float) -> void:
 	var busy := _strike_at > 0.0 or now < _hold_until
 	if busy:
 		walk = Vector3.ZERO  # rooted while it winds up: the moment to step aside
+	if now < _dodge_until:
+		walk = walk.rotated(Vector3.UP, _dodge_side * DODGE_TURN)  # going round whatever stood in the way
 	velocity.x = walk.x + _push.x
 	velocity.z = walk.z + _push.z
 	_push = _push.move_toward(Vector3.ZERO, PUSH_DECAY * delta)
@@ -273,6 +293,19 @@ func _physics_process(delta: float) -> void:
 		velocity.z = (position.z - before.z) / maxf(delta, 0.001)
 	else:
 		move_and_slide()
+		# Walking straight at its prey it can run into a rock, a tree or the back of another enemy: when it gets
+		# nowhere for a moment it turns aside for a while, and keeps to that side while the same thing blocks it.
+		var wanted := Vector2(walk.x, walk.z).length()
+		var real := get_real_velocity()
+		if wanted > 0.5 and Vector2(real.x, real.z).length() < wanted * 0.3:
+			_blocked += delta
+			if _blocked > 0.35 and now >= _dodge_until:
+				_blocked = 0.0
+				if now - _dodge_until > 3.0:
+					_dodge_side = 1.0 if randf() < 0.5 else -1.0
+				_dodge_until = now + 0.8
+		else:
+			_blocked = 0.0
 
 	if frozen:
 		return
@@ -419,7 +452,7 @@ func _animate(delta: float) -> void:
 		var tell := 0.0  # winding up a blow: it rears back, then throws itself forward
 		if _strike_at > 0.0 and _windup > 0.0:
 			tell = 1.0 - clampf((_strike_at - Time.get_ticks_msec() / 1000.0) / _windup, 0.0, 1.0)
-		_model.rotation.x = 0.2 * _flinch + 0.4 * tell - 0.55 * _lunge
+		_model.rotation.x = 0.2 * _flinch + 0.4 * tell - 0.55 * _lunge - (1.25 if _crawling else 0.0)
 	_walk_phase += speed * delta * 1.6
 	if _leg_l != null:
 		var swing := sin(_walk_phase) * WALK_SWING * clampf(speed / 3.0, 0.0, 1.0)

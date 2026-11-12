@@ -1,10 +1,14 @@
 {
  "version": 1,
- "_about": "The gun side's sounds and every enemy's attack sound (files assets/audio/game/<id>.wav, made by tools/make_game_sounds.py, played by game/fantasy_sounds.gd with this file). volume: decibels; pitch: [lowest, highest] picked at random each time; range: metres at which a placed sound is gone. Which gun or enemy uses which sound: data/weapons.json `sound` / `reload_sound`, `attack_sound` in data/enemies.json and data/fantasy/enemies.json; dry_fire, explosion and atk_windup (an enemy rearing back for a wound-up blow) are named in code. Every id must also be listed in data/sound_list.json (the Sounds page).",
+ "_about": "The gun side's sounds and every enemy's attack sound (files assets/audio/game/<id>.wav, made by tools/make_game_sounds.py, played by game/fantasy_sounds.gd with this file). volume: decibels; pitch: [lowest, highest] picked at random each time; range: metres at which a placed sound is gone. Which gun or enemy uses which sound: data/weapons.json `sound` / `reload_sound`, `attack_sound` in data/enemies.json and data/fantasy/enemies.json; dry_fire, explosion, atk_windup (an enemy rearing back for a wound-up blow) and the sting_ sounds of the island's rounds (round starts, round survived, boss round, special round) are named in code. Every id must also be listed in data/sound_list.json (the Sounds page).",
  "master": 0.0,
  "voices": 14,
  "ambience": {},
  "sounds": {
+  "sting_round": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
+  "sting_round_end": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
+  "sting_boss": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
+  "sting_special": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
   "shot_pistol": {
    "volume": -6,
    "pitch": [

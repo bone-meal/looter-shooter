@@ -82,6 +82,14 @@ func run(text: String, near: Node3D) -> PackedStringArray:
 				out.append("Level %d now." % session.progress().level())
 		"spawn":
 			out.append(_spawn(args, near, String(entry["usage"])))
+		"round":
+			if args.is_empty() or not String(args[0]).is_valid_int() or String(args[0]).to_int() < 1:
+				out.append(String(entry["usage"]))
+			elif not session.rounds().active:
+				out.append("Only the host runs the island's rounds.")
+			else:
+				session.rounds().skip_to(String(args[0]).to_int())
+				out.append("Round %d starts in a moment (stand on the island)." % String(args[0]).to_int())
 		"kill":
 			var gone := 0
 			for enemy: Node in session.director().enemy_list().duplicate():

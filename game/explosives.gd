@@ -12,6 +12,7 @@ var source  # has enemy_list()
 var sounds: Node  # the game's sound player, set by game/game_session.gd
 var numbers  # DamageNumbers or null
 var score: RefCounted  # core/score_card.gd or null: a blast pays one hit for every enemy it hurts without killing
+var cripple := {}  # data/island_rounds.json "cripple": a blast that takes `share` of an island enemy's health without killing it leaves it crawling
 var ignore: RID  # the player's body, so shots don't hit their owner
 
 var _meshes: Array[MeshInstance3D] = []
@@ -151,8 +152,10 @@ func _explode(i: int, point: Vector3) -> void:
 			continue
 		var dealt: float = damage * lerpf(1.0, MIN_DAMAGE_FRACTION, distance / radius)
 		enemy.on_hit(dealt, center, Vector3.UP)
-		if score != null and not enemy.health.is_dead():
+		if score != null and not enemy.health.is_dead() and not enemy.has_meta("host_pays"):
 			score.hit()
+		if not cripple.is_empty() and enemy.has_meta("island") and not enemy.health.is_dead() and dealt >= float(enemy.health.max_hp) * float(cripple["share"]):
+			enemy.cripple(float(cripple["speed"]))
 		if numbers != null:
 			numbers.spawn(center, dealt)
 
@@ -172,8 +175,10 @@ func blast(point: Vector3, radius: float, damage: float, flash: bool = true) -> 
 			continue
 		var dealt: float = damage * lerpf(1.0, MIN_DAMAGE_FRACTION, distance / radius)
 		enemy.on_hit(dealt, center, Vector3.UP)
-		if score != null and not enemy.health.is_dead():
+		if score != null and not enemy.health.is_dead() and not enemy.has_meta("host_pays"):
 			score.hit()
+		if not cripple.is_empty() and enemy.has_meta("island") and not enemy.health.is_dead() and dealt >= float(enemy.health.max_hp) * float(cripple["share"]):
+			enemy.cripple(float(cripple["speed"]))
 		if numbers != null:
 			numbers.spawn(center, dealt)
 

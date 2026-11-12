@@ -28,6 +28,7 @@ var sounds: Node  # the game's sound player (enemy attack sounds), set by game/g
 var _drops_cfg: Dictionary  # data/drops.json
 var _rng := RandomNumberGenerator.new()
 var _active := false  # waves wait until start() (the player enters the colosseum)
+var last_killed: Node  # the enemy whose death `killed` is being emitted for (its metas say where it belonged)
 
 
 # Call before add_child.
@@ -59,13 +60,17 @@ func reset() -> void:
 	_active = false
 	_waves = WaveState.new(_waves_data)
 	var keep: Array = []
+	var shared := 0
 	for e in _enemies:
 		if e == _boss and boss_handler.is_valid():
 			keep.append(e)  # the shared boss belongs to the whole party, not to our arena run
+			shared += 1
+		elif is_instance_valid(e) and (e as Node).has_meta("island"):
+			keep.append(e)  # the island's rounds go on for whoever is there (game/island_rounds.gd)
 		elif is_instance_valid(e):
 			e.queue_free()
 	_enemies = keep
-	_alive = keep.size()
+	_alive = shared
 	_boss = null
 
 
@@ -74,8 +79,9 @@ func reset_delay() -> float:
 	return float(_waves_data["reset_after_clear_seconds"])
 
 
+# Everything alive that this director holds: its own waves' enemies and those placed from outside (spawn_custom).
 func enemy_count() -> int:
-	return _alive
+	return _enemies.size()
 
 
 func enemy_list() -> Array:
@@ -164,8 +170,10 @@ func _roll_element(id: String) -> String:
 
 
 func _on_enemy_died(enemy: Node) -> void:
-	_alive = maxi(_alive - 1, 0)
+	if not enemy.has_meta("placed"):
+		_alive = maxi(_alive - 1, 0)
 	_enemies.erase(enemy)
+	last_killed = enemy
 	var wave := int(enemy.get_meta("tier")) if enemy.has_meta("tier") else _waves.wave_number()  # fantasy creatures carry their own level
 	killed.emit((enemy as Node3D).global_position, String(enemy.enemy_id), String(enemy.elite), wave)
 
@@ -185,10 +193,10 @@ func spawn_custom(id: String, stats: Dictionary, pos: Vector3, affix: Dictionary
 			var t: Array = _elements["elements"][element]["tint"]
 			enemy.element_tint = Color(t[0], t[1], t[2])
 	enemy.position = pos
+	enemy.set_meta("placed", true)  # not one of the arena's waves: they neither wait for it nor count it
 	enemy.died.connect(_on_enemy_died)
 	add_child(enemy)
 	_enemies.append(enemy)
-	_alive += 1
 	if id.begins_with("boss"):
 		_boss = enemy
 	return enemy
@@ -205,7 +213,8 @@ func despawn(enemy: Node) -> void:
 # Takes an enemy off the list without removing its body and without a kill (it falls on its own: game/enemy.gd fall).
 func forget(enemy: Node) -> void:
 	_enemies.erase(enemy)
-	_alive = maxi(_alive - 1, 0)
+	if not enemy.has_meta("placed"):
+		_alive = maxi(_alive - 1, 0)
 	if enemy == _boss:
 		_boss = null
 

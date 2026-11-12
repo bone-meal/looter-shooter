@@ -178,6 +178,14 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("rolled guns in slots %s; on the ground %d; shift %s  %s" % [", ".join(guns), int((session.get("_field") as Node).call("count")), str(Input.is_key_pressed(KEY_SHIFT)), " ".join(words.slice(2))])
 				_:
 					session.call("_toggle_inventory")
+		"rounds":  # "!rounds <note>": the island's round, its kind, what is left and alive, and how far away and how deep the living are
+			var island: Node = session.call("rounds")
+			var rules: RefCounted = island.get("rules")
+			var spots := PackedStringArray()
+			for enemy: Variant in island.get("_alive"):
+				if is_instance_valid(enemy):
+					spots.append("%s %.0fm y%.1f hp%d%s" % [String(enemy.get("enemy_id")), (enemy as Node3D).global_position.distance_to(player.global_position), (enemy as Node3D).global_position.y, int(enemy.health.hp), " crawling" if bool(enemy.call("crawling")) else ""])
+			_lines.append("ROUNDS %s: round %d %s, fighting %s, left %d, alive %d [%s], player hp %d" % [" ".join(words.slice(1)), int(rules.get("number")), String(rules.get("kind")), str(rules.call("fighting")), int(island.call("left")), int(island.call("alive")), ", ".join(spots), int(player.get("health").hp)])
 		"ammo":  # "!ammo <note>": what is in hand, the rounds in it and in its pool, every holster, the knife type
 			var bag: RefCounted = player.get("inventory")
 			var pools: RefCounted = player.get("pools")

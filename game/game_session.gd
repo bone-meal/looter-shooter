@@ -49,6 +49,8 @@ const TradeScreen = preload("res://game/trade_screen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
+const IslandRounds = preload("res://game/island_rounds.gd")
+const ISLAND_REACH := 60.0  # metres from the island's middle that still count as being on it
 const Scoreboard = preload("res://game/scoreboard.gd")
 
 const HUD_REFRESH := 0.25
@@ -107,6 +109,9 @@ var _points_cfg: Dictionary = DataStore.load_json("res://data/points.json")
 var _score := ScoreCard.new(_points_cfg)  # zombies-style points (saved in the profile) and this session's scoreboard row
 var _scoreboard := Scoreboard.new()
 var _knife_rolled := false  # this character has its knife type
+var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
+var _first_look := false  # a new character is still in its first customize menu: the rounds wait
+var _hurt_at := 0.0  # when the local player was last hurt (the island heals whoever is left alone for a while)
 var _jackpot := 500.0  # this player's progressive slot pot (saved in the profile)
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
@@ -271,6 +276,14 @@ func _ready() -> void:
 	_field.setup(_player.gun_db, _drops_cfg)
 	add_child(_field)
 	_director.killed.connect(_on_enemy_killed)
+	_rounds.director = _director
+	_rounds.bodies = _island_bodies
+	_rounds.rules.alive_cap = int((_rounds.config()["alive_cap"] as Dictionary).get(settings.graphics, 24))
+	_rounds.round_started.connect(_on_round_started)
+	_rounds.round_ended.connect(_on_round_ended)
+	add_child(_rounds)
+	_player.damaged.connect(func() -> void: _hurt_at = _time)
+	_explosives.cripple = _rounds.config()["cripple"]
 	_explosives.source = _director
 	_skill_fx.source = _director
 	_commands.session = self
@@ -297,6 +310,10 @@ func _ready() -> void:
 		net.drops.granted.connect(_on_drop_granted)
 		net.drops.refused.connect(_on_drop_refused)
 		net.scores.card = _score
+		net.rounds.bind(_rounds, _director, _score)
+		net.rounds.on_gun_side = func() -> bool: return not _in_fantasy
+		net.rounds.round_started.connect(_on_round_started)  # as a client: the host's rounds
+		net.rounds.round_ended.connect(_on_round_ended)
 		if net.is_active():
 			_build_fantasy()
 	apply_settings()
@@ -429,10 +446,12 @@ func _open_customizer() -> void:
 
 # A character's first session starts in the customize menu (game/main.gd, after the loading picture).
 func customize_now() -> void:
+	_first_look = true
 	_open_customizer()
 
 
 func _close_customizer() -> void:
+	_first_look = false
 	_customizer.visible = false
 	_player.controls_enabled = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -636,6 +655,10 @@ func wallet() -> Wallet:
 
 func score() -> ScoreCard:
 	return _score
+
+
+func rounds() -> IslandRounds:
+	return _rounds
 
 
 # The fantasy world while the player is in it, else null (commands that belong to it only work inside).
@@ -1131,7 +1154,11 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 	if enemy_id == "boss" or enemy_id.begins_with("boss_"):
 		kill_counters.append("boss_kills")
 		xp_kind = "boss"
-	var guns: Array = [] if _in_fantasy else DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())  # the fantasy world has its own drops
+	var island_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("island")
+	var guns: Array = [] if (_in_fantasy or island_kill) else DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())  # the fantasy world has its own drops; the island's enemies drop no guns
+	if island_kill and enemy_id.begins_with("boss"):  # until bosses drop power-ups: a beaten island boss fills every pool
+		_player.pools.fill_all()
+		_player_hud.notice("Max ammo")
 	for i in guns.size():
 		var gun: Dictionary = guns[i]
 		_field.spawn(gun, where + Vector3(0.6 * float(i), 0.0, 0.0))
@@ -1187,7 +1214,54 @@ func _on_player_died() -> void:
 		_fantasy.enter(_player.global_position)
 		_player_hud.play_fade()
 	else:
+		if net == null or not net.can_send():  # alone, going down ends the run: the island starts over at round 1
+			if _rounds.rules.number > 0:
+				_player_hud.notice("You made it to round %d" % _rounds.rules.number)
+			_rounds.stop()
 		_player.teleport(_island_spawn, 0.0)
+
+
+# --- the island's rounds (game/island_rounds.gd runs them; core/round_rules.gd decides) ---
+
+func _on_island(at: Vector3) -> bool:
+	return Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z).length() < ISLAND_REACH
+
+
+# The players standing on the island: us and, when hosting, the others. Nobody = the rounds wait.
+func _island_bodies() -> Array:
+	var out: Array = []
+	if _on_island(_player.global_position) and not _player.carried and not _first_look:
+		out.append(_player)
+	if net != null and net.can_send() and net.is_host():
+		for body: Node3D in net.target_nodes():
+			if _on_island(body.global_position):
+				out.append(body)
+	return out
+
+
+func _on_round_started(number: int, kind: String) -> void:
+	if number == 1:
+		_player.pools.fill_all()  # a run starts with full pools
+	match kind:
+		"boss":
+			_player_hud.notice("Round %d: something big is wading in" % number)
+			_sounds.call("play", "sting_boss")
+		"special":
+			_player_hud.notice("Round %d: the sea is crawling" % number)
+			_sounds.call("play", "sting_special")
+		_:
+			_player_hud.notice("Round %d" % number)
+			_sounds.call("play", "sting_round")
+
+
+func _on_round_ended(number: int, kind: String) -> void:
+	if kind == "special" and bool(_rounds.config()["special"]["max_ammo"]):
+		_player.pools.fill_all()
+		_player_hud.notice("Round %d survived: max ammo" % number)
+	else:
+		_player_hud.notice("Round %d survived" % number)
+	_sounds.call("play", "sting_round_end")
+	save_profile()
 
 
 # The third painting: the fantasy world Aurelind (game/fantasy_world.gd), a streamed open land with its own magic,
@@ -1334,6 +1408,9 @@ func _process(delta: float) -> void:
 		_fantasy_dirty = false
 		_fantasy_saved_at = _time
 		save_profile()
+	var regen: Dictionary = _rounds.config()["regen"]  # the classic way: left alone for a moment, you get your breath back
+	if not _in_arena and not _in_fantasy and _time - _hurt_at >= float(regen["delay"]) and _player.health.hp > 0.0 and _player.health.hp < _player.health.max_hp:
+		_player.health.heal(float(regen["per_second"]) * delta)
 	_player_hud.prompt_text = _prompt()
 	_player_hud.coins = _wallet.balance if _pachinko != null and _near(_pachinko.global_position, 30.0) else -1
 	if _coins_dirty and (_pachinko == null or _pachinko.balls_in_play() == 0):
@@ -1370,12 +1447,16 @@ func _process(delta: float) -> void:
 		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_2"), _key("knife"), _key("inventory"), _key("toggle_view")]
 	_player_hud.wave_text = _director.status_text()
 	_player_hud.boss_ratio = _director.boss_ratio()
-	_player_hud.round_number = _director.wave_number() if _in_arena else 0
+	var on_island := not _in_arena and not _in_fantasy and _on_island(_player.global_position)
+	var watching: bool = net != null and net.rounds.is_client()  # the host runs the rounds: we show what it tells us
+	var island_round: int = net.rounds.round_number if watching else _rounds.rules.number
+	var island_fight: bool = net.rounds.fighting if watching else _rounds.rules.fighting()
+	_player_hud.round_number = _director.wave_number() if _in_arena else (island_round if on_island else 0)
 	_player_hud.round_of = _director.wave_count() if _in_arena else 0
-	_player_hud.enemies_left = _director.enemies_left() if _in_arena else -1
+	_player_hud.enemies_left = _director.enemies_left() if _in_arena else ((net.rounds.round_left if watching else _rounds.left()) if on_island and island_fight else -1)
 	_player_hud.party = net.scores.others() if net != null and net.can_send() else []
 	_scoreboard.my_name = _profile_name
-	_scoreboard.title = "Wave %d / %d" % [_director.wave_number(), _director.wave_count()] if _player_hud.round_number > 0 else ""
+	_scoreboard.title = "" if _player_hud.round_number <= 0 else ("Wave %d / %d" % [_director.wave_number(), _director.wave_count()] if _in_arena else "Round %d" % _player_hud.round_number)
 	_player_hud.level = _progress.level()
 	_player_hud.xp_ratio = 1.0 if _progress.xp_for_level() == 0 else float(_progress.xp_into_level()) / float(_progress.xp_for_level())
 	if settings.show_debug:

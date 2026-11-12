@@ -60,6 +60,27 @@
    ]
   },
   {
+   "name": "Island rounds",
+   "sounds": [
+    {
+     "id": "sting_round",
+     "label": "Round starts"
+    },
+    {
+     "id": "sting_round_end",
+     "label": "Round survived"
+    },
+    {
+     "id": "sting_boss",
+     "label": "Boss round starts"
+    },
+    {
+     "id": "sting_special",
+     "label": "Special round starts"
+    }
+   ]
+  },
+  {
    "name": "Enemy attacks",
    "sounds": [
     {

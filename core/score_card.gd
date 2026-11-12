@@ -13,7 +13,7 @@ var kills := 0  # this session only, like the three below
 var headshots := 0
 var downs := 0
 var revives := 0
-var blow := ""  # how the hit being dealt right now lands: "headshot", "melee" or "" (set around the hit by whoever deals it)
+var blow := ""  # how the hit being dealt right now lands: "headshot", "melee", "" or "other" = not ours at all (set around the hit by whoever deals it)
 var paused := false  # true = hits and kills pay and count nothing (Aurelind: its fights are not part of the points game)
 
 var _awards: Dictionary
@@ -32,7 +32,7 @@ func hit() -> int:
 
 # The killing blow: pays by how it landed (see `blow`) and counts the kill.
 func kill() -> int:
-	if paused:
+	if paused or blow == "other":  # "other": somebody else's kill (online; whoever dealt the blow is paid by the host)
 		return 0
 	kills += 1
 	if blow == "headshot":
