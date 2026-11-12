@@ -1,10 +1,9 @@
-Trade window: hover cards; unused casino screens freed at exit
+Editor: test pictures are no longer imported (Unrecognized UID errors)
 
-Hovering a gun or armour in the trade window shows the same card as in
-the bag (stats against the gun in hand, parts, buffs, skills): the cards
-moved to game/hover_card.gd. The table-game screens no longer stay behind
-as orphans when the club was never visited. tools/editor_errors.tscn lists
-what a headless editor start complains about.
+tools/shots and tools/userdata get a .gdignore: the pictures and logs the
+check scenes write there were imported by the editor as textures, and each
+one made while the editor was open showed up as an Unrecognized UID error
+in its Output (232 lines). tools/uid_probe.tscn finds which file owns a uid.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

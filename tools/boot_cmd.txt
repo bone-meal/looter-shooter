@@ -1,1 +1,1 @@
-!wait 3;/give gun purple ak47;!wait 1;!inv;!wait 1;!inv hover 4;!wait 1;!snap hc_card;!inv shift on;!wait 1;!snap hc_shift;!inv shift off;!inv;/tp fantasy;!wait 8;!measure farm
+!wait 2;!snap gd_check
