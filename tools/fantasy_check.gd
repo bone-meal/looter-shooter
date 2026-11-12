@@ -257,7 +257,7 @@ func _split_from(enemies: Dictionary, id: String) -> bool:
 # down anything steeper than a player can walk (45 degrees), every place is reached and little dry land is cut off.
 # Also says how much of each region is cliff.
 func _check_walkable(terrain: FantasyTerrain, world: Dictionary) -> void:
-	var cell := 5.0
+	var cell := 10.0  # 5.0 until the world grew to 6 km (round 5): the same test took nine times as long
 	var side := int(terrain.size / cell)
 	var half := terrain.size * 0.5
 	var started := Time.get_ticks_msec()
@@ -442,12 +442,14 @@ func _check_round_two(all: Dictionary) -> void:
 	_lines.append("interiors: %d walk-in houses with %d containers, %d buildings with a door to a room, %d kinds of room, %d loot tables" % [walk_ins, chests, doors, (inside["rooms"] as Dictionary).size(), (inside["loot"] as Dictionary).size()])
 	var spots := {"fresh": 0, "salt": 0, "lava": 0}
 	var sites := 0
-	for cz in range(-8, 9):
-		for cx in range(-8, 9):
+	var site_reach := int(float(world["size"]) * 0.5 / float(all["layouts"]["site_cell"]))  # the whole map, whatever its size
+	for cz in range(-site_reach, site_reach + 1):
+		for cx in range(-site_reach, site_reach + 1):
 			if not layout.site(Vector2i(cx, cz)).is_empty():
 				sites += 1
-	for kz in range(-20, 21):
-		for kx in range(-20, 21):
+	var chunk_reach := int(float(world["size"]) * 0.5 / float(world["chunk"]))
+	for kz in range(-chunk_reach, chunk_reach + 1):
+		for kx in range(-chunk_reach, chunk_reach + 1):
 			for entry: Array in layout.nodes(Vector2i(kx, kz)):
 				var water := String(nodes[String(entry[1])].get("water", ""))
 				if water != "":

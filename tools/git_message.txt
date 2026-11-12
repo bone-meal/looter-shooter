@@ -1,12 +1,10 @@
-Round 5 batch 6: trading between players and shared player drops
+Round 5 batch 7: the world is three times as wide
 
-Online a gun a player drops is laid down by the host for everyone and goes
-to the first who picks it up (enemy and chest drops stay each player's
-own). Trading: hold interact on a player or /trade <name>, the other
-accepts with interact; two columns of guns and armour, ready ticks cleared
-by any change, both confirm; Esc, walking apart or leaving cancels. Rules
-in core/trade_desk.gd and core/shared_drops.gd (tools/trade_check.tscn);
-the host only judges that a thing is a legal roll.
+Every distance between the places of Aurelind is tripled (world 6 km
+across; towns, villages and arenas keep their size; ponds, the spawn and
+the way out keep their place beside what they belong to). No fast travel.
+Terrain rules version 3 (charts are painted afresh), far ground mesh in
+50 m squares, the data check scans the whole map at any size.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

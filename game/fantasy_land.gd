@@ -14,7 +14,7 @@ signal chunk_loaded(key: Vector2i, origin: Vector3)
 signal chunk_unloaded(key: Vector2i)
 
 const CELLS := 12  # squares along one side of a chunk
-const FAR_CELLS := 80  # squares along one side of the whole-land mesh
+const FAR_CELLS := 120  # squares along one side of the whole-land mesh (50 m each since the world is 6 km wide)
 # The whole-land mesh is coarse: where real ground chunks are shown it is cut away (uniform `hole`), or it would lie
 # over gorges and hollows it knows nothing about.
 const FAR_CODE := """shader_type spatial;

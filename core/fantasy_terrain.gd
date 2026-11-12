@@ -4,7 +4,7 @@
 # Dependencies: none (uses the engine's FastNoiseLite). Data: data/fantasy/world.json.
 extends RefCounted
 
-const RULES_VERSION := 2  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
+const RULES_VERSION := 3  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
 const RING_HEIGHT := 34.0  # the mountain ring around the last region
 const RING_WIDTH := 42.0
 const PASS_ANGLE := 0.5  # radians: how wide the gap in the ring is (it faces south, towards the start)

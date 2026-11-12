@@ -1,27 +1,27 @@
 {
- "version": 1,
- "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills), then the region's LANDFORMS (core/fantasy_terrain.gd `_landforms`; all fade out at places, along paths and round lakes): ridge {amp, rough, sharp} = mountain ridges; mesa {height, rough, level (higher = less table land), edge (smaller = steeper cliff)} = table land, with a small rough stone pillars; gorge {depth, rough, width} = winding cuts; dunes {amp, length} = waves of sand; terrace {step, soft} = the slope in steps; cone {place, open_to, crater, rim, radius, height} = a volcano round that place with its way in facing the other. After changing any of it raise RULES_VERSION in core/fantasy_terrain.gd (saved charts). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. clutter: {model: how many per chunk} = solid boulders, rock spires, logs, stumps and bushes scattered through the open country (models tools/blender/fantasy_clutter.py; at most 12 a chunk). nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads).",
- "size": 2000,
+ "version": 2,
+ "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. ROUND 5: every distance between places is three times what it was (size 6000; places keep their own size; a lake, the spawn and the way out keep their offset to the place they belong to); there is NO fast travel (director). Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills), then the region's LANDFORMS (core/fantasy_terrain.gd `_landforms`; all fade out at places, along paths and round lakes): ridge {amp, rough, sharp} = mountain ridges; mesa {height, rough, level (higher = less table land), edge (smaller = steeper cliff)} = table land, with a small rough stone pillars; gorge {depth, rough, width} = winding cuts; dunes {amp, length} = waves of sand; terrace {step, soft} = the slope in steps; cone {place, open_to, crater, rim, radius, height} = a volcano round that place with its way in facing the other. After changing any of it raise RULES_VERSION in core/fantasy_terrain.gd (saved charts). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. clutter: {model: how many per chunk} = solid boulders, rock spires, logs, stumps and bushes scattered through the open country (models tools/blender/fantasy_clutter.py; at most 12 a chunk). nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads).",
+ "size": 6000,
  "seed": 7411,
  "chunk": 50,
  "sea_level": 0.0,
- "blend": 90.0,
+ "blend": 200.0,
  "spawn": [
-  4,
-  566
+  -48,
+  1686
  ],
  "exit_painting": [
-  14,
-  558
+  -38,
+  1678
  ],
  "regions": [
   {
    "id": "amberfield",
    "center": [
     0,
-    470
+    1410
    ],
-   "radius": 340,
+   "radius": 1020,
    "level": [
     1,
     6
@@ -141,10 +141,10 @@
   {
    "id": "greenwald",
    "center": [
-    -620,
-    330
+    -1860,
+    990
    ],
-   "radius": 330,
+   "radius": 990,
    "level": [
     6,
     12
@@ -256,10 +256,10 @@
   {
    "id": "brinemouth",
    "center": [
-    580,
-    640
+    1740,
+    1920
    ],
-   "radius": 330,
+   "radius": 990,
    "level": [
     12,
     18
@@ -368,10 +368,10 @@
   {
    "id": "sunscar",
    "center": [
-    700,
-    20
+    2100,
+    60
    ],
-   "radius": 330,
+   "radius": 990,
    "level": [
     18,
     25
@@ -483,10 +483,10 @@
   {
    "id": "frostmere",
    "center": [
-    -140,
-    -660
+    -420,
+    -1980
    ],
-   "radius": 330,
+   "radius": 990,
    "level": [
     25,
     32
@@ -594,10 +594,10 @@
   {
    "id": "cinderreach",
    "center": [
-    620,
-    -620
+    1860,
+    -1860
    ],
-   "radius": 330,
+   "radius": 990,
    "level": [
     32,
     39
@@ -712,10 +712,10 @@
   {
    "id": "stormcrown",
    "center": [
-    -700,
-    -360
+    -2100,
+    -1080
    ],
-   "radius": 330,
+   "radius": 990,
    "level": [
     39,
     45
@@ -830,9 +830,9 @@
    "id": "hollow_crown",
    "center": [
     0,
-    -150
+    -450
    ],
-   "radius": 270,
+   "radius": 810,
    "level": [
     45,
     50
@@ -937,8 +937,8 @@
    "id": "hale_farm",
    "region": "amberfield",
    "pos": [
-    -26,
-    560
+    -78,
+    1680
    ],
    "kind": "farm",
    "flat": 34,
@@ -948,8 +948,8 @@
    "id": "millbrook",
    "region": "amberfield",
    "pos": [
-    70,
-    420
+    210,
+    1260
    ],
    "kind": "town",
    "flat": 55,
@@ -959,8 +959,8 @@
    "id": "threshing_floor",
    "region": "amberfield",
    "pos": [
-    -190,
-    330
+    -570,
+    990
    ],
    "kind": "arena",
    "flat": 30,
@@ -971,8 +971,8 @@
    "id": "fernhollow",
    "region": "greenwald",
    "pos": [
-    -540,
-    360
+    -1620,
+    1080
    ],
    "kind": "town_palisade",
    "flat": 45,
@@ -982,8 +982,8 @@
    "id": "rootmother_hollow",
    "region": "greenwald",
    "pos": [
-    -790,
-    240
+    -2370,
+    720
    ],
    "kind": "arena",
    "flat": 30,
@@ -994,8 +994,8 @@
    "id": "brinemouth_town",
    "region": "brinemouth",
    "pos": [
-    520,
-    690
+    1560,
+    2070
    ],
    "kind": "town",
    "flat": 55,
@@ -1005,8 +1005,8 @@
    "id": "tidal_flats",
    "region": "brinemouth",
    "pos": [
-    740,
-    770
+    2220,
+    2310
    ],
    "kind": "arena",
    "flat": 32,
@@ -1017,8 +1017,8 @@
    "id": "dunehaven",
    "region": "sunscar",
    "pos": [
-    640,
-    70
+    1920,
+    210
    ],
    "kind": "town",
    "flat": 50,
@@ -1028,8 +1028,8 @@
    "id": "glassmaw_pit",
    "region": "sunscar",
    "pos": [
-    850,
-    -110
+    2550,
+    -330
    ],
    "kind": "arena",
    "flat": 32,
@@ -1040,8 +1040,8 @@
    "id": "rimegate",
    "region": "frostmere",
    "pos": [
-    -110,
-    -600
+    -330,
+    -1800
    ],
    "kind": "town_palisade",
    "flat": 50,
@@ -1051,8 +1051,8 @@
    "id": "colossus_steps",
    "region": "frostmere",
    "pos": [
-    -310,
-    -810
+    -930,
+    -2430
    ],
    "kind": "arena",
    "flat": 32,
@@ -1063,8 +1063,8 @@
    "id": "anvilgate",
    "region": "cinderreach",
    "pos": [
-    540,
-    -560
+    1620,
+    -1680
    ],
    "kind": "town",
    "flat": 50,
@@ -1074,8 +1074,8 @@
    "id": "caldera",
    "region": "cinderreach",
    "pos": [
-    770,
-    -770
+    2310,
+    -2310
    ],
    "kind": "arena",
    "flat": 34,
@@ -1086,8 +1086,8 @@
    "id": "skyrest",
    "region": "stormcrown",
    "pos": [
-    -650,
-    -330
+    -1950,
+    -990
    ],
    "kind": "town_open",
    "flat": 45,
@@ -1097,8 +1097,8 @@
    "id": "roc_aerie",
    "region": "stormcrown",
    "pos": [
-    -860,
-    -510
+    -2580,
+    -1530
    ],
    "kind": "arena",
    "flat": 34,
@@ -1110,7 +1110,7 @@
    "region": "hollow_crown",
    "pos": [
     0,
-    60
+    180
    ],
    "kind": "camp",
    "flat": 26,
@@ -1121,7 +1121,7 @@
    "region": "hollow_crown",
    "pos": [
     0,
-    -170
+    -510
    ],
    "kind": "arena",
    "flat": 40,
@@ -1132,8 +1132,8 @@
    "id": "southfield",
    "region": "amberfield",
    "pos": [
-    170,
-    650
+    510,
+    1950
    ],
    "kind": "village",
    "flat": 38,
@@ -1143,8 +1143,8 @@
    "id": "barleywick",
    "region": "amberfield",
    "pos": [
-    -185,
-    520
+    -555,
+    1560
    ],
    "kind": "village",
    "flat": 34,
@@ -1154,8 +1154,8 @@
    "id": "mossford",
    "region": "greenwald",
    "pos": [
-    -420,
-    480
+    -1260,
+    1440
    ],
    "kind": "village",
    "flat": 32,
@@ -1165,8 +1165,8 @@
    "id": "saltmarsh",
    "region": "brinemouth",
    "pos": [
-    690,
-    545
+    2070,
+    1635
    ],
    "kind": "village",
    "flat": 32,
@@ -1176,8 +1176,8 @@
    "id": "red_camp",
    "region": "sunscar",
    "pos": [
-    545,
-    -95
+    1635,
+    -285
    ],
    "kind": "tribe_red",
    "flat": 30,
@@ -1187,8 +1187,8 @@
    "id": "blue_camp",
    "region": "sunscar",
    "pos": [
-    800,
-    55
+    2400,
+    165
    ],
    "kind": "tribe_blue",
    "flat": 30,
@@ -1198,8 +1198,8 @@
    "id": "the_reddening",
    "region": "sunscar",
    "pos": [
-    690,
-    -45
+    2070,
+    -135
    ],
    "kind": "battlefield",
    "flat": 34,
@@ -1209,8 +1209,8 @@
    "id": "hollin",
    "region": "frostmere",
    "pos": [
-    40,
-    -730
+    120,
+    -2190
    ],
    "kind": "village",
    "flat": 30,
@@ -1220,8 +1220,8 @@
    "id": "slagside",
    "region": "cinderreach",
    "pos": [
-    465,
-    -700
+    1395,
+    -2100
    ],
    "kind": "village",
    "flat": 30,
@@ -1231,8 +1231,8 @@
    "id": "high_cairn",
    "region": "stormcrown",
    "pos": [
-    -560,
-    -455
+    -1680,
+    -1365
    ],
    "kind": "village",
    "flat": 28,
@@ -1242,8 +1242,8 @@
    "id": "the_unpainted",
    "region": "hollow_crown",
    "pos": [
-    -125,
-    -45
+    -375,
+    -135
    ],
    "kind": "ruins",
    "flat": 30,
@@ -1632,8 +1632,8 @@
   {
    "id": "hale_pond",
    "pos": [
-    30,
-    600
+    -22,
+    1720
    ],
    "radius": 14,
    "depth": 2.2,
@@ -1642,8 +1642,8 @@
   {
    "id": "mill_water",
    "pos": [
-    150,
-    470
+    290,
+    1310
    ],
    "radius": 26,
    "depth": 3.0,
@@ -1652,8 +1652,8 @@
   {
    "id": "fern_mere",
    "pos": [
-    -600,
-    440
+    -1680,
+    1160
    ],
    "radius": 34,
    "depth": 3.5,
@@ -1662,8 +1662,8 @@
   {
    "id": "heron_pool",
    "pos": [
-    -470,
-    250
+    -1550,
+    970
    ],
    "radius": 18,
    "depth": 2.5,
@@ -1672,8 +1672,8 @@
   {
    "id": "brine_lagoon",
    "pos": [
-    610,
-    610
+    1990,
+    1700
    ],
    "radius": 24,
    "depth": 2.5,
@@ -1682,8 +1682,8 @@
   {
    "id": "last_oasis",
    "pos": [
-    720,
-    140
+    2000,
+    280
    ],
    "radius": 16,
    "depth": 2.2,
@@ -1692,8 +1692,8 @@
   {
    "id": "mirror_tarn",
    "pos": [
-    -200,
-    -640
+    -420,
+    -1840
    ],
    "radius": 36,
    "depth": 4.0,
@@ -1702,8 +1702,8 @@
   {
    "id": "white_eye",
    "pos": [
-    60,
-    -800
+    140,
+    -2260
    ],
    "radius": 18,
    "depth": 3.0,
@@ -1712,8 +1712,8 @@
   {
    "id": "ember_pool",
    "pos": [
-    620,
-    -680
+    1700,
+    -1800
    ],
    "radius": 22,
    "depth": 2.5,
@@ -1722,8 +1722,8 @@
   {
    "id": "cinder_sink",
    "pos": [
-    690,
-    -520
+    2070,
+    -1560
    ],
    "radius": 14,
    "depth": 2.0,
@@ -1732,8 +1732,8 @@
   {
    "id": "sky_mirror",
    "pos": [
-    -740,
-    -300
+    -2040,
+    -960
    ],
    "radius": 22,
    "depth": 3.0,
@@ -1743,7 +1743,7 @@
    "id": "pale_basin",
    "pos": [
     90,
-    -90
+    -430
    ],
    "radius": 18,
    "depth": 2.5,
