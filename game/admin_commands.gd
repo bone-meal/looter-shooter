@@ -135,6 +135,11 @@ func _give(args: Array) -> String:
 				return "/give coins <amount>"
 			session.wallet().add(maxi(String(args[1]).to_int(), 0))
 			return "You have %d coins." % session.wallet().balance
+		"points":
+			if args.size() < 2 or not String(args[1]).is_valid_int():
+				return "/give points <amount>"
+			session.score().give(maxi(String(args[1]).to_int(), 0))
+			return "You have %d points." % session.score().points
 	return String(ChatCommand.find(table, "give")["usage"])
 
 

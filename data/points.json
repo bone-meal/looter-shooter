@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "_about": "Zombies-style points. awards: a hit that does not kill pays `hit`; the killing blow pays ONE of kill / headshot_kill / melee_kill instead. headshot: head_share = the top part of an enemy's height that counts as its head (an enemy in enemies.json may carry its own head_share; 0 = it has no head), damage_mult = how much harder a head hit lands. max = the most points one character can hold. Points are saved with the character and are separate from casino coins.",
+  "awards": {"hit": 10, "kill": 60, "headshot_kill": 100, "melee_kill": 130},
+  "headshot": {"head_share": 0.17, "damage_mult": 1.5},
+  "max": 9999999
+}

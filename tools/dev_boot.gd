@@ -395,6 +395,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"bind":  # "!bind jump 1 mouse:5": a binding for the rest of the run (slot 0-2; mouse:4 / mouse:5 = wheel up / down), not saved
 			var InputSetup: GDScript = load("res://game/input_setup.gd")
 			_lines.append("bind %s slot %s = %s (taken from \"%s\")" % [words[1], words[2], words[3], InputSetup.call("bind", session.get("settings"), words[1], int(words[2]), words[3])])
+		"hud":  # "!hud round 7 [of 12]", "!hud left 9", "!hud party 3": what the HUD shows of rounds and other players, held for the rest of the run (for pictures before the mode that sets them exists)
+			session.set("_hud_timer", -100000.0)  # the session stops refreshing these
+			var hud: Control = session.get("_player_hud")
+			match words[1]:
+				"round":
+					hud.set("round_number", int(words[2]))
+					hud.set("round_of", int(words[4]) if words.size() > 4 else 0)
+				"left":
+					hud.set("enemies_left", int(words[2]))
+				"party":
+					var fake: Array = []
+					for i in int(words[2]):
+						fake.append({"name": ["Mara", "Okonkwo", "Jules", "Tessa", "Brandt"][i % 5], "points": 2350 - i * 410, "kills": 31 - i * 5, "headshots": 12 - i * 2, "downs": i, "revives": (i * 2) % 3})
+					hud.set("party", fake)
+		"score":  # "!score <note>": points and the session's kills and headshots into the log
+			var card: RefCounted = session.call("score")
+			_lines.append("SCORE %s: %s, held hp of nearest %s" % [" ".join(words.slice(1)), str(card.call("row")), str(session.call("director").call("enemy_count"))])
 		"place":  # "!place x y z [yaw]": puts the player at a WORLD spot without starting anything (the empty colosseum floor is 0 0.1 10)
 			player.call("teleport", Vector3(float(words[1]), float(words[2]), float(words[3])), deg_to_rad(float(words[4])) if words.size() > 4 else 0.0)
 		"speed":  # "!speed <note>": ground speed in Source units, what is in hand, fatigue
@@ -497,8 +514,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for enemy: Variant in session.call("director").call("enemy_list"):
 				if is_instance_valid(enemy) and (nearest == null or (enemy as Node3D).global_position.distance_to(player.global_position) < nearest.global_position.distance_to(player.global_position)):
 					nearest = enemy
-			if nearest != null:
-				player.call("look_at_point", nearest.global_position + Vector3(0, float(nearest.call("head_height")) * 0.55, 0))
+			if nearest != null:  # "!face head" aims at its head
+				player.call("look_at_point", nearest.global_position + Vector3(0, float(nearest.call("head_height")) * (0.93 if words.size() > 1 and words[1] == "head" else 0.55), 0))
 		"fight":  # fantasy world: health, mana, ward and the creatures around, for the log
 			var hub: Node = session.call("fantasy")
 			if not _counting:  # from the first !fight on: how many blows the ward stopped, and how many it threw back

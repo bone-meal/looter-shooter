@@ -3,7 +3,7 @@
  "_about": "Chat commands (type / in chat). scope: self = changes only your own character and runs on your machine; world = changes the shared world and runs on the host; host = only the host may use it. A client may use commands only after the host typed /op <name>. Commands are ON IN EVERY BUILD for now, release exports included (director 2026-11-10; the switch is settings `dev_commands` in core/settings_state.gd).",
  "commands": [
   {"name": "help", "usage": "/help [command]", "help": "Lists the commands, or explains one.", "scope": "self"},
-  {"name": "give", "usage": "/give gun [tier] [body] | unique <id|all> | item <id> [count] | coins <amount>", "help": "Puts a rolled gun, a pony unique, an item or casino coins in your inventory. Tiers: grey green blue purple gold orange rainbow pony.", "scope": "self"},
+  {"name": "give", "usage": "/give gun [tier] [body] | unique <id|all> | item <id> [count] | coins <amount> | points <amount>", "help": "Puts a rolled gun, a pony unique or an item in your inventory, or gives casino coins or points. Tiers: grey green blue purple gold orange rainbow pony.", "scope": "self"},
   {"name": "tp", "usage": "/tp <island|club|arena|fantasy|place name> | <x> <y> <z>", "help": "Moves you to a place or to coordinates. In the fantasy world, place = a region or town name.", "scope": "self"},
   {"name": "heal", "usage": "/heal", "help": "Fills your health and mana.", "scope": "self"},
   {"name": "god", "usage": "/god", "help": "Switches taking damage off or on.", "scope": "self"},

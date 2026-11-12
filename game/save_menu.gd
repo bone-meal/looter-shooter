@@ -42,7 +42,7 @@ func _rebuild() -> void:
 		var info := SaveSlots.summary(slot)
 		var text := "Slot %d:  empty" % slot
 		if info.has("name"):
-			text = "Slot %d:  %s    level %d    %d coins" % [slot, info["name"], info["level"], info["coins"]]
+			text = "Slot %d:  %s    level %d    %d points    %d coins" % [slot, info["name"], info["level"], info["points"], info["coins"]]
 		elif info.has("damaged"):
 			text = "Slot %d:  damaged save (a new game replaces it)" % slot
 		Widgets.title(_list, text, 18)

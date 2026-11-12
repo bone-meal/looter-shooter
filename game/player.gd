@@ -134,6 +134,9 @@ var _rally_until := 0.0  # Rally Cry: extra damage and healing until this engine
 var _rally_dmg := 0.0
 var _rally_regen := 0.0
 var _last_crit := false
+var score: RefCounted  # core/score_card.gd, set by the session (null in test scenes): shots that hurt an enemy pay points
+var head_share := 0.0  # data/points.json "headshot", set by the session: the top part of an enemy that is its head ...
+var head_mult := 1.0  # ... and how much harder a hit there lands
 var bonus_damage_pct := 0.0  # from stats and traits (core/progress_state.gd), set by the session
 var bonus_speed_pct := 0.0
 var bonus_hp_pct := 0.0
@@ -840,12 +843,22 @@ func _shoot() -> void:
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider.has_method("on_hit"):
 			var dealt := _gun_damage()
+			var head: bool = hit.collider.has_method("head_hit") and hit.collider.head_hit(hit.position, head_share)
+			if head:
+				dealt *= head_mult
 			var hp_before := _hp_of(hit.collider)
+			if score != null:
+				score.blow = "headshot" if head else ""  # a kill by this pellet is paid as what it was (the session hears of the kill)
 			hit.collider.on_hit(dealt, hit.position, hit.normal)
 			totals[hit.collider] = float(totals.get(hit.collider, 0.0)) + dealt
 			spots[hit.collider] = hit.position
 			if not _held_gun.is_empty():
 				_gun_hit_effects(hit.collider, hit.position, dealt, hp_before)
+	if score != null:
+		score.blow = ""
+		for collider in totals:
+			if collider.has_method("head_hit") and not collider.health.is_dead():
+				score.hit()  # one hit per enemy per shot, however many pellets landed; the killing shot is paid as the kill
 	if damage_numbers != null:
 		for collider in totals:
 			damage_numbers.spawn(spots[collider], totals[collider])

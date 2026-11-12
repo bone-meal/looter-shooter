@@ -1,5 +1,5 @@
 # Purpose: player rockets and grenades: a fixed projectile pool stepped on the physics tick, explosion damage in a radius, and a pooled explosion flash.
-# Dependencies: game/damage_numbers.gd (optional `numbers`). `source` must have enemy_list() (game/wave_director.gd). Stats come from the "projectile" block in data/weapons.json.
+# Dependencies: game/damage_numbers.gd (optional `numbers`), core/score_card.gd (optional `score`). `source` must have enemy_list() (game/wave_director.gd). Stats come from the "projectile" block in data/weapons.json.
 extends Node3D
 
 const POOL_SIZE := 12
@@ -11,6 +11,7 @@ const MIN_DAMAGE_FRACTION := 0.35  # damage at the very edge of the blast
 var source  # has enemy_list()
 var sounds: Node  # the game's sound player, set by game/game_session.gd
 var numbers  # DamageNumbers or null
+var score: RefCounted  # core/score_card.gd or null: a blast pays one hit for every enemy it hurts without killing
 var ignore: RID  # the player's body, so shots don't hit their owner
 
 var _meshes: Array[MeshInstance3D] = []
@@ -150,6 +151,8 @@ func _explode(i: int, point: Vector3) -> void:
 			continue
 		var dealt: float = damage * lerpf(1.0, MIN_DAMAGE_FRACTION, distance / radius)
 		enemy.on_hit(dealt, center, Vector3.UP)
+		if score != null and not enemy.health.is_dead():
+			score.hit()
 		if numbers != null:
 			numbers.spawn(center, dealt)
 
@@ -169,6 +172,8 @@ func blast(point: Vector3, radius: float, damage: float, flash: bool = true) -> 
 			continue
 		var dealt: float = damage * lerpf(1.0, MIN_DAMAGE_FRACTION, distance / radius)
 		enemy.on_hit(dealt, center, Vector3.UP)
+		if score != null and not enemy.health.is_dead():
+			score.hit()
 		if numbers != null:
 			numbers.spawn(center, dealt)
 

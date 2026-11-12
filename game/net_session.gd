@@ -18,6 +18,7 @@ const NetChat = preload("res://game/net_chat.gd")
 const NetFantasy = preload("res://game/net_fantasy.gd")
 const NetTrade = preload("res://game/net_trade.gd")
 const NetDrops = preload("res://game/net_drops.gd")
+const NetScores = preload("res://game/net_scores.gd")
 
 signal hosted(id: String)
 signal joined
@@ -53,6 +54,7 @@ var chat: Node  # text chat and command permissions (game/net_chat.gd)
 var fantasy: Node  # the fantasy world's creatures and party quests (game/net_fantasy.gd)
 var trade: Node  # trading between players (game/net_trade.gd)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
+var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
 
 
 func _ready() -> void:
@@ -88,6 +90,10 @@ func _ready() -> void:
 	drops.name = "Drops"
 	drops.net = self
 	add_child(drops)
+	scores = NetScores.new()
+	scores.name = "Scores"
+	scores.net = self
+	add_child(scores)
 
 
 func is_active() -> bool:

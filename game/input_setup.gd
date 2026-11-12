@@ -21,6 +21,7 @@ const ACTIONS := [
 	["toggle_view", "Switch 1st/3rd person"],
 	["inventory", "Inventory"],
 	["card", "Player card"],
+	["scoreboard", "Scoreboard (hold)"],
 	["chat", "Chat"],
 	["command", "Chat command (/)"],
 	["skills", "Skills panel"],
@@ -63,6 +64,7 @@ static func default_code(action: String) -> String:
 		"toggle_view": return "key:%d" % KEY_B
 		"inventory": return "key:%d" % KEY_I
 		"card": return "key:%d" % KEY_P
+		"scoreboard": return "key:%d" % KEY_TAB
 		"chat": return "key:%d" % KEY_ENTER
 		"command": return "key:%d" % KEY_SLASH
 		"skills": return "key:%d" % KEY_K

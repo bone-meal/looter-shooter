@@ -120,6 +120,13 @@ func head_height() -> float:
 	return _size.y
 
 
+# True when a hit at `point` landed on the head: the top `share` of the height (the enemy's own "head_share" in
+# data/enemies.json wins; 0 = this thing has no head).
+func head_hit(point: Vector3, share: float) -> bool:
+	var part := float(_stats.get("head_share", share))
+	return part > 0.0 and point.y >= global_position.y + _size.y * (1.0 - part)
+
+
 func _ready() -> void:
 	collision_layer = 2
 	collision_mask = 3  # world + player (1) and other enemies (2)

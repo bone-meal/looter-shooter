@@ -57,9 +57,19 @@ func wave_number() -> int:
 	return maxi(_index + 1, 1)
 
 
-func status(alive: int) -> String:
+func wave_count() -> int:
+	return _waves.size()
+
+
+# Enemies still to beat in this wave: the living plus those not yet sent in.
+func left(alive: int) -> int:
+	return alive + _pending.size()
+
+
+# What to announce between the fights ("" while a wave is being fought: the HUD shows its number and the enemies left).
+func status() -> String:
 	if cleared:
 		return "ARENA CLEARED"
 	if _waiting:
-		return "next wave %d/%d incoming" % [_index + 2, _waves.size()]
-	return "wave %d/%d  enemies %d" % [_index + 1, _waves.size(), alive + _pending.size()]
+		return "Wave %d / %d incoming" % [_index + 2, _waves.size()]
+	return ""

@@ -94,7 +94,21 @@ func boss_ratio() -> float:
 
 
 func status_text() -> String:
-	return _waves.status(_alive) if _active else ""
+	return _waves.status() if _active else ""
+
+
+# The wave being fought and how many there are (0, 0 while the waves are not running).
+func wave_number() -> int:
+	return _waves.wave_number() if _active and not _waves.cleared else 0
+
+
+func wave_count() -> int:
+	return _waves.wave_count() if _active else 0
+
+
+# Enemies left in this wave, -1 while the waves are not running.
+func enemies_left() -> int:
+	return _waves.left(_alive) if _active and not _waves.cleared else -1
 
 
 func _physics_process(_delta: float) -> void:

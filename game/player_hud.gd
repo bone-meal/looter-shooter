@@ -1,6 +1,11 @@
-# Purpose: Payday-2-style player HUD: health ring, weapon slots with icons and ammo pips, reload bar, wave/boss bar, damage flash.
-# Dependencies: game/player.gd (read-only: health, weapons, slot). game/game_session.gd sets `player`, `wave_text`, `boss_ratio`.
+# Purpose: the player HUD: health ring, hotbar, held gun with ammo and reload bar, boss bar, damage flash, and the
+# zombies-style parts: the round in red chalk (tallies up to 5, then a number), enemies left, and the points with their
+# "+10" pop-ups (the rest of the party's points listed above ours).
+# Dependencies: game/player.gd (read-only: health, weapons, slot), core/score_card.gd (read-only, via watch()),
+# game/chalk_marks.gd. game/game_session.gd sets `player`, the round, `enemies_left`, `party`, `wave_text`, `boss_ratio`.
 extends Control
+
+const ChalkMarks = preload("res://game/chalk_marks.gd")
 
 const ItemIcons = preload("res://game/item_icons.gd")
 const TierStyle = preload("res://game/tier_style.gd")
@@ -25,6 +30,12 @@ const SKILL_H := 44.0
 const MARGIN := 16.0
 const FLASH_STRIPS := 8
 const FLASH_STRIP_W := 14.0
+const CHALK := Color(0.78, 0.07, 0.05, 0.95)
+const POINTS := Color(1.0, 0.93, 0.7)
+const TALLY_H := 72.0  # height of the round marks
+const TALLY_W := 150.0  # room kept for them left of the health ring
+const POPS := 8  # points pop-ups alive at once
+const POP_TIME := 1.1
 
 var player: CharacterBody3D
 var wave_text := ""
@@ -35,16 +46,43 @@ var level := 0  # player level (0 = hidden) and progress to the next
 var xp_ratio := 0.0
 var coins := -1  # casino coins; -1 = hidden
 var prompt_text := ""  # interaction prompt shown near the crosshair, e.g. "[F] Enter"
+var round_number := 0  # the island round or the colosseum wave being fought; 0 = hidden
+var round_of := 0  # the colosseum: how many waves there are ("3 / 8"); 0 = endless rounds, shown as tallies
+var enemies_left := -1  # -1 = hidden
+var show_points := true  # off where the points game does not run (Aurelind)
+var party: Array = []  # the other players' {"name", "points"}, set by the session a few times a second
 
 var _flash := 0.0
 var _notice_time := 0.0
 var _fade := 0.0  # black screen amount, runs 1 -> 0 after play_fade()
 var _font: Font = ThemeDB.fallback_font
+var _score: RefCounted  # core/score_card.gd
+var _pop_amount := PackedInt32Array()  # pop-up pool: what each shows (negative = spent) ...
+var _pop_age := PackedFloat32Array()  # ... and for how long it has been flying (POP_TIME = free)
+var _pop_next := 0
+var _round_seen := 0
+var _round_flash := 0.0  # a new round: its marks flash white for a moment
 
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_IGNORE
 	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_pop_amount.resize(POPS)
+	_pop_age.resize(POPS)
+	_pop_age.fill(POP_TIME)
+
+
+# Shows this score card's points; every gain and every purchase flies off the number as a pop-up.
+func watch(card: RefCounted) -> void:
+	_score = card
+	card.earned.connect(_pop)
+	card.spent.connect(func(amount: int) -> void: _pop(-amount))
+
+
+func _pop(amount: int) -> void:
+	_pop_amount[_pop_next] = amount
+	_pop_age[_pop_next] = 0.0
+	_pop_next = (_pop_next + 1) % POPS
 
 
 # Called when the player takes damage.
@@ -67,6 +105,12 @@ func _process(delta: float) -> void:
 	_flash = maxf(_flash - delta * 2.0, 0.0)
 	_fade = maxf(_fade - delta, 0.0)
 	_notice_time = maxf(_notice_time - delta, 0.0)
+	for i in POPS:
+		_pop_age[i] = minf(_pop_age[i] + delta, POP_TIME)
+	if round_number != _round_seen:
+		_round_seen = round_number
+		_round_flash = 1.0
+	_round_flash = maxf(_round_flash - delta * 0.4, 0.0)
 	queue_redraw()
 
 
@@ -83,10 +127,59 @@ func _draw() -> void:
 		draw_string(_font, Vector2(0, view.y * 0.7), notice_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, Color(1, 0.85, 0.5, minf(_notice_time, 1.0)))
 	if _fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, view), Color(0, 0, 0, _fade))
-	_draw_health(Vector2(MARGIN + RING_RADIUS + 8.0, view.y - MARGIN - RING_RADIUS - 8.0))
-	_draw_status(Vector2(MARGIN, view.y - MARGIN - RING_RADIUS * 2.0 - 40.0))
+	var shift := _draw_round(view)  # the round takes the corner; the health ring moves over
+	_draw_health(Vector2(MARGIN + shift + RING_RADIUS + 8.0, view.y - MARGIN - RING_RADIUS - 8.0))
+	_draw_status(Vector2(MARGIN + shift, view.y - MARGIN - RING_RADIUS * 2.0 - 40.0))
 	_draw_weapons(view)
+	_draw_points(view)
 	_draw_top(view)
+
+
+# The round in the bottom left corner, in red chalk: tallies up to 5, then a number; the colosseum shows "3 / 8".
+# "Enemies left" sits above it. Returns the width it takes (0 when no round is running).
+func _draw_round(view: Vector2) -> float:
+	if round_number <= 0:
+		return 0.0
+	var color := CHALK.lerp(Color.WHITE, _round_flash * (0.5 + 0.5 * sin(Time.get_ticks_msec() * 0.012)))
+	var o := Vector2(MARGIN + 6.0, view.y - MARGIN - TALLY_H)
+	var w := 0.0
+	if round_of > 0:
+		w = ChalkMarks.number(self, o, round_number, TALLY_H, color)
+		draw_string(_font, o + Vector2(w + 2.0, TALLY_H), "/ %d" % round_of, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(color, 0.85))
+		w += 46.0
+	elif round_number <= 5:
+		w = ChalkMarks.tally(self, o, round_number, TALLY_H, color)
+	else:
+		w = ChalkMarks.number(self, o, round_number, TALLY_H, color)
+	if enemies_left >= 0:
+		_text(Vector2(MARGIN + 6.0, o.y - 14.0), "Enemies left  %d" % enemies_left, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 16, WHITE)
+	return maxf(w + 20.0, TALLY_W)
+
+
+# Our points above the held gun, the party's above ours, and the pop-ups flying off to the left.
+func _draw_points(view: Vector2) -> void:
+	if _score == null or not show_points:
+		return
+	var right := view.x - MARGIN
+	var base := view.y - MARGIN - SLOT_H - 32.0
+	_text(Vector2(right - 300.0, base), "%d" % int(_score.points), HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 34, POINTS)
+	for i in party.size():
+		var other: Dictionary = party[i]
+		_text(Vector2(right - 300.0, base - 40.0 - 20.0 * i), "%s   %d" % [other["name"], other["points"]], HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 15, Color(1, 1, 1, 0.85))
+	for i in POPS:
+		if _pop_age[i] >= POP_TIME:
+			continue
+		var t := _pop_age[i] / POP_TIME
+		var amount := _pop_amount[i]
+		var at := Vector2(right - 170.0 - 90.0 * t, base - 10.0 + (float(i % 4) - 1.5) * 26.0 * t)
+		var tint := Color(1.0, 0.85, 0.2, 1.0 - t * t) if amount > 0 else Color(0.95, 0.3, 0.3, 1.0 - t * t)
+		_text(at - Vector2(80.0, 0.0), ("+%d" if amount > 0 else "%d") % amount, HORIZONTAL_ALIGNMENT_RIGHT, 80.0, 22, tint)
+
+
+# Text with a dark edge, readable over sand and sky alike.
+func _text(at: Vector2, text: String, align: HorizontalAlignment, width: float, size: int, color: Color) -> void:
+	draw_string_outline(_font, at, text, align, width, size, 4, Color(0, 0, 0, 0.7 * color.a))
+	draw_string(_font, at, text, align, width, size, color)
 
 
 func _draw_flash(view: Vector2) -> void:

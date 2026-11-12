@@ -23,7 +23,7 @@ static func path(slot: int) -> String:
 	return "user://saves/%s/slot%d.sav" % [version(), slot]
 
 
-# What the menu shows of a slot: {} = empty, {"damaged": true} = a file nobody can read, else name, level, coins.
+# What the menu shows of a slot: {} = empty, {"damaged": true} = a file nobody can read, else name, level, points, coins.
 static func summary(slot: int) -> Dictionary:
 	var saved := ProfileIO.read(path(slot))
 	if saved.is_empty():
@@ -31,7 +31,8 @@ static func summary(slot: int) -> Dictionary:
 	var extra: Dictionary = saved["extra"]
 	var progress := ProgressState.new(DataStore.load_json("res://data/progression.json"), DataStore.load_json("res://data/achievements.json"))
 	progress.from_dict(extra.get("progress", {}))
-	return {"name": String(saved["name"]), "level": progress.level(), "coins": int(extra.get("coins", 0))}
+	var score: Variant = extra.get("score")
+	return {"name": String(saved["name"]), "level": progress.level(), "coins": int(extra.get("coins", 0)), "points": int(score.get("points", 0)) if score is Dictionary else 0}
 
 
 # From now on the profile is read from and written to this slot (game/profile_io.gd `active`).

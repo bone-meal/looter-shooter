@@ -47,6 +47,8 @@ const AdminCommands = preload("res://game/admin_commands.gd")
 const FantasyWorld = preload("res://game/fantasy_world.gd")
 const TradeScreen = preload("res://game/trade_screen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
+const ScoreCard = preload("res://core/score_card.gd")
+const Scoreboard = preload("res://game/scoreboard.gd")
 
 const HUD_REFRESH := 0.25
 const ARENA_SPAWN := Vector3(0, 0.1, 10)
@@ -100,6 +102,9 @@ var _progress := ProgressState.new(DataStore.load_json("res://data/progression.j
 var _card_screen := CardScreen.new()
 var _render_style := RenderStyle.new()
 var _wallet := Wallet.new()  # casino coins (saved in the profile)
+var _points_cfg: Dictionary = DataStore.load_json("res://data/points.json")
+var _score := ScoreCard.new(_points_cfg)  # zombies-style points (saved in the profile) and this session's scoreboard row
+var _scoreboard := Scoreboard.new()
 var _jackpot := 500.0  # this player's progressive slot pot (saved in the profile)
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
@@ -218,7 +223,14 @@ func _ready() -> void:
 	_skill_fx.follow = _player
 	_explosives.numbers = _numbers
 	_explosives.ignore = _player.get_rid()
+	_explosives.score = _score
+	_player.score = _score
+	_player.head_share = float(_points_cfg["headshot"]["head_share"])
+	_player.head_mult = float(_points_cfg["headshot"]["damage_mult"])
 	_player_hud.player = _player
+	_player_hud.watch(_score)
+	_scoreboard.card = _score
+	_scoreboard.others = func() -> Array: return _player_hud.party
 	_inventory_screen.inventory = _player.inventory
 	_inventory_screen.items = _player.items
 	_inventory_screen.gun_db = _player.gun_db
@@ -282,6 +294,7 @@ func _ready() -> void:
 		net.drops.removed.connect(_field.remove_shared)
 		net.drops.granted.connect(_on_drop_granted)
 		net.drops.refused.connect(_on_drop_refused)
+		net.scores.card = _score
 		if net.is_active():
 			_build_fantasy()
 	apply_settings()
@@ -614,6 +627,10 @@ func wallet() -> Wallet:
 	return _wallet
 
 
+func score() -> ScoreCard:
+	return _score
+
+
 # The fantasy world while the player is in it, else null (commands that belong to it only work inside).
 func fantasy() -> Node3D:
 	return _fantasy if _in_fantasy else null
@@ -722,6 +739,7 @@ func _load_profile() -> void:
 			_wallet.balance = maxi(int(extra["coins"]), 0)
 			_jackpot = float(extra.get("jackpot", _jackpot))
 		_progress.from_dict(extra.get("progress", {}))
+		_score.from_dict(extra.get("score"))
 		_fantasy_saved = extra.get("fantasy")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
@@ -755,7 +773,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict()}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict()}
 		if _fantasy != null:
 			extra["fantasy"] = _fantasy.to_dict()
 		elif _fantasy_saved != null:
@@ -1089,6 +1107,7 @@ func _pick_up(drop: Dictionary) -> void:
 # An enemy died: roll its gun drops (wave luck, elite and boss floors) and drop them where it fell.
 func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int) -> void:
 	_player.on_enemy_killed(elite, enemy_id)
+	_score.kill()  # paid by how the blow landed (the player sets `blow` around its hits); nothing in Aurelind
 	var kill_counters: Array = ["kills"]
 	var xp_kind := "kill"
 	if elite != "":
@@ -1213,6 +1232,8 @@ func _leave_fantasy() -> void:
 # Called every second and at once when the player changes world.
 func _rest_worlds() -> void:
 	_rest_in = 1.0
+	_score.paused = _in_fantasy  # the points game is the gun side's
+	_player_hud.show_points = not _in_fantasy
 	var gun_side := not _in_fantasy
 	var aurelind := _in_fantasy or _time - _fantasy_left_at < 3.0
 	if net != null and net.is_active() and net.is_host():
@@ -1330,6 +1351,12 @@ func _process(delta: float) -> void:
 		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_9"), _key("inventory"), _key("toggle_view")]
 	_player_hud.wave_text = _director.status_text()
 	_player_hud.boss_ratio = _director.boss_ratio()
+	_player_hud.round_number = _director.wave_number() if _in_arena else 0
+	_player_hud.round_of = _director.wave_count() if _in_arena else 0
+	_player_hud.enemies_left = _director.enemies_left() if _in_arena else -1
+	_player_hud.party = net.scores.others() if net != null and net.can_send() else []
+	_scoreboard.my_name = _profile_name
+	_scoreboard.title = "Wave %d / %d" % [_director.wave_number(), _director.wave_count()] if _player_hud.round_number > 0 else ""
 	_player_hud.level = _progress.level()
 	_player_hud.xp_ratio = 1.0 if _progress.xp_for_level() == 0 else float(_progress.xp_into_level()) / float(_progress.xp_for_level())
 	if settings.show_debug:
@@ -1383,5 +1410,6 @@ func _build_hud() -> void:
 	_cross.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
 	layer.add_child(_cross)
 	layer.add_child(_overlay)
+	layer.add_child(_scoreboard)
 	layer.add_child(_chat)
 	add_child(layer)

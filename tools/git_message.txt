@@ -1,10 +1,13 @@
-Round 6 step 2: three bindings per control, wheel and side buttons
+Round 6 step 3: points, round HUD in chalk, Tab scoreboard
 
-Every control takes up to three keys, mouse buttons or wheel directions;
-a key another control had moves over and the menu says so; Delete empties
-a slot. Old settings load as before. The wheel switches guns only in a
-direction no control uses, and a wheel tick counts as a jump press.
-tools/bind_check.tscn checks the rules.
+Zombies-style points saved with the character: a hit pays 10, the killing
+blow 60, a headshot kill 100, a melee kill 130 (data/points.json). Enemies
+have a head now: the top sixth of their box, hit 1.5 times as hard.
+The HUD shows the round in red chalk (tallies to 5, then a number; the
+colosseum as 3 / 12), enemies left, the points with pop-ups and the
+party's points. Holding Tab shows the scoreboard; online each machine
+reports its own row and the host cleans and passes the table on.
+No points in Aurelind. tools/score_check.tscn checks the rules.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
