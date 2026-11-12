@@ -109,6 +109,11 @@ func _on_roster(roster: Dictionary) -> void:
 	_roster_label.text = "In lobby: " + ", ".join(names)
 
 
+# The chosen save slot's character (game/main.gd): the name the lobby starts with.
+func set_player_name(character: String) -> void:
+	_name_edit.text = character
+
+
 func _refresh() -> void:
 	var active: bool = net.is_active()
 	var hosting: bool = net.is_host()

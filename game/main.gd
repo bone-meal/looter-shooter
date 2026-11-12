@@ -1,5 +1,5 @@
-# Purpose: entry scene: owns settings and the start, pause, settings and controls menus; starts and ends a game session.
-# Dependencies: game/input_setup.gd, game/settings_io.gd, game/main_menu.gd, game/pause_menu.gd, game/settings_menu.gd, game/controls_menu.gd,
+# Purpose: entry scene: owns settings and the start, save, pause, settings and controls menus; starts and ends a game session.
+# Dependencies: game/input_setup.gd, game/settings_io.gd, game/main_menu.gd, game/save_menu.gd, game/pause_menu.gd, game/settings_menu.gd, game/controls_menu.gd,
 # game/game_session.gd, core/settings_state.gd, game/renderer_switch.gd.
 extends Node3D
 
@@ -7,6 +7,7 @@ const InputSetup = preload("res://game/input_setup.gd")
 const SettingsIO = preload("res://game/settings_io.gd")
 const SettingsState = preload("res://core/settings_state.gd")
 const MainMenu = preload("res://game/main_menu.gd")
+const SaveMenu = preload("res://game/save_menu.gd")
 const PauseMenu = preload("res://game/pause_menu.gd")
 const SettingsMenu = preload("res://game/settings_menu.gd")
 const ControlsMenu = preload("res://game/controls_menu.gd")
@@ -19,6 +20,10 @@ const RendererSwitch = preload("res://game/renderer_switch.gd")
 
 var _settings := SettingsState.new()
 var _main_menu: Control
+var _save_menu: Control  # the three save slots, shown before a solo game and before the lobby
+var _save_for_online := false  # the save menu was opened from Multiplayer
+var _character := ""  # name of the chosen slot's character ("" = no slot: scripted developer runs)
+var _fresh := false  # that character was just created: its first session opens the customize menu
 var _pause_menu: Control
 var _settings_menu: Control
 var _controls_menu: Control
@@ -51,11 +56,16 @@ func _ready() -> void:
 	_net.left.connect(_on_net_left)
 
 	_main_menu = MainMenu.new()
-	_main_menu.multiplayer_pressed.connect(func() -> void: _show_only(_lobby))
-	_main_menu.start_pressed.connect(_start_game)
+	_main_menu.multiplayer_pressed.connect(_pick_save.bind(true))
+	_main_menu.start_pressed.connect(_pick_save.bind(false))
 	_main_menu.settings_pressed.connect(_open_settings.bind(_main_menu))
 	_main_menu.quit_pressed.connect(_quit)
 	layer.add_child(_main_menu)
+
+	_save_menu = SaveMenu.new()
+	_save_menu.chosen.connect(_on_save_chosen)
+	_save_menu.back_pressed.connect(func() -> void: _show_only(_main_menu))
+	layer.add_child(_save_menu)
 
 	_pause_menu = PauseMenu.new()
 	_pause_menu.resume_pressed.connect(_resume)
@@ -130,8 +140,7 @@ func _start_game() -> void:
 	_session.settings = _settings
 	_session.net = _net
 	_session.process_mode = Node.PROCESS_MODE_PAUSABLE
-	if _net.is_active():
-		_session.player_name = _net.local_name()
+	_session.player_name = _net.local_name() if _net.is_active() else _character
 	add_child(_session)
 	_session.look_changed.connect(_net.send_look)
 	_session.card_changed.connect(_net.send_card)
@@ -142,6 +151,25 @@ func _start_game() -> void:
 	_loading.call("finish")
 	_show_only(null)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if _fresh:
+		_fresh = false
+		_session.customize_now()
+
+
+# Start Game and Multiplayer both go through the save slots first.
+func _pick_save(online: bool) -> void:
+	_save_for_online = online
+	_show_only(_save_menu)
+
+
+func _on_save_chosen(character: String, fresh: bool) -> void:
+	_character = character
+	_fresh = fresh
+	if _save_for_online:
+		_lobby.set_player_name(character)
+		_show_only(_lobby)
+	else:
+		_start_game()
 
 
 func _resume() -> void:
@@ -212,7 +240,7 @@ func _on_settings_changed() -> void:
 
 # Shows one menu (or none) and frees the mouse whenever a menu is up.
 func _show_only(menu: Control) -> void:
-	for m in [_main_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _lobby]:
+	for m in [_main_menu, _save_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _lobby]:
 		m.visible = (m == menu)
 	if menu != null:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

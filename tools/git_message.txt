@@ -1,10 +1,11 @@
-Round 5 batch 2: frame rate on the High tier (Millbrook 74 -> 90 fps at 1080p Forward+)
+Round 5 batch 3: three save slots per build version
 
-Only the world the player is in runs: the islands and colosseum sleep while
-in Aurelind, Aurelind sleeps on the gun side (offline only). High tier:
-shadows in 2 splits to 70 m, bounce light at half resolution over 16 frames
-with 3 cascades (tier numbers in data/graphics.json). Measuring steps
-!nodes, !cut, !gi in tools/dev_boot.gd; !where works outside Aurelind.
+Start Game and Multiplayer go through a save menu: three slots, each one
+whole character; an empty slot asks for a name and the first session opens
+the customize menu. Saves live in user://saves/<version>/ (version from
+data/build.json, written by the release tool; "dev" from the editor), so a
+new version starts with three empty slots and older saves stay untouched.
+The player card starts with the character's name instead of "Unnamed".
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

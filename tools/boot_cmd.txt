@@ -1,1 +1,1 @@
-!uncap;/tp fantasy;!wait 10;/god;/tp millbrook;!wait 12;!look 240 0;!wait 3;!measure his settings millbrook;!snap e1_millbrook;!tier high;!wait 5;!measure high millbrook;!snap e2_high;/tp island;!wait 7;!measure high island after coming back;!snap e3_island;/tp arena;!wait 8;!measure high arena;!snap e4_arena;/tp fantasy;!wait 7;!measure high farm second entry
+!uncap;!wait 3;!measure island as he plays;!snap f1_island;!state;/tp fantasy;!wait 10;/god;/tp millbrook;!wait 10;!look 240 0;!wait 2;!measure millbrook as he plays;/tp island;!wait 6;!measure island after

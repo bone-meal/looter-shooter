@@ -35,6 +35,9 @@ func _work() -> void:
 		return
 	var version: String = _next_version()
 	var tag: String = "v" + version
+	var build := FileAccess.open("res://data/build.json", FileAccess.WRITE)  # packed into the build: saves are kept per version (game/save_slots.gd)
+	build.store_string(JSON.stringify({"version": version}) + "\n")
+	build.close()
 	var zips: PackedStringArray = PackedStringArray()
 	for preset in PRESETS:
 		var name_low: String = str(preset).to_lower()

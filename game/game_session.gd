@@ -386,6 +386,11 @@ func _open_customizer() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
+# A character's first session starts in the customize menu (game/main.gd, after the loading picture).
+func customize_now() -> void:
+	_open_customizer()
+
+
 func _close_customizer() -> void:
 	_customizer.visible = false
 	_player.controls_enabled = true
@@ -544,6 +549,8 @@ func _load_profile() -> void:
 		_fantasy_saved = extra.get("fantasy")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
+	if _progress.callsign == "":  # the card (P) starts with the character's name instead of "Unnamed"
+		_progress.set_card(_profile_name, _progress.emblem, _progress.title)
 	_apply_progress()
 	_apply_name_loadout()
 	_player.refresh_equipment()

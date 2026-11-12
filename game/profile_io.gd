@@ -1,4 +1,5 @@
-# Purpose: saves and loads the local profile (player name + inventory/equipment) to user://profile.sav with an HMAC signature.
+# Purpose: saves and loads the local profile (player name + inventory/equipment) with an HMAC signature: into the chosen
+# save slot (`active`), or user://profile.sav when no slot is chosen.
 # Dependencies: game/appearance_data.gd, core/profile_sign.gd, core/inventory_state.gd, core/item_db.gd, core/data_store.gd.
 extends RefCounted
 
@@ -11,8 +12,14 @@ const AppearanceData = preload("res://game/appearance_data.gd")
 const PATH := "user://profile.sav"
 const FORMAT := 1
 
-# One save file per typed name (two game windows on one PC must not share inventory or looks); "" = the original single file.
+# The chosen save slot's file (game/save_slots.gd `choose`). While set, every save and load goes there whatever the key.
+static var active := ""
+
+
+# Without a slot (scripted developer runs): one save file per typed name; "" = the original single file.
 static func path_for(key: String) -> String:
+	if active != "":
+		return active
 	var safe := ""
 	for ch in key.strip_edges().to_lower().substr(0, 20):
 		safe += ch if (ch >= "a" and ch <= "z") or (ch >= "0" and ch <= "9") else "_"
@@ -33,8 +40,12 @@ static func save(player_name: String, inv: Dictionary, look: Dictionary = {}, ke
 
 # Returns {"name": String, "inv": Dictionary, "look": Dictionary, "extra": Dictionary (casino coins/jackpot)} or {} when there is no usable save (see last_problem).
 static func load_profile(key := "") -> Dictionary:
+	return read(path_for(key))
+
+
+# The same for one named file.
+static func read(path: String) -> Dictionary:
 	last_problem = ""
-	var path := path_for(key)
 	if not FileAccess.file_exists(path):
 		return {}
 	var outer: Variant = JSON.parse_string(FileAccess.get_file_as_string(path))
