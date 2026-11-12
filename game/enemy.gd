@@ -122,6 +122,11 @@ func set_target(target: Node3D) -> void:
 	_target = target
 
 
+# How far its blow or shot reaches (metres).
+func reach() -> float:
+	return float(_stats["attack_range"])
+
+
 func head_height() -> float:
 	return _size.y
 
@@ -516,8 +521,8 @@ func _land_blow(distance: float) -> void:
 		_reset_color()
 		_lunge = 1.0
 	_say(String(_stats.get("attack_sound", "")))
-	if not is_instance_valid(_target) or distance > float(_stats["attack_range"]) * 1.3 + 0.3:
-		return  # a miss
+	if not is_instance_valid(_target) or distance > float(_stats["attack_range"]) * 1.3 + 0.3 or not _target.has_method("take_damage"):
+		return  # a miss (or it swung at a place, not at somebody: the boards of a window)
 	var damage := float(_stats["damage"]) * (_rally_damage if Time.get_ticks_msec() / 1000.0 < _rally_until else 1.0)
 	_target.set("struck_by", self)  # a ward needs to know where the blow comes from (and whom to throw it back at)
 	_target.take_damage(damage, element)

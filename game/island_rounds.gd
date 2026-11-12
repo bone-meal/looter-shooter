@@ -17,12 +17,14 @@ signal round_ended(number: int, kind: String)
 
 const RETARGET := 0.5  # seconds between two looks at who is nearest
 const NEAR_SHORE := 0.6  # a swimmer comes up within this many radians of its prey's bearing
+const LOST_BELOW := -14.0  # deeper than any sea bed: it fell out of the world
 const FAR_LOOKS := 2  # looks in a row an enemy must be too far from everybody before it is put back into the sea
 
 var rules: RoundRules
 var director: Node3D
 var bodies := Callable()  # func() -> Array of the players' bodies standing on the island (ours and, on the host, the others')
 var land: RefCounted  # core/archipelago.gd: where the islands are and where an enemy can come out of the sea
+var shelters: Node3D  # game/shelters.gd: where an enemy goes when its prey sits in a hut (null = there are none)
 var one_blow := Callable()  # func() -> bool, handed to every enemy sent in (game/enemy.gd `one_blow`)
 var active := true  # false on a machine that only watches (a client): the host runs the rounds
 
@@ -109,15 +111,23 @@ func _physics_process(delta: float) -> void:
 	_retarget -= delta
 	if _retarget <= 0.0:
 		_retarget = RETARGET
+		if shelters != null:
+			shelters.call("look_begins")
 		for enemy: Variant in _alive.duplicate():
 			if not is_instance_valid(enemy):
 				continue
 			var prey := _nearest(here, (enemy as Node3D).global_position)
-			(enemy as Node3D).call("set_target", prey)
+			(enemy as Node3D).call("set_target", shelters.call("guide", enemy, prey, now) if shelters != null else prey)
 			# left behind on another island: back into the sea, to come out again where the players are (never a boss:
 			# it would come back healed)
 			var from: Vector3 = (enemy as Node3D).global_position - Island.CENTER
 			var to := prey.global_position - Island.CENTER
+			if from.y < LOST_BELOW or not bool(land.within(from.x, from.z)):  # pushed through the ground or off the sea bed: it comes out of the sea again (as it is)
+				var again: Vector3 = land.sea_spot(int(land.island_near(to.x, to.z)), _rng)
+				if again.is_finite():
+					(enemy as Node3D).global_position = Island.CENTER + again + Vector3(0, 0.2, 0)
+					(enemy as CharacterBody3D).velocity = Vector3.ZERO
+				continue
 			var lost := int((enemy as Node).get_meta("far", 0)) + 1 if bool(land.left_behind(from.x, from.z, to.x, to.z)) else 0
 			(enemy as Node).set_meta("far", lost)
 			if lost >= FAR_LOOKS and not String((enemy as Node).get("enemy_id")).begins_with("boss"):

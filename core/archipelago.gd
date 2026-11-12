@@ -11,6 +11,8 @@ const TRIES := 12
 var cfg: Dictionary
 var sea_level: float
 var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "grass", "palms", "scatter"}
+var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)}
+var shelters: Array = []  # {"island": int, "at": Vector2, "yaw": the way its door faces (toward its island's middle)}
 var bridges: Array = []  # {"from": int, "to": int, "price": int, "kind", "a": Vector2, "b": Vector2 (shore to shore), "mid": Vector2, "open": bool}
 
 var _drop: float
@@ -35,6 +37,14 @@ func _init(config: Dictionary) -> void:
 		var a := here + along * (float(islands[from]["radius"]) - 1.0)
 		var b := there - along * (float(islands[to]["radius"]) - 1.0)
 		bridges.append({"from": from, "to": to, "price": int(entry["price"]), "kind": String(entry["kind"]), "a": a, "b": b, "mid": (a + b) * 0.5, "open": false})
+	for entry: Dictionary in config.get("wall_buys", []):
+		var isle := index_of(String(entry["island"]))
+		var off := Vector2(float(entry["at"][0]), float(entry["at"][1]))
+		wall_buys.append({"gun": String(entry["gun"]), "price": int(entry["price"]), "island": isle, "at": (islands[isle]["at"] as Vector2) + off, "yaw": atan2(-off.x, -off.y)})
+	for entry: Dictionary in config.get("shelters", []):
+		var isle := index_of(String(entry["island"]))
+		var off := Vector2(float(entry["at"][0]), float(entry["at"][1]))
+		shelters.append({"island": isle, "at": (islands[isle]["at"] as Vector2) + off, "yaw": atan2(-off.x, -off.y)})
 	var low := Vector2(INF, INF)
 	var high := Vector2(-INF, -INF)
 	for isle: Dictionary in islands:
@@ -143,6 +153,19 @@ func sea_spot(island: int, rng: RandomNumberGenerator, bearing: float = NAN, spr
 			continue
 		return Vector3(spot.x, height_at(spot.x, spot.y), spot.y)
 	return Vector3(INF, 0.0, 0.0)
+
+
+# What a refill of a wall gun's ammo pool costs.
+func ammo_price(wall_buy: int) -> int:
+	return roundi(float(wall_buys[wall_buy]["price"]) * float(cfg["ammo_share"]))
+
+
+# The wall buy within `metres` of a spot, -1 = none.
+func wall_buy_near(x: float, z: float, metres: float) -> int:
+	for i in wall_buys.size():
+		if Vector2(x, z).distance_to(wall_buys[i]["at"]) <= metres:
+			return i
+	return -1
 
 
 # --- the ways between the islands and their debris ---

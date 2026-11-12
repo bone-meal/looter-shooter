@@ -27,15 +27,18 @@ const POST_GAP := 4.0  # metres between the posts of a plank bridge
 
 
 # Returns {"spawn", "painting", "painting_fantasy": world positions, "debris": one game/debris_pile.gd per bridge}.
-# `extra_clear` = more spots ([x, z] from the spawn island's middle) to keep free of trees and rocks.
-static func build(parent: Node3D, land: Archipelago = null, extra_clear: Array[Vector2] = []) -> Dictionary:
+static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	if land == null:
 		land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
 	var arena: Dictionary = land.place_of("painting_arena")
 	var fantasy: Dictionary = land.place_of("painting_fantasy")
 	var spawn: Vector2 = land.place_of("spawn")["at"]
 	var clear: Array[Vector2] = [arena["at"], fantasy["at"], spawn]
-	clear.append_array(extra_clear)
+	for board: Dictionary in land.wall_buys:
+		clear.append(board["at"])
+	for hut: Dictionary in land.shelters:
+		for corner: Vector2 in [Vector2.ZERO, Vector2(3, 2.4), Vector2(-3, 2.4), Vector2(3, -2.4), Vector2(-3, -2.4), Vector2(0, 5)]:
+			clear.append((hut["at"] as Vector2) + corner.rotated(-float(hut["yaw"])))
 	for bridge: Dictionary in land.bridges:
 		clear.append(bridge["a"])
 		clear.append(bridge["b"])

@@ -199,6 +199,31 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var land: RefCounted = session.get("_land")
 			var mid: Vector2 = (land.get("islands") as Array)[int(words[1])]["at"]
 			player.call("teleport", Vector3(500.0 + mid.x + (float(words[2]) if words.size() > 3 else 0.0), 0.2, mid.y + (float(words[3]) if words.size() > 3 else 3.0)), 0.0)
+		"hut":  # "!hut in 0": stand inside hut n; "!hut window 4 [out]": stand at window n inside (or outside), looking at it; "!hut <note>": every window's boards, who is inside, points
+			var huts: Node3D = session.get("_shelters")
+			var hut_rules: RefCounted = huts.get("rules")
+			if words.size() > 2 and words[1] == "in":
+				var mid: Vector2 = (hut_rules.get("huts") as Array)[int(words[2])]["at"]
+				player.call("teleport", Vector3(500.0 + mid.x, 0.15, mid.y), 0.0)
+			elif words.size() > 2 and words[1] == "window":
+				var opening: Dictionary = (hut_rules.get("windows") as Array)[int(words[2])]
+				var side: Vector2 = ((opening["out"] as Vector2) - (opening["mid"] as Vector2)) * (1.3 if words.size() > 3 else -1.3)
+				player.call("teleport", Vector3(500.0 + (opening["mid"] as Vector2).x + side.x, 0.15, (opening["mid"] as Vector2).y + side.y), 0.0)
+				player.call("look_at_point", Vector3(500.0 + (opening["mid"] as Vector2).x, 1.5, (opening["mid"] as Vector2).y))
+			else:
+				var inside := 0
+				for enemy: Variant in session.call("director").call("enemy_list"):
+					if is_instance_valid(enemy) and int(hut_rules.call("hut_of", (enemy as Node3D).global_position.x - 500.0, (enemy as Node3D).global_position.z)) >= 0:
+						inside += 1
+				_lines.append("HUT %s: boards %s, player in hut %d, enemies inside huts %d of %d, points %d" % [" ".join(words.slice(1)), str(hut_rules.get("boards")), int(hut_rules.call("hut_of", player.global_position.x - 500.0, player.global_position.z)), inside,
+					(session.call("director").call("enemy_list") as Array).size(), int((session.call("score") as RefCounted).get("points"))])
+		"wall":  # "!wall goto 3": stand in front of wall buy n, looking at its board
+			var land: RefCounted = session.get("_land")
+			var board: Dictionary = (land.get("wall_buys") as Array)[int(words[2])]
+			var at: Vector2 = board["at"]
+			var front := Vector2(sin(float(board["yaw"])), cos(float(board["yaw"])))
+			player.call("teleport", Vector3(500.0 + at.x + front.x * 2.2, 0.15, at.y + front.y * 2.2), 0.0)
+			player.call("look_at_point", Vector3(500.0 + at.x, 1.5, at.y))
 		"debris":  # "!debris goto 0": stand 2.5 m before debris n on its first island's side, looking at it; "!debris <note>": where we are and what is cleared
 			var land: RefCounted = session.get("_land")
 			if words.size() > 2 and words[1] == "goto":

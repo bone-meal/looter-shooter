@@ -182,6 +182,10 @@ func _build(shape: String, color: Color) -> ArrayMesh:
 			_disc(main, 0.2, 0.05, Vector3(0.1, 0.03, 0.04))
 			_disc(trim, 0.12, 0.056, Vector3(-0.09, 0, -0.03))
 			_disc(trim, 0.12, 0.056, Vector3(0.1, 0.03, 0.04))
+		"hammer":
+			_rod(trim, 0.035, 0.5, Transform3D(Basis(Vector3.FORWARD, 0.5), Vector3(0, -0.02, 0)))
+			_box(main, Vector3(0.3, 0.14, 0.14), Vector3(-0.13, 0.2, 0))
+			_box(trim, Vector3(0.05, 0.16, 0.16), Vector3(-0.26, 0.26, 0))
 		_:  # "sea_mine": an iron ball with a painted band and horns
 			_ball(trim, 0.2, Vector3.ZERO)
 			_rod(main, 0.205, 0.06, Transform3D(Basis.IDENTITY, Vector3.ZERO))

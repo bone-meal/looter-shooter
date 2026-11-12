@@ -1,24 +1,25 @@
-Round 6 step 8a: the archipelago (four islands in a ring, bridges, debris)
+Round 6 step 8b + 8c: wall buys, shelters with boarded windows, carpenter
 
-The single spawn island becomes four islands round a lagoon, all from
-data/archipelago.json: Home Sand (radius 40 m), Painter's Key, Far Shoal and
-Wreck Cay (26 m each), joined by two plank bridges and two sandbars. Each way
-is blocked in its middle by debris that costs points to clear (750, 2250,
-6750, 20250; the dearest closes the ring back to the spawn island) and closes
-again at game over. The colosseum painting now stands on Painter's Key behind
-the first debris; the Aurelind painting, bank, crow and lifeguard stay on the
-spawn island.
+Wall buys: eight tarred boards with a chalk outline of the gun and its
+price (pistol 500 and shotgun 1000 on Home Sand, AK 1200 and M16 1200 on
+Painter's Key, sniper 1500 and grenade launcher 2000 on Far Shoal, M60 2500
+and rocket launcher 3000 on Wreck Cay). The plain gun takes a free ready
+slot or the place of the gun in hand, which goes to the backpack; holding
+that kind of gun already buys a full ammo pool for half the price. The
+outlines are drawn from our own gun models (tools/chalk_shot.tscn and
+tools/make_chalk_guns.py).
 
-Pure land rules in core/archipelago.gd (heights, which island, washing up,
-where enemies may come out of the sea, debris state). Enemies come up round
-the island their prey is on, on its side, and one left behind on another
-island comes again near the players. Wading too deep carries a player back
-to the shore, so nobody walks round a debris. Rocks and plants are drawn
-only near their island: the spawn view costs 13.9 ms on Forward+ at 1080p
-Ultimate (14.4 before), 4.9 ms on Compatibility.
+Shelters: three driftwood huts (Home Sand, Far Shoal, Wreck Cay) with a door
+toward the island and a boarded window in each other wall. An enemy whose
+prey is inside walks to the nearest window, tears a board every 1.2 s and
+climbs in (at most 6 inside a hut); when the prey leaves they step out of
+the door one by one. Holding interact at a window nails boards back for 10
+points each (12 paid per round). New power-up Shipwright (carpenter): every
+window whole again and 200 points each. Pure rules in core/shelter_rules.gd.
 
-Online the host clears debris for everybody after checking that the asker
-stands at it (never run between two machines).
+Also: an island enemy that falls out of the world comes out of the sea
+again. Online the host decides boards and checks who nails them (never run
+between two machines).
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

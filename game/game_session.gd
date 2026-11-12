@@ -52,6 +52,8 @@ const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
 const PowerupRules = preload("res://core/powerup_rules.gd")
 const Archipelago = preload("res://core/archipelago.gd")
+const WallBuy = preload("res://game/wall_buy.gd")
+const Shelters = preload("res://game/shelters.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
 const GameOverScreen = preload("res://game/game_over_screen.gd")
@@ -132,6 +134,8 @@ var _revive_target := 0  # online: the downed player we stand next to (0 = nobod
 var _revive_hold := 0.0  # ... and for how long we have held the key
 var _land: Archipelago  # the islands: where they are, which debris is cleared (core/archipelago.gd)
 var _debris: Array = []  # game/debris_pile.gd, one per bridge
+var _shelters := Shelters.new()  # the huts and their window boards
+var _nail_at := 0.0  # as a client: when we may next ask the host to nail a board
 var _last_isle := 0  # the island we last stood on (where the sea carries us back to)
 var _powerups: PowerupRules  # the islands' power-ups: what an enemy leaves and which effects are running
 var _power_field := PowerupField.new()  # ... and the ones lying around
@@ -202,6 +206,16 @@ func _ready() -> void:
 	_land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
 	var island := Island.build(self, _land)
 	_debris = island["debris"]
+	_shelters.setup(_land.shelters, _land.cfg["windows"])
+	_shelters.tore.connect(_on_board_torn)
+	add_child(_shelters)
+	for board: Dictionary in _land.wall_buys:
+		var stand := WallBuy.new()
+		stand.gun = String(board["gun"])
+		stand.price = int(board["price"])
+		stand.position = Island.CENTER + Vector3((board["at"] as Vector2).x, 0.0, (board["at"] as Vector2).y)
+		stand.rotation.y = float(board["yaw"])
+		add_child(stand)
 	LoadClock.mark("island")
 	_painting = island["painting"]
 	_painting_fantasy = island["painting_fantasy"]
@@ -312,6 +326,7 @@ func _ready() -> void:
 	_director.killed.connect(_on_enemy_killed)
 	_rounds.director = _director
 	_rounds.land = _land
+	_rounds.shelters = _shelters
 	_rounds.bodies = _island_bodies
 	_rounds.rules.alive_cap = int((_rounds.config()["alive_cap"] as Dictionary).get(settings.graphics, 24))
 	_rounds.round_started.connect(_on_round_started)
@@ -364,6 +379,9 @@ func _ready() -> void:
 		net.rounds.land = _land
 		net.rounds.debris_opened.connect(_on_debris_opened)
 		net.rounds.debris_billed.connect(_on_debris_billed)
+		net.rounds.shelters = _shelters.rules
+		net.rounds.window_set.connect(_on_window_set)
+		net.rounds.nail_paid.connect(_on_nail_paid)
 		var downs: Dictionary = _rounds.config()["downs"]
 		net.downs.reach = float(downs["reach"])
 		net.downs.health_share = float(downs["health"])
@@ -961,6 +979,17 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	var window := _window_here()
+	if window >= 0 and _shelters.rules.boards[window] < _shelters.rules.full():
+		return "[hold %s] Nail a board back (%d of %d)" % [key, _shelters.rules.boards[window], _shelters.rules.full()]
+	var board := _wall_buy_here()
+	if board >= 0:
+		var body := String(_land.wall_buys[board]["gun"])
+		if not _holds_body(body):
+			return "[%s] Buy the %s (%d points)" % [key, _player.items.item_name(body), int(_land.wall_buys[board]["price"])]
+		if _player.pools.is_full(body):
+			return "%s: your ammo is full" % _player.items.item_name(body)
+		return "[%s] Ammo for the %s (%d points)" % [key, _player.items.item_name(body), _land.ammo_price(board)]
 	var blocked := _debris_here()
 	if blocked >= 0:
 		return "[%s] Clear the way to %s (%d points)" % [key, _land.far_side(blocked, _player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z), _land.price(blocked)]
@@ -1016,6 +1045,8 @@ func _interact() -> void:
 		net.trade.answer(true)
 	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		_take_pack()
+	elif _wall_buy_here() >= 0:
+		_buy_from_wall(_wall_buy_here())
 	elif _debris_here() >= 0:
 		_buy_debris(_debris_here())
 	elif not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
@@ -1539,6 +1570,7 @@ func _on_round_started(number: int, kind: String) -> void:
 		net.downs.report("up")
 		_player_hud.notice("You are back in.")
 	_powerups.new_round()
+	_shelters.rules.new_round()
 	if number == 1:
 		_player.pools.fill_all()  # a run starts with full pools
 		_run_kills = _score.kills
@@ -1561,6 +1593,56 @@ func _on_round_ended(number: int, kind: String) -> void:
 		_drop_power(parting, _director.last_killed.global_position if is_instance_valid(_director.last_killed) else _island_spawn)
 	_player_hud.notice("Round %d survived" % number)
 	_sounds.call("play", "sting_round_end")
+	save_profile()
+
+
+# --- wall buys (data/archipelago.json wall_buys; game/wall_buy.gd is the board) ---
+
+# The wall buy our player stands at, -1 = none.
+func _wall_buy_here() -> int:
+	if _in_arena or _in_fantasy or not _on_island(_player.global_position):
+		return -1
+	return _land.wall_buy_near(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z, WallBuy.REACH)
+
+
+# True when one of our ready guns is of this body (plain or looted).
+func _holds_body(body: String) -> bool:
+	for i in _player.inventory.holster_count:
+		if _player.inventory.holster_body(i) == body:
+			return true
+	return false
+
+
+# Interact at a wall buy: the plain gun with a full pool, or (holding that kind already) its pool refilled for less.
+# A bought gun takes a free ready slot, else the place of the gun in hand, which goes into the backpack.
+func _buy_from_wall(index: int) -> void:
+	var body := String(_land.wall_buys[index]["gun"])
+	var owned := _holds_body(body)
+	var cost: int = _land.ammo_price(index) if owned else int(_land.wall_buys[index]["price"])
+	if owned and _player.pools.is_full(body):
+		return
+	if not _score.can_afford(cost):
+		_player_hud.notice("That costs %d points (you have %d)." % [cost, _score.points])
+		return
+	if not owned:
+		var holster: int = _player.inventory.free_holster()
+		if holster < 0:
+			holster = maxi(_player.hand_index(), 0)  # knife out: the first gun makes room
+			if not _player.inventory.stow_holster(holster):
+				_player_hud.notice("Your backpack is full: make room for the gun in your hand first.")
+				return
+		_player.inventory.add(body, 1)
+		_player.pools.fill(body)
+		_player.refresh_held()  # it loads itself from the pool ...
+		_player.pools.fill(body)  # ... and the pool is full on top of that
+		_player.select_hand(holster)
+		_inventory_screen.in_hand = _player.hand_index()
+		_player_hud.notice("%s bought." % _player.items.item_name(body))
+	else:
+		_player.pools.fill(body)
+		_player_hud.notice("%s: ammo refilled." % _player.items.item_name(body))
+	_score.spend(cost)
+	_sounds.call("play", "wall_buy")
 	save_profile()
 
 
@@ -1607,11 +1689,66 @@ func _on_debris_billed(index: int) -> void:
 		_score.spend(_land.price(index))
 
 
-# Game over: every way is blocked again.
+# Game over: every way is blocked again and every window is whole.
 func _close_debris() -> void:
 	_land.close_all()
 	for pile: Variant in _debris:
 		(pile as Node).call("set_open", false)
+	_shelters.rules.board_all()
+	_shelters.refresh()
+
+
+# --- shelter windows (core/shelter_rules.gd decides; game/shelters.gd shows the boards) ---
+
+# The window our player can reach, -1 = none.
+func _window_here() -> int:
+	if _in_arena or _in_fantasy or not _on_island(_player.global_position):
+		return -1
+	return _shelters.rules.window_near(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z)
+
+
+# Interact held at a window that misses boards: one goes back every repair_seconds. Online the host nails it.
+func _hold_nailing() -> void:
+	var window := _window_here()
+	if window < 0 or _player.downed or not Input.is_action_pressed("interact") or _shelters.rules.boards[window] >= _shelters.rules.full():
+		return
+	var now := Time.get_ticks_msec() / 1000.0  # the clock the rounds use for the boards
+	if net != null and net.rounds.is_client():
+		if now >= _nail_at:
+			_nail_at = now + float(_land.cfg["windows"]["repair_seconds"])
+			net.rounds.ask_nail(window)
+		return
+	var paid: int = _shelters.rules.nail(window, now)
+	if paid < 0:
+		return
+	_shelters.refresh()
+	_sounds.call("play", "board_fix")
+	_score.give(paid * _score.mult)
+	if net != null:
+		net.rounds.tell_window(window, _shelters.rules.boards[window])
+
+
+# Where the rounds run: an enemy tore a board off.
+func _on_board_torn(window: int) -> void:
+	if _near(_shelters.window_spot(window), 30.0):
+		_sounds.call("play", "board_tear")
+	if net != null:
+		net.rounds.tell_window(window, _shelters.rules.boards[window])
+
+
+# The host says what a window has now (as a client; on the host after a client nailed a board).
+func _on_window_set(window: int, boards: int) -> void:
+	if window < 0 or window >= _shelters.rules.boards.size():
+		return
+	var before: int = _shelters.rules.boards[window]
+	_shelters.rules.set_boards(window, boards)
+	_shelters.refresh()
+	if _shelters.rules.boards[window] != before and _near(_shelters.window_spot(window), 30.0):
+		_sounds.call("play", "board_fix" if _shelters.rules.boards[window] > before else "board_tear")
+
+
+func _on_nail_paid(points: int) -> void:
+	_score.give(points * _score.mult)
 
 
 # Nobody swims: a player wading deeper than data wade_depth is carried back to the island last stood on.
@@ -1666,6 +1803,9 @@ func _apply_power(kind: String) -> void:
 		return
 	var entry: Dictionary = _powerups.cfg["kinds"][kind]
 	_powerups.start(kind, _time)
+	if kind == "carpenter":
+		_shelters.rules.board_all()
+		_shelters.refresh()
 	if kind == "nuke" and _rounds.active:
 		var before := String(_score.blow)
 		_score.blow = "other"  # nobody is paid for what the blast kills ...
@@ -1682,6 +1822,8 @@ func _apply_power(kind: String) -> void:
 			_player.pools.fill_all()
 		"nuke":
 			_player_hud.flash_white()
+			_score.give(int(entry["points"]) * _powerups.points_mult(_time))
+		"carpenter":
 			_score.give(int(entry["points"]) * _powerups.points_mult(_time))
 
 
@@ -1860,6 +2002,7 @@ func _process(delta: float) -> void:
 	_power_field.deciding = _rounds.active
 	if _island_side():
 		_mind_the_sea()
+		_hold_nailing()
 	_score.mult = _powerups.points_mult(_time) if _island_side() else 1
 	_player_hud.power_now = _time
 	var regen: Dictionary = _rounds.config()["regen"]  # the classic way: left alone for a moment, you get your breath back

@@ -135,6 +135,17 @@ func take_holster(index: int) -> Dictionary:
 	return stack
 
 
+# Puts the gun of a ready slot away into the backpack (its rounds go back to its pool); false when the bag is full.
+func stow_holster(index: int) -> bool:
+	if holsters[index].is_empty():
+		return true
+	var slot := _empty_slot()
+	if slot < 0:
+		return false
+	_slots[slot] = take_holster(index)
+	return true
+
+
 func _unload(index: int) -> void:
 	var body := holster_body(index)
 	if body != "" and loaded[index] > 0:

@@ -1,0 +1,20 @@
+{
+ "version": 1,
+ "_about": "The chalk outlines of the wall buys (assets/ui/chalk_guns.png, made by tools/make_chalk_guns.py from tools/chalk_shot.tscn): cell = size of one outline in pixels, columns = outlines per row, cells = gun body -> which cell (counted along the rows from 0).",
+ "cell": [
+  512,
+  256
+ ],
+ "columns": 2,
+ "rows": 4,
+ "cells": {
+  "pistol_basic": 0,
+  "sniper_basic": 1,
+  "ak47": 2,
+  "m16": 3,
+  "m60": 4,
+  "shotgun_double": 5,
+  "rocket_launcher": 6,
+  "grenade_launcher": 7
+ }
+}

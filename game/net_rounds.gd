@@ -21,6 +21,8 @@ signal power_dropped(id: int, kind: String, at: Vector3)  # on a client: a power
 signal power_gone(id: int)  # on a client: it was taken or its time ran out
 signal power_taken(kind: String)  # on a client: somebody took it, so the whole party has it
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
+signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
+signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
 signal debris_billed(index: int)  # on a client: the host cleared the debris we asked for; we pay its price
 
 var net: Node3D
@@ -28,6 +30,7 @@ var rounds: Node  # game/island_rounds.gd of this machine (it runs only on the h
 var director: Node3D
 var card: RefCounted  # our own score card
 var land: RefCounted  # core/archipelago.gd of this machine (which debris is cleared)
+var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
 var on_gun_side := Callable()  # func() -> bool: our player is where island enemies can reach (not in Aurelind)
 var round_number := 0  # client: the round as the host last told it
 var round_kind := "normal"
@@ -259,6 +262,47 @@ func _debris_bill(index: int) -> void:
 	debris_billed.emit(index)
 
 
+# --- window boards: the host's enemies tear them, anybody may nail one back (the host checks they stand there) ---
+
+func tell_window(window: int, boards: int) -> void:
+	if net.can_send() and net.is_host():
+		_window.rpc(window, boards)
+
+
+func ask_nail(window: int) -> void:
+	if is_client():
+		_nail_ask.rpc_id(1, window)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _nail_ask(window: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body == null or shelters == null:
+		return
+	var at := body.global_position - ORIGIN
+	if window < 0 or int(shelters.call("window_near", at.x, at.z)) != window:
+		return  # not standing at it
+	var paid := int(shelters.call("nail", window, Time.get_ticks_msec() / 1000.0))
+	if paid < 0:
+		return
+	var boards := int((shelters.get("boards") as PackedInt32Array)[window])
+	_window.rpc(window, boards)
+	window_set.emit(window, boards)
+	if paid > 0:
+		_nail_paid.rpc_id(peer, paid)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _window(window: int, boards: int) -> void:
+	window_set.emit(window, boards)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _nail_paid(points: int) -> void:
+	nail_paid.emit(clampi(points, 0, 100))
+
+
 # --- power-ups: only the host speaks ---
 
 func tell_power_drop(id: int, kind: String, at: Vector3) -> void:
@@ -329,6 +373,10 @@ func _ask_all() -> void:
 	if land != null:
 		for index: int in land.call("open_list"):
 			_debris_open.rpc_id(peer, index, false)
+	if shelters != null:
+		var boards: PackedInt32Array = shelters.get("boards")
+		for window in boards.size():
+			_window.rpc_id(peer, window, boards[window])
 	for id: int in _enemies:
 		if is_instance_valid(_enemies[id]):
 			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position, int(_enemies[id].get_meta("tier")))
