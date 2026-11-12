@@ -1,7 +1,7 @@
 # Purpose: the trade window (online): what you give, what you get, both players' "ready" ticks, the second step
 # (confirm) and your tradable things to pick from: rolled guns and armour in the bag. Shows what the host's desk
 # says (core/trade_desk.gd through game/net_trade.gd); every click is a request, nothing changes hands here.
-# Dependencies: game/menu_widgets.gd, core/inventory_state.gd, core/item_db.gd, core/gun_db.gd, core/gun_stats.gd,
+# Dependencies: game/menu_widgets.gd, core/inventory_state.gd, core/item_db.gd, core/gun_db.gd, core/gun_stats.gd, game/hover_card.gd,
 # game/tier_style.gd.
 extends Control
 
@@ -9,6 +9,7 @@ const Widgets = preload("res://game/menu_widgets.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const TierStyle = preload("res://game/tier_style.gd")
+const HoverCard = preload("res://game/hover_card.gd")
 
 signal offered(thing: Dictionary)  # {"ref": slot, "gun": {...}} or {"ref": slot, "id": item id}
 signal withdrawn(ref: int)
@@ -28,6 +29,9 @@ var _status: Label
 var _ready_button: Button
 var _confirm_button: Button
 var _view := {}
+var selected_hotbar := 0  # the hotbar slot in the player's hand (set by the session): a hovered gun's card compares with that gun
+var _hover := {}  # the thing under the mouse (a line of either column or a bag button)
+var _card: Control  # lies over everything and draws the hovered thing's card (game/hover_card.gd)
 
 
 func setup(inventory: InventoryState, items: RefCounted, gun_db: RefCounted) -> void:
@@ -64,11 +68,50 @@ func setup(inventory: InventoryState, items: RefCounted, gun_db: RefCounted) -> 
 	_status.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_status.modulate = Color(1.0, 0.85, 0.5)
 	box.add_child(_status)
+	_card = Control.new()
+	_card.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(_card)
+	Widgets.fill(_card)
+	_card.draw.connect(_draw_card)
+
+
+func _process(_delta: float) -> void:
+	if visible and not _hover.is_empty():
+		_card.queue_redraw()  # the card follows the mouse
+
+
+# What the hovered thing is, exactly as the bag shows it: a gun with its stats against the gun in hand, armour with its lines.
+func _draw_card() -> void:
+	if _hover.is_empty():
+		return
+	var place := _card.get_local_mouse_position() + Vector2(18, 18)
+	var view := get_viewport_rect().size
+	if _hover.has("gun"):
+		var gun: Dictionary = _hover["gun"]
+		var in_hand := _inventory.gun_at(selected_hotbar)
+		if in_hand == gun:
+			in_hand = {}
+		HoverCard.draw_gun(_card, ThemeDB.fallback_font, _gun_db, gun, in_hand, place, view, "Rolled gun" if in_hand.is_empty() else "compared with the gun in hand")
+	else:
+		HoverCard.draw_item(_card, ThemeDB.fallback_font, _items, String(_hover["id"]), place, view)
+
+
+func _watch(over: Control, thing: Dictionary) -> void:
+	over.mouse_filter = Control.MOUSE_FILTER_STOP
+	over.mouse_entered.connect(func() -> void:
+		_hover = thing
+		_card.queue_redraw())
+	over.mouse_exited.connect(func() -> void:
+		if _hover == thing:
+			_hover = {}
+			_card.queue_redraw())
 
 
 # view: what the desk says this player sees (core/trade_desk.gd `_views`).
 func show_table(view: Dictionary) -> void:
 	_view = view
+	_hover = {}
+	_card.queue_redraw()
 	visible = true
 	_title.text = "TRADE WITH %s" % String(view["with"]).to_upper()
 	_fill(_give, view["mine"], true)
@@ -86,6 +129,7 @@ func show_table(view: Dictionary) -> void:
 		var pick := _button(_bag, _name_of(thing), func() -> void: offered.emit(thing))
 		pick.add_theme_color_override("font_color", _colour_of(thing))
 		pick.custom_minimum_size = Vector2(246, 36)
+		_watch(pick, thing)
 	var theirs: Array = view["theirs"]
 	var mine: Array = view["mine"]
 	var short := theirs.size() - (_free_slots() + mine.size())
@@ -105,6 +149,7 @@ func show_table(view: Dictionary) -> void:
 
 func close() -> void:
 	visible = false
+	_hover = {}
 	_view = {}
 
 
@@ -151,12 +196,14 @@ func _fill(column: VBoxContainer, things: Array, mine: bool) -> void:
 		if mine:
 			var back := _button(column, _name_of(thing), withdrawn.emit.bind(int(thing["ref"])))
 			back.add_theme_color_override("font_color", _colour_of(thing))
+			_watch(back, thing)
 		else:
 			var line := Label.new()
 			line.text = _name_of(thing)
 			line.modulate = _colour_of(thing)
 			line.custom_minimum_size = Vector2(0, 36)
 			column.add_child(line)
+			_watch(line, thing)
 	if things.is_empty():
 		var none := Label.new()
 		none.text = "(nothing yet)"

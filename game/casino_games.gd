@@ -28,6 +28,15 @@ var _bj_dealer: Node3D
 var _rt_dealer: Node3D
 var _bj_screen := BlackjackScreen.new()
 var _rt_screen := RouletteScreen.new()
+
+
+# The two screens join the tree in `setup`, which now only runs when the club is built (round 5): a session that never
+# went there would leave them behind as orphans at exit.
+func _notification(what: int) -> void:
+	if what == NOTIFICATION_PREDELETE:
+		for screen: Node in [_bj_screen, _rt_screen]:
+			if is_instance_valid(screen) and screen.get_parent() == null:
+				screen.free()
 var _bj := Blackjack.new()
 var _current := ""  # "", "blackjack" or "roulette"
 var _bj_shown: Array[int] = [0, 0]

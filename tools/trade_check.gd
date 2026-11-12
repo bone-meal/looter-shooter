@@ -178,6 +178,13 @@ func _picture(bag: InventoryState, theirs: Dictionary) -> void:
 		await RenderingServer.frame_post_draw
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://tools/shots"))
 	get_viewport().get_texture().get_image().save_jpg("res://tools/shots/trade_window.jpg", 0.9)
+	# the hover card of the gun that is offered to us (as if the mouse were on its line)
+	get_viewport().warp_mouse(Vector2(640, 180))
+	screen.set("_hover", {"gun": theirs})
+	(screen.get("_card") as Control).queue_redraw()
+	await get_tree().process_frame
+	await RenderingServer.frame_post_draw
+	get_viewport().get_texture().get_image().save_jpg("res://tools/shots/trade_hover.jpg", 0.9)
 
 
 func _note(text: String, good: bool) -> void:

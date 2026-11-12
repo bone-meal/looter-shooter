@@ -551,6 +551,7 @@ func _on_trade_message(what: String, args: Array) -> void:
 					_toggle_inventory()
 				_player.controls_enabled = false
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_trade_screen.selected_hotbar = _player.hotbar_index()
 			_trade_screen.show_table(args[0])
 		"refused":
 			_player_hud.notice("That cannot be traded.")
