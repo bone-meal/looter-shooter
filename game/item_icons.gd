@@ -1,4 +1,4 @@
-# Purpose: draws the icon of an item of the gun side of the game into any CanvasItem: guns and the worm as simple
+# Purpose: draws the icon of an item of the gun side of the game into any CanvasItem: guns, the knife and the worm as simple
 # drawn shapes, armour as the icon of the slot it is worn in (ring, trousers, helmet ...) in the item's own colour.
 # Used by the HUD and the inventory screen.
 # Dependencies: game/icon_art.gd (the icon sheet), data/items.json (slot and color of armour).
@@ -62,6 +62,10 @@ static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color) -> vo
 			canvas.draw_circle(o + Vector2(38, 15) * s, 11.0 * s, tint)  # drum
 			canvas.draw_rect(Rect2(o + Vector2(0, 12) * s, Vector2(26, 8) * s), tint)  # stock
 			canvas.draw_rect(Rect2(o + Vector2(30, 24) * s, Vector2(8, 10) * s), tint)  # grip
+		"knife":
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(38, 11) * s, o + Vector2(74, 11) * s, o + Vector2(88, 19) * s, o + Vector2(72, 23) * s, o + Vector2(38, 23) * s]), tint)  # blade
+			canvas.draw_rect(Rect2(o + Vector2(33, 6) * s, Vector2(5, 22) * s), tint)  # guard
+			canvas.draw_rect(Rect2(o + Vector2(4, 12) * s, Vector2(29, 10) * s), Color(tint, tint.a * 0.7))  # handle
 		"cigarette":
 			canvas.draw_rect(Rect2(o + Vector2(8, 15) * s, Vector2(56, 6) * s), Color(0.95, 0.93, 0.88))  # paper
 			canvas.draw_rect(Rect2(o + Vector2(8, 15) * s, Vector2(14, 6) * s), Color(0.85, 0.55, 0.2))  # filter

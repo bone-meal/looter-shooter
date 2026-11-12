@@ -10,6 +10,7 @@ const BodyMotion = preload("res://game/body_motion.gd")
 const RUN_SPEED := 7.0  # same as the player walk speed
 const CigaretteModel = preload("res://game/cigarette_model.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
 const DataStore = preload("res://core/data_store.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
 
@@ -163,7 +164,7 @@ func set_held(id: String) -> void:
 		_held_model = null
 	if id.is_empty():
 		return
-	_held_model = WeaponModels.build(id)
+	_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(id)
 	_place_held()
 
 

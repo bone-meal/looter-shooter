@@ -33,6 +33,8 @@ func _ready() -> void:
 	var bags := {1: InventoryState.new(_items), 2: InventoryState.new(_items)}
 	for who: int in bags:
 		(bags[who] as InventoryState).set_gun_db(_db)
+		(bags[who] as InventoryState).add("pistol_basic", 1)  # both holsters taken, so the guns below sit in the backpack:
+		(bags[who] as InventoryState).add("ak47", 1)  # only what is in the backpack can be traded
 	var gun_a := GunGen.generate(_db, rng, 0.5)
 	var gun_b := GunGen.generate(_db, rng, 0.9)
 	(bags[1] as InventoryState).add_gun(gun_a)

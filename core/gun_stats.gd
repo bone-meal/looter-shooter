@@ -1,18 +1,20 @@
 # Purpose: pure final stats of a gun: base weapon stats x part modifiers (boosted by the part's manufacturer) x part combos (core/gun_combos.gd) x rolled stat bonuses, plus buff values and a display name. No nodes.
-# Dependencies: core/gun_db.gd. Output of final_stats is shaped like a data/weapons.json entry so core/weapon_state.gd can use it, with extra keys: crit_chance, recoil (multiplier), ads_fov (multiplier), buffs {id: value}, combos, and unique (its data entry) for hand-made guns.
+# Dependencies: core/gun_db.gd. Output of final_stats is shaped like a data/weapons.json entry so core/weapon_state.gd can use it, with extra keys: crit_chance, recoil (multiplier), ads_fov (multiplier), move_speed (the body's, shifted by the parts), buffs {id: value}, combos, and unique (its data entry) for hand-made guns.
 extends RefCounted
 
 const GunCombos = preload("res://core/gun_combos.gd")
 
 const MIN_RELOAD := 0.2
 const MIN_SPREAD := 0.001
+const MIN_SPEED := 0.85  # parts never change a gun's carrying speed by more than this
+const MAX_SPEED := 1.08
 
 
 static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 	var base: Dictionary = db.weapons[String(gun["body"])]
 	var out: Dictionary = base.duplicate(true)
 	# 1. multiplier sums per stat from parts
-	var bonus := {"damage": 0.0, "fire_rate": 0.0, "mag_size": 0.0, "reload_time": 0.0, "spread": 0.0, "recoil": 0.0, "ads_fov": 0.0}
+	var bonus := {"damage": 0.0, "fire_rate": 0.0, "mag_size": 0.0, "reload_time": 0.0, "spread": 0.0, "recoil": 0.0, "ads_fov": 0.0, "move_speed": 0.0}
 	var crit: float = db.base_crit_chance
 	var gun_parts: Dictionary = gun["parts"]
 	for slot: String in gun_parts:
@@ -65,6 +67,8 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 	out["recoil"] = maxf(0.1, 1.0 + float(bonus["recoil"]))
 	out["ads_fov"] = maxf(0.2, 1.0 + float(bonus["ads_fov"]))
 	out["crit_chance"] = clampf(crit, 0.0, 0.75)
+	if base.has("move_speed"):  # heavy parts slow the carrier a little, light ones do the opposite
+		out["move_speed"] = float(base["move_speed"]) * clampf(1.0 + float(bonus["move_speed"]), MIN_SPEED, MAX_SPEED)
 	if out.has("projectile"):  # launchers: damage is the splash damage
 		var proj: Dictionary = out["projectile"]
 		proj["splash_damage"] = float(proj["splash_damage"]) * float(out["damage"]) / maxf(float(base["damage"]), 0.001)

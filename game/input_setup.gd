@@ -34,15 +34,11 @@ const ACTIONS := [
 	["element_gravity", "Magic: add gravity (while channelling)"],
 	["dodge", "Dodge step (fantasy world)"],
 	["drop_item", "Inventory: drop the gun under the mouse"],
-	["weapon_1", "Hotbar slot 1"],
-	["weapon_2", "Hotbar slot 2"],
-	["weapon_3", "Hotbar slot 3"],
-	["weapon_4", "Hotbar slot 4"],
-	["weapon_5", "Hotbar slot 5"],
-	["weapon_6", "Hotbar slot 6"],
-	["weapon_7", "Hotbar slot 7"],
-	["weapon_8", "Hotbar slot 8"],
-	["weapon_9", "Hotbar slot 9"],
+	["weapon_1", "Gun 1"],
+	["weapon_2", "Gun 2"],
+	["knife", "Knife"],
+	["weapon_3", "Gun 3 (with a third holster)"],
+	["weapon_4", "Gun 4 (with a fourth holster)"],
 ]
 
 
@@ -70,15 +66,18 @@ static func default_code(action: String) -> String:
 		"skills": return "key:%d" % KEY_K
 		"quests": return "key:%d" % KEY_L
 		"map": return "key:%d" % KEY_M
-		"element_water": return "key:%d" % KEY_Q  # the element keys share Q, E, 1, 3 with gun skills and the hotbar:
+		"element_water": return "key:%d" % KEY_Q  # the element keys share Q, E, 1, 3 with gun skills, gun 1 and the knife:
 		"element_fire": return "key:%d" % KEY_E  # they only act while left click is held with a staff
 		"element_earth": return "key:%d" % KEY_1
 		"element_air": return "key:%d" % KEY_3
 		"element_gravity": return "key:%d" % KEY_R  # R still reloads guns: it is an element only while channelling
 		"dodge": return "key:%d" % KEY_CTRL
 		"drop_item": return "key:%d" % KEY_G
-	if action.begins_with("weapon_"):
-		return "key:%d" % (KEY_1 + int(action.substr(7)) - 1)
+		"weapon_1": return "key:%d" % KEY_1
+		"weapon_2": return "key:%d" % KEY_2
+		"knife": return "key:%d" % KEY_3
+		"weapon_3": return "key:%d" % KEY_4
+		"weapon_4": return "key:%d" % KEY_5
 	return ""
 
 

@@ -1,4 +1,4 @@
-# Purpose: Minecraft-style inventory screen: 27 main slots + 9 hotbar slots + an 18-slot equipment panel; click to pick up / place / swap / wear, right click for half or one, hover tooltip with stats and flavor text. A rolled gun is dropped into the world by the drop key while the mouse is over it, or by carrying it out of the window and clicking (signal `dropped`); holding Shift over a gun shows the gun in hand beside it.
+# Purpose: the inventory screen: the 36 backpack slots, the holsters under them (the guns carried ready; only guns go in, and one put there by hand has to be reloaded), the knife's box (it cannot be moved) and an 18-slot equipment panel; click to pick up / place / swap / wear, right click for half or one, hover tooltip with stats and flavor text. A rolled gun is dropped into the world by the drop key while the mouse is over it, or by carrying it out of the window and clicking (signal `dropped`); holding Shift over a gun shows the gun in hand beside it.
 # Dependencies: core/inventory_state.gd, core/item_db.gd, game/item_icons.gd. Emits `changed` after every click so the player re-reads the held item.
 extends Control
 
@@ -20,13 +20,20 @@ const GAP := 4.0
 const COLUMNS := 9
 const TOOLTIP_WIDTH := 240.0
 const EQUIP_BASE := 100  # slot indices >= this are equipment slots (index - EQUIP_BASE into EQUIP_SLOTS)
+const HOLSTER_BASE := 200  # slot indices >= this are holsters
+const KNIFE_SLOT := 300  # the knife's box
+const HOLSTER_W := 2.0 * SLOT + GAP  # a holster is two slots wide
 const EQUIP_COLUMNS := 3
 const SLOT_LABELS := {"hat": "Hat", "head": "Head", "earrings": "Ears", "necklace": "Neck", "glasses": "Eyes", "mouth": "Mouth", "shirt": "Shirt", "chestplate": "Chest", "gauntlets": "Hands", "ring_1": "Ring", "ring_2": "Ring", "bracelet": "Wrist", "pants": "Pants", "leg_armor": "Legs", "cape": "Cape", "waist": "Belt", "boots": "Boots", "foot_armor": "Feet"}
 
 var inventory: InventoryState  # set before add_child
 var items: ItemDb  # set before add_child
 var gun_db: GunDb  # set before add_child (rolled guns: colours, names, stats)
-var selected_hotbar := 0  # set by the session so the held slot is highlighted
+var in_hand := 0  # which holster is in the player's hand (-1 = the knife), set by the session: that box is lit
+var knife := "combat"  # the knife type carried, set by the session
+var knife_name := ""
+var knife_key := ""  # the labels of the keys that take a gun or the knife in hand, set by the session
+var gun_keys: Array[String] = []
 
 var _mouse := Vector2.ZERO
 var _font: Font = ThemeDB.fallback_font
@@ -73,7 +80,13 @@ func _gui_input(event: InputEvent) -> void:
 			if event.button_index == MOUSE_BUTTON_LEFT and not _panel(get_viewport_rect().size).has_point(event.position):
 				_drop(-1)  # carried out of the window and let go
 			return
-		if slot >= EQUIP_BASE:
+		if slot >= KNIFE_SLOT:
+			return
+		if slot >= HOLSTER_BASE:
+			if event.button_index != MOUSE_BUTTON_LEFT and event.button_index != MOUSE_BUTTON_RIGHT:
+				return
+			inventory.click_holster(slot - HOLSTER_BASE)
+		elif slot >= EQUIP_BASE:
 			if event.button_index != MOUSE_BUTTON_LEFT and event.button_index != MOUSE_BUTTON_RIGHT:
 				return
 			inventory.click_equipment(inventory.EQUIP_SLOTS[slot - EQUIP_BASE])
@@ -94,13 +107,17 @@ func _input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 
 
-# Takes the rolled gun off the mouse (slot -1) or out of a slot and hands it to the session to lay on the ground.
+# Takes the rolled gun off the mouse (slot -1), out of a slot or out of a holster and hands it to the session to lay
+# on the ground.
 func _drop(slot: int) -> void:
-	if slot >= inventory.SIZE:
-		return
 	if slot < 0 and inventory.cursor.is_empty():
 		return
-	var gun := inventory.take_gun(slot)
+	var gun := {}
+	if slot >= HOLSTER_BASE and slot < KNIFE_SLOT:
+		if not inventory.holster_gun(slot - HOLSTER_BASE).is_empty():
+			gun = inventory.take_holster(slot - HOLSTER_BASE).get("gun", {})
+	elif slot < inventory.SIZE:
+		gun = inventory.take_gun(slot)
 	if gun.is_empty():
 		return
 	dropped.emit(gun)
@@ -126,17 +143,21 @@ func _draw() -> void:
 	var hover := _slot_at(_mouse)
 	for i in inventory.SIZE:
 		_draw_slot(i, hover == i)
+	_draw_holsters(hover)
 	_draw_equipment(hover)
 	var hovered_id := _id_at(hover)
-	if hovered_id != "" and inventory.cursor.is_empty():
-		if hovered_id == "gun" and hover < EQUIP_BASE:
-			var in_hand: Dictionary = {} if hover == selected_hotbar else inventory.gun_at(selected_hotbar)
-			var box := _draw_gun_tooltip(inventory.gun_at(hover), in_hand, _mouse + Vector2(18, 18), view, "Rolled gun" if in_hand.is_empty() else "compared with the gun in hand")
-			if Input.is_key_pressed(KEY_SHIFT) and not in_hand.is_empty():  # the gun in hand beside it, numbers against the hovered one
+	if hover == KNIFE_SLOT and inventory.cursor.is_empty():
+		HoverCard.draw_note(self, _font, knife_name, "Your knife. Always with you: it cannot be dropped, traded or lost.", _mouse + Vector2(18, 18), view)
+	elif hovered_id != "" and inventory.cursor.is_empty():
+		var hovered_gun := _gun_at(hover)
+		if not hovered_gun.is_empty():
+			var held: Dictionary = {} if (in_hand < 0 or hover == HOLSTER_BASE + in_hand) else inventory.holster_gun(in_hand)
+			var box := _draw_gun_tooltip(hovered_gun, held, _mouse + Vector2(18, 18), view, "Rolled gun" if held.is_empty() else "compared with the gun in hand")
+			if Input.is_key_pressed(KEY_SHIFT) and not held.is_empty():  # the gun in hand beside it, numbers against the hovered one
 				var beside := Vector2(box.position.x - box.size.x - 8.0, box.position.y)
 				if beside.x < 8.0:
 					beside.x = box.end.x + 8.0
-				_draw_gun_tooltip(in_hand, inventory.gun_at(hover), beside, view, "IN HAND")
+				_draw_gun_tooltip(held, hovered_gun, beside, view, "IN HAND")
 		else:
 			_draw_tooltip(hovered_id, view)
 	if not inventory.cursor.is_empty():
@@ -149,11 +170,51 @@ func _draw() -> void:
 		_draw_count(r, int(inventory.cursor["count"]))
 
 
+# The holsters (the ready guns) and the knife, in the order of their keys.
+func _draw_holsters(hover: int) -> void:
+	var o := _origin(get_viewport_rect().size)
+	draw_string(_font, o + Vector2(0, 4 * (SLOT + GAP) + 16.0), "READY (only guns; one put here by hand must be reloaded)", HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.6))
+	var fits: bool = inventory.is_weapon(inventory.cursor)
+	for i in inventory.holster_count:
+		var r := _holster_rect(i)
+		var held := i == in_hand
+		draw_rect(r, Color(0.05, 0.05, 0.06, 0.9))
+		draw_rect(r, Color(0.4, 1.0, 0.5, 0.95) if fits else (Color(1, 1, 1, 0.95) if held else (Color(1, 1, 0.6, 0.9) if hover == HOLSTER_BASE + i else Color(1, 1, 1, 0.25))), false, 2.0 if (fits or held or hover == HOLSTER_BASE + i) else 1.0)
+		draw_string(_font, r.position + Vector2(4, 13), gun_keys[i] if i < gun_keys.size() else "", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+		var body: String = inventory.holster_body(i)
+		if body == "":
+			continue
+		var gun: Dictionary = inventory.holster_gun(i)
+		var tint := Color.WHITE
+		if not gun.is_empty():
+			tint = TierStyle.color(gun_db, String(gun["tier"]), _now())
+			draw_rect(r, tint, false, 2.0)
+		ItemIcons.draw(self, body, r.grow(-6), tint)
+		if inventory.loaded[i] >= 0:
+			draw_string(_font, r.end - Vector2(34, 5), str(inventory.loaded[i]), HORIZONTAL_ALIGNMENT_RIGHT, 30, 13, Color.WHITE)
+	var k := _holster_rect(inventory.holster_count)
+	draw_rect(k, Color(0.05, 0.05, 0.06, 0.9))
+	draw_rect(k, Color(1, 1, 1, 0.95) if in_hand < 0 else (Color(1, 1, 0.6, 0.9) if hover == KNIFE_SLOT else Color(1, 1, 1, 0.25)), false, 2.0 if (in_hand < 0 or hover == KNIFE_SLOT) else 1.0)
+	draw_string(_font, k.position + Vector2(4, 13), knife_key, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.6))
+	ItemIcons.draw(self, "knife", k.grow(-6), Color.WHITE)
+
+
+# The rolled gun in a backpack slot or a holster ({} for anything else).
+func _gun_at(slot: int) -> Dictionary:
+	if slot >= HOLSTER_BASE and slot < KNIFE_SLOT:
+		return inventory.holster_gun(slot - HOLSTER_BASE)
+	return inventory.gun_at(slot) if slot >= 0 and slot < inventory.SIZE else {}
+
+
+func _holster_rect(i: int) -> Rect2:
+	var o := _origin(get_viewport_rect().size)
+	return Rect2(o + Vector2(i * (HOLSTER_W + GAP), 4 * (SLOT + GAP) + 22.0), Vector2(HOLSTER_W, SLOT))
+
+
 func _draw_slot(i: int, hovered: bool) -> void:
 	var r := _slot_rect(i)
 	draw_rect(r, Color(0.05, 0.05, 0.06, 0.9))
-	var held: bool = i == selected_hotbar
-	draw_rect(r, Color(1, 1, 1, 0.95) if held else (Color(1, 1, 0.6, 0.9) if hovered else Color(1, 1, 1, 0.25)), false, 2.0 if (held or hovered) else 1.0)
+	draw_rect(r, Color(1, 1, 0.6, 0.9) if hovered else Color(1, 1, 1, 0.25), false, 2.0 if hovered else 1.0)
 	var id: String = inventory.item_id(i)
 	if id == "":
 		return
@@ -187,6 +248,10 @@ func _draw_equipment(hover: int) -> void:
 func _id_at(slot: int) -> String:
 	if slot < 0:
 		return ""
+	if slot >= KNIFE_SLOT:
+		return ""
+	if slot >= HOLSTER_BASE:
+		return String(inventory.holsters[slot - HOLSTER_BASE].get("id", ""))
 	if slot >= EQUIP_BASE:
 		var stack: Dictionary = inventory.equipment[inventory.EQUIP_SLOTS[slot - EQUIP_BASE]]
 		return "" if stack.is_empty() else String(stack["id"])
@@ -213,10 +278,7 @@ func _origin(view: Vector2) -> Vector2:
 
 func _slot_rect(i: int) -> Rect2:
 	var o := _origin(get_viewport_rect().size)
-	if i < inventory.HOTBAR:
-		return Rect2(o + Vector2(i * (SLOT + GAP), 3 * (SLOT + GAP) + 14.0), Vector2(SLOT, SLOT))
-	var k := i - inventory.HOTBAR
-	return Rect2(o + Vector2((k % COLUMNS) * (SLOT + GAP), floori(k / float(COLUMNS)) * (SLOT + GAP)), Vector2(SLOT, SLOT))
+	return Rect2(o + Vector2((i % COLUMNS) * (SLOT + GAP), floori(i / float(COLUMNS)) * (SLOT + GAP)), Vector2(SLOT, SLOT))
 
 
 func _equip_origin(view: Vector2) -> Vector2:
@@ -236,4 +298,9 @@ func _slot_at(pos: Vector2) -> int:
 	for k in inventory.EQUIP_SLOTS.size():
 		if _equip_rect(k).has_point(pos):
 			return EQUIP_BASE + k
+	for i in inventory.holster_count:
+		if _holster_rect(i).has_point(pos):
+			return HOLSTER_BASE + i
+	if _holster_rect(inventory.holster_count).has_point(pos):
+		return KNIFE_SLOT
 	return -1

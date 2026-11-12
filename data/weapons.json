@@ -1,8 +1,10 @@
 {
- "version": 5,
+ "version": 6,
  "weapons": {
   "pistol_basic": {
-   "move_speed": 240, "damage": 12,
+   "ammo_pool": 96,
+   "move_speed": 240,
+   "damage": 12,
    "fire_rate": 4.0,
    "mag_size": 12,
    "reload_time": 1.2,
@@ -25,7 +27,10 @@
    "reload_sound": "reload_mag"
   },
   "sniper_basic": {
-   "move_speed": 200, "aim_speed": 100, "damage": 80,
+   "ammo_pool": 40,
+   "move_speed": 200,
+   "aim_speed": 100,
+   "damage": 80,
    "fire_rate": 0.8,
    "mag_size": 5,
    "reload_time": 2.5,
@@ -48,7 +53,9 @@
    "reload_sound": "reload_mag"
   },
   "ak47": {
-   "move_speed": 215, "damage": 14,
+   "ammo_pool": 240,
+   "move_speed": 215,
+   "damage": 14,
    "fire_rate": 9.0,
    "mag_size": 30,
    "reload_time": 2.2,
@@ -71,7 +78,9 @@
    "reload_sound": "reload_mag"
   },
   "m16": {
-   "move_speed": 225, "damage": 11,
+   "ammo_pool": 240,
+   "move_speed": 225,
+   "damage": 11,
    "fire_rate": 11.0,
    "mag_size": 30,
    "reload_time": 2.0,
@@ -94,7 +103,9 @@
    "reload_sound": "reload_mag"
   },
   "m60": {
-   "move_speed": 195, "damage": 10,
+   "ammo_pool": 400,
+   "move_speed": 195,
+   "damage": 10,
    "fire_rate": 12.0,
    "mag_size": 100,
    "reload_time": 5.0,
@@ -117,7 +128,9 @@
    "reload_sound": "reload_mag"
   },
   "shotgun_double": {
-   "move_speed": 220, "damage": 9,
+   "ammo_pool": 60,
+   "move_speed": 220,
+   "damage": 9,
    "pellets": 10,
    "fire_rate": 2.5,
    "mag_size": 2,
@@ -141,7 +154,9 @@
    "reload_sound": "reload_shells"
   },
   "rocket_launcher": {
-   "move_speed": 190, "damage": 120,
+   "ammo_pool": 10,
+   "move_speed": 190,
+   "damage": 120,
    "fire_rate": 0.6,
    "mag_size": 1,
    "reload_time": 3.0,
@@ -181,7 +196,9 @@
    "reload_sound": "reload_tube"
   },
   "grenade_launcher": {
-   "move_speed": 190, "damage": 80,
+   "ammo_pool": 24,
+   "move_speed": 190,
+   "damage": 80,
    "fire_rate": 1.5,
    "mag_size": 6,
    "reload_time": 3.5,
@@ -220,5 +237,6 @@
    "sound": "shot_grenade",
    "reload_sound": "reload_tube"
   }
- }
+ },
+ "_about": "ammo_pool = spare rounds a full pool of this gun body holds (every gun of the body shares it; a reload takes from it). move_speed / aim_speed = top speed carrying it / aiming with it, Source units a second (the knife runs at data/movement.json base_speed)."
 }

@@ -90,7 +90,8 @@
     "mods": {
      "spread": -0.25,
      "damage": 0.05,
-     "fire_rate": -0.05
+     "fire_rate": -0.05,
+     "move_speed": -0.02
     },
     "view": {
      "barrel_scale": [
@@ -104,7 +105,8 @@
     "model": "barrel_short",
     "mods": {
      "spread": 0.15,
-     "fire_rate": 0.1
+     "fire_rate": 0.1,
+     "move_speed": 0.02
     },
     "view": {
      "barrel_scale": [
@@ -119,7 +121,8 @@
     "mods": {
      "damage": 0.15,
      "fire_rate": -0.1,
-     "spread": -0.1
+     "spread": -0.1,
+     "move_speed": -0.04
     },
     "view": {
      "barrel_scale": [
@@ -135,7 +138,8 @@
     "model": "mag_extended",
     "mods": {
      "mag_size": 0.5,
-     "reload_time": 0.1
+     "reload_time": 0.1,
+     "move_speed": -0.015
     },
     "view": {
      "model": "mag_extended"
@@ -147,7 +151,8 @@
     "mods": {
      "mag_size": 1.0,
      "reload_time": 0.3,
-     "fire_rate": -0.05
+     "fire_rate": -0.05,
+     "move_speed": -0.04
     },
     "view": {
      "model": "mag_drum"
@@ -158,7 +163,8 @@
     "model": "mag_fast",
     "mods": {
      "reload_time": -0.3,
-     "mag_size": -0.1
+     "mag_size": -0.1,
+     "move_speed": 0.01
     },
     "view": {
      "model": "mag_fast"
@@ -183,7 +189,8 @@
     "model": "sight_acog",
     "mods": {
      "spread": -0.2,
-     "ads_fov": -0.35
+     "ads_fov": -0.35,
+     "move_speed": -0.01
     },
     "view": {
      "model": "sight_acog",
@@ -210,7 +217,8 @@
     "model": "muzzle_silencer",
     "mods": {
      "damage": -0.05,
-     "spread": -0.1
+     "spread": -0.1,
+     "move_speed": -0.01
     },
     "view": {
      "model": "muzzle_silencer"
@@ -255,7 +263,8 @@
     "model": "grip_angled",
     "mods": {
      "spread": -0.05,
-     "reload_time": -0.05
+     "reload_time": -0.05,
+     "move_speed": 0.005
     },
     "view": {
      "model": "grip_angled"
@@ -266,7 +275,8 @@
     "model": "grip_stubby",
     "mods": {
      "fire_rate": 0.05,
-     "recoil": -0.1
+     "recoil": -0.1,
+     "move_speed": 0.01
     },
     "view": {
      "model": "grip_stubby"
@@ -274,7 +284,7 @@
    }
   }
  },
- "_about": "Parts change stats on their own ('mods': fractions added to the stat multiplier; a part's maker strengthens its focus stats, data/manufacturers.json part_boost). 'combos' = what certain parts do TOGETHER on one gun (core/gun_combos.gd): 'needs' lists slot -> kind, 'mods' are extra stat changes, 'buffs' give a buff effect of data/gun_loot.json at that value (added to a rolled buff of the same kind), 'name' is put into the gun's name. 'matched' = bonus when that many parts come from the gun's own manufacturer. All numbers are placeholders to tune. 'view' on a part: how it is shown on the gun model (game/gun_parts_view.gd): 'model' file in assets/models/weapons/parts/, or 'barrel_scale' [thickness, length] for barrels. A body's 'part_scale' sizes attached parts.",
+ "_about": "Parts change stats on their own ('mods': fractions added to the stat multiplier; a part's maker strengthens its focus stats, data/manufacturers.json part_boost). 'combos' = what certain parts do TOGETHER on one gun (core/gun_combos.gd): 'needs' lists slot -> kind, 'mods' are extra stat changes, 'buffs' give a buff effect of data/gun_loot.json at that value (added to a rolled buff of the same kind), 'name' is put into the gun's name. 'matched' = bonus when that many parts come from the gun's own manufacturer. All numbers are placeholders to tune. 'view' on a part: how it is shown on the gun model (game/gun_parts_view.gd): 'model' file in assets/models/weapons/parts/, or 'barrel_scale' [thickness, length] for barrels. A body's 'part_scale' sizes attached parts. move_speed in a part's mods shifts the carrying speed of the gun (-0.04 = 4 % slower); all parts together never change it by more than -15 % / +8 %.",
  "combos": [
   {
    "id": "marksmans_dream",

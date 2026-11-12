@@ -1,4 +1,5 @@
-# Purpose: the player HUD: health ring, hotbar, held gun with ammo and reload bar, boss bar, damage flash, and the
+# Purpose: the player HUD: health ring, the holster bar (ready guns and the knife), the gun in hand with the rounds in
+# it and the spare rounds of its pool, reload bar, boss bar, damage flash, and the
 # zombies-style parts: the round in red chalk (tallies up to 5, then a number), enemies left, and the points with their
 # "+10" pop-ups (the rest of the party's points listed above ours).
 # Dependencies: game/player.gd (read-only: health, weapons, slot), core/score_card.gd (read-only, via watch()),
@@ -6,6 +7,8 @@
 extends Control
 
 const ChalkMarks = preload("res://game/chalk_marks.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
+const Player = preload("res://game/player.gd")
 
 const ItemIcons = preload("res://game/item_icons.gd")
 const TierStyle = preload("res://game/tier_style.gd")
@@ -245,18 +248,24 @@ func _draw_status_icon(element: String, c: Vector2, left: float, full: float) ->
 
 
 func _draw_weapons(view: Vector2) -> void:
-	if player.guns_locked:  # the fantasy world: no guns there, so no hotbar and no gun box
+	if player.guns_locked:  # the fantasy world: no guns there, so no holster bar and no gun box
 		return
-	_draw_hotbar(view)
-	var w = player.held_weapon()
-	if w == null:
-		return
+	_draw_holsters(view)
 	var now := Time.get_ticks_msec() / 1000.0
 	var x := view.x - MARGIN - SLOT_W
 	var top := view.y - MARGIN - SLOT_H
+	var w = player.held_weapon()
+	if w == null:
+		if player.knife_out():  # the knife: its type's name where a gun shows its ammo
+			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), BACK)
+			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), WHITE, false, 2.0)
+			draw_string(_font, Vector2(x + 8, top + 18), InputSetup.label(player.settings, "knife"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
+			ItemIcons.draw(self, "knife", Rect2(x + 24, top + 4, 100, 34), WHITE)
+			draw_string(_font, Vector2(x + 8, top + 54), KnifeModels.db().name_of(player.knife), HORIZONTAL_ALIGNMENT_RIGHT, SLOT_W - 16.0, 15, WHITE)
+		return
 	draw_rect(Rect2(x, top, SLOT_W, SLOT_H), BACK)
 	draw_rect(Rect2(x, top, SLOT_W, SLOT_H), WHITE, false, 2.0)
-	draw_string(_font, Vector2(x + 8, top + 18), str(player.hotbar_index() + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
+	draw_string(_font, Vector2(x + 8, top + 18), InputSetup.label(player.settings, "weapon_%d" % (player.hand_index() + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
 	var gun: Dictionary = player.held_gun()
 	var tint := WHITE
 	if not gun.is_empty():
@@ -265,13 +274,14 @@ func _draw_weapons(view: Vector2) -> void:
 		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), GunStats.display_name(player.gun_db, gun), 14, tint, SLOT_W)
 	ItemIcons.draw(self, w.weapon_id, Rect2(x + 24, top + 8, 100, 34), tint)
 	var low: bool = w.ammo <= maxi(1, w.mag_size / 4)
-	var pip_w: float = 110.0 / w.mag_size
+	var spare: int = w.spare()
+	var pip_w: float = 104.0 / w.mag_size
 	for p in w.mag_size:
 		var lit: bool = p < w.ammo
 		var pip_color: Color = (BAD if low else WHITE) if lit else Color(1, 1, 1, 0.1)
-		draw_rect(Rect2(x + 10 + p * pip_w, top + 44, maxf(pip_w - 2.0, 1.0), 10), pip_color)
-	draw_string(_font, Vector2(x + 128, top + 54), "%d" % w.ammo, HORIZONTAL_ALIGNMENT_RIGHT, 40, 30, BAD if low else WHITE)
-	draw_string(_font, Vector2(x + 170, top + 54), "/%d" % w.mag_size, HORIZONTAL_ALIGNMENT_LEFT, 28, 12, WHITE)
+		draw_rect(Rect2(x + 8 + p * pip_w, top + 44, maxf(pip_w - 2.0, 1.0), 10), pip_color)
+	draw_string(_font, Vector2(x + 106, top + 54), "%d" % w.ammo, HORIZONTAL_ALIGNMENT_RIGHT, 44, 30, BAD if low else WHITE)
+	draw_string(_font, Vector2(x + 153, top + 54), "/ %d" % spare, HORIZONTAL_ALIGNMENT_LEFT, 46, 14, BAD if spare <= 0 else WHITE)  # what is left in this gun body's pool
 	if w.is_reloading():
 		var frac: float = w.reload_fraction(now)
 		draw_rect(Rect2(x + 4, top + 3, SLOT_W - 8, 5), Color(1, 1, 1, 0.15))
@@ -296,29 +306,38 @@ func _draw_skills(x: float, top: float, tint: Color) -> void:
 			draw_string(_font, r.position + Vector2(SKILL_W - 46.0, 17), "%.1fs" % left, HORIZONTAL_ALIGNMENT_RIGHT, 40, 13, WARN)
 
 
-func _draw_hotbar(view: Vector2) -> void:
-	var box := 40.0
-	var x0 := (view.x - (9 * (box + 4.0) - 4.0)) * 0.5
-	var y := view.y - MARGIN - box
-	for i in 9:
-		var r := Rect2(x0 + i * (box + 4.0), y, box, box)
-		var selected: bool = i == player.hotbar_index()
+# What is carried ready, in the order of its keys: gun 1, gun 2, the knife, then the guns of extra holsters. Each
+# box shows its key, the gun (in its tier's colour) and the rounds in it; the one in hand is lit.
+func _draw_holsters(view: Vector2) -> void:
+	var inventory = player.inventory
+	var count: int = inventory.holster_count
+	var box := Vector2(84.0, 44.0)
+	var x := (view.x - ((count + 1) * (box.x + 6.0) - 6.0)) * 0.5
+	var y := view.y - MARGIN - box.y
+	for place in count + 1:
+		var holster := place if place < 2 else (Player.KNIFE if place == 2 else place - 1)
+		if count < 2 and place == count:
+			holster = Player.KNIFE
+		var r := Rect2(x + place * (box.x + 6.0), y, box.x, box.y)
+		var selected: bool = holster == player.hand_index()
 		draw_rect(r, BACK)
 		draw_rect(r, WHITE if selected else DIM, false, 2.0 if selected else 1.0)
-		draw_string(_font, r.position + Vector2(3, 11), str(i + 1), HORIZONTAL_ALIGNMENT_LEFT, -1, 10, DIM)
-		var id: String = player.inventory.item_id(i)
-		if id != "":
-			var icon_id := id
-			var icon_tint := WHITE
-			if id == "gun":
-				var g: Dictionary = player.inventory.gun_at(i)
-				icon_id = String(g["body"])
-				icon_tint = TierStyle.color(player.gun_db, String(g["tier"]), Time.get_ticks_msec() / 1000.0)
-				draw_rect(r, icon_tint, false, 2.0)
-			ItemIcons.draw(self, icon_id, r.grow(-4), icon_tint)
-			var count: int = player.inventory.item_count(i)
-			if count > 1:
-				draw_string(_font, r.end - Vector2(24, 4), str(count), HORIZONTAL_ALIGNMENT_RIGHT, 20, 12, WHITE)
+		draw_string(_font, r.position + Vector2(4, 13), InputSetup.label(player.settings, "knife" if holster == Player.KNIFE else "weapon_%d" % (holster + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, WHITE if selected else DIM)
+		if holster == Player.KNIFE:
+			ItemIcons.draw(self, "knife", r.grow(-8), WHITE if selected else Color(1, 1, 1, 0.6))
+			continue
+		var body: String = inventory.holster_body(holster)
+		if body == "":
+			continue
+		var tint := WHITE
+		var gun: Dictionary = inventory.holster_gun(holster)
+		if not gun.is_empty():
+			tint = TierStyle.color(player.gun_db, String(gun["tier"]), Time.get_ticks_msec() / 1000.0)
+			draw_rect(r, tint, false, 2.0)
+		ItemIcons.draw(self, body, Rect2(r.position + Vector2(14, 4), Vector2(box.x - 20.0, box.y - 12.0)), tint)
+		var rounds: int = inventory.loaded[holster]
+		if rounds >= 0:
+			draw_string(_font, r.end - Vector2(34, 4), str(rounds), HORIZONTAL_ALIGNMENT_RIGHT, 30, 12, BAD if rounds == 0 else WHITE)
 
 
 func _draw_top(view: Vector2) -> void:

@@ -11,6 +11,7 @@ const GunGen = preload("res://core/gun_gen.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const DataStore = preload("res://core/data_store.gd")
 const Player = preload("res://game/player.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
 
 const ENEMY_FILES := ["res://data/enemies.json", "res://data/fantasy/enemies.json"]
 const SPAWN_MAX := 20
@@ -135,6 +136,16 @@ func _give(args: Array) -> String:
 				return "/give coins <amount>"
 			session.wallet().add(maxi(String(args[1]).to_int(), 0))
 			return "You have %d coins." % session.wallet().balance
+		"ammo":
+			player.pools.fill_all()
+			return "Every ammo pool is full."
+		"knife":
+			var knives: RefCounted = KnifeModels.db()
+			if args.size() < 2 or not knives.has(String(args[1])):
+				return "Knives: %s." % ", ".join(knives.ids())
+			player.set_knife(String(args[1]))
+			session.save_profile()
+			return "Your knife is now the %s." % knives.name_of(player.knife)
 		"points":
 			if args.size() < 2 or not String(args[1]).is_valid_int():
 				return "/give points <amount>"

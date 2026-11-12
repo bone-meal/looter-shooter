@@ -23,6 +23,8 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 	lines.append(["Reload %.2fs%s" % [stats["reload_time"], _diff_text(float(stats["reload_time"]), other, "reload_time", 2)], _delta_color(float(stats["reload_time"]), other, "reload_time", false)])
 	lines.append(["Spread %.3f%s" % [stats["spread"], _diff_text(float(stats["spread"]), other, "spread", 3)], _delta_color(float(stats["spread"]), other, "spread", false)])
 	lines.append(["Recoil x%.2f   Crit %d%%" % [stats["recoil"], roundi(float(stats["crit_chance"]) * 100.0)], Color(0.85, 0.85, 0.9)])
+	if stats.has("move_speed"):  # how fast you run with it in hand (Source units a second; the knife runs at 250)
+		lines.append(["Carry speed %d%s" % [roundi(float(stats["move_speed"])), _diff_text(float(stats["move_speed"]), other, "move_speed", 0)], _delta_color(float(stats["move_speed"]), other, "move_speed", true)])
 	var dps := float(stats["damage"]) * float(stats["fire_rate"])
 	var dps_other := float(other["damage"]) * float(other["fire_rate"]) if not other.is_empty() else 0.0
 	lines.append(["DPS %.0f%s" % [dps, "" if other.is_empty() else " (%+.0f)" % (dps - dps_other)], Color(1.0, 0.9, 0.5) if other.is_empty() or dps >= dps_other else Color(1.0, 0.5, 0.45)])
@@ -84,6 +86,20 @@ static func draw_item(canvas: CanvasItem, font: Font, items: RefCounted, id: Str
 		canvas.draw_string(font, pos + Vector2(10, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.6, 1.0, 0.7))
 		y += 16.0
 	canvas.draw_multiline_string(font, pos + Vector2(10, y + 4.0), flavor, HORIZONTAL_ALIGNMENT_LEFT, ITEM_WIDTH - 20.0, 13, -1, Color(0.85, 0.8, 0.95))
+
+
+# A small card with a title and a sentence or two (things that are neither guns nor items: the knife).
+static func draw_note(canvas: CanvasItem, font: Font, title: String, text: String, place: Vector2, view: Vector2) -> void:
+	var wrapped := _wrap(text, 34)
+	var height := 40.0 + wrapped.size() * 16.0
+	var pos := Vector2(minf(place.x, view.x - ITEM_WIDTH - 8.0), minf(place.y, view.y - height - 8.0))
+	canvas.draw_rect(Rect2(pos, Vector2(ITEM_WIDTH, height)), Color(0.08, 0.04, 0.12, 0.96))
+	canvas.draw_rect(Rect2(pos, Vector2(ITEM_WIDTH, height)), Color(0.7, 0.5, 0.9, 0.8), false, 1.5)
+	canvas.draw_string(font, pos + Vector2(10, 22), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 1, 1))
+	var y := 42.0
+	for line in wrapped:
+		canvas.draw_string(font, pos + Vector2(10, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.85, 0.8, 0.95))
+		y += 16.0
 
 
 # Splits text into lines of at most `limit` characters, breaking at spaces.

@@ -48,6 +48,7 @@ const FantasyWorld = preload("res://game/fantasy_world.gd")
 const TradeScreen = preload("res://game/trade_screen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
 const Scoreboard = preload("res://game/scoreboard.gd")
 
 const HUD_REFRESH := 0.25
@@ -105,6 +106,7 @@ var _wallet := Wallet.new()  # casino coins (saved in the profile)
 var _points_cfg: Dictionary = DataStore.load_json("res://data/points.json")
 var _score := ScoreCard.new(_points_cfg)  # zombies-style points (saved in the profile) and this session's scoreboard row
 var _scoreboard := Scoreboard.new()
+var _knife_rolled := false  # this character has its knife type
 var _jackpot := 500.0  # this player's progressive slot pot (saved in the profile)
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
@@ -449,7 +451,12 @@ func _toggle_inventory() -> void:
 		_player.controls_enabled = true
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	else:
-		_inventory_screen.selected_hotbar = _player.hotbar_index()
+		_inventory_screen.in_hand = _player.hand_index()
+		_inventory_screen.knife_name = KnifeModels.db().name_of(_player.knife)
+		_inventory_screen.knife_key = InputSetup.label(settings, "knife")
+		_inventory_screen.gun_keys.clear()
+		for n in InventoryState.HOLSTERS:
+			_inventory_screen.gun_keys.append(InputSetup.label(settings, "weapon_%d" % (n + 1)))
 		_inventory_screen.open()
 		_player.controls_enabled = false
 
@@ -565,7 +572,7 @@ func _on_trade_message(what: String, args: Array) -> void:
 					_toggle_inventory()
 				_player.controls_enabled = false
 				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-			_trade_screen.selected_hotbar = _player.hotbar_index()
+			_trade_screen.in_hand = _player.hand_index()
 			_trade_screen.show_table(args[0])
 		"refused":
 			_player_hud.notice("That cannot be traded.")
@@ -611,7 +618,7 @@ func _finish_trade(gave: Array, got: Array) -> void:
 func _on_inventory_changed() -> void:
 	_player.refresh_held()
 	_player.refresh_equipment()
-	_inventory_screen.selected_hotbar = _player.hotbar_index()
+	_inventory_screen.in_hand = _player.hand_index()
 	save_profile()
 
 
@@ -740,16 +747,24 @@ func _load_profile() -> void:
 			_jackpot = float(extra.get("jackpot", _jackpot))
 		_progress.from_dict(extra.get("progress", {}))
 		_score.from_dict(extra.get("score"))
+		_player.pools.from_dict(extra.get("ammo"))
+		if KnifeModels.db().has(String(extra.get("knife", ""))):
+			_player.set_knife(String(extra["knife"]))
+			_knife_rolled = true
 		_fantasy_saved = extra.get("fantasy")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
+	if not _knife_rolled:  # a new character (or one from before the knives): its knife type is rolled once and kept
+		_knife_rolled = true
+		_player.set_knife(KnifeModels.db().roll(_rng))
+		_player_hud.notice("Your knife: %s" % KnifeModels.db().name_of(_player.knife))
 	if _progress.callsign == "":  # the card (P) starts with the character's name instead of "Unnamed"
 		_progress.set_card(_profile_name, _progress.emblem, _progress.title)
 	_apply_progress()
 	_apply_name_loadout()
 	_player.refresh_equipment()
-	_player.refresh_held()
-	_inventory_screen.selected_hotbar = _player.hotbar_index()
+	_player.reload_inventory()
+	_inventory_screen.in_hand = _player.hand_index()
 
 
 # Easter egg: some names start with extra items (data/player.json "name_loadouts"). Anyone can type the name, so these are not secret or cheat-proof.
@@ -773,7 +788,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict()}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife}
 		if _fantasy != null:
 			extra["fantasy"] = _fantasy.to_dict()
 		elif _fantasy_saved != null:
@@ -1156,6 +1171,7 @@ func _open_chest() -> void:
 # Dying sends you back to the island and your arena run starts over.
 func _enter_arena() -> void:
 	_in_arena = true
+	_player.pools.fill_all()  # until ammo can be bought or found (wall buys, max ammo): every colosseum run starts with full pools
 	_player.teleport(ARENA_SPAWN, 0.0)
 	_director.start()
 	_player_hud.play_fade()
@@ -1234,6 +1250,9 @@ func _rest_worlds() -> void:
 	_rest_in = 1.0
 	_score.paused = _in_fantasy  # the points game is the gun side's
 	_player_hud.show_points = not _in_fantasy
+	if _player.knife_stowed != _in_fantasy:  # in Aurelind the hand without a gun holds the staff, not the knife
+		_player.knife_stowed = _in_fantasy
+		_player.refresh_held()
 	var gun_side := not _in_fantasy
 	var aurelind := _in_fantasy or _time - _fantasy_left_at < 3.0
 	if net != null and net.is_active() and net.is_host():
@@ -1346,9 +1365,9 @@ func _process(delta: float) -> void:
 	var fps := Performance.get_monitor(Performance.TIME_FPS)
 	var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 	var mem_mb := Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
-	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s-%s hotbar, %s inventory, %s view, Esc menu" % [
+	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s/%s guns, %s knife, %s inventory, %s view, Esc menu" % [
 		fps, 1000.0 / maxf(fps, 1.0), draws, mem_mb, _moves(), _key("jump"), _key("sprint"), _key("shoot"),
-		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_9"), _key("inventory"), _key("toggle_view")]
+		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_2"), _key("knife"), _key("inventory"), _key("toggle_view")]
 	_player_hud.wave_text = _director.status_text()
 	_player_hud.boss_ratio = _director.boss_ratio()
 	_player_hud.round_number = _director.wave_number() if _in_arena else 0

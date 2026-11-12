@@ -1,5 +1,6 @@
 # Purpose: pure ammo, fire-rate and reload rules for one weapon. No nodes, no rendering.
-# Dependencies: none. Stats come from data/weapons.json (see tools/validate_data.gd).
+# Dependencies: core/ammo_pools.gd (optional `pool`: a reload takes its rounds from there). Stats come from
+# data/weapons.json (see tools/validate_data.gd).
 extends RefCounted
 
 var weapon_id: String
@@ -9,6 +10,7 @@ var mag_size: int
 var ammo: int
 var pellets := 1  # hitscan rays per shot (shotguns)
 var projectile := {}  # non-empty for rocket/grenade launchers (see game/explosives.gd)
+var pool: RefCounted  # core/ammo_pools.gd: spare rounds for this weapon's body (null = reloads cost nothing)
 
 var _fire_interval: float
 var _reload_time: float
@@ -41,8 +43,13 @@ func reload_fraction(now: float) -> float:
 
 func update(now: float) -> void:
 	if is_reloading() and now >= _reload_done_time:
-		ammo = mag_size
+		ammo += (mag_size - ammo) if pool == null else int(pool.take(weapon_id, mag_size - ammo))
 		_reload_done_time = -1.0
+
+
+# Rounds left to reload from (a large number when reloads cost nothing).
+func spare() -> int:
+	return 999999 if pool == null else int(pool.left(weapon_id))
 
 
 # Returns true if a shot was fired (ammo spent, cooldown started).
@@ -55,7 +62,12 @@ func try_fire(now: float) -> bool:
 	return true
 
 
+# Putting the gun away stops a reload: the magazine stays as it was.
+func cancel_reload() -> void:
+	_reload_done_time = -1.0
+
+
 func start_reload(now: float) -> void:
-	if is_reloading() or ammo == mag_size:
+	if is_reloading() or ammo >= mag_size or spare() <= 0:
 		return
 	_reload_done_time = now + _reload_time

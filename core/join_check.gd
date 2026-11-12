@@ -1,4 +1,4 @@
-# Purpose: the host's check of a joining player's profile (name, items, equipment) against the item data. Returns "" when fine, else a short reason.
+# Purpose: the host's check of a joining player's profile (name, items, holsters, equipment) against the item data. Returns "" when fine, else a short reason.
 # Dependencies: core/inventory_state.gd (sizes, slot names), core/item_db.gd (passed in).
 extends RefCounted
 
@@ -22,7 +22,13 @@ static func check(profile: Variant, db: RefCounted) -> String:
 	var slots: Variant = inv.get("slots")
 	if not (slots is Array) or slots.size() > InventoryState.SIZE:
 		return "bad inventory"
-	for entry in slots:
+	var ready: Variant = inv.get("holsters")
+	if not (ready is Array) or ready.size() > InventoryState.HOLSTERS:
+		return "bad inventory"
+	for entry in ready:
+		if entry is Array and entry.size() == 2 and entry[0] is String and db.has_item(entry[0]) and db.kind(entry[0]) != "weapon":
+			return "not a gun in a holster"
+	for entry in slots + ready:
 		if not (entry is Array):
 			return "bad inventory"
 		if entry.is_empty():

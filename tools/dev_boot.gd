@@ -145,8 +145,19 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"inv":  # the inventory window: "!inv" opens or shuts it, "!inv hover 5" puts the mouse on slot 5 (0-35), "!inv drop" presses the drop key, "!inv shift on|off" holds Shift, "!inv log" lists rolled guns and what lies on the ground
 			var window: Control = session.get("_inventory_screen")
 			match words[1] if words.size() > 1 else "":
-				"hover":
-					window.set("_mouse", (window.call("_slot_rect", int(words[2])) as Rect2).get_center())
+				"hover":  # a backpack slot (0-35), a holster ("h0".."h3") or "knife"
+					if words[2] == "knife":
+						window.set("_mouse", (window.call("_holster_rect", int(player.get("inventory").get("holster_count"))) as Rect2).get_center())
+					elif words[2].begins_with("h"):
+						window.set("_mouse", (window.call("_holster_rect", int(words[2].substr(1))) as Rect2).get_center())
+					else:
+						window.set("_mouse", (window.call("_slot_rect", int(words[2])) as Rect2).get_center())
+				"click":  # a left click on a backpack slot (0-35) or a holster ("h0".."h3")
+					if words[2].begins_with("h"):
+						player.get("inventory").call("click_holster", int(words[2].substr(1)))
+					else:
+						player.get("inventory").call("click_slot", int(words[2]))
+					session.call("_on_inventory_changed")
 				"drop":
 					var press := InputEventAction.new()
 					press.action = "drop_item"
@@ -167,8 +178,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("rolled guns in slots %s; on the ground %d; shift %s  %s" % [", ".join(guns), int((session.get("_field") as Node).call("count")), str(Input.is_key_pressed(KEY_SHIFT)), " ".join(words.slice(2))])
 				_:
 					session.call("_toggle_inventory")
-		"slot":  # hold the gun in hotbar slot n (1-9)
-			player.call("select_hotbar", int(words[1]) - 1)
+		"ammo":  # "!ammo <note>": what is in hand, the rounds in it and in its pool, every holster, the knife type
+			var bag: RefCounted = player.get("inventory")
+			var pools: RefCounted = player.get("pools")
+			var ready := PackedStringArray()
+			for i in int(bag.get("holster_count")):
+				var body := String(bag.call("holster_body", i))
+				ready.append("%d:%s loaded %d pool %d/%d" % [i + 1, body if body != "" else "-", int((bag.get("loaded") as Array)[i]), int(pools.call("left", body)), int(pools.call("size_of", body))])
+			_lines.append("AMMO %s: in hand %s | %s | knife %s | %d u/s top" % [" ".join(words.slice(1)), String(player.call("held_id")), "; ".join(ready), String(player.get("knife")), roundi(float(player.get("_top_units")))])
+		"slot":  # "!slot 2": take the gun of holster n (1-4) in hand; "!slot knife": the knife
+			player.call("select_hand", -1 if words[1] == "knife" else int(words[1]) - 1)
 		"closepanel":
 			session.call("fantasy").call("close_panel")
 		"accept":
@@ -416,7 +435,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			player.call("teleport", Vector3(float(words[1]), float(words[2]), float(words[3])), deg_to_rad(float(words[4])) if words.size() > 4 else 0.0)
 		"speed":  # "!speed <note>": ground speed in Source units, what is in hand, fatigue
 			var rules: RefCounted = player.get("move")
-			_lines.append("SPEED %s: %d u/s, in hand %s, on floor %s, stamina %.1f" % [" ".join(words.slice(1)), int(player.call("speed_units")), String(player.get("inventory").call("item_id", int(player.call("hotbar_index")))), str(player.is_on_floor()), float(rules.get("stamina"))])
+			_lines.append("SPEED %s: %d u/s, in hand %s, on floor %s, stamina %.1f" % [" ".join(words.slice(1)), int(player.call("speed_units")), String(player.call("held_id")), str(player.is_on_floor()), float(rules.get("stamina"))])
 		"jumptest":  # one jump on the spot: how high (units) and how long
 			var rules: RefCounted = player.get("move")
 			var ground := player.global_position.y

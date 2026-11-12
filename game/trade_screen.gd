@@ -29,7 +29,7 @@ var _status: Label
 var _ready_button: Button
 var _confirm_button: Button
 var _view := {}
-var selected_hotbar := 0  # the hotbar slot in the player's hand (set by the session): a hovered gun's card compares with that gun
+var in_hand := -1  # the holster in the player's hand, -1 = the knife (set by the session): a hovered gun's card compares with that gun
 var _hover := {}  # the thing under the mouse (a line of either column or a bag button)
 var _card: Control  # lies over everything and draws the hovered thing's card (game/hover_card.gd)
 
@@ -88,10 +88,8 @@ func _draw_card() -> void:
 	var view := get_viewport_rect().size
 	if _hover.has("gun"):
 		var gun: Dictionary = _hover["gun"]
-		var in_hand := _inventory.gun_at(selected_hotbar)
-		if in_hand == gun:
-			in_hand = {}
-		HoverCard.draw_gun(_card, ThemeDB.fallback_font, _gun_db, gun, in_hand, place, view, "Rolled gun" if in_hand.is_empty() else "compared with the gun in hand")
+		var held: Dictionary = _inventory.holster_gun(in_hand) if in_hand >= 0 else {}
+		HoverCard.draw_gun(_card, ThemeDB.fallback_font, _gun_db, gun, held, place, view, "Rolled gun" if held.is_empty() else "compared with the gun in hand")
 	else:
 		HoverCard.draw_item(_card, ThemeDB.fallback_font, _items, String(_hover["id"]), place, view)
 

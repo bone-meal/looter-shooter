@@ -1,13 +1,15 @@
-Round 6 step 3: points, round HUD in chalk, Tab scoreboard
+Round 6 step 4: ammo pools, two ready guns plus backpack, the knife
 
-Zombies-style points saved with the character: a hit pays 10, the killing
-blow 60, a headshot kill 100, a melee kill 130 (data/points.json). Enemies
-have a head now: the top sixth of their box, hit 1.5 times as hard.
-The HUD shows the round in red chalk (tallies to 5, then a number; the
-colosseum as 3 / 12), enemies left, the points with pop-ups and the
-party's points. Holding Tab shows the scoreboard; online each machine
-reports its own row and the host cleans and passes the table on.
-No points in Aurelind. tools/score_check.tscn checks the rules.
+Spare ammo is limited: one pool per gun body, shared by every gun of that
+body, and a reload takes from it. Two guns are carried ready (holsters),
+the rest sits in a 36-slot backpack; a gun put in a holster by hand starts
+empty. Every character carries a knife whose type (13 own models) is
+rolled once: slash on shoot, stab on aim, a melee kill pays 130 points,
+and the knife runs at full speed. Rolled parts shift a gun's carrying
+speed a little. The 9-slot hotbar is gone; keys are 1 2 guns, 3 knife.
+Old saves migrate: the first two guns of the old hotbar become ready.
+tools/gun_check.tscn checks the rules, tools/knife_shot.tscn shows the
+knives.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

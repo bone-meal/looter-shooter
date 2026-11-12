@@ -1,6 +1,6 @@
-# Purpose: local player: movement, mouse look, hitscan shooting, inventory + hotbar (the held hotbar item picks the weapon), weapon animation, first/third-person view (B toggles).
+# Purpose: local player: movement, mouse look, hitscan shooting, the knife, inventory (what is in hand: the gun of one of the holsters, or the knife), ammo pools, weapon animation, first/third-person view (B toggles).
 # Dependencies: game/weapon_models.gd, game/character_models.gd, core/viewmodel_motion.gd, core/weapon_state.gd, core/data_store.gd,
-# core/health_state.gd, core/settings_state.gd, core/item_db.gd, core/inventory_state.gd, core/armor_math.gd, core/status_state.gd, game/cigarette_model.gd. Input actions come from game/input_setup.gd.
+# core/health_state.gd, core/settings_state.gd, core/item_db.gd, core/inventory_state.gd, core/armor_math.gd, core/status_state.gd, game/cigarette_model.gd, core/ammo_pools.gd, core/melee_state.gd, game/knife_models.gd (+ core/knife_db.gd), core/gun_stats.gd. Input actions come from game/input_setup.gd.
 # Movement runs in _process (every rendered frame, physics interpolation off for the player, head and body model) so the view and the
 # visible body always move together with no interpolation lag. Enemies and projectiles still use the fixed tick.
 extends CharacterBody3D
@@ -21,7 +21,9 @@ const ViewmodelMotion = preload("res://core/viewmodel_motion.gd")
 const DataStore = preload("res://core/data_store.gd")
 const HealthState = preload("res://core/health_state.gd")
 const SettingsState = preload("res://core/settings_state.gd")
-const WormModel = preload("res://game/worm_model.gd")
+const AmmoPools = preload("res://core/ammo_pools.gd")
+const MeleeState = preload("res://core/melee_state.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
 const ArmorMath = preload("res://core/armor_math.gd")
 const StatusState = preload("res://core/status_state.gd")
 const CigaretteModel = preload("res://game/cigarette_model.gd")
@@ -48,7 +50,8 @@ const THIRD_PERSON_CAM := Vector3(0.9, 0.35, 2.8)   # over the right shoulder
 const THIRD_PERSON_HOLD := Vector3(0.26, -0.3, -0.5)  # weapon position relative to the head in third person
 const CAMERA_PADDING := 0.25
 const ORBIT_CAM := Vector3(0.0, 0.3, 3.4)  # camera offset while orbiting with H held
-const LOOT_HOLD := Vector3(0.28, -0.26, -0.55)  # first-person position of a held loot item
+const KNIFE := -1  # `_hand` when the knife is out instead of a holstered gun
+const LOOT_HOLD := Vector3(0.28, -0.26, -0.55)  # first-person position of something else held in the hand (the staff)
 const MAX_STEP := 1.0 / 30.0  # longest movement step, so a frame hitch can't tunnel through floors
 const FALL_LIMIT := -6.0
 const BERSERK_MAX := 10
@@ -60,7 +63,9 @@ const VIEW_KICK_RECOVERY := 5.0  # per second: how fast the scoped view settles 
 
 var third_person := false
 var emote := ""  # id of the dance playing, "" = none
-var weapon: WeaponState  # currently held weapon
+var weapon: WeaponState  # the gun in hand (a stock pistol nobody fires while the knife is out, so this is never null)
+var pools: AmmoPools  # spare ammunition, one pool per gun body (saved with the character by the session)
+var knife := "combat"  # which knife type this character carries (rolled once; set with set_knife)
 var gun_db: GunDb  # tiers, parts and makers for rolled guns
 var health: HealthState
 var settings: SettingsState  # set by game/game_session.gd before add_child
@@ -104,19 +109,24 @@ var _third_person_hold := THIRD_PERSON_HOLD  # rigged bodies move it to the hand
 var _spawn_position: Vector3
 var _yaw := 0.0
 var _walk_phase := 0.0
-var _weapons: Array[WeaponState] = []
-var _models: Array[Node3D] = []
-var _slot := 0  # index of the weapon being held (or last held)
-var _hotbar := 0  # selected hotbar slot
-var _holding := false  # true when the selected hotbar slot holds a weapon
-var _loot_models := {}  # loot item ID -> hand model (only the worm for now)
-var _held_loot: Node3D  # loot model currently in the hand, or null
+var _models: Array[Node3D] = []  # one per gun body
+var _slot := 0  # index of the body of the gun being held (or last held)
+var _hand := 0  # which holster is in hand, or KNIFE
+var _holding := false  # true while a gun is in hand
+var _idle_weapon: WeaponState
+var _ready_weapons: Array[WeaponState] = []  # one per holster: its magazine and fire timing (null = not built)
+var _ready_keys: Array[int] = []  # what each was built from (0 = nothing), so ammo and a running reload survive refreshes
+var _knife_model: Node3D
+var _knife_twin: Node3D  # the second one of a type held in both hands, else null
+var _knife_out := false
+var _melee := MeleeState.new()
+var _melee_kind := ""  # the attack whose blow has yet to land
 var _weapon_stats: Dictionary  # data/weapons.json entries
 var _base_views: Array[Dictionary] = []
-var _held_gun := {}  # the rolled gun in the selected hotbar slot, or {}
+var _held_gun := {}  # the rolled gun in hand, or {}
 var _held_stats := {}  # GunStats.final_stats of _held_gun
-var _gun_hash := {}  # slot index -> hash of the gun its WeaponState was built from
-var _weapon_index := {}  # weapon item ID -> index into _weapons/_models/_views
+var _gun_hash := {}  # body index -> hash of the rolled gun its model and view were dressed for
+var _weapon_index := {}  # weapon item ID -> index into _models/_views
 var _motion := ViewmodelMotion.new()
 var _views: Array[Dictionary] = []  # per-slot "view" tuning from data/weapons.json
 var _hip_positions: Array[Vector3] = []
@@ -150,6 +160,7 @@ var struck_by: Node3D  # whoever is about to hurt us: set by the attacker just b
 var struck_from := Vector3.INF  # where a hit without an attacker node comes from (a projectile)
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
+var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
 var channelling := false  # a staff spell is being built (game/staff_caster.gd): the element keys are not gun keys now
 var _world_hp := 0.0  # extra max health from the fantasy world's Magic level and robe
 var _world_damage := 1.0  # share of incoming damage that gets through the robe
@@ -169,11 +180,6 @@ func _ready() -> void:
 	gun_db = GunDb.new(DataStore.load_json("res://data/gun_loot.json"), DataStore.load_json("res://data/gun_parts.json"), DataStore.load_json("res://data/manufacturers.json"), DataStore.load_json("res://data/weapons.json"), DataStore.load_json("res://data/skills.json"), DataStore.load_json("res://data/gun_uniques.json"))
 	inventory.set_gun_db(gun_db)
 	status = StatusState.new(player_data["status"])
-	for id in items.ids_of_kind("loot"):
-		var held := WormModel.build()
-		held.visible = false
-		_head.add_child(held)
-		_loot_models[id] = held
 	for entry in player_data["starting_items"]:
 		inventory.add(String(entry[0]), int(entry[1]))
 	_sprint_multiplier = float(player_data["sprint_multiplier"])
@@ -203,9 +209,15 @@ func _ready() -> void:
 
 	var stats := DataStore.load_json("res://data/weapons.json")
 	_weapon_stats = stats["weapons"]
+	pools = AmmoPools.new(_weapon_stats)
+	for i in InventoryState.HOLSTERS:
+		_ready_weapons.append(null)
+		_ready_keys.append(0)
 	for id in items.weapon_ids():
-		_weapon_index[id] = _weapons.size()
-		_weapons.append(WeaponState.new(id, stats["weapons"][id]))
+		_weapon_index[id] = _models.size()
+		if _idle_weapon == null:
+			_idle_weapon = WeaponState.new(id, stats["weapons"][id])
+			weapon = _idle_weapon
 		var model := WeaponModels.build(id)
 		model.visible = false
 		_head.add_child(model)
@@ -228,7 +240,7 @@ func _ready() -> void:
 			var hand: Array = view.get("shoulder_grip", [0.0, -0.12, 0.03])
 			grip.position = Vector3(hand[0], hand[1], hand[2])
 			model.add_child(grip)
-	_select_slot(0)
+	set_knife(knife)
 	refresh_held()
 	refresh_equipment()
 	_apply_view()
@@ -259,14 +271,16 @@ func _unhandled_input(event: InputEvent) -> void:
 		use_skill(0)
 	elif event.is_action_pressed("skill_2"):
 		use_skill(1)
+	elif event.is_action_pressed("knife"):
+		select_hand(KNIFE)
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP and not InputSetup.used(settings, "mouse:%d" % MOUSE_BUTTON_WHEEL_UP):
-		select_hotbar((_hotbar + InventoryState.HOTBAR - 1) % InventoryState.HOTBAR)  # the wheel switches guns only in a direction no control is bound to
+		_cycle_hand(-1)  # the wheel switches guns only in a direction no control is bound to
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN and not InputSetup.used(settings, "mouse:%d" % MOUSE_BUTTON_WHEEL_DOWN):
-		select_hotbar((_hotbar + 1) % InventoryState.HOTBAR)
+		_cycle_hand(1)
 	else:
-		for i in InventoryState.HOTBAR:
+		for i in InventoryState.HOLSTERS:
 			if event.is_action_pressed("weapon_%d" % (i + 1)):
-				select_hotbar(i)
+				select_hand(i)
 
 
 # Hold H: wheel opens. Digits 1-8 or scroll pick; first-person mouse points at a slot; third-person mouse orbits the camera. Release H plays the pick.
@@ -440,7 +454,9 @@ func _move_and_shoot(delta: float) -> void:
 		velocity = Vector3.ZERO
 		_tick_from = position
 
-	if _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if _knife_out:
+		_use_knife()
+	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
 		if weapon.try_fire(_now()):
@@ -450,6 +466,8 @@ func _move_and_shoot(delta: float) -> void:
 			_gun_sound("dry_fire")
 	else:
 		weapon.update(_now())
+	if _holding and inventory.loaded[_hand] != weapon.ammo:
+		inventory.loaded[_hand] = weapon.ammo  # the inventory keeps count of what is in the magazine
 
 
 # Runs every rendered frame: places the camera, body model and weapon, and plays the animations.
@@ -551,18 +569,19 @@ func look_at_point(point: Vector3) -> void:
 	_head.rotation = Vector3(atan2(d.y - 1.6, Vector2(d.x, d.z).length()), _yaw, 0.0)
 
 
-# The weapon in the selected hotbar slot, or null when that slot holds something else.
+# The gun in hand, or null while the knife (or nothing) is out.
 func held_weapon() -> WeaponState:
 	return weapon if _holding else null
 
 
-# Item ID in the selected hotbar slot (online: shown in other players' hands; a rolled gun shows its body's model).
+# What is in hand, for other machines to show: a gun's body id, "knife:<type>" for the knife, "" for nothing.
 func held_id() -> String:
-	var id := inventory.item_id(_hotbar)
-	return String(_held_gun["body"]) if id == "gun" and not _held_gun.is_empty() else id
+	if _knife_out:
+		return "knife:" + knife
+	return inventory.holster_body(_hand) if _holding else ""
 
 
-# The rolled gun in the selected hotbar slot ({} for a plain weapon or something else).
+# The rolled gun in hand ({} for a plain weapon, the knife or nothing).
 func held_gun() -> Dictionary:
 	return _held_gun if _holding else {}
 
@@ -572,59 +591,146 @@ func smoking() -> bool:
 	return _cigarette.visible
 
 
-func hotbar_index() -> int:
-	return _hotbar
+# Which holster is in hand (0-3), or KNIFE.
+func hand_index() -> int:
+	return _hand
 
 
-func select_hotbar(index: int) -> void:
-	_hotbar = index
+func knife_out() -> bool:
+	return _knife_out
+
+
+# Takes the gun of a holster in hand, or the knife (KNIFE). An empty or closed holster is ignored. Putting a gun
+# away stops its reload; putting the knife away stops its swing.
+func select_hand(index: int) -> void:
+	if index == _hand or (index != KNIFE and (index >= inventory.holster_count or inventory.holster_body(index) == "")):
+		return
+	weapon.cancel_reload()
+	_melee.cancel()
+	_melee_kind = ""
+	_hand = index
 	refresh_held()
 
 
-# Every gun body has its own top speed, and some slow you while you aim (data/weapons.json move_speed / aim_speed).
+# The whole inventory was replaced (a save was loaded): nothing that was in hand before counts any more.
+func reload_inventory() -> void:
+	for i in InventoryState.HOLSTERS:
+		_ready_weapons[i] = null
+		_ready_keys[i] = 0
+	_hand = 0
+	refresh_held()
+
+
+# The wheel: the next or previous thing that can be held (the filled holsters in order, then the knife).
+func _cycle_hand(step: int) -> void:
+	var slots := inventory.holster_count + 1  # the knife sits after the last holster
+	var at := inventory.holster_count if _hand == KNIFE else _hand
+	for _i in slots:
+		at = (at + step + slots) % slots
+		if at == inventory.holster_count:
+			select_hand(KNIFE)
+			return
+		if inventory.holster_body(at) != "":
+			select_hand(at)
+			return
+
+
+# The knife type this character carries (an unknown id gives the plain combat knife).
+func set_knife(id: String) -> void:
+	knife = KnifeModels.db().known(id)
+	for old in [_knife_model, _knife_twin]:
+		if old != null:
+			old.queue_free()
+	_knife_model = KnifeModels.build(knife)
+	_knife_model.visible = false
+	_head.add_child(_knife_model)
+	_knife_twin = null
+	if KnifeModels.db().twin(knife):
+		_knife_twin = KnifeModels.build(knife)
+		_knife_twin.visible = false
+		_head.add_child(_knife_twin)
+	if is_inside_tree() and weapon != null:
+		refresh_held()
+
+
+# Top speed with a gun in hand: its body's, shifted a little by a rolled gun's parts; some slow you while you aim
+# (data/weapons.json move_speed / aim_speed).
 func _carry_speed(body: String) -> void:
-	_top_units = float(_weapon_stats[body].get("move_speed", _move_cfg["base_speed"]))
+	_top_units = float(_held_stats.get("move_speed", _weapon_stats[body].get("move_speed", _move_cfg["base_speed"])))
 	_aim_units = float(_weapon_stats[body].get("aim_speed", 0.0))
 
 
-# Re-reads the selected hotbar slot (call after the inventory changes).
+# Re-reads what is in hand (call after the inventory changes). Rounds from guns that left their holsters go back to
+# the pools here. With the gun in hand gone, the next ready gun comes out, else the knife.
 func refresh_held() -> void:
+	var back: Dictionary = inventory.take_returned()
+	for body: String in back:
+		pools.give(body, int(back[body]), true)
 	_models[_slot].visible = false
-	if _held_loot != null:
-		_held_loot.visible = false
-	var id := inventory.item_id(_hotbar)
-	_top_units = float(_move_cfg["base_speed"])
+	_knife_model.visible = false
+	if _knife_twin != null:
+		_knife_twin.visible = false
+	_top_units = float(_move_cfg["base_speed"])  # the knife and empty hands run at full speed
 	_aim_units = 0.0
-	_held_loot = _loot_models.get(id)
-	if _held_loot != null:
-		_held_loot.visible = true
 	_held_gun = {}
 	_held_stats = {}
-	if guns_locked and (id == "gun" or _weapon_index.has(id)):
-		_holding = false
+	_holding = false
+	_knife_out = false
+	weapon = _idle_weapon
+	for i in InventoryState.HOLSTERS:
+		if inventory.holster_body(i) == "":
+			_ready_weapons[i] = null
+			_ready_keys[i] = 0
+	if _hand != KNIFE and inventory.holster_body(_hand) == "":
+		_hand = KNIFE
+		for i in inventory.holster_count:
+			if inventory.holster_body(i) != "":
+				_hand = i
+				break
+	if guns_locked:  # Aurelind before its story is done: the staff is out, no gun and no knife
 		_apply_health_cap()
 		return
-	if id == "gun":
-		_held_gun = inventory.gun_at(_hotbar)
-		var body := String(_held_gun["body"])
-		_holding = _weapon_index.has(body)
-		if _holding:
-			_carry_speed(body)
-			_build_gun_slot(_weapon_index[body], body)
-			_select_slot(_weapon_index[body])
+	if _hand == KNIFE:
+		_knife_out = not knife_stowed
+		_knife_model.visible = _knife_out
+		if _knife_twin != null:
+			_knife_twin.visible = _knife_out
+		if _body != null and _body.has_method("support"):  # the hands let go of the gun that was put away
+			_body.call("support", null)
+			if _body.has_method("grip"):
+				_body.call("grip", null)
+		_motion.reset()
 		_apply_health_cap()
 		return
-	_holding = _weapon_index.has(id)
-	if _holding:
-		_carry_speed(id)
-		_reset_slot(_weapon_index[id], id)
-		_select_slot(_weapon_index[id])
+	var body := inventory.holster_body(_hand)
+	var index: int = _weapon_index[body]
+	_held_gun = inventory.holster_gun(_hand)
+	var stats: Dictionary = _weapon_stats[body]
+	if _held_gun.is_empty():
+		_undress_body(index)
+	else:
+		_held_stats = GunStats.final_stats(gun_db, _held_gun)
+		_dress_body(index)
+		stats = _held_stats
+	var key := body.hash() if _held_gun.is_empty() else _held_gun.hash()
+	if _ready_weapons[_hand] == null or _ready_keys[_hand] != key or inventory.loaded[_hand] == InventoryState.FRESH:
+		var made := WeaponState.new(body, stats)
+		made.pool = pools
+		var rounds := inventory.loaded[_hand]
+		made.ammo = pools.take(body, made.mag_size) if rounds == InventoryState.FRESH else clampi(rounds, 0, made.mag_size)
+		inventory.loaded[_hand] = made.ammo
+		_ready_weapons[_hand] = made
+		_ready_keys[_hand] = key
+	_holding = true
+	_carry_speed(body)
+	_select_slot(index)
+	weapon = _ready_weapons[_hand]
 	_apply_health_cap()
 
 
-# Gives the weapon slot of a gun's body the gun's final stats (only rebuilt when the gun changed, so ammo survives refreshes).
-func _build_gun_slot(index: int, body: String) -> void:
-	_held_stats = GunStats.final_stats(gun_db, _held_gun)
+# Gives the model of a gun body the parts, skin, sights and view tuning of the rolled gun in hand (only when the
+# gun changed).
+func _dress_body(index: int) -> void:
 	var h := _held_gun.hash()
 	if int(_gun_hash.get(index, 0)) == h:
 		return
@@ -632,7 +738,6 @@ func _build_gun_slot(index: int, body: String) -> void:
 	var eye := GunPartsView.apply(_models[index], _held_gun, gun_db)  # an optic raises the line the eye aims along
 	_ads_positions[index] = _base_ads[index] if eye <= 0.0 else Vector3(_base_ads[index].x, -eye * _models[index].scale.y, _base_ads[index].z)
 	PonySkin.apply(_models[index], String(gun_db.tier(String(_held_gun["tier"])).get("skin", "")) == "pony")
-	_weapons[index] = WeaponState.new(body, _held_stats)
 	var view: Dictionary = _base_views[index].duplicate()
 	view["optic"] = String((_held_gun.get("parts", {}) as Dictionary).get("sight", {}).get("kind", "")) if eye > 0.0 else ""
 	view["ads_fov"] = float(view.get("ads_fov", 60.0)) * float(_held_stats["ads_fov"])
@@ -641,15 +746,14 @@ func _build_gun_slot(index: int, body: String) -> void:
 	_views[index] = view
 
 
-# A plain weapon item goes back to the stock stats if a rolled gun used its slot before.
-func _reset_slot(index: int, id: String) -> void:
+# A plain weapon: its body's model goes back to stock if a rolled gun dressed it before.
+func _undress_body(index: int) -> void:
 	if not _gun_hash.has(index):
 		return
 	_gun_hash.erase(index)
 	GunPartsView.clear(_models[index])
 	_ads_positions[index] = _base_ads[index]
 	PonySkin.apply(_models[index], false)
-	_weapons[index] = WeaponState.new(id, _weapon_stats[id])
 	_views[index] = _base_views[index]
 
 
@@ -674,7 +778,6 @@ func sight_amount() -> float:
 func _select_slot(index: int) -> void:
 	_models[_slot].visible = false
 	_slot = index
-	weapon = _weapons[index]
 	_models[index].visible = true
 	_motion.reset()
 	_motion.ads_speed = float(_views[index].get("ads_speed", 9.0))
@@ -725,7 +828,7 @@ func _apply_view() -> void:
 func _animate_walk(delta: float) -> void:
 	var speed := Vector2(velocity.x, velocity.z).length()
 	_walk_phase += speed * delta * 1.6
-	BodyMotion.animate(_body, clampf(speed / move.base_speed, 0.0, 1.0), _walk_phase, _now(), _holding)
+	BodyMotion.animate(_body, clampf(speed / move.base_speed, 0.0, 1.0), _walk_phase, _now(), _holding or _knife_out)
 
 
 # Keeps the shoulder camera from clipping through walls: pulls it in front of whatever blocks the view.
@@ -749,10 +852,8 @@ func _animate_weapon(delta: float) -> void:
 	if not _holding:
 		_motion.update(delta, false, 0.0)
 		_camera.fov = settings.fov
-		if _held_loot != null:
-			_held_loot.position = _third_person_hold if third_person else LOOT_HOLD
-			_held_loot.rotation_degrees = Vector3(0, -25, 0)
-			WormModel.pose(_held_loot, _now(), 1.0)
+		if _knife_out:
+			_animate_knife()
 		return
 	var wants_ads := not third_person and Input.is_action_pressed("aim") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	_motion.update(delta, wants_ads, weapon.reload_fraction(_now()))
@@ -800,7 +901,82 @@ func _update_view_kick(delta: float) -> void:
 
 # The data/weapons.json entry of the gun in hand ({} when the hands hold something else).
 func _weapon_data() -> Dictionary:
-	return _weapon_stats.get(held_id(), {})
+	return _weapon_stats.get(inventory.holster_body(_hand), {}) if _holding else {}
+
+
+# The knife in hand: the shoot button slashes, the aim button stabs (data/knives.json "attacks"). The blow lands a
+# moment after the click, on the nearest enemy within reach of the crosshair.
+func _use_knife() -> void:
+	var now := _now()
+	if controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+		var kind := "slash" if Input.is_action_pressed("shoot") else ("stab" if Input.is_action_pressed("aim") else "")
+		if kind != "" and _melee.try_start(kind, KnifeModels.db().attack(kind), now):
+			_melee_kind = kind
+			_gun_sound(String(KnifeModels.db().attack(kind).get("sound", "")))
+	if _melee_kind != "" and _melee.lands(now):
+		_knife_blow(KnifeModels.db().attack(_melee_kind))
+		_melee_kind = ""
+
+
+func _knife_blow(attack: Dictionary) -> void:
+	var origin := _camera.global_position
+	var basis := _camera.global_transform.basis
+	var off := tan(deg_to_rad(float(KnifeModels.db().view()["aim_spread_deg"])))
+	var space := get_world_3d().direct_space_state
+	var best := {}
+	for ray: Vector2 in [Vector2.ZERO, Vector2(off, 0), Vector2(-off, 0), Vector2(0, off), Vector2(0, -off)]:
+		var dir := (-basis.z + basis.x * ray.x + basis.y * ray.y).normalized()
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * float(attack["reach_m"]))
+		query.exclude = [get_rid()]
+		var hit := space.intersect_ray(query)
+		if not hit.is_empty() and hit.collider.has_method("on_hit") and (best.is_empty() or origin.distance_squared_to(hit.position) < origin.distance_squared_to(best.position)):
+			best = hit
+	if best.is_empty():
+		return
+	var dealt := float(attack["damage"]) * (1.0 + bonus_damage_pct / 100.0)
+	var enemy: bool = best.collider.has_method("head_hit")
+	if score != null:
+		score.blow = "melee"
+	best.collider.on_hit(dealt, best.position, best.normal)
+	if score != null:
+		score.blow = ""
+		if enemy and not best.collider.health.is_dead():
+			score.hit()
+	_gun_sound(String(attack.get("hit_sound", "")))
+	if damage_numbers != null:
+		damage_numbers.spawn(best.position, dealt)
+
+
+# The knife in first person: at rest low on the right; a slash sweeps it across the view, a stab drives it forward.
+# In third person it simply sits in the body's right hand.
+func _animate_knife() -> void:
+	if _knife_twin != null:
+		_knife_twin.visible = not third_person
+	if third_person and _body != null and _body.has_method("hand_anchor"):
+		_knife_model.global_transform = (_body.call("hand_anchor") as Node3D).global_transform
+		return
+	var view: Dictionary = KnifeModels.db().view()
+	var at: Array = view["position"]
+	var turn: Array = view["rotation"]
+	var size := float(view["scale"])
+	var rest := _third_person_hold if third_person else Vector3(at[0], at[1], at[2])
+	var t := _melee.swing(_now())
+	var arc := sin(t * PI)  # 0 at rest, 1 in the middle of the swing
+	var move_by := Vector3.ZERO
+	var turn_by := Vector3.ZERO
+	if t < 1.0 and _melee.kind == "stab":
+		move_by = Vector3(-0.06, 0.05, -0.26) * arc
+		turn_by = Vector3(-18.0, -12.0, 0.0) * arc
+	elif t < 1.0:
+		move_by = Vector3(lerpf(0.1, -0.32, t), 0.04 * arc, -0.12 * arc)
+		turn_by = Vector3(-10.0 * arc, lerpf(-35.0, 70.0, t), lerpf(20.0, -50.0, t))
+	_knife_model.scale = Vector3.ONE * size
+	_knife_model.position = rest + move_by
+	_knife_model.rotation_degrees = Vector3(turn[0], turn[1], turn[2]) + turn_by
+	if _knife_twin != null:  # the left hand mirrors the right
+		_knife_twin.scale = Vector3.ONE * size
+		_knife_twin.position = Vector3(-rest.x - move_by.x, rest.y + move_by.y, rest.z + move_by.z * 0.6)
+		_knife_twin.rotation_degrees = Vector3(float(turn[0]) + turn_by.x, -float(turn[1]) - turn_by.y, -float(turn[2]) - turn_by.z)
 
 
 # Starts a reload, with its sound if one really starts.
