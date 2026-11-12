@@ -17,6 +17,7 @@
   {"name": "gear", "usage": "/gear <item id|list>", "help": "Gives fantasy gear or materials (staffs, tools, robes, logs, fish, ore ...).", "scope": "self"},
   {"name": "quest", "usage": "/quest list | start <id> | finish <id|all> | reset", "help": "Shows or changes the party's quest log.", "scope": "world"},
   {"name": "spawn", "usage": "/spawn <enemy id> [count]", "help": "Spawns enemies in front of you.", "scope": "world"},
+  {"name": "power", "usage": "/power [max_ammo | insta_kill | double_points | nuke]", "help": "Drops that power-up (or any) a few steps in front of you on the island. Alone or as the host.", "scope": "world"},
   {"name": "kill", "usage": "/kill", "help": "Removes every enemy.", "scope": "world"},
   {"name": "round", "usage": "/round <number>", "help": "The island's rounds jump to that round (it starts a few seconds later).", "scope": "world"},
   {"name": "trade", "usage": "/trade <player name>", "help": "Asks that player to trade guns and armour. Anyone may use it; the same as looking at them and holding the interact key.", "scope": "self"},

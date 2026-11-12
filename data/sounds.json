@@ -9,6 +9,9 @@
   "sting_round_end": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
   "sting_boss": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
   "sting_special": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
+  "powerup_drop": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
+  "powerup_grab": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
+  "powerup_nuke": {"volume": -4, "pitch": [1.0, 1.0], "range": 0},
   "shot_pistol": {
    "volume": -6,
    "pitch": [

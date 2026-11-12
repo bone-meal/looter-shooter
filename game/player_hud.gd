@@ -39,6 +39,8 @@ const TALLY_H := 72.0  # height of the round marks
 const TALLY_W := 150.0  # room kept for them left of the health ring
 const POPS := 8  # points pop-ups alive at once
 const POP_TIME := 1.1
+const CALL_TIME := 2.6  # seconds a power-up's name stays across the screen
+const POWER_BOX := Vector2(176.0, 38.0)  # one running power-up above the holster bar
 
 var player: CharacterBody3D
 var wave_text := ""
@@ -53,6 +55,8 @@ var round_number := 0  # the island round or the colosseum wave being fought; 0 
 var round_of := 0  # the colosseum: how many waves there are ("3 / 8"); 0 = endless rounds, shown as tallies
 var enemies_left := -1  # -1 = hidden
 var show_points := true  # off where the points game does not run (Aurelind)
+var powerups: RefCounted  # core/powerup_rules.gd: the running ones are shown with their time left
+var power_now := 0.0  # the session's clock, for that time
 var party: Array = []  # the other players' {"name", "points"}, set by the session a few times a second
 
 var _flash := 0.0
@@ -64,6 +68,10 @@ var _pop_amount := PackedInt32Array()  # pop-up pool: what each shows (negative 
 var _pop_age := PackedFloat32Array()  # ... and for how long it has been flying (POP_TIME = free)
 var _pop_next := 0
 var _round_seen := 0
+var _call_text := ""  # the power-up just taken, called out across the screen (see callout())
+var _call_color := Color.WHITE
+var _call_time := 0.0
+var _white := 0.0  # white screen amount, runs 1 -> 0 after flash_white() (the nuke)
 var _round_flash := 0.0  # a new round: its marks flash white for a moment
 
 
@@ -99,6 +107,18 @@ func notice(text: String) -> void:
 	_notice_time = 3.0
 
 
+# A power-up was taken: its name across the screen for a moment.
+func callout(text: String, color: Color) -> void:
+	_call_text = text.to_upper()
+	_call_color = color
+	_call_time = CALL_TIME
+
+
+# The nuke: the screen goes white and clears within a second.
+func flash_white() -> void:
+	_white = 1.0
+
+
 # Full black, then fades out over about a second (used after teleporting).
 func play_fade() -> void:
 	_fade = 1.0
@@ -108,6 +128,8 @@ func _process(delta: float) -> void:
 	_flash = maxf(_flash - delta * 2.0, 0.0)
 	_fade = maxf(_fade - delta, 0.0)
 	_notice_time = maxf(_notice_time - delta, 0.0)
+	_call_time = maxf(_call_time - delta, 0.0)
+	_white = maxf(_white - delta * 1.3, 0.0)
 	for i in POPS:
 		_pop_age[i] = minf(_pop_age[i] + delta, POP_TIME)
 	if round_number != _round_seen:
@@ -130,6 +152,9 @@ func _draw() -> void:
 		draw_string(_font, Vector2(0, view.y * 0.7), notice_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, Color(1, 0.85, 0.5, minf(_notice_time, 1.0)))
 	if _fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, view), Color(0, 0, 0, _fade))
+	if _white > 0.0:
+		draw_rect(Rect2(Vector2.ZERO, view), Color(1.0, 0.96, 0.86, _white * 0.8))
+	_draw_powers(view)
 	var shift := _draw_round(view)  # the round takes the corner; the health ring moves over
 	_draw_health(Vector2(MARGIN + shift + RING_RADIUS + 8.0, view.y - MARGIN - RING_RADIUS - 8.0))
 	_draw_status(Vector2(MARGIN + shift, view.y - MARGIN - RING_RADIUS * 2.0 - 40.0))
@@ -177,6 +202,38 @@ func _draw_points(view: Vector2) -> void:
 		var at := Vector2(right - 170.0 - 90.0 * t, base - 10.0 + (float(i % 4) - 1.5) * 26.0 * t)
 		var tint := Color(1.0, 0.85, 0.2, 1.0 - t * t) if amount > 0 else Color(0.95, 0.3, 0.3, 1.0 - t * t)
 		_text(at - Vector2(80.0, 0.0), ("+%d" if amount > 0 else "%d") % amount, HORIZONTAL_ALIGNMENT_RIGHT, 80.0, 22, tint)
+
+
+# The power-up just taken, called out across the screen, and the ones still running in a row above the holster bar:
+# name, seconds left and a bar that runs down; one about to end blinks.
+func _draw_powers(view: Vector2) -> void:
+	if _call_time > 0.0:
+		_text(Vector2(0, view.y * 0.3), _call_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 48, Color(_call_color.r, _call_color.g, _call_color.b, clampf(_call_time / 0.6, 0.0, 1.0)))
+	if powerups == null:
+		return
+	var kinds: Array[String] = powerups.timed()
+	var running := 0
+	for kind in kinds:
+		if bool(powerups.is_on(kind, power_now)):
+			running += 1
+	if running == 0:
+		return
+	var x := (view.x - (float(running) * (POWER_BOX.x + 8.0) - 8.0)) * 0.5
+	var y := view.y - MARGIN - 44.0 - 12.0 - POWER_BOX.y
+	for kind in kinds:
+		if not bool(powerups.is_on(kind, power_now)):
+			continue
+		var left: float = powerups.left(kind, power_now)
+		var color: Color = powerups.color_of(kind)
+		if left < 5.0 and fmod(left * 3.0, 1.0) < 0.35:
+			color.a = 0.35
+		var r := Rect2(Vector2(x, y), POWER_BOX)
+		draw_rect(r, BACK)
+		draw_rect(Rect2(x, y + POWER_BOX.y - 5.0, POWER_BOX.x * clampf(left / float(powerups.seconds_of(kind)), 0.0, 1.0), 5.0), color)
+		draw_rect(r, color, false, 2.0)
+		draw_string(_font, Vector2(x + 8.0, y + 23.0), String(powerups.name_of(kind)), HORIZONTAL_ALIGNMENT_LEFT, POWER_BOX.x - 56.0, 15, color)
+		draw_string(_font, Vector2(x + POWER_BOX.x - 50.0, y + 23.0), "%d s" % ceili(left), HORIZONTAL_ALIGNMENT_RIGHT, 42.0, 15, WHITE)
+		x += POWER_BOX.x + 8.0
 
 
 # Text with a dark edge, readable over sand and sky alike.

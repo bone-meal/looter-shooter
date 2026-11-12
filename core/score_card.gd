@@ -14,6 +14,7 @@ var headshots := 0
 var downs := 0
 var revives := 0
 var blow := ""  # how the hit being dealt right now lands: "headshot", "melee", "" or "other" = not ours at all (set around the hit by whoever deals it)
+var mult := 1  # every hit and kill pays this many times over (the double-points power-up)
 var paused := false  # true = hits and kills pay and count nothing (Aurelind: its fights are not part of the points game)
 
 var _awards: Dictionary
@@ -27,7 +28,7 @@ func _init(cfg: Dictionary) -> void:
 
 # A hit that did not kill.
 func hit() -> int:
-	return 0 if paused else _add(int(_awards["hit"]))
+	return 0 if paused else _add(int(_awards["hit"]) * mult)
 
 
 # The killing blow: pays by how it landed (see `blow`) and counts the kill.
@@ -37,13 +38,13 @@ func kill() -> int:
 	kills += 1
 	if blow == "headshot":
 		headshots += 1
-		return _add(int(_awards["headshot_kill"]))
+		return _add(int(_awards["headshot_kill"]) * mult)
 	if blow == "melee":
-		return _add(int(_awards["melee_kill"]))
-	return _add(int(_awards["kill"]))
+		return _add(int(_awards["melee_kill"]) * mult)
+	return _add(int(_awards["kill"]) * mult)
 
 
-# Points from anywhere else (a power-up, a command). Returns what was really added.
+# Points from anywhere else (a power-up, a command), never multiplied here. Returns what was really added.
 func give(amount: int) -> int:
 	return _add(maxi(amount, 0))
 

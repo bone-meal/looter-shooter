@@ -1,6 +1,7 @@
 {
  "version": 1,
  "luck_per_wave": 0.15,
+ "pony_trash_one_in": 100000,
  "max_world_drops": 24,
  "despawn_seconds": 120,
  "despawn_seconds_gold_up": 300,

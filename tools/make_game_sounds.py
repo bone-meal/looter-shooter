@@ -43,6 +43,10 @@ def main():
     save("sting_round_end", mix(note(294, 1.2), at(note(370, 1.2), 0.12), at(note(440, 1.6), 0.24), at(note(587, 2.0), 0.36)), 0.55)
     save("sting_boss", mix(lowpass(tone(glide(55, 49, 2.4), 2.4, "saw"), 700) * env(n(2.4), 0.05, 1.0), at(note(98, 1.9, "saw", 0.7, 900), 0.3), at(note(104, 1.9, "saw", 0.6, 900), 0.3), lowpass(noise(2.4), 300) * env(n(2.4), 0.2, 1.0) * 0.5), 0.8)
     save("sting_special", mix(lowpass(tone(glide(440, 880, 0.9), 0.9, "saw"), 3000) * (0.5 + 0.5 * np.sin(2 * np.pi * 14 * np.arange(n(0.9)) / RATE)) * env(n(0.9), 0.02, 1.0) * 0.5, at(note(659, 1.1, "saw", 0.4), 0.5), band(noise(1.3), 2000, 6000) * env(n(1.3), 0.1, 1.5) * 0.15), 0.6)
+    # --- power-ups: one appears, one is taken, the nuke goes off ---
+    save("powerup_drop", mix(note(784, 0.5, "sine", 0.5), at(note(988, 0.5, "sine", 0.5), 0.09), at(note(1175, 0.9, "sine", 0.6), 0.18), band(noise(1.1), 5000, 9000) * env(n(1.1), 0.05, 2.0) * 0.08), 0.5)
+    save("powerup_grab", mix(note(392, 0.5, "saw", 0.5), note(494, 0.5, "saw", 0.4), at(note(587, 0.6, "saw", 0.5), 0.1), at(note(784, 1.2, "saw", 0.6), 0.2), at(note(1175, 1.0, "sine", 0.3), 0.2)), 0.6)
+    save("powerup_nuke", mix(lowpass(noise(2.6), 900) * env(n(2.6), 0.004, 1.4), tone(glide(110, 28, 2.2), 2.2) * env(n(2.2), 0.002, 1.6) * 1.2, at(highpass(noise(0.5), 3000) * env(n(0.5), 0.001, 4) * 0.4, 0.0), at(lowpass(noise(1.8), 300) * env(n(1.8), 0.3, 1.2) * 0.7, 0.5)), 0.9)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

@@ -195,6 +195,22 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("rolled guns in slots %s; on the ground %d; shift %s  %s" % [", ".join(guns), int((session.get("_field") as Node).call("count")), str(Input.is_key_pressed(KEY_SHIFT)), " ".join(words.slice(2))])
 				_:
 					session.call("_toggle_inventory")
+		"powers":  # "!powers <note>": the power-ups lying around and running, and what points are multiplied by
+			var rules: RefCounted = session.get("_powerups")
+			var running := PackedStringArray()
+			for kind: String in rules.call("timed"):
+				if bool(rules.call("is_on", kind, float(session.get("_time")))):
+					running.append("%s %.0f s" % [kind, float(rules.call("left", kind, float(session.get("_time"))))])
+			var card: RefCounted = session.call("score")
+			_lines.append("POWERS %s: lying %d | running [%s] | points x%d = %d | enemies %d" % [" ".join(words.slice(1)), int((session.get("_power_field") as Node).call("count")), ", ".join(running), int(card.get("mult")), int(card.get("points")), (session.call("director").call("enemy_list") as Array).size()])
+		"watch":  # "!watch": the camera follows the nearest enemy as it would a teammate while we are out of the round; "!watch off": back to our own eyes
+			var seen: Node3D = null
+			if words.size() < 2 or words[1] != "off":
+				for enemy: Variant in session.call("director").call("enemy_list"):
+					if is_instance_valid(enemy) and (seen == null or (enemy as Node3D).global_position.distance_to(player.global_position) < seen.global_position.distance_to(player.global_position)):
+						seen = enemy
+			player.call("watch", seen)
+			_lines.append("WATCH %s" % ("off" if seen == null else "the nearest enemy, %.0f m away" % seen.global_position.distance_to(player.global_position)))
 		"pack":  # "!pack <note>": is a backpack lying, where and with how much; what is in the holsters and the bag. "!pack goto": stand next to it
 			var lying: Node3D = session.get("_pack")
 			if words.size() > 1 and words[1] == "goto":

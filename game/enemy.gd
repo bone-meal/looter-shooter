@@ -27,6 +27,7 @@ var enemy_id := ""
 var elite := ""  # affix name when this is an elite (set by game/wave_director.gd before add_child), else ""
 var element := "physical"  # "physical", "fire", "ice" or "toxic" (set by game/wave_director.gd before add_child)
 var element_tint := Color.WHITE
+var one_blow := Callable()  # func() -> bool: any hit kills right now (the islands' insta-kill power-up; never a boss)
 var puppet := false  # online copy of a boss simulated on the host: no AI, follows net_pos/net_yaw, damage goes to the host
 var net_pos := Vector3.ZERO
 var net_yaw := 0.0
@@ -332,6 +333,8 @@ func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vect
 		damage *= _vuln_mult
 	if Time.get_ticks_msec() / 1000.0 < _guard_until:
 		damage *= _guard_mult
+	if one_blow.is_valid() and bool(one_blow.call()) and not enemy_id.begins_with("boss"):
+		damage = maxf(damage, float(health.hp))
 	health.take_damage(damage)
 	if health.is_dead():
 		_blood.burst(spot, normal, true, _chips)

@@ -21,6 +21,7 @@ const NEAR_SHORE := 0.6  # a swimmer comes up within this many radians of its pr
 var rules: RoundRules
 var director: Node3D
 var bodies := Callable()  # func() -> Array of the players' bodies standing on the island (ours and, on the host, the others')
+var one_blow := Callable()  # func() -> bool, handed to every enemy sent in (game/enemy.gd `one_blow`)
 var active := true  # false on a machine that only watches (a client): the host runs the rounds
 
 var _cfg: Dictionary
@@ -137,10 +138,24 @@ func _send_in(id: String, here: Array) -> void:
 	var enemy: Node3D = director.call("spawn_custom", id, stats, Island.CENTER + Vector3(x, Island.height_at(x, z) + 0.2, z))
 	enemy.set_meta("island", true)
 	enemy.set_meta("tier", rules.number)
+	enemy.set("one_blow", one_blow)
 	enemy.call("set_target", prey)
 	enemy.connect("died", _on_died)
 	_alive.append(enemy)
 	spawned.emit(enemy)
+
+
+# The nuke: everything of the round that is ashore dies; a boss loses `boss_share` of its full health instead.
+# Returns how many were hit.
+func blast(boss_share: float) -> int:
+	var hit := 0
+	for enemy: Variant in _alive.duplicate():
+		if not is_instance_valid(enemy):
+			continue
+		var all := float(enemy.health.max_hp)
+		enemy.call("on_hit", all * boss_share if String(enemy.get("enemy_id")).begins_with("boss") else all * 100.0)
+		hit += 1
+	return hit
 
 
 func _on_died(enemy: Node) -> void:

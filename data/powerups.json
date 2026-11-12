@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "_about": "Power-ups on the islands. A dying island enemy leaves one with `drop_chance` (at most `max_per_round` a round); an island boss always leaves one, and the last enemy of a special round leaves `special_round_end`. It lies there for `seconds_on_ground` (blinking for the last `blink_seconds`) and whoever walks within `reach` metres takes it FOR THE WHOLE PARTY. Kinds: `weight` = how often it is this one; `seconds` = how long it lasts (none = at once); double_points `mult`; nuke `points` = paid to everyone, `boss_share` = how much of a boss's full health it takes (everything else dies). Names and colours are the director's to change. Shapes are built in game/powerup_field.gd.",
+ "drop_chance": 0.03,
+ "max_per_round": 4,
+ "seconds_on_ground": 26.0,
+ "blink_seconds": 6.0,
+ "reach": 1.5,
+ "special_round_end": "max_ammo",
+ "kinds": {
+  "max_ammo": {"name": "Full Pouches", "weight": 30, "color": "#59c46a", "shape": "ammo_tin"},
+  "insta_kill": {"name": "Killing Tide", "weight": 25, "seconds": 30.0, "color": "#e9e4d4", "shape": "skull"},
+  "double_points": {"name": "Double Pay", "weight": 25, "seconds": 30.0, "mult": 2, "color": "#f2c230", "shape": "coins"},
+  "nuke": {"name": "Depth Charge", "weight": 20, "points": 400, "boss_share": 0.25, "color": "#e2552a", "shape": "sea_mine"}
+ }
+}

@@ -183,7 +183,8 @@
    "id": "pony",
    "name": "Pony",
    "color": "#ff9ad5",
-   "weight": 0.05,
+   "_about": "weight 0 = no ordinary roll (enemy drop, chest, casino crate) ever gives this tier. It comes only from data/drops.json pony_trash_one_in and from the colosseum's last boss.",
+   "weight": 0.0,
    "stat_rolls": 6,
    "buffs": 3,
    "quality": [

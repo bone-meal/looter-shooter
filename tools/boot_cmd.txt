@@ -1,1 +1,1 @@
-!uncap;!wait 2;/god;/give points 30000;!bank goto;!wait 0.3;!key interact;!wait 0.4;!inv press 2;!inv press b0;!inv press 12;!inv press b7;!inv press h1;!inv press b3;!wait 0.2;!bank three real clicks in;!ammo ready gun moved to the bank;!inv press bankbutton;!wait 0.2;!snap v1_bank_used;!bank after the button;!inv press b0;!inv press 2;!bank one taken out again;!inv;!wait 0.3;!pack before leaving
+!uncap;!wait 2;/god;!wait 1;!snap idle

@@ -165,6 +165,7 @@ var knife_stowed := false  # fantasy world (set by the session): the hand withou
 var downed := false  # lying on the ground waiting for a revive: no moving, no shooting, nothing hurts any more
 var down_check := Callable()  # the session's: func() -> bool: true = going down here means waiting for a revive, not dying
 var died_at := Vector3.ZERO  # where health last hit zero
+var watching: Node3D  # out of the round (online): the camera follows this teammate instead of our own eyes (see watch())
 var channelling := false  # a staff spell is being built (game/staff_caster.gd): the element keys are not gun keys now
 var _world_hp := 0.0  # extra max health from the fantasy world's Magic level and robe
 var _world_damage := 1.0  # share of incoming damage that gets through the robe
@@ -496,6 +497,8 @@ func _process(delta: float) -> void:
 		_place_third_person_camera()
 	_animate_weapon(delta)
 	_update_view_kick(delta)
+	if watching != null:
+		_place_watching_camera()
 	if _now() < _rally_until:
 		health.heal(health.max_hp * _rally_regen / 100.0 * delta)
 	_dot_accum += status.tick(delta)
@@ -861,6 +864,35 @@ func _animate_walk(delta: float) -> void:
 	var speed := Vector2(velocity.x, velocity.z).length()
 	_walk_phase += speed * delta * 1.6
 	BodyMotion.animate(_body, clampf(speed / move.base_speed, 0.0, 1.0), _walk_phase, _now(), _holding or _knife_out)
+
+
+# Out of the round: from now on the camera follows `body` (another player) from behind, turned by our mouse, and
+# nothing of ourselves is drawn. null = back to our own eyes.
+func watch(body: Node3D) -> void:
+	watching = body
+	_head.visible = body == null  # the gun or knife in our hands
+	if body == null:
+		_camera.rotation = Vector3.ZERO
+		_apply_view()
+	else:
+		_visual.visible = false
+
+
+func _place_watching_camera() -> void:
+	if not is_instance_valid(watching):
+		watching = null
+		_head.visible = true
+		_camera.rotation = Vector3.ZERO
+		_apply_view()
+		return
+	var eye := watching.global_position + Vector3(0, HEAD_HEIGHT, 0)
+	var orbit := Basis(Vector3.UP, _yaw) * Basis(Vector3.RIGHT, _head.rotation.x)
+	var desired := eye + orbit * ORBIT_CAM
+	_camera_query.from = eye
+	_camera_query.to = desired
+	var hit := get_world_3d().direct_space_state.intersect_ray(_camera_query)
+	_camera.global_position = desired if hit.is_empty() else hit.position + hit.normal * CAMERA_PADDING
+	_camera.look_at(eye, Vector3.UP)
 
 
 # Keeps the shoulder camera from clipping through walls: pulls it in front of whatever blocks the view.

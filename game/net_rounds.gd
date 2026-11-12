@@ -1,7 +1,9 @@
 # Purpose: the island's rounds shared by a party. The HOST runs every island enemy (game/island_rounds.gd): spawning,
 # chasing, blows, health, the round itself. Other machines show puppets, send their hits as requests and are told the
 # results: which enemies exist and where, who died, which round it is, and what each hit PAID (a hit, a kill, a
-# headshot kill, a melee kill): the shooter's machine never pays itself for a host-run enemy.
+# headshot kill, a melee kill): the shooter's machine never pays itself for a host-run enemy. POWER-UPS are the
+# host's too: it says which one lies where, when one is gone, and what the whole party just got (it alone sees who
+# walked into one).
 # The host checks who sent a request, that the enemy exists and that the numbers are finite; like the shared boss it
 # does not cap the damage a client claims (director's decision).
 # Dependencies: game/net_session.gd (parent; `net`), game/island_rounds.gd (`rounds`), game/wave_director.gd
@@ -14,6 +16,9 @@ const EFFECTS := ["slow", "burn", "freeze", "weaken", "push"]
 
 signal round_started(number: int, kind: String)  # on a client: what the host announced
 signal round_ended(number: int, kind: String)
+signal power_dropped(id: int, kind: String, at: Vector3)  # on a client: a power-up lies there now
+signal power_gone(id: int)  # on a client: it was taken or its time ran out
+signal power_taken(kind: String)  # on a client: somebody took it, so the whole party has it
 
 var net: Node3D
 var rounds: Node  # game/island_rounds.gd of this machine (it runs only on the host)
@@ -210,6 +215,39 @@ func _died(id: int) -> void:
 		if card != null:
 			card.set("blow", before)
 	_enemies.erase(id)
+
+
+# --- power-ups: only the host speaks ---
+
+func tell_power_drop(id: int, kind: String, at: Vector3) -> void:
+	if net.can_send() and net.is_host():
+		_power_drop.rpc(id, kind, at)
+
+
+func tell_power_gone(id: int) -> void:
+	if net.can_send() and net.is_host():
+		_power_gone.rpc(id)
+
+
+func tell_power(kind: String) -> void:
+	if net.can_send() and net.is_host():
+		_power.rpc(kind)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _power_drop(id: int, kind: String, at: Vector3) -> void:
+	if id > 0 and at.is_finite():
+		power_dropped.emit(id, kind, at)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _power_gone(id: int) -> void:
+	power_gone.emit(id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _power(kind: String) -> void:
+	power_taken.emit(kind)
 
 
 # A host-run enemy hit one of the other players: their machine takes the damage (armour and all).

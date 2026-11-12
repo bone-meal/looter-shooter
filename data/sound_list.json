@@ -77,6 +77,18 @@
     {
      "id": "sting_special",
      "label": "Special round starts"
+    },
+    {
+     "id": "powerup_drop",
+     "label": "A power-up appears"
+    },
+    {
+     "id": "powerup_grab",
+     "label": "A power-up is taken"
+    },
+    {
+     "id": "powerup_nuke",
+     "label": "The nuke power-up goes off"
     }
    ]
   },

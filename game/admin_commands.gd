@@ -90,6 +90,8 @@ func run(text: String, near: Node3D) -> PackedStringArray:
 			else:
 				session.rounds().skip_to(String(args[0]).to_int())
 				out.append("Round %d starts in a moment (stand on the island)." % String(args[0]).to_int())
+		"power":
+			out.append(String(session.call("drop_power", String(args[0]) if not args.is_empty() else "", near)))
 		"kill":
 			var gone := 0
 			for enemy: Node in session.director().enemy_list().duplicate():

@@ -1,4 +1,4 @@
-# Purpose: pure rules for gun drops from enemies: drop chance, tier floor, wave luck, elite affix choice and stat scaling. The host/each machine rolls with its own RNG; no nodes.
+# Purpose: pure rules for gun drops from enemies: drop chance, tier floor, wave luck, the pony roll, elite affix choice and stat scaling. The host/each machine rolls with its own RNG; no nodes.
 # Dependencies: core/gun_gen.gd, core/gun_db.gd. Data: data/drops.json.
 extends RefCounted
 
@@ -25,6 +25,12 @@ static func roll_drops(db: RefCounted, cfg: Dictionary, rng: RandomNumberGenerat
 		for _i in int(e["count"]):
 			guns.append(GunGen.generate(db, rng, luck, "", "", String(e["min_tier"])))
 	return guns
+
+
+# The one way a pony gun comes from ordinary enemies: 1 kill in cfg.pony_trash_one_in (0 = never). Luck does not count.
+static func pony_roll(cfg: Dictionary, rng: RandomNumberGenerator) -> bool:
+	var one_in := int(cfg.get("pony_trash_one_in", 0))
+	return one_in > 0 and rng.randi_range(1, one_in) == 1
 
 
 # Picks an affix for a new enemy, or {} for a normal one. Elites never appear before cfg.elite.min_wave and never for a boss.

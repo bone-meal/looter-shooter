@@ -89,8 +89,9 @@ func set_down(on: bool) -> void:
 		_model.position.y = 0.25 if on else 0.0
 
 
+# True while this player cannot be fought: lying down, or out of the round (then the ghost is hidden).
 func is_down() -> bool:
-	return _down
+	return _down or not visible
 
 
 func _process(delta: float) -> void:

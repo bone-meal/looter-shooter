@@ -1,16 +1,23 @@
-Round 6 step 6: going down, the backpack left behind, the bank
+Round 6 step 7: island power-ups, pony rule, spectating while out
 
-Alone, running out of health on the islands ends the run: a game-over
-screen shows the round reached and the character's best round, and
-everything carried stays in a backpack where you lay (worn equipment and
-the knife stay on you, a pistol goes into your hand). Take it back with
-the interact key; go down again first and the old backpack is lost.
-A letter box on the spawn island is the bank: 10 slots that are safe when
-you go down, 20 and 30 for points, up to 60 for casino coins.
-Online a player goes down for 30 seconds and a teammate standing by can
-help them up; nobody came = out until the next round; nobody left
-standing = game over for the party (game/net_downs.gd; written, not yet
-run between two machines). Deaths in the colosseum still cost nothing.
+Power-ups (islands): a dying enemy leaves one with 3 percent chance, at most
+4 a round; an island boss always does; the last enemy of a special round
+leaves a max ammo. Four kinds in data/powerups.json: max ammo, insta-kill
+(30 s, never a boss), double points (30 s), nuke (everything ashore dies,
+a boss loses a quarter, 400 points each). Whoever walks into one takes it
+for the whole party. Pure rules core/powerup_rules.gd, pickups pooled in
+game/powerup_field.gd, HUD call-out and timers, three new sounds, admin
+command /power, check tools/powerup_check.tscn. Online the host decides
+drops, pickups and what one blow kills (game/net_rounds.gd).
+
+Pony rule: the pony tier is no longer rolled by enemies, chests or casino
+crates (weight 0 in data/gun_loot.json); any non-boss enemy anywhere leaves
+a pony gun 1 kill in 100000 (data/drops.json pony_trash_one_in).
+
+Director's changes to step 6: a revived player has full health; a player
+who is out watches the others (camera follows a teammate, shoot = next) and
+appears at the spawn when the next round starts; the save menu shows each
+character's best round.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

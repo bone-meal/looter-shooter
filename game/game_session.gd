@@ -50,6 +50,8 @@ const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
+const PowerupRules = preload("res://core/powerup_rules.gd")
+const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
 const GameOverScreen = preload("res://game/game_over_screen.gd")
 const BankState = preload("res://core/bank_state.gd")
@@ -128,6 +130,11 @@ var _down_until := 0.0  # online, lying down: when we bleed out
 var _out := false  # online: bled out, waiting at the spawn for the next round
 var _revive_target := 0  # online: the downed player we stand next to (0 = nobody)
 var _revive_hold := 0.0  # ... and for how long we have held the key
+var _powerups: PowerupRules  # the islands' power-ups: what an enemy leaves and which effects are running
+var _power_field := PowerupField.new()  # ... and the ones lying around
+var _power_id := 0  # the last one dropped here (alone or hosting)
+var _blasting := false  # the nuke is killing: what dies of it leaves nothing
+var _watched := 0  # online, out of the round: the teammate our camera follows (0 = nobody)
 var _jackpot := 500.0  # this player's progressive slot pot (saved in the profile)
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
@@ -304,6 +311,14 @@ func _ready() -> void:
 	_rounds.round_started.connect(_on_round_started)
 	_rounds.round_ended.connect(_on_round_ended)
 	add_child(_rounds)
+	_powerups = PowerupRules.new(DataStore.load_json("res://data/powerups.json"))
+	_power_field.setup(_powerups.cfg)
+	_power_field.bodies = _island_bodies
+	_power_field.touched.connect(_on_power_touched)
+	_power_field.expired.connect(_on_power_expired)
+	add_child(_power_field)
+	_rounds.one_blow = func() -> bool: return _powerups.is_on("insta_kill", _time)
+	_player_hud.powerups = _powerups
 	_player.damaged.connect(func() -> void: _hurt_at = _time)
 	_score.earned.connect(func(amount: int) -> void: _run_earned += amount)
 	_explosives.cripple = _rounds.config()["cripple"]
@@ -337,6 +352,9 @@ func _ready() -> void:
 		net.rounds.on_gun_side = func() -> bool: return not _in_fantasy
 		net.rounds.round_started.connect(_on_round_started)  # as a client: the host's rounds
 		net.rounds.round_ended.connect(_on_round_ended)
+		net.rounds.power_dropped.connect(_on_power_dropped)
+		net.rounds.power_gone.connect(_power_field.remove)
+		net.rounds.power_taken.connect(_apply_power)
 		var downs: Dictionary = _rounds.config()["downs"]
 		net.downs.reach = float(downs["reach"])
 		net.downs.health_share = float(downs["health"])
@@ -925,7 +943,9 @@ func _prompt() -> String:
 	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _games.is_open() or _flight_t >= 0.0:
 		return ""
 	if _player.downed:
-		return "You are out until the next round." if _out else "DOWN: a teammate can help you up (%d s)" % ceili(maxf(_down_until - _time, 0.0))
+		if _out:
+			return "Watching %s. You are back when the next round starts.  [%s] next player" % [net.roster.get(_watched, "the island"), InputSetup.label(settings, "shoot")]
+		return "DOWN: a teammate can help you up (%d s)" % ceili(maxf(_down_until - _time, 0.0))
 	if _revive_target != 0:
 		return "[hold %s] Help %s up%s" % [key, net.roster.get(_revive_target, "your teammate"), "" if _revive_hold <= 0.0 else "  %d %%" % roundi(_revive_hold / float(_rounds.config()["downs"]["hold"]) * 100.0)]
 	if _time < _trade_ask_until:
@@ -1243,9 +1263,12 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		xp_kind = "boss"
 	var island_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("island")
 	var guns: Array = [] if (_in_fantasy or island_kill) else DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())  # the fantasy world has its own drops; the island's enemies drop no guns
-	if island_kill and enemy_id.begins_with("boss"):  # until bosses drop power-ups: a beaten island boss fills every pool
-		_player.pools.fill_all()
-		_player_hud.notice("Max ammo")
+	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave
+		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony"))
+	if island_kill and _rounds.active and (enemy_id.begins_with("boss") or not _blasting):  # alone or hosting: maybe a power-up, always from a boss
+		var power := _powerups.roll_drop(_rng, enemy_id.begins_with("boss"))
+		if power != "":
+			_drop_power(power, where)
 	for i in guns.size():
 		var gun: Dictionary = guns[i]
 		_field.spawn(gun, where + Vector3(0.6 * float(i), 0.0, 0.0))
@@ -1308,7 +1331,9 @@ func _on_player_died() -> void:
 			_drop_pack(_player.died_at)
 			save_profile()
 		_player.teleport(_island_spawn, 0.0)
-		_player.downed = _out  # out = lying at the spawn, untouchable, until the next round starts
+		_player.downed = _out  # out = untouchable and unseen until the next round starts, watching the others
+		if _out:
+			_watch_next()
 
 
 # --- online: down, helped up, out (game/net_downs.gd keeps the party's states on the host) ---
@@ -1332,8 +1357,26 @@ func _on_went_down() -> void:
 func _bleed_out() -> void:
 	_out = true
 	net.downs.report("out")
-	_player.finish_off()  # -> _on_player_died: the backpack is left, we wait at the spawn
+	_player.finish_off()  # -> _on_player_died: the backpack is left and we watch the others
 	_player_hud.notice("Nobody came. You are out until the next round.")
+
+
+# Out of the round: the camera goes to the next teammate who is still standing on the islands (to nobody when there
+# is none: then we look out from the spawn).
+func _watch_next() -> void:
+	var ids: Array = []
+	for id: int in net.roster:
+		var body: Node3D = net.player_node(id)
+		if id != net.my_id() and body != null and net.downs.state_of(id) == "up" and _on_island(body.global_position):
+			ids.append(id)
+	ids.sort()
+	if ids.is_empty():
+		_watched = 0
+		_player.watch(null)
+		return
+	var at := ids.find(_watched)
+	_watched = ids[(at + 1) % ids.size()]
+	_player.watch(net.player_node(_watched))
 
 
 func _on_revived(share: float) -> void:
@@ -1356,6 +1399,7 @@ func _on_party_over(reached: int) -> void:
 	if _player.downed:
 		_player.revive(1.0)
 	_out = false
+	_player.watch(null)
 	if lying:
 		_player.teleport(_island_spawn, 0.0)
 	if was_there:
@@ -1364,14 +1408,18 @@ func _on_party_over(reached: int) -> void:
 		_player_hud.notice("The party's run on the islands ended in round %d." % reached)
 		if _rounds.active:
 			_rounds.stop()
+		_clear_powers()
 
 
-# Other players lying down are shown lying down.
+# Other players lying down are shown lying down; those who are out are not shown at all until they are back.
 func _show_downs() -> void:
 	for id: int in net.roster:
 		var body: Node3D = net.player_node(id)
 		if id != net.my_id() and body != null and body.has_method("set_down"):
-			body.call("set_down", net.downs.state_of(id) != "up")
+			body.call("set_down", net.downs.state_of(id) == "down")
+			body.visible = net.downs.state_of(id) != "out"
+	if _out and (_watched == 0 or net.downs.state_of(_watched) != "up"):
+		_watch_next()  # whoever we were watching went down too
 
 
 # Standing by a downed teammate and holding the interact key helps them up (the host has the last word).
@@ -1422,6 +1470,7 @@ func _end_run(reached: int, at: Vector3, drop: bool) -> void:
 		_drop_pack(at)
 	if _rounds.active:
 		_rounds.stop()
+	_clear_powers()
 	save_profile()
 
 
@@ -1466,11 +1515,15 @@ func _take_pack() -> void:
 
 
 func _on_round_started(number: int, kind: String) -> void:
-	if _out:  # online: whoever bled out is back in when the next round starts
+	if _out:  # online: whoever bled out appears again when the next round starts
 		_out = false
+		_player.watch(null)
 		_player.revive(1.0)
+		_player.teleport(_island_spawn, 0.0)
+		_player_hud.play_fade()
 		net.downs.report("up")
 		_player_hud.notice("You are back in.")
+	_powerups.new_round()
 	if number == 1:
 		_player.pools.fill_all()  # a run starts with full pools
 		_run_kills = _score.kills
@@ -1488,13 +1541,98 @@ func _on_round_started(number: int, kind: String) -> void:
 
 
 func _on_round_ended(number: int, kind: String) -> void:
-	if kind == "special" and bool(_rounds.config()["special"]["max_ammo"]):
-		_player.pools.fill_all()
-		_player_hud.notice("Round %d survived: max ammo" % number)
-	else:
-		_player_hud.notice("Round %d survived" % number)
+	var parting := String(_powerups.cfg.get("special_round_end", ""))
+	if kind == "special" and _rounds.active and _powerups.has(parting):  # the last one of a special round leaves this
+		_drop_power(parting, _director.last_killed.global_position if is_instance_valid(_director.last_killed) else _island_spawn)
+	_player_hud.notice("Round %d survived" % number)
 	_sounds.call("play", "sting_round_end")
 	save_profile()
+
+
+# --- power-ups (core/powerup_rules.gd decides; game/powerup_field.gd shows the ones lying around) ---
+
+# A power-up appears where an enemy fell. Only the machine that runs the rounds does this; it tells the others.
+func _drop_power(kind: String, where: Vector3) -> void:
+	var flat := Vector2(where.x - Island.CENTER.x, where.z - Island.CENTER.z)
+	if flat.length() > Island.RADIUS - 1.5:  # it fell in the water: the power-up washes up on the sand
+		flat = flat.normalized() * (Island.RADIUS - 1.5)
+	var at := Island.CENTER + Vector3(flat.x, Island.height_at(flat.x, flat.y), flat.y)
+	_power_id += 1
+	_power_field.drop(_power_id, kind, at)
+	if _island_side():
+		_sounds.call("play", "powerup_drop")
+	if net != null:
+		net.rounds.tell_power_drop(_power_id, kind, at)
+
+
+# As a client: the host says one lies there.
+func _on_power_dropped(id: int, kind: String, at: Vector3) -> void:
+	if _powerups.has(kind):
+		_power_field.drop(id, kind, at)
+		if _island_side():
+			_sounds.call("play", "powerup_drop")
+
+
+# Alone or hosting: a player walked into one. The whole party has it.
+func _on_power_touched(id: int, kind: String) -> void:
+	if net != null:
+		net.rounds.tell_power_gone(id)
+		net.rounds.tell_power(kind)
+	_apply_power(kind)
+
+
+func _on_power_expired(id: int) -> void:
+	if net != null:
+		net.rounds.tell_power_gone(id)
+
+
+# Somebody of the party took `kind`: what that does on this machine. The clocks run everywhere (the host's decides
+# what one blow kills); the rest is only for a player who is on the islands.
+func _apply_power(kind: String) -> void:
+	if not _powerups.has(kind):
+		return
+	var entry: Dictionary = _powerups.cfg["kinds"][kind]
+	_powerups.start(kind, _time)
+	if kind == "nuke" and _rounds.active:
+		var before := String(_score.blow)
+		_score.blow = "other"  # nobody is paid for what the blast kills ...
+		_blasting = true  # ... and none of it leaves a power-up (a boss it finishes still does)
+		_rounds.blast(float(entry["boss_share"]))
+		_blasting = false
+		_score.blow = before
+	if not _island_side():
+		return
+	_player_hud.callout(_powerups.name_of(kind), _powerups.color_of(kind))
+	_sounds.call("play", "powerup_nuke" if kind == "nuke" else "powerup_grab")
+	match kind:
+		"max_ammo":
+			_player.pools.fill_all()
+		"nuke":
+			_player_hud.flash_white()
+			_score.give(int(entry["points"]) * _powerups.points_mult(_time))
+
+
+# The run is over: no power-up lies around or runs any more.
+func _clear_powers() -> void:
+	_powerups.reset()
+	_power_field.clear()
+
+
+# True while our player is on the islands (not in the colosseum, Aurelind or the club).
+func _island_side() -> bool:
+	return not _in_arena and not _in_fantasy and _on_island(_player.global_position)
+
+
+# Admin command: a power-up a few steps in front of `near` ("" = any). Returns what to tell the typist.
+func drop_power(kind: String, near: Node3D) -> String:
+	if not _rounds.active:
+		return "Only the host drops power-ups."
+	var which := kind if kind != "" else _powerups.pick(_rng)
+	if not _powerups.has(which):
+		return "Power-ups: %s" % ", ".join(PackedStringArray(_powerups.kinds()))
+	var forward := Basis(Vector3.UP, float(near.call("look_yaw"))) * Vector3.FORWARD if near.has_method("look_yaw") else -near.global_transform.basis.z
+	_drop_power(which, near.global_position + forward * 4.0)
+	return "Dropped %s." % _powerups.name_of(which)
 
 
 # The third painting: the fantasy world Aurelind (game/fantasy_world.gd), a streamed open land with its own magic,
@@ -1637,6 +1775,8 @@ func _process(delta: float) -> void:
 		_hold_revive(delta)
 		if _player.downed and not _out and _time >= _down_until:
 			_bleed_out()
+		if _out and Input.is_action_just_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+			_watch_next()
 	_rest_in -= delta
 	if _rest_in <= 0.0:
 		_rest_worlds()
@@ -1644,6 +1784,9 @@ func _process(delta: float) -> void:
 		_fantasy_dirty = false
 		_fantasy_saved_at = _time
 		save_profile()
+	_power_field.deciding = _rounds.active
+	_score.mult = _powerups.points_mult(_time) if _island_side() else 1
+	_player_hud.power_now = _time
 	var regen: Dictionary = _rounds.config()["regen"]  # the classic way: left alone for a moment, you get your breath back
 	if not _in_arena and not _in_fantasy and _time - _hurt_at >= float(regen["delay"]) and _player.health.hp > 0.0 and _player.health.hp < _player.health.max_hp:
 		_player.health.heal(float(regen["per_second"]) * delta)
