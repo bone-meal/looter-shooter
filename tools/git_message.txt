@@ -1,9 +1,1 @@
-Editor: test pictures are no longer imported (Unrecognized UID errors)
-
-tools/shots and tools/userdata get a .gdignore: the pictures and logs the
-check scenes write there were imported by the editor as textures, and each
-one made while the editor was open showed up as an Unrecognized UID error
-in its Output (232 lines). tools/uid_probe.tscn finds which file owns a uid.
-
-Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.04
