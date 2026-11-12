@@ -13,17 +13,21 @@ extends Node
 const BLOWS := ["", "headshot", "melee"]
 const PAYS := ["hit", "kill", "headshot", "melee"]
 const EFFECTS := ["slow", "burn", "freeze", "weaken", "push"]
+const ORIGIN := Vector3(500, 0, 0)  # game/island.gd CENTER: the land's positions are counted from here
 
 signal round_started(number: int, kind: String)  # on a client: what the host announced
 signal round_ended(number: int, kind: String)
 signal power_dropped(id: int, kind: String, at: Vector3)  # on a client: a power-up lies there now
 signal power_gone(id: int)  # on a client: it was taken or its time ran out
 signal power_taken(kind: String)  # on a client: somebody took it, so the whole party has it
+signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
+signal debris_billed(index: int)  # on a client: the host cleared the debris we asked for; we pay its price
 
 var net: Node3D
 var rounds: Node  # game/island_rounds.gd of this machine (it runs only on the host)
 var director: Node3D
 var card: RefCounted  # our own score card
+var land: RefCounted  # core/archipelago.gd of this machine (which debris is cleared)
 var on_gun_side := Callable()  # func() -> bool: our player is where island enemies can reach (not in Aurelind)
 var round_number := 0  # client: the round as the host last told it
 var round_kind := "normal"
@@ -217,6 +221,44 @@ func _died(id: int) -> void:
 	_enemies.erase(id)
 
 
+# --- debris: a client asks, the host checks that it stands there and clears it for everybody ---
+
+func ask_debris(index: int) -> void:
+	if is_client():
+		_debris_ask.rpc_id(1, index)
+
+
+func tell_debris(index: int) -> void:
+	if net.can_send() and net.is_host():
+		_debris_open.rpc(index, true)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _debris_ask(index: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	if not net.is_host() or land == null or not net.roster.has(peer) or index < 0 or index >= (land.get("bridges") as Array).size():
+		return
+	var body: Node3D = net.player_node(peer)
+	if body == null or bool(land.call("is_open", index)):
+		return
+	var at := body.global_position - ORIGIN
+	if int(land.call("debris_near", at.x, at.z)) != index:
+		return  # not standing at it
+	_debris_bill.rpc_id(peer, index)
+	_debris_open.rpc(index, true)
+	debris_opened.emit(index, true)  # the host's own session clears it too
+
+
+@rpc("authority", "call_remote", "reliable")
+func _debris_open(index: int, show_it: bool) -> void:
+	debris_opened.emit(index, show_it)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _debris_bill(index: int) -> void:
+	debris_billed.emit(index)
+
+
 # --- power-ups: only the host speaks ---
 
 func tell_power_drop(id: int, kind: String, at: Vector3) -> void:
@@ -284,6 +326,9 @@ func _ask_all() -> void:
 	var peer := multiplayer.get_remote_sender_id()
 	if not net.roster.has(peer):
 		return
+	if land != null:
+		for index: int in land.call("open_list"):
+			_debris_open.rpc_id(peer, index, false)
 	for id: int in _enemies:
 		if is_instance_valid(_enemies[id]):
 			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position, int(_enemies[id].get_meta("tier")))

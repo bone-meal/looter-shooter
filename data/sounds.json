@@ -12,6 +12,10 @@
   "powerup_drop": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
   "powerup_grab": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
   "powerup_nuke": {"volume": -4, "pitch": [1.0, 1.0], "range": 0},
+  "debris_clear": {"volume": -5, "pitch": [0.95, 1.05], "range": 0},
+  "wall_buy": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
+  "board_fix": {"volume": -8, "pitch": [0.92, 1.08], "range": 0},
+  "board_tear": {"volume": -7, "pitch": [0.9, 1.1], "range": 0},
   "shot_pistol": {
    "volume": -6,
    "pitch": [

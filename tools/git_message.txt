@@ -1,23 +1,24 @@
-Round 6 step 7: island power-ups, pony rule, spectating while out
+Round 6 step 8a: the archipelago (four islands in a ring, bridges, debris)
 
-Power-ups (islands): a dying enemy leaves one with 3 percent chance, at most
-4 a round; an island boss always does; the last enemy of a special round
-leaves a max ammo. Four kinds in data/powerups.json: max ammo, insta-kill
-(30 s, never a boss), double points (30 s), nuke (everything ashore dies,
-a boss loses a quarter, 400 points each). Whoever walks into one takes it
-for the whole party. Pure rules core/powerup_rules.gd, pickups pooled in
-game/powerup_field.gd, HUD call-out and timers, three new sounds, admin
-command /power, check tools/powerup_check.tscn. Online the host decides
-drops, pickups and what one blow kills (game/net_rounds.gd).
+The single spawn island becomes four islands round a lagoon, all from
+data/archipelago.json: Home Sand (radius 40 m), Painter's Key, Far Shoal and
+Wreck Cay (26 m each), joined by two plank bridges and two sandbars. Each way
+is blocked in its middle by debris that costs points to clear (750, 2250,
+6750, 20250; the dearest closes the ring back to the spawn island) and closes
+again at game over. The colosseum painting now stands on Painter's Key behind
+the first debris; the Aurelind painting, bank, crow and lifeguard stay on the
+spawn island.
 
-Pony rule: the pony tier is no longer rolled by enemies, chests or casino
-crates (weight 0 in data/gun_loot.json); any non-boss enemy anywhere leaves
-a pony gun 1 kill in 100000 (data/drops.json pony_trash_one_in).
+Pure land rules in core/archipelago.gd (heights, which island, washing up,
+where enemies may come out of the sea, debris state). Enemies come up round
+the island their prey is on, on its side, and one left behind on another
+island comes again near the players. Wading too deep carries a player back
+to the shore, so nobody walks round a debris. Rocks and plants are drawn
+only near their island: the spawn view costs 13.9 ms on Forward+ at 1080p
+Ultimate (14.4 before), 4.9 ms on Compatibility.
 
-Director's changes to step 6: a revived player has full health; a player
-who is out watches the others (camera follows a teammate, shoot = next) and
-appears at the spawn when the next round starts; the save menu shows each
-character's best round.
+Online the host clears debris for everybody after checking that the asker
+stands at it (never run between two machines).
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

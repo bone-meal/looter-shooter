@@ -1,10 +1,15 @@
-# Purpose: builds the starting island: sand that slopes into the sea, a grass patch, the ocean, palm trees, shore rocks
-# and plants, and the paintings on posts. The middle (FLAT_RADIUS) is exactly flat at height 0, so everything that
-# stands on the island keeps y = 0.
-# Dependencies: game/painting_art.gd, game/surface_library.gd, game/ground_blend.gd, game/water_surface.gd,
+# Purpose: builds the islands of data/archipelago.json: for each one sand that slopes into the sea and a grass patch;
+# the ocean, palm trees, shore rocks and plants; the ways between the islands (plank bridges and sandbars) with the
+# debris across each; and the paintings on posts. The flat part of every island is exactly height 0, so everything
+# that stands on an island keeps y = 0.
+# Dependencies: core/archipelago.gd (where everything is; the session passes its own so both agree), core/data_store.gd,
+# game/debris_pile.gd, game/painting_art.gd, game/surface_library.gd, game/ground_blend.gd, game/water_surface.gd,
 # game/palm_builder.gd, game/model_library.gd, game/look_props.gd. Static and batched (MultiMeshes, shared materials).
 extends RefCounted
 
+const Archipelago = preload("res://core/archipelago.gd")
+const DataStore = preload("res://core/data_store.gd")
+const DebrisPile = preload("res://game/debris_pile.gd")
 const PaintingArt = preload("res://game/painting_art.gd")
 const SurfaceLibrary = preload("res://game/surface_library.gd")
 const GroundBlend = preload("res://game/ground_blend.gd")
@@ -13,41 +18,57 @@ const PalmBuilder = preload("res://game/palm_builder.gd")
 const ModelLibrary = preload("res://game/model_library.gd")
 const LookProps = preload("res://game/look_props.gd")
 
-const CENTER := Vector3(500, 0, 0)
-const RADIUS := 14.0          # where the sand meets the sea
-const FLAT_RADIUS := 12.0     # flat ground inside this radius
-const GROUND_RADIUS := 30.0   # the sea bed ends here
-const SEA_LEVEL := -0.4
-const BEACH_DROP := 0.1414    # sea bed depth = BEACH_DROP * (metres beyond FLAT_RADIUS) ^ 1.5
-const GRASS_RADIUS := 9.0
-const TREE_COUNT := 9
+const CENTER := Vector3(500, 0, 0)  # the middle of the spawn island in the world
 const CROW_POS := CENTER + Vector3(-7, 0, 3)
-
 const SAND := Color(0.9, 0.8, 0.55)
 const SECTORS := 96
-const PAINTING := Vector3(0, 0, -8)
-const PAINTING_FANTASY := Vector3(-9, 0, -6)
+const KEEP_CLEAR := 5.0  # no palm, rock or plant this near a painting, the spawn or the end of a bridge
+const POST_GAP := 4.0  # metres between the posts of a plank bridge
 
 
-# Returns {"spawn": Vector3, "painting": Vector3, "painting_fantasy": Vector3} (world positions).
-static func build(parent: Node3D) -> Dictionary:
-	_ocean(parent)
-	_ground(parent)
-	_palms(parent)
-	_rocks(parent)
-	_plants(parent)
-	var painting := CENTER + PAINTING
-	build_painting(parent, painting, PaintingArt.texture())
-	var painting_fantasy := CENTER + PAINTING_FANTASY
-	build_painting(parent, painting_fantasy, PaintingArt.wheat_texture())
-	return {"spawn": CENTER + Vector3(0, 0.1, 4), "painting": painting, "painting_fantasy": painting_fantasy}
+# Returns {"spawn", "painting", "painting_fantasy": world positions, "debris": one game/debris_pile.gd per bridge}.
+# `extra_clear` = more spots ([x, z] from the spawn island's middle) to keep free of trees and rocks.
+static func build(parent: Node3D, land: Archipelago = null, extra_clear: Array[Vector2] = []) -> Dictionary:
+	if land == null:
+		land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
+	var arena: Dictionary = land.place_of("painting_arena")
+	var fantasy: Dictionary = land.place_of("painting_fantasy")
+	var spawn: Vector2 = land.place_of("spawn")["at"]
+	var clear: Array[Vector2] = [arena["at"], fantasy["at"], spawn]
+	clear.append_array(extra_clear)
+	for bridge: Dictionary in land.bridges:
+		clear.append(bridge["a"])
+		clear.append(bridge["b"])
+	_ocean(parent, land)
+	var patches := PackedVector3Array()
+	for isle: Dictionary in land.islands:
+		patches.append(Vector3(CENTER.x + (isle["at"] as Vector2).x, CENTER.z + (isle["at"] as Vector2).y, float(isle["grass"])))
+	var blend := GroundBlend.material(SAND, patches, land.sea_level)
+	for i in land.islands.size():
+		_ground(parent, land, i, blend)
+	_palms(parent, land, clear)
+	_rocks(parent, land, clear)
+	_plants(parent, land, clear)
+	var debris: Array = []
+	for i in land.bridges.size():
+		debris.append(_bridge(parent, land, i, blend))
+	var painting := _world(arena["at"])
+	build_painting(parent, painting, PaintingArt.texture(), float(arena["yaw"]))
+	var painting_fantasy := _world(fantasy["at"])
+	build_painting(parent, painting_fantasy, PaintingArt.wheat_texture(), float(fantasy["yaw"]))
+	return {"spawn": _world(spawn) + Vector3(0, 0.1, 0), "painting": painting, "painting_fantasy": painting_fantasy, "debris": debris}
 
 
-# Ground height at a point given relative to CENTER.
-static func height_at(x: float, z: float) -> float:
-	var beyond := maxf(sqrt(x * x + z * z) - FLAT_RADIUS, 0.0)
-	var dunes := sin(x * 1.3 + z * 0.7) * sin(z * 1.1 - x * 0.4) * 0.05
-	return -BEACH_DROP * pow(beyond, 1.5) + dunes * clampf(beyond / 1.5, 0.0, 1.0)
+# A land spot (x, z from the spawn island's middle) as a world position on flat ground.
+static func _world(at: Vector2) -> Vector3:
+	return CENTER + Vector3(at.x, 0.0, at.y)
+
+
+static func _near_any(spot: Vector2, clear: Array[Vector2], within: float) -> bool:
+	for other: Vector2 in clear:
+		if spot.distance_to(other) < within:
+			return true
+	return false
 
 
 static func _flat(color: Color) -> StandardMaterial3D:
@@ -65,86 +86,96 @@ static func _place(parent: Node3D, mesh: Mesh, surface: Material, pos: Vector3) 
 	return mi
 
 
-static func _ocean(parent: Node3D) -> void:
+static func _ocean(parent: Node3D, land: Archipelago) -> void:
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(600, 600)
-	var water := _place(parent, plane, WaterSurface.material(Color(0.1, 0.45, 0.7)), CENTER + Vector3(0, SEA_LEVEL, 0))
+	plane.size = Vector2(700, 700)
+	var water := _place(parent, plane, WaterSurface.material(Color(0.1, 0.45, 0.7)), _world(land.middle()) + Vector3(0, land.sea_level, 0))
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	var shallows := CylinderMesh.new()
-	shallows.top_radius = RADIUS + 6.0
-	shallows.bottom_radius = RADIUS + 6.0
-	shallows.height = 0.1
-	LookProps.add(_place(parent, shallows, _flat(Color(0.3, 0.75, 0.8)), CENTER + Vector3(0, -0.3, 0)), false)
+	for isle: Dictionary in land.islands:
+		var shallows := CylinderMesh.new()
+		shallows.top_radius = float(isle["radius"]) + 6.0
+		shallows.bottom_radius = shallows.top_radius
+		shallows.height = 0.1
+		LookProps.add(_place(parent, shallows, _flat(Color(0.3, 0.75, 0.8)), _world(isle["at"]) + Vector3(0, -0.3, 0)), false)
 
 
-static func _ground(parent: Node3D) -> void:
+# One island's sand: rings of triangles out to where its sea bed ends, with a collider.
+static func _ground(parent: Node3D, land: Archipelago, index: int, blend: Material) -> void:
+	var isle: Dictionary = land.islands[index]
+	var at: Vector2 = isle["at"]
+	var flat := float(isle["flat"])
+	var edge := flat + float(land.cfg["sea_bed"])
 	var radii: Array[float] = [0.0]
-	while radii[-1] < GROUND_RADIUS - 0.01:
-		radii.append(minf(radii[-1] + (2.0 if radii[-1] < FLAT_RADIUS - 0.01 else 0.6), GROUND_RADIUS))
+	while radii[-1] < edge - 0.01:
+		radii.append(minf(radii[-1] + (minf(4.0, flat - radii[-1]) if radii[-1] < flat - 0.01 else 0.6), edge))
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for ring in radii.size() - 1:
 		for sector in SECTORS:
 			var a0 := TAU * float(sector) / SECTORS
 			var a1 := TAU * float(sector + 1) / SECTORS
-			var p00 := _ground_point(radii[ring], a0)
-			var p01 := _ground_point(radii[ring], a1)
-			var p10 := _ground_point(radii[ring + 1], a0)
-			var p11 := _ground_point(radii[ring + 1], a1)
-			_ground_tri(st, p00, p10, p11)
+			var p00 := _ground_point(land, index, at, radii[ring], a0)
+			var p01 := _ground_point(land, index, at, radii[ring], a1)
+			var p10 := _ground_point(land, index, at, radii[ring + 1], a0)
+			var p11 := _ground_point(land, index, at, radii[ring + 1], a1)
+			_ground_tri(st, land, index, at, p00, p10, p11)
 			if ring > 0:
-				_ground_tri(st, p00, p11, p01)
+				_ground_tri(st, land, index, at, p00, p11, p01)
 	var ground := st.commit()
-	var blend := GroundBlend.material(SAND, Vector2(CENTER.x, CENTER.z), GRASS_RADIUS, SEA_LEVEL)
-	_place(parent, ground, blend, CENTER)
+	_place(parent, ground, blend, _world(at))
 	var grass := CylinderMesh.new()
-	grass.top_radius = GRASS_RADIUS
-	grass.bottom_radius = GRASS_RADIUS
+	grass.top_radius = float(isle["grass"])
+	grass.bottom_radius = grass.top_radius
 	grass.height = 0.04
-	LookProps.add(_place(parent, grass, _flat(Color(0.35, 0.65, 0.3)), CENTER + Vector3(0, 0.02, 0)), false)
-
+	LookProps.add(_place(parent, grass, _flat(Color(0.35, 0.65, 0.3)), _world(at) + Vector3(0, 0.02, 0)), false)
 	var body := StaticBody3D.new()
-	body.position = CENTER
+	body.position = _world(at)
 	var shape := CollisionShape3D.new()
 	shape.shape = ground.create_trimesh_shape()
 	body.add_child(shape)
 	parent.add_child(body)
 
 
-static func _ground_point(radius: float, angle: float) -> Vector3:
+# A point of an island's ground, relative to that island's middle.
+static func _ground_point(land: Archipelago, index: int, at: Vector2, radius: float, angle: float) -> Vector3:
 	var x := cos(angle) * radius
 	var z := sin(angle) * radius
-	return Vector3(x, height_at(x, z), z)
+	return Vector3(x, land.island_height(index, at.x + x, at.y + z), z)
 
 
-static func _ground_normal(p: Vector3) -> Vector3:
+static func _ground_normal(land: Archipelago, index: int, at: Vector2, p: Vector3) -> Vector3:
 	var e := 0.1
-	return Vector3(height_at(p.x - e, p.z) - height_at(p.x + e, p.z), 2.0 * e, height_at(p.x, p.z - e) - height_at(p.x, p.z + e)).normalized()
+	var x := at.x + p.x
+	var z := at.y + p.z
+	return Vector3(land.island_height(index, x - e, z) - land.island_height(index, x + e, z), 2.0 * e, land.island_height(index, x, z - e) - land.island_height(index, x, z + e)).normalized()
 
 
-static func _ground_tri(st: SurfaceTool, a: Vector3, b: Vector3, c: Vector3) -> void:
+static func _ground_tri(st: SurfaceTool, land: Archipelago, index: int, at: Vector2, a: Vector3, b: Vector3, c: Vector3) -> void:
 	var pts := [a, b, c]
 	if (b - a).cross(c - a).y > 0.0:
 		pts = [a, c, b]  # Godot front faces are clockwise
 	for p: Vector3 in pts:
-		st.set_normal(_ground_normal(p))
+		st.set_normal(_ground_normal(land, index, at, p))
 		st.add_vertex(p)
 
 
-# Where the palms stand (relative to CENTER): a ring around the grass, kept clear of the first painting.
-static func _palm_spots() -> Array[Vector3]:
-	var spots: Array[Vector3] = []
-	for i in TREE_COUNT:
-		var angle := TAU * float(i) / TREE_COUNT + 0.3
-		var r := 9.0 + float(i % 3) * 1.2
-		var spot := Vector3(cos(angle) * r, 0.0, sin(angle) * r)
-		if spot.distance_to(PAINTING) < 4.0:
-			spot += Vector3(0, 0, 5)
-		spots.append(spot)
+# Where the palms stand ([x, z] from the spawn island's middle): scattered between each island's grass edge and its beach.
+static func _palm_spots(land: Archipelago, clear: Array[Vector2]) -> Array[Vector2]:
+	var spots: Array[Vector2] = []
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	for isle: Dictionary in land.islands:
+		var count := int(isle["palms"])
+		for i in count:
+			var angle := TAU * float(i) / float(count) + rng.randf_range(-0.2, 0.2)
+			var r := rng.randf_range(float(isle["grass"]) * 0.7, float(isle["flat"]) - 2.5)
+			var spot: Vector2 = (isle["at"] as Vector2) + Vector2(cos(angle), sin(angle)) * r
+			if not _near_any(spot, clear, KEEP_CLEAR):
+				spots.append(spot)
 	return spots
 
 
-static func _palms(parent: Node3D) -> void:
+static func _palms(parent: Node3D, land: Archipelago, clear: Array[Vector2]) -> void:
 	# Flat look: a pole and a ball.
 	var trunk_mesh := CylinderMesh.new()
 	trunk_mesh.top_radius = 0.18
@@ -158,12 +189,13 @@ static func _palms(parent: Node3D) -> void:
 	var palms: Array[Transform3D] = []
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	for spot: Vector3 in _palm_spots():
-		trunks.append(Transform3D(Basis(), CENTER + spot + Vector3(0, 2.5, 0)))
-		crowns.append(Transform3D(Basis(), CENTER + spot + Vector3(0, 5.1, 0)))
+	for at: Vector2 in _palm_spots(land, clear):
+		var spot := _world(at)
+		trunks.append(Transform3D(Basis(), spot + Vector3(0, 2.5, 0)))
+		crowns.append(Transform3D(Basis(), spot + Vector3(0, 5.1, 0)))
 		var tall := rng.randf_range(0.85, 1.25)
 		var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU)) * Basis.from_scale(Vector3(tall, tall, tall))
-		palms.append(Transform3D(turn, CENTER + spot))
+		palms.append(Transform3D(turn, spot))
 	LookProps.add(_field(parent, trunk_mesh, trunks, _flat(Color(0.5, 0.35, 0.2))), false)
 	LookProps.add(_field(parent, crown_mesh, crowns, _flat(Color(0.2, 0.55, 0.25))), false)
 	# Textured look: curved trunks with frond crowns.
@@ -171,67 +203,81 @@ static func _palms(parent: Node3D) -> void:
 	LookProps.add(_field(parent, PalmBuilder.mesh(bark), palms, null), true)
 
 
-# Boulders at the waterline (textured look only), each with a simple round collider.
-static func _rocks(parent: Node3D) -> void:
+# Boulders at every island's waterline (textured look only), each with a simple round collider. One set of
+# MultiMeshes per island, drawn only near it.
+static func _rocks(parent: Node3D, land: Archipelago, clear: Array[Vector2]) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 23
 	var body := StaticBody3D.new()
 	body.position = CENTER
 	parent.add_child(body)
 	LookProps.add(body, true)
-	# [model, node, how many, smallest size, largest size, real radius of the model in metres]
+	# [model, node, how many at scatter 1, smallest size, largest size, real radius of the model in metres]
 	for kind: Array in [["namaqualand_boulder_04", "boulder_04", 3, 0.45, 0.9, 1.25], ["rock_09", "rock_09_LOD0", 8, 5.0, 16.0, 0.07]]:
 		var rock := ModelLibrary.mesh(String(kind[0]), String(kind[1]))
 		if rock == null:
 			continue
 		var reach := float(kind[5])
-		var xforms: Array[Transform3D] = []
-		for i in int(kind[2]):
-			var angle := rng.randf_range(0.0, TAU)
-			var r := rng.randf_range(RADIUS - 1.6, RADIUS + 2.2)
-			var big := rng.randf_range(float(kind[3]), float(kind[4]))
-			var spot := Vector3(cos(angle) * r, 0.0, sin(angle) * r)
-			if spot.distance_to(PAINTING) < 5.0 or spot.distance_to(PAINTING_FANTASY) < 5.0:
-				continue
-			spot.y = height_at(spot.x, spot.z) - 0.25 * big * reach  # sunk into the sand a little
-			var turn := Basis.from_euler(Vector3(rng.randf_range(-0.2, 0.2), rng.randf_range(0.0, TAU), rng.randf_range(-0.2, 0.2)))
-			xforms.append(Transform3D(turn * Basis.from_scale(Vector3(big, big, big)), spot))
-			var ball := SphereShape3D.new()
-			ball.radius = big * reach * 0.8
-			var shape := CollisionShape3D.new()
-			shape.shape = ball
-			shape.position = spot + Vector3(0, ball.radius * 0.5, 0)
-			body.add_child(shape)
-		_field(body, rock, xforms, null)
+		for index in land.islands.size():
+			var isle: Dictionary = land.islands[index]
+			var radius := float(isle["radius"])
+			var xforms: Array[Transform3D] = []
+			for i in roundi(float(kind[2]) * float(isle["scatter"])):
+				var angle := rng.randf_range(0.0, TAU)
+				var r := rng.randf_range(radius - 1.6, radius + 2.2)
+				var big := rng.randf_range(float(kind[3]), float(kind[4]))
+				var at: Vector2 = (isle["at"] as Vector2) + Vector2(cos(angle), sin(angle)) * r
+				if _near_any(at, clear, KEEP_CLEAR + 1.0):
+					continue
+				var spot := Vector3(at.x, land.island_height(index, at.x, at.y) - 0.25 * big * reach, at.y)  # sunk into the sand a little
+				var turn := Basis.from_euler(Vector3(rng.randf_range(-0.2, 0.2), rng.randf_range(0.0, TAU), rng.randf_range(-0.2, 0.2)))
+				xforms.append(Transform3D(turn * Basis.from_scale(Vector3(big, big, big)), spot))
+				var ball := SphereShape3D.new()
+				ball.radius = big * reach * 0.8
+				var shape := CollisionShape3D.new()
+				shape.shape = ball
+				shape.position = spot + Vector3(0, ball.radius * 0.5, 0)
+				body.add_child(shape)
+			_near_only(_field(body, rock, xforms, null), land, index)
 
 
-# Ferns and broad-leaf plants around the grass edge and the palm feet (textured look only).
-static func _plants(parent: Node3D) -> void:
+# Ferns and broad-leaf plants around the grass edges and the palm feet (textured look only), per island.
+static func _plants(parent: Node3D, land: Archipelago, clear: Array[Vector2]) -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 37
-	var feet := _palm_spots()
-	# [model, plants of each variant, smallest size, largest size]
+	var feet := _palm_spots(land, clear)
+	# [model, plants of each variant at scatter 1, smallest size, largest size]
 	for kind: Array in [["fern_02", 9, 0.9, 1.6], ["calathea_orbifolia_01", 4, 1.0, 1.8], ["anthurium_botany_01", 2, 0.9, 1.4]]:
 		for entry: Array in ModelLibrary.meshes(String(kind[0])):
-			var xforms: Array[Transform3D] = []
-			for i in int(kind[1]):
-				var spot := Vector3.ZERO
-				if rng.randf() < 0.5:
-					var away := rng.randf_range(0.5, 1.6)
-					var around := rng.randf_range(0.0, TAU)
-					spot = feet[rng.randi() % feet.size()] + Vector3(cos(around) * away, 0.0, sin(around) * away)
-				else:
+			for index in land.islands.size():
+				var isle: Dictionary = land.islands[index]
+				var mid: Vector2 = isle["at"]
+				var xforms: Array[Transform3D] = []
+				for i in roundi(float(kind[1]) * float(isle["scatter"])):
 					var angle := rng.randf_range(0.0, TAU)
-					var r := rng.randf_range(GRASS_RADIUS - 2.5, GRASS_RADIUS + 1.5)
-					spot = Vector3(cos(angle) * r, 0.0, sin(angle) * r)
-				if spot.distance_to(PAINTING) < 3.5 or spot.distance_to(PAINTING_FANTASY) < 3.5 or spot.length() > FLAT_RADIUS:
+					var at := mid + Vector2(cos(angle), sin(angle)) * rng.randf_range(float(isle["grass"]) - 2.5, float(isle["grass"]) + 1.5)
+					if rng.randf() < 0.5 and not feet.is_empty():
+						var foot: Vector2 = feet[rng.randi() % feet.size()]
+						if foot.distance_to(mid) < float(isle["radius"]):  # at the foot of one of this island's palms
+							at = foot + Vector2(cos(angle), sin(angle)) * rng.randf_range(0.5, 1.6)
+					if _near_any(at, clear, KEEP_CLEAR - 1.5) or land.height_at(at.x, at.y) < -0.01:
+						continue
+					var big := rng.randf_range(float(kind[2]), float(kind[3]))
+					var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU)) * Basis.from_scale(Vector3(big, big, big))
+					xforms.append(Transform3D(turn, _world(at)))
+				if xforms.is_empty():
 					continue
-				var big := rng.randf_range(float(kind[2]), float(kind[3]))
-				var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU)) * Basis.from_scale(Vector3(big, big, big))
-				xforms.append(Transform3D(turn, CENTER + spot))
-			var field := _field(parent, entry[1] as Mesh, xforms, null)
-			field.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-			LookProps.add_scatter(field)
+				var field := _field(parent, entry[1] as Mesh, xforms, null)
+				field.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				_near_only(field, land, index)
+				LookProps.add_scatter(field)
+
+
+# Small things of one island are drawn only within data scatter_range metres of its shore (the range is measured to
+# the middle of what the MultiMesh holds, which is the island's middle).
+static func _near_only(field: MultiMeshInstance3D, land: Archipelago, index: int) -> void:
+	field.visibility_range_end = float(land.islands[index]["radius"]) + float(land.cfg["scatter_range"])
+	field.visibility_range_end_margin = 8.0
 
 
 # One MultiMesh for many copies of a mesh. surface = null keeps the mesh's own materials.
@@ -249,29 +295,106 @@ static func _field(parent: Node3D, mesh: Mesh, xforms: Array[Transform3D], surfa
 	return inst
 
 
-# A framed painting on two posts at `at` (also used for the way home inside a painting's world).
-static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D) -> void:
+# One way between two islands, shore to shore, with its debris in the middle. Planks = a deck on posts; sandbar = a
+# ridge of sand just above the water. Both are solid. Returns the debris (game/debris_pile.gd).
+static func _bridge(parent: Node3D, land: Archipelago, index: int, sand: Material) -> Node3D:
+	var entry: Dictionary = land.bridges[index]
+	var a: Vector2 = entry["a"]
+	var b: Vector2 = entry["b"]
+	var length := a.distance_to(b)
+	var width := land.deck_width()
+	var top := land.deck_height(index)
+	var way := Node3D.new()  # its -z runs from a to b
+	way.position = _world(entry["mid"])
+	way.rotation.y = atan2(-(b.x - a.x), -(b.y - a.y))
+	parent.add_child(way)
+	var body := StaticBody3D.new()
+	way.add_child(body)
+	var shape := CollisionShape3D.new()
+	body.add_child(shape)
+	if String(entry["kind"]) == "planks":
+		var wood := SurfaceLibrary.material("painting_post", Color(0.4, 0.28, 0.15))
+		var deck := BoxMesh.new()
+		deck.size = Vector3(width, 0.5, length)
+		_place(way, deck, wood, Vector3(0, top - 0.25, 0))
+		var box := BoxShape3D.new()
+		box.size = deck.size
+		shape.shape = box
+		shape.position = Vector3(0, top - 0.25, 0)
+		var post := CylinderMesh.new()
+		post.top_radius = 0.16
+		post.bottom_radius = 0.2
+		post.height = 7.0
+		post.radial_segments = 8
+		var posts: Array[Transform3D] = []
+		var rails: Array[Transform3D] = []
+		for n in floori(length / POST_GAP) + 1:
+			var along := -length * 0.5 + float(n) * length / float(floori(length / POST_GAP))
+			for side: float in [-1.0, 1.0]:
+				posts.append(Transform3D(Basis(), Vector3(side * (width * 0.5 + 0.1), top + 0.9 - post.height * 0.5, along)))
+		var rail := BoxMesh.new()
+		rail.size = Vector3(0.1, 0.1, length)
+		for side: float in [-1.0, 1.0]:
+			rails.append(Transform3D(Basis(), Vector3(side * (width * 0.5 + 0.1), top + 0.75, 0)))
+		_field(way, post, posts, wood)
+		_field(way, rail, rails, wood)
+	else:
+		var foot := -6.0  # the ridge stands on the sea bed
+		var spread := (top - foot) * 1.25  # how far each side runs out on its way down
+		var corners: Array[Vector3] = []
+		for end: float in [-1.0, 1.0]:
+			corners.append(Vector3(-width * 0.5, top, end * length * 0.5))
+			corners.append(Vector3(width * 0.5, top, end * length * 0.5))
+			corners.append(Vector3(-width * 0.5 - spread, foot, end * length * 0.5))
+			corners.append(Vector3(width * 0.5 + spread, foot, end * length * 0.5))
+		var st := SurfaceTool.new()
+		st.begin(Mesh.PRIMITIVE_TRIANGLES)
+		for quad: Array in [[0, 1, 5, 4], [2, 0, 4, 6], [1, 3, 7, 5]]:  # top, left side, right side
+			var normal := ((corners[quad[1]] - corners[quad[0]]).cross(corners[quad[3]] - corners[quad[0]])).normalized()
+			if normal.y < 0.0:
+				normal = -normal
+			for corner: int in [quad[0], quad[1], quad[2], quad[0], quad[2], quad[3]]:
+				st.set_normal(normal)
+				st.add_vertex(corners[corner])
+		var ridge := _place(way, st.commit(), sand, Vector3.ZERO)
+		ridge.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var hull := ConvexPolygonShape3D.new()
+		hull.points = PackedVector3Array(corners)
+		shape.shape = hull
+	var pile: Node3D = DebrisPile.new()
+	pile.set("width", width)
+	pile.position = Vector3(0, top, 0)
+	way.add_child(pile)
+	return pile
+
+
+# A framed painting on two posts at `at`, its picture facing `yaw` (0 = +z). Also used for the way home inside a
+# painting's world.
+static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D, yaw: float = 0.0) -> void:
+	var stand := Node3D.new()
+	stand.position = at
+	stand.rotation.y = yaw
+	parent.add_child(stand)
 	var post_wood := SurfaceLibrary.material("painting_post", Color(0.4, 0.28, 0.15))
 	for side: float in [-1.0, 1.0]:
 		var post := BoxMesh.new()
 		post.size = Vector3(0.25, 3.6, 0.25)
-		_place(parent, post, post_wood, at + Vector3(side * 2.4, 1.8, 0))
+		_place(stand, post, post_wood, Vector3(side * 2.4, 1.8, 0))
 	var frame := BoxMesh.new()
 	frame.size = Vector3(5.0, 3.6, 0.2)
-	_place(parent, frame, SurfaceLibrary.material("painting_frame", Color(0.55, 0.4, 0.15)), at + Vector3(0, 2.3, 0))
+	_place(stand, frame, SurfaceLibrary.material("painting_frame", Color(0.55, 0.4, 0.15)), Vector3(0, 2.3, 0))
 	var canvas := QuadMesh.new()
 	canvas.size = Vector2(4.6, 3.2)
 	var art := StandardMaterial3D.new()
 	art.albedo_texture = texture
 	art.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	art.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_place(parent, canvas, art, at + Vector3(0, 2.3, 0.11))
-
+	_place(stand, canvas, art, Vector3(0, 2.3, 0.11))
 	var body := StaticBody3D.new()
-	body.position = at + Vector3(0, 1.8, 0)
+	body.position = Vector3(0, 1.8, 0)
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
 	box.size = Vector3(5.0, 3.6, 0.4)
 	shape.shape = box
 	body.add_child(shape)
-	parent.add_child(body)
+	stand.add_child(body)

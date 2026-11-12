@@ -89,6 +89,22 @@
     {
      "id": "powerup_nuke",
      "label": "The nuke power-up goes off"
+    },
+    {
+     "id": "debris_clear",
+     "label": "Debris is cleared"
+    },
+    {
+     "id": "wall_buy",
+     "label": "A wall gun or its ammo is bought"
+    },
+    {
+     "id": "board_fix",
+     "label": "A window board is nailed back"
+    },
+    {
+     "id": "board_tear",
+     "label": "An enemy tears a board off"
     }
    ]
   },

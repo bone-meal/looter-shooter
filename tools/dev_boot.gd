@@ -195,6 +195,21 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("rolled guns in slots %s; on the ground %d; shift %s  %s" % [", ".join(guns), int((session.get("_field") as Node).call("count")), str(Input.is_key_pressed(KEY_SHIFT)), " ".join(words.slice(2))])
 				_:
 					session.call("_toggle_inventory")
+		"isle":  # "!isle 2 [dx dz]": stand on island n (0 = the spawn island), that far from its middle
+			var land: RefCounted = session.get("_land")
+			var mid: Vector2 = (land.get("islands") as Array)[int(words[1])]["at"]
+			player.call("teleport", Vector3(500.0 + mid.x + (float(words[2]) if words.size() > 3 else 0.0), 0.2, mid.y + (float(words[3]) if words.size() > 3 else 3.0)), 0.0)
+		"debris":  # "!debris goto 0": stand 2.5 m before debris n on its first island's side, looking at it; "!debris <note>": where we are and what is cleared
+			var land: RefCounted = session.get("_land")
+			if words.size() > 2 and words[1] == "goto":
+				var way: Dictionary = (land.get("bridges") as Array)[int(words[2])]
+				var before: Vector2 = (way["mid"] as Vector2) + ((way["a"] as Vector2) - (way["mid"] as Vector2)).normalized() * 2.5
+				player.call("teleport", Vector3(500.0 + before.x, float(land.call("deck_height", int(words[2]))) + 0.15, before.y), 0.0)
+				player.call("look_at_point", Vector3(500.0 + (way["mid"] as Vector2).x, 1.4, (way["mid"] as Vector2).y))
+			else:
+				var at: Vector3 = player.global_position - Vector3(500, 0, 0)
+				_lines.append("DEBRIS %s: on island %d, y %.2f, land %s, deck %d, debris here %d, cleared %s, reachable %s, points %d" % [" ".join(words.slice(1)), int(land.call("island_near", at.x, at.z)), at.y,
+					str(land.call("on_land", at.x, at.z)), int(land.call("deck_at", at.x, at.z)), int(session.call("_debris_here")), str(land.call("open_list")), str(land.call("reachable")), int((session.call("score") as RefCounted).get("points"))])
 		"powers":  # "!powers <note>": the power-ups lying around and running, and what points are multiplied by
 			var rules: RefCounted = session.get("_powerups")
 			var running := PackedStringArray()

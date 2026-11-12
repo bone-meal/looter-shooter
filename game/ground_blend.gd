@@ -1,5 +1,5 @@
 # Purpose: the material of the island ground. Blends three surfaces of data/surfaces.json per pixel: beach sand, a grass
-# patch with a ragged edge around the island centre, and darker wet sand at the waterline. Flat look = one sand colour.
+# patch with a ragged edge around each island's middle (up to four islands), and darker wet sand at the waterline. Flat look = one sand colour.
 # One shader source compiled with #defines, valid in Compatibility and Forward+.
 # Dependencies: game/surface_library.gd (texture sets and current quality). Configured by game/render_style.gd after it.
 extends RefCounted
@@ -19,8 +19,7 @@ render_mode cull_back;
 
 uniform vec3 flat_color : source_color = vec3(0.9, 0.8, 0.55);
 #ifdef TEXTURED
-uniform vec2 patch_center = vec2(0.0);
-uniform float patch_radius = 9.0;
+uniform vec3 patches[4];  // each island's grass patch: world x, world z, radius (0 = none)
 uniform float water_level = -0.4;
 uniform vec3 tiles = vec3(1.5, 2.0, 7.5);
 uniform vec3 sand_tint : source_color = vec3(1.0);
@@ -58,8 +57,11 @@ void fragment() {
 	vec2 uv_grass = p / tiles.y;
 	vec2 uv_shore = p / tiles.z;
 	float ragged = texture(grass_diff, p / (tiles.y * 6.3)).g;
-	float from_center = distance(p, patch_center) + (ragged - 0.3) * 6.0;
-	float grass = 1.0 - smoothstep(patch_radius - 1.0, patch_radius + 1.0, from_center);
+	float grass = 0.0;
+	for (int i = 0; i < 4; i++) {
+		float from_center = distance(p, patches[i].xy) + (ragged - 0.3) * 6.0;
+		grass = max(grass, (1.0 - smoothstep(patches[i].z - 1.0, patches[i].z + 1.0, from_center)) * step(0.5, patches[i].z));
+	}
 	float above = world_pos.y - water_level;
 	float shore = 1.0 - smoothstep(0.08, 0.5, above);
 	float wet = 1.0 - smoothstep(-0.05, 0.2, above);
@@ -91,13 +93,14 @@ static var _shaders := {}  # "#define ..." prefix -> Shader
 static var _toon := false
 
 
-# The one island ground material. center = world x,z of the grass patch.
-static func material(flat: Color, center: Vector2, grass_radius: float, water_level: float) -> ShaderMaterial:
+# The one island ground material. patches = up to four grass patches, each (world x, world z, radius).
+static func material(flat: Color, patches: PackedVector3Array, water_level: float) -> ShaderMaterial:
 	if _material == null:
 		_material = ShaderMaterial.new()
 	_material.set_shader_parameter("flat_color", flat)
-	_material.set_shader_parameter("patch_center", center)
-	_material.set_shader_parameter("patch_radius", grass_radius)
+	var four := patches.duplicate()
+	four.resize(4)  # unused ones stay (0, 0, 0)
+	_material.set_shader_parameter("patches", four)
 	_material.set_shader_parameter("water_level", water_level)
 	_refresh()
 	return _material

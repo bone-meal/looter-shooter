@@ -51,12 +51,12 @@ const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
 const PowerupRules = preload("res://core/powerup_rules.gd")
+const Archipelago = preload("res://core/archipelago.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
 const GameOverScreen = preload("res://game/game_over_screen.gd")
 const BankState = preload("res://core/bank_state.gd")
 const BankBox = preload("res://game/bank_box.gd")
-const ISLAND_REACH := 60.0  # metres from the island's middle that still count as being on it
 const Scoreboard = preload("res://game/scoreboard.gd")
 
 const HUD_REFRESH := 0.25
@@ -130,6 +130,9 @@ var _down_until := 0.0  # online, lying down: when we bleed out
 var _out := false  # online: bled out, waiting at the spawn for the next round
 var _revive_target := 0  # online: the downed player we stand next to (0 = nobody)
 var _revive_hold := 0.0  # ... and for how long we have held the key
+var _land: Archipelago  # the islands: where they are, which debris is cleared (core/archipelago.gd)
+var _debris: Array = []  # game/debris_pile.gd, one per bridge
+var _last_isle := 0  # the island we last stood on (where the sea carries us back to)
 var _powerups: PowerupRules  # the islands' power-ups: what an enemy leaves and which effects are running
 var _power_field := PowerupField.new()  # ... and the ones lying around
 var _power_id := 0  # the last one dropped here (alone or hosting)
@@ -196,7 +199,9 @@ func _ready() -> void:
 	var first_gun_side := get_child_count()
 	var gates := Colosseum.build(self)
 	LoadClock.mark("colosseum")
-	var island := Island.build(self)
+	_land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
+	var island := Island.build(self, _land)
+	_debris = island["debris"]
 	LoadClock.mark("island")
 	_painting = island["painting"]
 	_painting_fantasy = island["painting_fantasy"]
@@ -306,6 +311,7 @@ func _ready() -> void:
 	add_child(_field)
 	_director.killed.connect(_on_enemy_killed)
 	_rounds.director = _director
+	_rounds.land = _land
 	_rounds.bodies = _island_bodies
 	_rounds.rules.alive_cap = int((_rounds.config()["alive_cap"] as Dictionary).get(settings.graphics, 24))
 	_rounds.round_started.connect(_on_round_started)
@@ -355,6 +361,9 @@ func _ready() -> void:
 		net.rounds.power_dropped.connect(_on_power_dropped)
 		net.rounds.power_gone.connect(_power_field.remove)
 		net.rounds.power_taken.connect(_apply_power)
+		net.rounds.land = _land
+		net.rounds.debris_opened.connect(_on_debris_opened)
+		net.rounds.debris_billed.connect(_on_debris_billed)
 		var downs: Dictionary = _rounds.config()["downs"]
 		net.downs.reach = float(downs["reach"])
 		net.downs.health_share = float(downs["health"])
@@ -952,6 +961,9 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	var blocked := _debris_here()
+	if blocked >= 0:
+		return "[%s] Clear the way to %s (%d points)" % [key, _land.far_side(blocked, _player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z), _land.price(blocked)]
 	if not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
 		return "[%s] Open the bank: what is in it is safe when you go down (%d of %d slots used)" % [key, _bank.used(), _bank.capacity()]
 	if _near(Lifeguard.POS, LIFEGUARD_RANGE):
@@ -1004,6 +1016,8 @@ func _interact() -> void:
 		net.trade.answer(true)
 	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		_take_pack()
+	elif _debris_here() >= 0:
+		_buy_debris(_debris_here())
 	elif not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
 		_open_bank()
 	elif _near(Lifeguard.POS, LIFEGUARD_RANGE):
@@ -1409,6 +1423,7 @@ func _on_party_over(reached: int) -> void:
 		if _rounds.active:
 			_rounds.stop()
 		_clear_powers()
+		_close_debris()
 
 
 # Other players lying down are shown lying down; those who are out are not shown at all until they are back.
@@ -1445,7 +1460,7 @@ func _hold_revive(delta: float) -> void:
 # --- the island's rounds (game/island_rounds.gd runs them; core/round_rules.gd decides) ---
 
 func _on_island(at: Vector3) -> bool:
-	return Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z).length() < ISLAND_REACH
+	return _land.within(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
 
 
 # The players standing on the island: us and, when hosting, the others. Nobody = the rounds wait.
@@ -1471,6 +1486,9 @@ func _end_run(reached: int, at: Vector3, drop: bool) -> void:
 	if _rounds.active:
 		_rounds.stop()
 	_clear_powers()
+	_close_debris()
+	if _island_side():
+		_player.teleport(_island_spawn, 0.0)  # nobody is left behind a way that just closed
 	save_profile()
 
 
@@ -1483,10 +1501,7 @@ func _drop_pack(at: Vector3) -> void:
 		_pack = null
 		_player_hud.notice("The backpack you left before is gone for good.")
 	if InventoryState.bundle_size(bundle) > 0:
-		var flat := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
-		if flat.length() > Island.RADIUS - 1.5:  # went down in the water: it washes up on the sand
-			flat = flat.normalized() * (Island.RADIUS - 1.5)
-		_place_pack(Island.CENTER + Vector3(flat.x, Island.height_at(flat.x, flat.y), flat.y), bundle)
+		_place_pack(Island.CENTER + _land.wash_up(at.x - Island.CENTER.x, at.z - Island.CENTER.z), bundle)  # went down in the water: it washes up on the sand
 	for entry in DataStore.load_json("res://data/player.json")["starting_items"]:
 		_player.inventory.add(String(entry[0]), int(entry[1]))
 	_player.refresh_held()
@@ -1549,14 +1564,72 @@ func _on_round_ended(number: int, kind: String) -> void:
 	save_profile()
 
 
+# --- the ways between the islands (core/archipelago.gd knows which debris is cleared; game/debris_pile.gd shows it) ---
+
+# The closed debris our player stands at, -1 = none.
+func _debris_here() -> int:
+	if _in_arena or _in_fantasy or not _on_island(_player.global_position):
+		return -1
+	return _land.debris_near(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z)
+
+
+# Pays for a debris and clears it for everybody. Online the host decides (it checks we stand there) and bills us.
+func _buy_debris(index: int) -> void:
+	if not _score.can_afford(_land.price(index)):
+		_player_hud.notice("Clearing this costs %d points (you have %d)." % [_land.price(index), _score.points])
+		return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_debris(index)
+		return
+	_score.spend(_land.price(index))
+	_open_debris(index, true)
+	if net != null:
+		net.rounds.tell_debris(index)
+
+
+func _open_debris(index: int, show_it: bool) -> void:
+	if _land.open(index):
+		(_debris[index] as Node).call("set_open", true, show_it)
+		if show_it and _island_side():
+			_sounds.call("play", "debris_clear")
+			_player_hud.notice("The way to %s and back is clear." % _land.islands[int(_land.bridges[index]["to"])]["name"])
+
+
+# As a client: the host cleared one (ours or somebody else's), or tells us what is open as we arrive.
+func _on_debris_opened(index: int, show_it: bool) -> void:
+	if index >= 0 and index < _debris.size():
+		_open_debris(index, show_it)
+
+
+# As a client: the host cleared the one we asked for; this is its price.
+func _on_debris_billed(index: int) -> void:
+	if index >= 0 and index < _debris.size():
+		_score.spend(_land.price(index))
+
+
+# Game over: every way is blocked again.
+func _close_debris() -> void:
+	_land.close_all()
+	for pile: Variant in _debris:
+		(pile as Node).call("set_open", false)
+
+
+# Nobody swims: a player wading deeper than data wade_depth is carried back to the island last stood on.
+func _mind_the_sea() -> void:
+	var at := _player.global_position - Island.CENTER
+	if _land.on_land(at.x, at.z):
+		_last_isle = _land.island_near(at.x, at.z)
+	elif _land.deck_at(at.x, at.z) < 0 and at.y < _land.sea_level - float(_land.cfg["wade_depth"]) and not _player.carried and _flight_t < 0.0:
+		_player.teleport(Island.CENTER + _land.wash_up(at.x, at.z, _last_isle) + Vector3(0, 0.1, 0), 0.0)
+		_player_hud.play_fade()
+		_player_hud.notice("The current carries you back to the shore.")
+
+
 # --- power-ups (core/powerup_rules.gd decides; game/powerup_field.gd shows the ones lying around) ---
 
 # A power-up appears where an enemy fell. Only the machine that runs the rounds does this; it tells the others.
 func _drop_power(kind: String, where: Vector3) -> void:
-	var flat := Vector2(where.x - Island.CENTER.x, where.z - Island.CENTER.z)
-	if flat.length() > Island.RADIUS - 1.5:  # it fell in the water: the power-up washes up on the sand
-		flat = flat.normalized() * (Island.RADIUS - 1.5)
-	var at := Island.CENTER + Vector3(flat.x, Island.height_at(flat.x, flat.y), flat.y)
+	var at := Island.CENTER + _land.wash_up(where.x - Island.CENTER.x, where.z - Island.CENTER.z)  # it fell in the water: the power-up washes up on the sand
 	_power_id += 1
 	_power_field.drop(_power_id, kind, at)
 	if _island_side():
@@ -1785,6 +1858,8 @@ func _process(delta: float) -> void:
 		_fantasy_saved_at = _time
 		save_profile()
 	_power_field.deciding = _rounds.active
+	if _island_side():
+		_mind_the_sea()
 	_score.mult = _powerups.points_mult(_time) if _island_side() else 1
 	_player_hud.power_now = _time
 	var regen: Dictionary = _rounds.config()["regen"]  # the classic way: left alone for a moment, you get your breath back

@@ -1,0 +1,31 @@
+{
+ "version": 1,
+ "_about": "The islands (core/archipelago.gd). Every position is [x, z] in metres from the middle of the spawn island (island 0); the flat ground of every island is height 0. islands: `radius` = where the sand meets the sea (the flat part ends 2 m before it), `grass` = radius of the grass patch, `palms` = palm trees, `scatter` = how many shore rocks and plants it gets (1 = as many as the old single island had; they are only drawn within scatter_range metres of the island's shore). bridges: `from` / `to` = island ids, `price` = points to clear the debris in its middle (it closes again at game over), `kind` = planks | sandbar. spots: things standing on an island, [x, z] from THAT island's middle; `yaw_to` = the island id it faces. spawn_ring: enemies come out of the sea this many metres beyond the shore of the island their prey is on. spawn_arc: metres of shore to either side of its prey within which an enemy comes up (on a big island they would otherwise walk half a minute). far_respawn: an enemy on ANOTHER island than its prey and farther than this from it goes back into the sea and comes out near the players. wade_depth: a player whose feet are this far under the sea surface is carried back to the last island stood on (nobody swims round the debris). Names are the director's to change.",
+ "sea_level": -0.4,
+ "beach_drop": 0.1414,
+ "sea_bed": 18.0,
+ "spawn_ring": [3.5, 6.0],
+ "spawn_arc": 30.0,
+ "far_respawn": 30.0,
+ "scatter_range": 45.0,
+ "wade_depth": 1.2,
+ "debris_reach": 4.0,
+ "islands": [
+  {"id": "home", "name": "Home Sand", "at": [0, 0], "radius": 40.0, "grass": 30.0, "palms": 14, "scatter": 1.6},
+  {"id": "painter", "name": "Painter's Key", "at": [61, -55], "radius": 26.0, "grass": 17.0, "palms": 6, "scatter": 0.7},
+  {"id": "shoal", "name": "Far Shoal", "at": [101, 0], "radius": 26.0, "grass": 16.0, "palms": 5, "scatter": 0.7},
+  {"id": "wreck", "name": "Wreck Cay", "at": [61, 55], "radius": 26.0, "grass": 15.0, "palms": 5, "scatter": 0.7}
+ ],
+ "bridges": [
+  {"from": "home", "to": "painter", "price": 750, "kind": "planks"},
+  {"from": "painter", "to": "shoal", "price": 2250, "kind": "sandbar"},
+  {"from": "shoal", "to": "wreck", "price": 6750, "kind": "planks"},
+  {"from": "wreck", "to": "home", "price": 20250, "kind": "sandbar"}
+ ],
+ "bridge_width": 3.2,
+ "spots": {
+  "spawn": {"island": "home", "at": [0, 4]},
+  "painting_fantasy": {"island": "home", "at": [-9, -6]},
+  "painting_arena": {"island": "painter", "toward": "home", "from_shore": 12.0}
+ }
+}

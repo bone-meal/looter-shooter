@@ -47,6 +47,11 @@ def main():
     save("powerup_drop", mix(note(784, 0.5, "sine", 0.5), at(note(988, 0.5, "sine", 0.5), 0.09), at(note(1175, 0.9, "sine", 0.6), 0.18), band(noise(1.1), 5000, 9000) * env(n(1.1), 0.05, 2.0) * 0.08), 0.5)
     save("powerup_grab", mix(note(392, 0.5, "saw", 0.5), note(494, 0.5, "saw", 0.4), at(note(587, 0.6, "saw", 0.5), 0.1), at(note(784, 1.2, "saw", 0.6), 0.2), at(note(1175, 1.0, "sine", 0.3), 0.2)), 0.6)
     save("powerup_nuke", mix(lowpass(noise(2.6), 900) * env(n(2.6), 0.004, 1.4), tone(glide(110, 28, 2.2), 2.2) * env(n(2.2), 0.002, 1.6) * 1.2, at(highpass(noise(0.5), 3000) * env(n(0.5), 0.001, 4) * 0.4, 0.0), at(lowpass(noise(1.8), 300) * env(n(1.8), 0.3, 1.2) * 0.7, 0.5)), 0.9)
+    # --- the islands: debris sinks away, a wall gun is bought, a board is nailed back or torn off ---
+    save("debris_clear", mix(lowpass(noise(1.8), 700) * env(n(1.8), 0.02, 1.3), at(crack(0.25, 120, 900, 1.2), 0.05), at(crack(0.3, 90, 700, 1.0), 0.35), at(crack(0.3, 70, 600, 0.9), 0.75), at(lowpass(noise(1.2), 2500) * env(n(1.2), 0.2, 1.5) * 0.35, 0.7)), 0.8)
+    save("wall_buy", mix(click(1800, 0.04), at(click(900, 0.05), 0.07), at(note(659, 0.25, "sine", 0.5), 0.12), at(note(988, 0.6, "sine", 0.5), 0.22)), 0.6)
+    save("board_fix", mix(crack(0.12, 220, 1500, 0.9, 4.0), at(crack(0.1, 260, 1800, 0.7, 4.0), 0.16)), 0.7)
+    save("board_tear", mix(band(noise(0.35), 300, 1800) * env(n(0.35), 0.05, 1.2) * (0.6 + 0.4 * np.sin(2 * np.pi * 31 * np.arange(n(0.35)) / RATE)), at(crack(0.18, 150, 1000, 1.0), 0.28)), 0.75)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

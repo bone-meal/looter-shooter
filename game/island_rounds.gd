@@ -2,7 +2,7 @@
 # sends the enemies core/round_rules.gd asks for out of the sea, keeps each one after the nearest player on the
 # island, and puts them away with the clock held still while nobody is there. It decides nothing about points, loot
 # or the HUD: the session listens to its signals.
-# Dependencies: core/round_rules.gd, core/data_store.gd, game/island.gd (where the shore is), game/wave_director.gd
+# Dependencies: core/round_rules.gd, core/data_store.gd, core/archipelago.gd (`land`: where the shores are), game/island.gd (the islands' place in the world), game/wave_director.gd
 # (`director`: builds the enemies, so bars, blasts and skills see them like any other). Data: data/island_rounds.json,
 # data/enemies.json (the bosses).
 extends Node
@@ -17,10 +17,12 @@ signal round_ended(number: int, kind: String)
 
 const RETARGET := 0.5  # seconds between two looks at who is nearest
 const NEAR_SHORE := 0.6  # a swimmer comes up within this many radians of its prey's bearing
+const FAR_LOOKS := 2  # looks in a row an enemy must be too far from everybody before it is put back into the sea
 
 var rules: RoundRules
 var director: Node3D
 var bodies := Callable()  # func() -> Array of the players' bodies standing on the island (ours and, on the host, the others')
+var land: RefCounted  # core/archipelago.gd: where the islands are and where an enemy can come out of the sea
 var one_blow := Callable()  # func() -> bool, handed to every enemy sent in (game/enemy.gd `one_blow`)
 var active := true  # false on a machine that only watches (a client): the host runs the rounds
 
@@ -107,9 +109,21 @@ func _physics_process(delta: float) -> void:
 	_retarget -= delta
 	if _retarget <= 0.0:
 		_retarget = RETARGET
-		for enemy: Variant in _alive:
-			if is_instance_valid(enemy):
-				(enemy as Node3D).call("set_target", _nearest(here, (enemy as Node3D).global_position))
+		for enemy: Variant in _alive.duplicate():
+			if not is_instance_valid(enemy):
+				continue
+			var prey := _nearest(here, (enemy as Node3D).global_position)
+			(enemy as Node3D).call("set_target", prey)
+			# left behind on another island: back into the sea, to come out again where the players are (never a boss:
+			# it would come back healed)
+			var from: Vector3 = (enemy as Node3D).global_position - Island.CENTER
+			var to := prey.global_position - Island.CENTER
+			var lost := int((enemy as Node).get_meta("far", 0)) + 1 if bool(land.left_behind(from.x, from.z, to.x, to.z)) else 0
+			(enemy as Node).set_meta("far", lost)
+			if lost >= FAR_LOOKS and not String((enemy as Node).get("enemy_id")).begins_with("boss"):
+				_alive.erase(enemy)
+				rules.put_back([String((enemy as Node).get("enemy_id"))])
+				director.call("despawn", enemy)
 
 
 # Nobody is on the island: the living go back into the sea and come out again when somebody returns.
@@ -127,15 +141,16 @@ func _send_in(id: String, here: Array) -> void:
 	var base: Dictionary = _cfg["enemies"][id] if (_cfg["enemies"] as Dictionary).has(id) else _bosses[id]
 	var stats := stats_of(id, rules.number)
 	var prey: Node3D = here[_rng.randi() % here.size()]
-	var angle := _rng.randf() * TAU
-	if String(base.get("comes", "")) == "nearest_shore":  # a swimmer: up out of the water right where its prey stands
-		var to_prey := prey.global_position - Island.CENTER
-		angle = atan2(to_prey.z, to_prey.x) + _rng.randf_range(-NEAR_SHORE, NEAR_SHORE)
-	var ring: Array = _cfg["spawn_ring"]
-	var radius := _rng.randf_range(float(ring[0]), float(ring[1]))
-	var x := cos(angle) * radius
-	var z := sin(angle) * radius
-	var enemy: Node3D = director.call("spawn_custom", id, stats, Island.CENTER + Vector3(x, Island.height_at(x, z) + 0.2, z))
+	var at := prey.global_position - Island.CENTER
+	var isle: int = land.island_near(at.x, at.z)
+	var to_prey: Vector2 = Vector2(at.x, at.z) - (land.islands[isle]["at"] as Vector2)
+	var bearing := atan2(to_prey.y, to_prey.x) if to_prey.length() > 2.0 else NAN  # out of the sea on the prey's side of the island
+	var swims := String(base.get("comes", "")) == "nearest_shore"  # a swimmer: up out of the water right where its prey stands
+	var spot: Vector3 = land.sea_spot(isle, _rng, bearing, NEAR_SHORE if swims else float(land.arc_of(isle)))
+	if not spot.is_finite():
+		rules.put_back([id])  # no room in the sea just now: it comes a moment later
+		return
+	var enemy: Node3D = director.call("spawn_custom", id, stats, Island.CENTER + spot + Vector3(0, 0.2, 0))
 	enemy.set_meta("island", true)
 	enemy.set_meta("tier", rules.number)
 	enemy.set("one_blow", one_blow)
