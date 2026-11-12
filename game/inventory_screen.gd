@@ -1,4 +1,4 @@
-# Purpose: the inventory screen: the 36 backpack slots, the holsters under them (the guns carried ready; only guns go in, and one put there by hand has to be reloaded), the knife's box (it cannot be moved) and an 18-slot equipment panel; click to pick up / place / swap / wear, right click for half or one, hover tooltip with stats and flavor text. A rolled gun is dropped into the world by the drop key while the mouse is over it, or by carrying it out of the window and clicking (signal `dropped`); holding Shift over a gun shows the gun in hand beside it.
+# Purpose: the inventory screen: the 36 backpack slots, the holsters under them (the guns carried ready; only guns go in, and one put there by hand has to be reloaded), the knife's box (it cannot be moved) and an 18-slot equipment panel; opened at the bank its slots show beside the bag (core/bank_state.gd; click = what is there and what the mouse holds change places); click to pick up / place / swap / wear, right click for half or one, hover tooltip with stats and flavor text. A rolled gun is dropped into the world by the drop key while the mouse is over it, or by carrying it out of the window and clicking (signal `dropped`); holding Shift over a gun shows the gun in hand beside it.
 # Dependencies: core/inventory_state.gd, core/item_db.gd, game/item_icons.gd. Emits `changed` after every click so the player re-reads the held item.
 extends Control
 
@@ -14,6 +14,7 @@ const HoverCard = preload("res://game/hover_card.gd")
 
 signal changed
 signal dropped(gun: Dictionary)  # a rolled gun left the inventory: the session lays it on the ground
+signal bank_upgrade  # the bank's "more slots" button was clicked: the session takes the price and upgrades it
 
 const SLOT := 48.0
 const GAP := 4.0
@@ -23,6 +24,10 @@ const EQUIP_BASE := 100  # slot indices >= this are equipment slots (index - EQU
 const HOLSTER_BASE := 200  # slot indices >= this are holsters
 const KNIFE_SLOT := 300  # the knife's box
 const HOLSTER_W := 2.0 * SLOT + GAP  # a holster is two slots wide
+const BANK_BASE := 400  # slot indices >= this are the bank's
+const BANK_BUTTON := 900  # the bank's "more slots" button
+const BANK_COLUMNS := 10
+const BANK_WIDTH := BANK_COLUMNS * (SLOT + GAP) - GAP + 32.0
 const EQUIP_COLUMNS := 3
 const SLOT_LABELS := {"hat": "Hat", "head": "Head", "earrings": "Ears", "necklace": "Neck", "glasses": "Eyes", "mouth": "Mouth", "shirt": "Shirt", "chestplate": "Chest", "gauntlets": "Hands", "ring_1": "Ring", "ring_2": "Ring", "bracelet": "Wrist", "pants": "Pants", "leg_armor": "Legs", "cape": "Cape", "waist": "Belt", "boots": "Boots", "foot_armor": "Feet"}
 
@@ -34,6 +39,8 @@ var knife := "combat"  # the knife type carried, set by the session
 var knife_name := ""
 var knife_key := ""  # the labels of the keys that take a gun or the knife in hand, set by the session
 var gun_keys: Array[String] = []
+var bank: RefCounted  # core/bank_state.gd while the window is open AT the bank (its slots show on the right), else null
+var bank_price := ""  # what the next bank upgrade costs, worded by the session ("" = no upgrade left)
 
 var _mouse := Vector2.ZERO
 var _font: Font = ThemeDB.fallback_font
@@ -53,6 +60,7 @@ func open() -> void:
 # Returns the stack on the mouse to the inventory, then hides.
 func close() -> void:
 	inventory.return_cursor()
+	bank = null
 	visible = false
 	changed.emit()
 
@@ -77,8 +85,20 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed:
 		var slot := _slot_at(event.position)
 		if slot < 0:
-			if event.button_index == MOUSE_BUTTON_LEFT and not _panel(get_viewport_rect().size).has_point(event.position):
+			if event.button_index == MOUSE_BUTTON_LEFT and not _panel(get_viewport_rect().size).has_point(event.position) and not (bank != null and _bank_panel().has_point(event.position)):
 				_drop(-1)  # carried out of the window and let go
+			return
+		if slot == BANK_BUTTON:
+			if event.button_index == MOUSE_BUTTON_LEFT:
+				bank_upgrade.emit()
+				queue_redraw()
+			return
+		if slot >= BANK_BASE:
+			if event.button_index != MOUSE_BUTTON_LEFT:
+				return
+			bank.call("click", slot - BANK_BASE, inventory)
+			changed.emit()
+			queue_redraw()
 			return
 		if slot >= KNIFE_SLOT:
 			return
@@ -145,6 +165,8 @@ func _draw() -> void:
 		_draw_slot(i, hover == i)
 	_draw_holsters(hover)
 	_draw_equipment(hover)
+	if bank != null:
+		_draw_bank(hover)
 	var hovered_id := _id_at(hover)
 	if hover == KNIFE_SLOT and inventory.cursor.is_empty():
 		HoverCard.draw_note(self, _font, knife_name, "Your knife. Always with you: it cannot be dropped, traded or lost.", _mouse + Vector2(18, 18), view)
@@ -199,8 +221,55 @@ func _draw_holsters(hover: int) -> void:
 	ItemIcons.draw(self, "knife", k.grow(-6), Color.WHITE)
 
 
-# The rolled gun in a backpack slot or a holster ({} for anything else).
+# The bank's slots to the right of the bag (only when the window was opened at the bank), and its upgrade button.
+func _draw_bank(hover: int) -> void:
+	var panel := _bank_panel()
+	draw_rect(panel, Color(0.1, 0.13, 0.17, 0.95))
+	draw_rect(panel, Color(1, 1, 1, 0.3), false, 2.0)
+	var capacity: int = bank.call("capacity")
+	draw_string(_font, panel.position + Vector2(16, 28), "BANK", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1, 1, 1, 0.95))
+	draw_string(_font, panel.position + Vector2(96, 27), "safe when you go down      %d of %d slots used" % [int(bank.call("used")), capacity], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(1, 1, 1, 0.6))
+	for i in capacity:
+		var r := _bank_rect(i)
+		draw_rect(r, Color(0.05, 0.05, 0.06, 0.9))
+		draw_rect(r, Color(1, 1, 0.6, 0.9) if hover == BANK_BASE + i else Color(1, 1, 1, 0.25), false, 2.0 if hover == BANK_BASE + i else 1.0)
+		var stack: Dictionary = bank.call("stack", i)
+		if stack.is_empty():
+			continue
+		var gun: Dictionary = stack.get("gun", {})
+		if gun.is_empty():
+			ItemIcons.draw(self, String(stack["id"]), r.grow(-5), Color.WHITE)
+		else:
+			var tint := TierStyle.color(gun_db, String(gun["tier"]), _now())
+			draw_rect(r, tint, false, 2.0)
+			ItemIcons.draw(self, String(gun["body"]), r.grow(-5), tint)
+		_draw_count(r, int(stack["count"]))
+	if bank_price != "":
+		var b := _bank_button()
+		draw_rect(b, Color(0.16, 0.3, 0.2, 0.95) if hover == BANK_BUTTON else Color(0.1, 0.18, 0.13, 0.95))
+		draw_rect(b, Color(0.5, 1.0, 0.6, 0.8), false, 1.5)
+		draw_string(_font, b.position + Vector2(0, 20), bank_price, HORIZONTAL_ALIGNMENT_CENTER, b.size.x, 14, Color(1, 1, 1, 0.95))
+
+
+func _bank_panel() -> Rect2:
+	var bag := _panel(get_viewport_rect().size)
+	return Rect2(bag.end.x + 12.0, bag.position.y, BANK_WIDTH, bag.size.y)
+
+
+func _bank_rect(i: int) -> Rect2:
+	var o := _bank_panel().position + Vector2(16, 44)
+	return Rect2(o + Vector2((i % BANK_COLUMNS) * (SLOT + GAP), floori(i / float(BANK_COLUMNS)) * (SLOT + GAP)), Vector2(SLOT, SLOT))
+
+
+func _bank_button() -> Rect2:
+	var panel := _bank_panel()
+	return Rect2(panel.position.x + 16.0, panel.end.y - 40.0, panel.size.x - 32.0, 28.0)
+
+
+# The rolled gun in a backpack slot, a holster or a bank slot ({} for anything else).
 func _gun_at(slot: int) -> Dictionary:
+	if slot >= BANK_BASE and slot < BANK_BUTTON:
+		return (bank.call("stack", slot - BANK_BASE) as Dictionary).get("gun", {})
 	if slot >= HOLSTER_BASE and slot < KNIFE_SLOT:
 		return inventory.holster_gun(slot - HOLSTER_BASE)
 	return inventory.gun_at(slot) if slot >= 0 and slot < inventory.SIZE else {}
@@ -248,6 +317,10 @@ func _draw_equipment(hover: int) -> void:
 func _id_at(slot: int) -> String:
 	if slot < 0:
 		return ""
+	if slot >= BANK_BUTTON:
+		return ""
+	if slot >= BANK_BASE:
+		return String((bank.call("stack", slot - BANK_BASE) as Dictionary).get("id", ""))
 	if slot >= KNIFE_SLOT:
 		return ""
 	if slot >= HOLSTER_BASE:
@@ -273,7 +346,8 @@ func _draw_tooltip(id: String, view: Vector2) -> void:
 
 
 func _origin(view: Vector2) -> Vector2:
-	return Vector2((view.x - (COLUMNS * (SLOT + GAP) - GAP)) * 0.5, view.y * 0.5 - 130.0)
+	var shift := (BANK_WIDTH + 12.0) * 0.5 if bank != null else 0.0  # with the bank open the pair of panels is centred
+	return Vector2((view.x - (COLUMNS * (SLOT + GAP) - GAP)) * 0.5 - shift + (EQUIP_COLUMNS * (SLOT + GAP) + 44.0) * (0.5 if bank != null else 0.0), view.y * 0.5 - 130.0)
 
 
 func _slot_rect(i: int) -> Rect2:
@@ -303,4 +377,10 @@ func _slot_at(pos: Vector2) -> int:
 			return HOLSTER_BASE + i
 	if _holster_rect(inventory.holster_count).has_point(pos):
 		return KNIFE_SLOT
+	if bank != null:
+		for i in int(bank.call("capacity")):
+			if _bank_rect(i).has_point(pos):
+				return BANK_BASE + i
+		if bank_price != "" and _bank_button().has_point(pos):
+			return BANK_BUTTON
 	return -1

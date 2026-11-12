@@ -1,16 +1,16 @@
-Round 6 step 5: the island fights back in endless rounds
+Round 6 step 6: going down, the backpack left behind, the bank
 
-Ten seconds after you stand on the spawn island round 1 begins: enemies
-wade out of the sea, more and tougher every round (health, speed and
-damage, data/island_rounds.json), a boss every fifth round, a round of
-fast sea crawlers from round 7 with max ammo at its end, runners from
-round 10, swimmers that surface at your own beach, and crawlers left by
-blasts. The HUD shows the round in chalk and the enemies left; going down
-alone restarts at round 1; left alone for five seconds you heal. Island
-enemies drop no guns. Enemies now walk around what blocks them.
-Online the host runs the island's enemies and pays every hit and kill
-(game/net_rounds.gd; written, not yet run between two machines).
-tools/round_check.tscn checks the rules; /round n jumps to a round.
+Alone, running out of health on the islands ends the run: a game-over
+screen shows the round reached and the character's best round, and
+everything carried stays in a backpack where you lay (worn equipment and
+the knife stay on you, a pistol goes into your hand). Take it back with
+the interact key; go down again first and the old backpack is lost.
+A letter box on the spawn island is the bank: 10 slots that are safe when
+you go down, 20 and 30 for points, up to 60 for casino coins.
+Online a player goes down for 30 seconds and a teammate standing by can
+help them up; nobody came = out until the next round; nobody left
+standing = game over for the party (game/net_downs.gd; written, not yet
+run between two machines). Deaths in the colosseum still cost nothing.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

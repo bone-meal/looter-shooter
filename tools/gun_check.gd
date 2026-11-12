@@ -17,6 +17,7 @@ const JoinCheck = preload("res://core/join_check.gd")
 const KnifeDb = preload("res://core/knife_db.gd")
 const MeleeState = preload("res://core/melee_state.gd")
 const DataStore = preload("res://core/data_store.gd")
+const BankState = preload("res://core/bank_state.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -126,6 +127,61 @@ func _ready() -> void:
 	cheat.erase("holsters")
 	_say("... and a profile without holsters (another game version)", JoinCheck.check({"name": "Tester", "inv": cheat}, items) != "")
 
+	# --- everything carried, taken and given back (the backpack left where you go down) ---
+	var carried_guns := 0
+	for i in InventoryState.HOLSTERS:
+		carried_guns += 1 if loaded_bag.holster_body(i) != "" else 0
+	loaded_bag.loaded[0] = 7
+	var bundle: Dictionary = loaded_bag.take_all()
+	var gone := loaded_bag.holster_body(0) == "" and loaded_bag.holster_body(1) == "" and loaded_bag.count_of("worm") == 0 and loaded_bag.gun_at(0).is_empty()
+	_say("going down: %d things leave in one bundle, nothing is left in hand or bag, the pistol's 7 rounds go back to the pool" % InventoryState.bundle_size(bundle), gone and InventoryState.bundle_size(bundle) == 4 and int(loaded_bag.take_returned().get("pistol_basic", 0)) == 7)
+	loaded_bag.add("pistol_basic", 1)  # the pistol you get back
+	var rest: Dictionary = loaded_bag.put_all(JSON.parse_string(JSON.stringify(bundle)))
+	_say("back at the backpack: everything returns (the fresh pistol keeps holster 1, the first gun of the bundle takes holster 2, the rest goes to the bag)", InventoryState.bundle_size(rest) == 0 and loaded_bag.holster_body(0) == "pistol_basic" and loaded_bag.holster_body(1) == "pistol_basic" and String(loaded_bag.gun_at(0).get("body", "")) == "m60" and String(loaded_bag.gun_at(1).get("body", "")) == "ak47" and loaded_bag.count_of("worm") == 3)
+	var full := InventoryState.new(items)
+	full.set_gun_db(gun_db)
+	full.add("pistol_basic", 1)
+	full.add("ak47", 1)
+	for i in InventoryState.SIZE:
+		full.add_gun(GunGen.generate(gun_db, rng, 0.0, "m16", "green"))
+	var no_room: Dictionary = full.put_all({"things": [["gun", 1, ak], ["worm", 2]]})
+	_say("a full bag takes nothing: both things stay in the backpack", InventoryState.bundle_size(no_room) == 2)
+	_say("nonsense instead of a bundle does nothing", InventoryState.bundle_size(full.put_all("junk")) == 0 and InventoryState.bundle_size(full.put_all({"things": [["laser", 1], 5]})) == 0)
+
+	# --- the bank ---
+	var bank_cfg: Dictionary = DataStore.load_json("res://data/bank.json")
+	var bank := BankState.new(bank_cfg)
+	var costs := PackedStringArray()
+	var probe := BankState.new(bank_cfg)
+	while not probe.next_upgrade().is_empty():
+		var cost: Dictionary = probe.next_upgrade()
+		costs.append("%d %s" % [int(cost.values()[0]), String(cost.keys()[0])])
+		probe.upgrade()
+	_say("the bank starts with %d slots and grows to %d: %s" % [bank.capacity(), probe.capacity(), ", ".join(costs)], bank.capacity() == 10 and probe.capacity() == 60 and probe.capacity() == bank.most_slots() and costs.size() == 5 and costs[0] == "25000 points" and costs[2] == "5000 coins")
+	var owner_bag := InventoryState.new(items)
+	owner_bag.set_gun_db(gun_db)
+	owner_bag.add("pistol_basic", 1)
+	owner_bag.add("ak47", 1)
+	owner_bag.add_gun(m60)
+	owner_bag.add("worm", 5)
+	owner_bag.click_slot(0)  # the M60 on the mouse
+	bank.click(3, owner_bag)
+	owner_bag.click_slot(1)  # the worms
+	bank.click(0, owner_bag)
+	_say("a gun and a stack of worms put into the bank leave the bag", bank.used() == 2 and owner_bag.cursor.is_empty() and owner_bag.gun_at(0).is_empty() and owner_bag.count_of("worm") == 0 and String(bank.stack(3)["gun"]["body"]) == "m60")
+	owner_bag.take_all()
+	_say("going down takes nothing out of the bank", bank.used() == 2)
+	bank.click(9 + 1, owner_bag)
+	_say("a slot the bank does not have yet cannot be used", bank.used() == 2)
+	bank.upgrade()
+	var kept := BankState.new(bank_cfg)
+	kept.from_dict(JSON.parse_string(JSON.stringify(bank.to_dict(owner_bag))), owner_bag)
+	_say("saved and loaded: %d slots, the M60 and 5 worms still there" % kept.capacity(), kept.capacity() == 20 and kept.used() == 2 and int(kept.stack(0)["count"]) == 5 and String(kept.stack(3)["gun"]["body"]) == "m60")
+	kept.from_dict({"level": 99, "slots": [["laser", 3], "x", ["worm", 2]]}, owner_bag)
+	_say("a save with nonsense in it: no more upgrades than exist, unknown things left out", kept.capacity() == 60 and kept.used() == 1 and String(kept.stack(2)["id"]) == "worm")
+	kept.click(2, owner_bag)
+	_say("taking it out puts it on the mouse", String(owner_bag.cursor.get("id", "")) == "worm" and kept.used() == 0)
+
 	# --- parts shift the carrying speed ---
 	var parts: Dictionary = DataStore.load_json("res://data/gun_parts.json")["parts"]
 	var slowest := 0.0
@@ -141,8 +197,8 @@ func _ready() -> void:
 		fastest += high
 	_say("parts change speed slightly: the heaviest build %.1f %%, the lightest +%.1f %%" % [slowest * 100.0, fastest * 100.0], slowest < 0.0 and slowest >= -0.15 and fastest > 0.0 and fastest <= 0.08)
 	var heavy := GunGen.generate(gun_db, rng, 0.0, "ak47", "blue")
-	(heavy["parts"] as Dictionary)["barrel"] = {"kind": "heavy", "maker": (heavy["parts"]["barrel"] as Dictionary).get("maker", heavy["maker"])}
-	(heavy["parts"] as Dictionary)["mag"] = {"kind": "drum", "maker": (heavy["parts"]["mag"] as Dictionary).get("maker", heavy["maker"])}
+	(heavy["parts"] as Dictionary)["barrel"] = {"kind": "heavy", "maker": heavy["maker"]}  # (a rolled gun need not have every part)
+	(heavy["parts"] as Dictionary)["mag"] = {"kind": "drum", "maker": heavy["maker"]}
 	var heavy_speed := float(GunStats.final_stats(gun_db, heavy)["move_speed"])
 	var plain_speed := float(weapons["ak47"]["move_speed"])
 	_say("an AK with a heavy barrel and a drum: %.0f u/s instead of %.0f" % [heavy_speed, plain_speed], heavy_speed < plain_speed and heavy_speed >= plain_speed * 0.85)

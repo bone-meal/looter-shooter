@@ -286,6 +286,46 @@ func click_equipment(slot: String) -> void:
 		cursor = old
 
 
+# Everything carried, taken off the player in one bundle: the ready guns and the whole backpack (what is worn stays).
+# Rounds in the ready guns are handed back like any gun leaving its holster. The bundle is plain saved data.
+func take_all() -> Dictionary:
+	return_cursor()
+	var things: Array = []
+	for i in HOLSTERS:
+		if not holsters[i].is_empty():
+			_unload(i)
+			things.append(_saved_stack(holsters[i]))
+			holsters[i] = {}
+	for i in SIZE:
+		if not _slots[i].is_empty():
+			things.append(_saved_stack(_slots[i]))
+			_slots[i] = {}
+	return {"things": things}
+
+
+# Puts a bundle's things back (guns into free holsters first). Returns the bundle of what found no room.
+func put_all(bundle: Variant) -> Dictionary:
+	var rest: Array = []
+	if bundle is Dictionary and bundle.get("things") is Array:
+		for entry: Variant in bundle["things"]:
+			var stack := _loaded_stack(entry)
+			if stack.is_empty():
+				continue
+			if stack.has("gun"):
+				if not add_gun(stack["gun"]):
+					rest.append(_saved_stack(stack))
+			else:
+				var left := add(String(stack["id"]), int(stack["count"]))
+				if left > 0:
+					rest.append([stack["id"], left])
+	return {"things": rest}
+
+
+# How many stacks a bundle holds (0 for anything that is not one).
+static func bundle_size(bundle: Variant) -> int:
+	return (bundle["things"] as Array).size() if bundle is Dictionary and bundle.get("things") is Array else 0
+
+
 # Puts the cursor stack back into the inventory (call when the screen closes). A gun goes to the backpack, or
 # unloaded into a free holster when the backpack is full: it never comes back loaded for free.
 func return_cursor() -> void:
@@ -321,6 +361,16 @@ func to_dict() -> Dictionary:
 	for i in HOLSTERS:
 		ready.append(_saved_stack(holsters[i]))
 	return {"version": VERSION, "slots": out, "equipment": worn, "holsters": ready, "loaded": loaded.duplicate()}
+
+
+# One stack as it is written into a save, and back ({} for anything that is no known item or valid gun): for other
+# places that keep stacks (the bank).
+func stack_to_saved(s: Dictionary) -> Array:
+	return _saved_stack(s)
+
+
+func stack_from_saved(entry: Variant) -> Dictionary:
+	return _loaded_stack(entry)
 
 
 func _saved_stack(s: Dictionary) -> Array:

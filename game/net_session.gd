@@ -20,6 +20,7 @@ const NetTrade = preload("res://game/net_trade.gd")
 const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
 const NetRounds = preload("res://game/net_rounds.gd")
+const NetDowns = preload("res://game/net_downs.gd")
 
 signal hosted(id: String)
 signal joined
@@ -57,6 +58,7 @@ var trade: Node  # trading between players (game/net_trade.gd)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
 var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
+var downs: Node  # who is down or out on the islands, revives, the party's game over (game/net_downs.gd)
 
 
 func _ready() -> void:
@@ -100,6 +102,10 @@ func _ready() -> void:
 	rounds.name = "Rounds"
 	rounds.net = self
 	add_child(rounds)
+	downs = NetDowns.new()
+	downs.name = "Downs"
+	downs.net = self
+	add_child(downs)
 
 
 func is_active() -> bool:

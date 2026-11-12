@@ -50,6 +50,10 @@ const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
+const DroppedPack = preload("res://game/dropped_pack.gd")
+const GameOverScreen = preload("res://game/game_over_screen.gd")
+const BankState = preload("res://core/bank_state.gd")
+const BankBox = preload("res://game/bank_box.gd")
 const ISLAND_REACH := 60.0  # metres from the island's middle that still count as being on it
 const Scoreboard = preload("res://game/scoreboard.gd")
 
@@ -112,6 +116,18 @@ var _knife_rolled := false  # this character has its knife type
 var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
 var _first_look := false  # a new character is still in its first customize menu: the rounds wait
 var _hurt_at := 0.0  # when the local player was last hurt (the island heals whoever is left alone for a while)
+var _pack: DroppedPack  # our backpack lying where we went down on the islands (null = none); saved with the character
+var _game_over := GameOverScreen.new()
+var _best_round := 0  # the furthest this character ever got on the islands (saved)
+var _bank_cfg: Dictionary = DataStore.load_json("res://data/bank.json")
+var _bank := BankState.new(_bank_cfg)  # slots on the spawn island that are safe when we go down (saved)
+var _bank_pos := Vector3.ZERO
+var _run_kills := 0  # the score card's kills when this run began ...
+var _run_earned := 0  # ... and the points earned since
+var _down_until := 0.0  # online, lying down: when we bleed out
+var _out := false  # online: bled out, waiting at the spawn for the next round
+var _revive_target := 0  # online: the downed player we stand next to (0 = nobody)
+var _revive_hold := 0.0  # ... and for how long we have held the key
 var _jackpot := 500.0  # this player's progressive slot pot (saved in the profile)
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
@@ -197,6 +213,11 @@ func _ready() -> void:
 	lifeguard.position = Lifeguard.POS
 	add_child(lifeguard)
 	lifeguard.look_at(Lifeguard.POS + (Lifeguard.POS - Island.CENTER), Vector3.UP)
+	var bank_box := BankBox.new()
+	_bank_pos = Island.CENTER + Vector3(float(_bank_cfg["place"][0]), 0.0, float(_bank_cfg["place"][1]))
+	bank_box.position = _bank_pos
+	add_child(bank_box)
+	bank_box.look_at(Vector3(Island.CENTER.x, 0.0, Island.CENTER.z) + (bank_box.position - Island.CENTER) * 2.0, Vector3.UP)  # its slot faces the middle of the island
 	for index in range(first_gun_side, get_child_count()):
 		_gun_side.append(get_child(index))
 	_ride_crow = CrowModel.build()
@@ -243,6 +264,7 @@ func _ready() -> void:
 	_inventory_screen.gun_db = _player.gun_db
 	_inventory_screen.changed.connect(_on_inventory_changed)
 	_inventory_screen.dropped.connect(_on_gun_dropped)
+	_inventory_screen.bank_upgrade.connect(_on_bank_upgrade)
 	add_child(_inventory_screen_layer())
 	_customizer.applied.connect(_on_look_applied)
 	_customizer.cancelled.connect(_close_customizer)
@@ -283,6 +305,7 @@ func _ready() -> void:
 	_rounds.round_ended.connect(_on_round_ended)
 	add_child(_rounds)
 	_player.damaged.connect(func() -> void: _hurt_at = _time)
+	_score.earned.connect(func(amount: int) -> void: _run_earned += amount)
 	_explosives.cripple = _rounds.config()["cripple"]
 	_explosives.source = _director
 	_skill_fx.source = _director
@@ -314,6 +337,17 @@ func _ready() -> void:
 		net.rounds.on_gun_side = func() -> bool: return not _in_fantasy
 		net.rounds.round_started.connect(_on_round_started)  # as a client: the host's rounds
 		net.rounds.round_ended.connect(_on_round_ended)
+		var downs: Dictionary = _rounds.config()["downs"]
+		net.downs.reach = float(downs["reach"])
+		net.downs.health_share = float(downs["health"])
+		net.downs.on_island = _on_island
+		net.downs.round_now = func() -> int: return _rounds.rules.number
+		net.downs.revived.connect(_on_revived)
+		net.downs.gave_revive.connect(_on_gave_revive)
+		net.downs.party_over.connect(_on_party_over)
+		net.downs.states_changed.connect(_show_downs)
+		_player.down_check = _goes_down
+		_player.went_down.connect(_on_went_down)
 		if net.is_active():
 			_build_fantasy()
 	apply_settings()
@@ -478,6 +512,38 @@ func _toggle_inventory() -> void:
 			_inventory_screen.gun_keys.append(InputSetup.label(settings, "weapon_%d" % (n + 1)))
 		_inventory_screen.open()
 		_player.controls_enabled = false
+
+
+# The bank: the inventory window with the bank's slots beside the bag (core/bank_state.gd).
+func _open_bank() -> void:
+	if _inventory_screen.visible:
+		return
+	_inventory_screen.bank = _bank
+	_inventory_screen.bank_price = _bank_price()
+	_toggle_inventory()
+
+
+func _bank_price() -> String:
+	var cost: Dictionary = _bank.next_upgrade()
+	if cost.is_empty():
+		return ""
+	var slots := int(_bank_cfg["per_upgrade"])
+	return "%d more slots: %d points (you have %d)" % [slots, int(cost["points"]), _score.points] if cost.has("points") else "%d more slots: %d casino coins (you have %d)" % [slots, int(cost["coins"]), _wallet.balance]
+
+
+# The bank's upgrade button: the first upgrades cost points, the later ones casino coins.
+func _on_bank_upgrade() -> void:
+	var cost: Dictionary = _bank.next_upgrade()
+	if cost.is_empty():
+		return
+	var paid: bool = _score.spend(int(cost["points"])) if cost.has("points") else _wallet.spend(int(cost["coins"]))
+	if not paid:
+		_player_hud.notice("Not enough %s for more bank slots." % ("points" if cost.has("points") else "casino coins"))
+		return
+	_bank.upgrade()
+	_inventory_screen.bank_price = _bank_price()
+	_player_hud.notice("The bank now has %d slots." % _bank.capacity())
+	save_profile()
 
 
 # A gun thrown out of the inventory lies on the ground a step ahead until somebody picks it up or the area is left.
@@ -771,6 +837,11 @@ func _load_profile() -> void:
 		_progress.from_dict(extra.get("progress", {}))
 		_score.from_dict(extra.get("score"))
 		_player.pools.from_dict(extra.get("ammo"))
+		_best_round = maxi(int(extra.get("best_round", 0)), 0)
+		_bank.from_dict(extra.get("bank"), _player.inventory)
+		var lying: Variant = extra.get("pack")
+		if lying is Dictionary and lying.get("at") is Array and (lying["at"] as Array).size() == 3 and InventoryState.bundle_size(lying) > 0:
+			_place_pack(Vector3(float(lying["at"][0]), float(lying["at"][1]), float(lying["at"][2])), {"things": lying["things"]})
 		if KnifeModels.db().has(String(extra.get("knife", ""))):
 			_player.set_knife(String(extra["knife"]))
 			_knife_rolled = true
@@ -811,7 +882,9 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory)}
+		if _pack != null:
+			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
 			extra["fantasy"] = _fantasy.to_dict()
 		elif _fantasy_saved != null:
@@ -851,8 +924,16 @@ func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
 	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _games.is_open() or _flight_t >= 0.0:
 		return ""
+	if _player.downed:
+		return "You are out until the next round." if _out else "DOWN: a teammate can help you up (%d s)" % ceili(maxf(_down_until - _time, 0.0))
+	if _revive_target != 0:
+		return "[hold %s] Help %s up%s" % [key, net.roster.get(_revive_target, "your teammate"), "" if _revive_hold <= 0.0 else "  %d %%" % roundi(_revive_hold / float(_rounds.config()["downs"]["hold"]) * 100.0)]
 	if _time < _trade_ask_until:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
+	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
+		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	if not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
+		return "[%s] Open the bank: what is in it is safe when you go down (%d of %d slots used)" % [key, _bank.used(), _bank.capacity()]
 	if _near(Lifeguard.POS, LIFEGUARD_RANGE):
 		return "[%s] Talk to the lifeguard: change your look" % key
 	var drop := _field.nearest(_player.global_position)
@@ -896,9 +977,15 @@ func _prompt() -> String:
 
 
 func _interact() -> void:
+	if _player.downed or _revive_target != 0:
+		return  # lying down, or busy helping somebody up (the key is held for that)
 	if _time < _trade_ask_until:
 		_trade_ask_until = 0.0
 		net.trade.answer(true)
+	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
+		_take_pack()
+	elif not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
+		_open_bank()
 	elif _near(Lifeguard.POS, LIFEGUARD_RANGE):
 		_open_customizer()
 	elif not _field.nearest(_player.global_position).is_empty():
@@ -1214,11 +1301,97 @@ func _on_player_died() -> void:
 		_fantasy.enter(_player.global_position)
 		_player_hud.play_fade()
 	else:
-		if net == null or not net.can_send():  # alone, going down ends the run: the island starts over at round 1
-			if _rounds.rules.number > 0:
-				_player_hud.notice("You made it to round %d" % _rounds.rules.number)
-			_rounds.stop()
+		if (net == null or not net.can_send()) and _rounds.rules.number > 0:  # alone, going down ends the run
+			_score.downs += 1
+			_end_run(_rounds.rules.number, _player.died_at, true)
+		elif _out:  # online, nobody came: everything carried stays where we lay, and we wait for the next round
+			_drop_pack(_player.died_at)
+			save_profile()
 		_player.teleport(_island_spawn, 0.0)
+		_player.downed = _out  # out = lying at the spawn, untouchable, until the next round starts
+
+
+# --- online: down, helped up, out (game/net_downs.gd keeps the party's states on the host) ---
+
+# Asked by the player the moment its health runs out: true = lie down and wait for a teammate instead of dying.
+func _goes_down() -> bool:
+	return net != null and net.can_send() and not _in_arena and not _in_fantasy and _on_island(_player.global_position) and _island_round() > 0
+
+
+func _island_round() -> int:
+	return net.rounds.round_number if net != null and net.rounds.is_client() else _rounds.rules.number
+
+
+func _on_went_down() -> void:
+	_score.downs += 1
+	_down_until = _time + float(_rounds.config()["downs"]["seconds"])
+	net.downs.report("down")
+
+
+# Nobody helped in time.
+func _bleed_out() -> void:
+	_out = true
+	net.downs.report("out")
+	_player.finish_off()  # -> _on_player_died: the backpack is left, we wait at the spawn
+	_player_hud.notice("Nobody came. You are out until the next round.")
+
+
+func _on_revived(share: float) -> void:
+	if _player.downed and not _out:
+		_player.revive(share)
+		_hurt_at = _time
+		_player_hud.notice("You are back on your feet.")
+
+
+func _on_gave_revive() -> void:
+	_score.revives += 1
+	_player_hud.notice("You helped a teammate up.")
+
+
+# The host ended the run for the whole party: nobody on the islands was left standing.
+func _on_party_over(reached: int) -> void:
+	var was_there := _player.downed or _out or (not _in_arena and not _in_fantasy and _on_island(_player.global_position))
+	var lying := _player.downed and not _out
+	var at := _player.global_position
+	if _player.downed:
+		_player.revive(1.0)
+	_out = false
+	if lying:
+		_player.teleport(_island_spawn, 0.0)
+	if was_there:
+		_end_run(reached, at, lying)
+	else:
+		_player_hud.notice("The party's run on the islands ended in round %d." % reached)
+		if _rounds.active:
+			_rounds.stop()
+
+
+# Other players lying down are shown lying down.
+func _show_downs() -> void:
+	for id: int in net.roster:
+		var body: Node3D = net.player_node(id)
+		if id != net.my_id() and body != null and body.has_method("set_down"):
+			body.call("set_down", net.downs.state_of(id) != "up")
+
+
+# Standing by a downed teammate and holding the interact key helps them up (the host has the last word).
+func _hold_revive(delta: float) -> void:
+	_revive_target = 0
+	if _player.downed:
+		_revive_hold = 0.0
+		return
+	for id: int in net.downs.states:
+		var body: Node3D = net.player_node(id)
+		if id != net.my_id() and net.downs.state_of(id) == "down" and body != null and _near(body.global_position, net.downs.reach):
+			_revive_target = id
+			break
+	if _revive_target == 0 or not Input.is_action_pressed("interact"):
+		_revive_hold = 0.0
+		return
+	_revive_hold += delta
+	if _revive_hold >= float(_rounds.config()["downs"]["hold"]):
+		_revive_hold = 0.0
+		net.downs.ask_revive(_revive_target)
 
 
 # --- the island's rounds (game/island_rounds.gd runs them; core/round_rules.gd decides) ---
@@ -1230,18 +1403,78 @@ func _on_island(at: Vector3) -> bool:
 # The players standing on the island: us and, when hosting, the others. Nobody = the rounds wait.
 func _island_bodies() -> Array:
 	var out: Array = []
-	if _on_island(_player.global_position) and not _player.carried and not _first_look:
+	if _on_island(_player.global_position) and not _player.carried and not _first_look and not _player.downed:
 		out.append(_player)
 	if net != null and net.can_send() and net.is_host():
 		for body: Node3D in net.target_nodes():
-			if _on_island(body.global_position):
+			if _on_island(body.global_position) and not (body.has_method("is_down") and bool(body.call("is_down"))):
 				out.append(body)
 	return out
 
 
+# The run on the islands is over for us: the game-over screen, the character's best round, and everything carried
+# stays behind in a backpack where we went down. The island starts again at round 1.
+func _end_run(reached: int, at: Vector3, drop: bool) -> void:
+	var record := reached > _best_round
+	_best_round = maxi(_best_round, reached)
+	_game_over.show_run(reached, _best_round, record, PackedStringArray(["Kills %d        Points earned %d" % [_score.kills - _run_kills, _run_earned], "Everything you carried lies in a backpack where you went down." if (drop or _pack != null) else "You were still standing: you keep what you carry."]))
+	if drop:
+		_drop_pack(at)
+	if _rounds.active:
+		_rounds.stop()
+	save_profile()
+
+
+# Everything carried (ready guns and the whole bag; what is worn stays) is left in a backpack at `at`. A backpack
+# still lying somewhere from last time is lost with all that is in it. A pistol goes into the empty hand.
+func _drop_pack(at: Vector3) -> void:
+	var bundle: Dictionary = _player.inventory.take_all()
+	if _pack != null:
+		_pack.queue_free()
+		_pack = null
+		_player_hud.notice("The backpack you left before is gone for good.")
+	if InventoryState.bundle_size(bundle) > 0:
+		var flat := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
+		if flat.length() > Island.RADIUS - 1.5:  # went down in the water: it washes up on the sand
+			flat = flat.normalized() * (Island.RADIUS - 1.5)
+		_place_pack(Island.CENTER + Vector3(flat.x, Island.height_at(flat.x, flat.y), flat.y), bundle)
+	for entry in DataStore.load_json("res://data/player.json")["starting_items"]:
+		_player.inventory.add(String(entry[0]), int(entry[1]))
+	_player.refresh_held()
+	_player.refresh_equipment()
+	_inventory_screen.in_hand = _player.hand_index()
+
+
+func _place_pack(at: Vector3, bundle: Dictionary) -> void:
+	_pack = DroppedPack.new()
+	_pack.bundle = bundle
+	add_child(_pack)
+	_pack.global_position = at
+
+
+# Back at the backpack: what fits goes back to where it belongs (guns into free holsters first), the rest waits.
+func _take_pack() -> void:
+	var rest: Dictionary = _player.inventory.put_all(_pack.bundle)
+	if InventoryState.bundle_size(rest) == 0:
+		_pack.queue_free()
+		_pack = null
+		_player_hud.notice("You have your things back.")
+	else:
+		_pack.bundle = rest
+		_player_hud.notice("%d things found no room and stay in the backpack." % InventoryState.bundle_size(rest))
+	_on_inventory_changed()
+
+
 func _on_round_started(number: int, kind: String) -> void:
+	if _out:  # online: whoever bled out is back in when the next round starts
+		_out = false
+		_player.revive(1.0)
+		net.downs.report("up")
+		_player_hud.notice("You are back in.")
 	if number == 1:
 		_player.pools.fill_all()  # a run starts with full pools
+		_run_kills = _score.kills
+		_run_earned = 0
 	match kind:
 		"boss":
 			_player_hud.notice("Round %d: something big is wading in" % number)
@@ -1401,6 +1634,9 @@ func _process(delta: float) -> void:
 	_hold_pachinko(delta)
 	if net != null and net.can_send():
 		_hold_trade(delta)
+		_hold_revive(delta)
+		if _player.downed and not _out and _time >= _down_until:
+			_bleed_out()
 	_rest_in -= delta
 	if _rest_in <= 0.0:
 		_rest_worlds()
@@ -1511,5 +1747,6 @@ func _build_hud() -> void:
 	layer.add_child(_cross)
 	layer.add_child(_overlay)
 	layer.add_child(_scoreboard)
+	layer.add_child(_game_over)
 	layer.add_child(_chat)
 	add_child(layer)

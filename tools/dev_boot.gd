@@ -152,6 +152,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						window.set("_mouse", (window.call("_holster_rect", int(words[2].substr(1))) as Rect2).get_center())
 					else:
 						window.set("_mouse", (window.call("_slot_rect", int(words[2])) as Rect2).get_center())
+				"press":  # a REAL left mouse click through the window's own input: a backpack slot (0-35), a holster ("h0".."h3"), a bank slot ("b0".."b59") or "bankbutton"
+					var spot := Rect2()
+					if words[2] == "bankbutton":
+						spot = window.call("_bank_button")
+					elif words[2].begins_with("b"):
+						spot = window.call("_bank_rect", int(words[2].substr(1)))
+					elif words[2].begins_with("h"):
+						spot = window.call("_holster_rect", int(words[2].substr(1)))
+					else:
+						spot = window.call("_slot_rect", int(words[2]))
+					for down: bool in [true, false]:
+						var click := InputEventMouseButton.new()
+						click.button_index = MOUSE_BUTTON_LEFT
+						click.pressed = down
+						click.position = spot.get_center()
+						click.global_position = spot.get_center()
+						window.call("_gui_input", click)
 				"click":  # a left click on a backpack slot (0-35) or a holster ("h0".."h3")
 					if words[2].begins_with("h"):
 						player.get("inventory").call("click_holster", int(words[2].substr(1)))
@@ -178,6 +195,32 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("rolled guns in slots %s; on the ground %d; shift %s  %s" % [", ".join(guns), int((session.get("_field") as Node).call("count")), str(Input.is_key_pressed(KEY_SHIFT)), " ".join(words.slice(2))])
 				_:
 					session.call("_toggle_inventory")
+		"pack":  # "!pack <note>": is a backpack lying, where and with how much; what is in the holsters and the bag. "!pack goto": stand next to it
+			var lying: Node3D = session.get("_pack")
+			if words.size() > 1 and words[1] == "goto":
+				if lying != null:
+					player.call("teleport", lying.global_position + Vector3(0.8, 0.3, 0.0), 0.0)
+			else:
+				var bag: RefCounted = player.get("inventory")
+				var in_bag := 0
+				for i in 36:
+					in_bag += 0 if String(bag.call("item_id", i)) == "" else 1
+				var ready := PackedStringArray()
+				for i in int(bag.get("holster_count")):
+					ready.append(String(bag.call("holster_body", i)) if String(bag.call("holster_body", i)) != "" else "-")
+				_lines.append("PACK %s: %s; holsters [%s], %d stacks in the bag, best round %d, downs %d, game-over screen %s" % [" ".join(words.slice(1)), "none lying" if lying == null else "lying %.0f m away with %d things" % [lying.global_position.distance_to(player.global_position), (lying.get("bundle")["things"] as Array).size()], ", ".join(ready), in_bag, int(session.get("_best_round")), int(session.call("score").get("downs")), "up" if (session.get("_game_over") as Control).visible else "gone"])
+		"bank":  # "!bank goto" stand at the bank, "!bank click 3" a click on its slot 3, "!bank upgrade" its button, "!bank <note>" what is in it
+			var vault: RefCounted = session.get("_bank")
+			match words[1] if words.size() > 1 else "":
+				"goto":
+					player.call("teleport", (session.get("_bank_pos") as Vector3) + Vector3(-1.2, 0.2, 0.6), 0.0)
+				"click":
+					vault.call("click", int(words[2]), player.get("inventory"))
+					session.call("_on_inventory_changed")
+				"upgrade":
+					session.call("_on_bank_upgrade")
+				_:
+					_lines.append("BANK %s: %d of %d slots used, next upgrade %s, points %d" % [" ".join(words.slice(1)), int(vault.call("used")), int(vault.call("capacity")), str(vault.call("next_upgrade")), int(session.call("score").get("points"))])
 		"rounds":  # "!rounds <note>": the island's round, its kind, what is left and alive, and how far away and how deep the living are
 			var island: Node = session.call("rounds")
 			var rules: RefCounted = island.get("rules")

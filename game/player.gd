@@ -7,6 +7,7 @@ extends CharacterBody3D
 
 signal damaged
 signal died  # health hit zero; the game session decides where to respawn
+signal went_down  # health hit zero where a teammate can still help: lying there until revive() or finish_off()
 signal blocked  # a hit was fully blocked by armor
 
 const WeaponState = preload("res://core/weapon_state.gd")
@@ -161,6 +162,9 @@ var struck_from := Vector3.INF  # where a hit without an attacker node comes fro
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
 var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
+var downed := false  # lying on the ground waiting for a revive: no moving, no shooting, nothing hurts any more
+var down_check := Callable()  # the session's: func() -> bool: true = going down here means waiting for a revive, not dying
+var died_at := Vector3.ZERO  # where health last hit zero
 var channelling := false  # a staff spell is being built (game/staff_caster.gd): the element keys are not gun keys now
 var _world_hp := 0.0  # extra max health from the fantasy world's Magic level and robe
 var _world_damage := 1.0  # share of incoming damage that gets through the robe
@@ -259,7 +263,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_yaw -= event.relative.x * sens
 		_head.rotation.y = _yaw
 		_head.rotation.x = clampf(_head.rotation.x - event.relative.y * sens, -1.5, 1.5)
-	elif channelling:
+	elif channelling or downed:
 		return
 	elif event.is_action_pressed("toggle_view"):
 		third_person = not third_person
@@ -388,7 +392,7 @@ func _move_tick(input: Vector2) -> void:
 		var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not aiming and _crouch < 0.5
 		var now_top := sprint_top if sprinting else top * lerpf(1.0, float(_move_cfg["crouch_factor"]), _crouch)
 		var hop: bool = armor["abilities"].has("auto_bhop") and Input.is_action_pressed("jump")  # the boots hop for you
-		var jump := grounded and controls_enabled and (_now() <= _jump_until or hop)
+		var jump := grounded and controls_enabled and not downed and (_now() <= _jump_until or hop)
 		if jump:
 			_jump_until = 0.0
 		velocity = move.step(velocity, wish, now_top, sprint_top, grounded, jump)
@@ -436,10 +440,12 @@ func _move_and_shoot(delta: float) -> void:
 		_tick_left = 0.0
 		_tick_from = global_position
 		return
-	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back") if controls_enabled else Vector2.ZERO
-	if controls_enabled and Input.is_action_just_pressed("jump"):
+	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back") if controls_enabled and not downed else Vector2.ZERO
+	if downed:
+		_jump_until = 0.0
+	elif controls_enabled and Input.is_action_just_pressed("jump"):
 		_jump_until = _now() + move.tick + float(_move_cfg["jump_buffer"])
-	_set_crouch(controls_enabled and Input.is_action_pressed("crouch"), delta)
+	_set_crouch(downed or (controls_enabled and Input.is_action_pressed("crouch")), delta)
 	if not emote.is_empty() and (input != Vector2.ZERO or Input.is_action_just_pressed("jump") or Input.is_action_pressed("shoot")):
 		stop_emote()
 	# The body moves in fixed ticks (data/movement.json tick_hz) whatever the frame rate, so a hop is timed the same on
@@ -454,7 +460,9 @@ func _move_and_shoot(delta: float) -> void:
 		velocity = Vector3.ZERO
 		_tick_from = position
 
-	if _knife_out:
+	if downed:
+		weapon.update(_now())
+	elif _knife_out:
 		_use_knife()
 	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
@@ -476,7 +484,7 @@ func _process(delta: float) -> void:
 	var origin := global_position
 	if not carried and _tick_from.distance_squared_to(origin) < 4.0:  # between two ticks (farther apart = a teleport)
 		origin = _tick_from.lerp(origin, clampf(_tick_left / move.tick, 0.0, 1.0))
-	_head.global_position = origin + Vector3(0, HEAD_HEIGHT - _crouch_drop(), 0)
+	_head.global_position = origin + Vector3(0, HEAD_HEIGHT - _crouch_drop() - (0.75 if downed else 0.0), 0)
 	_visual.global_position = origin
 	_visual.rotation.y = _yaw
 	if third_person:
@@ -518,7 +526,7 @@ func take_damage(amount: float, element: String = "physical") -> void:
 		amount = float(damage_gate.call(amount, element))
 	struck_by = null
 	struck_from = Vector3.INF
-	if cheat_god or amount <= 0.0:
+	if cheat_god or downed or amount <= 0.0:
 		return
 	var taken := ArmorMath.incoming(amount * _world_damage, element, armor, randf())
 	if taken <= 0.0:
@@ -533,11 +541,35 @@ func _hurt(amount: float) -> void:
 	health.take_damage(amount)
 	damaged.emit()
 	if health.is_dead():
-		position = _spawn_position
-		velocity = Vector3.ZERO
-		health.reset()
-		status.clear()
-		died.emit()
+		died_at = global_position
+		if down_check.is_valid() and bool(down_check.call()):
+			downed = true
+			velocity = Vector3.ZERO
+			status.clear()
+			weapon.cancel_reload()
+			went_down.emit()
+			return
+		finish_off()
+
+
+# A teammate got us back on our feet, with this share of our health.
+func revive(share: float) -> void:
+	if not downed:
+		return
+	downed = false
+	health.reset()
+	health.hp = maxf(health.max_hp * clampf(share, 0.05, 1.0), 1.0)
+
+
+# Dead: back at the spawn point with full health; the session decides what that costs.
+func finish_off() -> void:
+	downed = false
+	position = _spawn_position
+	velocity = Vector3.ZERO
+	_tick_from = position
+	health.reset()
+	status.clear()
+	died.emit()
 
 
 # Re-reads worn items (call after the inventory screen changes anything).

@@ -1,0 +1,8 @@
+{
+ "version": 1,
+ "_about": "The bank on the spawn island (core/bank_state.gd): slots that keep what is in them when you go down. slots = how many it has at first, per_upgrade = how many each upgrade adds, upgrades = what each costs in turn: points (the island's) or coins (the casino's). place = where it stands, metres from the island's middle [x, z].",
+ "slots": 10,
+ "per_upgrade": 10,
+ "upgrades": [{"points": 25000}, {"points": 75000}, {"coins": 5000}, {"coins": 15000}, {"coins": 45000}],
+ "place": [5.0, -2.5]
+}

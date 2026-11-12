@@ -29,6 +29,7 @@ var _model: Node3D
 var _label: Label3D
 var _badge: Sprite3D
 var _held_id := ""
+var _down := false  # see set_down()
 var _held_model: Node3D
 var _smoking := false
 var _emote := ""
@@ -76,6 +77,20 @@ func _ready() -> void:
 	add_child(_badge)
 	_apply_card()
 	_rebuild()
+
+
+# Shows this player lying on the ground (down on the islands, waiting for a revive) or back on their feet.
+func set_down(on: bool) -> void:
+	if on == _down:
+		return
+	_down = on
+	if _model != null:
+		_model.rotation.x = -PI * 0.5 if on else 0.0
+		_model.position.y = 0.25 if on else 0.0
+
+
+func is_down() -> bool:
+	return _down
 
 
 func _process(delta: float) -> void:
