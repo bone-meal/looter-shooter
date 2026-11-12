@@ -47,6 +47,8 @@ func stat_lines(id: String) -> Array[String]:
 		lines.append("%s resist %d%%" % [String(e).capitalize(), roundi(float(it["resist"][e]) * 100.0)])
 	if String(it.get("ability", "")) == "auto_reload":
 		lines.append("Left click reloads an empty gun")
+	if String(it.get("ability", "")) == "auto_bhop":
+		lines.append("Hold jump: hops by itself, no jump fatigue")
 	return lines
 
 

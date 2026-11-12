@@ -10,6 +10,7 @@ const ACTIONS := [
 	["move_right", "Move right"],
 	["jump", "Jump"],
 	["sprint", "Sprint"],
+	["crouch", "Crouch"],
 	["shoot", "Shoot"],
 	["aim", "Aim down sights"],
 	["reload", "Reload"],
@@ -51,6 +52,7 @@ static func default_code(action: String) -> String:
 		"move_right": return "key:%d" % KEY_D
 		"jump": return "key:%d" % KEY_SPACE
 		"sprint": return "key:%d" % KEY_SHIFT
+		"crouch": return "key:%d" % KEY_C
 		"shoot": return "mouse:%d" % MOUSE_BUTTON_LEFT
 		"aim": return "mouse:%d" % MOUSE_BUTTON_RIGHT
 		"reload": return "key:%d" % KEY_R

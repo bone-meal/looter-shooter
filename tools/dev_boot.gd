@@ -392,6 +392,67 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var forward: Vector3 = -player.global_transform.basis.z
 			block.global_position = player.global_position + Vector3(forward.x, 0.0, forward.z).normalized() * 4.3 + Vector3.UP * (float(words[1]) * 0.5 - 0.05)
 			_lines.append("ledge %s m ahead, player at height %.2f" % [words[1], player.global_position.y])
+		"place":  # "!place x y z [yaw]": puts the player at a WORLD spot without starting anything (the empty colosseum floor is 0 0.1 10)
+			player.call("teleport", Vector3(float(words[1]), float(words[2]), float(words[3])), deg_to_rad(float(words[4])) if words.size() > 4 else 0.0)
+		"speed":  # "!speed <note>": ground speed in Source units, what is in hand, fatigue
+			var rules: RefCounted = player.get("move")
+			_lines.append("SPEED %s: %d u/s, in hand %s, on floor %s, stamina %.1f" % [" ".join(words.slice(1)), int(player.call("speed_units")), String(player.get("inventory").call("item_id", int(player.call("hotbar_index")))), str(player.is_on_floor()), float(rules.get("stamina"))])
+		"jumptest":  # one jump on the spot: how high (units) and how long
+			var rules: RefCounted = player.get("move")
+			var ground := player.global_position.y
+			var top := ground
+			var began := Time.get_ticks_msec()
+			var tap := InputEventAction.new()
+			tap.action = "jump"
+			tap.pressed = true
+			Input.parse_input_event(tap)
+			var frames := 0
+			while Time.get_ticks_msec() - began < 60000:
+				await get_tree().process_frame
+				frames += 1
+				top = maxf(top, player.global_position.y)
+				if player.is_on_floor() and frames > 3:
+					break
+			Input.action_release("jump")
+			_lines.append("JUMP %s: %.1f units high, %.2f s" % [" ".join(words.slice(1)), (top - ground) / float(rules.get("unit")), float(Time.get_ticks_msec() - began) / 1000.0])
+		"bhop":  # "!bhop 6 [late_ms] [strafe]": runs up, then hops with no keys held. late 0 = jump is tapped every other frame while falling (what scrolling the wheel does); late_ms = one tap that long after landing; strafe = holds strafe-right and keeps the view on the flight path (flawless air strafing). Logs the speed after each hop.
+			var hops := int(words[1])
+			var late := int(words[2]) if words.size() > 2 else 0
+			var strafe := words.size() > 3
+			Input.action_release("jump")
+			Input.action_press("move_forward")
+			await get_tree().create_timer(1.2, true, false, true).timeout
+			var speeds := PackedStringArray([str(int(player.call("speed_units")))])
+			_tap("jump", true)
+			await get_tree().process_frame
+			await get_tree().process_frame
+			_tap("jump", false)
+			Input.action_release("move_forward")
+			if strafe:
+				Input.action_press("move_right")
+			for hop in hops:
+				var began := Time.get_ticks_msec()
+				while player.is_on_floor() and Time.get_ticks_msec() - began < 500:
+					await get_tree().process_frame  # leaving the ground
+				var down := false
+				while not player.is_on_floor() and Time.get_ticks_msec() - began < 3000:
+					var flight: Vector3 = player.get("velocity")
+					if strafe and Vector2(flight.x, flight.z).length() > 0.5:
+						player.call("look_at_point", player.global_position + Vector3(flight.x, 0.0, flight.z).normalized() * 20.0 + Vector3(0, 1.6, 0))
+					if late == 0 and flight.y < 0.0:
+						down = not down
+						_tap("jump", down)
+					await get_tree().process_frame
+				if late > 0:
+					await get_tree().create_timer(float(late) / 1000.0, true, false, true).timeout
+					_tap("jump", true)
+				await get_tree().process_frame
+				await get_tree().process_frame
+				_tap("jump", false)
+				await get_tree().process_frame
+				speeds.append(str(int(player.call("speed_units"))))
+			Input.action_release("move_right")
+			_lines.append("BHOP %s%s: run %s u/s, after each hop %s" % ["tapped while falling" if late == 0 else "%d ms late" % late, ", flawless strafing" if strafe else "", speeds[0], " ".join(speeds.slice(1))])
 		"where":  # the player's spot for the log: map metres in the fantasy world, world metres elsewhere
 			var here: Vector3 = player.global_position
 			if session.call("fantasy") != null:
@@ -464,6 +525,13 @@ func _stage(renderer: String, stage: String, seconds: float) -> void:
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)),
 		int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
 		Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0])
+
+
+func _tap(action: String, down: bool) -> void:
+	var event := InputEventAction.new()
+	event.action = action
+	event.pressed = down
+	Input.parse_input_event(event)
 
 
 func _count_kinds(node: Node, into: Dictionary) -> void:

@@ -2,7 +2,7 @@
  "version": 5,
  "weapons": {
   "pistol_basic": {
-   "damage": 12,
+   "move_speed": 240, "damage": 12,
    "fire_rate": 4.0,
    "mag_size": 12,
    "reload_time": 1.2,
@@ -25,7 +25,7 @@
    "reload_sound": "reload_mag"
   },
   "sniper_basic": {
-   "damage": 80,
+   "move_speed": 200, "aim_speed": 100, "damage": 80,
    "fire_rate": 0.8,
    "mag_size": 5,
    "reload_time": 2.5,
@@ -48,7 +48,7 @@
    "reload_sound": "reload_mag"
   },
   "ak47": {
-   "damage": 14,
+   "move_speed": 215, "damage": 14,
    "fire_rate": 9.0,
    "mag_size": 30,
    "reload_time": 2.2,
@@ -71,7 +71,7 @@
    "reload_sound": "reload_mag"
   },
   "m16": {
-   "damage": 11,
+   "move_speed": 225, "damage": 11,
    "fire_rate": 11.0,
    "mag_size": 30,
    "reload_time": 2.0,
@@ -94,7 +94,7 @@
    "reload_sound": "reload_mag"
   },
   "m60": {
-   "damage": 10,
+   "move_speed": 195, "damage": 10,
    "fire_rate": 12.0,
    "mag_size": 100,
    "reload_time": 5.0,
@@ -117,7 +117,7 @@
    "reload_sound": "reload_mag"
   },
   "shotgun_double": {
-   "damage": 9,
+   "move_speed": 220, "damage": 9,
    "pellets": 10,
    "fire_rate": 2.5,
    "mag_size": 2,
@@ -141,7 +141,7 @@
    "reload_sound": "reload_shells"
   },
   "rocket_launcher": {
-   "damage": 120,
+   "move_speed": 190, "damage": 120,
    "fire_rate": 0.6,
    "mag_size": 1,
    "reload_time": 3.0,
@@ -181,7 +181,7 @@
    "reload_sound": "reload_tube"
   },
   "grenade_launcher": {
-   "damage": 80,
+   "move_speed": 190, "damage": 80,
    "fire_rate": 1.5,
    "mag_size": 6,
    "reload_time": 3.5,

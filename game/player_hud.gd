@@ -28,6 +28,7 @@ const FLASH_STRIP_W := 14.0
 
 var player: CharacterBody3D
 var wave_text := ""
+var show_speed := false  # ground speed in Source units under the crosshair (on with the debug HUD)
 var boss_ratio := -1.0
 var notice_text := ""  # short pickup message, fades after a few seconds (see notice())
 var level := 0  # player level (0 = hidden) and progress to the next
@@ -74,6 +75,8 @@ func _draw() -> void:
 		return
 	var view := get_viewport_rect().size
 	_draw_flash(view)
+	if show_speed:
+		draw_string(_font, Vector2(0, view.y * 0.5 + 64.0), "%d u/s" % player.speed_units(), HORIZONTAL_ALIGNMENT_CENTER, view.x, 16, Color(1, 1, 1, 0.75))
 	if prompt_text != "":
 		draw_string(_font, Vector2(0, view.y * 0.62), prompt_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 22, WHITE)
 	if _notice_time > 0.0:

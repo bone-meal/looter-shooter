@@ -1,0 +1,20 @@
+{
+ "version": 1,
+ "_about": "How the player moves, everywhere in the game (rules: core/move_rules.gd, body: game/player.gd). Speeds are Source units as in Counter-Strike: 1 unit = 1 inch (unit_m metres), so 250 units a second is 6.35 m/s. tick_hz: movement is worked out this many times a second whatever the frame rate. gravity (units/s2) and jump_impulse (units/s) give a 57 unit jump. friction, stop_speed, accelerate: ground handling (how fast you stop and reach full speed). air_accelerate + air_cap: air strafing (in the air a key can only add speed up to air_cap units along its direction, which is what makes turning with the mouse gain speed). base_speed: top speed with empty hands or the knife; each gun has its own in data/weapons.json (move_speed, and aim_speed while aiming); sprinting multiplies it by data/player.json sprint_multiplier. crouch_factor: share of top speed while crouched; crouch_drop: how far the view sinks (units); crouch_seconds: how long going down or up takes. jump_buffer: a jump pressed up to this many seconds BEFORE landing still counts as a perfect hop (0 = only the exact tick, as in CS:GO). bunny_cap: when you jump, speed above this many times your sprint top speed is cut back to it (CS:GO: 1.1 x run speed; 0 = no cap). stamina = jump fatigue: a jump adds jump_cost x jump_impulse, a landing adds land_cost x the speed you fell at, up to max; it wears off at recover a second. While you have any: a jump only reaches (1 - stamina / 100) of its speed, and on the ground your speed is dragged down each tick by that share (drag_rate times a second), so a hop that leaves the ground the tick it lands loses nothing and a late one loses a lot. CS:GO's own numbers for comparison: jump_cost 0.08, land_cost 0.05, recover 60, max 80, bunny_cap 1.1, jump_buffer 0. The director asked for a little more forgiving than that.",
+ "unit_m": 0.0254,
+ "tick_hz": 64,
+ "gravity": 800.0,
+ "jump_impulse": 301.993,
+ "friction": 5.2,
+ "stop_speed": 80.0,
+ "accelerate": 5.5,
+ "air_accelerate": 12.0,
+ "air_cap": 30.0,
+ "base_speed": 250.0,
+ "crouch_factor": 0.34,
+ "crouch_drop": 18.0,
+ "crouch_seconds": 0.15,
+ "jump_buffer": 0.03,
+ "bunny_cap": 1.2,
+ "stamina": {"max": 80.0, "recover": 75.0, "jump_cost": 0.053, "land_cost": 0.033, "drag_rate": 70.0}
+}

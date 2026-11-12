@@ -35,8 +35,9 @@ const DancePoses = preload("res://game/dance_poses.gd")
 const BodyMotion = preload("res://game/body_motion.gd")
 const EmoteWheel = preload("res://game/emote_wheel.gd")
 
-const SPEED := 7.0
-const JUMP_SPEED := 5.5
+const MoveRules = preload("res://core/move_rules.gd")
+
+const STAND_HEIGHT := 1.8  # the body's capsule, standing (Counter-Strike's 72 units)
 const STEP_HEIGHT := 0.45  # ledges up to this high are stepped onto (_step_up); a house's plinth is 0.6
 const STEP_REACH := 0.3  # how far ahead there must be room and ground on top
 const SHOT_RANGE := 200.0
@@ -74,7 +75,18 @@ var sounds: Node  # the game's sound player (data/sounds.json), set by game/game
 var skill_fx: Node3D  # world effects of gun skills (game/skill_effects.gd), set by game/game_session.gd
 var skills := SkillState.new()  # cooldowns of the Q/E gun skills
 
-var _gravity: float = ProjectSettings.get_setting("physics/3d/default_gravity")
+var move: MoveRules  # how the body moves: friction, air strafing, jump fatigue (data/movement.json)
+var _move_cfg := {}
+var _top_units := 250.0  # top speed of what is in hand, Source units a second (data/weapons.json move_speed)
+var _aim_units := 0.0  # top speed while aiming with it (0 = aiming does not slow)
+var _tick_left := 0.0  # frame time not yet turned into movement ticks
+var _tick_from := Vector3.ZERO  # where the body stood before its latest tick (the view glides from there, see _process)
+var _jump_until := 0.0  # a jump was pressed: it counts until this time (jump_buffer)
+var _was_grounded := true
+var _fall_speed := 0.0  # how fast the body was falling in its latest tick in the air
+var _crouch := 0.0  # 0 standing .. 1 fully crouched
+var _capsule: CapsuleShape3D
+var _capsule_node: CollisionShape3D
 var _head := Node3D.new()
 var _wheel := EmoteWheel.new()
 var _wheel_open := false
@@ -166,11 +178,16 @@ func _ready() -> void:
 
 	var shape := CollisionShape3D.new()
 	var capsule_shape := CapsuleShape3D.new()
-	capsule_shape.height = 1.8
+	capsule_shape.height = STAND_HEIGHT
 	capsule_shape.radius = 0.4
 	shape.shape = capsule_shape
-	shape.position.y = 0.9
+	shape.position.y = STAND_HEIGHT * 0.5
 	add_child(shape)
+	_capsule = capsule_shape
+	_capsule_node = shape
+	_move_cfg = DataStore.load_json("res://data/movement.json")
+	move = MoveRules.new(_move_cfg)
+	_top_units = float(_move_cfg["base_speed"])
 
 	set_appearance(AppearanceData.db().default_for("female"))
 
@@ -334,33 +351,88 @@ func _step_up(delta: float) -> void:
 	global_position.y += STEP_HEIGHT - _step_hit.get_travel().length() + 0.02
 
 
+# One fixed tick of walking, jumping and falling. core/move_rules.gd does the sums (friction, air strafing, fatigue);
+# this feeds it the keys and the top speed that applies right now and moves the body.
+func _move_tick(input: Vector2) -> void:
+	var grounded := is_on_floor()
+	if grounded and not _was_grounded:
+		move.land(_fall_speed)
+	_was_grounded = grounded
+	var aiming := Input.is_action_pressed("aim")
+	var top := (_aim_units if aiming and _aim_units > 0.0 else _top_units) * move.unit * status.speed_multiplier() * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace
+	var sprint_top := top * _sprint_multiplier
+	if cheat_fly:  # the whole movement follows the view, up and down included
+		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * sprint_top * 2.0
+	else:
+		var wish := (Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, input.y)).normalized()
+		var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not aiming and _crouch < 0.5
+		var now_top := sprint_top if sprinting else top * lerpf(1.0, float(_move_cfg["crouch_factor"]), _crouch)
+		var hop: bool = armor["abilities"].has("auto_bhop") and Input.is_action_pressed("jump")  # the boots hop for you
+		var jump := grounded and controls_enabled and (_now() <= _jump_until or hop)
+		if jump:
+			_jump_until = 0.0
+		velocity = move.step(velocity, wish, now_top, sprint_top, grounded, jump)
+		if not is_on_floor() or jump:
+			_fall_speed = maxf(-velocity.y, 0.0)
+	var own := Vector2(velocity.x, velocity.z).length()
+	velocity += _shove
+	_step_up(move.tick)
+	# move_and_slide moves by velocity x the FRAME's time; one tick must move by velocity x the tick's.
+	var frame := get_process_delta_time()
+	var stretch := move.tick / frame if frame > 0.0 else 1.0
+	velocity *= stretch
+	move_and_slide()
+	velocity /= stretch
+	if _shove != Vector3.ZERO:  # what blew or dragged the body is not its own speed
+		var flat := Vector2(velocity.x - _shove.x, velocity.z - _shove.z).limit_length(own)
+		velocity = Vector3(flat.x, velocity.y, flat.y)
+		_shove = _shove.move_toward(Vector3.ZERO, 30.0 * move.tick)
+
+
+# Crouching: the view sinks, the body gets shorter (it fits under things) and walking slows. Standing up waits for head room.
+func _set_crouch(wanted: bool, delta: float) -> void:
+	if not wanted and _crouch > 0.0 and test_move(global_transform, Vector3.UP * (STAND_HEIGHT - _capsule.height + 0.05)):
+		wanted = true  # something is overhead
+	var target := 1.0 if wanted else 0.0
+	if is_equal_approx(_crouch, target):
+		return
+	_crouch = move_toward(_crouch, target, delta / maxf(float(_move_cfg["crouch_seconds"]), 0.01))
+	_capsule.height = STAND_HEIGHT - _crouch_drop()
+	_capsule_node.position.y = _capsule.height * 0.5
+
+
+func _crouch_drop() -> float:
+	return float(_move_cfg["crouch_drop"]) * move.unit * _crouch
+
+
+# Ground speed in Source units a second (250 = running with empty hands), for the debug HUD.
+func speed_units() -> int:
+	return roundi(Vector2(velocity.x, velocity.z).length() / move.unit)
+
+
 func _move_and_shoot(delta: float) -> void:
 	if carried:
 		velocity = Vector3.ZERO
+		_tick_left = 0.0
+		_tick_from = global_position
 		return
-	if cheat_fly:
-		velocity.y = 0.0
-	elif not is_on_floor():
-		velocity.y -= _gravity * delta
-	elif controls_enabled and Input.is_action_just_pressed("jump"):
-		velocity.y = JUMP_SPEED
-
 	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back") if controls_enabled else Vector2.ZERO
-	var dir := (Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, input.y)).normalized()
-	var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not Input.is_action_pressed("aim")
-	var speed := SPEED * (_sprint_multiplier if sprinting else 1.0) * status.speed_multiplier() * (1.0 + bonus_speed_pct / 100.0) * cheat_speed
-	velocity.x = dir.x * speed * _pace + _shove.x
-	velocity.z = dir.z * speed * _pace + _shove.z
-	_shove = _shove.move_toward(Vector3.ZERO, 30.0 * delta)
-	if cheat_fly:  # the whole movement follows the view, up and down included
-		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * speed * 2.0
+	if controls_enabled and Input.is_action_just_pressed("jump"):
+		_jump_until = _now() + move.tick + float(_move_cfg["jump_buffer"])
+	_set_crouch(controls_enabled and Input.is_action_pressed("crouch"), delta)
 	if not emote.is_empty() and (input != Vector2.ZERO or Input.is_action_just_pressed("jump") or Input.is_action_pressed("shoot")):
 		stop_emote()
-	_step_up(delta)
-	move_and_slide()
+	# The body moves in fixed ticks (data/movement.json tick_hz) whatever the frame rate, so a hop is timed the same on
+	# every machine; _process glides the view between the last two ticks.
+	_tick_left += delta
+	while _tick_left >= move.tick:
+		_tick_left -= move.tick
+		_tick_from = global_position
+		_move_tick(input)
 	if position.y < FALL_LIMIT:
 		position = _spawn_position
 		velocity = Vector3.ZERO
+		_tick_from = position
 
 	if _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
@@ -378,7 +450,9 @@ func _move_and_shoot(delta: float) -> void:
 func _process(delta: float) -> void:
 	_move_and_shoot(minf(delta, MAX_STEP))
 	var origin := global_position
-	_head.global_position = origin + Vector3(0, HEAD_HEIGHT, 0)
+	if not carried and _tick_from.distance_squared_to(origin) < 4.0:  # between two ticks (farther apart = a teleport)
+		origin = _tick_from.lerp(origin, clampf(_tick_left / move.tick, 0.0, 1.0))
+	_head.global_position = origin + Vector3(0, HEAD_HEIGHT - _crouch_drop(), 0)
 	_visual.global_position = origin
 	_visual.rotation.y = _yaw
 	if third_person:
@@ -446,6 +520,7 @@ func _hurt(amount: float) -> void:
 func refresh_equipment() -> void:
 	armor = ArmorMath.totals(inventory, items)
 	_cigarette.visible = armor["abilities"].has("auto_reload")
+	move.no_fatigue = armor["abilities"].has("auto_bhop")
 
 
 # Moves the player to a new spawn point (island -> arena) and makes it the respawn point.
@@ -456,6 +531,7 @@ func look_yaw() -> float:
 
 func teleport(to: Vector3, yaw: float) -> void:
 	position = to
+	_tick_from = to
 	velocity = Vector3.ZERO
 	_spawn_position = to
 	_yaw = yaw
@@ -499,12 +575,20 @@ func select_hotbar(index: int) -> void:
 	refresh_held()
 
 
+# Every gun body has its own top speed, and some slow you while you aim (data/weapons.json move_speed / aim_speed).
+func _carry_speed(body: String) -> void:
+	_top_units = float(_weapon_stats[body].get("move_speed", _move_cfg["base_speed"]))
+	_aim_units = float(_weapon_stats[body].get("aim_speed", 0.0))
+
+
 # Re-reads the selected hotbar slot (call after the inventory changes).
 func refresh_held() -> void:
 	_models[_slot].visible = false
 	if _held_loot != null:
 		_held_loot.visible = false
 	var id := inventory.item_id(_hotbar)
+	_top_units = float(_move_cfg["base_speed"])
+	_aim_units = 0.0
 	_held_loot = _loot_models.get(id)
 	if _held_loot != null:
 		_held_loot.visible = true
@@ -519,12 +603,14 @@ func refresh_held() -> void:
 		var body := String(_held_gun["body"])
 		_holding = _weapon_index.has(body)
 		if _holding:
+			_carry_speed(body)
 			_build_gun_slot(_weapon_index[body], body)
 			_select_slot(_weapon_index[body])
 		_apply_health_cap()
 		return
 	_holding = _weapon_index.has(id)
 	if _holding:
+		_carry_speed(id)
 		_reset_slot(_weapon_index[id], id)
 		_select_slot(_weapon_index[id])
 	_apply_health_cap()
@@ -633,7 +719,7 @@ func _apply_view() -> void:
 func _animate_walk(delta: float) -> void:
 	var speed := Vector2(velocity.x, velocity.z).length()
 	_walk_phase += speed * delta * 1.6
-	BodyMotion.animate(_body, clampf(speed / SPEED, 0.0, 1.0), _walk_phase, _now(), _holding)
+	BodyMotion.animate(_body, clampf(speed / move.base_speed, 0.0, 1.0), _walk_phase, _now(), _holding)
 
 
 # Keeps the shoulder camera from clipping through walls: pulls it in front of whatever blocks the view.

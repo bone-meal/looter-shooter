@@ -316,6 +316,22 @@
     0.22
    ]
   },
+  "phoons_treasure": {
+   "name": "Phoon's Treasure",
+   "kind": "armor",
+   "slot": "boots",
+   "stack_max": 1,
+   "defense": 1,
+   "block": 0,
+   "resist": {},
+   "flavor": "Too much for anyone. Hold jump and never stop: these hop on their own, and your legs never tire.",
+   "ability": "auto_bhop",
+   "color": [
+    0.95,
+    0.8,
+    0.25
+   ]
+  },
   "iron_sabatons": {
    "name": "Iron Sabatons",
    "kind": "armor",

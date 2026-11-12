@@ -294,6 +294,7 @@ func apply_settings() -> void:
 		_fantasy_detail()
 		_fantasy.enter(_player.global_position)
 	_overlay.visible = settings.show_debug
+	_player_hud.show_speed = settings.show_debug
 
 
 func _place_crow(at: Vector3, facing: Vector3) -> Node3D:

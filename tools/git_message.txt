@@ -1,1 +1,12 @@
-Add secret scan and make-public tools (repo made public)
+Round 6 step 1: Counter-Strike style movement everywhere
+
+Ground friction and acceleration, air strafing, a 57 unit jump, jump
+fatigue and a bunny-hop cap as pure rules (core/move_rules.gd) with every
+number in data/movement.json in Source units. The player moves in fixed
+64 Hz ticks and the view glides between them. Each gun body has its own
+top speed (sniper slower while aiming), sprint is kept, crouch is on C.
+New boots item phoons_treasure: hops while jump is held, no fatigue.
+Speed readout with the debug HUD; tools/move_check.tscn checks the rules.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
