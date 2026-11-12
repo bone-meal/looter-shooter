@@ -77,9 +77,10 @@ func _ready() -> void:
 	get_tree().node_added.connect(_on_node_added)
 
 
-func apply(graphics_id: String, shader_id: String) -> void:
+# picks: the player's own choices over the preset, option id -> choice id (data/graphics.json "options").
+func apply(graphics_id: String, shader_id: String, picks: Dictionary = {}) -> void:
 	var data := presets()
-	_graphics = _find(data.get("graphics", []), graphics_id)
+	_graphics = _with_picks(_find(data.get("graphics", []), graphics_id), data.get("options", []), picks)
 	_shaders = _find(data.get("shaders", []), shader_id)
 	if is_forward() and _shaders.get("forward") is Dictionary:
 		# The two renderers show the same numbers differently, so a look can carry Forward+ replacements.
@@ -110,6 +111,25 @@ func _find(list: Array, id: String) -> Dictionary:
 		return {}
 	var first: Dictionary = list[0]
 	return first
+
+
+# A copy of the tier with each picked choice's numbers written over it, in the block where the tier keeps them:
+# "tier" = the top, "realistic" = the realistic look, "forward" = that look's Forward+ extras.
+func _with_picks(tier: Dictionary, options: Array, picks: Dictionary) -> Dictionary:
+	var out := tier.duplicate(true)
+	for option: Dictionary in options:
+		var choice := _find(option["choices"], String(picks.get(option["id"], "preset")))
+		out.merge(choice.get("tier", {}), true)
+		if not (choice.has("realistic") or choice.has("forward")):
+			continue
+		var look: Dictionary = out.get("realistic", {})
+		look.merge(choice.get("realistic", {}), true)
+		if choice.has("forward"):
+			var extras: Dictionary = look.get("forward", {})
+			extras.merge(choice["forward"], true)
+			look["forward"] = extras
+		out["realistic"] = look
+	return out
 
 
 # The realistic-look numbers of the current graphics tier.

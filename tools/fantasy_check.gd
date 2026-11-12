@@ -595,5 +595,9 @@ func _check_ways(all: Dictionary, layout: FantasyLayout) -> void:
 		if int((tier["fantasy"] as Dictionary).get("plain_buildings", 0)) > 0:
 			tiers.append(String(tier["id"]))
 	_need(plain > 0 or tiers.is_empty(), "graphics tiers ask for plain buildings but there are none (run the three tools/blender/fantasy_*.py scripts)")
+	for option: Dictionary in (JSON.parse_string(FileAccess.get_file_as_string("res://data/graphics.json")) as Dictionary)["options"]:
+		var first: Dictionary = (option["choices"] as Array)[0]
+		_need(String(first["id"]) == "preset" and first.size() == 2, "graphics option %s: its first choice must be the plain \"preset\"" % option["id"])
+		_need(String(option.get("label", "")) != "" and String(option.get("about", "")) != "", "graphics option %s has no label or description" % option["id"])
 	_lines.append("plain buildings: %d models, shown on the tiers %s" % [plain, ", ".join(tiers)])
 	_lines.append("doors: %d buildings are entered from a spot in front of their own wall; %d of the spots are out of reach" % [doors, shut])

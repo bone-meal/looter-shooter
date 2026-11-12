@@ -1,4 +1,5 @@
 # Purpose: builds the second island: a neon dance club (dance floor with color-cycling tiles, stage with performers, DJ booth, bar with bartender, tables, crowd), a disco ball and a glowing sign.
+# In two steps: build_shell (what is seen from afar, at session start) and build_inside (the rest, on the first trip there).
 # Dependencies: game/party_people.gd (characters and all animation), game/casino_room.gd (the casino annex). Walls, floor and bar have colliders; the rest is visual.
 extends RefCounted
 
@@ -15,20 +16,28 @@ const MAGENTA := Color(1.0, 0.1, 0.6)
 const CYAN := Color(0.1, 0.9, 1.0)
 
 static var _anim: Node3D
+static var _sign: Label3D  # made with the shell, flickered by the inside's animator
 
 
-# Returns {"spawn": Vector3, "crow": Vector3, "casino": Dictionary (see casino_room.gd)}.
-static func build(parent: Node3D) -> Dictionary:
-	_anim = PartyPeople.new()
-	parent.add_child(_anim)
+# What is seen from the main island and stood on after any teleport: sea, sand, the club's walls, roof and sign.
+# Built at session start. Everything else (build_inside) waits until the player travels there.
+static func build_shell(parent: Node3D) -> void:
 	_island(parent)
 	_building(parent)
+
+
+# The club's inside, its people and the casino: built the first time the player travels to the club.
+# Returns the casino dictionary (see casino_room.gd).
+static func build_inside(parent: Node3D) -> Dictionary:
+	_anim = PartyPeople.new()
+	parent.add_child(_anim)
+	_anim.sign_label = _sign
 	_dance_floor(parent)
 	_stage(parent)
 	_bar(parent)
 	_tables(parent)
 	_people()
-	return {"spawn": SPAWN, "crow": CROW_POS, "casino": CasinoRoom.build(parent, CENTER)}
+	return CasinoRoom.build(parent, CENTER)
 
 
 static func _at(x: float, y: float, z: float) -> Vector3:
@@ -136,7 +145,7 @@ static func _building(parent: Node3D) -> void:
 	sign_label.double_sided = false
 	sign_label.position = _at(0, WALL_H + 2.0, 2.3)
 	parent.add_child(sign_label)
-	_anim.sign_label = sign_label
+	_sign = sign_label
 
 
 static func _dance_floor(parent: Node3D) -> void:

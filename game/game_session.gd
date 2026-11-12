@@ -56,6 +56,7 @@ const PACHINKO_RANGE := 2.8
 const PACHINKO_HOLD_DELAY := 0.4
 const PACHINKO_HOLD_EVERY := 0.15
 const SLOT_RANGE := 2.0
+const CLUB_NEAR := 300.0  # metres from the club's middle within which its inside is built and runs
 
 signal look_changed(look: Dictionary)
 signal table_event(op: String, args: Array)  # our blackjack table actions, sent to other players so they can watch
@@ -121,7 +122,11 @@ var _loot_tables: Dictionary
 var _crow_a: Node3D  # home-island crow (feed it worms to fly to the club island)
 var _crow_b: Node3D  # club-island crow (flies you home for free)
 var _ride_crow: Node3D  # the crow that actually flies
-var _gun_side: Array[Node] = []  # the colosseum, both islands, the crows and the lifeguard: asleep while the player is in Aurelind (_rest_gun_side)
+var _gun_side: Array[Node] = []  # the colosseum, the island, the club's shell, the crows and the lifeguard (see _rest_worlds)
+var _club_parts: Array[Node] = []  # the club's inside and the casino, built on the first trip there (_build_club)
+var _custom_layer: CanvasLayer  # the overlays' layer (the table games add theirs when the club is built)
+var _fantasy_left_at := -1000.0  # _time when the player last left Aurelind: it sleeps a little later, once its sounds have faded
+var _rest_in := 0.0  # seconds until _rest_worlds looks again
 var _crow_cfg: Dictionary
 var _club_spawn := Vector3.ZERO
 var _crow_a_pos := Vector3.ZERO
@@ -155,22 +160,16 @@ func _ready() -> void:
 	_island_spawn = island["spawn"]
 	_loot_tables = DataStore.load_json("res://data/loot_tables.json")["tables"]
 	_rng.randomize()
-	var club := ClubIsland.build(self)
-	LoadClock.mark("club island and casino")
-	_club_spawn = club["spawn"]
+	ClubIsland.build_shell(self)  # only what is seen from afar; the inside and the casino wait for the first trip (_build_club)
+	LoadClock.mark("club island shell")
+	_club_spawn = ClubIsland.SPAWN
 	_casino_cfg = DataStore.load_json("res://data/casino.json")
 	_wallet = Wallet.new(int(_casino_cfg["starting_coins"]))
-	_casino = club["casino"]
-	_pachinko = _casino["pachinko"]
-	_pachinko.ball_landed.connect(_on_pachinko_landed)
 	_slot_data = DataStore.load_json("res://data/slots.json")
 	_slot_math = SlotMath.new(_slot_data)
 	_jackpot = _slot_math.jackpot_seed
-	_slot_machines = club["casino"]["slots"]
-	for m in _slot_machines:
-		m.finished.connect(_on_slot_finished)
 	_crow_a_pos = Island.CROW_POS
-	_crow_b_pos = club["crow"]
+	_crow_b_pos = ClubIsland.CROW_POS
 	_crow_cfg = DataStore.load_json("res://data/crow.json")
 	_crow_a = _place_crow(_crow_a_pos, island["spawn"])
 	_crow_b = _place_crow(_crow_b_pos, _club_spawn)
@@ -221,6 +220,7 @@ func _ready() -> void:
 	_customizer.applied.connect(_on_look_applied)
 	_customizer.cancelled.connect(_close_customizer)
 	var custom_layer := CanvasLayer.new()
+	_custom_layer = custom_layer
 	custom_layer.layer = 6
 	custom_layer.add_child(_customizer)
 	_card_screen.progress = _progress
@@ -231,8 +231,6 @@ func _ready() -> void:
 	_slot_screen.setup(_slot_data)
 	_slot_screen.spin_requested.connect(_on_slot_spin)
 	_slot_screen.closed.connect(_close_slots)
-	_games.setup(_wallet, _casino_cfg, _casino, custom_layer, _player, _player_hud, _rng)
-	(_casino["blackjack"] as Node3D).connect("changed", func(op: String, args: Array) -> void: table_event.emit(op, args))
 	_games.round_finished.connect(save_profile)
 	_games.left.connect(save_profile)
 	add_child(_games)
@@ -268,7 +266,7 @@ func _ready() -> void:
 
 func apply_settings() -> void:
 	_player.apply_settings()
-	_render_style.apply(settings.graphics, settings.shaders)
+	_render_style.apply(settings.graphics, settings.shaders, settings.picks)
 	if _in_fantasy:
 		_fantasy_detail()
 		_fantasy.enter(_player.global_position)
@@ -326,7 +324,7 @@ func close_inventory() -> bool:
 
 # Another player's blackjack table action: shown on our table unless we are playing a table game ourselves.
 func apply_table_event(_peer: int, op: String, args: Array) -> void:
-	if _games.is_open():
+	if _casino.is_empty() or _games.is_open():
 		return
 	(_casino["blackjack"] as Node3D).call("apply_remote", op, args)
 
@@ -632,7 +630,7 @@ func _prompt() -> String:
 	var table := _games.spot_near(_player.global_position)
 	if table != "":
 		return "[%s] Sit at the %s table (free coins)" % [key, table]
-	if _near(_pachinko.console_position(), PACHINKO_RANGE):
+	if _near_pachinko():
 		return "[%s] Launch a pachinko ball (%d coins, hold to keep firing): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
 	var food: String = _crow_cfg["food_item"]
 	var needed: int = int(_crow_cfg["worms_needed"])
@@ -669,7 +667,7 @@ func _interact() -> void:
 		_open_slots(_slot_near())
 	elif _games.spot_near(_player.global_position) != "":
 		_games.open(_games.spot_near(_player.global_position))
-	elif _near(_pachinko.console_position(), PACHINKO_RANGE):
+	elif _near_pachinko():
 		_launch_pachinko()
 	elif _near(_crow_a_pos, CROW_RANGE):
 		_feed_crow()
@@ -762,9 +760,13 @@ func _on_slot_finished() -> void:
 
 
 # Holding the interact key at the console keeps launching balls (after a short delay, then fast).
+func _near_pachinko() -> bool:
+	return _pachinko != null and _near(_pachinko.console_position(), PACHINKO_RANGE)
+
+
 func _hold_pachinko(delta: float) -> void:
 	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _inventory_screen.visible
-	if busy or not Input.is_action_pressed("interact") or not _near(_pachinko.console_position(), PACHINKO_RANGE):
+	if busy or not Input.is_action_pressed("interact") or not _near_pachinko():
 		_pachinko_hold = 0.0
 		return
 	_pachinko_hold += delta
@@ -815,6 +817,8 @@ func _feed_crow() -> void:
 
 
 func _start_flight(source: Node3D, from: Vector3, to: Vector3, dest_spawn: Vector3) -> void:
+	if dest_spawn == _club_spawn and _casino.is_empty():
+		_build_club()  # before take-off, so the flight itself does not stall
 	_flight_t = 0.0
 	_flight_from = from
 	_flight_to = to
@@ -855,6 +859,8 @@ func _fly(delta: float) -> void:
 
 # Vendor kiosk within reach: its crate dictionary, or {}.
 func _vendor_near() -> Dictionary:
+	if _casino.is_empty():
+		return {}
 	for v: Node3D in _casino["vendors"]:
 		if _near(v.global_position, VENDOR_RANGE):
 			return v.crate
@@ -966,8 +972,7 @@ func _enter_fantasy() -> void:
 	_build_fantasy()
 	LoadClock.mark("fantasy: world built")
 	_in_fantasy = true
-	_rest_gun_side(true)
-	_rest_fantasy()
+	_rest_worlds()
 	_player.teleport(_fantasy.spawn_world(), 0.0)
 	_player.look_at_point(_fantasy.farm_world() + Vector3(0.0, 3.0, 0.0))  # you arrive facing the farmhouse
 	apply_settings()  # switches to the painted look and loads the land around the player
@@ -1000,31 +1005,60 @@ func _leave_fantasy() -> void:
 	_fantasy.leave()
 	_director.reset()
 	_in_fantasy = false
-	_rest_gun_side(false)
-	get_tree().create_timer(3.0).timeout.connect(_rest_fantasy)  # after its sounds have faded out
+	_fantasy_left_at = _time
+	_rest_worlds()
 	apply_settings()
 	save_profile()
 	_player.teleport(_island_spawn, 0.0)
 	_player_hud.play_fade()
 
 
-# Aurelind lies 20 km from the islands, yet their ~1500 nodes (staff, machines, neon, animated bodies) kept running
-# and cost 0.6 ms a frame there (round 5). Asleep = not processed and out of the physics world; nothing is freed.
-# Not done online: the host runs the shared boss in the colosseum for players who are still on the gun side.
-func _rest_gun_side(asleep: bool) -> void:
-	if asleep and net != null and net.is_active():
-		return
+# ONLY THE WORLDS IN USE RUN (round 5). The gun side (colosseum, island, club shell) and Aurelind lie 20 km apart, yet
+# each kept its ~1500-2000 nodes running while the player was in the other (0.6 ms a frame in Aurelind, 2.7 ms on the
+# island). Asleep = not processed and out of the physics world; nothing is freed. A world is in use while the player
+# is in it; on the HOST also while any other player is, because the host runs the shared boss and the party's fantasy
+# world for them. A joining machine runs nothing for others. The club's inside runs only while the player is near it.
+# Called every second and at once when the player changes world.
+func _rest_worlds() -> void:
+	_rest_in = 1.0
+	var gun_side := not _in_fantasy
+	var aurelind := _in_fantasy or _time - _fantasy_left_at < 3.0
+	if net != null and net.is_active() and net.is_host():
+		for spot: Vector3 in net.other_positions():
+			if spot.x > FantasyWorld.OFFSET.x * 0.5:
+				aurelind = true
+			else:
+				gun_side = true
 	for part in _gun_side:
-		part.process_mode = Node.PROCESS_MODE_DISABLED if asleep else Node.PROCESS_MODE_INHERIT
+		part.process_mode = Node.PROCESS_MODE_INHERIT if gun_side else Node.PROCESS_MODE_DISABLED
+	if _fantasy != null:
+		_fantasy.process_mode = Node.PROCESS_MODE_INHERIT if aurelind else Node.PROCESS_MODE_DISABLED
+	var at_club := _player.global_position.distance_to(ClubIsland.CENTER) < CLUB_NEAR
+	if at_club and _casino.is_empty():
+		_build_club()
+	for part in _club_parts:
+		part.process_mode = Node.PROCESS_MODE_INHERIT if at_club else Node.PROCESS_MODE_DISABLED
 
 
-# The other way round: Aurelind's own ~2000 nodes sleep while the player is on the gun side (awake at once on entry).
-# Not done online: the host runs that world for whoever of the party is still in it.
-func _rest_fantasy() -> void:
-	if _fantasy == null:
-		return
-	var asleep: bool = not _in_fantasy and (net == null or not net.is_active())
-	_fantasy.process_mode = Node.PROCESS_MODE_DISABLED if asleep else Node.PROCESS_MODE_INHERIT
+# The club's inside, its people and the casino exist only from the player's first trip there (crow ride or /tp club);
+# until then the island shows its shell (ClubIsland.build_shell). Costs about a second, under the loading picture.
+func _build_club() -> void:
+	if loading != null:
+		loading.call("begin", 2)
+	var first := get_child_count()
+	_casino = ClubIsland.build_inside(self)
+	for index in range(first, get_child_count()):
+		_club_parts.append(get_child(index))
+	_pachinko = _casino["pachinko"]
+	_pachinko.ball_landed.connect(_on_pachinko_landed)
+	_slot_machines = _casino["slots"]
+	for m in _slot_machines:
+		m.finished.connect(_on_slot_finished)
+	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
+	(_casino["blackjack"] as Node3D).connect("changed", func(op: String, args: Array) -> void: table_event.emit(op, args))
+	LoadClock.mark("club inside and casino")
+	if loading != null:
+		loading.call("finish")
 
 
 # How much of the land is kept around the player, by graphics tier (data/graphics.json "fantasy").
@@ -1059,13 +1093,16 @@ func _process(delta: float) -> void:
 		CrowModel.pose(_crow_a, CrowModel.IDLE, _time)
 	CrowModel.pose(_crow_b, CrowModel.IDLE, _time + 1.7)
 	_hold_pachinko(delta)
+	_rest_in -= delta
+	if _rest_in <= 0.0:
+		_rest_worlds()
 	if _fantasy_dirty and _time - _fantasy_saved_at > 20.0:
 		_fantasy_dirty = false
 		_fantasy_saved_at = _time
 		save_profile()
 	_player_hud.prompt_text = _prompt()
-	_player_hud.coins = _wallet.balance if _near(_pachinko.global_position, 30.0) else -1
-	if _coins_dirty and _pachinko.balls_in_play() == 0:
+	_player_hud.coins = _wallet.balance if _pachinko != null and _near(_pachinko.global_position, 30.0) else -1
+	if _coins_dirty and (_pachinko == null or _pachinko.balls_in_play() == 0):
 		_coins_dirty = false
 		save_profile()
 	if _in_arena and _reward == null and _director.is_cleared():

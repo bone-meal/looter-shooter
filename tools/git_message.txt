@@ -1,11 +1,10 @@
-Round 5 batch 3: three save slots per build version
+Round 5: own graphics choices, lazy club, host sleeps unused worlds
 
-Start Game and Multiplayer go through a save menu: three slots, each one
-whole character; an empty slot asks for a name and the first session opens
-the customize menu. Saves live in user://saves/<version>/ (version from
-data/build.json, written by the release tool; "dev" from the editor), so a
-new version starts with three empty slots and older saves stay untouched.
-The player card starts with the character's name instead of "Unnamed".
+Settings page: anti-aliasing, bounce light and shadow distance, each with
+its choices and a description (data/graphics.json "options"); the page
+scrolls. The club's inside and casino are built on the first trip there;
+the island shows only its shell until then. Online the host keeps a world
+awake only while a player is in it.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

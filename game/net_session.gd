@@ -115,6 +115,14 @@ func local_player() -> Node3D:
 
 
 # Other players' bodies (the shared boss chooses its victim among these and the local player).
+# Where the other players are right now (world positions): enough to know which worlds are in use.
+func other_positions() -> Array[Vector3]:
+	var out: Array[Vector3] = []
+	for id in _ghosts:
+		out.append(_ghosts[id]["pos"])
+	return out
+
+
 func target_nodes() -> Array:
 	var out: Array = []
 	for id in _ghosts:

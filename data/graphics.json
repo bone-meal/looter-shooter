@@ -1,4 +1,39 @@
 {
+ "options": [
+  {
+   "id": "antialiasing",
+   "label": "Anti-aliasing",
+   "about": "Smooths the jagged steps on edges such as roofs, fences and grass. Higher is smoother and costs more frame time; 4x is about a fifth of the frame on a GTX 1080.",
+   "choices": [
+    {"id": "preset", "label": "As the graphics preset"},
+    {"id": "off", "label": "Off", "tier": {"msaa": 0}, "forward": {"msaa": 0}},
+    {"id": "2x", "label": "2x", "tier": {"msaa": 2}, "forward": {"msaa": 2}},
+    {"id": "4x", "label": "4x", "tier": {"msaa": 4}, "forward": {"msaa": 4}},
+    {"id": "8x", "label": "8x", "tier": {"msaa": 8}, "forward": {"msaa": 8}}
+   ]
+  },
+  {
+   "id": "bounce_light",
+   "label": "Bounce light",
+   "about": "Sunlight thrown back by ground and walls into the shade: rooms, alleys and the undersides of roofs get soft coloured light. Off looks flatter and greyer. Light looks nearly the same as Full and is cheaper. Only on the Forward+ renderer with Realistic lighting.",
+   "choices": [
+    {"id": "preset", "label": "As the graphics preset"},
+    {"id": "off", "label": "Off", "forward": {"sdfgi": false, "ssil": false}},
+    {"id": "light", "label": "Light", "forward": {"sdfgi": true, "gi_half": true, "gi_update": 4, "gi_cascades": 3, "ssil": false}},
+    {"id": "full", "label": "Full", "forward": {"sdfgi": true, "gi_half": false, "gi_update": 2, "gi_cascades": 4, "ssil": true}}
+   ]
+  },
+  {
+   "id": "shadow_reach",
+   "label": "Shadow distance",
+   "about": "How far away things still cast a shadow. Long keeps shadows under distant houses and trees; Short ends them at 70 m and draws about a third fewer shadows. Only with Realistic lighting.",
+   "choices": [
+    {"id": "preset", "label": "As the graphics preset"},
+    {"id": "short", "label": "Short (70 m)", "realistic": {"shadow_splits": 2, "shadow_far": 70.0}},
+    {"id": "long", "label": "Long (120 m)", "realistic": {"shadow_splits": 4, "shadow_far": 120.0}}
+   ]
+  }
+ ],
  "graphics": [
   {
    "id": "potato",

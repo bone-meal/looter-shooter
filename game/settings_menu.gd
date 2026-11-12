@@ -1,9 +1,11 @@
-# Purpose: settings screen (mouse sensitivity, FOV, graphics preset, lighting shaders, renderer, vsync, fullscreen, fps cap, debug HUD); used from start and pause menus.
-# Dependencies: game/menu_widgets.gd, core/settings_state.gd. Emits changed on every edit and closed on Back.
+# Purpose: settings screen (mouse sensitivity, FOV, graphics preset and the player's own graphics choices with what each does,
+# lighting shaders, renderer, vsync, fullscreen, fps cap, debug HUD); used from start and pause menus. Scrolls in a small window.
+# Dependencies: game/menu_widgets.gd, core/settings_state.gd, core/data_store.gd, data/graphics.json "options". Emits changed on every edit and closed on Back.
 extends Control
 
 const Widgets = preload("res://game/menu_widgets.gd")
 const SettingsState = preload("res://core/settings_state.gd")
+const DataStore = preload("res://core/data_store.gd")
 
 signal changed
 signal closed
@@ -16,13 +18,26 @@ var settings: SettingsState  # set before add_child
 func _ready() -> void:
 	Widgets.fill(self)
 	Widgets.backdrop(self, Color(0.05, 0.05, 0.05, 0.9))
-	var box := Widgets.centered_column(self, 520)
+	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	add_child(scroll)
+	Widgets.fill(scroll)
+	var center := CenterContainer.new()
+	center.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	center.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.add_child(center)
+	var box := VBoxContainer.new()
+	box.custom_minimum_size = Vector2(560, 0)
+	box.add_theme_constant_override("separation", 10)
+	center.add_child(box)
 	Widgets.title(box, "SETTINGS")
 	_slider(box, "Mouse sensitivity", SettingsState.MOUSE_SENS_MIN, SettingsState.MOUSE_SENS_MAX, 0.0005, settings.mouse_sens, "%.4f",
 		func(v: float) -> void: settings.mouse_sens = v)
 	_slider(box, "Field of view", SettingsState.FOV_MIN, SettingsState.FOV_MAX, 1.0, settings.fov, "%d",
 		func(v: float) -> void: settings.fov = v)
 	_choice(box, "Graphics", SettingsState.GRAPHICS_IDS, settings.graphics, func(id: String) -> void: settings.graphics = id)
+	for option: Dictionary in DataStore.load_json("res://data/graphics.json").get("options", []):
+		_own_choice(box, option)
 	_choice(box, "Lighting shaders", SettingsState.SHADER_IDS, settings.shaders, func(id: String) -> void: settings.shaders = id)
 	_choice(box, "Renderer (after restart)", SettingsState.RENDERER_IDS, settings.renderer, func(id: String) -> void: settings.renderer = id)
 	_fps_option(box)
@@ -95,6 +110,34 @@ func _fps_option(box: Container) -> void:
 func _on_fps_selected(index: int) -> void:
 	settings.max_fps = SettingsState.MAX_FPS_CHOICES[index]
 	changed.emit()
+
+
+# One of the player's own graphics choices (data/graphics.json "options"): a dropdown and, under it, what it changes.
+func _own_choice(box: Container, option: Dictionary) -> void:
+	var row := HBoxContainer.new()
+	box.add_child(row)
+	var name_label := Label.new()
+	name_label.text = String(option["label"])
+	name_label.custom_minimum_size = Vector2(190, 0)
+	row.add_child(name_label)
+	var choices: Array = option["choices"]
+	var picker := OptionButton.new()
+	var current := String(settings.picks.get(option["id"], "preset"))
+	for index in choices.size():
+		picker.add_item(String(choices[index]["label"]))
+		if String(choices[index]["id"]) == current:
+			picker.selected = index
+	picker.item_selected.connect(func(index: int) -> void:
+		settings.picks[String(option["id"])] = String(choices[index]["id"])
+		changed.emit())
+	row.add_child(picker)
+	var about := Label.new()
+	about.text = String(option["about"])
+	about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	about.custom_minimum_size = Vector2(560, 0)
+	about.add_theme_font_size_override("font_size", 13)
+	about.modulate = Color(1, 1, 1, 0.6)
+	box.add_child(about)
 
 
 # A dropdown of preset IDs (shown capitalized).

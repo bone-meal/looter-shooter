@@ -81,6 +81,8 @@ func request_close() -> void:
 
 # "blackjack", "roulette" or "" depending on which table the player is standing at.
 func spot_near(pos: Vector3) -> String:
+	if _bj_table == null:
+		return ""  # the club is not built yet (game_session `_build_club`)
 	if _is_near(_bj_table, pos):
 		return "blackjack"
 	if _is_near(_rt_table, pos):

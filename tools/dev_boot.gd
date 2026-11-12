@@ -371,6 +371,13 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			(session.get("settings") as RefCounted).set("graphics", words[1])
 			session.call("apply_settings")
 			_lines.append("graphics tier %s" % words[1])
+		"pick":  # "!pick bounce_light off": one of the player's own graphics choices (data/graphics.json "options") for the rest of the run
+			((session.get("settings") as RefCounted).get("picks") as Dictionary)[words[1]] = words[2]
+			session.call("apply_settings")
+			_lines.append("pick %s = %s" % [words[1], words[2]])
+		"menu":  # "!menu settings" shows the settings page (for a picture), "!menu none" hides the menus again
+			var main_scene: Node = session.get_parent()
+			main_scene.call("_show_only", main_scene.get("_settings_menu") if words[1] == "settings" else null)
 		"buildings":  # "!buildings full" / "!buildings plain": which building models places built from now on use, whatever the tier says (to measure one against the other)
 			(session.call("fantasy").get("places") as Node).set("plain", words[1] == "plain")
 			_lines.append("buildings %s" % words[1])

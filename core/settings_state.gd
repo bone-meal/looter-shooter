@@ -20,6 +20,7 @@ var show_debug := false
 var graphics := "medium"
 var shaders := "realistic"
 var renderer := "compatibility"  # applied at the next start (game/renderer_switch.gd)
+var picks := {}  # the player's own choices over the graphics preset: option id -> choice id (data/graphics.json "options"); missing = "preset"
 var bindings := {}  # action -> "key:87" / "mouse:1"; missing = default (see game/input_setup.gd)
 var dev_commands := true  # chat commands such as /give (game/admin_commands.gd). Director 2026-11-10: ON IN RELEASE BUILDS TOO for now (was: debug builds only)
 var volume := 1.0  # master volume 0..1
@@ -37,6 +38,7 @@ func to_dict() -> Dictionary:
 		"graphics": graphics,
 		"shaders": shaders,
 		"renderer": renderer,
+		"picks": picks,
 		"bindings": bindings,
 		"dev_commands": dev_commands,
 		"volume": volume,
@@ -58,6 +60,11 @@ func from_dict(d: Dictionary) -> void:
 	volume = clampf(float(d.get("volume", volume)), 0.0, 1.0)
 	var quiet: Variant = d.get("muted_sounds", [])
 	muted_sounds = (quiet as Array).duplicate() if quiet is Array else []
+	var picked: Variant = d.get("picks", {})
+	picks = {}
+	if picked is Dictionary:
+		for option in picked:
+			picks[String(option)] = String(picked[option])  # an id the data no longer has falls back to "preset" where it is used
 	var saved = d.get("bindings", {})
 	if saved is Dictionary:
 		bindings = {}
