@@ -1,11 +1,12 @@
-Round 5: one mesh per NPC body, far people frozen, quiet ambience
+Round 5 batch 6: trading between players and shared player drops
 
-rigged_body.merge_pieces folds a body's skinned pieces into one mesh with
-a surface per material and its own distance levels (shared per kind of
-body); used for every NPC. People beyond 28 m stand still and cast no
-shadow. Millbrook with its ten guards costs what it did without them.
-Ambience: the wind is a faint low rumble with gusts, the birds stay, and
-a sparse layer of town life plays inside towns and villages.
+Online a gun a player drops is laid down by the host for everyone and goes
+to the first who picks it up (enemy and chest drops stay each player's
+own). Trading: hold interact on a player or /trade <name>, the other
+accepts with interact; two columns of guns and armour, ready ticks cleared
+by any change, both confirm; Esc, walking apart or leaving cancels. Rules
+in core/trade_desk.gd and core/shared_drops.gd (tools/trade_check.tscn);
+the host only judges that a thing is a legal roll.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

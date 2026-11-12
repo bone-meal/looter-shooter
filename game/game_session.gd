@@ -45,6 +45,8 @@ const ChatBox = preload("res://game/chat_box.gd")
 const ChatCommand = preload("res://core/chat_command.gd")
 const AdminCommands = preload("res://game/admin_commands.gd")
 const FantasyWorld = preload("res://game/fantasy_world.gd")
+const TradeScreen = preload("res://game/trade_screen.gd")
+const InventoryState = preload("res://core/inventory_state.gd")
 
 const HUD_REFRESH := 0.25
 const ARENA_SPAWN := Vector3(0, 0.1, 10)
@@ -56,6 +58,8 @@ const PACHINKO_RANGE := 2.8
 const PACHINKO_HOLD_DELAY := 0.4
 const PACHINKO_HOLD_EVERY := 0.15
 const SLOT_RANGE := 2.0
+const TRADE_RANGE := 4.0  # metres: look at a player this near and hold the interact key to ask for a trade
+const TRADE_HOLD := 0.6  # seconds the key must be held
 const CLUB_NEAR := 300.0  # metres from the club's middle within which its inside is built and runs
 
 signal look_changed(look: Dictionary)
@@ -107,6 +111,10 @@ var _coins_dirty := false
 var _slot_data: Dictionary
 var _slot_math: SlotMath
 var _slot_screen := SlotScreen.new()
+var _trade_screen := TradeScreen.new()  # online: the trade window (game/net_trade.gd tells it what to show)
+var _trade_asker := ""  # somebody asked us to trade: their name ...
+var _trade_ask_until := 0.0  # ... until this _time
+var _trade_hold := 0.0  # how long the interact key has been held on a player
 var _slot_machines: Array = []
 var _slot_machine: SlotMachine
 var _slot_pending: Dictionary = {}
@@ -228,6 +236,8 @@ func _ready() -> void:
 	_card_screen.closed.connect(_on_card_closed)
 	custom_layer.add_child(_card_screen)
 	custom_layer.add_child(_slot_screen)
+	custom_layer.add_child(_trade_screen)
+	_trade_screen.setup(_player.inventory, _player.items, _player.gun_db)
 	_slot_screen.setup(_slot_data)
 	_slot_screen.spin_requested.connect(_on_slot_spin)
 	_slot_screen.closed.connect(_close_slots)
@@ -259,6 +269,19 @@ func _ready() -> void:
 		net.chat.reply.connect(func(text: String) -> void: _chat.add_line(text, Color(0.75, 0.9, 1.0)))
 		net.chat.op_changed.connect(func(on: bool) -> void: _chat.add_line("The host %s commands." % ("lets you use" if on else "took away your"), Color(1.0, 0.85, 0.4)))
 		net.chat.world_command = _run_world_command
+		net.trade.desk.legal = _legal_thing
+		net.trade.message.connect(_on_trade_message)
+		_trade_screen.offered.connect(net.trade.offer)
+		_trade_screen.withdrawn.connect(net.trade.withdraw)
+		_trade_screen.ready_set.connect(net.trade.set_ready)
+		_trade_screen.confirmed.connect(net.trade.confirm)
+		_trade_screen.cancelled.connect(net.trade.cancel)
+		_trade_screen.cancelled.connect(_close_trade)  # at once, also when the host's desk is gone (it left, or a new host took over)
+		net.drops.legal = _legal_gun
+		net.drops.spawned.connect(_on_shared_drop)
+		net.drops.removed.connect(_field.remove_shared)
+		net.drops.granted.connect(_on_drop_granted)
+		net.drops.refused.connect(_on_drop_refused)
 		if net.is_active():
 			_build_fantasy()
 	apply_settings()
@@ -282,7 +305,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or _trade_screen.visible or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _flight_t >= 0.0:
 		return
@@ -315,6 +338,10 @@ func close_inventory() -> bool:
 		return true
 	if _customizer.visible:
 		_close_customizer()
+		return true
+	if _trade_screen.visible:  # Esc = cancel the trade
+		net.trade.cancel()
+		_close_trade()
 		return true
 	if not _inventory_screen.visible:
 		return false
@@ -417,8 +444,153 @@ func _toggle_inventory() -> void:
 func _on_gun_dropped(gun: Dictionary) -> void:
 	var ahead := -_player.global_transform.basis.z
 	ahead.y = 0.0
-	_field.spawn(gun, _player.global_position + ahead.normalized() * 1.6)
+	var at := _player.global_position + ahead.normalized() * 1.6
+	if net != null and net.can_send():
+		net.drops.drop(gun, at)  # online a dropped gun is for everyone: the host lays it down (_on_shared_drop)
+	else:
+		_field.spawn(gun, at)
 	_player_hud.notice("Dropped %s" % GunStats.display_name(_player.gun_db, gun))
+
+
+# --- online: guns players drop for each other (game/net_drops.gd) and trading (game/net_trade.gd) ---
+
+func _on_shared_drop(id: int, gun: Dictionary, pos: Vector3) -> void:
+	if not _field.has_shared(id) and _legal_gun(gun):  # a gun this machine cannot build is not shown
+		_field.spawn(gun, pos, id)
+
+
+func _on_drop_granted(gun: Dictionary) -> void:
+	if _player.inventory.add_gun(gun):
+		_player.refresh_held()
+		save_profile()
+		_player_hud.notice("Picked up %s" % GunStats.display_name(_player.gun_db, gun))
+	else:
+		_on_gun_dropped(gun)  # the bag filled up meanwhile: it goes back on the ground
+
+
+func _on_drop_refused(gun: Dictionary) -> void:
+	_player.inventory.add_gun(gun)
+	_on_inventory_changed()
+	_player_hud.notice("That gun cannot be dropped here.")
+
+
+# Host: may this gun be laid down or traded? A legal roll of the game's own data, nothing a client made up.
+func _legal_gun(gun: Dictionary) -> bool:
+	return GunGen.validate(_player.gun_db, gun) == ""
+
+
+# Host: guns and armour only (director, round 5).
+func _legal_thing(thing: Dictionary) -> bool:
+	if thing.has("gun"):
+		return _legal_gun(thing["gun"])
+	var id := String(thing.get("id", ""))
+	return _player.items.has_item(id) and _player.items.equip_slot(id) != ""
+
+
+func _free_slots() -> int:
+	var free := 0
+	for slot in InventoryState.SIZE:
+		if _player.inventory.item_id(slot) == "":
+			free += 1
+	return free
+
+
+# The other player this one is looking at from close by (0 = nobody): hold the interact key on them to ask for a trade.
+func _trade_target() -> int:
+	if net == null or not net.can_send():
+		return 0
+	var eye := _player.global_position + Vector3.UP * 1.5
+	var forward: Vector3 = _player.view_forward()
+	var best := 0
+	var best_dot := 0.9
+	for id: int in net.roster:
+		var body: Node3D = net.player_node(id)
+		if id == net.my_id() or body == null:
+			continue
+		var to := body.global_position + Vector3.UP - eye
+		if to.length() <= TRADE_RANGE and to.normalized().dot(forward) > best_dot:
+			best_dot = to.normalized().dot(forward)
+			best = id
+	return best
+
+
+func _hold_trade(delta: float) -> void:
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
+	if busy or not Input.is_action_pressed("interact") or _trade_target() == 0 or not _field.nearest(_player.global_position).is_empty():
+		_trade_hold = 0.0
+		return
+	_trade_hold += delta
+	if _trade_hold >= TRADE_HOLD:
+		_trade_hold = -2.0  # asked: not again for a moment
+		net.trade.ask(_trade_target())
+
+
+# "/trade <name>": the same ask by name.
+func _trade_by_name(who: String) -> String:
+	if net == null or not net.can_send():
+		return "Trading needs an online session."
+	for id: int in net.roster:
+		if id != net.my_id() and String(net.roster[id]).to_lower() == who.to_lower():
+			net.trade.ask(id)
+			return "Asked %s to trade." % net.roster[id]
+	return "No player called %s." % who
+
+
+# What the host's trade desk tells this player (core/trade_desk.gd).
+func _on_trade_message(what: String, args: Array) -> void:
+	match what:
+		"asked":
+			_trade_asker = String(args[1])
+			_trade_ask_until = _time + 20.0
+			_player_hud.notice("%s wants to trade." % _trade_asker)
+		"waiting":
+			_player_hud.notice("Asked %s to trade..." % args[0])
+		"table":
+			if not _trade_screen.is_open():
+				if _inventory_screen.visible:
+					_toggle_inventory()
+				_player.controls_enabled = false
+				Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+			_trade_screen.show_table(args[0])
+		"refused":
+			_player_hud.notice("That cannot be traded.")
+		"done":
+			_close_trade()
+			_finish_trade(args[0], args[1])
+		"ended":
+			_trade_ask_until = 0.0
+			if _trade_screen.is_open():
+				_close_trade()
+			if String(args[0]) != "":
+				_player_hud.notice(String(args[0]))
+
+
+func _close_trade() -> void:
+	_trade_screen.close()
+	_player.controls_enabled = true
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+# The trade went through: what we gave leaves the bag (by the slots we named), what we got goes in.
+func _finish_trade(gave: Array, got: Array) -> void:
+	for ref: Variant in gave:
+		var slot := int(ref)
+		if slot < 0 or slot >= InventoryState.SIZE:
+			continue
+		if _player.inventory.take_gun(slot).is_empty() and _player.inventory.item_id(slot) != "":
+			_player.inventory.remove(_player.inventory.item_id(slot), 1)
+	for thing: Variant in got:
+		if not thing is Dictionary:
+			continue
+		var given: Dictionary = thing
+		if given.has("gun") and _legal_gun(given["gun"]):
+			if not _player.inventory.add_gun(given["gun"]):
+				_on_gun_dropped(given["gun"])
+		elif given.has("id") and _player.items.has_item(String(given["id"])):
+			_player.inventory.add(String(given["id"]), 1)
+	_on_inventory_changed()
+	save_profile()
+	_player_hud.notice("Trade done: gave %d, got %d." % [gave.size(), got.size()])
 
 
 func _on_inventory_changed() -> void:
@@ -458,6 +630,10 @@ func _on_chat_closed() -> void:
 
 
 func _on_chat_submitted(text: String) -> void:
+	if String(ChatCommand.parse(text).get("name", "")) == "trade":  # every player may trade: no operator right needed
+		_chat.add_line(ChatCommand.clean(text), Color(0.7, 0.7, 0.7))
+		_chat.add_line(_trade_by_name(" ".join(PackedStringArray(ChatCommand.parse(text)["args"]))), Color(0.75, 0.9, 1.0))
+		return
 	if ChatCommand.parse(text).is_empty():
 		if net != null and net.is_active():
 			net.chat.say(text)
@@ -615,13 +791,18 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _games.is_open() or _flight_t >= 0.0:
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _games.is_open() or _flight_t >= 0.0:
 		return ""
+	if _time < _trade_ask_until:
+		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _near(Lifeguard.POS, LIFEGUARD_RANGE):
 		return "[%s] Talk to the lifeguard: change your look" % key
 	var drop := _field.nearest(_player.global_position)
 	if not drop.is_empty():
 		return "[%s] Pick up %s" % [key, GunStats.display_name(_player.gun_db, drop["gun"])]
+	var partner := _trade_target()
+	if partner != 0:
+		return "[hold %s] Trade with %s" % [key, net.roster[partner]]
 	var vendor := _vendor_near()
 	if not vendor.is_empty():
 		return "[%s] Buy a %s (%d coins) - a random rolled gun, %s or better" % [key, vendor["name"], int(vendor["price"]), vendor["min_tier"]]
@@ -657,7 +838,10 @@ func _prompt() -> String:
 
 
 func _interact() -> void:
-	if _near(Lifeguard.POS, LIFEGUARD_RANGE):
+	if _time < _trade_ask_until:
+		_trade_ask_until = 0.0
+		net.trade.answer(true)
+	elif _near(Lifeguard.POS, LIFEGUARD_RANGE):
 		_open_customizer()
 	elif not _field.nearest(_player.global_position).is_empty():
 		_pick_up(_field.nearest(_player.global_position))
@@ -885,6 +1069,12 @@ func _buy_crate(crate: Dictionary) -> void:
 
 
 func _pick_up(drop: Dictionary) -> void:
+	if int(drop["shared"]) != 0:  # a gun another player may be reaching for too: the host says who gets it (_on_drop_granted)
+		if _free_slots() == 0:
+			_player_hud.notice("Inventory full: make room first.")
+		else:
+			net.drops.take(int(drop["shared"]))
+		return
 	if _player.inventory.add_gun(drop["gun"]):
 		var gun: Dictionary = _field.take(drop)
 		_player.refresh_held()
@@ -1093,6 +1283,8 @@ func _process(delta: float) -> void:
 		CrowModel.pose(_crow_a, CrowModel.IDLE, _time)
 	CrowModel.pose(_crow_b, CrowModel.IDLE, _time + 1.7)
 	_hold_pachinko(delta)
+	if net != null and net.can_send():
+		_hold_trade(delta)
 	_rest_in -= delta
 	if _rest_in <= 0.0:
 		_rest_worlds()

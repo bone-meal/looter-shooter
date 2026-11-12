@@ -26,7 +26,9 @@ func count() -> int:
 
 
 # Drops `gun` at `pos` (world position on the floor). The oldest drop goes when the cap is reached.
-func spawn(gun: Dictionary, pos: Vector3) -> void:
+# shared = the host's number of a gun a PLAYER dropped online (game/net_drops.gd; 0 = this machine's own drop):
+# such a drop stays until the host says it is gone (`remove_shared`), whatever its age or `clear`.
+func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	while _drops.size() >= int(cfg["max_world_drops"]):
 		_remove(0)
 	var tier_id := String(gun["tier"])
@@ -84,7 +86,7 @@ func spawn(gun: Dictionary, pos: Vector3) -> void:
 		player.play()
 		SoundBoard.heard("chime_" + tier_id)
 	var ttl := float(cfg["despawn_seconds_gold_up"]) if ti >= gun_db.tier_index("gold") else float(cfg["despawn_seconds"])
-	_drops.append({"node": node, "gun": gun, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": ttl, "animated": TierStyle.animated(gun_db, tier_id), "tier": tier_id})
+	_drops.append({"node": node, "gun": gun, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": INF if shared != 0 else ttl, "animated": TierStyle.animated(gun_db, tier_id), "tier": tier_id, "shared": shared})
 	_tint(_drops[_drops.size() - 1], 0.0)
 
 
@@ -107,9 +109,25 @@ func take(drop: Dictionary) -> Dictionary:
 	return gun
 
 
+func has_shared(shared: int) -> bool:
+	for d in _drops:
+		if int(d["shared"]) == shared:
+			return true
+	return false
+
+
+func remove_shared(shared: int) -> void:
+	for i in _drops.size():
+		if int(_drops[i]["shared"]) == shared:
+			_remove(i)
+			return
+
+
+# This machine's own drops go; guns other players can still pick up stay.
 func clear() -> void:
-	while not _drops.is_empty():
-		_remove(0)
+	for i in range(_drops.size() - 1, -1, -1):
+		if int(_drops[i]["shared"]) == 0:
+			_remove(i)
 
 
 func _remove(i: int) -> void:

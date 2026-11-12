@@ -1,1 +1,1 @@
-!uncap;/tp fantasy;!wait 9;!heard 4;/tp millbrook;!wait 10;!heard 4;!look 240 0;!wait 2;!measure millbrook as he plays;!goto 70 560;!wait 6;!heard 3
+!wait 3;/give gun purple ak47;!wait 1;!inv;!wait 1;!inv log;!inv hover 4;!inv drop;!wait 1;!inv log;!inv;!wait 1;!snap t1_dropped;/trade nobody;!wait 1;!key interact;!wait 2;!inv;!wait 1;!inv log;!inv;/tp fantasy;!wait 8;!measure farm

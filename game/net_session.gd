@@ -16,6 +16,8 @@ const NetSpirits = preload("res://game/net_spirits.gd")
 const NetPvp = preload("res://game/net_pvp.gd")
 const NetChat = preload("res://game/net_chat.gd")
 const NetFantasy = preload("res://game/net_fantasy.gd")
+const NetTrade = preload("res://game/net_trade.gd")
+const NetDrops = preload("res://game/net_drops.gd")
 
 signal hosted(id: String)
 signal joined
@@ -49,6 +51,8 @@ var _spirits: Node
 var _pvp: Node
 var chat: Node  # text chat and command permissions (game/net_chat.gd)
 var fantasy: Node  # the fantasy world's creatures and party quests (game/net_fantasy.gd)
+var trade: Node  # trading between players (game/net_trade.gd)
+var drops: Node  # guns players drop for each other (game/net_drops.gd)
 
 
 func _ready() -> void:
@@ -76,6 +80,14 @@ func _ready() -> void:
 	fantasy.name = "Fantasy"
 	fantasy.net = self
 	add_child(fantasy)
+	trade = NetTrade.new()
+	trade.name = "Trade"
+	trade.net = self
+	add_child(trade)
+	drops = NetDrops.new()
+	drops.name = "Drops"
+	drops.net = self
+	add_child(drops)
 
 
 func is_active() -> bool:
@@ -115,6 +127,16 @@ func local_player() -> Node3D:
 
 
 # Other players' bodies (the shared boss chooses its victim among these and the local player).
+# Where every player this machine knows of is right now, itself included: peer id -> world position.
+func positions() -> Dictionary:
+	var out := {}
+	for id in _ghosts:
+		out[id] = _ghosts[id]["pos"]
+	if _player != null and is_instance_valid(_player):
+		out[my_id()] = _player.global_position
+	return out
+
+
 # Where the other players are right now (world positions): enough to know which worlds are in use.
 func other_positions() -> Array[Vector3]:
 	var out: Array[Vector3] = []
