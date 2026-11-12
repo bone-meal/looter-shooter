@@ -67,8 +67,20 @@ func half_size(model: String) -> Vector2:
 # The furniture of one kind of room in the building's own axes: [{"model", "x", "z", "turn", "loot", "station"}].
 func furniture(kind: String, half: Vector2) -> Array:
 	var out: Array = []
+	var clear := float(data.get("clear_m", 0.0))
+	var may_lie: Array = data.get("clear_skip", [])
+	var n := 0
 	for rule: Dictionary in data["rooms"][kind]["items"]:
-		out.append({"model": String(rule["model"]), "x": float(rule["at"][0]) * half.x, "z": -float(rule["at"][1]) * half.y,  # along: -1 is the back wall (+z), 1 the door's wall (-z)
+		var x := float(rule["at"][0]) * half.x
+		var z := -float(rule["at"][1]) * half.y  # along: -1 is the back wall (+z), 1 the door's wall (-z)
+		var size: Dictionary = props.get(String(rule["model"]), {})
+		var reach := maxf(float(size.get("w", 1.0)), float(size.get("d", 1.0))) * 0.5
+		n += 1
+		# The way from the door to the middle stays free (round 5): what stood in it moves aside, as far as the wall allows.
+		if clear > 0.0 and z < half.y * 0.25 and absf(x) < clear + reach and not may_lie.has(String(rule["model"])):
+			var side := 1.0 if x > 0.01 or (absf(x) <= 0.01 and n % 2 == 0) else -1.0
+			x = side * maxf(minf(clear + reach, half.x - reach * 0.7), absf(x))
+		out.append({"model": String(rule["model"]), "x": x, "z": z,
 			"turn": deg_to_rad(float(rule.get("turn", 0.0))), "loot": String(rule.get("loot", "")), "station": String(rule.get("station", ""))})
 	return out
 

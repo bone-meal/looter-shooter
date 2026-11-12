@@ -174,14 +174,15 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 		_trunk(trunks, float(tree[1]), float(tree[2]), 0.3 * float(tree[3]))
 	for thing: Array in layout.clutter(key):  # boulders, logs, bushes: [model, x, z, grow, turn, radius]
 		_clutter_add(key, String(thing[0]), Transform3D(Basis(Vector3.UP, float(thing[4])).scaled(Vector3.ONE * float(thing[3])), Vector3(float(thing[1]), terrain.height(float(thing[1]), float(thing[2])) - 0.12, float(thing[2]))))
-		_trunk(trunks, float(thing[1]), float(thing[2]), float(thing[5]))
+		if not layout.walked_over(String(thing[0])):  # bushes and stumps are walked through; boulders, spires and logs stay solid
+			_trunk(trunks, float(thing[1]), float(thing[2]), float(thing[5]))
 	for node: Array in layout.nodes(key):  # things to work on: [slot, node id, x, y, z, turn]
 		var def: Dictionary = _node_data[String(node[1])]
 		var index := _place(by_model, String(def["model"]), float(node[2]), float(node[3]), float(node[4]), 1.0, float(node[5]))
 		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), float(node[3]), float(node[4])), String(def["model"]), index)
 		if String(def["skill"]) == "woodcutting":
 			_trunk(trunks, float(node[2]), float(node[4]), 0.35)
-		elif String(def["skill"]) == "mining":  # a rock is as wide as its model
+		elif String(def["skill"]) == "mining" and not layout.walked_over(String(def["model"])):  # a rock is as wide as its model (the low ore rocks are walked over)
 			var rock: Dictionary = layout.props.get(String(def["model"]), {})
 			_trunk(trunks, float(node[2]), float(node[4]), maxf(maxf(float(rock.get("w", 0.9)), float(rock.get("d", 0.9))) * 0.4, 0.35))
 	for id: String in by_model:

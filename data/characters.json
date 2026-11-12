@@ -579,7 +579,7 @@
    "braids": "buns"
   },
   "outfits": {
-   "farmer": "farmer",
+   "town_guard": "guard", "man_at_arms": "man_at_arms", "farmer": "farmer",
    "fisher": "townsfolk",
    "druid": "traveller",
    "monk": "robed",

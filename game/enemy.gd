@@ -35,6 +35,7 @@ var sounds: Node  # the game's sound player (game/fantasy_sounds.gd with data/so
 var order_goal := Vector3.INF  # squad order (game/squad_command.gd): walk to this spot instead of straight at the target
 var order_attack := true  # squad order: it may strike now (false = it waits its turn)
 var order_until := 0.0  # engine time the order stops counting (orders are renewed a few times a second)
+var calm_until := 0.0  # engine time until which it has given up the chase (its prey is in a safe place): no special attacks (game/boss_moves.gd)
 var health: HealthState
 var _slow_until := 0.0  # gun buff: seconds (engine time) until the slow ends
 var _slow_amount := 0.0

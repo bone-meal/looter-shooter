@@ -140,6 +140,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	var folk := {}
 	for region: Dictionary in terrain.regions:
 		folk[String(region["id"])] = region["folk"]
+	folk["guard"] = data["world"]["guard_folk"]
 	places.setup(terrain, layout, folk)
 	LoadClock.mark("fantasy: every place laid out")
 	mana = max_mana()
@@ -165,6 +166,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	add_child(squads)
 	squads.source = director
 	squads.setup(self, player, data["squad"])
+	squads.safe.setup(terrain.places, data["squad"]["safe"])
 	add_child(caster)
 	caster.setup(self, player, effects)
 	caster.cast_done.connect(_on_cast)

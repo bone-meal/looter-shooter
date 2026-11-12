@@ -374,8 +374,8 @@ func loose(item: Dictionary) -> bool:
 # house its wall pieces, so the way through stays open.
 func boxes(item: Dictionary) -> Array:
 	var model := String(item["model"])
-	if not props.has(model) or (not bool(item.get("solid", false)) and _walk_over.has(model)):
-		return []
+	if not props.has(model) or _walk_over.has(model):
+		return []  # unknown, or one of the low things nobody bumps into (rules "walk_over": rugs, crop rows, bushes, stumps, small rocks ...)
 	var size: Dictionary = props[model]
 	var out: Array = []
 	if size.has("walls"):
@@ -384,6 +384,21 @@ func boxes(item: Dictionary) -> Array:
 		return out
 	var fit := 1.0 if item.has("run") else 0.92  # stretches of a wall close up; other things are a little smaller than they look
 	return [[float(size["x"]), float(size["z"]), maxf(float(size["w"]) * fit, 0.3), maxf(float(size["d"]) * fit, 0.3), float(size["h"])]]
+
+
+# True for the low things nobody bumps into (rules "walk_over").
+func walked_over(model: String) -> bool:
+	return _walk_over.has(model)
+
+
+# Small, roughly square things get a ROUND collider of this radius, so nobody catches on their corners
+# (0 = keep the box: long things, walls, buildings and anything made of several pieces).
+func round_radius(item: Dictionary, box: Array) -> float:
+	var wide := maxf(float(box[2]), float(box[3]))
+	var narrow := minf(float(box[2]), float(box[3]))
+	if item.has("run") or (props[String(item["model"])] as Dictionary).has("walls") or wide > 2.6 or wide > narrow * 1.6:
+		return 0.0
+	return (wide + narrow) * 0.25
 
 
 # True when a thing's boxes cover a point (with `pad` to spare). Works in any flat axes the thing is given in: the

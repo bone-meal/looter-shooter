@@ -244,9 +244,16 @@ func _enter(door: Dictionary) -> void:
 		_room.add_child(made)
 		for box: Array in _world.get("layout").call("boxes", piece):  # furniture is in the way like anything else
 			var shape := CollisionShape3D.new()
-			var block := BoxShape3D.new()
-			block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
-			shape.shape = block
+			var radius: float = _world.get("layout").call("round_radius", piece, box)
+			if radius > 0.0:  # small square things are round to walk past (no corners to catch on)
+				var drum := CylinderShape3D.new()
+				drum.radius = radius
+				drum.height = float(box[4])
+				shape.shape = drum
+			else:
+				var block := BoxShape3D.new()
+				block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
+				shape.shape = block
 			shape.transform = made.transform * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
 			body.add_child(shape)
 		var at := _room.global_position + made.position

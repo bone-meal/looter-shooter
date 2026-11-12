@@ -381,6 +381,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"buildings":  # "!buildings full" / "!buildings plain": which building models places built from now on use, whatever the tier says (to measure one against the other)
 			(session.call("fantasy").get("places") as Node).set("plain", words[1] == "plain")
 			_lines.append("buildings %s" % words[1])
+		"ledge":  # "!ledge 0.3": a solid block of that height (4 m wide, 6 m deep) starting 1.3 m ahead of the player (does _step_up climb it or not?)
+			var block := StaticBody3D.new()
+			var shape := CollisionShape3D.new()
+			var box := BoxShape3D.new()
+			box.size = Vector3(4.0, float(words[1]), 6.0)
+			shape.shape = box
+			block.add_child(shape)
+			session.add_child(block)
+			var forward: Vector3 = -player.global_transform.basis.z
+			block.global_position = player.global_position + Vector3(forward.x, 0.0, forward.z).normalized() * 4.3 + Vector3.UP * (float(words[1]) * 0.5 - 0.05)
+			_lines.append("ledge %s m ahead, player at height %.2f" % [words[1], player.global_position.y])
 		"where":  # the player's spot for the log: map metres in the fantasy world, world metres elsewhere
 			var here: Vector3 = player.global_position
 			if session.call("fantasy") != null:

@@ -47,6 +47,9 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 		var folk: Dictionary = text.get("folk", {}).get(String(region["id"]), {})
 		var says: Variant = folk.get("says", [])
 		region["folk"] = {"name": String(folk.get("name", "")), "lines": says if says is Array else [says]}
+	var guard: Dictionary = text.get("folk", {}).get("guard", {})
+	var guard_says: Variant = guard.get("says", [])
+	world["guard_folk"] = {"name": _line(text, "folk", "guard", "name", missing), "lines": guard_says if guard_says is Array else [guard_says]}
 	for place: Dictionary in world["places"]:
 		place["name"] = _line(text, "place", String(place["id"]), "name", missing)
 	for lake: Dictionary in world.get("lakes", []):

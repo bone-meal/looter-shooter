@@ -97,3 +97,14 @@ name: Keg
 # WHAT: the name of this thing when it can be searched ("Search ...").
 name: Pots
 
+
+# ---------------- GUARDS ----------------
+
+[folk guard]
+# WHO: the guards of every town, village and the farm (they stand at gates and walk a round; they do not fight yet).
+# `name` floats over each of them; each `says` line is one thing one of them tells a player who talks to them.
+name: Guard
+says: Nothing from the wilds gets past the boundary stones. Stay inside them and you are safe.
+says: Keep your staff low inside the walls.
+says: Quiet watch. I would like it to stay that way.
+says: The beasts turn back at the border. Do not ask me why; I only walk the round.

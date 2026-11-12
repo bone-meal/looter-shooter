@@ -297,6 +297,13 @@ func third_person_hold() -> Vector3:
 	return Vector3(float(at[0]), float(at[1]), float(at[2]))
 
 
+# Stops the body in the pose it has (no animation, so no skinning work) until animate() is called again:
+# for people too far away to see them breathe.
+func still() -> void:
+	if _tree != null:
+		_tree.active = false
+
+
 # Shows one moment of a clip and holds it (for still pictures and previews); stops the blended motion.
 func hold(clip: String, time: float) -> void:
 	_held_clip = clip

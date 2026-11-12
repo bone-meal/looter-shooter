@@ -1,10 +1,11 @@
-Round 5: own graphics choices, lazy club, host sleeps unused worlds
+Round 5 batch 4: safe towns, show guards, bigger rooms, no more catching
 
-Settings page: anti-aliasing, bounce light and shadow distance, each with
-its choices and a description (data/graphics.json "options"); the page
-scrolls. The club's inside and casino are built on the first trip there;
-the island shows only its shell until then. Online the host keeps a world
-awake only while a player is in it.
+Creatures turn back at a border round every town, village and the farm and
+drop the chase (core/safe_places.gd, squad command). Guards stand inside
+gates and walk rounds (show only). Rooms are at least 8 x 7 m with a clear
+way from the door to the middle. Bushes, stumps, sacks, troughs and ore
+rocks are walked through, small props have round colliders, and the player
+steps onto ledges up to 0.45 m.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

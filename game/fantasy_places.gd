@@ -16,6 +16,7 @@ const BodyMotion = preload("res://game/body_motion.gd")
 
 const HIDE_EXTRA := 60.0
 const PEOPLE_AT := 80.0  # people are built later than houses (bodies cost more)
+const NEAR_M := 28.0  # people farther than this stand still and cast no shadow: a moving body is skinned piece by piece every frame and drawn a dozen times in every shadow split (ten guards cost Millbrook 2-4 ms, round 5). Guards on their round keep walking.
 const JOINTED := ["windmill", "hearth"]  # models made of more than one part: placed as scenes, not as copies
 const MERGE_PER_FRAME := 6  # buildings folded into a place's one mesh each frame
 const INSIDE_M := 45.0  # furniture inside walk-in houses is drawn within this distance
@@ -32,6 +33,7 @@ var motion := 3  # graphics tier: 0 nothing moves, 1 windmill sails, 2 people br
 var plain := false  # graphics tier: buildings are shown as their plain models (assets/models/fantasy/plain/, about 30 % of the triangles)
 var _merges: Array = []  # places whose buildings are still being folded into one mesh: {"holder", "list", "next", "tools"}
 var stations: Array = []  # {"kind": workbench|forge|cauldron|fire, "at": Vector3, "place": id, "until": engine time or 0}
+var _player_at := Vector3(INF, 0.0, INF)  # where the player was at the last `follow` (guards halt when he is close)
 var people: Array = []  # {"id", "name", "at": Vector3, "place", "greet", "look", "folk": bool, "node", "mark"}
 
 var _built := {}  # place or site id -> Node3D
@@ -86,11 +88,80 @@ func setup(land_terrain: FantasyTerrain, world_layout: FantasyLayout, folk: Dict
 			people.append({"id": "folk:%s:%d" % [place["id"], i], "name": String(words.get("name", "")), "at": Vector3(spot.x, terrain.height(spot.x, spot.y), spot.y),
 				"place": String(place["id"]), "greet": String(lines[(i + int(absf(cz))) % lines.size()]) if not lines.is_empty() else "", "folk": true, "node": null, "mark": null,
 				"look": {"gender": style[0], "outfit": "desert_nomad" if tribe else style[1], "hair": style[2], "hair_color": style[3], "skin": (i * 3 + int(absf(cx))) % 10}})
+		_post_guards(place, things, folk.get("guard", {}))
+
+
+# Show-only guards (round 5, numbers in data/fantasy/layouts.json "guards"): some stand just inside each gate looking
+# out, the others walk a round inside the place. They are ordinary folk to talk to; what keeps the creatures out is
+# core/safe_places.gd, not them. Each machine walks its own guards (they are not sent over the network).
+func _post_guards(place: Dictionary, things: Array, words: Dictionary) -> void:
+	var all: Dictionary = layout.rules.get("guards", {})
+	var rule: Dictionary = all.get("kinds", {}).get(String(place["kind"]), {})
+	if rule.is_empty():
+		return
+	var middle := Vector2(float(place["pos"][0]), float(place["pos"][1]))
+	var lines: Array = words.get("lines", [])
+	var count := 0
+	for item: Dictionary in things:
+		if not String(item["model"]).ends_with("gate"):
+			continue
+		var gate := Vector2(float(item["x"]), float(item["z"]))
+		var inward := (middle - gate).normalized()
+		for n in int(rule.get("at_gate", 0)):
+			var side := inward.orthogonal() * (3.2 if n % 2 == 0 else -3.2) * float(1 + (n >> 1))
+			var spot := layout.push_out(gate.x + inward.x * 4.5 + side.x, gate.y + inward.y * 4.5 + side.y, 0.9)
+			_add_guard(place, count, all["gate_looks"], spot, words, lines).merge({"yaw": atan2(-inward.x, -inward.y) + PI})
+			count += 1
+	var ring := float(rule.get("ring", 0.3)) * float(place["flat"])
+	var steps := maxi(int(TAU * ring / 1.5), 8)
+	for n in int(rule.get("patrol", 0)):
+		var path := PackedVector2Array()
+		for step in steps:
+			var a := TAU * float(step) / float(steps) * (1.0 if n % 2 == 0 else -1.0)  # every second guard walks the other way round
+			var spot := layout.push_out(middle.x + cos(a) * ring, middle.y + sin(a) * ring, 0.9)
+			if path.is_empty() or spot.distance_to(path[path.size() - 1]) > 0.5:
+				path.append(spot)
+		var start := floori(float(steps * n) / float(maxi(int(rule["patrol"]), 1))) % path.size()
+		_add_guard(place, count, all["patrol_looks"], path[start], words, lines).merge({"path": path, "next": (start + 1) % path.size()})
+		count += 1
+
+
+func _add_guard(place: Dictionary, n: int, looks: Array, spot: Vector2, words: Dictionary, lines: Array) -> Dictionary:
+	var style: Array = looks[(n + int(absf(float(place["pos"][0])))) % looks.size()]
+	var who := {"id": "guard:%s:%d" % [place["id"], n], "name": String(words.get("name", "")), "at": Vector3(spot.x, terrain.height(spot.x, spot.y), spot.y),
+		"place": String(place["id"]), "greet": String(lines[(n + int(absf(float(place["pos"][1])))) % lines.size()]) if not lines.is_empty() else "", "folk": true, "node": null, "mark": null,
+		"look": {"gender": style[0], "outfit": style[1], "hair": style[2], "hair_color": style[3], "skin": (n * 3 + int(absf(float(place["pos"][0])))) % 10}}
+	people.append(who)
+	return who
+
+
+# One frame of a guard's round: towards the next point of its path, halting while a player stands close.
+# Returns how fast it walks (0..1) for its animation.
+func _walk(who: Dictionary, delta: float) -> float:
+	var at: Vector3 = who["at"]
+	var guards: Dictionary = layout.rules["guards"]
+	if Vector2(_player_at.x - at.x, _player_at.z - at.z).length() < float(guards["halt_m"]):
+		return 0.0
+	var path: PackedVector2Array = who["path"]
+	var to := path[int(who["next"])] - Vector2(at.x, at.z)
+	if to.length() < 0.25:
+		who["next"] = (int(who["next"]) + 1) % path.size()
+		return 0.45
+	var step := to.normalized() * float(guards["pace"]) * delta
+	at.x += step.x
+	at.z += step.y
+	at.y = terrain.height(at.x, at.z)
+	who["at"] = at
+	var body: Node3D = who["node"]
+	body.position = at
+	body.rotation.y = lerp_angle(body.rotation.y, atan2(to.x, to.y) + PI, minf(delta * 6.0, 1.0))
+	return 0.45
 
 
 # Call twice a second with the player's spot. Builds ONE place or site per call, the nearest first (building every
 # one in range in the same frame was a long stall on arriving), and removes what is far away.
 func follow(local: Vector3) -> void:
+	_player_at = local
 	var next_id := ""
 	var next_items: Array = []
 	var next_d := INF
@@ -129,6 +200,12 @@ func follow(local: Vector3) -> void:
 		var wanted := d < PEOPLE_AT and (not bool(who["folk"]) or FantasyTerrain.hash01(i, 7, 3) < folk_share)
 		if wanted and who["node"] == null:
 			_stand(who)
+		if who["node"] != null and bool(who.get("shaded", true)) != (d < NEAR_M):
+			who["shaded"] = d < NEAR_M
+			for part: Node in (who["node"] as Node).find_children("*", "MeshInstance3D", true, false):
+				(part as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if d < NEAR_M else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			if d >= NEAR_M and not who.has("path") and (who["node"] as Node).has_method("still"):
+				(who["node"] as Node).call("still")
 		elif who["node"] != null and d > PEOPLE_AT + 30.0:
 			(who["node"] as Node3D).queue_free()
 			who["node"] = null
@@ -255,8 +332,8 @@ func _process(delta: float) -> void:
 	_clock += delta
 	if motion >= 2:
 		for i in people.size():  # people stand breathing, not frozen
-			if people[i]["node"] != null:
-				BodyMotion.animate(people[i]["node"], 0.0, 0.0, _clock + float(i) * 0.7, false)
+			if people[i]["node"] != null and (bool(people[i].get("shaded", true)) or people[i].has("path")):
+				BodyMotion.animate(people[i]["node"], _walk(people[i], delta) if people[i].has("path") else 0.0, 0.0, _clock + float(i) * 0.7, false)
 	_timer += delta
 	if _timer < 1.0:
 		return
@@ -336,9 +413,16 @@ func _build(id: String, items: Array) -> void:
 			(copies[key] as Array).append(at)
 		for box: Array in layout.boxes(item):
 			var shape := CollisionShape3D.new()
-			var block := BoxShape3D.new()
-			block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
-			shape.shape = block
+			var radius := layout.round_radius(item, box)
+			if radius > 0.0:
+				var drum := CylinderShape3D.new()
+				drum.radius = radius
+				drum.height = float(box[4])
+				shape.shape = drum
+			else:
+				var block := BoxShape3D.new()
+				block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
+				shape.shape = block
 			shape.transform = at * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
 			body.add_child(shape)
 		if size.has("inner"):  # a walk-in house: a warm light inside
@@ -383,10 +467,13 @@ func _stand(entry: Dictionary) -> void:
 	var look := {"gender": "female", "height": 1.0, "weight": 1.0, "bust": 0.3, "glutes": 0.3, "skin": 2, "hair": "bob", "hair_color": "#553322", "face": "gentle_smile", "outfit": "farmer"}
 	look.merge(entry["look"], true)
 	var body := NpcBody.build(look)
+	entry["shaded"] = true  # a new body casts a shadow until `follow` finds it far away
 	body.position = entry["at"]
 	BodyMotion.animate(body, 0.0, 0.0, 0.0, false)  # a standing pose even on tiers where people do not move
 	var home := terrain.place(String(entry["place"]))
 	body.rotation.y = atan2(float(home["pos"][0]) - entry["at"].x, float(home["pos"][1]) - entry["at"].z) + PI  # face the middle of the place
+	if entry.has("yaw"):
+		body.rotation.y = float(entry["yaw"])  # a gate guard looks out through its gate
 	add_child(body)
 	if String(entry["name"]) != "":
 		var plate := Label3D.new()

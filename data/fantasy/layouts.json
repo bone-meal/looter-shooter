@@ -1704,26 +1704,19 @@
    "cairns": 1
   }
  },
- "walk_over": [
-  "rug",
-  "path_stones",
-  "veg_patch",
-  "crop_rows",
-  "nets",
-  "laundry",
-  "banner_blue",
-  "banner_red",
-  "prayer_flags",
-  "ripples",
-  "bedroll",
-  "bone_pile",
-  "stool",
-  "herb_blue",
-  "herb_green",
-  "herb_red",
-  "herb_yellow",
-  "herb_mushroom",
-  "signpost",
-  "staff_orb"
- ]
+ "guards": {
+  "_about": "Show-only guards (they do not fight yet). Per kind of place: at_gate = how many stand inside each gate, patrol = how many walk a round, ring = that round's radius as a share of the place's flat radius. pace = walking speed in m/s, halt_m = a guard stops while a player is this close. looks = [gender, trade, hair, hair colour] (the trade picks the clothes: data/characters.json npc.outfits).",
+  "pace": 1.25,
+  "halt_m": 3.0,
+  "gate_looks": [["male", "man_at_arms", "buzz", "#3a2f25"], ["female", "man_at_arms", "bob", "#5a4630"]],
+  "patrol_looks": [["male", "town_guard", "crop", "#5a4630"], ["female", "town_guard", "ponytail", "#2e2a22"], ["male", "town_guard", "buzz", "#777777"]],
+  "kinds": {
+   "town": {"at_gate": 2, "patrol": 2, "ring": 0.345},
+   "town_palisade": {"at_gate": 2, "patrol": 2, "ring": 0.345},
+   "town_open": {"patrol": 3, "ring": 0.345},
+   "village": {"patrol": 2, "ring": 0.3},
+   "farm": {"patrol": 1, "ring": 0.55}
+  }
+ },
+ "walk_over": ["banner_blue", "banner_red", "bedroll", "bone_pile", "bush_ash", "bush_dry", "bush_gold", "bush_green", "chopping_block", "crop_rows", "herb_blue", "herb_green", "herb_mushroom", "herb_red", "herb_yellow", "laundry", "nets", "path_stones", "pottery", "prayer_flags", "ripples", "rock_copper", "rock_iron", "rock_obsidian", "rock_skysteel", "rock_sunstone", "rug", "sacks", "signpost", "sled", "staff_orb", "stool", "stump", "trough", "veg_patch"]
 }

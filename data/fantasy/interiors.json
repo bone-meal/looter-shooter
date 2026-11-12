@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "What is inside the fantasy world's buildings (core/fantasy_interiors.gd, game/fantasy_rooms.gd). buildings: the start of a model's name -> the kinds of interior it can be (several = picked per building from where it stands, so the same building is always the same thing). A model whose entry in props.json has \"inner\" is a WALK-IN house (main story): its furniture stands in the open world. Every other listed building is entered through its door into a room of its own (fade). rooms: per kind the floor and wall material (wood, stone, plaster, cloth, dirt), the wall colour and the furniture: model, at = [across, along] from -1 to 1 (across: -1 left, 1 right; along: -1 back wall, 1 the door's wall), turn in degrees (0 = facing the door), loot = a table below (a container to search), station = fire / forge / workbench / cauldron (usable like the ones outside). loot: rolls = [fewest, most] items a search gives, refill_s = seconds until it can be searched again, items = item id -> weight. Names of buildings and containers are in data/fantasy/writing/buildings.txt.",
+ "_about": "What is inside the fantasy world's buildings (core/fantasy_interiors.gd, game/fantasy_rooms.gd). buildings: the start of a model's name -> the kinds of interior it can be (several = picked per building from where it stands, so the same building is always the same thing). A model whose entry in props.json has \"inner\" is a WALK-IN house (main story): its furniture stands in the open world. Every other listed building is entered through its door into a room of its own (fade). smallest / largest: a room's least and most [width, depth] in metres. clear_m: half the width of the way kept free from the door to the middle of every room (furniture standing in it is moved aside, towards the nearer side wall; clear_skip = things that may lie in it). rooms: per kind the floor and wall material (wood, stone, plaster, cloth, dirt), the wall colour and the furniture: model, at = [across, along] from -1 to 1 (across: -1 left, 1 right; along: -1 back wall, 1 the door's wall), turn in degrees (0 = facing the door), loot = a table below (a container to search), station = fire / forge / workbench / cauldron (usable like the ones outside). loot: rolls = [fewest, most] items a search gives, refill_s = seconds until it can be searched again, items = item id -> weight. Names of buildings and containers are in data/fantasy/writing/buildings.txt.",
  "door_reach": 2.6,
  "reach": 2.3,
  "offset": [
@@ -9,10 +9,9 @@
   4000
  ],
  "room_height": 3.0,
- "smallest": [
-  6.0,
-  5.6
- ],
+ "smallest": [8.0, 7.0],
+ "clear_m": 1.3,
+ "clear_skip": ["rug", "bedroll", "stool"],
  "largest": [
   11.0,
   10.0

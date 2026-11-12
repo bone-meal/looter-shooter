@@ -37,6 +37,8 @@ const EmoteWheel = preload("res://game/emote_wheel.gd")
 
 const SPEED := 7.0
 const JUMP_SPEED := 5.5
+const STEP_HEIGHT := 0.45  # ledges up to this high are stepped onto (_step_up); a house's plinth is 0.6
+const STEP_REACH := 0.3  # how far ahead there must be room and ground on top
 const SHOT_RANGE := 200.0
 const HEAD_HEIGHT := 1.6
 const FIRST_PERSON_CAM := Vector3(0, 0, 0)
@@ -311,6 +313,27 @@ func emote_id() -> String:
 	return emote
 
 
+# Small ledges (a kerb, a threshold, a low stone) are stepped onto instead of stopping the walk (round 5). Only when
+# there is head room, the thing is lower than STEP_HEIGHT and there is walkable ground on top of it; a steep slope
+# or a wall is neither. The body is lifted and move_and_slide carries it on.
+var _step_hit := KinematicCollision3D.new()
+
+
+func _step_up(delta: float) -> void:
+	if not is_on_floor() or cheat_fly or carried:
+		return
+	var ahead := Vector3(velocity.x, 0.0, velocity.z) * delta
+	if ahead.length() < 0.001 or not test_move(global_transform, ahead):
+		return  # nothing in the way
+	var lift := Vector3.UP * STEP_HEIGHT
+	var reach := ahead.normalized() * maxf(ahead.length(), STEP_REACH)
+	if test_move(global_transform, lift) or test_move(global_transform.translated(lift), reach):
+		return
+	if not test_move(global_transform.translated(lift + reach), -lift, _step_hit) or _step_hit.get_normal().y < cos(floor_max_angle):
+		return
+	global_position.y += STEP_HEIGHT - _step_hit.get_travel().length() + 0.02
+
+
 func _move_and_shoot(delta: float) -> void:
 	if carried:
 		velocity = Vector3.ZERO
@@ -333,6 +356,7 @@ func _move_and_shoot(delta: float) -> void:
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * speed * 2.0
 	if not emote.is_empty() and (input != Vector2.ZERO or Input.is_action_just_pressed("jump") or Input.is_action_pressed("shoot")):
 		stop_emote()
+	_step_up(delta)
 	move_and_slide()
 	if position.y < FALL_LIMIT:
 		position = _spawn_position

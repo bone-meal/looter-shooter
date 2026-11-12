@@ -2,15 +2,18 @@
 # data/fantasy/squad.json): a few times a second every group of creatures hunting the same player is planned as one
 # squad, and each creature is told where to walk and whether it may strike (game/enemy.gd order_goal / order_attack).
 # Bosses and creatures busy with something else (a tribe's feud) keep their own heads. Host only: other machines'
-# creatures are puppets.
-# Dependencies: an enemy list (`source.enemy_list()`), game/fantasy_world.gd (combat.warding, caster.channelling,
+# creatures are puppets. Towns, villages and the farm are SAFE (core/safe_places.gd): a creature inside one's border,
+# or whose prey is, is sent back out and may not strike or use its special attack (game/enemy.gd `calm_until`).
+# Dependencies: core/safe_places.gd, an enemy list (`source.enemy_list()`), game/fantasy_world.gd (combat.warding, caster.channelling,
 # marks.hazards), game/enemy.gd.
 extends Node
 
 const SquadRules = preload("res://core/squad_rules.gd")
+const SafePlaces = preload("res://core/safe_places.gd")
 
 var cfg: Dictionary
 var source: Node  # has enemy_list()
+var safe := SafePlaces.new()  # set up by game/fantasy_world.gd once the land is known
 
 var _world: Node3D
 var _player: Node3D
@@ -59,6 +62,7 @@ func _process(delta: float) -> void:
 		(_squads[key]["list"] as Array).clear()
 		(_squads[key]["bodies"] as Array).clear()
 	var reach := float(cfg["radius"])
+	var until := Time.get_ticks_msec() / 1000.0 + float(cfg["tick"]) * 2.5
 	for enemy: Variant in source.call("enemy_list"):
 		if not is_instance_valid(enemy):
 			continue
@@ -69,6 +73,15 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(prey) or not players.has(prey):
 			continue  # nobody to hunt, or it is fighting another creature
 		var hunted := prey as Node3D
+		var here: Vector3 = _world.call("local_of", body.global_position)
+		var there: Vector3 = _world.call("local_of", hunted.global_position)
+		var back := safe.turn_back(Vector2(here.x, here.z), Vector2(there.x, there.z))
+		if back.is_finite():  # a safe place is in the way: out it goes, and no blow, shot or special attack meanwhile
+			body.set("order_goal", body.global_position + Vector3(back.x - here.x, 0.0, back.y - here.z))
+			body.set("order_attack", false)
+			body.set("order_until", until)
+			body.set("calm_until", until)
+			continue
 		if body.global_position.distance_to(hunted.global_position) > reach:
 			continue  # still far off: it just walks up
 		var key := hunted.get_instance_id()
@@ -90,7 +103,6 @@ func _process(delta: float) -> void:
 		(_squads[key]["bodies"] as Array).append(body)
 	_hazards.clear()
 	_world.get("marks").call("hazards", _hazards)
-	var until := Time.get_ticks_msec() / 1000.0 + float(cfg["tick"]) * 2.5
 	for key: int in _squads.keys():
 		var squad: Dictionary = _squads[key]
 		var list: Array = squad["list"]

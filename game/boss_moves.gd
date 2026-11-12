@@ -138,7 +138,7 @@ func _process(delta: float) -> void:
 			wait[m] -= delta
 			if wait[m] <= 0.0 and ready < 0:
 				ready = m
-		if ready >= 0 and not _busy(entry["boss"]) and bodies.is_valid():
+		if ready >= 0 and not _busy(entry["boss"]) and bodies.is_valid() and float(entry["boss"].get("calm_until")) < now:
 			var boss: Node3D = entry["boss"]
 			var all: Array = bodies.call()
 			var target: Node3D = all[0]

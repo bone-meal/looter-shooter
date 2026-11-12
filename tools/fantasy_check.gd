@@ -13,6 +13,7 @@ const SpellBook = preload("res://core/spell_book.gd")
 const CombatRules = preload("res://core/combat_rules.gd")
 const GroundRules = preload("res://core/ground_rules.gd")
 const SquadRules = preload("res://core/squad_rules.gd")
+const SafePlaces = preload("res://core/safe_places.gd")
 const SkillLevels = preload("res://core/skill_levels.gd")
 const FantasyBag = preload("res://core/fantasy_bag.gd")
 const QuestLog = preload("res://core/quest_log.gd")
@@ -390,6 +391,7 @@ func _check_round_two(all: Dictionary) -> void:
 	_check_combat(all["combat"])
 	_check_ground(all["ground"], all["spells"])
 	_check_squad(all["squad"], enemies)
+	_check_safe(all["squad"]["safe"], all["world"])
 	var tribes: Dictionary = all["enemies"]["tribes"]
 	for banner: String in tribes["camps"]:
 		_need(enemies.has(banner + "_warrior"), "tribe %s has no warrior" % banner)
@@ -485,6 +487,32 @@ func _check_round_two(all: Dictionary) -> void:
 
 
 # Round 4, item 28: every rigged outfit's pieces exist for both bodies, and every person of the world has clothes.
+# Safe places (core/safe_places.gd): creatures are turned back at every town, village and the farm.
+func _check_safe(rule: Dictionary, world: Dictionary) -> void:
+	var safe := SafePlaces.new()
+	safe.setup(world["places"], rule)
+	var spawn := Vector2(float(world["spawn"][0]), float(world["spawn"][1]))
+	_need(safe.place_at(spawn) >= 0, "the starting point is not inside a safe place")
+	var reach := float(rule["margin"]) + float(rule["retreat"])
+	var kinds: Array = rule["kinds"]
+	var safe_count := 0
+	for place: Dictionary in world["places"]:
+		var middle := Vector2(float(place["pos"][0]), float(place["pos"][1]))
+		var edge := float(place["flat"])
+		if not kinds.has(String(place["kind"])):
+			_need(safe.place_at(middle) < 0 or String(place["kind"]) != "arena", "arena %s lies inside a safe place: its boss could not fight" % place["id"])
+			continue
+		safe_count += 1
+		var inside := safe.turn_back(middle + Vector2(3, 0), middle)
+		_need(is_equal_approx(inside.distance_to(middle), edge + reach), "%s: a creature inside is not sent out to the retreat ring" % place["id"])
+		var chasing := safe.turn_back(middle + Vector2(edge + float(rule["margin"]) + 4.0, 0), middle)
+		_need(is_equal_approx(chasing.distance_to(middle), edge + reach), "%s: a creature chasing somebody inside does not back off" % place["id"])
+		var resting := middle + Vector2(0, edge + reach + 2.0)
+		_need(safe.turn_back(resting, middle) == resting, "%s: a creature that has backed off does not stand still" % place["id"])
+	_need(not safe.turn_back(Vector2(9000, 9000), Vector2(9010, 9000)).is_finite(), "safe places turn back a creature far from any of them")
+	_lines.append("safe places: %d (creatures kept %d m beyond the flat ground, backing off %d m more)" % [safe_count, int(rule["margin"]), int(rule["retreat"])])
+
+
 func _check_outfits(world: Dictionary) -> void:
 	var rig: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/characters.json"))
 	var outfits: Dictionary = rig["outfits"]
