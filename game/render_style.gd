@@ -265,7 +265,7 @@ func _apply_forward_extras() -> void:
 	env.volumetric_fog_anisotropy = 0.6
 	env.volumetric_fog_length = 96.0
 	env.volumetric_fog_sky_affect = 0.1
-	sun.light_angular_distance = 0.5 if on else 0.0  # soft shadow edges that widen with distance
+	sun.light_angular_distance = 0.0  # NOT widened with distance: at 0.5 every shadow became one dithered veil over the whole view and cost half the frame (round 5)
 	get_viewport().use_debanding = on
 
 

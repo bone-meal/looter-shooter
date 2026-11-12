@@ -3,10 +3,12 @@
 # (optional, else GitHub writes them from the commits). Tag = v + next version from
 # tools/release_version.txt (director, 2026-11-10: v1.03 first, then 1.04, 1.05 ...).
 # Log: tools/git_release.log.
-# Depends on: tools/git_cli.gd, export_presets.cfg, installed export templates, gh.
+# Depends on: tools/git_cli.gd, tools/export_cover.gd (refuses to build when a data file would be left out),
+# export_presets.cfg, installed export templates, gh.
 extends Node
 
 const GitCli = preload("res://tools/git_cli.gd")
+const ExportCover = preload("res://tools/export_cover.gd")
 const PRESETS := ["Windows", "Linux"]
 const OUT_DIR := "build/release"
 const VERSION_FILE := "res://tools/release_version.txt"  # last released version, e.g. 1.02
@@ -24,6 +26,13 @@ func _ready() -> void:
 
 func _work() -> void:
 	var g = GitCli.new(ProjectSettings.globalize_path("res://tools/git_release.log"))
+	var left_out := ExportCover.missing()  # data files no export filter names would be missing from the build
+	if not left_out.is_empty():
+		for line in left_out:
+			g.line("NOT PACKED: " + line)
+		g.line("RESULT STOP: add the files above to include_filter in export_presets.cfg")
+		_done(g)
+		return
 	var version: String = _next_version()
 	var tag: String = "v" + version
 	var zips: PackedStringArray = PackedStringArray()

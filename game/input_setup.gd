@@ -30,6 +30,7 @@ const ACTIONS := [
 	["element_air", "Magic: add air (while channelling)"],
 	["element_gravity", "Magic: add gravity (while channelling)"],
 	["dodge", "Dodge step (fantasy world)"],
+	["drop_item", "Inventory: drop the gun under the mouse"],
 	["weapon_1", "Hotbar slot 1"],
 	["weapon_2", "Hotbar slot 2"],
 	["weapon_3", "Hotbar slot 3"],
@@ -70,6 +71,7 @@ static func default_code(action: String) -> String:
 		"element_air": return "key:%d" % KEY_3
 		"element_gravity": return "key:%d" % KEY_R  # R still reloads guns: it is an element only while channelling
 		"dodge": return "key:%d" % KEY_CTRL
+		"drop_item": return "key:%d" % KEY_G
 	if action.begins_with("weapon_"):
 		return "key:%d" % (KEY_1 + int(action.substr(7)) - 1)
 	return ""

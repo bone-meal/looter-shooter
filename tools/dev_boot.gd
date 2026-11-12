@@ -12,6 +12,7 @@ var _counting := false  # !fight has hooked the ward's signal
 var _listening := false  # !moves has hooked the special attacks' signal
 var _used := PackedStringArray()  # "creature:move" for every special attack started since the last !moves
 var _wards := [0, 0]  # blows the ward stopped: [held, just in time]
+var _msaa := -1  # the 3D anti-aliasing the game had set before "!fx msaa off"
 
 
 func _ready() -> void:
@@ -31,6 +32,7 @@ func _ready() -> void:
 			var session := _find_with(get_tree().root, "run_chat")
 			session.set("no_save", true)  # a scripted run must never change the player's real save
 			(session.get("settings") as RefCounted).set("dev_commands", true)  # the steps are chat commands
+			_lines.append("his settings: graphics %s, lighting %s, window %s" % [str((session.get("settings") as RefCounted).get("graphics")), str((session.get("settings") as RefCounted).get("shaders")), str(DisplayServer.window_get_size())])
 			for text in arg.substr(6).split(";", false):
 				if text.begins_with("!"):
 					await _dev(renderer, session, text.substr(1).split(" ", false))
@@ -140,6 +142,31 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			window.call("open_station", words[1])
 			if words.size() > 2:
 				window.call("pick", words[2])
+		"inv":  # the inventory window: "!inv" opens or shuts it, "!inv hover 5" puts the mouse on slot 5 (0-35), "!inv drop" presses the drop key, "!inv shift on|off" holds Shift, "!inv log" lists rolled guns and what lies on the ground
+			var window: Control = session.get("_inventory_screen")
+			match words[1] if words.size() > 1 else "":
+				"hover":
+					window.set("_mouse", (window.call("_slot_rect", int(words[2])) as Rect2).get_center())
+				"drop":
+					var press := InputEventAction.new()
+					press.action = "drop_item"
+					press.pressed = true
+					Input.parse_input_event(press)
+				"shift":
+					var key := InputEventKey.new()
+					key.keycode = KEY_SHIFT
+					key.physical_keycode = KEY_SHIFT
+					key.pressed = words[2] == "on"
+					Input.parse_input_event(key)
+				"log":
+					var guns := PackedStringArray()
+					var bag: RefCounted = player.get("inventory")
+					for i in 36:
+						if not (bag.call("gun_at", i) as Dictionary).is_empty():
+							guns.append("%d:%s" % [i, String((bag.call("gun_at", i) as Dictionary)["tier"])])
+					_lines.append("rolled guns in slots %s; on the ground %d; shift %s  %s" % [", ".join(guns), int((session.get("_field") as Node).call("count")), str(Input.is_key_pressed(KEY_SHIFT)), " ".join(words.slice(2))])
+				_:
+					session.call("_toggle_inventory")
 		"slot":  # hold the gun in hotbar slot n (1-9)
 			player.call("select_hotbar", int(words[1]) - 1)
 		"closepanel":
@@ -217,6 +244,71 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			get_parent().call("_show_only", null if words.size() > 1 else get_parent().get("_sound_menu"))
 		"loading":  # shows the loading picture as a session start does; "!loading off" lets it fade
 			get_parent().get("_loading").call("finish" if words.size() > 1 else "begin", 4)
+		"uncap":  # no vsync and no frame cap for the rest of the run, so "!measure" reads what the machine can do
+			DisplayServer.window_set_vsync_mode(DisplayServer.VSYNC_DISABLED)
+			Engine.max_fps = 0
+			_lines.append("window %s, vsync and frame cap off" % str(DisplayServer.window_get_size()))
+		"lighting":  # "!lighting realistic": the lighting preset for the rest of the run (the settings FILE is not touched)
+			(session.get("settings") as RefCounted).set("shaders", words[1])
+			session.call("apply_settings")
+			_lines.append("lighting %s" % words[1])
+		"fx":  # "!fx sdfgi off": one effect of the lighting off or on (ssao, sdfgi, ssr, ssil, fog, glow, msaa, shadows) to see what it costs or causes
+			var look: Environment = (session.get("_render_style") as Object).get("env")
+			var on := words[2] == "on"
+			match words[1]:
+				"ssao":
+					look.ssao_enabled = on
+				"sdfgi":
+					look.sdfgi_enabled = on
+				"ssr":
+					look.ssr_enabled = on
+				"ssil":
+					look.ssil_enabled = on
+				"fog":
+					look.volumetric_fog_enabled = on
+				"glow":
+					look.glow_enabled = on
+				"msaa":
+					if _msaa < 0:
+						_msaa = int(get_viewport().msaa_3d)
+					get_viewport().msaa_3d = (_msaa if on else int(Viewport.MSAA_DISABLED)) as Viewport.MSAA
+				"shadows":
+					for light in get_tree().root.find_children("*", "DirectionalLight3D", true, false):
+						(light as DirectionalLight3D).shadow_enabled = on
+			_lines.append("fx %s %s" % [words[1], words[2]])
+		"sun":  # "!sun light_angular_distance 0": one property of every sun in the scene, for the rest of the run or until settings are applied again
+			for light in get_tree().root.find_children("*", "DirectionalLight3D", true, false):
+				if words[2].contains("."):
+					light.set(words[1], float(words[2]))
+				else:
+					light.set(words[1], int(words[2]))
+			_lines.append("sun %s = %s" % [words[1], words[2]])
+		"measure":  # "!measure note": 90 frames of this view into the log: whole frame, GPU, main thread split into drawing and the rest, physics
+			var view := get_viewport().get_viewport_rid()
+			RenderingServer.viewport_set_measure_render_time(view, true)
+			for _i in 12:
+				await RenderingServer.frame_post_draw
+			var began := Time.get_ticks_usec()
+			var before := began
+			var slowest := 0.0
+			var gpu_ms := 0.0
+			var draw_cpu_ms := 0.0
+			var script_ms := 0.0
+			var physics_ms := 0.0
+			for _i in 90:
+				await RenderingServer.frame_post_draw
+				var now := Time.get_ticks_usec()
+				slowest = maxf(slowest, float(now - before) / 1000.0)
+				before = now
+				gpu_ms += RenderingServer.viewport_get_measured_render_time_gpu(view)
+				draw_cpu_ms += RenderingServer.viewport_get_measured_render_time_cpu(view) + RenderingServer.get_frame_setup_time_cpu()
+				script_ms += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
+				physics_ms += Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
+			# TIME_PROCESS is the whole main-thread frame, drawing included: what is left after the drawing is scripts, animation and node upkeep
+			_lines.append("MEASURE %s: frame %.2f ms (worst %.1f); gpu %.2f; main thread %.2f = drawing %.2f + scripts and the rest %.2f; physics %.2f; draws %d, tris %d, nodes %d, objects drawn %d" % [" ".join(words.slice(1)),
+				float(Time.get_ticks_usec() - began) / 90000.0, slowest, gpu_ms / 90.0, script_ms / 90.0, draw_cpu_ms / 90.0, maxf(script_ms - draw_cpu_ms, 0.0) / 90.0, physics_ms / 90.0,
+				int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)), int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
+				int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))])
 		"tier":  # "!tier low": the graphics tier for the rest of the run (the settings FILE is not touched)
 			(session.get("settings") as RefCounted).set("graphics", words[1])
 			session.call("apply_settings")

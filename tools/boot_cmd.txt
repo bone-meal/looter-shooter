@@ -1,1 +1,1 @@
-!tier low;/tp fantasy;!wait 12;/god;/tp rimegate;!wait 6;!buildings full;/tp millbrook;!wait 10;!look 240 0;!snap v1_low_full;!state;/tp rimegate;!wait 6;!buildings plain;/tp millbrook;!wait 10;!look 240 0;!snap v2_low_plain
+!uncap;/tp fantasy;!wait 12;/god;!look 20 -28;!wait 3;!snap n1_farm;/tp millbrook;!wait 12;!look 240 0;!measure millbrook as he plays after the fix;!snap n2_millbrook;!inv;!wait 1;!snap n3_inventory;!inv

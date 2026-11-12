@@ -212,6 +212,7 @@ func _ready() -> void:
 	_inventory_screen.items = _player.items
 	_inventory_screen.gun_db = _player.gun_db
 	_inventory_screen.changed.connect(_on_inventory_changed)
+	_inventory_screen.dropped.connect(_on_gun_dropped)
 	add_child(_inventory_screen_layer())
 	_customizer.applied.connect(_on_look_applied)
 	_customizer.cancelled.connect(_close_customizer)
@@ -403,6 +404,14 @@ func _toggle_inventory() -> void:
 		_inventory_screen.selected_hotbar = _player.hotbar_index()
 		_inventory_screen.open()
 		_player.controls_enabled = false
+
+
+# A gun thrown out of the inventory lies on the ground a step ahead until somebody picks it up or the area is left.
+func _on_gun_dropped(gun: Dictionary) -> void:
+	var ahead := -_player.global_transform.basis.z
+	ahead.y = 0.0
+	_field.spawn(gun, _player.global_position + ahead.normalized() * 1.6)
+	_player_hud.notice("Dropped %s" % GunStats.display_name(_player.gun_db, gun))
 
 
 func _on_inventory_changed() -> void:

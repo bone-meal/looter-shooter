@@ -1,1 +1,9 @@
-Release v1.03
+Round 5 batch 1: dithered shadow veil fixed (twice the frame rate), release text, drop guns, Shift compare
+
+- render_style: the sun's shadow edges are no longer widened with distance on Forward+ (it turned every shadow into one dithered veil over the view and cost half the frame)
+- export_presets: the writers' text files are packed; tools/export_cover.gd + fantasy_check + git_release refuse a release that would lack data files
+- inventory: drop a rolled gun with the drop key (G) or by carrying it out of the window; hold Shift over a gun to see the gun in hand beside it
+- dev tools: !uncap, !lighting, !fx, !sun, !measure, !inv; boot_opts.txt runs the boot check fullscreen
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

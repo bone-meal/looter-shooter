@@ -2,6 +2,8 @@
 # process, waits for each to finish and leaves in res://tools/userdata/: boot_<renderer>.log (everything the game
 # printed, errors included), boot_<renderer>.txt (frame cost) and boot_<renderer>_<stage>.jpg. Vsync and the fps cap of
 # the machine's settings apply, so frame_ms is a floor, not a benchmark. Run scene tools/game_boot_check.tscn.
+# Optional res://tools/boot_opts.txt, one per line: `only=forward_plus` (just that renderer) and `args=--fullscreen`
+# (more engine arguments, e.g. the size the director really plays at).
 # Dependencies: game/main.gd (--autostart), tools/dev_boot.gd, game/renderer_switch.gd (its relaunch marker).
 extends Node
 
@@ -16,9 +18,20 @@ const RUNS := [
 func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var lines := PackedStringArray()
+	var only := ""
+	var more := PackedStringArray()
+	if FileAccess.file_exists("res://tools/boot_opts.txt"):
+		for line in FileAccess.get_file_as_string("res://tools/boot_opts.txt").split("\n", false):
+			if line.strip_edges().begins_with("only="):
+				only = line.strip_edges().trim_prefix("only=")
+			elif line.strip_edges().begins_with("args="):
+				more = line.strip_edges().trim_prefix("args=").split(" ", false)
 	for run: Array in RUNS:
+		if only != "" and String(run[0]) != only:
+			continue
 		var args := PackedStringArray(["--path", ProjectSettings.globalize_path("res://")])
 		args.append_array(PackedStringArray(run[1]))
+		args.append_array(more)
 		args.append_array(["--log-file", ProjectSettings.globalize_path(OUT + "boot_%s.log" % run[0])])
 		args.append_array(["--", RendererSwitch.MARK, "--autostart"])
 		if FileAccess.file_exists("res://tools/boot_cmd.txt"):  # optional: chat lines and dev steps for tools/dev_boot.gd, separated by ;

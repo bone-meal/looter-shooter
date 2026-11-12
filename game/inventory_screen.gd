@@ -1,4 +1,4 @@
-# Purpose: Minecraft-style inventory screen: 27 main slots + 9 hotbar slots + an 18-slot equipment panel; click to pick up / place / swap / wear, right click for half or one, hover tooltip with stats and flavor text.
+# Purpose: Minecraft-style inventory screen: 27 main slots + 9 hotbar slots + an 18-slot equipment panel; click to pick up / place / swap / wear, right click for half or one, hover tooltip with stats and flavor text. A rolled gun is dropped into the world by the drop key while the mouse is over it, or by carrying it out of the window and clicking (signal `dropped`); holding Shift over a gun shows the gun in hand beside it.
 # Dependencies: core/inventory_state.gd, core/item_db.gd, game/item_icons.gd. Emits `changed` after every click so the player re-reads the held item.
 extends Control
 
@@ -12,6 +12,7 @@ const GunStats = preload("res://core/gun_stats.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 
 signal changed
+signal dropped(gun: Dictionary)  # a rolled gun left the inventory: the session lays it on the ground
 
 const SLOT := 48.0
 const GAP := 4.0
@@ -68,6 +69,8 @@ func _gui_input(event: InputEvent) -> void:
 	elif event is InputEventMouseButton and event.pressed:
 		var slot := _slot_at(event.position)
 		if slot < 0:
+			if event.button_index == MOUSE_BUTTON_LEFT and not _panel(get_viewport_rect().size).has_point(event.position):
+				_drop(-1)  # carried out of the window and let go
 			return
 		if slot >= EQUIP_BASE:
 			if event.button_index != MOUSE_BUTTON_LEFT and event.button_index != MOUSE_BUTTON_RIGHT:
@@ -83,15 +86,42 @@ func _gui_input(event: InputEvent) -> void:
 		queue_redraw()
 
 
+# The drop key: the gun on the mouse, else the gun under it.
+func _input(event: InputEvent) -> void:
+	if visible and event.is_action_pressed("drop_item"):
+		_drop(-1 if not inventory.cursor.is_empty() else _slot_at(_mouse))
+		get_viewport().set_input_as_handled()
+
+
+# Takes the rolled gun off the mouse (slot -1) or out of a slot and hands it to the session to lay on the ground.
+func _drop(slot: int) -> void:
+	if slot >= inventory.SIZE:
+		return
+	if slot < 0 and inventory.cursor.is_empty():
+		return
+	var gun := inventory.take_gun(slot)
+	if gun.is_empty():
+		return
+	dropped.emit(gun)
+	changed.emit()
+	queue_redraw()
+
+
+func _panel(view: Vector2) -> Rect2:
+	var left := EQUIP_COLUMNS * (SLOT + GAP) + 44.0
+	return Rect2(_origin(view) - Vector2(16 + left, 44), Vector2(COLUMNS * (SLOT + GAP) - GAP + 32 + left, 6 * (SLOT + GAP) + 64))
+
+
 func _draw() -> void:
 	var view := get_viewport_rect().size
 	draw_rect(Rect2(Vector2.ZERO, view), Color(0, 0, 0, 0.6))
 	var origin := _origin(view)
-	var left := EQUIP_COLUMNS * (SLOT + GAP) + 44.0
-	var panel := Rect2(origin - Vector2(16 + left, 44), Vector2(COLUMNS * (SLOT + GAP) - GAP + 32 + left, 6 * (SLOT + GAP) + 64))
+	var panel := _panel(view)
 	draw_rect(panel, Color(0.12, 0.12, 0.14, 0.95))
 	draw_rect(panel, Color(1, 1, 1, 0.3), false, 2.0)
 	draw_string(_font, origin + Vector2(0, -16), "INVENTORY", HORIZONTAL_ALIGNMENT_LEFT, -1, 22, Color(1, 1, 1, 0.95))
+	var drop_keys := InputMap.action_get_events("drop_item")
+	draw_string(_font, Vector2(panel.position.x + 16.0, panel.end.y + 18.0), "%s over a gun, or carry it out of the window and click: drop it      Hold Shift over a gun: the gun in hand beside it" % ("?" if drop_keys.is_empty() else drop_keys[0].as_text().replace(" - Physical", "").replace(" (Physical)", "")), HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(1, 1, 1, 0.6))
 	var hover := _slot_at(_mouse)
 	for i in inventory.SIZE:
 		_draw_slot(i, hover == i)
@@ -99,7 +129,13 @@ func _draw() -> void:
 	var hovered_id := _id_at(hover)
 	if hovered_id != "" and inventory.cursor.is_empty():
 		if hovered_id == "gun" and hover < EQUIP_BASE:
-			_draw_gun_tooltip(inventory.gun_at(hover), hover, view)
+			var in_hand: Dictionary = {} if hover == selected_hotbar else inventory.gun_at(selected_hotbar)
+			var box := _draw_gun_tooltip(inventory.gun_at(hover), in_hand, _mouse + Vector2(18, 18), view, "Rolled gun" if in_hand.is_empty() else "compared with the gun in hand")
+			if Input.is_key_pressed(KEY_SHIFT) and not in_hand.is_empty():  # the gun in hand beside it, numbers against the hovered one
+				var beside := Vector2(box.position.x - box.size.x - 8.0, box.position.y)
+				if beside.x < 8.0:
+					beside.x = box.end.x + 8.0
+				_draw_gun_tooltip(in_hand, inventory.gun_at(hover), beside, view, "IN HAND")
 		else:
 			_draw_tooltip(hovered_id, view)
 	if not inventory.cursor.is_empty():
@@ -161,11 +197,11 @@ func _draw_count(r: Rect2, count: int) -> void:
 		draw_string(_font, r.end - Vector2(30, 6), str(count), HORIZONTAL_ALIGNMENT_RIGHT, 26, 15, Color.WHITE)
 
 
-# Tooltip of a rolled gun: name in its tier colour, stats compared with the gun in the selected hotbar slot, parts and buffs.
-func _draw_gun_tooltip(gun: Dictionary, slot: int, view: Vector2) -> void:
+# Card of a rolled gun at `place`: name in its tier colour, stats compared with `against` (another rolled gun, or {}),
+# parts and buffs. Returns where it was drawn.
+func _draw_gun_tooltip(gun: Dictionary, against: Dictionary, place: Vector2, view: Vector2, note: String) -> Rect2:
 	var stats := GunStats.final_stats(gun_db, gun)
-	var held: Dictionary = inventory.gun_at(selected_hotbar)
-	var other: Dictionary = {} if held.is_empty() or slot == selected_hotbar else GunStats.final_stats(gun_db, held)
+	var other: Dictionary = {} if against.is_empty() else GunStats.final_stats(gun_db, against)
 	var lines: Array = []  # [text, colour]
 	lines.append(["Damage %.1f%s" % [stats["damage"], _diff_text(float(stats["damage"]), other, "damage", 1)], _delta_color(float(stats["damage"]), other, "damage", true)])
 	lines.append(["Fire rate %.2f/s%s" % [stats["fire_rate"], _diff_text(float(stats["fire_rate"]), other, "fire_rate", 2)], _delta_color(float(stats["fire_rate"]), other, "fire_rate", true)])
@@ -201,18 +237,19 @@ func _draw_gun_tooltip(gun: Dictionary, slot: int, view: Vector2) -> void:
 			lines.append(["   " + wrapped, Color(0.7, 0.8, 0.85)])
 	var width := 340.0
 	var height := 54.0 + lines.size() * 16.0
-	var pos := _mouse + Vector2(18, 18)
+	var pos := place
 	pos.x = minf(pos.x, view.x - width - 8.0)
-	pos.y = minf(pos.y, view.y - height - 8.0)
+	pos.y = maxf(minf(pos.y, view.y - height - 8.0), 4.0)
 	var tint := TierStyle.color(gun_db, String(gun["tier"]), _now())
 	draw_rect(Rect2(pos, Vector2(width, height)), Color(0.06, 0.05, 0.1, 0.97))
 	draw_rect(Rect2(pos, Vector2(width, height)), tint, false, 2.0)
 	TierStyle.draw_name(self, _font, pos + Vector2(10, 22), gun_db, String(gun["tier"]), GunStats.display_name(gun_db, gun), 17, tint)
-	draw_string(_font, pos + Vector2(10, 40), "vs held gun" if not other.is_empty() else "Rolled gun", HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.7, 0.7, 0.8))
+	draw_string(_font, pos + Vector2(10, 40), note, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.7, 0.7, 0.8))
 	var y := 58.0
 	for line: Array in lines:
 		draw_string(_font, pos + Vector2(10, y), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, width - 20.0, 13, line[1])
 		y += 16.0
+	return Rect2(pos, Vector2(width, height))
 
 
 # Splits text into lines of at most `limit` characters, breaking at spaces.

@@ -454,6 +454,10 @@ func _check_round_two(all: Dictionary) -> void:
 	_need(int(spots["fresh"]) > 0 and int(spots["salt"]) > 0, "no fishing spots were placed on fresh or salt water")
 	_check_ways(all, layout)
 	_check_outfits(world)
+	var left_out := (load("res://tools/export_cover.gd") as GDScript).call("missing") as PackedStringArray  # what a release would lack
+	for line in left_out:
+		_need(false, line)
+	_lines.append("export: %d data files would be missing from a release" % left_out.size())
 	# every fantasy sound can be found (and muted) on the Sounds page of the settings
 	var listed := {}
 	for group: Dictionary in (JSON.parse_string(FileAccess.get_file_as_string("res://data/sound_list.json")) as Dictionary)["groups"]:

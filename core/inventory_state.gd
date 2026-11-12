@@ -36,6 +36,20 @@ func gun_at(slot: int) -> Dictionary:
 	return _slots[slot].get("gun", {})
 
 
+# Takes the rolled gun out of a slot, or off the mouse with slot -1, so it can be dropped into the world.
+# {} when there is no rolled gun there (nothing is changed then).
+func take_gun(slot: int) -> Dictionary:
+	if slot < 0:
+		var carried: Dictionary = cursor.get("gun", {})
+		if not carried.is_empty():
+			cursor = {}
+		return carried
+	var gun := gun_at(slot)
+	if not gun.is_empty():
+		_slots[slot] = {}
+	return gun
+
+
 # Puts a rolled gun (one slot each) in the first empty slot. Returns false when the inventory is full.
 func add_gun(gun: Dictionary) -> bool:
 	for i in SIZE:
