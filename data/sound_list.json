@@ -388,6 +388,10 @@
     {
      "id": "ambience_hollow_crown",
      "label": "Ambience: Hollow Crown"
+    },
+    {
+     "id": "ambience_town",
+     "label": "Ambience: town and village life"
     }
    ]
   },

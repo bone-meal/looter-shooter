@@ -467,6 +467,7 @@ func _check_round_two(all: Dictionary) -> void:
 			listed[String(sound["id"])] = true
 	for id: String in all["sounds"]["sounds"]:
 		_need(listed.has(id), "sound %s is missing from data/sound_list.json" % id)
+	_need(listed.has("ambience_town") and FileAccess.file_exists("res://assets/audio/fantasy/%s.wav" % all["sounds"]["town"]["file"]), "the town ambience has no file or no line on the Sounds page")
 	for id: String in all["sounds"]["ambience"]:
 		_need(listed.has("ambience_" + id), "ambience %s is missing from data/sound_list.json" % id)
 	# the gun side's sounds: each has its file and its line on the Sounds page; every gun and enemy names one that exists

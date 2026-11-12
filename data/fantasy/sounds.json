@@ -4,6 +4,7 @@
  "master": -4.0,
  "fade_seconds": 2.5,
  "voices": 10,
+ "town": {"file": "amb_town", "volume": -15},
  "ambience": {
   "amberfield": {
    "file": "amb_amberfield",

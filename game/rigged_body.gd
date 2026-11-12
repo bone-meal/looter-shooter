@@ -24,6 +24,7 @@ static var _data := {}
 static var _available := -1  # -1 not checked yet, 0 packs missing, 1 ready
 static var _head_meshes := {}  # body id -> ArrayMesh with only the head and neck triangles
 static var _skin_materials := {}  # "body:tone" -> StandardMaterial3D
+static var _merged := {}  # body kind + how its surfaces group by material -> {"mesh", "skin"} (merge_pieces); {} = could not be merged
 static var _hair_materials := {}  # "texture:colour" -> StandardMaterial3D
 static var _tinted_materials := {}  # "material id:colour" -> Material
 
@@ -42,6 +43,7 @@ var _hold_amount := 0.0
 var _held_clip := ""  # hold() asked for before the body was in the scene; applied in _ready
 var _held_time := 0.0
 var _outfit_albedo: Texture2D  # the outfit's alternative colour texture, if it has one
+var _kind := ""  # body | outfit | hairstyle: bodies of one kind are made of the same pieces (merge_pieces shares their mesh)
 
 
 static func data() -> Dictionary:
@@ -168,6 +170,7 @@ func setup(look: Dictionary) -> bool:
 	if under_hood.has(body_id) and hair_id != "none":
 		hair_id = String(under_hood[body_id])
 	var style: Dictionary = styles[hair_id]
+	_kind = "%s|%s|%s" % [body_id, outfit_id, hair_id]
 	var hair_models: Dictionary = style.get("models", {})
 	if hair_models.has(body_id):
 		_add_head_piece(String(hair_models[body_id]), String(style.get("texture", "1")), hair_color)
@@ -240,6 +243,163 @@ func tint_outfit(color: Color) -> void:
 					tinted.albedo_texture = _outfit_albedo
 				_tinted_materials[key] = tinted
 			piece.set_surface_override_material(surface, _tinted_materials[key])
+
+
+# Folds every skinned piece of the body into ONE mesh with one surface per material (round 5). A dressed body was
+# 12-14 draw calls, again in every shadow split, and each piece was skinned on its own; merged it is one skinned mesh
+# of about 4-6 surfaces. Bodies of the same kind and colours' grouping share the mesh (built once). Call it when the
+# body is complete and tinted: `tint_outfit` does nothing afterwards. Bodies with shape sliders (their pieces carry
+# blend shapes and jiggle) and anything unusual are left as they are.
+func merge_pieces() -> void:
+	var pieces: Array[MeshInstance3D] = []
+	for child in _skeleton.get_children():
+		var piece := child as MeshInstance3D
+		if piece != null and piece.mesh != null and piece.skin != null:
+			if piece.mesh.get_blend_shape_count() > 0:
+				return
+			pieces.append(piece)
+	if pieces.size() < 2:
+		return
+	var materials: Array[Material] = []
+	var groups := PackedInt32Array()  # for every surface of every piece, in order: which merged surface it joins
+	for piece in pieces:
+		for surface in piece.mesh.get_surface_count():
+			var material := piece.get_active_material(surface)
+			var group := materials.find(material)
+			if group < 0:
+				group = materials.size()
+				materials.append(material)
+			groups.append(group)
+	var key := "%s:%s" % [_kind, str(groups)]
+	if not _merged.has(key):
+		_merged[key] = _merge(pieces, groups, materials.size())
+	var made: Dictionary = _merged[key]
+	if made.is_empty():
+		return
+	var whole := MeshInstance3D.new()
+	whole.name = "Merged"
+	whole.mesh = made["mesh"]
+	whole.skin = made["skin"]
+	_skeleton.add_child(whole)
+	whole.skeleton = NodePath("..")
+	for group in materials.size():
+		whole.set_surface_override_material(group, materials[group])
+	for piece in pieces:
+		piece.free()
+
+
+# The pieces as one mesh (a surface per group) and one skin, or {} when they cannot be joined. Every piece has its own
+# skin, so its vertices' bone numbers are renumbered to the joint skin (same bone with another bind pose = another bind).
+static func _merge(pieces: Array[MeshInstance3D], groups: PackedInt32Array, count: int) -> Dictionary:
+	var skin := Skin.new()
+	var binds := {}
+	var verts: Array[PackedVector3Array] = []
+	var normals: Array[PackedVector3Array] = []
+	var tangents: Array[PackedFloat32Array] = []
+	var uvs: Array[PackedVector2Array] = []
+	var colours: Array[PackedColorArray] = []
+	var bones: Array[PackedInt32Array] = []
+	var weights: Array[PackedFloat32Array] = []
+	var indices: Array[PackedInt32Array] = []
+	var coloured := PackedByteArray()
+	coloured.resize(count)
+	for group in count:
+		verts.append(PackedVector3Array())
+		normals.append(PackedVector3Array())
+		tangents.append(PackedFloat32Array())
+		uvs.append(PackedVector2Array())
+		colours.append(PackedColorArray())
+		bones.append(PackedInt32Array())
+		weights.append(PackedFloat32Array())
+		indices.append(PackedInt32Array())
+	var slot := 0
+	for piece in pieces:
+		var renumber := PackedInt32Array()
+		for bind in piece.skin.get_bind_count():
+			var bind_key := "%s %s" % [piece.skin.get_bind_name(bind), var_to_str(piece.skin.get_bind_pose(bind))]
+			if not binds.has(bind_key):
+				binds[bind_key] = skin.get_bind_count()
+				skin.add_named_bind(piece.skin.get_bind_name(bind), piece.skin.get_bind_pose(bind))
+			renumber.append(int(binds[bind_key]))
+		var moved := not piece.transform.is_equal_approx(Transform3D.IDENTITY)
+		for surface in piece.mesh.get_surface_count():
+			var group := groups[slot]
+			slot += 1
+			var arrays := piece.mesh.surface_get_arrays(surface)
+			var v: PackedVector3Array = arrays[Mesh.ARRAY_VERTEX]
+			var many := v.size()
+			if arrays[Mesh.ARRAY_BONES] == null or arrays[Mesh.ARRAY_WEIGHTS] == null or many == 0:
+				return {}
+			var b: PackedInt32Array = arrays[Mesh.ARRAY_BONES]
+			var w: PackedFloat32Array = arrays[Mesh.ARRAY_WEIGHTS]
+			if b.size() != many * 4:
+				return {}  # eight weights a vertex: not something these packs have
+			for i in b.size():
+				b[i] = renumber[b[i]] if b[i] < renumber.size() else 0
+			var n := PackedVector3Array()
+			if arrays[Mesh.ARRAY_NORMAL] != null:
+				n = arrays[Mesh.ARRAY_NORMAL]
+			else:
+				n.resize(many)
+				n.fill(Vector3.UP)
+			if moved:
+				for i in many:
+					v[i] = piece.transform * v[i]
+					n[i] = (piece.transform.basis * n[i]).normalized()
+			var t := PackedFloat32Array()
+			if arrays[Mesh.ARRAY_TANGENT] != null:
+				t = arrays[Mesh.ARRAY_TANGENT]
+			else:
+				t.resize(many * 4)
+				for i in many:
+					t[i * 4] = 1.0
+					t[i * 4 + 3] = 1.0
+			var uv := PackedVector2Array()
+			if arrays[Mesh.ARRAY_TEX_UV] != null:
+				uv = arrays[Mesh.ARRAY_TEX_UV]
+			else:
+				uv.resize(many)
+			var c := PackedColorArray()
+			if arrays[Mesh.ARRAY_COLOR] != null:
+				c = arrays[Mesh.ARRAY_COLOR]
+				coloured[group] = 1
+			else:
+				c.resize(many)
+				c.fill(Color.WHITE)
+			var first := verts[group].size()
+			var index := PackedInt32Array()
+			if arrays[Mesh.ARRAY_INDEX] != null:
+				index = arrays[Mesh.ARRAY_INDEX]
+				for i in index.size():
+					index[i] += first
+			else:
+				index.resize(many)
+				for i in many:
+					index[i] = first + i
+			verts[group].append_array(v)
+			normals[group].append_array(n)
+			tangents[group].append_array(t)
+			uvs[group].append_array(uv)
+			colours[group].append_array(c)
+			bones[group].append_array(b)
+			weights[group].append_array(w)
+			indices[group].append_array(index)
+	var draft := ImporterMesh.new()  # as the importer does it, so the merged body gets distance levels like its pieces had
+	for group in count:
+		var arrays := []
+		arrays.resize(Mesh.ARRAY_MAX)
+		arrays[Mesh.ARRAY_VERTEX] = verts[group]
+		arrays[Mesh.ARRAY_NORMAL] = normals[group]
+		arrays[Mesh.ARRAY_TANGENT] = tangents[group]
+		arrays[Mesh.ARRAY_TEX_UV] = uvs[group]
+		if coloured[group] == 1:
+			arrays[Mesh.ARRAY_COLOR] = colours[group]
+		arrays[Mesh.ARRAY_BONES] = bones[group]
+		arrays[Mesh.ARRAY_WEIGHTS] = weights[group]
+		arrays[Mesh.ARRAY_INDEX] = indices[group]
+		draft.add_surface(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	draft.generate_lods(25.0, 60.0, [])
+	return {"mesh": draft.get_mesh(), "skin": skin}
 
 
 # A point that follows the head: face items (cigarette) placed here use the same offsets as on the old code-built head.

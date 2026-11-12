@@ -1,11 +1,11 @@
-Round 5 batch 4: safe towns, show guards, bigger rooms, no more catching
+Round 5: one mesh per NPC body, far people frozen, quiet ambience
 
-Creatures turn back at a border round every town, village and the farm and
-drop the chase (core/safe_places.gd, squad command). Guards stand inside
-gates and walk rounds (show only). Rooms are at least 8 x 7 m with a clear
-way from the door to the middle. Bushes, stumps, sacks, troughs and ore
-rocks are walked through, small props have round colliders, and the player
-steps onto ledges up to 0.45 m.
+rigged_body.merge_pieces folds a body's skinned pieces into one mesh with
+a surface per material and its own distance levels (shared per kind of
+body); used for every NPC. People beyond 28 m stand still and cast no
+shadow. Millbrook with its ten guards costs what it did without them.
+Ambience: the wind is a faint low rumble with gusts, the birds stay, and
+a sparse layer of town life plays inside towns and villages.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

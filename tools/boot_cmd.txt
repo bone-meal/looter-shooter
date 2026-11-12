@@ -1,1 +1,1 @@
-!uncap;/tp fantasy;!wait 10;/god;/tp millbrook;!wait 14;!look 240 0;!wait 3;!measure millbrook square as he plays;!snap k1_square;!tier high;!wait 5;!measure millbrook square high;!look 60 0;!wait 2;!measure high other way
+!uncap;/tp fantasy;!wait 9;!heard 4;/tp millbrook;!wait 10;!heard 4;!look 240 0;!wait 2;!measure millbrook as he plays;!goto 70 560;!wait 6;!heard 3

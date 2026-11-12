@@ -1,7 +1,7 @@
 # Purpose: developer-time script. Synthesises every sound of the fantasy world (no recordings, no music) into
 # assets/audio/fantasy/<name>.wav: spell casts (one per kind of substance, so a spell is also heard apart), the element
 # plucks while channelling, impacts, gathering and crafting, UI ticks, creature and boss sounds, and one looping
-# ambience per region (wind, birds, surf, storm ...). 22.05 kHz mono 16 bit keeps them small. Which sound plays when,
+# ambience per region (a faint wind, birds, surf, storm ...) and one of town life laid over it in towns and villages. 22.05 kHz mono 16 bit keeps them small. Which sound plays when,
 # and how loud, is data/fantasy/sounds.json.
 # Run: python3 tools/make_fantasy_sounds.py   (from the project folder; needs pip package numpy)
 import os
@@ -115,6 +115,42 @@ def gusts(seconds, lo, hi, speed):
     return w * (0.55 + 0.45 * wander)
 
 
+def breeze(seconds, low_hz, gust_hz, often):
+    """Round 5: a faint low rumble with a gust now and then. (`gusts` above is a steady hiss: the director heard it as
+    loud static.) often = the share of the time a gust is blowing."""
+    n = int(RATE * seconds)
+    rumble = lowpass(noise(seconds), low_hz)
+    rumble /= max(np.abs(rumble).max(), 1e-9)
+    swell = lowpass(rng.uniform(-1, 1, n), 0.35)
+    swell = (swell - swell.min()) / (swell.max() - swell.min() + 1e-9)
+    swell = np.clip((swell - (1.0 - often)) / often, 0.0, 1.0) ** 2
+    gust = lowpass(noise(seconds), gust_hz)
+    gust /= max(np.abs(gust).max(), 1e-9)
+    return 0.45 * rumble + gust * swell
+
+
+def town_life(seconds):
+    """Round 5: the few sounds of people nearby, far apart: a smith's hammer, hens, a door, a far bell."""
+    out = np.zeros(int(RATE * seconds))
+
+    def put(x, when, gain):
+        s = int(RATE * when)
+        out[s:s + len(x)] += gain * x[:len(out[s:s + len(x)])]
+
+    ting = lowpass(sum(tone(f, 0.4) for f in (1320, 2110, 3170)) * env(int(RATE * 0.4), 0.001, 5), 2600)
+    for when in (2.0, 2.45, 2.9, 8.6, 9.05):
+        put(ting, when, 0.22)
+    cluck = lowpass(tone(glide(560, 380, 0.07), 0.07, "saw"), 1800) * env(int(RATE * 0.07), 0.005, 1.5)
+    for when in (5.0, 5.16, 5.4, 5.52, 11.2, 11.38, 11.5):
+        put(cluck, when, 0.16)
+    knock = lowpass(noise(0.09), 320) * env(int(RATE * 0.09), 0.002, 2)
+    put(knock, 6.8, 0.5)
+    put(knock, 7.02, 0.35)
+    bell = (tone(392, 2.6) + 0.4 * tone(784, 2.6) + 0.2 * tone(1176, 2.6)) * env(int(RATE * 2.6), 0.004, 3)
+    put(bell, 9.9, 0.1)
+    return out
+
+
 def main():
     os.makedirs(OUT, exist_ok=True)
     # --- spell casts: one per shape of substance ---
@@ -179,20 +215,23 @@ def main():
     save("boss_warn", tone(glide(300, 620, 0.5), 0.5, "saw") * (0.5 + 0.5 * np.sign(tone(14, 0.5))) * env(int(RATE * 0.5), 0.03, 1.0) * 0.7, 0.6)
     save("boss_hit", mix(tone(glide(120, 32, 0.7), 0.7) * env(int(RATE * 0.7), 0.002, 2), lowpass(noise(0.5), 900) * env(int(RATE * 0.5), 0.001, 2.5)))
     save("clash", mix(sum(tone(f, 0.25) for f in (1245, 1870, 2960)) * env(int(RATE * 0.25), 0.001, 4) * 0.3, band(noise(0.05), 1000, 6000) * env(int(RATE * 0.05), 0.001, 2)), 0.6)
-    # --- ambience, one loop per region (6 s, the end blends into the start) ---
-    L = 6.5
-    save("amb_amberfield", mix(0.5 * gusts(L, 300, 1100, 0.4), 0.35 * chirps(L, 9, 2400, 4200)), 0.5, True)
-    save("amb_greenwald", mix(0.4 * gusts(L, 500, 2200, 0.6), 0.45 * chirps(L, 16, 1800, 5200), 0.2 * chirps(L, 3, 500, 700, 0.25)), 0.5, True)
-    surf = lowpass(noise(L), 1300) * (0.35 + 0.65 * np.abs(np.sin(np.pi * t(L) / 3.25)) ** 2)
-    save("amb_brinemouth", mix(surf, 0.2 * chirps(L, 4, 1400, 2100, 0.2)), 0.55, True)
-    save("amb_sunscar", mix(0.7 * gusts(L, 200, 900, 0.3), 0.25 * band(noise(L), 3000, 7000) * (0.3 + 0.7 * np.abs(tone(0.2, L)))), 0.45, True)
-    save("amb_frostmere", mix(gusts(L, 400, 1900, 0.8), 0.25 * tone(430 + 60 * lowpass(noise(L), 1.5), L) * (0.3 + 0.7 * np.abs(tone(0.17, L)))), 0.5, True)
-    crackle = highpass(noise(L), 3500) * (rng.uniform(0, 1, int(RATE * L)) > 0.93)
-    save("amb_cinderreach", mix(0.8 * lowpass(noise(L), 120) * 3.0, 0.5 * crackle, 0.3 * gusts(L, 200, 600, 0.3)), 0.5, True)
-    thunder = at(lowpass(noise(2.2), glide(600, 60, 2.2)) * env(int(RATE * 2.2), 0.05, 1.6), 2.4)
-    save("amb_stormcrown", mix(gusts(L, 500, 2600, 1.0), 0.8 * thunder), 0.55, True)
-    save("amb_hollow_crown", mix(0.5 * tone(73, L) * (0.6 + 0.4 * tone(0.31, L)), 0.35 * tone(110.5, L) * (0.6 + 0.4 * tone(0.23, L)), 0.2 * gusts(L, 200, 700, 0.2)), 0.4, True)
-
+    # --- ambience, one loop per region (13 s, the end blends into the start). Round 5: the wind is a faint low
+    # rumble with gusts (`breeze`), the birds carry the sound; `save` scales the whole mix, so the numbers in front of
+    # each part are what decides how much wind there is against the birds.
+    L = 13.5
+    save("amb_amberfield", mix(0.16 * breeze(L, 120, 420, 0.35), 0.45 * chirps(L, 18, 2400, 4200)), 0.5, True)
+    save("amb_greenwald", mix(0.14 * breeze(L, 140, 600, 0.4), 0.5 * chirps(L, 32, 1800, 5200), 0.2 * chirps(L, 6, 500, 700, 0.25)), 0.5, True)
+    surf = lowpass(noise(L), 700) * (0.12 + 0.88 * np.abs(np.sin(np.pi * t(L) / 6.5)) ** 3)
+    save("amb_brinemouth", mix(0.55 * surf, 0.3 * chirps(L, 8, 1400, 2100, 0.2)), 0.5, True)
+    sand = band(noise(L), 3000, 7000) * (np.clip(np.abs(tone(0.11, L)) - 0.7, 0.0, 1.0) / 0.3) ** 2
+    save("amb_sunscar", mix(0.5 * breeze(L, 100, 380, 0.3), 0.05 * sand), 0.4, True)
+    save("amb_frostmere", mix(0.6 * breeze(L, 140, 700, 0.5), 0.12 * tone(430 + 60 * lowpass(noise(L), 1.5), L) * (0.3 + 0.7 * np.abs(tone(0.17, L)))), 0.45, True)
+    crackle = highpass(noise(L), 3500) * (rng.uniform(0, 1, int(RATE * L)) > 0.97)
+    save("amb_cinderreach", mix(0.8 * lowpass(noise(L), 120) * 3.0, 0.3 * crackle, 0.15 * breeze(L, 120, 500, 0.3)), 0.5, True)
+    thunder = at(lowpass(noise(2.2), glide(600, 60, 2.2)) * env(int(RATE * 2.2), 0.05, 1.6), 5.4)
+    save("amb_stormcrown", mix(0.7 * breeze(L, 160, 900, 0.6), 0.8 * thunder), 0.55, True)
+    save("amb_hollow_crown", mix(0.5 * tone(73, L) * (0.6 + 0.4 * tone(0.31, L)), 0.35 * tone(110.5, L) * (0.6 + 0.4 * tone(0.23, L)), 0.08 * breeze(L, 120, 500, 0.2)), 0.4, True)
+    save("amb_town", town_life(L), 0.4, True)
 
 if __name__ == "__main__":
     main()

@@ -1,7 +1,7 @@
 # Purpose: developer check. Stands one rigged character per outfit of data/characters.json in two rows (women in
 # front, men behind), built the way the game builds them, and saves pictures from the front and the back to
 # res://tools/shots/outfits_<n>_front.jpg / _back.jpg (six outfits a picture) plus triangles and draw calls to
-# tools/outfit_shot.log. `-- --only=farmer,guard` shows just those.
+# tools/outfit_shot.log. `-- --only=farmer,guard` shows just those; `--merged` merges each body's pieces first.
 # Dependencies: game/rigged_body.gd, game/surface_library.gd, data/characters.json.
 extends Node3D
 
@@ -17,6 +17,7 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):
 			only = arg.trim_prefix("--only=").split(",", false)
+	var merged := OS.get_cmdline_user_args().has("--merged")  # every body folded into one mesh (rigged_body.merge_pieces): must look the same
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.62, 0.74, 0.9)
@@ -60,11 +61,15 @@ func _ready() -> void:
 			var id := String(ids[shot * PER_SHOT + i])
 			for row in 2:
 				var look := {"gender": "female" if row == 0 else "male", "rig_outfit": id, "rig_hair": "long" if row == 0 else "parted", "skin": (i * 3 + row * 4) % 10, "hair_color": "#4a3324"}
-				var body := RiggedBody.build(look)
+				var body := RiggedBody.build(look, not merged)  # a body with shape sliders cannot be merged
 				if body == null:
 					lines.append("%s %s: NOT BUILT" % [id, look["gender"]])
 					continue
 				add_child(body)
+				if merged:
+					var before := Time.get_ticks_usec()
+					body.call("merge_pieces")
+					lines.append("%s %s merged in %.1f ms" % [id, look["gender"], float(Time.get_ticks_usec() - before) / 1000.0])
 				body.position = Vector3(float(i) * 1.1 + 0.55 * float(row), 0.0, -1.3 * float(row))
 				body.rotation.y = PI  # towards the front camera
 				_bodies.append(body)

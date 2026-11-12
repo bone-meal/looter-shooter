@@ -23,6 +23,9 @@ var _master := 0.0
 var _bed_volume := -80.0  # what the current ambience plays at when it is not muted
 var _fade_until := 0.0  # engine time the ambience cross-fade is over
 var _poll := 0.0
+var _town: AudioStreamPlayer  # town and village life, laid over the region's ambience while the player is in one (set_town)
+var _in_town := false
+var _town_fade_until := 0.0
 
 
 func setup(data: Dictionary) -> void:
@@ -43,6 +46,9 @@ func setup(data: Dictionary) -> void:
 		bed.volume_db = -80.0
 		add_child(bed)
 		_beds.append(bed)
+	_town = AudioStreamPlayer.new()
+	_town.volume_db = -80.0
+	add_child(_town)
 
 
 func _stream(id: String) -> AudioStream:
@@ -90,6 +96,11 @@ func _process(delta: float) -> void:
 	if _poll < 0.5:
 		return
 	_poll = 0.0
+	if _in_town and _town.playing:
+		if SoundBoard.allow("ambience_town"):
+			SoundBoard.heard("ambience_town")
+		if Time.get_ticks_msec() / 1000.0 >= _town_fade_until:
+			_town.volume_db = _town_volume()
 	var bed := _beds[_bed]
 	if _region == "" or not bed.playing:
 		return
@@ -98,6 +109,43 @@ func _process(delta: float) -> void:
 		SoundBoard.heard(id)
 	if Time.get_ticks_msec() / 1000.0 >= _fade_until:
 		bed.volume_db = _bed_volume if SoundBoard.allow(id) else -80.0
+
+
+func _loop(stream: AudioStream) -> void:
+	if stream is AudioStreamWAV and (stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_DISABLED:
+		var wav := stream as AudioStreamWAV
+		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		wav.loop_begin = 0
+		wav.loop_end = int(wav.get_length() * float(wav.mix_rate))
+
+
+# Town and village life (a hammer, hens, a door, a far bell) fades in over the region's ambience and out again.
+func set_town(inside: bool) -> void:
+	if inside == _in_town:
+		return
+	_in_town = inside
+	var def: Dictionary = _data.get("town", {})
+	var stream := _stream(String(def.get("file", "")))
+	if stream == null:
+		return
+	var seconds := float(_data.get("fade_seconds", 2.0))
+	_town_fade_until = Time.get_ticks_msec() / 1000.0 + seconds
+	var fade := create_tween()
+	if inside:
+		_loop(stream)
+		_town.stream = stream
+		_town.volume_db = -60.0
+		_town.play()
+		fade.tween_property(_town, "volume_db", _town_volume(), seconds)
+	else:
+		fade.tween_property(_town, "volume_db", -80.0, seconds)
+		fade.tween_callback(_town.stop)
+
+
+func _town_volume() -> float:
+	if not SoundBoard.allow("ambience_town"):
+		return -80.0
+	return float((_data["town"] as Dictionary).get("volume", -15.0)) + _master
 
 
 # The ambience of a region fades in and the previous one out ("" = silence, on leaving the world).
@@ -118,11 +166,7 @@ func set_region(id: String) -> void:
 	var stream := _stream(String(def["file"]))
 	if stream == null:
 		return
-	if stream is AudioStreamWAV and (stream as AudioStreamWAV).loop_mode == AudioStreamWAV.LOOP_DISABLED:
-		var wav := stream as AudioStreamWAV
-		wav.loop_mode = AudioStreamWAV.LOOP_FORWARD
-		wav.loop_begin = 0
-		wav.loop_end = int(wav.get_length() * float(wav.mix_rate))
+	_loop(stream)
 	fresh.stream = stream
 	fresh.volume_db = -60.0
 	fresh.play()

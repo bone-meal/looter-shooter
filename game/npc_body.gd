@@ -33,6 +33,7 @@ static func build(look: Dictionary) -> Node3D:
 		_tail(body.call("attach", "pelvis") as Node3D)
 	if String(old_outfit.get("neck", "")) == "bowtie":
 		_bow(body.call("attach", "neck_01") as Node3D, accent)
+	body.call("merge_pieces")  # one skinned mesh instead of a dozen pieces (a body with shape sliders stays as it is)
 	return body
 
 

@@ -194,12 +194,14 @@ func follow(local: Vector3) -> void:
 			var site := layout.site(Vector2i(int(parts[1]), int(parts[2])))
 			if Vector2(local.x - float(site["x"]), local.z - float(site["z"])).length() > show_at + HIDE_EXTRA:
 				_unbuild(id)
+	var stood := 0
 	for i in people.size():
 		var who: Dictionary = people[i]
 		var d := Vector2(local.x - who["at"].x, local.z - who["at"].z).length()
 		var wanted := d < PEOPLE_AT and (not bool(who["folk"]) or FantasyTerrain.hash01(i, 7, 3) < folk_share)
-		if wanted and who["node"] == null:
+		if wanted and who["node"] == null and stood < 2:  # two a call: the first body of each kind takes a moment to merge
 			_stand(who)
+			stood += 1
 		if who["node"] != null and bool(who.get("shaded", true)) != (d < NEAR_M):
 			who["shaded"] = d < NEAR_M
 			for part: Node in (who["node"] as Node).find_children("*", "MeshInstance3D", true, false):

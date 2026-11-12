@@ -440,6 +440,7 @@ func leave() -> void:
 	combat.set_active(false)
 	rooms.reset()
 	sounds.call("set_region", "")
+	sounds.call("set_town", false)
 	panel.close_panel()
 	_style.call("set_sky_tint", Color.WHITE)
 	_player.set("guns_locked", false)
@@ -493,6 +494,7 @@ func _process(delta: float) -> void:
 	if not _buff.is_empty() and now >= float(_buff["until"]):
 		_buff = {}
 		apply_stats()
+	sounds.call("set_town", squads.safe.place_at(Vector2(local.x, local.z)) >= 0)
 	var region := terrain.region_at(local.x, local.z)
 	if String(region["id"]) != _region:
 		_region = String(region["id"])
