@@ -36,6 +36,7 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	var clear: Array[Vector2] = [arena["at"], fantasy["at"], spawn]
 	for board: Dictionary in land.wall_buys:
 		clear.append(board["at"])
+	clear.append_array(land.keep_clear)
 	for hut: Dictionary in land.shelters:
 		for corner: Vector2 in [Vector2.ZERO, Vector2(3, 2.4), Vector2(-3, 2.4), Vector2(3, -2.4), Vector2(-3, -2.4), Vector2(0, 5)]:
 			clear.append((hut["at"] as Vector2) + corner.rotated(-float(hut["yaw"])))

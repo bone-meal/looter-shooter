@@ -1,0 +1,202 @@
+{
+ "version": 1,
+ "_about": "The islands' perks (core/perk_state.gd; game/perk_machine.gd is the machine). limit = most perks carried at once (the boss's perk power-up ignores it); all are lost when you go down. Each perk: name, price in points, island + at [x, z] from that island's middle (its machine; it faces the island's middle), color, desc (shown at the machine), and its numbers. Machines work once the power is on. Every name, price and number is the director's to change.",
+ "limit": 6,
+ "reach": 2.6,
+ "perks": {
+  "second_wind": {
+   "name": "Second Wind",
+   "price": 1500,
+   "island": "home",
+   "at": [
+    24.9,
+    10.5
+   ],
+   "color": "#7fd4ff",
+   "desc": "Help a teammate up twice as fast. Alone: once a run you get back up by yourself.",
+   "revive_mult": 0.5,
+   "self_revive_seconds": 3.0
+  },
+  "hair_trigger": {
+   "name": "Hair Trigger",
+   "price": 2000,
+   "island": "home",
+   "at": [
+    -10.5,
+    24.9
+   ],
+   "color": "#ffd23f",
+   "desc": "Guns fire a third faster.",
+   "fire_rate_mult": 1.33
+  },
+  "trade_winds": {
+   "name": "Trade Winds",
+   "price": 2000,
+   "island": "home",
+   "at": [
+    -24.9,
+    -10.5
+   ],
+   "color": "#59e0c1",
+   "desc": "Sprint a quarter faster.",
+   "sprint_mult": 1.25
+  },
+  "blast_proof": {
+   "name": "Blast Proof",
+   "price": 2000,
+   "island": "home",
+   "at": [
+    10.5,
+    -24.9
+   ],
+   "color": "#b58cff",
+   "desc": "Landing from high up throws a shockwave.",
+   "shock_fall": 7.0,
+   "shock_radius": 4.5,
+   "shock_damage": 150.0
+  },
+  "iron_gut": {
+   "name": "Iron Gut",
+   "price": 2500,
+   "island": "painter",
+   "at": [
+    6.4,
+    16.8
+   ],
+   "color": "#e2552a",
+   "desc": "Health 250 instead of 100.",
+   "max_health": 250.0
+  },
+  "steady_hand": {
+   "name": "Steady Hand",
+   "price": 2500,
+   "island": "painter",
+   "at": [
+    -17.8,
+    2.7
+   ],
+   "color": "#f2efe4",
+   "desc": "Headshots hit half again as hard; steadier from the hip.",
+   "head_mult": 1.5,
+   "hip_spread_mult": 0.7
+  },
+  "deep_pockets": {
+   "name": "Deep Pockets",
+   "price": 2500,
+   "island": "painter",
+   "at": [
+    -9.7,
+    -15.1
+   ],
+   "color": "#c98a4b",
+   "desc": "Ammo pools hold half again as much, magazines a fifth more.",
+   "pool_bonus_pct": 50.0,
+   "mag_mult": 1.2
+  },
+  "run_and_gun": {
+   "name": "Run and Gun",
+   "price": 2500,
+   "island": "painter",
+   "at": [
+    15.1,
+    -9.8
+   ],
+   "color": "#9be564",
+   "desc": "A finished reload makes you a fifth faster for 2 s.",
+   "reload_boost_mult": 1.2,
+   "reload_boost_seconds": 2.0
+  },
+  "quickhands": {
+   "name": "Quickhands",
+   "price": 3000,
+   "island": "shoal",
+   "at": [
+    -6.2,
+    16.9
+   ],
+   "color": "#59c46a",
+   "desc": "Reloads take half as long.",
+   "reload_time_mult": 0.5
+  },
+  "scavenger": {
+   "name": "Scavenger",
+   "price": 3000,
+   "island": "shoal",
+   "at": [
+    -14.6,
+    -10.6
+   ],
+   "color": "#d6c15a",
+   "desc": "Some kills hand you rounds for the gun in hand; power-ups last half again as long.",
+   "ammo_chance": 0.15,
+   "ammo_share": 0.1,
+   "power_time_mult": 1.5
+  },
+  "backdraft": {
+   "name": "Backdraft",
+   "price": 3000,
+   "island": "shoal",
+   "at": [
+    4.9,
+    -17.3
+   ],
+   "color": "#ff8a3d",
+   "desc": "An enemy that hits you is set alight and thrown back (every 5 s).",
+   "burn_dps": 20.0,
+   "burn_seconds": 3.0,
+   "push": 9.0,
+   "cooldown": 5.0
+  },
+  "thick_skin": {
+   "name": "Thick Skin",
+   "price": 3000,
+   "island": "shoal",
+   "at": [
+    -13.8,
+    11.6
+   ],
+   "color": "#8fa3b8",
+   "desc": "Armour counts double; burning, poison and slow last half as long.",
+   "defense_mult": 2.0,
+   "status_time_mult": 0.5
+  },
+  "cold_blood": {
+   "name": "Cold Blood",
+   "price": 3500,
+   "island": "wreck",
+   "at": [
+    -17.4,
+    -4.6
+   ],
+   "color": "#6aa9ff",
+   "desc": "The first shot after 3 s without firing hits twice as hard.",
+   "calm_seconds": 3.0,
+   "calm_mult": 2.0
+  },
+  "third_holster": {
+   "name": "Third Holster",
+   "price": 4000,
+   "island": "wreck",
+   "at": [
+    4.6,
+    -17.4
+   ],
+   "color": "#e36bd0",
+   "desc": "One more ready gun.",
+   "extra_holsters": 1
+  },
+  "lucky_strike": {
+   "name": "Lucky Strike",
+   "price": 4000,
+   "island": "wreck",
+   "at": [
+    17.4,
+    4.6
+   ],
+   "color": "#58d68d",
+   "desc": "One kill in ten pays double; power-ups drop a quarter more often.",
+   "double_kill_chance": 0.1,
+   "power_drop_mult": 1.25
+  }
+ }
+}

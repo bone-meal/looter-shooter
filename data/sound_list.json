@@ -105,6 +105,38 @@
     {
      "id": "board_tear",
      "label": "An enemy tears a board off"
+    },
+    {
+     "id": "part_take",
+     "label": "A power part is picked up"
+    },
+    {
+     "id": "power_on",
+     "label": "The power goes on"
+    },
+    {
+     "id": "perk_buy",
+     "label": "A perk is bought"
+    },
+    {
+     "id": "box_spin",
+     "label": "The mystery box spins"
+    },
+    {
+     "id": "box_gull",
+     "label": "The seagull takes the box away"
+    },
+    {
+     "id": "upgrade_done",
+     "label": "The upgrade machine is done"
+    },
+    {
+     "id": "trap_zap",
+     "label": "An electric trap runs"
+    },
+    {
+     "id": "trap_fire",
+     "label": "A fire trap runs"
     }
    ]
   },

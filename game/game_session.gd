@@ -54,6 +54,11 @@ const PowerupRules = preload("res://core/powerup_rules.gd")
 const Archipelago = preload("res://core/archipelago.gd")
 const WallBuy = preload("res://game/wall_buy.gd")
 const Shelters = preload("res://game/shelters.gd")
+const PerkState = preload("res://core/perk_state.gd")
+const NetRounds = preload("res://game/net_rounds.gd")
+const PowerState = preload("res://core/power_state.gd")
+const PerkMachine = preload("res://game/perk_machine.gd")
+const PowerStation = preload("res://game/power_station.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
 const GameOverScreen = preload("res://game/game_over_screen.gd")
@@ -134,6 +139,16 @@ var _revive_target := 0  # online: the downed player we stand next to (0 = nobod
 var _revive_hold := 0.0  # ... and for how long we have held the key
 var _land: Archipelago  # the islands: where they are, which debris is cleared (core/archipelago.gd)
 var _debris: Array = []  # game/debris_pile.gd, one per bridge
+var _perks: PerkState  # the perks our player carries (lost on going down)
+var _perk_spots := {}  # perk id -> Vector2 (its machine, metres from the spawn island's middle)
+var _perk_machines := {}  # perk id -> game/perk_machine.gd
+var _power: PowerState  # the switch: parts found, on or off (the whole party's)
+var _power_cfg: Dictionary  # data/power.json
+var _power_station := PowerStation.new()
+var _part_spots: Array[Vector2] = []
+var _bench_spot := Vector2.ZERO
+var _second_wind_used := false  # alone: the one self-revive of this run is spent
+var _self_revive_at := -1.0  # alone with Second Wind: when we get back up (-1 = not lying)
 var _shelters := Shelters.new()  # the huts and their window boards
 var _nail_at := 0.0  # as a client: when we may next ask the host to nail a board
 var _last_isle := 0  # the island we last stood on (where the sea carries us back to)
@@ -204,8 +219,34 @@ func _ready() -> void:
 	var gates := Colosseum.build(self)
 	LoadClock.mark("colosseum")
 	_land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
+	_perks = PerkState.new(DataStore.load_json("res://data/perks.json"))
+	for id: String in _perks.ids():
+		_perk_spots[id] = _land.on_island(String(_perks.cfg["perks"][id]["island"]), _perks.cfg["perks"][id]["at"])
+		_land.keep_clear.append(_perk_spots[id])
+	_power_cfg = DataStore.load_json("res://data/power.json")
+	_power = PowerState.new(_power_cfg)
+	for part: Dictionary in _power_cfg["parts"]:
+		_part_spots.append(_land.on_island(String(part["island"]), part["at"]))
+	_bench_spot = _land.on_island(String(_power_cfg["bench"]["island"]), _power_cfg["bench"]["at"])
+	_land.keep_clear.append_array(_part_spots)
+	_land.keep_clear.append(_bench_spot)
 	var island := Island.build(self, _land)
 	_debris = island["debris"]
+	for id: String in _perk_spots:
+		var machine := PerkMachine.new()
+		machine.title = _perks.name_of(id)
+		machine.price = _perks.price(id)
+		machine.tint = _perks.color_of(id)
+		machine.position = _flat(_perk_spots[id])
+		machine.rotation.y = _toward_middle(_perk_spots[id])
+		add_child(machine)
+		_perk_machines[id] = machine
+	var parts: Array[Vector3] = []
+	for spot: Vector2 in _part_spots:
+		parts.append(_flat(spot))
+	_power_station.setup(parts, _flat(_bench_spot), _toward_middle(_bench_spot))
+	add_child(_power_station)
+	_show_power()
 	_shelters.setup(_land.shelters, _land.cfg["windows"])
 	_shelters.tore.connect(_on_board_torn)
 	add_child(_shelters)
@@ -327,6 +368,8 @@ func _ready() -> void:
 	_rounds.director = _director
 	_rounds.land = _land
 	_rounds.shelters = _shelters
+	_player.perks = _perks
+	_player_hud.perks = _perks
 	_rounds.bodies = _island_bodies
 	_rounds.rules.alive_cap = int((_rounds.config()["alive_cap"] as Dictionary).get(settings.graphics, 24))
 	_rounds.round_started.connect(_on_round_started)
@@ -380,6 +423,9 @@ func _ready() -> void:
 		net.rounds.debris_opened.connect(_on_debris_opened)
 		net.rounds.debris_billed.connect(_on_debris_billed)
 		net.rounds.shelters = _shelters.rules
+		net.rounds.power = _power
+		net.rounds.power_near = _power_thing_at
+		net.rounds.power_bits.connect(_on_power_bits)
 		net.rounds.window_set.connect(_on_window_set)
 		net.rounds.nail_paid.connect(_on_nail_paid)
 		var downs: Dictionary = _rounds.config()["downs"]
@@ -979,6 +1025,24 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	var perk := _perk_here()
+	if perk != "":
+		if not _power.on:
+			return "%s: no power. The switch is built on %s from %d parts lying on %s." % [_perks.name_of(perk), _land.islands[_land.island_near(_bench_spot.x, _bench_spot.y)]["name"], _part_spots.size(), _land.islands[_land.island_near(_part_spots[0].x, _part_spots[0].y)]["name"]]
+		if _perks.has(perk):
+			return "%s: you carry it" % _perks.name_of(perk)
+		if perk == "second_wind" and _second_wind_used:
+			return "%s: sold out for this run" % _perks.name_of(perk)
+		if _perks.refusal(perk) == "limit":
+			return "You carry %d perks already" % _perks.limit()
+		return "[%s] %s (%d points): %s" % [key, _perks.name_of(perk), _perks.price(perk), _perks.desc(perk)]
+	var thing := _power_thing_at(_player.global_position) if _island_side() else -1
+	if thing == NetRounds.SWITCH:
+		if _power.all_found():
+			return "[%s] Build the switch and throw it" % key
+		return "The power switch needs %d parts (%d found)." % [_part_spots.size(), _power.found_count()]
+	if thing >= 0:
+		return "[%s] Take the %s (part of the power switch)" % [key, _power_cfg["parts"][thing]["name"]]
 	var window := _window_here()
 	if window >= 0 and _shelters.rules.boards[window] < _shelters.rules.full():
 		return "[hold %s] Nail a board back (%d of %d)" % [key, _shelters.rules.boards[window], _shelters.rules.full()]
@@ -1045,6 +1109,10 @@ func _interact() -> void:
 		net.trade.answer(true)
 	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		_take_pack()
+	elif _perk_here() != "":
+		_buy_perk(_perk_here())
+	elif _island_side() and _power_thing_at(_player.global_position) >= 0:
+		_use_power_thing(_power_thing_at(_player.global_position))
 	elif _wall_buy_here() >= 0:
 		_buy_from_wall(_wall_buy_here())
 	elif _debris_here() >= 0:
@@ -1297,7 +1365,16 @@ func _pick_up(drop: Dictionary) -> void:
 # An enemy died: roll its gun drops (wave luck, elite and boss floors) and drop them where it fell.
 func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int) -> void:
 	_player.on_enemy_killed(elite, enemy_id)
-	_score.kill()  # paid by how the blow landed (the player sets `blow` around its hits); nothing in Aurelind
+	var lucky := _rng.randf() < _perks.num("double_kill_chance", 0.0)  # Lucky Strike: this kill pays double
+	if lucky:
+		_score.mult *= 2
+	var paid := _score.kill()  # paid by how the blow landed (the player sets `blow` around its hits); nothing in Aurelind
+	if lucky:
+		_score.mult = maxi(_score.mult >> 1, 1)
+	if paid > 0 and _player.hand_index() >= 0 and _rng.randf() < _perks.num("ammo_chance", 0.0):  # Scavenger: rounds for the gun in hand
+		var in_hand: String = _player.inventory.holster_body(_player.hand_index())
+		if in_hand != "":
+			_player.pools.give(in_hand, ceili(float(_player.pools.size_of(in_hand)) * _perks.num("ammo_share", 0.0)))
 	var kill_counters: Array = ["kills"]
 	var xp_kind := "kill"
 	if elite != "":
@@ -1311,7 +1388,7 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave
 		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony"))
 	if island_kill and _rounds.active and (enemy_id.begins_with("boss") or not _blasting):  # alone or hosting: maybe a power-up, always from a boss
-		var power := _powerups.roll_drop(_rng, enemy_id.begins_with("boss"))
+		var power := _powerups.roll_drop(_rng, enemy_id.begins_with("boss"), _perks.num("power_drop_mult", 1.0))
 		if power != "":
 			_drop_power(power, where)
 	for i in guns.size():
@@ -1385,7 +1462,9 @@ func _on_player_died() -> void:
 
 # Asked by the player the moment its health runs out: true = lie down and wait for a teammate instead of dying.
 func _goes_down() -> bool:
-	return net != null and net.can_send() and not _in_arena and not _in_fantasy and _on_island(_player.global_position) and _island_round() > 0
+	if _in_arena or _in_fantasy or not _on_island(_player.global_position) or _island_round() <= 0:
+		return false
+	return (net != null and net.can_send()) or (_perks.has("second_wind") and not _second_wind_used)  # online; or alone with the one self-revive
 
 
 func _island_round() -> int:
@@ -1394,6 +1473,14 @@ func _island_round() -> int:
 
 func _on_went_down() -> void:
 	_score.downs += 1
+	if net == null or not net.can_send():  # alone with Second Wind: up again by ourselves in a moment, this once
+		_second_wind_used = true
+		_self_revive_at = _time + _perks.num("self_revive_seconds", 3.0)
+		_down_until = INF
+		_lose_perks()
+		_player_hud.notice("Second Wind: hold on ...")
+		return
+	_lose_perks()
 	_down_until = _time + float(_rounds.config()["downs"]["seconds"])
 	net.downs.report("down")
 
@@ -1483,7 +1570,7 @@ func _hold_revive(delta: float) -> void:
 		_revive_hold = 0.0
 		return
 	_revive_hold += delta
-	if _revive_hold >= float(_rounds.config()["downs"]["hold"]):
+	if _revive_hold >= float(_rounds.config()["downs"]["hold"]) * _perks.num("revive_mult", 1.0):
 		_revive_hold = 0.0
 		net.downs.ask_revive(_revive_target)
 
@@ -1696,6 +1783,148 @@ func _close_debris() -> void:
 		(pile as Node).call("set_open", false)
 	_shelters.rules.board_all()
 	_shelters.refresh()
+	_power.reset()
+	_show_power()
+	_lose_perks()
+	_second_wind_used = false
+	_self_revive_at = -1.0
+
+
+# --- perks and the power switch (core/perk_state.gd, core/power_state.gd decide) ---
+
+# A spot of the land as a world position on flat ground, and the way something standing there faces the middle of
+# its island.
+func _flat(spot: Vector2) -> Vector3:
+	return Island.CENTER + Vector3(spot.x, 0.0, spot.y)
+
+
+func _toward_middle(spot: Vector2) -> float:
+	var off: Vector2 = spot - (_land.islands[_land.island_near(spot.x, spot.y)]["at"] as Vector2)
+	return atan2(-off.x, -off.y)
+
+
+# The perk whose machine our player stands at, "" = none.
+func _perk_here() -> String:
+	if not _island_side():
+		return ""
+	var at := Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z)
+	for id: String in _perk_spots:
+		if at.distance_to(_perk_spots[id]) <= float(_perks.cfg["reach"]):
+			return id
+	return ""
+
+
+func _buy_perk(id: String) -> void:
+	if not _power.on or _perks.refusal(id) != "" or (id == "second_wind" and _second_wind_used):
+		return
+	if not _score.spend(_perks.price(id)):
+		_player_hud.notice("%s costs %d points (you have %d)." % [_perks.name_of(id), _perks.price(id), _score.points])
+		return
+	_perks.add(id)
+	_perks_changed(true)
+	_sounds.call("play", "perk_buy")
+	_player_hud.notice("%s: %s" % [_perks.name_of(id), _perks.desc(id)])
+
+
+# The perks carried changed: everything that reads their numbers follows.
+func _perks_changed(heal: bool) -> void:
+	_player.pools.bonus_pct = _perks.num("pool_bonus_pct", 0.0)
+	var homeless: Array = _player.inventory.set_holster_count(2 + int(_perks.num("extra_holsters", 0.0)))
+	if not homeless.is_empty():  # the extra ready gun found no room in the bag: it lies in a backpack at our feet
+		var things: Array = []
+		for stack: Dictionary in homeless:
+			things.append(_player.inventory.stack_to_saved(stack))
+		if _pack != null:
+			(_pack.bundle["things"] as Array).append_array(things)
+		else:
+			_place_pack(_player.global_position, {"things": things})
+		_player_hud.notice("No room for the gun of your extra slot: it lies in a backpack.")
+	if _player.hand_index() >= _player.inventory.holster_count:
+		_player.select_hand(0)
+	_player.perks_changed(heal)
+	_inventory_screen.in_hand = _player.hand_index()
+
+
+# Going down or game over: every perk is gone.
+func _lose_perks() -> void:
+	if _perks.owned.is_empty():
+		return
+	_perks.clear()
+	_perks_changed(false)
+	_player_hud.notice("Your perks are gone.")
+
+
+# What of the power switch lies at a world spot: a part's number, NetRounds.SWITCH at the workbench, -1 = nothing
+# (parts already found and a switch already thrown do not count).
+func _power_thing_at(at: Vector3) -> int:
+	var spot := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
+	var reach := float(_power_cfg["reach"])
+	for i in _part_spots.size():
+		if not _power.found[i] and spot.distance_to(_part_spots[i]) <= reach:
+			return i
+	return NetRounds.SWITCH if (not _power.on and spot.distance_to(_bench_spot) <= reach + 0.6) else -1
+
+
+# Interact at a part or at the workbench. Online the host does it for the whole party.
+func _use_power_thing(thing: int) -> void:
+	if thing == NetRounds.SWITCH and not _power.all_found():
+		return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_power(thing)
+		return
+	if _power.switch_on() if thing == NetRounds.SWITCH else _power.take(thing):
+		_power_changed(thing)
+		if net != null:
+			net.rounds.tell_power_state(_power.to_bits())
+
+
+# The power's state as the host says it (as a client; on the host after a client's ask).
+func _on_power_bits(bits: int) -> void:
+	var was_on := _power.on
+	var had := _power.found_count()
+	_power.set_bits(bits)
+	_power_changed(NetRounds.SWITCH if (_power.on and not was_on) else (0 if _power.found_count() > had else -1))
+
+
+# Shows the new state; `what` = what just happened (a part's number, SWITCH = it went on, -1 = nothing to tell).
+func _power_changed(what: int) -> void:
+	_show_power()
+	if what < 0 or not _island_side():
+		return
+	if what == NetRounds.SWITCH:
+		_sounds.call("play", "power_on")
+		_player_hud.callout("Power on", Color(0.5, 0.95, 1.0))
+	else:
+		_sounds.call("play", "part_take")
+		_player_hud.notice("Power switch: %d of %d parts found." % [_power.found_count(), _part_spots.size()])
+
+
+# Admin commands: the power on without the parts; a perk (or all of them) for nothing.
+func cheat_power() -> String:
+	if net != null and net.rounds.is_client():
+		return "Only the host can do that."
+	for i in _part_spots.size():
+		_power.take(i)
+	_power.switch_on()
+	_power_changed(NetRounds.SWITCH)
+	if net != null:
+		net.rounds.tell_power_state(_power.to_bits())
+	return "The power is on."
+
+
+func cheat_perk(id: String) -> String:
+	if id != "all" and not _perks.known(id):
+		return "Perks: %s" % ", ".join(PackedStringArray(_perks.ids()))
+	for perk: String in (_perks.ids() if id == "all" else [id]):
+		_perks.add(perk, true)
+	_perks_changed(true)
+	return "You carry: %s." % ", ".join(PackedStringArray(_perks.owned))
+
+
+func _show_power() -> void:
+	_power_station.show_state(_power.found, _power.on)
+	for id: String in _perk_machines:
+		(_perk_machines[id] as Node).call("set_powered", _power.on)
 
 
 # --- shelter windows (core/shelter_rules.gd decides; game/shelters.gd shows the boards) ---
@@ -1802,7 +2031,7 @@ func _apply_power(kind: String) -> void:
 	if not _powerups.has(kind):
 		return
 	var entry: Dictionary = _powerups.cfg["kinds"][kind]
-	_powerups.start(kind, _time)
+	_powerups.start(kind, _time, _perks.num("power_time_mult", 1.0))
 	if kind == "carpenter":
 		_shelters.rules.board_all()
 		_shelters.refresh()
@@ -1825,6 +2054,11 @@ func _apply_power(kind: String) -> void:
 			_score.give(int(entry["points"]) * _powerups.points_mult(_time))
 		"carpenter":
 			_score.give(int(entry["points"]) * _powerups.points_mult(_time))
+		"perk":
+			var got := _perks.give_random(_rng)
+			if got != "":
+				_perks_changed(true)
+				_player_hud.notice("%s: %s" % [_perks.name_of(got), _perks.desc(got)])
 
 
 # The run is over: no power-up lies around or runs any more.
@@ -2000,6 +2234,10 @@ func _process(delta: float) -> void:
 		_fantasy_saved_at = _time
 		save_profile()
 	_power_field.deciding = _rounds.active
+	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
+		_self_revive_at = -1.0
+		_player.revive(1.0)
+		_player_hud.notice("You are back on your feet. That was your one Second Wind.")
 	if _island_side():
 		_mind_the_sea()
 		_hold_nailing()

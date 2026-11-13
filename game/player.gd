@@ -90,6 +90,10 @@ var _tick_left := 0.0  # frame time not yet turned into movement ticks
 var _tick_from := Vector3.ZERO  # where the body stood before its latest tick (the view glides from there, see _process)
 var _jump_until := 0.0  # a jump was pressed: it counts until this time (jump_buffer)
 var _was_grounded := true
+var _calm_since := -100.0  # when a gun was last fired (the Cold Blood perk)
+var _backdraft_at := 0.0  # when the Backdraft perk may answer a blow again
+var _was_reloading := false
+var _reload_boost_until := 0.0  # the Run and Gun perk: faster until then
 var _fall_speed := 0.0  # how fast the body was falling in its latest tick in the air
 var _crouch := 0.0  # 0 standing .. 1 fully crouched
 var _capsule: CapsuleShape3D
@@ -148,6 +152,7 @@ var _last_crit := false
 var score: RefCounted  # core/score_card.gd, set by the session (null in test scenes): shots that hurt an enemy pay points
 var head_share := 0.0  # data/points.json "headshot", set by the session: the top part of an enemy that is its head ...
 var head_mult := 1.0  # ... and how much harder a hit there lands
+var perks: RefCounted  # core/perk_state.gd: the islands' perks carried (null in tools); see _perk()
 var bonus_damage_pct := 0.0  # from stats and traits (core/progress_state.gd), set by the session
 var bonus_speed_pct := 0.0
 var bonus_hp_pct := 0.0
@@ -382,10 +387,14 @@ func _move_tick(input: Vector2) -> void:
 	var grounded := is_on_floor()
 	if grounded and not _was_grounded:
 		move.land(_fall_speed)
+		if _fall_speed >= _perk("shock_fall", INF) and explosives != null:  # Blast Proof: a hard landing throws a shockwave
+			explosives.blast(global_position, _perk("shock_radius", 0.0), _perk("shock_damage", 0.0))
 	_was_grounded = grounded
 	var aiming := Input.is_action_pressed("aim")
 	var top := (_aim_units if aiming and _aim_units > 0.0 else _top_units) * move.unit * status.speed_multiplier() * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace
-	var sprint_top := top * _sprint_multiplier
+	if _now() < _reload_boost_until:
+		top *= _perk("reload_boost_mult", 1.0)
+	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
 	if cheat_fly:  # the whole movement follows the view, up and down included
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * sprint_top * 2.0
 	else:
@@ -475,6 +484,9 @@ func _move_and_shoot(delta: float) -> void:
 			_gun_sound("dry_fire")
 	else:
 		weapon.update(_now())
+	if _was_reloading and not weapon.is_reloading() and _perk("reload_boost_seconds", 0.0) > 0.0:
+		_reload_boost_until = _now() + _perk("reload_boost_seconds", 0.0)  # Run and Gun: a finished reload quickens the step
+	_was_reloading = weapon.is_reloading()
 	if _holding and inventory.loaded[_hand] != weapon.ammo:
 		inventory.loaded[_hand] = weapon.ammo  # the inventory keeps count of what is in the magazine
 
@@ -527,6 +539,7 @@ func set_pace(mult: float) -> void:
 func take_damage(amount: float, element: String = "physical") -> void:
 	if damage_gate.is_valid():
 		amount = float(damage_gate.call(amount, element))
+	var attacker: Variant = struck_by
 	struck_by = null
 	struck_from = Vector3.INF
 	if cheat_god or downed or amount <= 0.0:
@@ -535,8 +548,15 @@ func take_damage(amount: float, element: String = "physical") -> void:
 	if taken <= 0.0:
 		blocked.emit()
 		return
+	var defense := float(armor["defense"])
+	taken *= (ArmorMath.DEFENSE_SCALE + defense) / (ArmorMath.DEFENSE_SCALE + defense * _perk("defense_mult", 1.0))  # Thick Skin: armour counts for more
 	if element != "physical":
-		status.apply(element, float(armor["resist"].get(element, 0.0)))
+		status.apply(element, 1.0 - (1.0 - float(armor["resist"].get(element, 0.0))) * _perk("status_time_mult", 1.0))
+	if is_instance_valid(attacker) and (attacker as Object).has_method("apply_burn") and _now() >= _backdraft_at and _perk("cooldown", 0.0) > 0.0:
+		_backdraft_at = _now() + _perk("cooldown", 0.0)  # Backdraft: whoever hit us burns and is thrown back
+		(attacker as Object).call("apply_burn", _perk("burn_dps", 0.0), _perk("burn_seconds", 0.0))
+		var away: Vector3 = ((attacker as Node3D).global_position - global_position) * Vector3(1, 0, 1)
+		(attacker as Object).call("push", away.normalized() * _perk("push", 0.0))
 	_hurt(taken)
 
 
@@ -747,9 +767,9 @@ func refresh_held() -> void:
 		_held_stats = GunStats.final_stats(gun_db, _held_gun)
 		_dress_body(index)
 		stats = _held_stats
-	var key := body.hash() if _held_gun.is_empty() else _held_gun.hash()
+	var key := (body.hash() if _held_gun.is_empty() else _held_gun.hash()) + (int(perks.get("stamp")) if perks != null else 0)  # a perk bought or lost: the gun's numbers are worked out again
 	if _ready_weapons[_hand] == null or _ready_keys[_hand] != key or inventory.loaded[_hand] == InventoryState.FRESH:
-		var made := WeaponState.new(body, stats)
+		var made := WeaponState.new(body, _with_perks(stats))
 		made.pool = pools
 		var rounds := inventory.loaded[_hand]
 		made.ammo = pools.take(body, made.mag_size) if rounds == InventoryState.FRESH else clampi(rounds, 0, made.mag_size)
@@ -1063,7 +1083,9 @@ func _shoot() -> void:
 	var forward := -_camera.global_transform.basis.z
 	var right := _camera.global_transform.basis.x
 	var up := _camera.global_transform.basis.y
-	var spread := weapon.spread * lerpf(1.0, float(_views[_slot].get("ads_spread_mult", 1.0)), _motion.ads_eased())
+	var spread := weapon.spread * lerpf(_perk("hip_spread_mult", 1.0), float(_views[_slot].get("ads_spread_mult", 1.0)), _motion.ads_eased())
+	var calm := _perk("calm_mult", 1.0) if _now() - _calm_since >= _perk("calm_seconds", INF) else 1.0  # Cold Blood: the first shot after a quiet while
+	_calm_since = _now()
 	_kick_view()  # applies after this shot's direction is taken (the camera vectors above were read first)
 
 	var buffs: Dictionary = _held_stats.get("buffs", {})
@@ -1082,10 +1104,10 @@ func _shoot() -> void:
 		query.exclude = [get_rid()]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider.has_method("on_hit"):
-			var dealt := _gun_damage()
+			var dealt := _gun_damage() * calm
 			var head: bool = hit.collider.has_method("head_hit") and hit.collider.head_hit(hit.position, head_share)
 			if head:
-				dealt *= head_mult
+				dealt *= head_mult * _perk("head_mult", 1.0)
 			var hp_before := _hp_of(hit.collider)
 			if score != null:
 				score.blow = "headshot" if head else ""  # a kill by this pellet is paid as what it was (the session hears of the kill)
@@ -1142,10 +1164,35 @@ func set_progress_bonuses(damage_pct: float, speed_pct: float, hp_pct: float) ->
 		health.hp += health.max_hp - before
 
 
+# A number of the perks carried (core/perk_state.gd `num`), `fallback` without that perk.
+func _perk(key: String, fallback: float) -> float:
+	return float(perks.call("num", key, fallback)) if perks != null else fallback
+
+
+# A gun's numbers with the perks that change them (fire rate, reload, magazine).
+func _with_perks(stats: Dictionary) -> Dictionary:
+	if perks == null or (perks.get("owned") as Array).is_empty():
+		return stats
+	var out := stats.duplicate()
+	out["fire_rate"] = float(stats["fire_rate"]) * _perk("fire_rate_mult", 1.0)
+	out["reload_time"] = float(stats["reload_time"]) * _perk("reload_time_mult", 1.0)
+	out["mag_size"] = roundi(float(stats["mag_size"]) * _perk("mag_mult", 1.0))
+	return out
+
+
+# The session bought or took away a perk: health and the gun in hand follow.
+func perks_changed(heal: bool) -> void:
+	var before := health.max_hp
+	_apply_health_cap()
+	if heal and health.max_hp > before:
+		health.hp = health.max_hp
+	refresh_held()
+
+
 # Glass Cannon lowers max health while the gun is held (current health is never raised by swapping).
 func _apply_health_cap() -> void:
 	var buffs: Dictionary = _held_stats.get("buffs", {})
-	health.max_hp = (_base_max_hp + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0)
+	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0)
 	health.hp = minf(health.hp, health.max_hp)
 
 

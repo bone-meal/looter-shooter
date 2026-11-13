@@ -55,6 +55,7 @@ var round_number := 0  # the island round or the colosseum wave being fought; 0 
 var round_of := 0  # the colosseum: how many waves there are ("3 / 8"); 0 = endless rounds, shown as tallies
 var enemies_left := -1  # -1 = hidden
 var show_points := true  # off where the points game does not run (Aurelind)
+var perks: RefCounted  # core/perk_state.gd: the perks carried, shown as a row of coloured tags
 var powerups: RefCounted  # core/powerup_rules.gd: the running ones are shown with their time left
 var power_now := 0.0  # the session's clock, for that time
 var party: Array = []  # the other players' {"name", "points"}, set by the session a few times a second
@@ -156,6 +157,7 @@ func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, view), Color(1.0, 0.96, 0.86, _white * 0.8))
 	_draw_powers(view)
 	var shift := _draw_round(view)  # the round takes the corner; the health ring moves over
+	_draw_perks(view, shift)
 	_draw_health(Vector2(MARGIN + shift + RING_RADIUS + 8.0, view.y - MARGIN - RING_RADIUS - 8.0))
 	_draw_status(Vector2(MARGIN + shift, view.y - MARGIN - RING_RADIUS * 2.0 - 40.0))
 	_draw_weapons(view)
@@ -234,6 +236,22 @@ func _draw_powers(view: Vector2) -> void:
 		draw_string(_font, Vector2(x + 8.0, y + 23.0), String(powerups.name_of(kind)), HORIZONTAL_ALIGNMENT_LEFT, POWER_BOX.x - 56.0, 15, color)
 		draw_string(_font, Vector2(x + POWER_BOX.x - 50.0, y + 23.0), "%d s" % ceili(left), HORIZONTAL_ALIGNMENT_RIGHT, 42.0, 15, WHITE)
 		x += POWER_BOX.x + 8.0
+
+
+# The perks carried: a row of tags in each perk's colour with its initials, right of the health ring.
+func _draw_perks(view: Vector2, shift: float) -> void:
+	if perks == null:
+		return
+	var owned: Array = perks.get("owned")
+	var x := MARGIN + shift + RING_RADIUS * 2.0 + 30.0
+	var y := view.y - MARGIN - 34.0
+	for id: String in owned:
+		var tint: Color = perks.call("color_of", id)
+		draw_rect(Rect2(x, y, 30.0, 30.0), tint)
+		draw_rect(Rect2(x, y, 30.0, 30.0), BACK, false, 2.0)
+		var words: PackedStringArray = String(perks.call("name_of", id)).split(" ")
+		draw_string(_font, Vector2(x, y + 21.0), words[0].left(1) + (words[words.size() - 1].left(1) if words.size() > 1 else ""), HORIZONTAL_ALIGNMENT_CENTER, 30.0, 15, Color(0.05, 0.05, 0.06))
+		x += 34.0
 
 
 # Text with a dark edge, readable over sand and sky alike.

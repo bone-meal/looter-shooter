@@ -42,6 +42,11 @@ func _ready() -> void:
 		if rules.has(rules.roll_drop(rng, true)):
 			bosses += 1
 	_say("a boss always leaves one, cap or not", bosses == 50)
+	var perk_drops := 0
+	for _n in 2000:
+		if rules.roll_drop(rng, true) == "perk":
+			perk_drops += 1
+	_say("2000 bosses leave the perk power-up %d times (about %d expected); a perk makes ordinary drops likelier" % [perk_drops, roundi(2000.0 * float(cfg["boss_perk_chance"]))], absf(float(perk_drops) / 2000.0 - float(cfg["boss_perk_chance"])) < 0.04)
 	var chance_drops := 0
 	for _n in 40000:
 		rules.new_round()
@@ -55,7 +60,11 @@ func _ready() -> void:
 	var total := 0.0
 	for kind: String in cfg["kinds"]:
 		total += float(cfg["kinds"][kind]["weight"])
-	var spread_fine := seen.size() == (cfg["kinds"] as Dictionary).size()
+	var by_chance := 0
+	for kind: String in cfg["kinds"]:
+		if float(cfg["kinds"][kind]["weight"]) > 0.0:
+			by_chance += 1
+	var spread_fine := seen.size() == by_chance and not seen.has("perk")
 	for kind: String in seen:
 		spread_fine = spread_fine and absf(float(seen[kind]) / 20000.0 - float(cfg["kinds"][kind]["weight"]) / total) < 0.015
 	_say("kinds come by their weights: %s" % [seen], spread_fine)
@@ -67,6 +76,9 @@ func _ready() -> void:
 	_say("insta-kill runs %.0f s; max ammo has no clock" % lasts, rules.is_on("insta_kill", 100.0 + lasts - 0.1) and not rules.is_on("insta_kill", 100.0 + lasts) and not rules.is_on("max_ammo", 100.5) and is_equal_approx(rules.left("insta_kill", 110.0), lasts - 10.0))
 	rules.start("insta_kill", 120.0)
 	_say("taking it again starts its clock from full", is_equal_approx(rules.left("insta_kill", 120.0), lasts))
+	rules.start("double_points", 500.0, 1.5)
+	_say("a perk makes a power-up last half again as long", is_equal_approx(rules.left("double_points", 500.0), rules.seconds_of("double_points") * 1.5))
+	rules.reset()
 	rules.start("double_points", 200.0)
 	_say("double points: x%d while it runs, x1 after" % rules.points_mult(201.0), rules.points_mult(201.0) == int(cfg["kinds"]["double_points"]["mult"]) and rules.points_mult(200.0 + rules.seconds_of("double_points") + 0.1) == 1)
 	rules.reset()

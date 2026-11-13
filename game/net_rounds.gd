@@ -13,6 +13,7 @@ extends Node
 const BLOWS := ["", "headshot", "melee"]
 const PAYS := ["hit", "kill", "headshot", "melee"]
 const EFFECTS := ["slow", "burn", "freeze", "weaken", "push"]
+const SWITCH := 99  # ask_power: build the switch and throw it
 const ORIGIN := Vector3(500, 0, 0)  # game/island.gd CENTER: the land's positions are counted from here
 
 signal round_started(number: int, kind: String)  # on a client: what the host announced
@@ -23,6 +24,7 @@ signal power_taken(kind: String)  # on a client: somebody took it, so the whole 
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
 signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
+signal power_bits(bits: int)  # the power's state changed (core/power_state.gd `set_bits`): on a client, and on the host after a client's ask
 signal debris_billed(index: int)  # on a client: the host cleared the debris we asked for; we pay its price
 
 var net: Node3D
@@ -31,6 +33,8 @@ var director: Node3D
 var card: RefCounted  # our own score card
 var land: RefCounted  # core/archipelago.gd of this machine (which debris is cleared)
 var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
+var power: RefCounted  # core/power_state.gd of this machine
+var power_near := Callable()  # func(at: Vector3) -> int: the power part lying at that spot, SWITCH at the workbench, -1 = neither
 var on_gun_side := Callable()  # func() -> bool: our player is where island enemies can reach (not in Aurelind)
 var round_number := 0  # client: the round as the host last told it
 var round_kind := "normal"
@@ -303,6 +307,34 @@ func _nail_paid(points: int) -> void:
 	nail_paid.emit(clampi(points, 0, 100))
 
 
+# --- the power switch: parts are found and the switch thrown for the whole party; the host checks who stands where ---
+
+func ask_power(what: int) -> void:
+	if is_client():
+		_power_ask.rpc_id(1, what)
+
+
+func tell_power_state(bits: int) -> void:
+	if net.can_send() and net.is_host():
+		_power_bits.rpc(bits)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _power_ask(what: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body == null or power == null or not power_near.is_valid() or int(power_near.call(body.global_position)) != what:
+		return
+	if bool(power.call("switch_on") if what == SWITCH else power.call("take", what)):
+		_power_bits.rpc(int(power.call("to_bits")))
+		power_bits.emit(int(power.call("to_bits")))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _power_bits(bits: int) -> void:
+	power_bits.emit(bits)
+
+
 # --- power-ups: only the host speaks ---
 
 func tell_power_drop(id: int, kind: String, at: Vector3) -> void:
@@ -373,6 +405,8 @@ func _ask_all() -> void:
 	if land != null:
 		for index: int in land.call("open_list"):
 			_debris_open.rpc_id(peer, index, false)
+	if power != null:
+		_power_bits.rpc_id(peer, int(power.call("to_bits")))
 	if shelters != null:
 		var boards: PackedInt32Array = shelters.get("boards")
 		for window in boards.size():

@@ -13,6 +13,7 @@ var sea_level: float
 var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "grass", "palms", "scatter"}
 var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)}
 var shelters: Array = []  # {"island": int, "at": Vector2, "yaw": the way its door faces (toward its island's middle)}
+var keep_clear: Array[Vector2] = []  # more spots where things will stand (the session adds them before the islands are built): no tree or rock there
 var bridges: Array = []  # {"from": int, "to": int, "price": int, "kind", "a": Vector2, "b": Vector2 (shore to shore), "mid": Vector2, "open": bool}
 
 var _drop: float
@@ -61,6 +62,11 @@ func index_of(id: String) -> int:
 		if String(islands[i]["id"]) == id:
 			return i
 	return -1
+
+
+# A spot given as [x, z] from the middle of the island with this id.
+func on_island(island_id: String, at: Array) -> Vector2:
+	return (islands[index_of(island_id)]["at"] as Vector2) + Vector2(float(at[0]), float(at[1]))
 
 
 # The middle of everything and how far from it still counts as being at the islands.

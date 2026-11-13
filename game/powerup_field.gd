@@ -182,6 +182,11 @@ func _build(shape: String, color: Color) -> ArrayMesh:
 			_disc(main, 0.2, 0.05, Vector3(0.1, 0.03, 0.04))
 			_disc(trim, 0.12, 0.056, Vector3(-0.09, 0, -0.03))
 			_disc(trim, 0.12, 0.056, Vector3(0.1, 0.03, 0.04))
+		"bottle":
+			_rod(main, 0.11, 0.3, Transform3D(Basis(), Vector3(0, -0.06, 0)))
+			_rod(main, 0.045, 0.16, Transform3D(Basis(), Vector3(0, 0.17, 0)))
+			_rod(trim, 0.055, 0.04, Transform3D(Basis(), Vector3(0, 0.27, 0)))
+			_box(trim, Vector3(0.16, 0.12, 0.012), Vector3(0, -0.06, 0.11))
 		"hammer":
 			_rod(trim, 0.035, 0.5, Transform3D(Basis(Vector3.FORWARD, 0.5), Vector3(0, -0.02, 0)))
 			_box(main, Vector3(0.3, 0.14, 0.14), Vector3(-0.13, 0.2, 0))

@@ -52,6 +52,15 @@ def main():
     save("wall_buy", mix(click(1800, 0.04), at(click(900, 0.05), 0.07), at(note(659, 0.25, "sine", 0.5), 0.12), at(note(988, 0.6, "sine", 0.5), 0.22)), 0.6)
     save("board_fix", mix(crack(0.12, 220, 1500, 0.9, 4.0), at(crack(0.1, 260, 1800, 0.7, 4.0), 0.16)), 0.7)
     save("board_tear", mix(band(noise(0.35), 300, 1800) * env(n(0.35), 0.05, 1.2) * (0.6 + 0.4 * np.sin(2 * np.pi * 31 * np.arange(n(0.35)) / RATE)), at(crack(0.18, 150, 1000, 1.0), 0.28)), 0.75)
+    # --- the islands' machines: power, perks, the mystery box and its seagull, the upgrade machine, traps ---
+    save("part_take", mix(click(1400, 0.05), at(click(700, 0.06), 0.06), at(note(523, 0.3, "sine", 0.4), 0.08)), 0.6)
+    save("power_on", mix(lowpass(tone(glide(40, 120, 1.6), 1.6, "saw"), 900) * env(n(1.6), 0.6, 0.6) * 0.9, at(crack(0.2, 180, 1200, 1.2), 0.0), at(note(392, 1.4, "saw", 0.3), 0.9), at(note(587, 1.6, "saw", 0.35), 1.1), band(noise(2.2), 100, 400) * env(n(2.2), 0.8, 0.8) * 0.3), 0.8)
+    save("perk_buy", mix(click(1200, 0.05), at(lowpass(noise(0.5), 1800) * env(n(0.5), 0.02, 2.5) * 0.4, 0.05), at(note(523, 0.3, "saw", 0.4), 0.3), at(note(659, 0.3, "saw", 0.4), 0.42), at(note(784, 0.9, "saw", 0.5), 0.54)), 0.6)
+    save("box_spin", mix(*[at(note(440 * 2 ** ((i * 5 % 12) / 12), 0.22, "sine", 0.45), 0.2 * i) for i in range(14)], at(note(880, 1.0, "sine", 0.5), 2.85)), 0.55)
+    save("box_gull", mix(tone(glide(1500, 900, 0.35), 0.35, "saw") * env(n(0.35), 0.05, 1.2) * 0.4, at(tone(glide(1700, 1000, 0.3), 0.3, "saw") * env(n(0.3), 0.05, 1.2) * 0.4, 0.45), at(tone(glide(1600, 800, 0.5), 0.5, "saw") * env(n(0.5), 0.05, 1.0) * 0.4, 0.9)), 0.5)
+    save("upgrade_done", mix(lowpass(tone(glide(200, 1200, 1.2), 1.2, "saw"), 3000) * env(n(1.2), 0.5, 0.8) * 0.5, at(crack(0.2, 300, 2500, 0.8), 1.15), at(note(988, 1.2, "sine", 0.5), 1.2)), 0.65)
+    save("trap_zap", mix(band(noise(1.5), 1500, 7000) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 55 * np.arange(n(1.5)) / RATE))) * env(n(1.5), 0.02, 0.7) * 0.6, tone(110, 1.5, "saw") * env(n(1.5), 0.02, 0.7) * 0.3), 0.6)
+    save("trap_fire", mix(lowpass(noise(1.8), 1500) * env(n(1.8), 0.15, 0.8), band(noise(1.8), 300, 900) * env(n(1.8), 0.3, 0.7) * 0.6), 0.65)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

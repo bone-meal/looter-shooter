@@ -16,6 +16,14 @@
   "wall_buy": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
   "board_fix": {"volume": -8, "pitch": [0.92, 1.08], "range": 0},
   "board_tear": {"volume": -7, "pitch": [0.9, 1.1], "range": 0},
+  "part_take": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
+  "power_on": {"volume": -5, "pitch": [1.0, 1.0], "range": 0},
+  "perk_buy": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
+  "box_spin": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
+  "box_gull": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},
+  "upgrade_done": {"volume": -6, "pitch": [1.0, 1.0], "range": 0},
+  "trap_zap": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
+  "trap_fire": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
   "shot_pistol": {
    "volume": -6,
    "pitch": [

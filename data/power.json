@@ -1,0 +1,38 @@
+{
+ "version": 1,
+ "_about": "The power switch (core/power_state.gd, game/power_station.gd). parts: things lying on an island that the party has to find ([x, z] from that island's middle); bench: where the switch is built and thrown once every part is found. Perk machines, the upgrade machine and traps work only while the power is on; game over turns it off and puts the parts back.",
+ "reach": 2.4,
+ "parts": [
+  {
+   "name": "Lever",
+   "island": "home",
+   "at": [
+    -30.4,
+    12.9
+   ]
+  },
+  {
+   "name": "Fuse",
+   "island": "home",
+   "at": [
+    -5.8,
+    -18.1
+   ]
+  },
+  {
+   "name": "Coil of cable",
+   "island": "home",
+   "at": [
+    20.1,
+    -24.9
+   ]
+  }
+ ],
+ "bench": {
+  "island": "painter",
+  "at": [
+   -5.2,
+   -6.1
+  ]
+ }
+}

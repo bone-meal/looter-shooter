@@ -199,6 +199,21 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var land: RefCounted = session.get("_land")
 			var mid: Vector2 = (land.get("islands") as Array)[int(words[1])]["at"]
 			player.call("teleport", Vector3(500.0 + mid.x + (float(words[2]) if words.size() > 3 else 0.0), 0.2, mid.y + (float(words[3]) if words.size() > 3 else 3.0)), 0.0)
+		"perk":  # "!perk goto iron_gut": stand at that perk's machine; "!perk <note>": perks carried, health, holsters, power
+			if words.size() > 2 and words[1] == "goto":
+				var spot: Vector2 = (session.get("_perk_spots") as Dictionary)[words[2]]
+				var mid: Vector2 = ((session.get("_land") as RefCounted).get("islands") as Array)[int((session.get("_land") as RefCounted).call("island_near", spot.x, spot.y))]["at"]
+				var front := spot + (mid - spot).normalized() * 1.8
+				player.call("teleport", Vector3(500.0 + front.x, 0.15, front.y), 0.0)
+				player.call("look_at_point", Vector3(500.0 + spot.x, 1.3, spot.y))
+			else:
+				var power: RefCounted = session.get("_power")
+				_lines.append("PERK %s: carried %s, health %d / %d, ready slots %d, power parts %d on %s, points %d" % [" ".join(words.slice(1)), str((session.get("_perks") as RefCounted).get("owned")), roundi(float(player.get("health").hp)), roundi(float(player.get("health").max_hp)),
+					int((player.get("inventory") as RefCounted).get("holster_count")), int(power.call("found_count")), str(power.get("on")), int((session.call("score") as RefCounted).get("points"))])
+		"power":  # "!power part 1": stand at power part n; "!power bench": stand at the workbench
+			var spot: Vector2 = session.get("_bench_spot") if words[1] == "bench" else (session.get("_part_spots") as Array)[int(words[2])]
+			player.call("teleport", Vector3(500.0 + spot.x + 1.2, 0.15, spot.y + 1.2), 0.0)
+			player.call("look_at_point", Vector3(500.0 + spot.x, 0.8, spot.y))
 		"hut":  # "!hut in 0": stand inside hut n; "!hut window 4 [out]": stand at window n inside (or outside), looking at it; "!hut <note>": every window's boards, who is inside, points
 			var huts: Node3D = session.get("_shelters")
 			var hut_rules: RefCounted = huts.get("rules")

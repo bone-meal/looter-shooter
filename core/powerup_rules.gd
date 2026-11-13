@@ -59,11 +59,12 @@ func reset() -> void:
 		_until[kind] = -1.0
 
 
-# What a dying island enemy leaves: mostly "" (nothing). A boss always leaves one.
-func roll_drop(rng: RandomNumberGenerator, boss: bool) -> String:
+# What a dying island enemy leaves: mostly "" (nothing). A boss always leaves one, sometimes the perk one.
+# `chance_mult` = a perk that makes ordinary drops more likely.
+func roll_drop(rng: RandomNumberGenerator, boss: bool, chance_mult: float = 1.0) -> String:
 	if boss:
-		return pick(rng)
-	if _dropped >= int(cfg["max_per_round"]) or rng.randf() >= float(cfg["drop_chance"]):
+		return "perk" if (_kinds.has("perk") and rng.randf() < float(cfg.get("boss_perk_chance", 0.0))) else pick(rng)
+	if _dropped >= int(cfg["max_per_round"]) or rng.randf() >= float(cfg["drop_chance"]) * chance_mult:
 		return ""
 	_dropped += 1
 	return pick(rng)
@@ -77,6 +78,8 @@ func pick(rng: RandomNumberGenerator) -> String:
 	var roll := rng.randf() * total
 	var last := ""
 	for kind: String in _kinds:
+		if float(_kinds[kind]["weight"]) <= 0.0:
+			continue  # never by chance (the boss's perk power-up)
 		last = kind
 		roll -= float(_kinds[kind]["weight"])
 		if roll <= 0.0:
@@ -84,10 +87,11 @@ func pick(rng: RandomNumberGenerator) -> String:
 	return last
 
 
-# Somebody took `kind`: one that lasts starts its clock (again from full when it was still running).
-func start(kind: String, now: float) -> void:
+# Somebody took `kind`: one that lasts starts its clock (again from full when it was still running). `time_mult` = a
+# perk that makes it last longer.
+func start(kind: String, now: float, time_mult: float = 1.0) -> void:
 	if _until.has(kind):
-		_until[kind] = now + seconds_of(kind)
+		_until[kind] = now + seconds_of(kind) * time_mult
 
 
 func is_on(kind: String, now: float) -> bool:
