@@ -1,11 +1,1 @@
-Round 6 stats list: W kills counter, Combat Report tab, spell use counts, 100 achievements with 100 emblems and titles
-
-- W kills: one rolled gun in four counts its kills, shown on the gun model and in its card, kept through re-rolls
-- Combat Report: 5th player card tab with a live portrait and the whole record (kills by enemy and weapon, damage, time, islands, colosseum, Aurelind skilling and spells)
-- Aurelind spell page shows how often each mix and spell was cast
-- 100 new achievements read from the record, each with its own emblem and title: 90 layered emblems drawn in code and 10 painted ones
-- Achievements tab is an icon grid with hover details; the card banner line reads the record
-- tools/achievement_check, tools/wkills_check, tools/emblem_shot, tools/wkills_shot
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.07
