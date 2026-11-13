@@ -74,7 +74,7 @@ static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color) -> vo
 			canvas.draw_polyline(PackedVector2Array([o + Vector2(74, 12) * s, o + Vector2(70, 6) * s, o + Vector2(76, 0) * s]), Color(0.8, 0.8, 0.85, 0.7), maxf(2.0 * s, 1.0), true)  # smoke
 		_:
 			# Armour: the shape says where it is worn (a ring, trousers, a helmet ...), the colour is the item's own (data/items.json).
-			var def: Dictionary = _defs().get(id, {})
+			var def: Dictionary = _defs().get(id.get_slice("+", 0), {})  # a variant ("<id>+holster") looks like its plain item
 			var shape := slot_shape(String(def.get("slot", "")))
 			var c: Array = def.get("color", [0.8, 0.8, 0.82])
 			IconArt.draw(canvas, shape, rect, Color(c[0], c[1], c[2]))

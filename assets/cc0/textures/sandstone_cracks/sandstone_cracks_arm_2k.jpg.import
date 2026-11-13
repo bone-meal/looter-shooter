@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b7ps5n5t81ctk"
 path.s3tc="res://.godot/imported/sandstone_cracks_arm_2k.jpg-964cf350e7e64669d4aa8f70824b3e11.s3tc.ctex"
-path.etc2="res://.godot/imported/sandstone_cracks_arm_2k.jpg-964cf350e7e64669d4aa8f70824b3e11.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/sandstone_cracks/sandstone_cracks_arm_2k.jpg"
-dest_files=["res://.godot/imported/sandstone_cracks_arm_2k.jpg-964cf350e7e64669d4aa8f70824b3e11.s3tc.ctex", "res://.godot/imported/sandstone_cracks_arm_2k.jpg-964cf350e7e64669d4aa8f70824b3e11.etc2.ctex"]
+dest_files=["res://.godot/imported/sandstone_cracks_arm_2k.jpg-964cf350e7e64669d4aa8f70824b3e11.s3tc.ctex"]
 
 [params]
 

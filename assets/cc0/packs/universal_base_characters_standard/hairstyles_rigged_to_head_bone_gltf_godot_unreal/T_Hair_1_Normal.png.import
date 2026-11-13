@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cgcbthh3tg5mo"
 path.s3tc="res://.godot/imported/T_Hair_1_Normal.png-df4bf249e61964562f0b32f94b2546a3.s3tc.ctex"
-path.etc2="res://.godot/imported/T_Hair_1_Normal.png-df4bf249e61964562f0b32f94b2546a3.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/universal_base_characters_standard/hairstyles_rigged_to_head_bone_gltf_godot_unreal/T_Hair_1_Normal.png"
-dest_files=["res://.godot/imported/T_Hair_1_Normal.png-df4bf249e61964562f0b32f94b2546a3.s3tc.ctex", "res://.godot/imported/T_Hair_1_Normal.png-df4bf249e61964562f0b32f94b2546a3.etc2.ctex"]
+dest_files=["res://.godot/imported/T_Hair_1_Normal.png-df4bf249e61964562f0b32f94b2546a3.s3tc.ctex"]
 
 [params]
 

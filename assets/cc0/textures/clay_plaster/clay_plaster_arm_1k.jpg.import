@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bpyqmfyual8pr"
 path.s3tc="res://.godot/imported/clay_plaster_arm_1k.jpg-1bb7469b853c2d39967a3071993c60f7.s3tc.ctex"
-path.etc2="res://.godot/imported/clay_plaster_arm_1k.jpg-1bb7469b853c2d39967a3071993c60f7.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/clay_plaster/clay_plaster_arm_1k.jpg"
-dest_files=["res://.godot/imported/clay_plaster_arm_1k.jpg-1bb7469b853c2d39967a3071993c60f7.s3tc.ctex", "res://.godot/imported/clay_plaster_arm_1k.jpg-1bb7469b853c2d39967a3071993c60f7.etc2.ctex"]
+dest_files=["res://.godot/imported/clay_plaster_arm_1k.jpg-1bb7469b853c2d39967a3071993c60f7.s3tc.ctex"]
 
 [params]
 

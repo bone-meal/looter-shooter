@@ -159,7 +159,7 @@ func _check_waves(path: String, enemies_path: String) -> int:
 		printerr("%s: missing file or waves" % path)
 		return 1
 	var errors := 0
-	for key in ["max_alive", "spawn_interval", "wave_delay", "reset_after_clear_seconds"]:
+	for key in ["max_alive", "spawn_interval", "wave_delay"]:
 		if not data.has(key) or not _is_positive(data[key]):
 			printerr("%s: bad or missing '%s'" % [path, key])
 			errors += 1

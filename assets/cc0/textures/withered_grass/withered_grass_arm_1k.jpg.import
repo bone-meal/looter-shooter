@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bdq4s8hlujr20"
 path.s3tc="res://.godot/imported/withered_grass_arm_1k.jpg-a417a734d416585fc28f997712cc409d.s3tc.ctex"
-path.etc2="res://.godot/imported/withered_grass_arm_1k.jpg-a417a734d416585fc28f997712cc409d.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/withered_grass/withered_grass_arm_1k.jpg"
-dest_files=["res://.godot/imported/withered_grass_arm_1k.jpg-a417a734d416585fc28f997712cc409d.s3tc.ctex", "res://.godot/imported/withered_grass_arm_1k.jpg-a417a734d416585fc28f997712cc409d.etc2.ctex"]
+dest_files=["res://.godot/imported/withered_grass_arm_1k.jpg-a417a734d416585fc28f997712cc409d.s3tc.ctex"]
 
 [params]
 

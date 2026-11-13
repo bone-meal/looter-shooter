@@ -3,7 +3,6 @@
  "max_alive": 10,
  "spawn_interval": 0.8,
  "wave_delay": 4.0,
- "reset_after_clear_seconds": 30,
  "waves": [
   {
    "chaser": 3

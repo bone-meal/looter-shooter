@@ -4,6 +4,7 @@ extends RefCounted
 
 var max_hp: float
 var hp: float
+var no_heal := false  # while true nothing heals (a colosseum modifier)
 
 
 func _init(max_value: float) -> void:
@@ -16,7 +17,8 @@ func take_damage(amount: float) -> void:
 
 
 func heal(amount: float) -> void:
-	hp = minf(hp + amount, max_hp)
+	if not no_heal:
+		hp = minf(hp + amount, max_hp)
 
 
 func is_dead() -> bool:

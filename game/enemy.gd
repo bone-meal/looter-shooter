@@ -55,6 +55,8 @@ var _target: Node3D
 var _pool: Node3D
 var _blood: Node3D
 var _speed: float
+var run_fx := {}  # a colosseum run's effects (core/colosseum_rules.gd `effects`): set by the wave director, {} everywhere else
+var _berserk_at := 0.0  # health at which it goes berserk (0 = never, or done)
 var _size: Vector3
 var _accent: Color
 var _base_color: Color
@@ -244,9 +246,21 @@ func _ready() -> void:
 	add_child(shape)
 
 
+# The wave director hands over the run's effects after configure().
+func set_run_fx(fx: Dictionary) -> void:
+	run_fx = fx
+	_berserk_at = health.max_hp * float(fx.get("berserk_below", 0.0))
+
+
 func _physics_process(delta: float) -> void:
 	if _falling:
 		return
+	if _berserk_at > 0.0 and health.hp <= _berserk_at:  # Berserkers: nearly dead, it gets faster and hits harder
+		_berserk_at = 0.0
+		var rage := float(run_fx.get("berserk_mult", 1.0))
+		_speed *= rage
+		_stats = _stats.duplicate()
+		_stats["damage"] = float(_stats["damage"]) * rage
 	if puppet:
 		var d := net_pos - position
 		velocity = Vector3(d.x, 0.0, d.z) * 8.0  # only drives the walk animation
@@ -340,6 +354,8 @@ func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vect
 		damage *= _guard_mult
 	if one_blow.is_valid() and bool(one_blow.call()) and not enemy_id.begins_with("boss"):
 		damage = maxf(damage, float(health.hp))
+	if run_fx.has("boss_body_damage") and enemy_id.begins_with("boss") and not head_hit(spot, 0.17):
+		damage *= float(run_fx["boss_body_damage"])  # Bulletproof Bosses: only headshots count in full
 	health.take_damage(damage)
 	if health.is_dead():
 		_blood.burst(spot, normal, true, _chips)
@@ -526,6 +542,8 @@ func _land_blow(distance: float) -> void:
 	var damage := float(_stats["damage"]) * (_rally_damage if Time.get_ticks_msec() / 1000.0 < _rally_until else 1.0)
 	_target.set("struck_by", self)  # a ward needs to know where the blow comes from (and whom to throw it back at)
 	_target.take_damage(damage, element)
+	if run_fx.has("vampire"):  # Vampires: it heals by what it hit for
+		health.heal(damage * float(run_fx["vampire"]))
 
 
 # A special attack is being wound up: stand still and leave ordinary attacks for `seconds`.

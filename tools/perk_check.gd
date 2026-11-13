@@ -37,7 +37,8 @@ func _ready() -> void:
 		dearest_by_island[isle] = maxi(int(dearest_by_island.get(isle, 0)), perks.price(id))
 	var rising := true
 	for isle in range(1, land.islands.size()):
-		rising = rising and int(dearest_by_island.get(isle, 0)) >= int(dearest_by_island.get(isle - 1, 0))
+		if dearest_by_island.has(isle):  # an island without machines (Gull Rock) is not part of the ladder
+			rising = rising and int(dearest_by_island[isle]) >= int(dearest_by_island.get(isle - 1, 0))
 	_say("15 perks, limit 6, every machine on flat ground clear of the others, boards and huts; the farther the island the dearer its perks", data_fine and rising)
 
 	_say("nothing carried: numbers fall back", is_equal_approx(perks.num("max_health", 100.0), 100.0) and perks.refusal("iron_gut") == "")

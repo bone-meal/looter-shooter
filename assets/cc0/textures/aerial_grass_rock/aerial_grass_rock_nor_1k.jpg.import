@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://llowx7t7rr6t"
 path.s3tc="res://.godot/imported/aerial_grass_rock_nor_1k.jpg-143fdcc449827673bb29b9e58cb0001e.s3tc.ctex"
-path.etc2="res://.godot/imported/aerial_grass_rock_nor_1k.jpg-143fdcc449827673bb29b9e58cb0001e.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/aerial_grass_rock/aerial_grass_rock_nor_1k.jpg"
-dest_files=["res://.godot/imported/aerial_grass_rock_nor_1k.jpg-143fdcc449827673bb29b9e58cb0001e.s3tc.ctex", "res://.godot/imported/aerial_grass_rock_nor_1k.jpg-143fdcc449827673bb29b9e58cb0001e.etc2.ctex"]
+dest_files=["res://.godot/imported/aerial_grass_rock_nor_1k.jpg-143fdcc449827673bb29b9e58cb0001e.s3tc.ctex"]
 
 [params]
 

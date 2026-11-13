@@ -44,6 +44,7 @@ const POWER_BOX := Vector2(176.0, 38.0)  # one running power-up above the holste
 
 var player: CharacterBody3D
 var wave_text := ""
+var blind := false  # a colosseum modifier: no holster bar and no ammo counter
 var show_speed := false  # ground speed in Source units under the crosshair (on with the debug HUD)
 var boss_ratio := -1.0
 var notice_text := ""  # short pickup message, fades after a few seconds (see notice())
@@ -323,7 +324,7 @@ func _draw_status_icon(element: String, c: Vector2, left: float, full: float) ->
 
 
 func _draw_weapons(view: Vector2) -> void:
-	if player.guns_locked:  # the fantasy world: no guns there, so no holster bar and no gun box
+	if player.guns_locked or blind:  # the fantasy world: no guns there, so no holster bar and no gun box
 		return
 	_draw_holsters(view)
 	var now := Time.get_ticks_msec() / 1000.0

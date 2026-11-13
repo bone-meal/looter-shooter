@@ -14,8 +14,9 @@ var _next_time := 0.0
 var _waiting := false
 
 
-func _init(data: Dictionary) -> void:
-	_waves = data["waves"]
+# limit = how many of the data's waves this run has (0 = all of them: a colosseum ticket buys the first few).
+func _init(data: Dictionary, limit: int = 0) -> void:
+	_waves = (data["waves"] as Array).slice(0, limit) if limit > 0 else data["waves"]
 	_max_alive = int(data["max_alive"])
 	_spawn_interval = float(data["spawn_interval"])
 	_wave_delay = float(data["wave_delay"])
@@ -50,6 +51,19 @@ func update(now: float, alive: int) -> String:
 		_next_time = now + _spawn_interval
 		return _pending.pop_front()
 	return ""
+
+
+# More enemies for the wave being fought.
+func add(ids: Array[String]) -> void:
+	_pending.append_array(ids)
+
+
+# Admin command /wave: the next wave to come in is `number` (whatever is still waiting of this one is dropped).
+func skip_to(number: int) -> void:
+	_index = clampi(number, 1, _waves.size()) - 2
+	_pending.clear()
+	_waiting = false
+	cleared = false
 
 
 # Wave being fought (1-based; 1 before the first wave starts).

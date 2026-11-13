@@ -134,6 +134,7 @@ var _shield_out := false  # it is in hand (covers ahead); otherwise it hangs on 
 var _shield_model: MeshInstance3D  # the one held up
 var _shield_back: MeshInstance3D  # the one on the body's back
 var _hand_before := 0  # what was in hand before the shield came up
+var run_fx := {}  # a colosseum run's effects on us (core/colosseum_rules.gd `effects`): set by the session, {} outside a run
 var _melee_kind := ""  # the attack whose blow has yet to land
 var _weapon_stats: Dictionary  # data/weapons.json entries
 var _base_views: Array[Dictionary] = []
@@ -416,7 +417,7 @@ func _move_tick(input: Vector2) -> void:
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * sprint_top * 2.0
 	else:
 		var wish := (Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, input.y)).normalized()
-		var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not aiming and _crouch < 0.5
+		var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not aiming and _crouch < 0.5 and not run_fx.has("no_sprint")
 		var now_top := sprint_top if sprinting else top * lerpf(1.0, float(_move_cfg["crouch_factor"]), _crouch)
 		var hop: bool = armor["abilities"].has("auto_bhop") and Input.is_action_pressed("jump")  # the boots hop for you
 		var jump := grounded and controls_enabled and not downed and (_now() <= _jump_until or hop)
@@ -831,7 +832,7 @@ func refresh_held() -> void:
 		_held_stats = GunStats.final_stats(gun_db, _held_gun)
 		_dress_body(index)
 		stats = _held_stats
-	var key := (body.hash() if _held_gun.is_empty() else _held_gun.hash()) + (int(perks.get("stamp")) if perks != null else 0)  # a perk bought or lost: the gun's numbers are worked out again
+	var key := (body.hash() if _held_gun.is_empty() else _held_gun.hash()) + (int(perks.get("stamp")) if perks != null else 0) + run_fx.hash()  # a perk bought or lost: the gun's numbers are worked out again
 	if _ready_weapons[_hand] == null or _ready_keys[_hand] != key or inventory.loaded[_hand] == InventoryState.FRESH:
 		var made := WeaponState.new(body, _with_perks(stats))
 		made.pool = pools
@@ -1320,13 +1321,23 @@ func _perk(key: String, fallback: float) -> float:
 
 # A gun's numbers with the perks that change them (fire rate, reload, magazine).
 func _with_perks(stats: Dictionary) -> Dictionary:
-	if perks == null or (perks.get("owned") as Array).is_empty():
+	if (perks == null or (perks.get("owned") as Array).is_empty()) and run_fx.is_empty():
 		return stats
 	var out := stats.duplicate()
 	out["fire_rate"] = float(stats["fire_rate"]) * _perk("fire_rate_mult", 1.0)
-	out["reload_time"] = float(stats["reload_time"]) * _perk("reload_time_mult", 1.0)
+	out["reload_time"] = float(stats["reload_time"]) * _perk("reload_time_mult", 1.0) * float(run_fx.get("reload_time", 1.0))
 	out["mag_size"] = roundi(float(stats["mag_size"]) * _perk("mag_mult", 1.0))
 	return out
+
+
+# A colosseum run starts or ends: its effects on us ({} = none). Health, the gun in hand and the legs follow.
+func set_run_fx(fx: Dictionary) -> void:
+	run_fx = fx
+	health.no_heal = fx.has("no_heal")
+	move.fatigue_mult = float(fx.get("jump_fatigue", 1.0))
+	refresh_held()
+	if fx.has("player_health"):
+		health.hp = health.max_hp
 
 
 # The session bought or took away a perk: health and the gun in hand follow.
@@ -1341,7 +1352,7 @@ func perks_changed(heal: bool) -> void:
 # Glass Cannon lowers max health while the gun is held (current health is never raised by swapping).
 func _apply_health_cap() -> void:
 	var buffs: Dictionary = _held_stats.get("buffs", {})
-	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0)
+	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0) * float(run_fx.get("player_health", 1.0))
 	health.hp = minf(health.hp, health.max_hp)
 
 

@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c2cuomi5sfast"
 path.s3tc="res://.godot/imported/thatch_roof_angled_nor_1k.jpg-c9db0fbfe087739fed2296b38b2dc459.s3tc.ctex"
-path.etc2="res://.godot/imported/thatch_roof_angled_nor_1k.jpg-c9db0fbfe087739fed2296b38b2dc459.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/thatch_roof_angled/thatch_roof_angled_nor_1k.jpg"
-dest_files=["res://.godot/imported/thatch_roof_angled_nor_1k.jpg-c9db0fbfe087739fed2296b38b2dc459.s3tc.ctex", "res://.godot/imported/thatch_roof_angled_nor_1k.jpg-c9db0fbfe087739fed2296b38b2dc459.etc2.ctex"]
+dest_files=["res://.godot/imported/thatch_roof_angled_nor_1k.jpg-c9db0fbfe087739fed2296b38b2dc459.s3tc.ctex"]
 
 [params]
 

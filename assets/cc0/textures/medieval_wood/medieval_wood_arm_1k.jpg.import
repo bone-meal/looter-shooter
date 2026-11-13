@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://runl0o15hwoc"
 path.s3tc="res://.godot/imported/medieval_wood_arm_1k.jpg-73fb3d69d9c9c59a43053b0b39bf82f8.s3tc.ctex"
-path.etc2="res://.godot/imported/medieval_wood_arm_1k.jpg-73fb3d69d9c9c59a43053b0b39bf82f8.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/medieval_wood/medieval_wood_arm_1k.jpg"
-dest_files=["res://.godot/imported/medieval_wood_arm_1k.jpg-73fb3d69d9c9c59a43053b0b39bf82f8.s3tc.ctex", "res://.godot/imported/medieval_wood_arm_1k.jpg-73fb3d69d9c9c59a43053b0b39bf82f8.etc2.ctex"]
+dest_files=["res://.godot/imported/medieval_wood_arm_1k.jpg-73fb3d69d9c9c59a43053b0b39bf82f8.s3tc.ctex"]
 
 [params]
 

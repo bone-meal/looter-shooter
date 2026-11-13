@@ -29,6 +29,10 @@ var _drops_cfg: Dictionary  # data/drops.json
 var _rng := RandomNumberGenerator.new()
 var _active := false  # waves wait until start() (the player enters the colosseum)
 var last_killed: Node  # the enemy whose death `killed` is being emitted for (its metas say where it belonged)
+var wave_stats := Callable()  # func(stats: Dictionary, wave: int) -> Dictionary: an arena enemy's numbers in that wave (core/colosseum_rules.gd; unset = as in the data)
+var wave_list := Callable()  # func(waves: Array, count: int) -> Array: the waves of a run (core/colosseum_rules.gd `run_waves`; unset = the data's first `count`)
+var run_fx := {}  # the run's effects, handed to every arena enemy (set by the session before start())
+var _shared_out := false  # the shared boss of this run is in (a second "boss" of a wave is our own)
 
 
 # Call before add_child.
@@ -45,9 +49,20 @@ func setup(player: Node3D, gates: Array[Vector3]) -> void:
 	add_child(_blood)
 
 
-# Begins the waves; the first wave timer starts now.
-func start() -> void:
+# Begins a run of the first `waves` waves (0 = all); the first wave timer starts now.
+func start(waves: int = 0) -> void:
+	var run := _waves_data.duplicate()
+	var count := waves if waves > 0 else (_waves_data["waves"] as Array).size()
+	run["waves"] = wave_list.call(_waves_data["waves"], count) if wave_list.is_valid() else (_waves_data["waves"] as Array).slice(0, count)
+	run["wave_delay"] = float(run_fx.get("wave_delay", _waves_data["wave_delay"]))
+	_waves = WaveState.new(run)
+	_shared_out = false
 	_active = true
+
+
+# More enemies for the wave being fought (a modifier's late pack). They come in like the rest of the wave.
+func send_in(ids: Array[String]) -> void:
+	_waves.add(ids)
 
 
 # True once every wave has been beaten.
@@ -74,9 +89,32 @@ func reset() -> void:
 	_boss = null
 
 
-# Seconds after the arena is cleared before it starts over at round 1.
-func reset_delay() -> float:
-	return float(_waves_data["reset_after_clear_seconds"])
+# Admin command /wave: this run goes on with wave `number`; the wave's enemies still alive are taken away.
+func skip_to(number: int) -> void:
+	for enemy: Node in _enemies.duplicate():
+		if is_instance_valid(enemy) and not enemy.has_meta("placed"):
+			despawn(enemy)
+	_alive = 0
+	_waves.skip_to(number)
+
+
+# How many waves the data has, and the wave a kind of enemy first comes in (0 = never).
+func waves_in_data() -> int:
+	return (_waves_data["waves"] as Array).size()
+
+
+func first_wave_of(id: String) -> int:
+	var list: Array = _waves_data["waves"]
+	for i in list.size():
+		if (list[i] as Dictionary).has(id):
+			return i + 1
+	return 0
+
+
+# An arena enemy's numbers in a wave.
+func _in_wave(id: String, wave: int) -> Dictionary:
+	var stats: Dictionary = _enemy_stats[id]
+	return wave_stats.call(stats, wave) if wave_stats.is_valid() else stats
 
 
 # Everything alive that this director holds: its own waves' enemies and those placed from outside (spawn_custom).
@@ -126,17 +164,23 @@ func _physics_process(_delta: float) -> void:
 
 
 func _spawn(id: String) -> void:
-	if id == "boss" and boss_handler.is_valid():  # only the clockwork bear is shared online; the wasteland bosses are each player's own
+	if id == "boss" and boss_handler.is_valid() and not _shared_out:  # only the clockwork bear is shared online; the wasteland bosses (and a twin of the bear) are each player's own
+		_shared_out = true
 		_alive += 1  # the shared boss counts as alive until it dies (or is found already dead)
 		boss_handler.call(self)
 		return
 	var enemy := Enemy.new()
-	var stats: Dictionary = _enemy_stats[id]
+	var stats := _in_wave(id, _waves.wave_number())  # every wave is tougher than the one before
 	var affix := DropRules.roll_elite(_drops_cfg, _rng, id, _waves.wave_number())
+	if affix.is_empty() and run_fx.has("all_elite") and not id.begins_with("boss"):  # All Elite: a trait for everybody, without an elite's drop
+		var traits: Array = _drops_cfg["elite"]["affixes"]
+		affix = traits[_rng.randi_range(0, traits.size() - 1)]
+		enemy.set_meta("forced_elite", true)
 	if not affix.is_empty():
 		stats = DropRules.apply_affix(stats, affix)
 		enemy.elite = String(affix["name"])
 	enemy.configure(id, stats, _player, _pool, _blood)
+	enemy.set_run_fx(run_fx)
 	enemy.sounds = sounds
 	var element := _roll_element(id)
 	if element != "":
@@ -228,7 +272,7 @@ func boss_spawn_position() -> Vector3:
 # Builds the one shared boss: the real one on the host, a puppet elsewhere. It is not part of our waves until attach_boss().
 func create_shared_boss(as_puppet: bool, pos: Vector3) -> Enemy:
 	var boss := Enemy.new()
-	boss.configure("boss", _enemy_stats["boss"], _player, _pool, _blood)
+	boss.configure("boss", _in_wave("boss", first_wave_of("boss")), _player, _pool, _blood)
 	boss.sounds = sounds
 	boss.puppet = as_puppet
 	boss.position = pos

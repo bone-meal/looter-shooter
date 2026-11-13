@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://4hvaqefishhu"
 path.s3tc="res://.godot/imported/cobblestone_floor_04_arm_1k.jpg-1670d15ea64ba97fc66f38425b243a0f.s3tc.ctex"
-path.etc2="res://.godot/imported/cobblestone_floor_04_arm_1k.jpg-1670d15ea64ba97fc66f38425b243a0f.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/cobblestone_floor_04/cobblestone_floor_04_arm_1k.jpg"
-dest_files=["res://.godot/imported/cobblestone_floor_04_arm_1k.jpg-1670d15ea64ba97fc66f38425b243a0f.s3tc.ctex", "res://.godot/imported/cobblestone_floor_04_arm_1k.jpg-1670d15ea64ba97fc66f38425b243a0f.etc2.ctex"]
+dest_files=["res://.godot/imported/cobblestone_floor_04_arm_1k.jpg-1670d15ea64ba97fc66f38425b243a0f.s3tc.ctex"]
 
 [params]
 

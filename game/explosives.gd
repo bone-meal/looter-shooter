@@ -183,6 +183,11 @@ func blast(point: Vector3, radius: float, damage: float, flash: bool = true) -> 
 			numbers.spawn(center, dealt)
 
 
+# Only the flash of a blast (something else does the hurting).
+func show_flash(point: Vector3, radius: float) -> void:
+	_show_flash(point, radius)
+
+
 func _show_flash(point: Vector3, radius: float) -> void:
 	var f := _flashes[_next_flash]
 	f.position = point

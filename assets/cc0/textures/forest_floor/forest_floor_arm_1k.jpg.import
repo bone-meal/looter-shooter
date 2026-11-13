@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cohtqff2m1inv"
 path.s3tc="res://.godot/imported/forest_floor_arm_1k.jpg-02ee44de0f4c1612a2a3ed1a00d5e4ea.s3tc.ctex"
-path.etc2="res://.godot/imported/forest_floor_arm_1k.jpg-02ee44de0f4c1612a2a3ed1a00d5e4ea.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/forest_floor/forest_floor_arm_1k.jpg"
-dest_files=["res://.godot/imported/forest_floor_arm_1k.jpg-02ee44de0f4c1612a2a3ed1a00d5e4ea.s3tc.ctex", "res://.godot/imported/forest_floor_arm_1k.jpg-02ee44de0f4c1612a2a3ed1a00d5e4ea.etc2.ctex"]
+dest_files=["res://.godot/imported/forest_floor_arm_1k.jpg-02ee44de0f4c1612a2a3ed1a00d5e4ea.s3tc.ctex"]
 
 [params]
 

@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dx16eai8ky0pm"
 path.s3tc="res://.godot/imported/large_sandstone_blocks_01_diff_2k.jpg-72f5b93411211ced82b7df2ad4fa40da.s3tc.ctex"
-path.etc2="res://.godot/imported/large_sandstone_blocks_01_diff_2k.jpg-72f5b93411211ced82b7df2ad4fa40da.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/large_sandstone_blocks_01/large_sandstone_blocks_01_diff_2k.jpg"
-dest_files=["res://.godot/imported/large_sandstone_blocks_01_diff_2k.jpg-72f5b93411211ced82b7df2ad4fa40da.s3tc.ctex", "res://.godot/imported/large_sandstone_blocks_01_diff_2k.jpg-72f5b93411211ced82b7df2ad4fa40da.etc2.ctex"]
+dest_files=["res://.godot/imported/large_sandstone_blocks_01_diff_2k.jpg-72f5b93411211ced82b7df2ad4fa40da.s3tc.ctex"]
 
 [params]
 

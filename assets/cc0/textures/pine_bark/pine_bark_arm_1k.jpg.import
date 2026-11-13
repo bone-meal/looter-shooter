@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://btiqpum6gxtoe"
 path.s3tc="res://.godot/imported/pine_bark_arm_1k.jpg-90451aaf35a7eff909eae64de42664a0.s3tc.ctex"
-path.etc2="res://.godot/imported/pine_bark_arm_1k.jpg-90451aaf35a7eff909eae64de42664a0.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/pine_bark/pine_bark_arm_1k.jpg"
-dest_files=["res://.godot/imported/pine_bark_arm_1k.jpg-90451aaf35a7eff909eae64de42664a0.s3tc.ctex", "res://.godot/imported/pine_bark_arm_1k.jpg-90451aaf35a7eff909eae64de42664a0.etc2.ctex"]
+dest_files=["res://.godot/imported/pine_bark_arm_1k.jpg-90451aaf35a7eff909eae64de42664a0.s3tc.ctex"]
 
 [params]
 

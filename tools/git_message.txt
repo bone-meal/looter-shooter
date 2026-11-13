@@ -1,4 +1,27 @@
-Release v1.05 with a macOS build
+Round 6 step 11: colosseum tickets, loot by wave, armour drops, 22 modifiers
 
-macOS preset: universal + ad-hoc signing; project imports ETC2/ASTC textures (needed for Apple Silicon).
-tools/git_release builds Windows, Linux and macOS; tools/git_release_add attaches one build to an existing release.
+Tickets (data/colosseum.json, core/colosseum_rules.gd, game/colosseum_board.gd):
+the painting opens a board; 4 / 8 / 12 waves for 2000 / 5000 / 10000 points;
+the buyer pays and the party goes in. Every wave is tougher (+12 % health,
++8 % damage, +1 % speed a wave). A cleared run ends with the chest and the
+door; the arena no longer restarts by itself.
+
+Loot by wave: ordinary kills leave a gun 3 % of the time (green in waves 1-4,
+blue 5-7, purple 8-9, gold 10-12, a small chance of one tier better), elites
+always, bosses one tier above their wave, the wave-12 boss three guns (orange
+60 / rainbow 30 / pony 10) and sometimes Phoon's Treasure. The chest holds two
+guns one tier above the run's last wave. No greys.
+
+Armour now drops in the colosseum as things lying in the world
+(game/loot_field.gd spawn_item); rarely as the variant with a holster: one
+more ready gun slot (core/item_db.gd variants, data/items.json).
+
+22 modifiers ticked on the board: each makes the run harder and every loot
+chance better; core/colosseum_rules.gd effects() turns them into one table
+read by the wave director, enemies, the player, the HUD and the session.
+
+Also: /wave command, dev steps !ticket !slay !arena !wear,
+tools/colosseum_check.tscn.
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

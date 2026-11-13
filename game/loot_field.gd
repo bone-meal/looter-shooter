@@ -90,6 +90,56 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	_tint(_drops[_drops.size() - 1], 0.0)
 
 
+# Drops an item (a piece of armour) at `pos`: a small box turning under a beam of its colour, with its name.
+# Its entry has "item" = the id (and an empty "gun"); the session picks it up by that.
+func spawn_item(id: String, title: String, color: Color, pos: Vector3) -> void:
+	while _drops.size() >= int(cfg["max_world_drops"]):
+		_remove(0)
+	var node := Node3D.new()
+	node.position = pos
+	add_child(node)
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = Color(color.r, color.g, color.b, 0.4)
+	var beam_mesh := CylinderMesh.new()
+	beam_mesh.top_radius = 0.1
+	beam_mesh.bottom_radius = 0.1
+	beam_mesh.height = 12.0
+	beam_mesh.radial_segments = 8
+	beam_mesh.rings = 1
+	var beam := MeshInstance3D.new()
+	beam.mesh = beam_mesh
+	beam.material_override = mat
+	beam.position.y = 6.0
+	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	node.add_child(beam)
+	var solid := StandardMaterial3D.new()
+	solid.albedo_color = color
+	var box := BoxMesh.new()
+	box.size = Vector3(0.42, 0.42, 0.42)
+	var piece := MeshInstance3D.new()
+	piece.mesh = box
+	piece.material_override = solid
+	var holder := Node3D.new()
+	holder.position.y = 0.9
+	holder.add_child(piece)
+	node.add_child(holder)
+	var label := Label3D.new()
+	label.text = title
+	label.modulate = color
+	label.font_size = 40
+	label.pixel_size = 0.0045
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.outline_size = 10
+	label.position.y = 2.0
+	label.visibility_range_end = 30.0
+	node.add_child(label)
+	_drops.append({"node": node, "gun": {}, "item": id, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": float(cfg["despawn_seconds_gold_up"]), "animated": false, "tier": "", "shared": 0})
+
+
 # The closest drop within pickup range of `pos`, or {} (the dictionary is the live entry: pass it to take()).
 func nearest(pos: Vector3) -> Dictionary:
 	var best := {}

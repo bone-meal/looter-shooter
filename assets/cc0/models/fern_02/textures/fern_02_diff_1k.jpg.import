@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://e55owubfaiho"
 path.s3tc="res://.godot/imported/fern_02_diff_1k.jpg-b696d57a303c34f18d4ae1114a5cdfc6.s3tc.ctex"
-path.etc2="res://.godot/imported/fern_02_diff_1k.jpg-b696d57a303c34f18d4ae1114a5cdfc6.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/models/fern_02/textures/fern_02_diff_1k.jpg"
-dest_files=["res://.godot/imported/fern_02_diff_1k.jpg-b696d57a303c34f18d4ae1114a5cdfc6.s3tc.ctex", "res://.godot/imported/fern_02_diff_1k.jpg-b696d57a303c34f18d4ae1114a5cdfc6.etc2.ctex"]
+dest_files=["res://.godot/imported/fern_02_diff_1k.jpg-b696d57a303c34f18d4ae1114a5cdfc6.s3tc.ctex"]
 
 [params]
 

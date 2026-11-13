@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dlxm4w48hqg8e"
 path.s3tc="res://.godot/imported/T_Guns_Batch2_Emissive.png-13b575ebd1d69944a52512b380c99d46.s3tc.ctex"
-path.etc2="res://.godot/imported/T_Guns_Batch2_Emissive.png-13b575ebd1d69944a52512b380c99d46.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/sci_fi_essentials_kit_standard/T_Guns_Batch2_Emissive.png"
-dest_files=["res://.godot/imported/T_Guns_Batch2_Emissive.png-13b575ebd1d69944a52512b380c99d46.s3tc.ctex", "res://.godot/imported/T_Guns_Batch2_Emissive.png-13b575ebd1d69944a52512b380c99d46.etc2.ctex"]
+dest_files=["res://.godot/imported/T_Guns_Batch2_Emissive.png-13b575ebd1d69944a52512b380c99d46.s3tc.ctex"]
 
 [params]
 

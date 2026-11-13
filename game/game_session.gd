@@ -67,6 +67,8 @@ const IslandWeather = preload("res://game/island_weather.gd")
 const BuildState = preload("res://core/build_state.gd")
 const BuildSite = preload("res://game/build_site.gd")
 const BoatRules = preload("res://core/boat_rules.gd")
+const ColosseumRules = preload("res://core/colosseum_rules.gd")
+const ColosseumBoard = preload("res://game/colosseum_board.gd")
 const Boat = preload("res://game/boat.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
@@ -216,7 +218,19 @@ var _slot_machines: Array = []
 var _slot_machine: SlotMachine
 var _slot_pending: Dictionary = {}
 var _games := CasinoGames.new()
-var _reset_left := 0.0  # seconds until a cleared arena starts over at round 1
+var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data/colosseum.json)
+var _board := ColosseumBoard.new()  # the ticket board at the painting
+var _run_ticket := 0  # the ticket of the colosseum run we are in
+var _run_mods := PackedStringArray()  # and its modifiers
+var _run_fx := {}  # what those modifiers change (core/colosseum_rules.gd `effects`), {} outside a run
+var _fuse_wave := 0  # Short Fuse: the wave whose clock runs, the seconds it has left, and whether its late pack came
+var _fuse_left := 0.0
+var _fuse_late := false
+var _still := 0.0  # Toxic Sand: seconds we have stood still
+var _ring: MultiMeshInstance3D  # Closing Ring: its flames (made on the first run that has it)
+var _ring_radius := 0.0
+var _ring_tick := 0.0
+var _torch: SpotLight3D  # Blackout: the light on our head
 var _numbers := DamageNumbers.new()
 var _explosives := Explosives.new()
 var _sounds: Node3D = preload("res://game/fantasy_sounds.gd").new()  # guns, explosions and enemy attacks (data/sounds.json)
@@ -448,6 +462,12 @@ func _ready() -> void:
 	custom_layer.add_child(_card_screen)
 	custom_layer.add_child(_slot_screen)
 	custom_layer.add_child(_trade_screen)
+	_colosseum = ColosseumRules.new(DataStore.load_json("res://data/colosseum.json"))
+	_board.rules = _colosseum
+	_board.tier_name = func(tier: String) -> String: return String(_player.gun_db.tier(tier)["name"])
+	_board.chosen.connect(_on_ticket_chosen)
+	_board.closed.connect(_close_board)
+	custom_layer.add_child(_board)
 	_trade_screen.setup(_player.inventory, _player.items, _player.gun_db)
 	_slot_screen.setup(_slot_data)
 	_slot_screen.spin_requested.connect(_on_slot_spin)
@@ -468,6 +488,8 @@ func _ready() -> void:
 	_field.setup(_player.gun_db, _drops_cfg)
 	add_child(_field)
 	_director.killed.connect(_on_enemy_killed)
+	_director.wave_stats = func(stats: Dictionary, wave: int) -> Dictionary: return _colosseum.wave_stats(stats, wave, _run_fx)
+	_director.wave_list = func(waves: Array, count: int) -> Array: return _colosseum.run_waves(waves, count, _run_fx)
 	_rounds.director = _director
 	_rounds.land = _land
 	_rounds.shelters = _shelters
@@ -533,6 +555,11 @@ func _ready() -> void:
 		net.rounds.build_near = _build_thing_at
 		net.rounds.build_bits.connect(_on_build_bits)
 		net.rounds.boat_near = _near_boat
+		net.rounds.painting_near = func(at: Vector3) -> bool: return at.distance_to(_painting) <= PAINTING_RANGE + 1.5
+		net.rounds.run_asked.connect(func(peer: int, ticket: int, mods: PackedStringArray) -> void:
+			_start_run(ticket, mods, peer)
+			net.rounds.tell_run(ticket, mods, peer))
+		net.rounds.run_started.connect(_start_run)
 		net.rounds.seat_asked.connect(_on_seat_asked)
 		net.rounds.helm_input.connect(func(peer: int, throttle: float, rudder: float) -> void:
 			if _boat.helm() == peer:
@@ -583,7 +610,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or _trade_screen.visible or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _flight_t >= 0.0:
 		return
@@ -616,6 +643,9 @@ func close_inventory() -> bool:
 		return true
 	if _customizer.visible:
 		_close_customizer()
+		return true
+	if _board.visible:
+		_close_board()
 		return true
 	if _trade_screen.visible:  # Esc = cancel the trade
 		net.trade.cancel()
@@ -914,6 +944,8 @@ func _finish_trade(gave: Array, got: Array) -> void:
 func _on_inventory_changed() -> void:
 	_player.refresh_held()
 	_player.refresh_equipment()
+	if _player.inventory.holster_count != _holsters_due():  # armour with a holster was put on or taken off
+		_perks_changed(false)
 	_inventory_screen.in_hand = _player.hand_index()
 	save_profile()
 
@@ -1019,7 +1051,7 @@ func travel(place: String) -> String:
 		"club":
 			_player.teleport(_club_spawn, 0.0)
 		"arena":
-			_enter_arena()
+			_enter_arena(_colosseum.ticket_count() - 1, PackedStringArray())
 		_:
 			return "Unknown place %s. Places: island, club, arena, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
 	return "Moved to %s." % place
@@ -1068,6 +1100,8 @@ func _load_profile() -> void:
 	_apply_progress()
 	_apply_name_loadout()
 	_player.refresh_equipment()
+	if _perks != null and _player.inventory.holster_count != _holsters_due():
+		_perks_changed(false)
 	_player.reload_inventory()
 	_inventory_screen.in_hand = _player.hand_index()
 
@@ -1133,7 +1167,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _games.is_open() or _flight_t >= 0.0:
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or _games.is_open() or _flight_t >= 0.0:
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1224,7 +1258,7 @@ func _prompt() -> String:
 		return "[%s] Talk to the lifeguard: change your look" % key
 	var drop := _field.nearest(_player.global_position)
 	if not drop.is_empty():
-		return "[%s] Pick up %s" % [key, GunStats.display_name(_player.gun_db, drop["gun"])]
+		return "[%s] Pick up %s" % [key, _player.items.item_name(String(drop["item"])) if drop.has("item") else GunStats.display_name(_player.gun_db, drop["gun"])]
 	var partner := _trade_target()
 	if partner != 0:
 		return "[hold %s] Trade with %s" % [key, net.roster[partner]]
@@ -1247,7 +1281,7 @@ func _prompt() -> String:
 	if _near(_crow_b_pos, CROW_RANGE):
 		return "[%s] Ride the crow home" % key
 	if _near_painting():
-		return "[%s] Enter the colosseum" % key
+		return "[%s] The colosseum: buy a ticket for the party" % key
 	if _near_fantasy_exit():
 		return "[%s] Return to the island" % key
 	if _near_painting_fantasy():
@@ -1315,7 +1349,7 @@ func _interact() -> void:
 	elif _in_fantasy:
 		_fantasy.interact()
 	elif _near_painting():
-		_enter_arena()
+		_open_board()
 	elif _reward != null and not _reward.is_chest_open() and _near(_reward.chest_position(), REWARD_RANGE):
 		_open_chest()
 	elif _reward != null and _reward.is_door_ready() and _near(_reward.door_position(), REWARD_RANGE):
@@ -1526,6 +1560,15 @@ func _pick_up(drop: Dictionary) -> void:
 		else:
 			net.drops.take(int(drop["shared"]))
 		return
+	if drop.has("item"):  # a piece of armour
+		var id := String(drop["item"])
+		if _player.inventory.add(id, 1) > 0:
+			_player_hud.notice("Inventory full: make room first.")
+			return
+		_field.take(drop)
+		save_profile()
+		_player_hud.notice("Picked up %s" % _player.items.item_name(id))
+		return
 	if _player.inventory.add_gun(drop["gun"]):
 		var gun: Dictionary = _field.take(drop)
 		_player.refresh_held()
@@ -1557,7 +1600,11 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		kill_counters.append("boss_kills")
 		xp_kind = "boss"
 	var island_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("island")
-	var guns: Array = [] if (_in_fantasy or island_kill) else DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())  # the fantasy world has its own drops; the island's enemies drop no guns
+	var guns: Array = []  # the fantasy world has its own drops; the island's enemies drop no guns
+	if _in_arena and not island_kill:
+		guns = _colosseum_drops(where, enemy_id, elite != "", wave)
+	elif not _in_fantasy and not island_kill:
+		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())
 	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave
 		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony"))
 	if island_kill and _rounds.active and (enemy_id.begins_with("boss") or not _blasting):  # alone or hosting: maybe a power-up, always from a boss
@@ -1574,6 +1621,36 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 	_award(xp_kind, kill_counters)
 
 
+# A kill in the colosseum: the guns it leaves by the wave's loot (core/colosseum_rules.gd); armour and the last
+# boss's treasure are dropped here as well.
+func _colosseum_drops(where: Vector3, enemy_id: String, elite: bool, wave: int) -> Array:
+	var forced: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("forced_elite")  # All Elite's trait is not an elite's drop
+	var kind := "boss" if enemy_id.begins_with("boss") else ("elite" if (elite and not forced) else "trash")
+	if _run_fx.has("death_blast_radius"):  # Bad Blood: it blows up where it fell
+		_explosives.show_flash(where, float(_run_fx["death_blast_radius"]))
+		if _player.global_position.distance_to(where) <= float(_run_fx["death_blast_radius"]):
+			_player.struck_from = where
+			_player.take_damage(float(_run_fx["death_blast_damage"]), "fire")
+	var loot := _luck_mult() * _colosseum.loot_mult(_run_mods)
+	var guns: Array = []
+	for tier: String in _colosseum.kill_tiers(_rng, wave, kind, loot):
+		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", tier))
+	var things: Array[String] = []
+	if _colosseum.armour_drops(_rng, kind, loot):
+		var pieces := _player.items.armour_drops()
+		var piece := pieces[_rng.randi_range(0, pieces.size() - 1)]
+		var rare := "%s+%s" % [piece, String(_colosseum.cfg["loot"]["armour"]["slot_trait"])]
+		things.append(rare if (_colosseum.armour_has_slot(_rng) and _player.items.has_item(rare)) else piece)
+	var treasure := _colosseum.treasure(_rng, wave, kind, loot)
+	if treasure != "":
+		things.append(treasure)
+		_player_hud.callout(_player.items.item_name(treasure), Color(1.0, 0.85, 0.3))
+	for i in things.size():
+		var tint: Array = _player.items.stats(things[i]).get("color", [0.8, 0.8, 0.82])
+		_field.spawn_item(things[i], _player.items.item_name(things[i]), Color(tint[0], tint[1], tint[2]), where + Vector3(0.0, 0.0, 0.7 * float(i + 1)))
+	return guns
+
+
 # Gun luck multiplier from Fortune points and the Lucky Find trait.
 func _luck_mult() -> float:
 	return 1.0 + _progress.bonus("luck_pct") / 100.0
@@ -1588,9 +1665,8 @@ func _open_chest() -> void:
 		var left: int = _player.inventory.add(drop["id"], drop["count"])
 		lost = lost or left > 0
 		found.append("%s x%d" % [_player.items.item_name(drop["id"]), drop["count"] - left])
-	var chest: Dictionary = DataStore.load_json("res://data/gun_loot.json")["chest"]
-	for n in int(chest["guns"]):
-		var gun := GunGen.generate(_player.gun_db, _rng, float(chest["luck"]) * _luck_mult(), "", "", String(chest["min_tier"]) if n == 0 else "")
+	for tier: String in _colosseum.chest_tiers(int(_colosseum.ticket(_run_ticket)["waves"]), _run_mods):  # by the ticket: one tier above its last wave
+		var gun := GunGen.generate(_player.gun_db, _rng, 0.0, "", tier)
 		if _player.inventory.add_gun(gun):
 			found.append(GunStats.display_name(_player.gun_db, gun))
 		else:
@@ -1600,13 +1676,169 @@ func _open_chest() -> void:
 	_player_hud.notice("Found: " + ", ".join(found) + ("  (inventory full, some was left behind)" if lost else ""))
 
 
-# Dying sends you back to the island and your arena run starts over.
-func _enter_arena() -> void:
+# --- the colosseum: a run is bought at the painting (game/colosseum_board.gd), core/colosseum_rules.gd decides ---
+
+func _open_board() -> void:
+	_board.open(_score.points)
+	_player.controls_enabled = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+func _close_board() -> void:
+	_board.close()
+	_player.controls_enabled = true
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
+# "Go in" on the board: the buyer pays and the whole party goes. Online the host sends everybody.
+func _on_ticket_chosen(ticket: int, mods: PackedStringArray) -> void:
+	var price := int(_colosseum.ticket(ticket)["price"])
+	if not _score.can_afford(price):
+		_player_hud.notice("That ticket costs %d points (you have %d)." % [price, _score.points])
+		return
+	_close_board()
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_run(ticket, mods)
+		return
+	_start_run(ticket, mods, _my_id())
+	if net != null:
+		net.rounds.tell_run(ticket, mods, _my_id())
+
+
+# The party goes into the colosseum: whoever bought the ticket pays; everybody on the islands and on his feet goes.
+func _start_run(ticket: int, mods: PackedStringArray, buyer: int) -> void:
+	if ticket < 0 or ticket >= _colosseum.ticket_count():
+		return
+	var entry: Dictionary = _colosseum.ticket(ticket)
+	if buyer == _my_id():
+		_score.spend(int(entry["price"]))
+		save_profile()
+	if _in_arena or _in_fantasy or _player.downed or _flight_t >= 0.0 or not _on_island(_player.global_position):
+		return  # not there to go along
+	if _seat >= 0:
+		_leave_boat(true)
+	if _board.visible:
+		_close_board()
+	_enter_arena(ticket, mods)
+	_player_hud.notice("%s: %d waves%s" % [String(entry["name"]), int(entry["waves"]), "" if buyer == _my_id() else " (%s bought the ticket)" % String(net.roster.get(buyer, "a teammate"))])
+
+
+# Into the arena for a run of that ticket. Dying there sends you back to the island with nothing lost.
+func _enter_arena(ticket: int, mods: PackedStringArray) -> void:
+	_run_ticket = ticket
+	_run_mods = mods
 	_in_arena = true
-	_player.pools.fill_all()  # until ammo can be bought or found (wall buys, max ammo): every colosseum run starts with full pools
+	_player.pools.fill_all()  # every colosseum run starts with full pools
+	_set_run_fx(_colosseum.effects(mods))
 	_player.teleport(ARENA_SPAWN, 0.0)
-	_director.start()
+	_director.start(int(_colosseum.ticket(ticket)["waves"]))
 	_player_hud.play_fade()
+
+
+# A run's modifiers take hold (or, with {}, let go): on us, on the HUD, on the arena's light and air. Enemies and
+# waves read `_run_fx` through the wave director.
+func _set_run_fx(fx: Dictionary) -> void:
+	var had_look := _run_fx.has("fog") or _run_fx.has("blackout")
+	_run_fx = fx
+	_director.run_fx = fx
+	_player.set_run_fx(fx)
+	_player_hud.blind = fx.has("blind")
+	_bars.visible = not fx.has("hide_bars")
+	_fuse_wave = 0
+	_still = 0.0
+	if fx.has("ammo_start"):  # Dry Mags: part of every pool stays outside
+		for body: String in _player.pools.bodies():
+			_player.pools.take(body, floori(float(_player.pools.left(body)) * (1.0 - float(fx["ammo_start"]))))
+	if had_look or fx.has("fog") or fx.has("blackout"):
+		apply_settings()  # sky, fog and sun as the look has them (and the islands' weather lets go of them)
+	if fx.has("fog"):
+		_render_style.env.fog_enabled = true
+		_render_style.env.fog_density = float(fx["fog"])
+		_render_style.env.fog_light_color = Color(0.04, 0.04, 0.05) if fx.has("blackout") else Color(0.62, 0.6, 0.55)
+		_render_style.env.fog_sky_affect = 1.0
+		_render_style.env.fog_aerial_perspective = 0.0
+	if fx.has("blackout"):
+		_render_style.sun.light_energy *= 0.03
+		_render_style.env.ambient_light_energy *= 0.08
+		_render_style.env.background_energy_multiplier = 0.03
+		if _torch == null:
+			_torch = SpotLight3D.new()
+			_torch.spot_range = 26.0
+			_torch.spot_angle = 34.0
+			_torch.light_energy = 6.0
+			_torch.shadow_enabled = false
+			_player.hand_parent().add_child(_torch)
+	elif _render_style.env.background_energy_multiplier != 1.0:
+		_render_style.env.background_energy_multiplier = 1.0
+	if _torch != null:
+		_torch.visible = fx.has("blackout")
+	if _ring != null:
+		_ring.visible = false
+	_ring_radius = 0.0
+
+
+# Every frame of a run with modifiers: the ones that need a clock (Short Fuse, Toxic Sand, Closing Ring).
+func _run_modifiers(delta: float) -> void:
+	var wave := _director.wave_number()
+	if _run_fx.has("wave_seconds") and wave > 0:
+		if wave != _fuse_wave:
+			_fuse_wave = wave
+			_fuse_left = float(_run_fx["wave_seconds"])
+			_fuse_late = false
+		elif _director.enemies_left() > 0 and not _fuse_late:
+			_fuse_left -= delta
+			if _fuse_left <= 0.0:  # too slow: elites more, of whatever this wave is made of
+				_fuse_late = true
+				var pack: Array[String] = []
+				var kinds: Array = (_director.enemy_list() as Array).filter(func(e: Variant) -> bool: return is_instance_valid(e) and not String((e as Node).get("enemy_id")).begins_with("boss"))
+				for i in int(_run_fx.get("late_pack", 0)):
+					pack.append(String((kinds[i % kinds.size()] as Node).get("enemy_id")) if not kinds.is_empty() else "chaser")
+				_director.send_in(pack)
+				_player_hud.notice("Too slow: %d more come in." % pack.size())
+	if _run_fx.has("still_seconds"):
+		_still = _still + delta if Vector2(_player.velocity.x, _player.velocity.z).length() < 0.5 else 0.0
+		if _still >= float(_run_fx["still_seconds"]):
+			_still -= 1.0  # and again every second we keep standing
+			_player.status.apply(String(_run_fx["still_element"]), 0.0)
+			_player_hud.notice("The sand poisons you: keep moving.")
+	if _run_fx.has("ring_start") and wave > 0:
+		var last := maxi(_director.wave_count() - 1, 1)
+		var radius := lerpf(float(_run_fx["ring_start"]), float(_run_fx["ring_end"]), clampf(float(wave - 1) / float(last), 0.0, 1.0))
+		if not is_equal_approx(radius, _ring_radius):
+			_ring_radius = radius
+			_show_ring(radius)
+		_ring_tick += delta
+		if _ring_tick >= 0.5:
+			if Vector2(_player.global_position.x, _player.global_position.z).length() > radius:
+				_player.take_damage(float(_run_fx["ring_dps"]) * _ring_tick, "fire")
+			_ring_tick = 0.0
+
+
+# The ring of fire at that radius round the arena's middle: 64 flame cones in one MultiMesh.
+func _show_ring(radius: float) -> void:
+	if _ring == null:
+		var flame := CylinderMesh.new()
+		flame.top_radius = 0.0
+		flame.bottom_radius = 0.35
+		flame.height = 1.6
+		flame.radial_segments = 6
+		flame.rings = 1
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.albedo_color = Color(1.0, 0.5, 0.12)
+		flame.material = glow
+		var flames := MultiMesh.new()
+		flames.transform_format = MultiMesh.TRANSFORM_3D
+		flames.mesh = flame
+		flames.instance_count = 64
+		_ring = MultiMeshInstance3D.new()
+		_ring.multimesh = flames
+		_ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(_ring)
+	for i in 64:
+		var angle := TAU * float(i) / 64.0
+		_ring.multimesh.set_instance_transform(i, Transform3D(Basis.IDENTITY, Vector3(cos(angle) * radius, 0.8, sin(angle) * radius)))
+	_ring.visible = true
 
 
 func _on_player_died() -> void:
@@ -2024,10 +2256,16 @@ func _buy_perk(id: String) -> void:
 	_player_hud.notice("%s: %s" % [_perks.name_of(id), _perks.desc(id)])
 
 
+# How many ready gun slots we should have: two, one more with the Third Holster perk, one more with a piece of armour
+# that has a holster (several such pieces still give one).
+func _holsters_due() -> int:
+	return 2 + int(_perks.num("extra_holsters", 0.0)) + (1 if (_player.armor["abilities"] as Array).has("extra_holster") else 0)
+
+
 # The perks carried changed: everything that reads their numbers follows.
 func _perks_changed(heal: bool) -> void:
 	_player.pools.bonus_pct = _perks.num("pool_bonus_pct", 0.0)
-	var homeless: Array = _player.inventory.set_holster_count(2 + int(_perks.num("extra_holsters", 0.0)))
+	var homeless: Array = _player.inventory.set_holster_count(_holsters_due())
 	if not homeless.is_empty():  # the extra ready gun found no room in the bag: it lies in a backpack at our feet
 		var things: Array = []
 		for stack: Dictionary in homeless:
@@ -2880,6 +3118,7 @@ func _fantasy_detail() -> void:
 
 func _leave_arena() -> void:
 	_field.clear()
+	_set_run_fx({})
 	if _reward != null:
 		_reward.queue_free()
 	_reward = null
@@ -2918,6 +3157,8 @@ func _process(delta: float) -> void:
 	_run_machines(delta)
 	_run_weather(delta)
 	_run_boat(delta)
+	if _in_arena and not _run_fx.is_empty():
+		_run_modifiers(delta)
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
 		_self_revive_at = -1.0
 		_player.revive(1.0)
@@ -2936,22 +3177,13 @@ func _process(delta: float) -> void:
 		_coins_dirty = false
 		save_profile()
 	if _in_arena and _reward == null and _director.is_cleared():
-		_reward = RewardArea.new()
+		_reward = RewardArea.new()  # the run is won: the chest, then the door back to the island
 		add_child(_reward)
-		_reset_left = _director.reset_delay()
-		_player_hud.notice("Arena resets to round 1 in %d s" % int(_reset_left))
-	elif _in_arena and _reward != null:
-		_reset_left -= delta
-		if _reset_left <= 0.0:
-			_reward.queue_free()
-			_reward = null
-			_director.reset()
-			_director.start()
-			_player_hud.notice("Round 1")
+		_player_hud.callout("Colosseum cleared", Color(1.0, 0.85, 0.4))
 	var scope: float = _player.sight_amount()
 	_scope.kind = _player.sight_kind()
 	_scope.amount = scope
-	_cross.visible = scope < ScopeOverlay.SHOW_FROM
+	_cross.visible = scope < ScopeOverlay.SHOW_FROM and not _run_fx.has("blind")
 	if settings.show_debug:
 		_overlay.push_frame(delta)
 	_hud_timer += delta

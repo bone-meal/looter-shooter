@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://phhue2tibyjq"
 path.s3tc="res://.godot/imported/roof_slates_02_diff_1k.jpg-87f31182eb1e0e2fc23ad13d04aec327.s3tc.ctex"
-path.etc2="res://.godot/imported/roof_slates_02_diff_1k.jpg-87f31182eb1e0e2fc23ad13d04aec327.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/roof_slates_02/roof_slates_02_diff_1k.jpg"
-dest_files=["res://.godot/imported/roof_slates_02_diff_1k.jpg-87f31182eb1e0e2fc23ad13d04aec327.s3tc.ctex", "res://.godot/imported/roof_slates_02_diff_1k.jpg-87f31182eb1e0e2fc23ad13d04aec327.etc2.ctex"]
+dest_files=["res://.godot/imported/roof_slates_02_diff_1k.jpg-87f31182eb1e0e2fc23ad13d04aec327.s3tc.ctex"]
 
 [params]
 

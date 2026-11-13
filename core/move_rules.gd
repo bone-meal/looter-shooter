@@ -11,6 +11,7 @@ var jump_speed := 0.0
 var base_speed := 0.0  # top speed with empty hands
 var stamina := 0.0  # jump fatigue, 0 = fresh (see data "stamina")
 var no_fatigue := false  # set by the player while a thing that removes fatigue is worn
+var fatigue_mult := 1.0  # jumping and landing tire this many times as much (a colosseum modifier)
 
 var _friction := 0.0
 var _stop_speed := 0.0
@@ -48,7 +49,7 @@ func _init(cfg: Dictionary) -> void:
 # The body touched the ground after falling at `fall_speed` m/s.
 func land(fall_speed: float) -> void:
 	if not no_fatigue:
-		stamina = minf(stamina + _land_cost * fall_speed / unit, _stamina_max)
+		stamina = minf(stamina + _land_cost * fatigue_mult * fall_speed / unit, _stamina_max)
 
 
 # One tick. velocity in m/s; wish = the flat unit direction the keys ask for (ZERO = none); top = the top speed that
@@ -66,7 +67,7 @@ func step(velocity: Vector3, wish: Vector3, top: float, cap_top: float, grounded
 			flat *= cap_top * _bunny_cap / speed
 		up = jump_speed * maxf(1.0 - stamina / 100.0, 0.0)
 		if not no_fatigue:
-			stamina = minf(stamina + _jump_cost * jump_speed / unit, _stamina_max)
+			stamina = minf(stamina + _jump_cost * fatigue_mult * jump_speed / unit, _stamina_max)
 		grounded = false  # it leaves the ground this very tick: no friction, no fatigue drag (a perfect hop keeps its speed)
 	if grounded:
 		if stamina > 0.0:

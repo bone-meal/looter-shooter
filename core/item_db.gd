@@ -1,4 +1,5 @@
 # Purpose: read-only lookup of item definitions (name, flavor text, kind, stack size). Pure data, no nodes.
+# An armour item may exist in variants (data/items.json `variants`): `<id>+<suffix>` is the same piece with an ability.
 # Dependencies: none. Data comes from data/items.json (checked by tools/validate_data.gd).
 extends RefCounted
 
@@ -6,7 +7,26 @@ var _items: Dictionary
 
 
 func _init(data: Dictionary) -> void:
-	_items = data.get("items", {})
+	_items = (data.get("items", {}) as Dictionary).duplicate()
+	for variant: Dictionary in data.get("variants", []):  # e.g. every plain chestplate also exists "with a Holster"
+		for id: String in (data.get("items", {}) as Dictionary):
+			var plain: Dictionary = _items[id]
+			if String(plain.get("kind", "")) != "armor" or plain.has("ability") or not (variant["slots"] as Array).has(String(plain.get("slot", ""))):
+				continue
+			var made := plain.duplicate()
+			made["name"] = String(variant["name"]) % String(plain["name"])
+			made["ability"] = String(variant["ability"])
+			made["no_drop"] = true  # it only comes as the rare version of its plain item
+			_items["%s+%s" % [id, String(variant["suffix"])]] = made
+
+
+# The armour that can drop in the colosseum: every armour item not marked no_drop.
+func armour_drops() -> Array[String]:
+	var ids: Array[String] = []
+	for id: String in _items:
+		if String(_items[id].get("kind", "")) == "armor" and not bool(_items[id].get("no_drop", false)):
+			ids.append(id)
+	return ids
 
 
 func has_item(id: String) -> bool:
@@ -47,6 +67,8 @@ func stat_lines(id: String) -> Array[String]:
 		lines.append("%s resist %d%%" % [String(e).capitalize(), roundi(float(it["resist"][e]) * 100.0)])
 	if String(it.get("ability", "")) == "auto_reload":
 		lines.append("Left click reloads an empty gun")
+	if String(it.get("ability", "")) == "extra_holster":
+		lines.append("One more ready gun slot")
 	if String(it.get("ability", "")) == "auto_bhop":
 		lines.append("Hold jump: hops by itself, no jump fatigue")
 	return lines

@@ -90,6 +90,12 @@ func run(text: String, near: Node3D) -> PackedStringArray:
 			else:
 				session.rounds().skip_to(String(args[0]).to_int())
 				out.append("Round %d starts in a moment (stand on the island)." % String(args[0]).to_int())
+		"wave":
+			if args.is_empty() or not String(args[0]).is_valid_int() or session.director().wave_count() == 0:
+				out.append("%s  (only during a colosseum run)" % String(entry["usage"]))
+			else:
+				session.director().skip_to(String(args[0]).to_int())
+				out.append("Wave %d comes in a moment." % clampi(String(args[0]).to_int(), 1, session.director().wave_count()))
 		"power":
 			out.append(String(session.call("drop_power", String(args[0]) if not args.is_empty() else "", near)))
 		"switch":

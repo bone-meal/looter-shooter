@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://digddnch51qtc"
 path.s3tc="res://.godot/imported/T_Regular_Male_Roughness.png-455df3f7323734cae9d0c4b8744cc3e8.s3tc.ctex"
-path.etc2="res://.godot/imported/T_Regular_Male_Roughness.png-455df3f7323734cae9d0c4b8744cc3e8.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/modular_character_outfits_fantasy_standard/textures_ranger_base_chars/T_Regular_Male_Roughness.png"
-dest_files=["res://.godot/imported/T_Regular_Male_Roughness.png-455df3f7323734cae9d0c4b8744cc3e8.s3tc.ctex", "res://.godot/imported/T_Regular_Male_Roughness.png-455df3f7323734cae9d0c4b8744cc3e8.etc2.ctex"]
+dest_files=["res://.godot/imported/T_Regular_Male_Roughness.png-455df3f7323734cae9d0c4b8744cc3e8.s3tc.ctex"]
 
 [params]
 

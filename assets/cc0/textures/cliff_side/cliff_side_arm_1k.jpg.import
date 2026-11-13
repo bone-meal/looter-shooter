@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b8pjxcjb1x10q"
 path.s3tc="res://.godot/imported/cliff_side_arm_1k.jpg-5d46d4cf1b8e7b7f107f2463d2c95769.s3tc.ctex"
-path.etc2="res://.godot/imported/cliff_side_arm_1k.jpg-5d46d4cf1b8e7b7f107f2463d2c95769.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/cliff_side/cliff_side_arm_1k.jpg"
-dest_files=["res://.godot/imported/cliff_side_arm_1k.jpg-5d46d4cf1b8e7b7f107f2463d2c95769.s3tc.ctex", "res://.godot/imported/cliff_side_arm_1k.jpg-5d46d4cf1b8e7b7f107f2463d2c95769.etc2.ctex"]
+dest_files=["res://.godot/imported/cliff_side_arm_1k.jpg-5d46d4cf1b8e7b7f107f2463d2c95769.s3tc.ctex"]
 
 [params]
 

@@ -24,6 +24,8 @@ signal power_taken(kind: String)  # on a client: somebody took it, so the whole 
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
 signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
+signal run_asked(peer: int, ticket: int, modifiers: PackedStringArray)  # on the host: a client standing at the colosseum painting buys a run
+signal run_started(ticket: int, modifiers: PackedStringArray, buyer: int)  # on a client: the party goes into the colosseum; `buyer` pays
 signal seat_asked(peer: int, aboard: bool)  # on the host: a client standing by the boat wants a seat, or gives its seat up
 signal helm_input(peer: int, throttle: float, rudder: float)  # on the host: what a client does with the keys at the tiller
 signal boat_state(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array)  # on a client: the boat as the host runs it
@@ -43,6 +45,7 @@ var land: RefCounted  # core/archipelago.gd of this machine (which debris is cle
 var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
 var power: RefCounted  # core/power_state.gd of this machine
 var builds: RefCounted  # core/build_state.gd of this machine
+var painting_near := Callable()  # func(at: Vector3) -> bool: that spot is at the colosseum painting
 var boat_near := Callable()  # func(at: Vector3) -> bool: that spot is near enough to the boat to climb aboard
 var build_near := Callable()  # func(at: Vector3) -> int: the code (BuildState.code_of) of the part or bench at that spot, -1 = none
 var power_near := Callable()  # func(at: Vector3) -> int: the power part lying at that spot, SWITCH at the workbench, -1 = neither
@@ -374,6 +377,31 @@ func _build_ask(code: int) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _build_bits(bits: int) -> void:
 	build_bits.emit(bits)
+
+
+# --- a colosseum run: one player buys the ticket at the painting, the host sends the whole party in ---
+
+func ask_run(ticket: int, modifiers: PackedStringArray) -> void:
+	if is_client():
+		_run_ask.rpc_id(1, ticket, modifiers)
+
+
+func tell_run(ticket: int, modifiers: PackedStringArray, buyer: int) -> void:
+	if net.can_send() and net.is_host():
+		_run.rpc(ticket, modifiers, buyer)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _run_ask(ticket: int, modifiers: PackedStringArray) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body != null and modifiers.size() <= 64 and painting_near.is_valid() and bool(painting_near.call(body.global_position)):
+		run_asked.emit(peer, ticket, modifiers)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _run(ticket: int, modifiers: PackedStringArray, buyer: int) -> void:
+	run_started.emit(ticket, modifiers, buyer)
 
 
 # --- the boat: the host sails it; a client asks for a seat and, at the tiller, sends what its keys say ---

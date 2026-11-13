@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://d371gfy0v01pe"
 path.s3tc="res://.godot/imported/T_Enemies_Large_Emissive.png-3f1c1e81feba667de0d226bdbc793e59.s3tc.ctex"
-path.etc2="res://.godot/imported/T_Enemies_Large_Emissive.png-3f1c1e81feba667de0d226bdbc793e59.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/sci_fi_essentials_kit_standard/T_Enemies_Large_Emissive.png"
-dest_files=["res://.godot/imported/T_Enemies_Large_Emissive.png-3f1c1e81feba667de0d226bdbc793e59.s3tc.ctex", "res://.godot/imported/T_Enemies_Large_Emissive.png-3f1c1e81feba667de0d226bdbc793e59.etc2.ctex"]
+dest_files=["res://.godot/imported/T_Enemies_Large_Emissive.png-3f1c1e81feba667de0d226bdbc793e59.s3tc.ctex"]
 
 [params]
 

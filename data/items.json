@@ -1,5 +1,21 @@
 {
  "version": 3,
+ "_about": "Items (core/item_db.gd). kind armor: slot, defense, block, resist, optional ability (auto_reload, auto_bhop, extra_holster = one more ready gun slot). no_drop: true = never among the colosseum's armour drops. variants: for every armour item without an ability worn in one of `slots`, the item db also knows the item `<id>+<suffix>` with that ability and the name pattern (the colosseum's rare armour with a gun slot more).",
+ "variants": [
+  {
+   "suffix": "holster",
+   "name": "%s with a Holster",
+   "ability": "extra_holster",
+   "slots": [
+    "chestplate",
+    "waist",
+    "pants",
+    "leg_armor",
+    "shirt",
+    "cape"
+   ]
+  }
+ ],
  "items": {
   "pistol_basic": {
    "name": "Hand Cannon",
@@ -143,7 +159,8 @@
    "block": 0,
    "resist": {},
    "flavor": "Smoldering with attitude. Left click reloads an empty gun for you.",
-   "ability": "auto_reload"
+   "ability": "auto_reload",
+   "no_drop": true
   },
   "band_shirt": {
    "name": "Band Shirt",
@@ -330,7 +347,8 @@
     0.95,
     0.8,
     0.25
-   ]
+   ],
+   "no_drop": true
   },
   "iron_sabatons": {
    "name": "Iron Sabatons",

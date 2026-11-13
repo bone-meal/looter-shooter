@@ -302,6 +302,37 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var me: Vector3 = player.global_position - Vector3(500, 0, 0)
 				_lines.append("BOAT %s: %s | we are at %.1f %.1f %.1f" % [" ".join(words.slice(1)), String(session.call("boat_note")), me.x, me.y, me.z])
+		"ticket":  # "!ticket goto": stand at the colosseum painting; "!ticket buy 1 [mod,mod]": choose that ticket (0 = the shortest) and those modifiers on the board and press Go in
+			if words.size() > 1 and words[1] == "goto":
+				var painting: Vector3 = session.get("_painting")
+				player.call("teleport", painting + Vector3(1.5, 0.15, 1.5), 0.0)
+				player.call("look_at_point", painting + Vector3(0, 1.6, 0))
+			elif words.size() > 2 and words[1] == "buy":
+				var board: Control = session.get("_board")
+				var mods := PackedStringArray(words[3].split(",", false)) if words.size() > 3 else PackedStringArray()
+				board.call("choose", int(words[2]), mods)
+				board.emit_signal("chosen", int(words[2]), mods)
+		"wear":  # "!wear steel_chestplate+holster": that armour item is put on (as if dragged onto its slot)
+			var bag: RefCounted = player.get("inventory")
+			var slot := String((player.get("items") as RefCounted).call("equip_slot", words[1]))
+			(bag.get("equipment") as Dictionary)[slot] = {"id": words[1], "count": 1}
+			session.call("_on_inventory_changed")
+		"slay":  # every enemy takes a blow it cannot survive (real kills: points, drops, the wave goes on)
+			for enemy: Variant in (session.call("director").call("enemy_list") as Array).duplicate():
+				if is_instance_valid(enemy):
+					(enemy as Node3D).call("on_hit", 1000000.0, (enemy as Node3D).global_position + Vector3(0, 1, 0), Vector3.UP)
+		"arena":  # "!arena <note>": the run's wave, who is alive with how much health, what lies about, our points and ready slots
+			var waves: Node = session.call("director")
+			var alive := PackedStringArray()
+			for enemy: Variant in waves.call("enemy_list"):
+				if is_instance_valid(enemy):
+					var hp: RefCounted = (enemy as Node).get("health")
+					alive.append("%s%s %.0f/%.0f" % [String((enemy as Node).get("enemy_id")), "" if String((enemy as Node).get("elite")) == "" else "(" + String((enemy as Node).get("elite")) + ")", float(hp.get("hp")), float(hp.get("max_hp"))])
+			var lying := PackedStringArray()
+			for drop: Dictionary in (session.get("_field") as Node).get("_drops"):
+				lying.append(String(drop["item"]) if drop.has("item") else String((drop["gun"] as Dictionary)["tier"]))
+			_lines.append("ARENA %s: in arena %s, wave %d of %d, left %d, cleared %s | alive [%s] | lying [%s] | points %d, ready slots %d, mods %s" % [" ".join(words.slice(1)), str(session.get("_in_arena")), int(waves.call("wave_number")), int(waves.call("wave_count")), int(waves.call("enemies_left")), str(waves.call("is_cleared")),
+				", ".join(alive), ", ".join(lying), int((session.call("score") as RefCounted).get("points")), int((player.get("inventory") as RefCounted).get("holster_count")), str(session.get("_run_mods"))])
 		"weather":  # "!weather <note>": the islands' weather on screen now (stage, fog, sun, rain drops, the looping sound)
 			_lines.append("WEATHER %s: %s" % [" ".join(words.slice(1)), String(session.call("weather_note"))])
 		"powers":  # "!powers <note>": the power-ups lying around and running, and what points are multiplied by

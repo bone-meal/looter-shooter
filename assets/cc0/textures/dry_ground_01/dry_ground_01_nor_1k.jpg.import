@@ -4,16 +4,15 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://djxhgbp3oavh8"
 path.s3tc="res://.godot/imported/dry_ground_01_nor_1k.jpg-f9a1c2cd2c23db86024b615c4bf0afad.s3tc.ctex"
-path.etc2="res://.godot/imported/dry_ground_01_nor_1k.jpg-f9a1c2cd2c23db86024b615c4bf0afad.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc", "etc2_astc"],
+"imported_formats": ["s3tc_bptc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/dry_ground_01/dry_ground_01_nor_1k.jpg"
-dest_files=["res://.godot/imported/dry_ground_01_nor_1k.jpg-f9a1c2cd2c23db86024b615c4bf0afad.s3tc.ctex", "res://.godot/imported/dry_ground_01_nor_1k.jpg-f9a1c2cd2c23db86024b615c4bf0afad.etc2.ctex"]
+dest_files=["res://.godot/imported/dry_ground_01_nor_1k.jpg-f9a1c2cd2c23db86024b615c4bf0afad.s3tc.ctex"]
 
 [params]
 
