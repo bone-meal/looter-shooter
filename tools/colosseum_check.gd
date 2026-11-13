@@ -7,6 +7,7 @@ extends Node
 const ColosseumRules = preload("res://core/colosseum_rules.gd")
 const WaveState = preload("res://core/wave_state.gd")
 const ItemDb = preload("res://core/item_db.gd")
+const CigaretteState = preload("res://core/cigarette_state.gd")
 const DataStore = preload("res://core/data_store.gd")
 
 var _lines := PackedStringArray()
@@ -112,6 +113,22 @@ func _ready() -> void:
 	for key: String in ["enemy_health", "enemy_damage", "enemy_speed", "death_blast_radius", "death_blast_damage", "all_elite", "player_health", "ammo_start", "fog", "hide_bars", "boss_count", "enemy_count", "no_heal", "wave_seconds", "late_pack", "boss_body_damage", "vampire", "wave_delay", "blackout", "ring_start", "ring_end", "ring_dps", "still_seconds", "still_element", "berserk_below", "berserk_mult", "blind", "reload_time", "jump_fatigue", "no_sprint"]:
 		keys_there = keys_there and all_fx.has(key)
 	_say("every effect the game reads is given by some modifier (%d keys)" % all_fx.size(), keys_there and all_fx.size() == 30)
+
+	# --- the cigarette (core/cigarette_state.gd with data/cigarette.json) ---
+	var smoke := CigaretteState.new()
+	smoke.setup(DataStore.load_json("res://data/cigarette.json"))
+	_say("a cigarette burns %d minutes; the burnt one is an item that exists, has no ability and stacks like cigarettes" % roundi(smoke.full() / 60.0), is_equal_approx(smoke.full(), 1800.0) and items.has_item("cigarette_butt") and not items.stats("cigarette_butt").has("ability") and items.stack_max("cigarette") > 1 and items.equip_slot("cigarette_butt") == "mouth")
+	smoke.light()
+	var burnt_early := smoke.tick(600.0, true)
+	var idle_left := smoke.left
+	smoke.tick(5000.0, false)
+	_say("lit: full; 10 burning minutes leave 20; time off the gun side burns nothing", not burnt_early and is_equal_approx(idle_left, 1200.0) and is_equal_approx(smoke.left, 1200.0))
+	smoke.light()
+	_say("putting one back on goes on from where it was (no free refill)", is_equal_approx(smoke.left, 1200.0))
+	var out := smoke.tick(1199.0, true) == false and smoke.warning() and smoke.tick(5.0, true)
+	smoke.light()
+	_say("it warns near the end, burns out once, and only then the next one starts full", out and is_equal_approx(smoke.left, 1800.0))
+	_say("reward chests: one cigarette after 4 or 8 waves, two after 12", smoke.chest_count(4, 12) == 1 and smoke.chest_count(8, 12) == 1 and smoke.chest_count(12, 12) == 2)
 
 	_lines.append("COLOSSEUM_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/colosseum_check.log", FileAccess.WRITE)

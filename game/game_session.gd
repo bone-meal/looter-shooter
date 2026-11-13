@@ -69,6 +69,7 @@ const BuildSite = preload("res://game/build_site.gd")
 const BoatRules = preload("res://core/boat_rules.gd")
 const ColosseumRules = preload("res://core/colosseum_rules.gd")
 const ColosseumBoard = preload("res://game/colosseum_board.gd")
+const CigaretteState = preload("res://core/cigarette_state.gd")
 const Boat = preload("res://game/boat.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
@@ -222,6 +223,7 @@ var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data
 var _board := ColosseumBoard.new()  # the ticket board at the painting
 var _run_ticket := 0  # the ticket of the colosseum run we are in
 var _run_mods := PackedStringArray()  # and its modifiers
+var _smoke := CigaretteState.new()  # the burn of the cigarette being smoked (data/cigarette.json)
 var _run_fx := {}  # what those modifiers change (core/colosseum_rules.gd `effects`), {} outside a run
 var _fuse_wave := 0  # Short Fuse: the wave whose clock runs, the seconds it has left, and whether its late pack came
 var _fuse_left := 0.0
@@ -268,6 +270,7 @@ func _ready() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	LoadClock.mark("session created")
 	_build_environment()
+	_smoke.setup(DataStore.load_json("res://data/cigarette.json"))
 	LoadClock.mark("sky and light")
 	var first_gun_side := get_child_count()
 	var gates := Colosseum.build(self)
@@ -1081,6 +1084,7 @@ func _load_profile() -> void:
 		_score.from_dict(extra.get("score"))
 		_player.pools.from_dict(extra.get("ammo"))
 		_best_round = maxi(int(extra.get("best_round", 0)), 0)
+		_smoke.left = clampf(float(extra.get("cigarette_left", 0.0)), 0.0, _smoke.full())
 		_bank.from_dict(extra.get("bank"), _player.inventory)
 		var lying: Variant = extra.get("pack")
 		if lying is Dictionary and lying.get("at") is Array and (lying["at"] as Array).size() == 3 and InventoryState.bundle_size(lying) > 0:
@@ -1127,7 +1131,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory)}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1671,6 +1675,13 @@ func _open_chest() -> void:
 			found.append(GunStats.display_name(_player.gun_db, gun))
 		else:
 			lost = true
+	var waves := int(_colosseum.ticket(_run_ticket)["waves"])
+	var smokes := _smoke.chest_count(waves, int(_colosseum.ticket(_colosseum.ticket_count() - 1)["waves"]))
+	if smokes > 0:
+		var left_over: int = _player.inventory.add(String(_smoke.cfg["item"]), smokes)
+		lost = lost or left_over > 0
+		if left_over < smokes:
+			found.append("%s x%d" % [_player.items.item_name(String(_smoke.cfg["item"])), smokes - left_over])
 	_player.refresh_held()
 	save_profile()
 	_player_hud.notice("Found: " + ", ".join(found) + ("  (inventory full, some was left behind)" if lost else ""))
@@ -2971,6 +2982,25 @@ func _clear_powers() -> void:
 	_power_field.clear()
 
 
+# --- the cigarette (core/cigarette_state.gd decides; data/cigarette.json) ---
+
+# Every frame: a worn cigarette burns while we are on the gun side (the islands, the colosseum; not the club, the
+# casino or Aurelind); when it is done it turns into a butt in the mouth. The HUD shows what is left.
+func _run_cigarette(delta: float) -> void:
+	var worn: Dictionary = _player.inventory.equipment.get("mouth", {})
+	if worn.is_empty() or String(worn["id"]) != String(_smoke.cfg["item"]):
+		_player_hud.cigarette = -1.0
+		return
+	_smoke.light()  # one burnt out before: this is a fresh one
+	if _smoke.tick(delta, _in_arena or _island_side()):
+		_player.inventory.equipment["mouth"] = {"id": String(_smoke.cfg["burnt"]), "count": 1}
+		_player.refresh_equipment()
+		_player_hud.notice("Your cigarette burnt out. Reward chests in the colosseum hold fresh ones.")
+		save_profile()
+	_player_hud.cigarette = _smoke.share()
+	_player_hud.cigarette_warn = _smoke.warning()
+
+
 # The islands' weather follows the round (game/island_weather.gd); a boss round's red sky only while it is fought.
 func _run_weather(delta: float) -> void:
 	var here := _island_side()
@@ -3157,6 +3187,7 @@ func _process(delta: float) -> void:
 	_run_machines(delta)
 	_run_weather(delta)
 	_run_boat(delta)
+	_run_cigarette(delta)
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:

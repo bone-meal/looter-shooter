@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "_about": "The Lit Cigarette (core/cigarette_state.gd). burn_seconds = how long one lasts while it burns: only on the gun side (the islands and the colosseum), never in the club or casino, in Aurelind or while the game is paused. The burn belongs to the smoker, not to the stick: taking it out of the mouth and putting it (or another) back on goes on from where it was; a new one starts full only after the last burnt out. burnt = the item it turns into when it is done (no ability). warn_seconds: the HUD bar turns red this long before the end. chest: cigarettes in the colosseum's reward chest, by the waves of the ticket (the longest ticket gives `final`).",
+  "item": "cigarette",
+  "burnt": "cigarette_butt",
+  "burn_seconds": 1800,
+  "warn_seconds": 120,
+  "chest": {"normal": 1, "final": 2}
+}

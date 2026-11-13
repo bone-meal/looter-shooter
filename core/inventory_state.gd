@@ -298,6 +298,12 @@ func click_equipment(slot: String) -> void:
 		equipment[slot] = {}
 	elif can_equip_cursor(slot):
 		var old: Dictionary = equipment[slot]
+		if int(cursor["count"]) > 1:  # a stack (cigarettes): one is worn, the rest stays on the cursor
+			if not old.is_empty():
+				return  # no room for what is worn: take it off first
+			equipment[slot] = {"id": cursor["id"], "count": 1}
+			cursor["count"] = int(cursor["count"]) - 1
+			return
 		equipment[slot] = {"id": cursor["id"], "count": 1}
 		cursor = old
 

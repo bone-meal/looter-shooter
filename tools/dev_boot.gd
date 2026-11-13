@@ -312,6 +312,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var mods := PackedStringArray(words[3].split(",", false)) if words.size() > 3 else PackedStringArray()
 				board.call("choose", int(words[2]), mods)
 				board.emit_signal("chosen", int(words[2]), mods)
+		"smoke":  # "!smoke 5": the cigarette being smoked has 5 s left; "!smoke <note>": what is in the mouth, seconds left, the HUD bar, whether the model shows
+			var smoke: RefCounted = session.get("_smoke")
+			if words.size() > 1 and words[1].is_valid_float():
+				smoke.set("left", float(words[1]))
+			else:
+				var mouth: Dictionary = ((player.get("inventory") as RefCounted).get("equipment") as Dictionary).get("mouth", {})
+				var hud: Node = session.get("_player_hud")
+				_lines.append("SMOKE %s: mouth '%s', left %.1f s, bar %.3f%s, smoking %s, bag cigarettes %d, butts %d" % [" ".join(words.slice(1)), String(mouth.get("id", "")), float(smoke.get("left")), float(hud.get("cigarette")), " (red)" if bool(hud.get("cigarette_warn")) else "", str(player.call("smoking")),
+					int((player.get("inventory") as RefCounted).call("count_of", "cigarette")), int((player.get("inventory") as RefCounted).call("count_of", "cigarette_butt"))])
 		"wear":  # "!wear steel_chestplate+holster": that armour item is put on (as if dragged onto its slot)
 			var bag: RefCounted = player.get("inventory")
 			var slot := String((player.get("items") as RefCounted).call("equip_slot", words[1]))

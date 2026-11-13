@@ -154,13 +154,29 @@
    "name": "Lit Cigarette",
    "kind": "armor",
    "slot": "mouth",
-   "stack_max": 1,
+   "stack_max": 10,
    "defense": 0,
    "block": 0,
    "resist": {},
-   "flavor": "Smoldering with attitude. Left click reloads an empty gun for you.",
+   "flavor": "Smoldering with attitude. Left click reloads an empty gun for you. Burns for half an hour of fighting, then it is just a butt.",
    "ability": "auto_reload",
    "no_drop": true
+  },
+  "cigarette_butt": {
+   "name": "Cigarette Butt",
+   "kind": "armor",
+   "slot": "mouth",
+   "stack_max": 10,
+   "defense": 0,
+   "block": 0,
+   "resist": {},
+   "flavor": "It did its job. Reward chests in the colosseum hold fresh ones.",
+   "no_drop": true,
+   "color": [
+    0.85,
+    0.6,
+    0.35
+   ]
   },
   "band_shirt": {
    "name": "Band Shirt",

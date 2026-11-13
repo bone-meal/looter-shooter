@@ -45,6 +45,8 @@ const POWER_BOX := Vector2(176.0, 38.0)  # one running power-up above the holste
 var player: CharacterBody3D
 var wave_text := ""
 var blind := false  # a colosseum modifier: no holster bar and no ammo counter
+var cigarette := -1.0  # 0..1 of the lit cigarette left (-1 = none worn): a thin bar under the health ring
+var cigarette_warn := false  # nearly burnt out: the bar is red
 var show_speed := false  # ground speed in Source units under the crosshair (on with the debug HUD)
 var boss_ratio := -1.0
 var notice_text := ""  # short pickup message, fades after a few seconds (see notice())
@@ -286,6 +288,14 @@ func _draw_health(c: Vector2) -> void:
 	draw_circle(c + Vector2(6, -6), 7.0, color)
 	draw_colored_polygon(PackedVector2Array([c + Vector2(-12.5, -3), c + Vector2(12.5, -3), c + Vector2(0, 14)]), color)
 	draw_string(_font, c + Vector2(-30, 38), "%d" % ceilf(player.health.hp), HORIZONTAL_ALIGNMENT_CENTER, 60, 16, WHITE)
+	if cigarette >= 0.0:  # the cigarette burning down: paper, a filter on the left, the ember at the burning end
+		var bar := Rect2(c + Vector2(-RING_RADIUS, RING_RADIUS + RING_WIDTH * 0.5 + 5.0), Vector2(RING_RADIUS * 2.0, 5.0))
+		draw_rect(bar.grow(1.0), BACK)
+		draw_rect(Rect2(bar.position, Vector2(bar.size.x * 0.18, bar.size.y)), Color(0.85, 0.55, 0.2))
+		var paper := (bar.size.x * 0.82) * cigarette
+		draw_rect(Rect2(bar.position + Vector2(bar.size.x * 0.18, 0.0), Vector2(paper, bar.size.y)), BAD if cigarette_warn else Color(0.95, 0.93, 0.88))
+		if cigarette > 0.0:
+			draw_rect(Rect2(bar.position + Vector2(bar.size.x * 0.18 + paper - 3.0, 0.0), Vector2(3.0, bar.size.y)), Color(1.0, 0.45, 0.1))
 
 
 # Armor summary and active elemental effects above the health ring.

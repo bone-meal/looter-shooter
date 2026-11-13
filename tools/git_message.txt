@@ -1,1 +1,16 @@
-Release v1.06
+Round 6 step 12: the cigarette burns down
+
+The Lit Cigarette burns for 30 minutes of time on the gun side (the islands
+and the colosseum; not the club or casino, not Aurelind, not while paused).
+A thin bar under the health ring shows what is left and turns red in the
+last two minutes. Burnt out, it is a Cigarette Butt in the mouth, without
+the auto-reload. Every reward chest holds one cigarette, the 12-wave chest
+two; they stack in the bag and a fresh one lights when worn.
+
+The burn belongs to the smoker, not the stick: taking it off and putting it
+back on goes on from where it was (data/cigarette.json, pure
+core/cigarette_state.gd, saved as cigarette_left). Wearing from a stack now
+wears one of it. The old chest table no longer rolls a cigarette.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
