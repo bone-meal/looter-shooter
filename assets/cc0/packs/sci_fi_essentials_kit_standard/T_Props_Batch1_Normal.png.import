@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bqisf0mir5xfl"
 path.s3tc="res://.godot/imported/T_Props_Batch1_Normal.png-8c3e270341e78cfc7e1fdf7ff950bcef.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Props_Batch1_Normal.png-8c3e270341e78cfc7e1fdf7ff950bcef.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/sci_fi_essentials_kit_standard/T_Props_Batch1_Normal.png"
-dest_files=["res://.godot/imported/T_Props_Batch1_Normal.png-8c3e270341e78cfc7e1fdf7ff950bcef.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Props_Batch1_Normal.png-8c3e270341e78cfc7e1fdf7ff950bcef.s3tc.ctex", "res://.godot/imported/T_Props_Batch1_Normal.png-8c3e270341e78cfc7e1fdf7ff950bcef.etc2.ctex"]
 
 [params]
 

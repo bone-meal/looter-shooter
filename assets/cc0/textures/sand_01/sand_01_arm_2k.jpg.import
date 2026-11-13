@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://do2lyj5ln1ko6"
 path.s3tc="res://.godot/imported/sand_01_arm_2k.jpg-c5d5ac663874a601989013f6d417770a.s3tc.ctex"
+path.etc2="res://.godot/imported/sand_01_arm_2k.jpg-c5d5ac663874a601989013f6d417770a.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/sand_01/sand_01_arm_2k.jpg"
-dest_files=["res://.godot/imported/sand_01_arm_2k.jpg-c5d5ac663874a601989013f6d417770a.s3tc.ctex"]
+dest_files=["res://.godot/imported/sand_01_arm_2k.jpg-c5d5ac663874a601989013f6d417770a.s3tc.ctex", "res://.godot/imported/sand_01_arm_2k.jpg-c5d5ac663874a601989013f6d417770a.etc2.ctex"]
 
 [params]
 

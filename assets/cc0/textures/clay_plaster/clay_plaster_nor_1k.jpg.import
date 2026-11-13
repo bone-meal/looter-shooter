@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b0oxjy0ik8orh"
 path.s3tc="res://.godot/imported/clay_plaster_nor_1k.jpg-20a00199b7388198335f287acc74b379.s3tc.ctex"
+path.etc2="res://.godot/imported/clay_plaster_nor_1k.jpg-20a00199b7388198335f287acc74b379.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/clay_plaster/clay_plaster_nor_1k.jpg"
-dest_files=["res://.godot/imported/clay_plaster_nor_1k.jpg-20a00199b7388198335f287acc74b379.s3tc.ctex"]
+dest_files=["res://.godot/imported/clay_plaster_nor_1k.jpg-20a00199b7388198335f287acc74b379.s3tc.ctex", "res://.godot/imported/clay_plaster_nor_1k.jpg-20a00199b7388198335f287acc74b379.etc2.ctex"]
 
 [params]
 

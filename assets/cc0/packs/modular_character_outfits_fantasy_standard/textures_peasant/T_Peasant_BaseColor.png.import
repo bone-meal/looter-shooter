@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://snhtuwe8hfo4"
 path.s3tc="res://.godot/imported/T_Peasant_BaseColor.png-e14d8900002887482a01ab452e9a92ae.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Peasant_BaseColor.png-e14d8900002887482a01ab452e9a92ae.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/modular_character_outfits_fantasy_standard/textures_peasant/T_Peasant_BaseColor.png"
-dest_files=["res://.godot/imported/T_Peasant_BaseColor.png-e14d8900002887482a01ab452e9a92ae.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Peasant_BaseColor.png-e14d8900002887482a01ab452e9a92ae.s3tc.ctex", "res://.godot/imported/T_Peasant_BaseColor.png-e14d8900002887482a01ab452e9a92ae.etc2.ctex"]
 
 [params]
 

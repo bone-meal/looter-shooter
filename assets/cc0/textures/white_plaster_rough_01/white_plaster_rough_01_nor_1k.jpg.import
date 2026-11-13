@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bwgmmsjiqbp0y"
 path.s3tc="res://.godot/imported/white_plaster_rough_01_nor_1k.jpg-63cb053c9c5bd477ffe6891da43760d5.s3tc.ctex"
+path.etc2="res://.godot/imported/white_plaster_rough_01_nor_1k.jpg-63cb053c9c5bd477ffe6891da43760d5.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/white_plaster_rough_01/white_plaster_rough_01_nor_1k.jpg"
-dest_files=["res://.godot/imported/white_plaster_rough_01_nor_1k.jpg-63cb053c9c5bd477ffe6891da43760d5.s3tc.ctex"]
+dest_files=["res://.godot/imported/white_plaster_rough_01_nor_1k.jpg-63cb053c9c5bd477ffe6891da43760d5.s3tc.ctex", "res://.godot/imported/white_plaster_rough_01_nor_1k.jpg-63cb053c9c5bd477ffe6891da43760d5.etc2.ctex"]
 
 [params]
 

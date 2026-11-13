@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dwcjcjm2348ro"
 path.s3tc="res://.godot/imported/T_Superhero_Male_Dark.png-f4de3dfb9baf4b6c79bf41bb59e135ae.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Superhero_Male_Dark.png-f4de3dfb9baf4b6c79bf41bb59e135ae.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/universal_base_characters_standard/base_characters_godot_ue/T_Superhero_Male_Dark.png"
-dest_files=["res://.godot/imported/T_Superhero_Male_Dark.png-f4de3dfb9baf4b6c79bf41bb59e135ae.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Superhero_Male_Dark.png-f4de3dfb9baf4b6c79bf41bb59e135ae.s3tc.ctex", "res://.godot/imported/T_Superhero_Male_Dark.png-f4de3dfb9baf4b6c79bf41bb59e135ae.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://byekxeudjr1ea"
 path.s3tc="res://.godot/imported/sandstone_brick_wall_01_nor_1k.jpg-2e8650edb3deb426f72ca8eadfbf2a00.s3tc.ctex"
+path.etc2="res://.godot/imported/sandstone_brick_wall_01_nor_1k.jpg-2e8650edb3deb426f72ca8eadfbf2a00.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/sandstone_brick_wall_01/sandstone_brick_wall_01_nor_1k.jpg"
-dest_files=["res://.godot/imported/sandstone_brick_wall_01_nor_1k.jpg-2e8650edb3deb426f72ca8eadfbf2a00.s3tc.ctex"]
+dest_files=["res://.godot/imported/sandstone_brick_wall_01_nor_1k.jpg-2e8650edb3deb426f72ca8eadfbf2a00.s3tc.ctex", "res://.godot/imported/sandstone_brick_wall_01_nor_1k.jpg-2e8650edb3deb426f72ca8eadfbf2a00.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ojdfbnustxwr"
 path.s3tc="res://.godot/imported/palm_tree_bark_diff_1k.jpg-ada03dc7b705078afc1f3b06ee17e334.s3tc.ctex"
+path.etc2="res://.godot/imported/palm_tree_bark_diff_1k.jpg-ada03dc7b705078afc1f3b06ee17e334.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/palm_tree_bark/palm_tree_bark_diff_1k.jpg"
-dest_files=["res://.godot/imported/palm_tree_bark_diff_1k.jpg-ada03dc7b705078afc1f3b06ee17e334.s3tc.ctex"]
+dest_files=["res://.godot/imported/palm_tree_bark_diff_1k.jpg-ada03dc7b705078afc1f3b06ee17e334.s3tc.ctex", "res://.godot/imported/palm_tree_bark_diff_1k.jpg-ada03dc7b705078afc1f3b06ee17e334.etc2.ctex"]
 
 [params]
 

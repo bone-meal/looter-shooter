@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://c5hclqo3k3cm3"
 path.s3tc="res://.godot/imported/T_Regular_Female_Dark_BaseColor.png-324725bf42047cbf5509b6bababf6814.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Regular_Female_Dark_BaseColor.png-324725bf42047cbf5509b6bababf6814.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/modular_character_outfits_fantasy_standard/textures_ranger_base_chars/T_Regular_Female_Dark_BaseColor.png"
-dest_files=["res://.godot/imported/T_Regular_Female_Dark_BaseColor.png-324725bf42047cbf5509b6bababf6814.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Regular_Female_Dark_BaseColor.png-324725bf42047cbf5509b6bababf6814.s3tc.ctex", "res://.godot/imported/T_Regular_Female_Dark_BaseColor.png-324725bf42047cbf5509b6bababf6814.etc2.ctex"]
 
 [params]
 

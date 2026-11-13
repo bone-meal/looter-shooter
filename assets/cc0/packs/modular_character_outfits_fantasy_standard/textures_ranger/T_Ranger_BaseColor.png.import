@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://ov81evwdgovq"
 path.s3tc="res://.godot/imported/T_Ranger_BaseColor.png-c8a8a19b44f1564bf8021509d3ff577b.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Ranger_BaseColor.png-c8a8a19b44f1564bf8021509d3ff577b.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/modular_character_outfits_fantasy_standard/textures_ranger/T_Ranger_BaseColor.png"
-dest_files=["res://.godot/imported/T_Ranger_BaseColor.png-c8a8a19b44f1564bf8021509d3ff577b.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Ranger_BaseColor.png-c8a8a19b44f1564bf8021509d3ff577b.s3tc.ctex", "res://.godot/imported/T_Ranger_BaseColor.png-c8a8a19b44f1564bf8021509d3ff577b.etc2.ctex"]
 
 [params]
 
