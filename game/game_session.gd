@@ -890,17 +890,17 @@ func _bank_price() -> String:
 	if cost.is_empty():
 		return ""
 	var slots := int(_bank_cfg["per_upgrade"])
-	return "%d more slots: %d points (you have %d)" % [slots, int(cost["points"]), _score.points] if cost.has("points") else "%d more slots: %d casino coins (you have %d)" % [slots, int(cost["coins"]), _wallet.balance]
+	return "%d more slots: %d points (you have %d)" % [slots, int(cost["points"]), _score.points] if cost.has("points") else "%d more slots: %d casino chips (you have %d)" % [slots, int(cost["coins"]), _wallet.balance]
 
 
-# The bank's upgrade button: the first upgrades cost points, the later ones casino coins.
+# The bank's upgrade button: the first upgrades cost points, the later ones casino chips.
 func _on_bank_upgrade() -> void:
 	var cost: Dictionary = _bank.next_upgrade()
 	if cost.is_empty():
 		return
 	var paid: bool = _score.spend(int(cost["points"])) if cost.has("points") else _wallet.spend(int(cost["coins"]))
 	if not paid:
-		_player_hud.notice("Not enough %s for more bank slots." % ("points" if cost.has("points") else "casino coins"))
+		_player_hud.notice("Not enough %s for more bank slots." % ("points" if cost.has("points") else "casino chips"))
 		return
 	_bank.upgrade()
 	_inventory_screen.bank_price = _bank_price()
@@ -1395,14 +1395,14 @@ func _prompt() -> String:
 		return "[hold %s] Trade with %s" % [key, net.roster[partner]]
 	var vendor := _vendor_near()
 	if not vendor.is_empty():
-		return "[%s] Buy a %s (%d coins) - a random rolled gun, %s or better" % [key, vendor["name"], int(vendor["price"]), vendor["min_tier"]]
+		return "[%s] Buy a %s (%d chips) - a random rolled gun, %s or better" % [key, vendor["name"], int(vendor["price"]), vendor["min_tier"]]
 	if _slot_near() != null:
-		return "[%s] Play the slot machine (free coins)" % key
+		return "[%s] Play the slot machine (free chips)" % key
 	var table := _games.spot_near(_player.global_position)
 	if table != "":
-		return "[%s] Sit at the %s table (free coins)" % [key, table]
+		return "[%s] Sit at the %s table (free chips)" % [key, table]
 	if _near_pachinko():
-		return "[%s] Launch a pachinko ball (%d coins, hold to keep firing): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
+		return "[%s] Launch a pachinko ball (%d chips, hold to keep firing): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
 	var food: String = _crow_cfg["food_item"]
 	var needed: int = int(_crow_cfg["worms_needed"])
 	if _near(_crow_a_pos, CROW_RANGE):
@@ -1516,7 +1516,7 @@ func _open_slots(machine: SlotMachine) -> void:
 	var refill: Dictionary = _casino_cfg["free_refill"]
 	if _wallet.balance < int(refill["below"]):
 		_wallet.balance = int(refill["to"])
-		_player_hud.notice("The casino tops you up to %d free coins." % _wallet.balance)
+		_player_hud.notice("The casino tops you up to %d free chips." % _wallet.balance)
 	_player.look_at_point(machine.global_position + Vector3(0, 1.5, 0))
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -1555,13 +1555,13 @@ func _on_slot_finished() -> void:
 	var big := false
 	if won > 0:
 		_wallet.add(won)
-		message = "You win %d coins!" % won
+		message = "You win %d chips!" % won
 	if result["jackpot_won"]:
 		big = true
 		_progress.count("jackpots", 1)
 		_progress_notices(0)
 		_jackpot = _slot_math.jackpot_seed
-		message = "JACKPOT!  +%d coins" % won
+		message = "JACKPOT!  +%d chips" % won
 		_update_pots()
 	if won > 0:
 		_slot_machine.flash_win(big)
@@ -1594,9 +1594,9 @@ func _launch_pachinko() -> void:
 		if _wallet.balance < int(refill["below"]):
 			_wallet.balance = int(refill["to"])
 			_coins_dirty = true
-			_player_hud.notice("The casino tops you up to %d free coins." % _wallet.balance)
+			_player_hud.notice("The casino tops you up to %d free chips." % _wallet.balance)
 		else:
-			_player_hud.notice("Not enough coins (a ball costs %d)." % cost)
+			_player_hud.notice("Not enough chips (a ball costs %d)." % cost)
 		return
 	if _pachinko.launch():
 		_wallet.spend(cost)
@@ -1608,7 +1608,7 @@ func _launch_pachinko() -> void:
 func _on_pachinko_landed(_pocket: int, coins: int, pocket_name: String) -> void:
 	if coins > 0:
 		_wallet.add(coins)
-		_player_hud.notice("%s: +%d coins" % [pocket_name, coins])
+		_player_hud.notice("%s: +%d chips" % [pocket_name, coins])
 	_coins_dirty = true
 
 
@@ -1682,7 +1682,7 @@ func _vendor_near() -> Dictionary:
 func _buy_crate(crate: Dictionary) -> void:
 	var price := int(crate["price"])
 	if not _wallet.can_afford(price):
-		_player_hud.notice("A %s costs %d coins (you have %d)." % [crate["name"], price, _wallet.balance])
+		_player_hud.notice("A %s costs %d chips (you have %d)." % [crate["name"], price, _wallet.balance])
 		return
 	var gun := GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]))
 	if not _player.inventory.add_gun(gun):
@@ -1703,14 +1703,18 @@ func _pick_up(drop: Dictionary) -> void:
 		else:
 			net.drops.take(int(drop["shared"]))
 		return
-	if drop.has("item"):  # a piece of armour
+	if drop.has("item"):  # a piece of armour, or worms from an island boss
 		var id := String(drop["item"])
-		if _player.inventory.add(id, 1) > 0:
+		var count := int(drop.get("count", 1))
+		var left := int(_player.inventory.add(id, count))
+		if left >= count:
 			_player_hud.notice("Inventory full: make room first.")
 			return
 		_field.take(drop)
+		if left > 0:  # what did not fit stays lying
+			_field.spawn_item(id, _player.items.item_name(id), Color(1.0, 0.6, 0.7), _player.global_position + _player.global_basis.z * -1.0, left)
 		save_profile()
-		_player_hud.notice("Picked up %s" % _player.items.item_name(id))
+		_player_hud.notice("Picked up %s%s" % [_player.items.item_name(id), "" if count - left <= 1 else " x%d" % (count - left)])
 		return
 	if _player.inventory.add_gun(drop["gun"]):
 		var gun: Dictionary = _field.take(drop)
@@ -1770,6 +1774,11 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 				_show_quest()
 				if net != null:
 					net.rounds.tell_quest(_quest.to_dict(), -1)
+	if island_kill and enemy_id.begins_with("boss"):  # worms (data/island_rounds.json boss.drops): every machine that sees the boss die drops its player's own
+		var row := 0
+		for item_id: String in _rounds.rules.boss_drops():
+			row += 1
+			_field.spawn_item(item_id, _player.items.item_name(item_id), Color(1.0, 0.6, 0.7), where + Vector3(-0.8 * float(row), 0.0, 0.5), int(_rounds.rules.boss_drops()[item_id]))
 	if island_kill and _rounds.active and (enemy_id.begins_with("boss") or not _blasting):  # alone or hosting: maybe a power-up, always from a boss
 		var power := _powerups.roll_drop(_rng, enemy_id.begins_with("boss"), _perks.num("power_drop_mult", 1.0))
 		if power != "":

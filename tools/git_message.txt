@@ -1,1 +1,8 @@
-Release v1.07
+Card game step 1 and 2: worms from island bosses, casino coins shown as chips
+
+- Every island boss leaves 3 worms for each player (data/island_rounds.json boss.drops), picked up as one pile
+- The casino money is called chips everywhere with a poker chip icon (HUD, slot, blackjack and roulette screens, vendor, pachinko); the save key stays coins
+- /give chips, dev steps take and pachinko
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

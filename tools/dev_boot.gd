@@ -517,6 +517,19 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var slot := String((player.get("items") as RefCounted).call("equip_slot", words[1]))
 			(bag.get("equipment") as Dictionary)[slot] = {"id": words[1], "count": 1}
 			session.call("_on_inventory_changed")
+		"pachinko":  # "!pachinko": stand in front of the casino's pachinko wall (the chips show at the top right there)
+			var wall: Node3D = session.get("_pachinko")
+			if wall != null:
+				player.global_position = wall.global_position + wall.global_basis.z * 4.0
+		"take":  # "!take <item id>": walk onto the nearest lying drop of that item and pick it up; logs how many we carry after
+			var field: Node = session.get("_field")
+			for d: Dictionary in field.get("_drops"):
+				if String(d.get("item", "")) == words[1]:
+					player.global_position = (d["node"] as Node3D).global_position
+					session.call("_pick_up", d)
+					break
+			var bag: RefCounted = player.get("inventory")
+			_lines.append("TAKE %s: carrying %d" % [words[1], int(bag.call("count_of", words[1]))])
 		"slay":  # every enemy takes a blow it cannot survive (real kills: points, drops, the wave goes on)
 			for enemy: Variant in (session.call("director").call("enemy_list") as Array).duplicate():
 				if is_instance_valid(enemy):

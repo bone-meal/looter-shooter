@@ -131,6 +131,11 @@ func boss_of(round_number: int) -> String:
 	return String(order[(roundi(float(round_number) / float(boss["every"])) - 1) % order.size()])
 
 
+# Items every player gets from a boss killed on the islands: id -> how many (data/island_rounds.json boss.drops).
+func boss_drops() -> Dictionary:
+	return (_cfg["boss"] as Dictionary).get("drops", {})
+
+
 func boss_cycle(round_number: int) -> int:
 	var boss: Dictionary = _cfg["boss"]
 	return floori(float(roundi(float(round_number) / float(boss["every"])) - 1) / float((boss["order"] as Array).size()))

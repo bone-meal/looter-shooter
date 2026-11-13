@@ -2,6 +2,8 @@
 # Dependencies: game/symbol_art.gd (paytable icons), data/slots.json passed in via setup().
 extends Control
 
+const ChipArt = preload("res://game/chip_art.gd")
+
 const SymbolArt = preload("res://game/symbol_art.gd")
 
 signal spin_requested(bet_per_line: int)
@@ -48,7 +50,7 @@ func setup(data: Dictionary) -> void:
 	v.add_theme_constant_override("separation", 6)
 	panel.add_child(v)
 	_info.add_theme_font_size_override("font_size", 20)
-	v.add_child(_info)
+	v.add_child(ChipArt.row(_info))
 	_result.add_theme_font_size_override("font_size", 22)
 	_result.add_theme_color_override("font_color", GOLD)
 	v.add_child(_result)
@@ -135,7 +137,7 @@ func _on_spin() -> void:
 
 
 func _refresh() -> void:
-	_info.text = "Coins %d     Jackpot pot %d     Cost %d (%d lines x %d)" % [_coins, floori(_pot), cost(), _lines, _bet]
+	_info.text = "Chips %d     Jackpot pot %d     Cost %d (%d lines x %d)" % [_coins, floori(_pot), cost(), _lines, _bet]
 	_result.text = _message
 	for i in _bet_buttons.size():
 		_bet_buttons[i].button_pressed = int(_bets[i]) == _bet

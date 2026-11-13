@@ -291,7 +291,7 @@ func _console() -> void:
 	b.position = Vector3(0.5, 1.08, 0.1)
 	c.add_child(b)
 	var l := Label3D.new()
-	l.text = "LAUNCH  %d coins" % sim.ball_cost
+	l.text = "LAUNCH  %d chips" % sim.ball_cost
 	l.font_size = 48
 	l.pixel_size = 0.005
 	l.modulate = GOLD

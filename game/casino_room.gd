@@ -92,7 +92,7 @@ static func _vendor_sign(root: Node3D, center_z: float, kiosks: int) -> void:
 	title.position = Vector3(12.4, 4.65, center_z)
 	root.add_child(title)
 	var sub := Label3D.new()
-	sub.text = "random rolled guns - pay with coins - press F"
+	sub.text = "random rolled guns - pay with chips - press F"
 	sub.font_size = 48
 	sub.pixel_size = 0.006
 	sub.modulate = CYAN

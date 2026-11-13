@@ -34,9 +34,9 @@ var _rt_screen := RouletteScreen.new()
 # went there would leave them behind as orphans at exit.
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE:
-		for screen: Node in [_bj_screen, _rt_screen]:
-			if is_instance_valid(screen) and screen.get_parent() == null:
-				screen.free()
+		for screen: Variant in [_bj_screen, _rt_screen]:  # (Variant: at exit they may be freed already)
+			if is_instance_valid(screen) and (screen as Node).get_parent() == null:
+				(screen as Node).free()
 var _bj := Blackjack.new()
 var _current := ""  # "", "blackjack" or "roulette"
 var _bj_shown: Array[int] = [0, 0]
@@ -108,7 +108,7 @@ func open(which: String) -> void:
 	var refill: Dictionary = _cfg["free_refill"]
 	if _wallet.balance < int(refill["below"]):
 		_wallet.balance = int(refill["to"])
-		_hud.call("notice", "The casino tops you up to %d free coins." % _wallet.balance)
+		_hud.call("notice", "The casino tops you up to %d free chips." % _wallet.balance)
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if which == "blackjack":
@@ -199,7 +199,7 @@ func _on_action(action: String) -> void:
 			else:
 				refused = true
 	if refused:
-		_bj_update("Not enough coins for that.")
+		_bj_update("Not enough chips for that.")
 		return
 	if _bj.hands.size() != hands_before:
 		# split: re-lay both hands from the shoe
@@ -242,7 +242,7 @@ func _bj_finish() -> void:
 	_wallet.add(_bj.returned)
 	var net := _bj.returned - _bj.staked
 	var message := "  |  ".join(lines)
-	message += "     (%s%d coins)" % ["+" if net >= 0 else "", net]
+	message += "     (%s%d chips)" % ["+" if net >= 0 else "", net]
 	_bj_update(message, false)
 	_on_bj_bet_chosen(_bj_screen.current_bet())
 	round_finished.emit()

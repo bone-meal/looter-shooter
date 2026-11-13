@@ -1,4 +1,4 @@
-# Purpose: a casino kiosk that sells one kind of crate (a random rolled gun with a tier floor) for coins. Draws only; game_session handles the purchase.
+# Purpose: a casino kiosk that sells one kind of crate (a random rolled gun with a tier floor) for chips. Draws only; game_session handles the purchase.
 # Dependencies: none. Crate data comes from data/gun_loot.json `vendor`.
 extends Node3D
 
@@ -47,7 +47,7 @@ func _ready() -> void:
 	crate_box.position = Vector3(0.0, 1.45, 0.0)
 	add_child(crate_box)
 	var label := Label3D.new()
-	label.text = "%s\n%d coins\n[F] buy" % [crate["name"], int(crate["price"])]
+	label.text = "%s\n%d chips\n[F] buy" % [crate["name"], int(crate["price"])]
 	label.font_size = 36
 	label.pixel_size = 0.004
 	label.modulate = color

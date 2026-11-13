@@ -2,6 +2,8 @@
 # Dependencies: none.
 extends Control
 
+const ChipArt = preload("res://game/chip_art.gd")
+
 signal deal_requested(bet: int)
 signal action_requested(action: String)
 signal bet_changed(amount: int)  # chip picked before the deal (for the 3D table)
@@ -46,7 +48,7 @@ func setup(cfg: Dictionary) -> void:
 	v.add_theme_constant_override("separation", 6)
 	panel.add_child(v)
 	_info.add_theme_font_size_override("font_size", 20)
-	v.add_child(_info)
+	v.add_child(ChipArt.row(_info))
 	_totals.add_theme_font_size_override("font_size", 18)
 	v.add_child(_totals)
 	_result.add_theme_font_size_override("font_size", 22)
@@ -143,7 +145,7 @@ func _on_action(a: String) -> void:
 
 
 func _refresh() -> void:
-	_info.text = "Coins %d     Bet %d" % [_coins, _bet]
+	_info.text = "Chips %d     Bet %d" % [_coins, _bet]
 	_bet_row.visible = not _in_round
 	_action_row.visible = _in_round
 	for i in _bet_buttons.size():

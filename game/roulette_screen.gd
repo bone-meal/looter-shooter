@@ -2,6 +2,8 @@
 # Dependencies: core/roulette_rules.gd (colours and bet keys).
 extends Control
 
+const ChipArt = preload("res://game/chip_art.gd")
+
 const Roulette = preload("res://core/roulette_rules.gd")
 
 signal spin_requested(bets: Dictionary)
@@ -50,7 +52,7 @@ func setup(cfg: Dictionary) -> void:
 	v.add_theme_constant_override("separation", 5)
 	panel.add_child(v)
 	_info.add_theme_font_size_override("font_size", 18)
-	v.add_child(_info)
+	v.add_child(ChipArt.row(_info))
 	_result.add_theme_font_size_override("font_size", 22)
 	_result.add_theme_color_override("font_color", GOLD)
 	v.add_child(_result)
@@ -186,7 +188,7 @@ func _on_bet(key: String) -> void:
 	if _busy:
 		return
 	if total_bet() + _chip > mini(_coins, _table_max):
-		_result.text = "Not enough coins or table limit (%d) reached." % _table_max
+		_result.text = "Not enough chips or table limit (%d) reached." % _table_max
 		return
 	_bets[key] = int(_bets.get(key, 0)) + _chip
 	_order.append([key, _chip])
@@ -222,7 +224,7 @@ func _on_spin() -> void:
 
 
 func _refresh() -> void:
-	_info.text = "Coins %d     On the table %d (max %d)" % [_coins, total_bet(), _table_max]
+	_info.text = "Chips %d     On the table %d (max %d)" % [_coins, total_bet(), _table_max]
 	for i in _chip_buttons.size():
 		_chip_buttons[i].button_pressed = int(_chips[i]) == _chip
 		_chip_buttons[i].disabled = _busy

@@ -6,6 +6,7 @@
 # game/chalk_marks.gd. game/game_session.gd sets `player`, the round, `enemies_left`, `party`, `wave_text`, `boss_ratio`.
 extends Control
 
+const ChipArt = preload("res://game/chip_art.gd")
 const ChalkMarks = preload("res://game/chalk_marks.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const Player = preload("res://game/player.gd")
@@ -54,7 +55,7 @@ var boss_ratio := -1.0
 var notice_text := ""  # short pickup message, fades after a few seconds (see notice())
 var level := 0  # player level (0 = hidden) and progress to the next
 var xp_ratio := 0.0
-var coins := -1  # casino coins; -1 = hidden
+var coins := -1  # casino chips (saved as "coins"); -1 = hidden
 var prompt_text := ""  # interaction prompt shown near the crosshair, e.g. "[F] Enter"
 var round_number := 0  # the island round or the colosseum wave being fought; 0 = hidden
 var round_of := 0  # the colosseum: how many waves there are ("3 / 8"); 0 = endless rounds, shown as tallies
@@ -458,8 +459,7 @@ func _draw_holsters(view: Vector2) -> void:
 
 func _draw_top(view: Vector2) -> void:
 	if coins >= 0:
-		draw_circle(Vector2(view.x - 150.0, 26.0), 10.0, Color(1.0, 0.8, 0.25))
-		draw_arc(Vector2(view.x - 150.0, 26.0), 6.0, 0.0, TAU, 16, Color(0.7, 0.5, 0.1), 2.0)
+		ChipArt.draw(self, Vector2(view.x - 150.0, 26.0), 10.0)
 		draw_string(_font, Vector2(view.x - 134.0, 33.0), "%d" % coins, HORIZONTAL_ALIGNMENT_LEFT, 120, 20, WHITE)
 	if level > 0:
 		draw_string(_font, Vector2(view.x - 150.0, 62.0), "LV %d" % level, HORIZONTAL_ALIGNMENT_LEFT, 60, 16, WHITE)

@@ -153,11 +153,11 @@ func _give(args: Array) -> String:
 			var left: int = player.inventory.add(item, count)
 			session.refresh_after_command()
 			return "Gave %d x %s." % [count - left, player.items.item_name(item)]
-		"coins":
+		"coins", "chips":
 			if args.size() < 2 or not String(args[1]).is_valid_int():
-				return "/give coins <amount>"
+				return "/give chips <amount>"
 			session.wallet().add(maxi(String(args[1]).to_int(), 0))
-			return "You have %d coins." % session.wallet().balance
+			return "You have %d chips." % session.wallet().balance
 		"ammo":
 			player.pools.fill_all()
 			return "Every ammo pool is full."
