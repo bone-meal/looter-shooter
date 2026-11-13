@@ -235,4 +235,6 @@ Run data validator:
 
 ## Card game "You got me Lobster?" (design: diary/DECISIONS_TCG.md, build log: diary/TCG_PROGRESS.md)
 - Pure rules (core/tcg/, no rendering): card_db.gd (data/tcg/rules.json, keywords.json, cards.json, leaders.json by string id; `problems()`, `deck_problem()`, `pick_of()`), match_state.gd (one match: coin toss, mulligan, turns, mana 1-8, intents play / attack / power / end_turn / concede refused with a reason, the 12 keywords, traps, fatigue, burn, seeded RNG, event log `take_log()`; target code = creature uid or HERO - side for a leader), effects.gd (effect runner: damage, heal, draw, summon, buff, give, destroy, mana, crystal, bounce, add, roll, flip; targets; "per" counts). Check: tools/tcg_rules_check.
+- AI: core/tcg/ai_player.gd (`mulligan`, `next_move`, `take_turn`, `do_move`; one difficulty: dearest playable card, removal on what it kills, good trades, breaks Guards together, face when nothing better / lethal, hero power with spare mana). Simulator: tools/tcg_sim (every pair of data/tcg/starters.json, 400 games each, win rates and the going-first edge).
+- Data: data/tcg/cards.json (cards + tokens + lucky_chip, format in its _about), leaders.json (the 10 leaders and their hero powers), starters.json (starter decks; first slice Tide + Crypt).
 

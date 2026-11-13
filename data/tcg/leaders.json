@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "_about": "The 10 faction leaders (locked: 2 per faction; extra cards pulled from packs, each starter deck holds its own). A leader is the deck's hero (data/tcg/rules.json hero_health unless health is given) with a hero power: 2 mana, once a turn; power.effects use the same effect words as cards with when = power. Names of the powers and their effects are MINE (the director edits).",
+ "leaders": {
+  "tide_brute": {"name": "Tide Brute", "faction": "tide", "power": {"name": "Undertow", "text": "Summon a 1/1 Drowned Spawn.", "effects": [{"when": "power", "do": "summon", "card": "drowned_spawn"}]}},
+  "crab_queen": {"name": "The Crab Queen", "faction": "tide", "power": {"name": "Hardened Shell", "text": "Give a friendly creature Plated.", "effects": [{"when": "power", "do": "give", "keyword": "plated", "to": "pick_friendly_creature"}]}},
+  "warlord": {"name": "The Warlord", "faction": "waste", "power": {"name": "Open Fire", "text": "Deal 1 damage to anything.", "effects": [{"when": "power", "do": "damage", "amount": 1, "to": "pick_any"}]}},
+  "butcher": {"name": "The Butcher", "faction": "waste", "power": {"name": "Meat Hook", "text": "Deal 2 damage to a creature.", "effects": [{"when": "power", "do": "damage", "amount": 2, "to": "pick_creature"}]}},
+  "clockwork_bear": {"name": "The Clockwork Bear", "faction": "crypt", "power": {"name": "Rewind", "text": "Give a friendly creature +2 health.", "effects": [{"when": "power", "do": "buff", "health": 2, "to": "pick_friendly_creature"}]}},
+  "skeleton_king": {"name": "The Skeleton King", "faction": "crypt", "power": {"name": "Raise Bones", "text": "Summon a 1/1 Bone Rattler with Guard.", "effects": [{"when": "power", "do": "summon", "card": "bone_rattler"}]}},
+  "mirren": {"name": "Mirren", "faction": "aurelind", "power": {"name": "Study", "text": "Draw a card. Your leader takes 2 damage.", "effects": [{"when": "power", "do": "draw", "amount": 1}, {"when": "power", "do": "damage", "amount": 2, "to": "own_hero"}]}},
+  "slime_king": {"name": "The Slime King", "faction": "aurelind", "power": {"name": "Ooze", "text": "Give a friendly creature +1/+1.", "effects": [{"when": "power", "do": "buff", "attack": 1, "health": 1, "to": "pick_friendly_creature"}]}},
+  "cherry": {"name": "Cherry", "faction": "club", "power": {"name": "Deal Me In", "text": "Roll a die. 1-3: deal 2 damage to a random enemy. 4-6: draw a card.", "effects": [{"when": "power", "do": "roll", "sides": 6, "low": [{"do": "damage", "amount": 2, "to": "random_enemy"}], "high": [{"do": "draw", "amount": 1}]}]}},
+  "dj": {"name": "The DJ", "faction": "club", "power": {"name": "Hype", "text": "Give a random friendly creature +1/+1.", "effects": [{"when": "power", "do": "buff", "attack": 1, "health": 1, "to": "random_friendly_creature"}]}}
+ }
+}

@@ -1,8 +1,8 @@
-Card game step 3: the rules engine
+Card game step 4: the computer opponent and the simulator
 
-- core/tcg/card_db.gd, match_state.gd, effects.gd: pure rules of You got me Lobster? (coin toss, mulligan, mana 1 to 8, play, attack, hero power, end turn, concede, the 12 keywords, traps, fatigue, burn, seeded randomness, event log)
-- data/tcg/rules.json and keywords.json
-- tools/tcg_rules_check: 36 checks with a small test card set
+- core/tcg/ai_player.gd: one difficulty for the House Dealer and the simulator (mulligan, dearest playable card, removal, trades, breaks Guards together, lethal)
+- tools/tcg_sim: the AI plays every pair of starter decks 400 times and reports win rates and the going-first edge
+- data/tcg/leaders.json (the 10 leaders and hero powers), cards.json (first slice: the Tide and Crypt starters, tokens, Lucky Chip), starters.json
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

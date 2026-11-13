@@ -1,0 +1,8 @@
+{
+ "version": 1,
+ "_about": "The starter decks (locked: 5, one per faction, built as a ring; a new player picks one + 3 packs; sold at the machine for 2 000 chips). Each: name, leader (data/tcg/leaders.json), style, 20 cards. FIRST SLICE: Tide and Crypt only (the first playable); the other three come with the full card set.",
+ "starters": {
+  "tide": {"name": "Rising Tide", "leader": "tide_brute", "style": "swarm aggro", "cards": ["drowned_deckhand", "drowned_deckhand", "brine_runner", "brine_runner", "harbor_gull", "harbor_gull", "reef_crab", "reef_crab", "drowned_sailor", "drowned_sailor", "tide_caller", "tide_caller", "shell_bash", "shell_bash", "rising_tide", "rising_tide", "barnacled_brute", "barnacled_brute", "crawler_mother", "crawler_mother"]},
+  "crypt": {"name": "Bones and Brass", "leader": "clockwork_bear", "style": "value control", "cards": ["restless_bones", "restless_bones", "brass_beetle", "brass_beetle", "skeleton_archer", "skeleton_archer", "clockwork_sentry", "clockwork_sentry", "tighten_springs", "tighten_springs", "skeleton_swordsman", "skeleton_swordsman", "oil_and_bone", "oil_and_bone", "mainspring_golem", "mainspring_golem", "final_rest", "final_rest", "crypt_keeper", "crypt_keeper"]}
+ }
+}
