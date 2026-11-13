@@ -1,0 +1,78 @@
+{
+ "version": 1,
+ "_about": "The ten hidden songs (core/song_book.gd, game/song_floats.gd). Each secret is three small glass fishing floats lying on the islands ([x, z] from that island's middle); shooting all three of one secret plays its song and unlocks it for the character for good (saved). Song n is the n-th file, by name, in `folder`: the director drops MP3 files named \"Artist - Title.mp3\" there (the game shows the part before \" - \" as the artist and the rest as the title). A secret whose file is missing tells so instead of playing. The club's jukebox plays every unlocked song. volume in decibels.",
+ "folder": "res://assets/music",
+ "volume": -6,
+ "secrets": [
+  {
+   "things": [
+    {"island": "home", "at": [-9.2, 18.4]},
+    {"island": "wreck", "at": [-7.2, -10.1]},
+    {"island": "painter", "at": [-14.7, -3.4]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "painter", "at": [-17.2, 8.9]},
+    {"island": "gull", "at": [6.5, 6.5]},
+    {"island": "shoal", "at": [-9.7, -11.6]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "shoal", "at": [-13.9, 4.2]},
+    {"island": "home", "at": [1.0, 27.7]},
+    {"island": "wreck", "at": [12.7, -1.6]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "wreck", "at": [-16.3, 9.2]},
+    {"island": "painter", "at": [9.4, 13.3]},
+    {"island": "home", "at": [2.5, -27.6]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "gull", "at": [6.8, -6.8]},
+    {"island": "shoal", "at": [11.0, -17.3]},
+    {"island": "home", "at": [-28.9, 4.7]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "home", "at": [-21.0, -27.8]},
+    {"island": "wreck", "at": [6.3, -12.9]},
+    {"island": "painter", "at": [8.3, -17.9]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "painter", "at": [-2.8, 15.3]},
+    {"island": "home", "at": [-20.9, 25.6]},
+    {"island": "shoal", "at": [1.7, 16.1]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "shoal", "at": [17.3, -5.3]},
+    {"island": "home", "at": [22.9, 17.4]},
+    {"island": "wreck", "at": [3.4, 12.8]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "wreck", "at": [-12.9, -2.3]},
+    {"island": "painter", "at": [15.3, -4.3]},
+    {"island": "gull", "at": [-8.9, -8.8]}
+   ]
+  },
+  {
+   "things": [
+    {"island": "home", "at": [14.1, -22.0]},
+    {"island": "shoal", "at": [11.8, 15.4]},
+    {"island": "wreck", "at": [13.7, 14.8]}
+   ]
+  }
+ ]
+}

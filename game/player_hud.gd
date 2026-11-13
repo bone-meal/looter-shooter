@@ -45,6 +45,7 @@ const POWER_BOX := Vector2(176.0, 38.0)  # one running power-up above the holste
 var player: CharacterBody3D
 var wave_text := ""
 var blind := false  # a colosseum modifier: no holster bar and no ammo counter
+var quest_text := ""  # the main quest's tracker (top left; "" = hidden)
 var cigarette := -1.0  # 0..1 of the lit cigarette left (-1 = none worn): a thin bar under the health ring
 var cigarette_warn := false  # nearly burnt out: the bar is red
 var show_speed := false  # ground speed in Source units under the crosshair (on with the debug HUD)
@@ -166,6 +167,11 @@ func _draw() -> void:
 	_draw_weapons(view)
 	_draw_points(view)
 	_draw_top(view)
+	if quest_text != "":
+		var lines := quest_text.split("\n")
+		draw_string(_font, Vector2(MARGIN, 96.0), lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.6, 0.85, 1.0))
+		if lines.size() > 1:
+			draw_string(_font, Vector2(MARGIN, 116.0), lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.6, 0.85, 1.0, 0.75))
 
 
 # The round in the bottom left corner, in red chalk: tallies up to 5, then a number; the colosseum shows "3 / 8".

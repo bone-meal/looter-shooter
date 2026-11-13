@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "_about": "The islands' main quest (core/quest_state.gd decides, game/quest_things.gd shows its things). Every word the player reads is in data/zombies/writing/quest.txt, one [step <id>] section per step here. Steps run in order; the whole party shares one quest and the host decides; game over starts it again from the first step. A step's kind says what finishes it: use = interact at its spot (island + [x, z] from that island's middle); power = the islands' power is on; kills = `count` enemies die within `radius` metres of its spot; shoot = every lamp in `spots` is shot (each [x, z] from its island's middle and `height` metres up a post); build = the buildable `thing` (data/buildables.json) is built; boss = the enemy `enemy` (data/enemies.json) comes out of the sea at its spot, as strong as an island boss `rounds_ahead` rounds after the round being fought, and dies. reward: `unique` = a hand-made unique of data/gun_uniques.json for every player on the islands (\"any\" = a random one), `points` to everybody there. reach = metres to a `use` spot.",
+  "reach": 2.6,
+  "steps": [
+    {"id": "log", "kind": "use", "island": "home", "at": [-26.0, -18.0]},
+    {"id": "power", "kind": "power"},
+    {"id": "jars", "kind": "kills", "island": "wreck", "at": [-12.0, -14.0], "radius": 8.0, "count": 15},
+    {"id": "lamps", "kind": "shoot", "spots": [
+      {"island": "painter", "at": [-14.0, 14.0], "height": 3.2},
+      {"island": "shoal", "at": [18.0, 10.0], "height": 3.2},
+      {"island": "home", "at": [33.0, -8.0], "height": 3.2}
+    ]},
+    {"id": "boat", "kind": "build", "thing": "boat"},
+    {"id": "bell", "kind": "use", "island": "gull", "at": [0.0, 6.0]},
+    {"id": "warden", "kind": "boss", "enemy": "boss_tyrant", "island": "gull", "at": [0.0, -5.0], "rounds_ahead": 10}
+  ],
+  "reward": {"unique": "any", "points": 5000}
+}

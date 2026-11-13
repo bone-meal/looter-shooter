@@ -70,6 +70,13 @@ const BoatRules = preload("res://core/boat_rules.gd")
 const ColosseumRules = preload("res://core/colosseum_rules.gd")
 const ColosseumBoard = preload("res://game/colosseum_board.gd")
 const CigaretteState = preload("res://core/cigarette_state.gd")
+const QuestState = preload("res://core/quest_state.gd")
+const QuestThings = preload("res://game/quest_things.gd")
+const SongBook = preload("res://core/song_book.gd")
+const SongFloats = preload("res://game/song_floats.gd")
+const Jukebox = preload("res://game/jukebox.gd")
+const JukeboxMenu = preload("res://game/jukebox_menu.gd")
+const TextBook = preload("res://core/text_book.gd")
 const Boat = preload("res://game/boat.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
@@ -80,6 +87,8 @@ const Scoreboard = preload("res://game/scoreboard.gd")
 
 const HUD_REFRESH := 0.25
 const ARENA_SPAWN := Vector3(0, 0.1, 10)
+const JUKEBOX_AT := Vector3(-8.8, 0.0, 0.3)  # in the club, from its middle: by the left wall, between the bar and the front wall
+const JUKEBOX_YAW := -PI * 0.5  # its front (-Z) toward the middle of the room
 const PAINTING_RANGE := 4.5
 const REWARD_RANGE := 3.0
 const CROW_RANGE := 6.0
@@ -223,6 +232,18 @@ var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data
 var _board := ColosseumBoard.new()  # the ticket board at the painting
 var _run_ticket := 0  # the ticket of the colosseum run we are in
 var _run_mods := PackedStringArray()  # and its modifiers
+var _quest := QuestState.new()  # the islands' main quest (data/zombies/quest.json + writing/quest.txt)
+var _quest_things := QuestThings.new()
+var _quest_text_problems := PackedStringArray()  # shown once the HUD exists
+var _quest_spots := {}  # step id -> Vector2 on the land's map (use, kills and boss steps)
+var _lamp_spots: Array[Vector3] = []  # the shoot step's lamps, world positions (their tops)
+var _songs := SongBook.new()  # the hidden songs (data/zombies/songs.json)
+var _song_floats := SongFloats.new()
+var _song_spots: Array = []  # [secret][thing] -> world position
+var _music := AudioStreamPlayer.new()  # the song playing (a found one, or the jukebox)
+var _music_secret := -1
+var _jukebox: Node3D  # in the club, made with its inside
+var _jukebox_menu := JukeboxMenu.new()
 var _smoke := CigaretteState.new()  # the burn of the cigarette being smoked (data/cigarette.json)
 var _run_fx := {}  # what those modifiers change (core/colosseum_rules.gd `effects`), {} outside a run
 var _fuse_wave := 0  # Short Fuse: the wave whose clock runs, the seconds it has left, and whether its late pack came
@@ -304,6 +325,26 @@ func _ready() -> void:
 	_boat_start_yaw = _toward_middle(_boat_start)  # that turns -Z, the bow, away from the island
 	_boat.place(_boat_start, _boat_start_yaw)
 	_boat_node.setup(boat_cfg)
+	_quest.setup(DataStore.load_json("res://data/zombies/quest.json"), TextBook.read_files(PackedStringArray(["res://data/zombies/writing/quest.txt"])))
+	for entry: Dictionary in _quest.steps():
+		if entry.has("at"):
+			_quest_spots[String(entry["id"])] = _land.on_island(String(entry["island"]), entry["at"])
+			_land.keep_clear.append(_quest_spots[String(entry["id"])])
+		for lamp: Dictionary in entry.get("spots", []):
+			var foot := _land.on_island(String(lamp["island"]), lamp["at"])
+			_land.keep_clear.append(foot)
+			_lamp_spots.append(_flat(foot) + Vector3(0, float(lamp["height"]), 0))
+	var song_cfg: Dictionary = DataStore.load_json("res://data/zombies/songs.json")
+	_songs.setup(song_cfg)
+	for secret: Dictionary in song_cfg["secrets"]:
+		var row: Array = []
+		for thing: Dictionary in secret["things"]:
+			var foot := _land.on_island(String(thing["island"]), thing["at"])
+			_land.keep_clear.append(foot)
+			row.append(_flat(foot) + Vector3(0, 0.12, 0))
+		_song_spots.append(row)
+	if DirAccess.dir_exists_absolute(String(song_cfg["folder"])):
+		_songs.set_files(ResourceLoader.list_directory(String(song_cfg["folder"])))
 	var box_cfg: Dictionary = DataStore.load_json("res://data/mystery_box.json")
 	_box = MysteryBox.new(box_cfg, _rng)
 	for place: Dictionary in box_cfg["spots"]:
@@ -351,6 +392,19 @@ func _ready() -> void:
 		sites.append({"id": _builds.ids[thing], "parts": spots, "bench": _flat(_build_benches[thing]), "yaw": _toward_middle(_build_benches[thing])})
 	_build_site.setup(sites)
 	add_child(_build_site)
+	var quest_places := {"lamps": _lamp_spots}
+	for id: String in ["log", "jars", "bell"]:
+		if _quest_spots.has(id):
+			quest_places[id] = _flat(_quest_spots[id])
+	_quest_things.setup(quest_places, _on_lamp_shot)
+	add_child(_quest_things)
+	_song_floats.setup(_song_spots, _on_float_shot)
+	add_child(_song_floats)
+	_music.volume_db = float(song_cfg.get("volume", -6.0))
+	add_child(_music)
+	for problem: String in _quest.text_problems():  # the writers' file: say what it is missing
+		push_warning(problem)
+		_quest_text_problems.append(problem)
 	add_child(_boat_node)
 	_show_builds()
 	add_child(_box_node)
@@ -471,6 +525,13 @@ func _ready() -> void:
 	_board.chosen.connect(_on_ticket_chosen)
 	_board.closed.connect(_close_board)
 	custom_layer.add_child(_board)
+	_jukebox_menu.picked.connect(func(secret: int) -> void: _play_song(secret))
+	_jukebox_menu.stopped.connect(func() -> void:
+		_music.stop()
+		_music_secret = -1
+		_close_jukebox())
+	_jukebox_menu.closed.connect(_close_jukebox)
+	custom_layer.add_child(_jukebox_menu)
 	_trade_screen.setup(_player.inventory, _player.items, _player.gun_db)
 	_slot_screen.setup(_slot_data)
 	_slot_screen.spin_requested.connect(_on_slot_spin)
@@ -558,6 +619,10 @@ func _ready() -> void:
 		net.rounds.build_near = _build_thing_at
 		net.rounds.build_bits.connect(_on_build_bits)
 		net.rounds.boat_near = _near_boat
+		net.rounds.quest = _quest
+		net.rounds.quest_near = _quest_fits
+		net.rounds.quest_asked.connect(func(_peer: int, action: String, index: int) -> void: _quest_do(action, index))
+		net.rounds.quest_told.connect(_on_quest_told)
 		net.rounds.painting_near = func(at: Vector3) -> bool: return at.distance_to(_painting) <= PAINTING_RANGE + 1.5
 		net.rounds.run_asked.connect(func(peer: int, ticket: int, mods: PackedStringArray) -> void:
 			_start_run(ticket, mods, peer)
@@ -591,6 +656,9 @@ func _ready() -> void:
 		if net.is_active():
 			_build_fantasy()
 	apply_settings()
+	_show_quest()
+	for problem: String in _quest_text_problems:  # the writers' quest file is missing something: say what
+		_chat.add_line(problem, Color(1.0, 0.6, 0.4))
 
 
 func apply_settings() -> void:
@@ -613,7 +681,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _flight_t >= 0.0:
 		return
@@ -649,6 +717,9 @@ func close_inventory() -> bool:
 		return true
 	if _board.visible:
 		_close_board()
+		return true
+	if _jukebox_menu.visible:
+		_close_jukebox()
 		return true
 	if _trade_screen.visible:  # Esc = cancel the trade
 		net.trade.cancel()
@@ -1085,6 +1156,7 @@ func _load_profile() -> void:
 		_player.pools.from_dict(extra.get("ammo"))
 		_best_round = maxi(int(extra.get("best_round", 0)), 0)
 		_smoke.left = clampf(float(extra.get("cigarette_left", 0.0)), 0.0, _smoke.full())
+		_songs.from_list(extra.get("songs"))
 		_bank.from_dict(extra.get("bank"), _player.inventory)
 		var lying: Variant = extra.get("pack")
 		if lying is Dictionary and lying.get("at") is Array and (lying["at"] as Array).size() == 3 and InventoryState.bundle_size(lying) > 0:
@@ -1131,7 +1203,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list()}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1171,7 +1243,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or _games.is_open() or _flight_t >= 0.0:
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or _games.is_open() or _flight_t >= 0.0:
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1187,6 +1259,10 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	if _quest_use_here() != "":
+		return "[%s] %s" % [key, _quest.line(_quest_use_here(), "what") if _quest.step > 0 else "Look at the book in the sand"]
+	if _jukebox != null and _near(_jukebox.global_position, Jukebox.REACH):
+		return "[%s] The jukebox" % key
 	if _boat_here():
 		if _boat.aboard() >= _boat.seats.size():
 			return "The %s is full." % String(_boat.cfg["name"])
@@ -1308,6 +1384,10 @@ func _interact() -> void:
 	elif _time < _trade_ask_until:
 		_trade_ask_until = 0.0
 		net.trade.answer(true)
+	elif _quest_use_here() != "":
+		_quest_try("use", 0)
+	elif _jukebox != null and _near(_jukebox.global_position, Jukebox.REACH):
+		_open_jukebox()
 	elif _boat_here():
 		_board_boat()
 	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
@@ -1611,6 +1691,16 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())
 	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave
 		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony"))
+	if island_kill and _quest_host():  # the main quest: its boss, or a kill by the brine jars
+		if _director.last_killed.has_meta("quest_boss") and _quest.boss_killed():
+			_quest_advance()
+		elif _quest.kind() == "kills" and Vector2(where.x - Island.CENTER.x, where.z - Island.CENTER.z).distance_to(_quest_spots[String(_quest.current()["id"])]) <= float(_quest.current()["radius"]):
+			if _quest.killed_near():
+				_quest_advance()
+			else:
+				_show_quest()
+				if net != null:
+					net.rounds.tell_quest(_quest.to_dict(), -1)
 	if island_kill and _rounds.active and (enemy_id.begins_with("boss") or not _blasting):  # alone or hosting: maybe a power-up, always from a boss
 		var power := _powerups.roll_drop(_rng, enemy_id.begins_with("boss"), _perks.num("power_drop_mult", 1.0))
 		if power != "":
@@ -2222,6 +2312,8 @@ func _close_debris() -> void:
 	_second_wind_used = false
 	_self_revive_at = -1.0
 	_builds.reset()
+	_quest.reset()
+	_show_quest()
 	if _seat >= 0:
 		_put_ashore()
 	_boat.empty()
@@ -2336,6 +2428,8 @@ func _on_power_bits(bits: int) -> void:
 # Shows the new state; `what` = what just happened (a part's number, SWITCH = it went on, -1 = nothing to tell).
 func _power_changed(what: int) -> void:
 	_show_power()
+	if _power.on and _quest_host() and _quest.power_is_on(true):
+		_quest_advance()
 	if what < 0 or not _island_side():
 		return
 	if what == NetRounds.SWITCH:
@@ -2406,6 +2500,9 @@ func _on_build_bits(bits: int) -> void:
 # Shows the new state; `code` = what just happened (a part found, a thing built; -1 = nothing to tell).
 func _builds_changed(code: int) -> void:
 	_show_builds()
+	for thing in _builds.ids.size():
+		if _builds.built(thing) and _quest_host() and _quest.built(_builds.ids[thing]):
+			_quest_advance()
 	if code < 0 or not _island_side():
 		return
 	var thing := BuildState.thing_of(code)
@@ -2982,6 +3079,203 @@ func _clear_powers() -> void:
 	_power_field.clear()
 
 
+# --- the main quest (core/quest_state.gd decides; texts in data/zombies/writing/quest.txt) ---
+
+# Alone or hosting: this machine decides the quest. A client tells the host and shows what it hears back.
+func _quest_host() -> bool:
+	return net == null or not net.rounds.is_client()
+
+
+# The use step whose spot our player stands at ("" = none).
+func _quest_use_here() -> String:
+	if not _island_side() or _quest.kind() != "use":
+		return ""
+	var id := String(_quest.current()["id"])
+	var spot := Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z)
+	return id if spot.distance_to(_quest_spots[id]) <= float(_quest.cfg["reach"]) else ""
+
+
+# Host: does that spot fit a client's claim? (use: at the step's spot; lamp: within a long shot of it)
+func _quest_fits(at: Vector3, action: String, index: int) -> bool:
+	var spot := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
+	if action == "use" and _quest.kind() == "use":
+		return spot.distance_to(_quest_spots[String(_quest.current()["id"])]) <= float(_quest.cfg["reach"]) + 1.5
+	if action == "lamp" and index >= 0 and index < _lamp_spots.size():
+		return at.distance_to(_lamp_spots[index]) <= 120.0
+	return false
+
+
+# Something we did for the quest: decide it (alone / host) or ask the host.
+func _quest_try(action: String, index: int) -> void:
+	if _quest_host():
+		_quest_do(action, index)
+	else:
+		net.rounds.ask_quest(action, index)
+
+
+func _quest_do(action: String, index: int) -> void:
+	match action:
+		"use":
+			if _quest.kind() == "use" and _quest.used(String(_quest.current()["id"])):
+				_quest_advance()
+		"lamp":
+			if _quest.lamp_out(index):
+				_quest_advance()
+			else:
+				_show_quest()
+				if net != null:
+					net.rounds.tell_quest(_quest.to_dict(), -1)
+
+
+func _on_lamp_shot(index: int) -> void:
+	if _island_side() and _quest.kind() == "shoot" and not _quest.shot[index]:
+		_sounds.call("play", "secret_clink")
+		_quest_try("lamp", index)
+
+
+# Host: the step is done. Everybody hears of it.
+func _quest_advance() -> void:
+	var finished := _quest.step
+	_quest.advance()
+	_on_quest_told(_quest.to_dict(), finished)
+	if net != null:
+		net.rounds.tell_quest(_quest.to_dict(), finished)
+
+
+# The quest as it now is; `news` = the step just finished (its done line, then the next step's lines), -1 = none.
+func _on_quest_told(state: Dictionary, news: int) -> void:
+	var was := _quest.step
+	_quest.from_dict(state)
+	_show_quest()
+	if news < 0 or news >= _quest.steps().size() or not _island_side():
+		return
+	var old_id := String(_quest.steps()[news]["id"])
+	_sounds.call("play", "quest_step")
+	if news == 0:
+		_player_hud.callout(_quest.quest_line("name"), Color(0.55, 0.85, 1.0))
+	_player_hud.notice(_quest.line(old_id, "done"))
+	if _quest.done():
+		_quest_reward()
+		return
+	if was != _quest.step:
+		var next := String(_quest.current()["id"])
+		for said: String in _quest.says(next):
+			var who := _quest.line(next, "who")
+			_chat.add_line(said if who == "" else "%s: %s" % [who, said], Color(0.6, 0.85, 1.0))
+
+
+# The quest is done: every player on the islands gets the reward on his own machine.
+func _quest_reward() -> void:
+	var reward: Dictionary = _quest.cfg.get("reward", {})
+	_chat.add_line(_quest.quest_line("finished"), Color(1.0, 0.85, 0.45))
+	_player_hud.callout(_quest.quest_line("name"), Color(1.0, 0.85, 0.45))
+	_score.give(int(reward.get("points", 0)))
+	var which := String(reward.get("unique", ""))
+	if which == "any":
+		var ids: Array = _player.gun_db.uniques.keys()
+		which = String(ids[_rng.randi_range(0, ids.size() - 1)]) if not ids.is_empty() else ""
+	if which != "":
+		var gun := GunGen.unique(_player.gun_db, which)
+		if not gun.is_empty():
+			_field.spawn(gun, _player.global_position + Vector3(0, 0, -1.2))
+			_player_hud.notice("%s  %s" % [_quest.quest_line("reward"), GunStats.display_name(_player.gun_db, gun)])
+	save_profile()
+
+
+# Every frame: the boss step sends its enemy once somebody of the party stands near its spot (host).
+func _run_quest() -> void:
+	if _quest.kind() != "boss" or _quest.boss_out or not _quest_host() or not _rounds.active:
+		return
+	var id := String(_quest.current()["id"])
+	var spot: Vector2 = _quest_spots[id]
+	for body: Node3D in _island_bodies():
+		if Vector2(body.global_position.x - Island.CENTER.x, body.global_position.z - Island.CENTER.z).distance_to(spot) < 14.0:
+			_quest.boss_out = true
+			_rounds.send_at(String(_quest.current()["enemy"]), _flat(spot) + Vector3(0, 0.2, 0), maxi(_island_round(), 1) + int(_quest.current().get("rounds_ahead", 0)))
+			for said: String in _quest.says(id):
+				var who := _quest.line(id, "who")
+				_chat.add_line(said if who == "" else "%s: %s" % [who, said], Color(1.0, 0.5, 0.45))
+			if net != null:
+				net.rounds.tell_quest(_quest.to_dict(), -1)
+			return
+
+
+# The tracker line at the top left and the quest's things (jars, lamps). Hidden until the first step is done.
+func _show_quest() -> void:
+	var fill := 0.0
+	if _quest.kind() == "kills":
+		fill = float(_quest.count) / float(_quest.current()["count"])
+	elif _quest.step > _quest_step_of("jars"):
+		fill = 1.0
+	var lamps: Array = _quest.shot if _quest.kind() == "shoot" else ([true, true, true] if _quest.step > _quest_step_of("lamps") else [])
+	_quest_things.show_state(fill, lamps, _quest.kind() == "shoot")
+	if _quest.step <= 0 or _quest.done():
+		_player_hud.quest_text = ""
+		return
+	var id := String(_quest.current()["id"])
+	var extra := ""
+	if _quest.kind() == "kills":
+		extra = "  (%d / %d)" % [_quest.count, int(_quest.current()["count"])]
+	elif _quest.kind() == "shoot":
+		extra = "  (%d / %d)" % [_quest.shot.count(true), _quest.shot.size()]
+	_player_hud.quest_text = "%s: %s%s\n%s" % [_quest.quest_line("name"), _quest.line(id, "what"), extra, _quest.line(id, "where")]
+
+
+func _quest_step_of(id: String) -> int:
+	for i in _quest.steps().size():
+		if String(_quest.steps()[i]["id"]) == id:
+			return i
+	return 99
+
+
+# --- the hidden songs (core/song_book.gd decides; data/zombies/songs.json; the files in its folder) ---
+
+func _on_float_shot(secret: int, thing: int) -> void:
+	if _songs.is_shot(secret, thing):
+		return
+	_sounds.call("play", "secret_clink")
+	if not _songs.shoot(secret, thing):
+		_song_floats.show_shot(secret, thing, true)
+		return
+	_song_floats.show_secret(secret, false)
+	save_profile()
+	_play_song(secret)
+
+
+# Plays secret n's song (or says that its file is missing).
+func _play_song(secret: int) -> void:
+	var song := _songs.song(secret)
+	if song.is_empty():
+		_player_hud.notice("Hidden song %d found! (No song file for it yet: put \"Artist - Title.mp3\" files into %s.)" % [secret + 1, String(_songs.cfg["folder"])])
+		return
+	var stream: AudioStream = load(String(_songs.cfg["folder"]).path_join(String(song["file"])))
+	if stream == null:
+		_player_hud.notice("Hidden song %d: %s could not be read." % [secret + 1, String(song["file"])])
+		return
+	_music.stream = stream
+	_music.play()
+	_music_secret = secret
+	var artist := String(song["artist"])
+	_player_hud.callout(String(song["title"]) if artist == "" else "%s - %s" % [artist, String(song["title"])], Color(0.65, 1.0, 0.75))
+
+
+func _open_jukebox() -> void:
+	var list: Array = []
+	for secret: int in _songs.unlocked:
+		var song := _songs.song(secret)
+		if not song.is_empty():
+			list.append({"secret": secret, "artist": song["artist"], "title": song["title"]})
+	_jukebox_menu.open(list, _music_secret if _music.playing else -1, _songs.unlocked.size(), _songs.secret_count())
+	_player.controls_enabled = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+func _close_jukebox() -> void:
+	_jukebox_menu.close()
+	_player.controls_enabled = true
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+
+
 # --- the cigarette (core/cigarette_state.gd decides; data/cigarette.json) ---
 
 # Every frame: a worn cigarette burns while we are on the gun side (the islands, the colosseum; not the club, the
@@ -3131,6 +3425,11 @@ func _build_club() -> void:
 		m.finished.connect(_on_slot_finished)
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
 	(_casino["blackjack"] as Node3D).connect("changed", func(op: String, args: Array) -> void: table_event.emit(op, args))
+	_jukebox = Jukebox.new()
+	_jukebox.position = ClubIsland.CENTER + JUKEBOX_AT
+	_jukebox.rotation.y = JUKEBOX_YAW
+	add_child(_jukebox)
+	_club_parts.append(_jukebox)
 	LoadClock.mark("club inside and casino")
 	if loading != null:
 		loading.call("finish")
@@ -3188,6 +3487,7 @@ func _process(delta: float) -> void:
 	_run_weather(delta)
 	_run_boat(delta)
 	_run_cigarette(delta)
+	_run_quest()
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:

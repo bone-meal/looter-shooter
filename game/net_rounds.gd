@@ -26,6 +26,8 @@ signal window_set(window: int, boards: int)  # on a client (and on the host afte
 signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
 signal run_asked(peer: int, ticket: int, modifiers: PackedStringArray)  # on the host: a client standing at the colosseum painting buys a run
 signal run_started(ticket: int, modifiers: PackedStringArray, buyer: int)  # on a client: the party goes into the colosseum; `buyer` pays
+signal quest_asked(peer: int, action: String, index: int)  # on the host: a client did something for the main quest (it stood there: checked)
+signal quest_told(state: Dictionary, news: int)  # on a client: the quest as the host has it; news = the step that was just finished (-1 = none)
 signal seat_asked(peer: int, aboard: bool)  # on the host: a client standing by the boat wants a seat, or gives its seat up
 signal helm_input(peer: int, throttle: float, rudder: float)  # on the host: what a client does with the keys at the tiller
 signal boat_state(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array)  # on a client: the boat as the host runs it
@@ -45,6 +47,8 @@ var land: RefCounted  # core/archipelago.gd of this machine (which debris is cle
 var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
 var power: RefCounted  # core/power_state.gd of this machine
 var builds: RefCounted  # core/build_state.gd of this machine
+var quest: RefCounted  # core/quest_state.gd of this machine
+var quest_near := Callable()  # func(at: Vector3, action: String, index: int) -> bool: that spot fits the client's quest action
 var painting_near := Callable()  # func(at: Vector3) -> bool: that spot is at the colosseum painting
 var boat_near := Callable()  # func(at: Vector3) -> bool: that spot is near enough to the boat to climb aboard
 var build_near := Callable()  # func(at: Vector3) -> int: the code (BuildState.code_of) of the part or bench at that spot, -1 = none
@@ -379,6 +383,31 @@ func _build_bits(bits: int) -> void:
 	build_bits.emit(bits)
 
 
+# --- the main quest: the host keeps it; a client says what it did and the host checks where it stands ---
+
+func ask_quest(action: String, index: int) -> void:
+	if is_client():
+		_quest_ask.rpc_id(1, action, index)
+
+
+func tell_quest(state: Dictionary, news: int) -> void:
+	if net.can_send() and net.is_host():
+		_quest_state.rpc(state, news)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _quest_ask(action: String, index: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body != null and action.length() < 16 and quest_near.is_valid() and bool(quest_near.call(body.global_position, action, index)):
+		quest_asked.emit(peer, action, index)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _quest_state(state: Dictionary, news: int) -> void:
+	quest_told.emit(state, news)
+
+
 # --- a colosseum run: one player buys the ticket at the painting, the host sends the whole party in ---
 
 func ask_run(ticket: int, modifiers: PackedStringArray) -> void:
@@ -563,6 +592,8 @@ func _ask_all() -> void:
 		_power_bits.rpc_id(peer, int(power.call("to_bits")))
 	if builds != null:
 		_build_bits.rpc_id(peer, int(builds.call("to_bits")))
+	if quest != null:
+		_quest_state.rpc_id(peer, quest.call("to_dict"), -1)
 	if shelters != null:
 		var boards: PackedInt32Array = shelters.get("boards")
 		for window in boards.size():

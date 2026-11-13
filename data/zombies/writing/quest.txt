@@ -1,0 +1,81 @@
+# THE ISLANDS' MAIN QUEST  (a secret quest: nothing shows until the first step is found)
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them.
+#   * Change only the words AFTER the first colon of a line.   name: The Drowned Bell  ->  name: Bell of the Deep
+#   * Do not change what is in [square brackets] or before the colon: that is how the game finds the line.
+#   * One line per text. Long lines are fine. No quotation marks are needed. Inside jokes welcome.
+#   * A "says:" line may be repeated: each one is shown in the chat, in order, one after another.
+#
+# EVERY STEP HAS:
+#   what:   WHAT IS GOING ON. Shown at the top left of the screen while the step is the one to do.
+#   where:  WHERE it happens, in a few words (shown after the what line).
+#   who:    WHO speaks the says lines (shown before each line in the chat). May be empty.
+#   says:   WHAT IS SAID when the step BEGINS (one line each, in order).
+#   done:   the line shown when the step is finished.
+#
+# WHAT FINISHES A STEP and WHERE ITS THINGS STAND is not here: it is in data/zombies/quest.json (the designers'
+# file). The steps below are in the same order. If the game cannot read a step here, it names it when the game
+# starts ("quest.txt: step jars has no what line") and tools/colosseum_check.tscn lists it too.
+# ----------------------------------------------------------------------------------------------
+
+[quest main]
+# The quest's name: shown once when it starts and over the tracker line.
+name: The Drowned Bell
+# Shown when the whole quest is done, before the reward.
+finished: The bell is silent. For one night, the sea keeps its dead.
+# Shown with the reward.
+reward: The Keeper's chest washes up at your feet.
+
+[step log]
+# Found by interacting with a sea-stained logbook half buried in the sand on Home Sand.
+what: Read the keeper's logbook
+where: in the sand on Home Sand, south-west
+who: Keeper's logbook
+says: Day 41. The bell rang again last night. There is no bell on these islands.
+says: Day 44. They come out of the water when it rings. They walk like they remember the way.
+says: Day 45. If anyone reads this: light the islands, and the old lamps, and take a boat to the rock.
+done: The logbook's last page is a map of a rock far out at sea.
+
+[step power]
+what: Bring light back to the islands
+where: the power switch (its parts lie on Home Sand)
+who: Keeper's logbook
+says: The switch is on Painter's Key. The parts are where the storm left them.
+done: The islands hum. Somewhere far out, the bell answers.
+
+[step jars]
+what: Fill the brine jars on Wreck Cay
+where: the jars by the wreck on Wreck Cay
+who: Keeper's logbook
+says: The drowned carry the sea in them. Let them spill it into the jars.
+done: The jars are full and glowing.
+
+[step lamps]
+what: Shoot out the three old lamps
+where: on posts on Painter's Key, Far Shoal and Home Sand
+who: Keeper's logbook
+says: The old lamps guide them home. Put them out.
+done: The last lamp bursts. The bell rings once, very close.
+
+[step boat]
+what: Build the boat
+where: the slipway on Wreck Cay (its parts lie on three islands)
+who: Keeper's logbook
+says: The rock is past Wreck Cay, where no bridge goes. Build a boat.
+done: The boat floats.
+
+[step bell]
+what: Find the bell on Gull Rock
+where: Gull Rock, past Wreck Cay (by boat)
+who: Keeper's logbook
+says: There it is. Do not ring it. Ring it.
+done: The bell rings.
+
+[step warden]
+what: Defeat what answers the bell
+where: Gull Rock
+who: The Bell Warden
+says: Who rings my bell?
+says: Then you will hear it forever.
+done: The Bell Warden sinks back into the sea.

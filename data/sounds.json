@@ -25,6 +25,8 @@
   "trap_zap": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
   "trap_fire": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
   "thunder": {"volume": -4, "pitch": [0.8, 1.12], "range": 0},
+  "secret_clink": {"volume": -8, "pitch": [0.95, 1.08], "range": 0},
+  "quest_step": {"volume": -5, "pitch": [1.0, 1.0], "range": 0},
   "build_done": {"volume": -6, "pitch": [1.0, 1.0], "range": 0},
   "shield_block": {"volume": -5, "pitch": [0.9, 1.12], "range": 0},
   "shield_bash": {"volume": -6, "pitch": [0.92, 1.1], "range": 0},

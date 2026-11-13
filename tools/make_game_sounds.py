@@ -70,6 +70,9 @@ def main():
     save("shield_block", mix(tone(glide(170, 90, 0.16), 0.16) * env(n(0.16), 0.002, 2.5), band(noise(0.1), 300, 1800) * env(n(0.1), 0.001, 3.0) * 0.7, at(tone(1900, 0.08) * env(n(0.08), 0.001, 4) * 0.15, 0.0)), 0.7)
     save("shield_bash", mix(band(noise(0.22), 250, glide(600, 2200, 0.22)) * env(n(0.22), 0.08, 1.2) * 0.6, at(tone(glide(140, 60, 0.2), 0.2) * env(n(0.2), 0.002, 2.5), 0.14)), 0.7)
     save("shield_break", mix(crack(0.3, 110, 900, 1.3, 2.0), at(band(noise(0.5), 400, 3000) * env(n(0.5), 0.01, 1.8) * 0.6, 0.05), at(crack(0.2, 160, 1300, 0.8, 3.0), 0.22), at(crack(0.15, 200, 1700, 0.6, 3.0), 0.4)), 0.8)
+    # --- secrets: a hidden float or a quest lamp is hit (a glassy clink), a quest step is done (a low bell with a bright chord) ---
+    save("secret_clink", mix(tone(2350, 0.5) * env(n(0.5), 0.001, 3.0) * 0.6, tone(3520, 0.35) * env(n(0.35), 0.001, 4.0) * 0.35, at(tone(2790, 0.4) * env(n(0.4), 0.001, 3.5) * 0.3, 0.05)), 0.55)
+    save("quest_step", mix(tone(196, 2.4) * env(n(2.4), 0.003, 1.2) * 0.8, tone(392.5, 2.0) * env(n(2.0), 0.003, 1.4) * 0.35, tone(588, 1.6) * env(n(1.6), 0.003, 1.6) * 0.2, at(note(784, 0.9, "sine", 0.35), 0.35), at(note(988, 1.1, "sine", 0.35), 0.5)), 0.7)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

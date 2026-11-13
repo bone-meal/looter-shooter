@@ -170,6 +170,23 @@ func _send_in(id: String, here: Array) -> void:
 	spawned.emit(enemy)
 
 
+# Sends one enemy in at a given world spot, as strong as in round `number` (the main quest's boss). Like any
+# enemy of the round it is host-run and shown to the others; it carries meta "quest_boss". Returns it.
+func send_at(id: String, at: Vector3, number: int) -> Node3D:
+	var enemy: Node3D = director.call("spawn_custom", id, stats_of(id, number), at)
+	enemy.set_meta("island", true)
+	enemy.set_meta("tier", number)
+	enemy.set_meta("quest_boss", true)
+	enemy.set("one_blow", one_blow)
+	var here: Array = bodies.call() if bodies.is_valid() else []
+	if not here.is_empty():
+		enemy.call("set_target", _nearest(here, at))
+	enemy.connect("died", _on_died)
+	_alive.append(enemy)
+	spawned.emit(enemy)
+	return enemy
+
+
 # The nuke: everything of the round that is ashore dies; a boss loses `boss_share` of its full health instead.
 # Returns how many were hit.
 func blast(boss_share: float) -> int:

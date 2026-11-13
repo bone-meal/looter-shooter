@@ -312,6 +312,33 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var mods := PackedStringArray(words[3].split(",", false)) if words.size() > 3 else PackedStringArray()
 				board.call("choose", int(words[2]), mods)
 				board.emit_signal("chosen", int(words[2]), mods)
+		"quest":  # "!quest goto <step id>": stand at that step's spot; "!quest lamp n": shoot lamp n; "!quest jump n": the quest is at step n (host); "!quest <note>": where it stands
+			if words.size() > 2 and words[1] == "goto":
+				var to: Vector2 = (session.get("_quest_spots") as Dictionary)[words[2]]
+				player.call("teleport", Vector3(500.0 + to.x + 1.2, 0.15, to.y + 1.2), 0.0)
+				player.call("look_at_point", Vector3(500.0 + to.x, 0.4, to.y))
+			elif words.size() > 2 and words[1] == "lamp":
+				session.call("_on_lamp_shot", int(words[2]))
+			elif words.size() > 2 and words[1] == "jump":
+				var quest: RefCounted = session.get("_quest")
+				quest.call("from_dict", {"step": int(words[2])})
+				session.call("_show_quest")
+			else:
+				var quest: RefCounted = session.get("_quest")
+				_lines.append("QUEST %s: step %d (%s, %s), count %d, lamps %s, boss out %s, tracker '%s', points %d" % [" ".join(words.slice(1)), int(quest.get("step")), String((quest.call("current") as Dictionary).get("id", "done")), String(quest.call("kind")), int(quest.get("count")), str(quest.get("shot")), str(quest.get("boss_out")),
+					String((session.get("_player_hud") as Node).get("quest_text")).replace("\n", " | "), int((session.call("score") as RefCounted).get("points"))])
+		"song":  # "!song n": shoot all three floats of hidden song n (1-based); "!song <note>": unlocked songs, the files found, what plays
+			var book: RefCounted = session.get("_songs")
+			if words.size() > 1 and words[1].is_valid_int():
+				for thing in 3:
+					session.call("_on_float_shot", int(words[1]) - 1, thing)
+			else:
+				_lines.append("SONG %s: unlocked %s, files %s, playing %s (secret %d)" % [" ".join(words.slice(1)), str(book.get("unlocked")), str(book.get("files")), str((session.get("_music") as AudioStreamPlayer).playing), int(session.get("_music_secret"))])
+		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
+			var box: Node3D = session.get("_jukebox")
+			if box != null:
+				player.call("teleport", box.global_position + box.global_transform.basis.z * -1.8 + Vector3(0, 0.1, 0), 0.0)
+				player.call("look_at_point", box.global_position + Vector3(0, 1.0, 0))
 		"smoke":  # "!smoke 5": the cigarette being smoked has 5 s left; "!smoke <note>": what is in the mouth, seconds left, the HUD bar, whether the model shows
 			var smoke: RefCounted = session.get("_smoke")
 			if words.size() > 1 and words[1].is_valid_float():
