@@ -1,0 +1,857 @@
+# YOU GOT ME LOBSTER?  -  every card's NAME and FLAVOUR TEXT, and every leader's name, power name and flavour
+# ----------------------------------------------------------------------------------------------
+# FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
+#   * Lines starting with # are notes for you. The game ignores them.
+#   * Change only the words AFTER the first colon of a line.   name: Reef Crab  ->  name: Rock Pincher
+#   * Do not change what is in [square brackets]: that is how the game finds the card.
+#   * flavor: is the italic line at the bottom of the card. It may be empty (flavor:).
+#   * What a card DOES (cost, attack, health, keywords, effects) is not here: it is in data/tcg/cards.json.
+#     The rules text printed on the card is written from those effects by the game.
+#   * tools/tcg_rules_check.tscn names any card that has no name here.
+# ----------------------------------------------------------------------------------------------
+
+# ================ LEADERS (the hero of a deck; power = its hero power's name)
+
+[leader tide_brute]
+name: Tide Brute
+power: Undertow
+flavor: The biggest thing that ever crawled out of the harbour. Still dripping.
+
+[leader crab_queen]
+name: The Crab Queen
+power: Hardened Shell
+flavor: Every crab on the reef answers to her. Every crab on the reef is armed.
+
+[leader warlord]
+name: The Warlord
+power: Open Fire
+flavor: Rules the wasteland from the back of a burning truck.
+
+[leader butcher]
+name: The Butcher
+power: Meat Hook
+flavor: Weighs every raider by the pound.
+
+[leader clockwork_bear]
+name: The Clockwork Bear
+power: Rewind
+flavor: Built to guard a toy shop. Grew up guarding a crypt.
+
+[leader skeleton_king]
+name: The Skeleton King
+power: Raise Bones
+flavor: His crown is the only thing on him that isn't bone.
+
+[leader mirren]
+name: Mirren
+power: Study
+flavor: Teaches the first spell at Hale Farm. Has never once been on time.
+
+[leader slime_king]
+name: The Slime King
+power: Ooze
+flavor: Split in two at his own coronation. Both halves claim the throne.
+
+[leader cherry]
+name: Cherry
+power: Deal Me In
+flavor: Blackjack dealer. Twenty-one or bust, darlings.
+
+[leader dj]
+name: The DJ
+power: Hype
+flavor: Drops the beat. The whole club drops with it.
+
+# ================ TOKENS AND THE LUCKY CHIP (made by other cards, never in packs)
+
+[card lucky_chip]
+# token spell, 0 mana
+name: Lucky Chip
+flavor: Found under the roulette table. Still warm.
+
+[card drowned_spawn]
+# token creature, 1 mana
+name: Drowned Spawn
+flavor: Small, wet, and absolutely certain you owe it money.
+
+[card sea_crawler]
+# token creature, 1 mana
+name: Sea Crawler
+flavor: It walks sideways into every argument.
+
+[card gull_chick]
+# token creature, 1 mana
+name: Gull Chick
+flavor: Learned to steal chips before it learned to fly.
+
+[card bone_rattler]
+# token creature, 1 mana
+name: Bone Rattler
+flavor: Mostly ribs. Entirely loyal.
+
+[card slimelet]
+# token creature, 1 mana
+name: Slimelet
+flavor: Half a slime is still a whole problem.
+
+# ================ THE TIDE
+
+[card drowned_deckhand]
+# common creature, 1 mana
+name: Drowned Deckhand
+flavor: Still swabbing a deck that sank forty years ago.
+
+[card brine_runner]
+# common creature, 1 mana
+name: Brine Runner
+flavor: The tide comes in fast. He comes in faster.
+
+[card harbor_gull]
+# common creature, 2 mana
+name: Harbor Gull
+flavor: Your chips. Its chips. Same thing, really.
+
+[card reef_crab]
+# common creature, 2 mana
+name: Reef Crab
+flavor: It has never once moved out of the way.
+
+[card drowned_sailor]
+# common creature, 2 mana
+name: Drowned Sailor
+flavor: The crew always comes back for one of their own.
+
+[card tide_caller]
+# common creature, 3 mana
+name: Tide Caller
+flavor: She hums, and the sea hums back.
+
+[card shell_bash]
+# common spell, 1 mana
+name: Shell Bash
+flavor: Crab diplomacy.
+
+[card gull_swarm]
+# common spell, 3 mana
+name: Gull Swarm
+flavor: Someone opened a bag of fries.
+
+[card hermit_crab]
+# common creature, 1 mana
+name: Hermit Crab
+flavor: Lives in a bottle cap. Owns the bottle cap.
+
+[card salt_spray]
+# common spell, 2 mana
+name: Salt Spray
+flavor: Stings the eyes. Stings the pride more.
+
+[card undertow_lurker]
+# common creature, 3 mana
+name: Undertow Lurker
+flavor: Waits under the pier for anyone who drops a sandal.
+
+[card drowned_boatswain]
+# common creature, 4 mana
+name: Drowned Boatswain
+flavor: All hands! Well. All the hands we found.
+
+[card rising_tide]
+# rare spell, 2 mana
+name: Rising Tide
+flavor: Every boat rises. So does everything that sank.
+
+[card barnacled_brute]
+# rare creature, 4 mana
+name: Barnacled Brute
+flavor: Three hundred barnacles, one opinion.
+
+[card crawler_mother]
+# rare creature, 4 mana
+name: Crawler Mother
+flavor: Never alone. Never quiet.
+
+[card gull_matriarch]
+# rare creature, 3 mana
+name: Gull Matriarch
+flavor: Every evening, one more mouth to feed. Yours.
+
+[card riptide]
+# rare spell, 2 mana
+name: Riptide
+flavor: The sea gives it back. Eventually.
+
+[card barnacle_shell]
+# rare spell, 1 mana
+name: Barnacle Shell
+flavor: Fashionable, if you like rocks.
+
+[card drowned_captain]
+# rare creature, 5 mana
+name: Drowned Captain
+flavor: Went down with the ship. Came back with the crew.
+
+[card bulwark_crab]
+# rare creature, 3 mana
+name: Bulwark Crab
+flavor: Two shells. Zero regrets.
+
+[card call_of_the_deep]
+# epic spell, 5 mana
+name: Call of the Deep
+flavor: Ring the bell once and the whole harbour answers.
+
+[card kraken_bitten_bosun]
+# epic creature, 5 mana
+name: Kraken-Bitten Bosun
+flavor: Lost an arm to the deep. Gained a crew.
+
+[card stormgull]
+# epic creature, 5 mana
+name: Stormgull
+flavor: Strikes twice, squawks once.
+
+[card old_shellback]
+# epic creature, 6 mana
+name: Old Shellback
+flavor: The reef grew around it. Then the reef gave up.
+
+[card bell_keeper]
+# legendary creature, 7 mana
+name: The Bell Keeper
+flavor: When the drowned bell rings, she counts who comes home.
+
+[card undertow_leviathan]
+# legendary creature, 8 mana
+name: The Undertow Leviathan
+flavor: The whole beach is its tide pool.
+
+# ================ THE WASTE
+
+[card raider_scrapper]
+# common creature, 1 mana
+name: Raider Scrapper
+flavor: Armour made of hubcaps and confidence.
+
+[card wasteland_feral]
+# common creature, 2 mana
+name: Wasteland Feral
+flavor: Hasn't said a word in years. Has bitten plenty.
+
+[card scav_gunner]
+# common creature, 2 mana
+name: Scav Gunner
+flavor: Every bullet is the last one. He keeps finding more.
+
+[card raider_marksman]
+# common creature, 3 mana
+name: Raider Marksman
+flavor: Calls the shot. Then makes it.
+
+[card raider_brute]
+# common creature, 4 mana
+name: Raider Brute
+flavor: Doesn't aim. Doesn't need to.
+
+[card sandbag_guard]
+# common creature, 3 mana
+name: Sandbag Guard
+flavor: Half sandbag, half man, all stubborn.
+
+[card kestrel_snap_shot]
+# common spell, 1 mana
+name: Kestrel Snap Shot
+flavor: Kestrel Works: tight groups, steady hands.
+
+[card brawn_buckshot]
+# common spell, 2 mana
+name: Brawn Buckshot
+flavor: Brawn & Sons: hits like a truck.
+
+[card zephyr_burst]
+# common spell, 2 mana
+name: Zephyr Burst
+flavor: Zephyr Labs: everything faster, including the bill.
+
+[card vantor_supply_drop]
+# common spell, 3 mana
+name: Vantor Supply Drop
+flavor: Vantor Ordnance: plain, balanced, on time.
+
+[card scav_lookout]
+# common creature, 1 mana
+name: Scav Lookout
+flavor: Spots you first. Shoots you first.
+
+[card raider_bomber]
+# common creature, 3 mana
+name: Raider Bomber
+flavor: Never lights the fuse until he's sure you're watching.
+
+[card moss_hose_down]
+# rare spell, 4 mana
+name: Moss Hose-Down
+flavor: Moss Dynamics: big mags, no mercy.
+
+[card brawn_frag]
+# rare spell, 3 mana
+name: Brawn Frag
+flavor: Everybody gets a piece.
+
+[card kestrel_headshot]
+# rare spell, 4 mana
+name: Kestrel Headshot
+flavor: One breath. One shot.
+
+[card raider_warchief]
+# rare creature, 5 mana
+name: Raider Warchief
+flavor: Points at the casino. Says one word: Tonight.
+
+[card scrap_mortar]
+# rare creature, 4 mana
+name: Scrap Mortar
+flavor: Every evening at six. You can set your watch.
+
+[card blood_drinker]
+# rare creature, 3 mana
+name: Blood Drinker
+flavor: Out here, you take what you can get back.
+
+[card scav_squad]
+# rare creature, 5 mana
+name: Scav Squad
+flavor: Three raiders, one stolen motorbike.
+
+[card dune_sniper]
+# rare creature, 4 mana
+name: Dune Sniper
+flavor: That glint on the dune? Duck.
+
+[card zephyr_autoloader]
+# epic spell, 4 mana
+name: Zephyr Autoloader
+flavor: Holds the trigger so you don't have to.
+
+[card feral_alpha]
+# epic creature, 5 mana
+name: Feral Alpha
+flavor: The pack follows the one who never stops.
+
+[card brawn_demolition]
+# epic spell, 6 mana
+name: Brawn Demolition Charge
+flavor: Brawn & Sons accept no responsibility.
+
+[card raider_flamethrower]
+# epic creature, 4 mana
+name: Raider Flamethrower
+flavor: Warms up the whole room.
+
+[card old_man_brawn]
+# legendary creature, 6 mana
+name: Old Man Brawn
+flavor: Founded Brawn & Sons with one gun and two very loud sons.
+
+[card mira_kestrel]
+# legendary creature, 5 mana
+name: Mira Kestrel, Gunsmith
+flavor: Built the first Kestrel rifle. Still zeroes every one by hand.
+
+# ================ THE CRYPT
+
+[card restless_bones]
+# common creature, 1 mana
+name: Restless Bones
+flavor: Lie down? He's tried. It never takes.
+
+[card brass_beetle]
+# common creature, 1 mana
+name: Brass Beetle
+flavor: Tick. Tick. Tick. Bite.
+
+[card skeleton_archer]
+# common creature, 2 mana
+name: Skeleton Archer
+flavor: No eyes. Never misses.
+
+[card clockwork_sentry]
+# common creature, 2 mana
+name: Clockwork Sentry
+flavor: Wound once, a hundred years ago. Still on duty.
+
+[card tighten_springs]
+# common spell, 2 mana
+name: Tighten the Springs
+flavor: A quarter turn more. Just a quarter.
+
+[card skeleton_swordsman]
+# common creature, 3 mana
+name: Skeleton Swordsman
+flavor: Falls to pieces. Every piece is sharp.
+
+[card oil_and_bone]
+# common spell, 2 mana
+name: Oil and Bone
+flavor: One for the joints, one for the gears.
+
+[card fire_skeleton]
+# common creature, 3 mana
+name: Fire Skeleton
+flavor: Burns hottest on the way out.
+
+[card frostbone_guard]
+# common creature, 3 mana
+name: Frostbone Guard
+flavor: Cold to the marrow. Colder to strangers.
+
+[card toxic_skeleton]
+# common creature, 3 mana
+name: Toxic Skeleton
+flavor: Do not shake its hand.
+
+[card cog_spider]
+# common creature, 2 mana
+name: Cog Spider
+flavor: Eight legs, eight springs, no off switch.
+
+[card grave_call]
+# common spell, 3 mana
+name: Grave Call
+flavor: Knock twice. Somebody always knocks back.
+
+[card mainspring_golem]
+# rare creature, 4 mana
+name: Mainspring Golem
+flavor: Gets a little bigger every morning. Like a grudge.
+
+[card final_rest]
+# rare spell, 5 mana
+name: Final Rest
+flavor: Some stay down. This one will.
+
+[card brass_owl]
+# rare creature, 3 mana
+name: Brass Owl
+flavor: Sees everything. Writes it all down.
+
+[card bone_knight]
+# rare creature, 4 mana
+name: Bone Knight
+flavor: Swore to guard the gate. Death was no excuse.
+
+[card clockwork_repairman]
+# rare creature, 3 mana
+name: Clockwork Repairman
+flavor: Oils the hinges. Patches the boss. Clocks out at midnight.
+
+[card bone_harvest]
+# rare spell, 4 mana
+name: Bone Harvest
+flavor: Reap what the island sows.
+
+[card overwind]
+# rare spell, 2 mana
+name: Overwind
+flavor: One more turn of the key. What could go wrong?
+
+[card cog_hound]
+# rare creature, 3 mana
+name: Cog Hound
+flavor: Fetches. Then keeps fetching.
+
+[card crypt_keeper]
+# epic creature, 5 mana
+name: Crypt Keeper
+flavor: Keeps the crypt. Keeps the count. Keeps coming.
+
+[card lich_clockmaker]
+# epic creature, 6 mana
+name: The Lich Clockmaker
+flavor: Every hour on the hour, another hand for the clock.
+
+[card bonewall_colossus]
+# epic creature, 6 mana
+name: Bonewall Colossus
+flavor: A thousand skeletons agreed on one thing: nobody gets past.
+
+[card the_long_night]
+# epic spell, 7 mana
+name: The Long Night
+flavor: When the lights go out on the island, everything sleeps.
+
+[card grand_orrery]
+# legendary creature, 8 mana
+name: The Grand Orrery
+flavor: It winds the stars. Then it winds you.
+
+[card mother_of_bones]
+# legendary creature, 7 mana
+name: Mother of Bones
+flavor: She has never lost a child. She has only misplaced their skin.
+
+# ================ AURELIND
+
+[card strawling]
+# common creature, 1 mana
+name: Strawling
+flavor: Scares crows. Fails. Tries again tomorrow.
+
+[card field_slime]
+# common creature, 2 mana
+name: Field Slime
+flavor: Cut it in half and you've made two friends.
+
+[card moss_goblin]
+# common creature, 2 mana
+name: Moss Goblin
+flavor: Lives under the mill. Charges a toll in turnips.
+
+[card forest_wolf]
+# common creature, 3 mana
+name: Forest Wolf
+flavor: The woods past Hale Farm are never empty.
+
+[card barkhide]
+# common creature, 4 mana
+name: Barkhide
+flavor: Old as the oaks and twice as stubborn.
+
+[card scarecrow_sentinel]
+# common creature, 3 mana
+name: Scarecrow Sentinel
+flavor: Stands in the field all night so the farmers don't have to.
+
+[card apprentice_mage]
+# common creature, 2 mana
+name: Apprentice Mage
+flavor: Third week of lessons. Only set fire to the barn twice.
+
+[card ember_dart]
+# common spell, 1 mana
+name: Ember Dart
+flavor: Fire: the first element every student learns, and the last one they forget.
+
+[card water_mend]
+# common spell, 1 mana
+name: Water Mend
+flavor: Water: cool, patient, and always kind.
+
+[card gust]
+# common spell, 2 mana
+name: Gust
+flavor: Air: sends anything back where it came from.
+
+[card stone_spikes]
+# common spell, 2 mana
+name: Stone Spikes
+flavor: Earth: it was here first.
+
+[card gravity_tug]
+# common spell, 2 mana
+name: Gravity Tug
+flavor: Gravity: the fifth element pulls everything down.
+
+[card storm_harpy]
+# rare creature, 3 mana
+name: Storm Harpy
+flavor: Rides the first gust of every storm.
+
+[card magma_imp]
+# rare creature, 2 mana
+name: Magma Imp
+flavor: Small, hot, and furious about it.
+
+[card frost_wolf]
+# rare creature, 3 mana
+name: Frost Wolf
+flavor: Its fur freezes into armour by morning.
+
+[card fire_lance]
+# rare spell, 4 mana
+name: Fire Lance
+flavor: Point the staff. Say the word. Step back.
+
+[card tidal_wave]
+# rare spell, 5 mana
+name: Tidal Wave
+flavor: The lake remembers every spell cast on it.
+
+[card ice_golem]
+# rare creature, 5 mana
+name: Ice Golem
+flavor: Melts in summer. Comes back in winter. Angrier.
+
+[card scroll_of_insight]
+# rare spell, 3 mana
+name: Scroll of Insight
+flavor: Mirren's handwriting. Nobody else can read it.
+
+[card gale_spirit]
+# rare creature, 4 mana
+name: Gale Spirit
+flavor: Grows with every spell carried on the wind.
+
+[card harvest_king]
+# epic creature, 6 mana
+name: The Harvest King
+flavor: Crowned with wheat. Followed by everything that grows.
+
+[card great_slime]
+# epic creature, 5 mana
+name: Great Slime
+flavor: The more you hit it, the more of it there is.
+
+[card ash_drake]
+# epic creature, 6 mana
+name: Ash Drake
+flavor: Its shadow arrives a moment before the heat.
+
+[card meteor]
+# epic spell, 7 mana
+name: Meteor
+flavor: Every element at once, falling from the sky.
+
+[card cinderwyrm]
+# legendary creature, 8 mana
+name: Cinderwyrm
+flavor: The volcano is not a mountain. It is a nest.
+
+[card tempest_roc]
+# legendary creature, 7 mana
+name: Tempest Roc
+flavor: One wingbeat and the battlefield is somewhere else.
+
+# ================ THE CLUB
+
+[card party_goer]
+# common creature, 1 mana
+name: Party Goer
+flavor: Came for one song. That was three days ago.
+
+[card dance_floor_regular]
+# common creature, 2 mana
+name: Dance Floor Regular
+flavor: Knows every tile that lights up. Stands on all of them.
+
+[card coin_toss]
+# common spell, 1 mana
+name: Coin Toss
+flavor: Heads you win. Tails you also win, but less.
+
+[card club_bouncer]
+# common creature, 3 mana
+name: Club Bouncer
+flavor: Your name is not on the list. Your name will never be on the list.
+
+[card cocktail_waitress]
+# common creature, 2 mana
+name: Cocktail Waitress
+flavor: On the house. Almost.
+
+[card chip_runner]
+# common creature, 1 mana
+name: Chip Runner
+flavor: Carries chips between tables. Drops one now and then. For you.
+
+[card loaded_dice]
+# common spell, 2 mana
+name: Loaded Dice
+flavor: The house insists they are perfectly fair.
+
+[card tell_bluff]
+# common trap, 1 mana
+name: Tell: Bluff
+flavor: She smiled. That was the tell.
+
+[card glow_stick_raver]
+# common creature, 2 mana
+name: Glow Stick Raver
+flavor: Dances like nobody is watching. Everybody is watching.
+
+[card dice_shaker]
+# common creature, 3 mana
+name: Dice Shaker
+flavor: Blows on every pair for luck. Yours, too, if you ask nicely.
+
+[card velvet_rope]
+# common spell, 2 mana
+name: Velvet Rope
+flavor: VIP only. Very Important Protection.
+
+[card stage_diver]
+# common creature, 4 mana
+name: Stage Diver
+flavor: Trusts the crowd completely. The crowd is still deciding.
+
+[card violet]
+# rare creature, 3 mana
+name: Violet, Roulette Dealer
+flavor: Round and round she goes. Where she stops, she already knows.
+
+[card mint]
+# rare creature, 2 mana
+name: Mint, Waitress
+flavor: My feet hurt. Your drink is coming.
+
+[card goldie]
+# rare creature, 3 mana
+name: Goldie, Waitress
+flavor: You look like a winner. Here, take a lucky charm.
+
+[card tell_double_down]
+# rare trap, 2 mana
+name: Tell: Double Down
+flavor: Raise the stakes, and the crowd raises with you.
+
+[card tell_counter_bet]
+# rare trap, 3 mana
+name: Tell: Counter Bet
+flavor: You cast a spell. She cashes in.
+
+[card jackpot]
+# rare spell, 4 mana
+name: Jackpot!
+flavor: Lights, bells, and a very loud machine.
+
+[card bartender_juniper]
+# rare creature, 4 mana
+name: Juniper, Bartender
+flavor: Mixes a drink for every trick you pull.
+
+[card conga_line]
+# rare spell, 4 mana
+name: Conga Line
+flavor: One more joins every song. Nobody remembers starting it.
+
+[card tell_all_in]
+# epic trap, 3 mana
+name: Tell: All In
+flavor: Push every chip to the middle. Watch them flinch.
+
+[card lottie]
+# epic creature, 5 mana
+name: Lottie, Card Dealer
+flavor: Deals on the beach under the pink parasol. Guards first, darlings.
+
+[card double_or_nothing]
+# epic spell, 3 mana
+name: Double or Nothing
+flavor: The only bet worth making is the one you can't afford to lose.
+
+[card pit_boss]
+# epic creature, 6 mana
+name: Pit Boss
+flavor: Every loss on the floor is a lesson. For somebody else.
+
+[card high_roller]
+# legendary creature, 7 mana
+name: The High Roller
+flavor: Never asks the odds. Owns the odds.
+
+[card pachinko_queen]
+# legendary creature, 5 mana
+name: The Pachinko Queen
+flavor: Can hear which pin a ball will hit before it leaves the launcher.
+
+# ================ NEUTRAL
+
+[card pink_earthworm]
+# common creature, 1 mana
+name: Pink Earthworm
+flavor: Three of these and a crow will fly you anywhere.
+
+[card island_fisher]
+# common creature, 2 mana
+name: Island Fisher
+flavor: Caught a boot once. Still talks about it.
+
+[card lifeguard_trainee]
+# common creature, 2 mana
+name: Lifeguard Trainee
+flavor: Nobody drowns on her shift. Her shift is two hours.
+
+[card chalk_artist]
+# common creature, 2 mana
+name: Chalk Artist
+flavor: Draws every gun on the wall. Buys none of them.
+
+[card shipwright]
+# common creature, 3 mana
+name: Shipwright
+flavor: Boards up the windows, then the doors, then you.
+
+[card debris_hauler]
+# common creature, 3 mana
+name: Debris Hauler
+flavor: Moves the junk between the islands. For a price.
+
+[card hop_runner]
+# common creature, 3 mana
+name: Hop Course Runner
+flavor: Never once touched the ground on purpose.
+
+[card arena_gladiator]
+# common creature, 4 mana
+name: Arena Gladiator
+flavor: Bought a ticket for twelve waves. Lived to complain about wave eleven.
+
+[card colosseum_bruiser]
+# common creature, 5 mana
+name: Colosseum Bruiser
+flavor: The crowd chants his name. He can't remember it.
+
+[card driftwood_golem]
+# common creature, 6 mana
+name: Driftwood Golem
+flavor: Everything the sea threw away, standing up at once.
+
+[card box_seagull]
+# rare creature, 3 mana
+name: The Box Seagull
+flavor: It moved the mystery box again. It will move you next.
+
+[card marina]
+# rare creature, 4 mana
+name: Marina, Lifeguard
+flavor: Want a new look? First, stop drowning.
+
+[card mystery_box]
+# rare spell, 3 mana
+name: Mystery Box
+flavor: Nine hundred and fifty chips. Never a pony.
+
+[card smoke_break]
+# rare spell, 2 mana
+name: Smoke Break
+flavor: Thirty minutes to burn. Use them well.
+
+[card reforge]
+# rare spell, 2 mana
+name: Re-forge
+flavor: Same steel, better temper.
+
+[card giant_crow]
+# epic creature, 5 mana
+name: The Giant Crow
+flavor: Feed it three worms and hold on tight.
+
+[card dome_beast]
+# epic creature, 7 mana
+name: The Dome Beast
+flavor: The colosseum built its roof over it, not the other way round.
+
+[card phoons_treasure]
+# epic spell, 5 mana
+name: Phoon's Treasure
+flavor: The rarest chest in the arena. Most people never see it open.
+
+[card the_tyrant]
+# legendary creature, 8 mana
+name: The Tyrant
+flavor: Wave twelve. The crowd goes quiet.
+
+[card the_overseer]
+# legendary creature, 6 mana
+name: The Overseer
+flavor: Watches every fight in the colosseum. Ends the ones that bore it.

@@ -1,7 +1,11 @@
 # Purpose: the card game's data ("You got me Lobster?"): rules, keywords, cards and leaders by string id, the checks
 # that every card / leader / effect is well formed, and deck legality. Pure: no nodes, no rendering.
-# Dependencies: data/tcg/rules.json, keywords.json, cards.json, leaders.json (or dictionaries handed in by a check tool).
+# Names and flavour come from the writers' file data/tcg/writing/cards.txt (merged in by from_files).
+# Dependencies: data/tcg/rules.json, keywords.json, cards.json, leaders.json, writing/cards.txt (or dictionaries handed in
+# by a check tool), core/text_book.gd.
 extends RefCounted
+
+const TextBook = preload("res://core/text_book.gd")
 
 const FACTIONS := ["tide", "waste", "crypt", "aurelind", "club", "neutral"]
 const TYPES := ["creature", "spell", "trap"]
@@ -19,6 +23,8 @@ var keywords: Dictionary
 var cards: Dictionary  # id -> card
 var leaders: Dictionary  # id -> leader
 
+const WRITING := "res://data/tcg/writing/cards.txt"
+
 
 func _init(rules_data: Dictionary, keyword_data: Dictionary, card_data: Dictionary, leader_data: Dictionary) -> void:
 	rules = rules_data
@@ -29,8 +35,26 @@ func _init(rules_data: Dictionary, keyword_data: Dictionary, card_data: Dictiona
 
 static func from_files() -> RefCounted:
 	var script: GDScript = load("res://core/tcg/card_db.gd")
-	return script.new(_json("res://data/tcg/rules.json"), _json("res://data/tcg/keywords.json"),
+	var db: RefCounted = script.new(_json("res://data/tcg/rules.json"), _json("res://data/tcg/keywords.json"),
 		_json("res://data/tcg/cards.json"), _json("res://data/tcg/leaders.json"))
+	if FileAccess.file_exists(WRITING):
+		db.call("add_words", TextBook.parse(FileAccess.get_file_as_string(WRITING)))
+	return db
+
+
+# The writers' file: [card id] name / flavor, [leader id] name / power / flavor.
+func add_words(book: Dictionary) -> void:
+	for id: String in book.get("card", {}):
+		if cards.has(id):
+			var words: Dictionary = book["card"][id]
+			cards[id]["name"] = String(words.get("name", ""))
+			cards[id]["flavor"] = String(words.get("flavor", ""))
+	for id: String in book.get("leader", {}):
+		if leaders.has(id):
+			var words: Dictionary = book["leader"][id]
+			leaders[id]["name"] = String(words.get("name", ""))
+			leaders[id]["flavor"] = String(words.get("flavor", ""))
+			(leaders[id]["power"] as Dictionary)["name"] = String(words.get("power", ""))
 
 
 static func _json(path: String) -> Dictionary:
@@ -98,6 +122,8 @@ func problems() -> Array[String]:
 			out.append("%s: cost" % where)
 		if String(c["type"]) == "creature" and (int(c.get("attack", -1)) < 0 or int(c.get("health", 0)) < 1):
 			out.append("%s: a creature needs attack >= 0 and health >= 1" % where)
+		if String(c.get("name", "")) == "":
+			out.append("%s: no name (data/tcg/writing/cards.txt)" % where)
 		if String(c["type"]) == "trap" and String(c["faction"]) != "club":
 			out.append("%s: traps are Club only" % where)
 		for kw: Variant in c.get("keywords", []):
@@ -109,12 +135,44 @@ func problems() -> Array[String]:
 		if not FACTIONS.has(String(l.get("faction", ""))) or String(l.get("faction", "")) == "neutral":
 			out.append("leader %s: faction" % id)
 		var power: Dictionary = l.get("power", {})
+		if String(l.get("name", "")) == "":
+			out.append("leader %s: no name (data/tcg/writing/cards.txt)" % id)
 		if power.is_empty() or String(power.get("name", "")) == "":
-			out.append("leader %s: no hero power" % id)
+			out.append("leader %s: no hero power (or no power name in data/tcg/writing/cards.txt)" % id)
 		_check_effects(power.get("effects", []), "leader %s" % id, "power", out)
 	if not cards.has(String(rules.get("lucky_card", ""))):
 		out.append("rules: lucky_card %s is not a card" % rules.get("lucky_card", ""))
 	return out
+
+
+# The full set against its locked shape (rules.json "set"): "" or what is off.
+func set_problem() -> String:
+	var shape: Dictionary = rules.get("set", {})
+	if shape.is_empty():
+		return ""
+	var by_faction := {}
+	var by_rarity := {}
+	for id: String in cards:
+		var c: Dictionary = cards[id]
+		if String(c["rarity"]) == "token":
+			continue
+		by_faction[String(c["faction"])] = int(by_faction.get(String(c["faction"]), 0)) + 1
+		by_rarity[String(c["rarity"])] = int(by_rarity.get(String(c["rarity"]), 0)) + 1
+	var off: PackedStringArray = []
+	for f: String in FACTIONS:
+		var want := int(shape["neutral_cards"]) if f == "neutral" else int(shape["faction_cards"])
+		if int(by_faction.get(f, 0)) != want:
+			off.append("%s has %d cards (want %d)" % [f, int(by_faction.get(f, 0)), want])
+	for r: String in shape["rarity"]:
+		if int(by_rarity.get(r, 0)) != int(shape["rarity"][r]):
+			off.append("%d %s (want %d)" % [int(by_rarity.get(r, 0)), r, int(shape["rarity"][r])])
+	var lead := {}
+	for id: String in leaders:
+		lead[String(leaders[id]["faction"])] = int(lead.get(String(leaders[id]["faction"]), 0)) + 1
+	for f: String in FACTIONS:
+		if f != "neutral" and int(lead.get(f, 0)) != int(shape["leaders_per_faction"]):
+			off.append("%s has %d leaders" % [f, int(lead.get(f, 0))])
+	return ", ".join(off)
 
 
 func _check_effects(effects: Array, where: String, kind: String, out: Array[String]) -> void:

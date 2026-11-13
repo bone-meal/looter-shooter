@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp club;!wait 6;!tcg tide;!wait 1;!tcg move;!wait 1;!tcg move;!mouse 400 600;!wait 0.6;!tcg note;!snap tcg_play;!tcg crypt auto;!wait 110;!tcg note;!snap tcg_over;!tcg esc;!wait 1;!tcg note;!third;!wait 1;!snap tcg_table
+!uncap;!wait 2;/tp club;!wait 6;!tcg club;!wait 1;!tcg move;!wait 1;!tcg move;!mouse 400 600;!wait 0.6;!tcg note;!snap tcg_play;!tcg aurelind auto;!wait 110;!tcg note;!snap tcg_over;!tcg esc;!wait 1;!tcg note;!third;!wait 1;!snap tcg_table

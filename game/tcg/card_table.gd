@@ -39,6 +39,7 @@ var _known: Dictionary = {}  # uid -> card id, for the log
 var _wait := 0.0
 var _turn_left := 0.0
 var _who: Array = ["You", "Dealer"]
+var _rng := RandomNumberGenerator.new()  # which deck the dealer plays, the match seed
 
 
 # Called when the club is built. casino = game/casino_room.gd's dictionary ("card_table", "card_dealer", "crew").
@@ -52,6 +53,7 @@ func setup(wallet: Wallet, casino: Dictionary, layer: CanvasLayer, player: Chara
 	_cfg = DataStore.load_json("res://data/tcg/table.json")
 	_starters = DataStore.load_json("res://data/tcg/starters.json")["starters"]
 	_db = CardDb.from_files()
+	_rng.randomize()
 	var npc: Dictionary = (DataStore.load_json("res://data/npcs.json")["npcs"] as Dictionary).get(String(_cfg["house"]["dealer_npc"]), {})
 	_who = ["You", String(npc.get("name", "Dealer"))]
 	_screen = TableScreen.new()
@@ -121,9 +123,9 @@ func _start(deck_id: String) -> void:
 	_deck = deck_id
 	var others: Array = _starters.keys()
 	others.erase(deck_id)
-	var theirs: Dictionary = _starters[others[randi() % others.size()]]
+	var theirs: Dictionary = _starters[others[_rng.randi_range(0, others.size() - 1)]]
 	var mine: Dictionary = _starters[deck_id]
-	match_state = MatchState.new(_db, [{"leader": mine["leader"], "cards": mine["cards"]}, {"leader": theirs["leader"], "cards": theirs["cards"]}], randi())
+	match_state = MatchState.new(_db, [{"leader": mine["leader"], "cards": mine["cards"]}, {"leader": theirs["leader"], "cards": theirs["cards"]}], _rng.randi())
 	_known = {}
 	_turn_left = float(_db.get("rules")["turn_seconds"])
 	match_state.call("mulligan", DEALER, AiPlayer.mulligan(match_state, DEALER))

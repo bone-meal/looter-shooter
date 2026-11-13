@@ -1,11 +1,12 @@
-Card game step 5: first playable table against the House Dealer
+Card game step 6: the full set of 150 cards, 10 leaders and 5 starter decks
 
-- Beach table outside the casino door with the House Dealer Lottie (data/tcg/table.json, game/tcg/beach_table.gd)
-- F to sit, pick a starter, coin toss, mulligan, play, hover zoom, turn timer with fuse, Esc = Concede?, 20 chips for a win
-- 2D table screen and plain card faces (game/tcg/table_screen.gd, card_face.gd, card_table.gd)
-- Card rules text and match log lines written from the data (core/tcg/card_text.gd, event_text.gd)
-- tcg_rules_check: every card has text, a starter match names every event
-- Dev steps !tcg deck [auto], !tcg move, !tcg esc, !tcg note
+- data/tcg/cards.json: 150 cards (5 factions x 26 + 20 neutral; 70 common, 45 rare, 23 epic, 12 legendary) + tokens
+- data/tcg/writing/cards.txt: every card and leader name, power name and flavour text (writers' file, merged by card_db)
+- data/tcg/starters.json: Rising Tide, Gunsmoke, Bones and Brass, Elements Unbound, House Rules, tuned as a ring in the simulator
+- rules.json set shape + card_db set_problem; tcg_rules_check checks shape, starters and plays every card in AI matches
+- tcg_sim takes --games=N; power text on the table is written from its effects
+- export presets also pack data/tcg/writing/*.txt
+- the House Dealer picks her deck and the match seed from her own randomized generator
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

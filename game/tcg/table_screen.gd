@@ -234,7 +234,7 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 	_foe_bar.text = "%s  -  %s     Health %d/%d     Mana %d/%d     Deck %d     Hand %d%s" % [who[1 - me], leaders[String(foe["leader"])]["name"], int(foe["hp"]), int(foe["max_hp"]), int(foe["mana"]), int(foe["crystals"]), (foe["deck"] as Array).size(), (foe["hand"] as Array).size(), "     Tells %d" % (foe["traps"] as Array).size() if not (foe["traps"] as Array).is_empty() else ""]
 	_my_bar.text = "%s  -  %s     Health %d/%d     Mana %d/%d     Deck %d%s" % [who[me], leaders[String(mine["leader"])]["name"], int(mine["hp"]), int(mine["max_hp"]), int(mine["mana"]), int(mine["crystals"]), (mine["deck"] as Array).size(), "     Tells %d" % (mine["traps"] as Array).size() if not (mine["traps"] as Array).is_empty() else ""]
 	var p: Dictionary = m.call("power_of", me)
-	_power.text = "%s (%d): %s%s" % [p.get("name", "Power"), int(m.get("rules")["power_cost"]), p.get("text", ""), "  - used" if bool(mine["power_used"]) else ""]
+	_power.text = "%s (%d): %s%s" % [p.get("name", "Power"), int(m.get("rules")["power_cost"]), CardText.of(m.get("db"), {"effects": p.get("effects", [])}), "  - used" if bool(mine["power_used"]) else ""]
 	_power.disabled = not my_turn or bool(mine["power_used"]) or int(mine["mana"]) < int(m.get("rules")["power_cost"])
 	_end.disabled = not my_turn
 	_fill_row(_foe_row, foe["board"], MAT_SIZE, false)

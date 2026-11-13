@@ -2,7 +2,8 @@
 # small test card set made here: coin toss, hands, mulligan, mana, every keyword, traps, powers, fatigue, burn, deck
 # legality, a dice card and determinism. Also checks the real data/tcg files when they exist.
 # Log tools/tcg_rules_check.log (TCG_RULES_CHECK_DONE problems=n).
-# Also: every real card gets printed rules text, and every match event gets a log line (core/tcg/card_text.gd, event_text.gd).
+# Also: every real card gets printed rules text, every match event gets a log line (core/tcg/card_text.gd, event_text.gd),
+# the full set has its locked shape, every starter is legal, and 40 AI matches of one-of decks play every card.
 # Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd, core/tcg/card_text.gd, core/tcg/event_text.gd.
 extends Node
 
@@ -33,7 +34,14 @@ func _ready() -> void:
 	if not (real.get("cards") as Dictionary).is_empty():
 		var real_wrong: Array[String] = real.problems()
 		_say("data/tcg cards and leaders are well formed (%d cards, %d leaders)%s" % [(real.get("cards") as Dictionary).size(), (real.get("leaders") as Dictionary).size(), "" if real_wrong.is_empty() else ": " + "; ".join(real_wrong)], real_wrong.is_empty())
+		var shape: String = real.set_problem()
+		_say("the full set has its locked shape (5 x 26 + 20 neutral, 70 / 45 / 23 / 12, 2 leaders a faction)%s" % ("" if shape == "" else ": " + shape), shape == "")
+		var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+		for deck_id: String in starters:
+			var why: String = real.deck_problem(starters[deck_id])
+			_say("starter %s is legal%s" % [deck_id, "" if why == "" else ": " + why], why == "")
 		_check_texts(real)
+		_check_every_card(real)
 	_finish()
 
 
@@ -306,6 +314,57 @@ func _check_texts(real: RefCounted) -> void:
 		if not quiet and EventText.line(real, e, 0, known, ["You", "Dealer"]) == "" and not silent.has(String(e["e"])):
 			silent.append(String(e["e"]))
 	_say("a starter match ends (%s) and every event has a log line%s" % [m.get("phase"), "" if silent.is_empty() else ": no line for " + ", ".join(silent)], silent.is_empty() and m.get("phase") == "over")
+
+
+# Every real card is played at least once in AI matches of one-of-each decks (each faction's 26 with neutrals), and every
+# match ends. A script error in a card's effect shows in the output as SCRIPT ERROR.
+func _check_every_card(real: RefCounted) -> void:
+	var by_faction := {}
+	for id: String in real.get("cards"):
+		var c: Dictionary = real.card(id)
+		if String(c["rarity"]) != "token":
+			if not by_faction.has(String(c["faction"])):
+				by_faction[String(c["faction"])] = []
+			(by_faction[String(c["faction"])] as Array).append(id)
+	var leader_of := {}
+	for id: String in real.get("leaders"):
+		leader_of[String(real.get("leaders")[id]["faction"])] = id
+	var factions: Array = ["tide", "waste", "crypt", "aurelind", "club"]
+	var played := {}
+	var unfinished := 0
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var AiPlayer: GDScript = load("res://core/tcg/ai_player.gd")
+	for round_i in 40:
+		var decks: Array = []
+		for side in 2:
+			var f: String = factions[(round_i + side * 2) % 5]
+			var pool: Array = (by_faction[f] as Array) + (by_faction["neutral"] as Array)
+			var list: Array = []
+			while list.size() < 20:
+				var pick: String = pool[rng.randi_range(0, pool.size() - 1)]
+				if not list.has(pick):
+					list.append(pick)
+			decks.append({"leader": leader_of[f], "cards": list})
+		var m: RefCounted = Match.new(real, decks, 100 + round_i)
+		m.mulligan(0, [])
+		m.mulligan(1, [])
+		for t in 80:
+			if m.get("phase") != "play":
+				break
+			AiPlayer.take_turn(m, int(m.get("current")))
+		if m.get("phase") != "over":
+			unfinished += 1
+		for e: Dictionary in m.take_log():
+			if String(e["e"]) == "play":
+				played[String(e["card"])] = true
+	var never: PackedStringArray = []
+	for f: String in by_faction:
+		for id: String in by_faction[f]:
+			if not played.has(id):
+				never.append(id)
+	_say("40 AI matches of mixed one-of decks all end (%d did not)" % unfinished, unfinished == 0)
+	_lines.append("info cards never played by the AI in them: %d%s" % [never.size(), "" if never.is_empty() else " (" + ", ".join(never) + ")"])
 
 
 func _play_out(seed_value: int) -> Array:

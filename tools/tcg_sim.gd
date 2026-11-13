@@ -8,7 +8,7 @@ extends Node
 const CardDb = preload("res://core/tcg/card_db.gd")
 const Match = preload("res://core/tcg/match_state.gd")
 const Ai = preload("res://core/tcg/ai_player.gd")
-const GAMES := 400  # per pair
+const GAMES := 400  # per pair (a run may pass -- --games=N)
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -22,6 +22,10 @@ func _ready() -> void:
 	for id: String in starters:
 		var why: String = db.deck_problem(starters[id])
 		_say("starter %s (%s) is legal%s" % [id, starters[id]["name"], "" if why == "" else ": " + why], why == "")
+	var games := GAMES
+	for arg in OS.get_cmdline_user_args():
+		if arg.begins_with("--games="):
+			games = int(arg.get_slice("=", 1))
 	var ids := starters.keys()
 	var first_wins := 0
 	var total := 0
@@ -31,7 +35,7 @@ func _ready() -> void:
 			var turns := 0
 			var unfinished := 0
 			var first_won := 0
-			for g in GAMES:
+			for g in games:
 				var first := g % 2
 				var m: RefCounted = Match.new(db, [starters[ids[a]], starters[ids[b]]], 1000 + g, first)
 				m.mulligan(0, Ai.mulligan(m, 0))
@@ -48,7 +52,7 @@ func _ready() -> void:
 				turns += int(m.get("turn"))
 				if w == first:
 					first_won += 1
-			var played := GAMES - unfinished
+			var played := games - unfinished
 			first_wins += first_won
 			total += played
 			_say("%s vs %s: %d - %d (%d draws), first player won %.0f %%, %.1f turns a game" % [ids[a], ids[b], wins[0], wins[1], wins[2], 100.0 * float(first_won) / maxf(float(played), 1.0), float(turns) / maxf(float(played), 1.0)], unfinished == 0)
