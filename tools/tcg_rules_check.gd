@@ -42,6 +42,8 @@ func _ready() -> void:
 			_say("starter %s is legal%s" % [deck_id, "" if why == "" else ": " + why], why == "")
 		_check_texts(real)
 		_check_every_card(real)
+		_check_collection(real)
+		_check_packs(real)
 	_finish()
 
 
@@ -365,6 +367,75 @@ func _check_every_card(real: RefCounted) -> void:
 				never.append(id)
 	_say("40 AI matches of mixed one-of decks all end (%d did not)" % unfinished, unfinished == 0)
 	_lines.append("info cards never played by the AI in them: %d%s" % [never.size(), "" if never.is_empty() else " (" + ", ".join(never) + ")"])
+
+
+# The collection (core/tcg/collection.gd): owning, the starter gift, playable decks, the record, save and load.
+func _check_collection(real: RefCounted) -> void:
+	var Collection: GDScript = load("res://core/tcg/collection.gd")
+	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var c: RefCounted = Collection.new()
+	_say("a new collection has no deck to play", (c.call("playable", real) as Dictionary).is_empty())
+	c.call("give_starter", "tide", starters["tide"], "standard")
+	_say("the starter gift: 20 cards, the leader, 3 packs, a playable deck in slot 1", int(c.call("count", "reef_crab")) == 2 and int(c.call("count", "tide_brute", "*", true)) == 1 and int(c.call("pack_count")) == 3 and (c.call("playable", real) as Dictionary).has(0))
+	c.call("add", "harbor_gull", "pony")
+	_say("finishes are counted apart and together", int(c.call("count", "harbor_gull", "pony")) == 1 and int(c.call("count", "harbor_gull")) == 3)
+	_say("removing more than owned is refused", not bool(c.call("remove", "harbor_gull", "pony", 2)) and bool(c.call("remove", "harbor_gull", "pony", 1)) and int(c.call("count", "harbor_gull")) == 2)
+	c.call("remove", "reef_crab", "", 2)
+	_say("a deck missing a card is not playable", not (c.call("playable", real) as Dictionary).has(0))
+	c.call("record_result", true, "Lottie", "Rising Tide", true, "tide")
+	c.call("record_result", true, "Bonk", "Rising Tide", false)
+	var r: Dictionary = c.get("record")
+	_say("wins against the House Dealer stay apart from the player record", int(r["house"]["wins"]) == 1 and int(r["wins"]) == 1 and int(r["streak"]) == 1 and (r["house"]["decks_won"] as Array).has("tide"))
+	var saved: Dictionary = c.call("to_dict")
+	(saved["cards"] as Dictionary)["no_such_card"] = {"": 3}
+	var back: RefCounted = Collection.new()
+	back.call("from_dict", JSON.parse_string(JSON.stringify(saved)), real)
+	_say("save and load keep the collection and drop unknown cards", int(back.call("count", "harbor_gull")) == 2 and int(back.call("count", "no_such_card")) == 0 and int(back.call("pack_count")) == 3 and String(back.get("starter")) == "tide" and int((back.get("record") as Dictionary)["house"]["wins"]) == 1)
+
+
+# Pack rolls (core/tcg/pack_roll.gd): 5 cards with the last rare or better, the odds over many packs, pity, foils,
+# leaders, and a box always holding its guaranteed legendaries and epics.
+func _check_packs(real: RefCounted) -> void:
+	var Collection: GDScript = load("res://core/tcg/collection.gd")
+	var Packs: GDScript = load("res://core/tcg/pack_roll.gd")
+	var cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/packs.json"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 42
+	var c: RefCounted = Collection.new()
+	var rare_last := true
+	var counts := {"common": 0, "rare": 0, "epic": 0, "legendary": 0}
+	var leaders := 0
+	var foils := 0
+	var gap := 0
+	var worst_gap := 0
+	for i in 3000:
+		var pack: Dictionary = Packs.open(real, c, cfg, rng)
+		var cards: Array = pack["cards"]
+		if not bool(pack["god"]) and (cards.size() != 5 or String(cards[-1]["rarity"]) == "common"):
+			rare_last = false
+		var leg := false
+		for card: Dictionary in cards:
+			counts[String(card["rarity"])] = int(counts[String(card["rarity"])]) + 1
+			leaders += 1 if bool(card["leader"]) else 0
+			foils += 1 if String(card["finish"]) != "" else 0
+			leg = leg or String(card["rarity"]) == "legendary"
+		gap = 0 if leg else gap + 1
+		worst_gap = maxi(worst_gap, gap)
+	_say("3000 packs: 5 cards, the last never common", rare_last)
+	_lines.append("info 3000 packs: %s, leaders %d, foils %d (%.1f %%), longest run without a legendary %d packs" % [str(counts), leaders, foils, 100.0 * float(foils) / 15000.0, worst_gap])
+	_say("pity: never more than %d packs without a legendary" % int(cfg["pity"]["legendary"]), worst_gap < int(cfg["pity"]["legendary"]))
+	var ok := true
+	for b in 20:
+		var box_owner: RefCounted = Collection.new()
+		box_owner.call("add_box", 50, 5, 12)
+		var leg_n := 0
+		var epic_n := 0
+		for p in 50:
+			for card: Dictionary in (Packs.open(real, box_owner, cfg, rng, "box") as Dictionary)["cards"]:
+				leg_n += 1 if String(card["rarity"]) == "legendary" else 0
+				epic_n += 1 if String(card["rarity"]) == "epic" else 0
+		ok = ok and leg_n >= 5 and epic_n >= 12
+	_say("20 boxes of 50 packs each hold at least 5 legendaries and 12 epics", ok)
 
 
 func _play_out(seed_value: int) -> Array:

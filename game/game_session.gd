@@ -50,6 +50,8 @@ const SlotScreen = preload("res://game/slot_screen.gd")
 const SlotMath = preload("res://core/slot_math.gd")
 const CasinoGames = preload("res://game/casino_games.gd")
 const CardTable = preload("res://game/tcg/card_table.gd")
+const CardCollection = preload("res://core/tcg/collection.gd")
+const CardDb = preload("res://core/tcg/card_db.gd")
 const ChatBox = preload("res://game/chat_box.gd")
 const ChatCommand = preload("res://core/chat_command.gd")
 const AdminCommands = preload("res://game/admin_commands.gd")
@@ -251,6 +253,7 @@ var _slot_machine: SlotMachine
 var _slot_pending: Dictionary = {}
 var _games := CasinoGames.new()
 var _tcg := CardTable.new()  # the card game table on the club beach (built with the club)
+var _cards := CardCollection.new()  # the card game collection (saved in extra "tcg")
 var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data/colosseum.json)
 var _board := ColosseumBoard.new()  # the ticket board at the painting
 var _run_ticket := 0  # the ticket of the colosseum run we are in
@@ -1216,6 +1219,7 @@ func _load_profile() -> void:
 		_stats.from_dict(extra.get("stats"))
 		_course.best = maxf(float(extra.get("course_best", 0.0)), 0.0) if (extra.get("course_best") is float or extra.get("course_best") is int) else 0.0
 		_bank.from_dict(extra.get("bank"), _player.inventory)
+		_cards.from_dict(extra.get("tcg"), CardDb.from_files())
 		var lying: Variant = extra.get("pack")
 		if lying is Dictionary and lying.get("at") is Array and (lying["at"] as Array).size() == 3 and InventoryState.bundle_size(lying) > 0:
 			_place_pack(Vector3(float(lying["at"][0]), float(lying["at"][1]), float(lying["at"][2])), {"things": lying["things"]})
@@ -1261,7 +1265,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict()}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict(), "tcg": _cards.to_dict()}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -3760,7 +3764,7 @@ func _build_club() -> void:
 	for m in _slot_machines:
 		m.finished.connect(_on_slot_finished)
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
-	_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud)
+	_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards)
 	(_casino["blackjack"] as Node3D).connect("changed", func(op: String, args: Array) -> void: table_event.emit(op, args))
 	_jukebox = Jukebox.new()
 	_jukebox.position = ClubIsland.CENTER + JUKEBOX_AT

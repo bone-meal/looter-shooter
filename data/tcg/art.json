@@ -1,0 +1,531 @@
+{
+ "version": 1,
+ "art": {
+  "reef_crab": {
+   "stage": "beach",
+   "time": "sunset",
+   "sun_yaw": 8,
+   "mist": [
+    3,
+    40
+   ],
+   "subjects": [
+    {
+     "model": "fantasy/creatures/reef_crab",
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 195,
+     "scale": 1.6,
+     "pose": {
+      "ArmL": [
+       0,
+       -50,
+       0
+      ],
+      "ArmR": [
+       0,
+       50,
+       0
+      ]
+     }
+    }
+   ],
+   "fx": [
+    {
+     "kind": "spray",
+     "at": [
+      0.3,
+      2.0,
+      0.0
+     ],
+     "size": 0.6,
+     "count": 220
+    }
+   ],
+   "camera": {
+    "from": [
+     1.6,
+     -4.2,
+     0.35
+    ],
+    "at": [
+     0,
+     1,
+     0.8
+    ],
+    "lens": 26,
+    "roll": -7,
+    "focus": [
+     0,
+     0,
+     0.5
+    ]
+   }
+  },
+  "skeleton_swordsman": {
+   "stage": "crypt",
+   "time": "night",
+   "sun_yaw": -30,
+   "mist": [
+    4,
+    25
+   ],
+   "subjects": [
+    {
+     "model": "creatures/skeleton_sword",
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 160,
+     "scale": 1.0,
+     "pose": {
+      "ArmR": [
+       150,
+       0,
+       20
+      ],
+      "ArmL": [
+       40,
+       0,
+       -20
+      ],
+      "LegL": [
+       25,
+       0,
+       0
+      ],
+      "LegR": [
+       -20,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "fx": [
+    {
+     "kind": "embers",
+     "at": [
+      0,
+      0.3,
+      0.6
+     ],
+     "size": 1.4,
+     "count": 120
+    },
+    {
+     "kind": "glow",
+     "at": [
+      -1,
+      -0.5,
+      1.2
+     ],
+     "size": 1.5,
+     "color": [
+      0.4,
+      0.7,
+      1.0
+     ]
+    },
+    {
+     "kind": "smoke",
+     "at": [
+      0,
+      2.5,
+      0
+     ],
+     "size": 1.4,
+     "color": [
+      0.1,
+      0.12,
+      0.18
+     ]
+    }
+   ],
+   "camera": {
+    "from": [
+     -1.0,
+     -3.0,
+     0.5
+    ],
+    "at": [
+     0,
+     0,
+     1.2
+    ],
+    "lens": 24,
+    "roll": 9
+   }
+  },
+  "raider_brute": {
+   "stage": "waste",
+   "time": "dust",
+   "sun_yaw": 20,
+   "mist": [
+    5,
+    45
+   ],
+   "subjects": [
+    {
+     "model": "creatures/brute",
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 170,
+     "scale": 1.0,
+     "pose": {
+      "ArmR": [
+       120,
+       0,
+       10
+      ],
+      "ArmL": [
+       70,
+       0,
+       -10
+      ],
+      "LegL": [
+       25,
+       0,
+       0
+      ],
+      "LegR": [
+       -15,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "fx": [
+    {
+     "kind": "dust",
+     "at": [
+      0,
+      0.6,
+      0
+     ],
+     "size": 1.0
+    },
+    {
+     "kind": "sparks",
+     "at": [
+      0.3,
+      -0.3,
+      1.9
+     ],
+     "size": 0.8,
+     "count": 90
+    }
+   ],
+   "camera": {
+    "from": [
+     0.8,
+     -2.8,
+     0.3
+    ],
+    "at": [
+     0,
+     0,
+     1.3
+    ],
+    "lens": 22,
+    "roll": -5
+   }
+  },
+  "storm_harpy": {
+   "stage": "field",
+   "time": "storm",
+   "sun_yaw": 0,
+   "mist": [
+    6,
+    50
+   ],
+   "subjects": [
+    {
+     "model": "fantasy/creatures/storm_harpy",
+     "at": [
+      0,
+      1,
+      1.6
+     ],
+     "yaw": 180,
+     "scale": 1.0,
+     "pose": {
+      "FlapL": [
+       0,
+       30,
+       0
+      ],
+      "FlapR": [
+       0,
+       -30,
+       0
+      ]
+     }
+    }
+   ],
+   "fx": [
+    {
+     "kind": "bolt",
+     "at": [
+      2.5,
+      6,
+      0
+     ]
+    },
+    {
+     "kind": "streaks",
+     "at": [
+      0,
+      1.5,
+      1.2
+     ],
+     "size": 1.0,
+     "color": [
+      0.7,
+      0.85,
+      1.0
+     ]
+    }
+   ],
+   "camera": {
+    "from": [
+     0.5,
+     -3.5,
+     0.6
+    ],
+    "at": [
+     0,
+     1,
+     2.0
+    ],
+    "lens": 24,
+    "roll": 12
+   }
+  },
+  "dance_floor_regular": {
+   "stage": "club",
+   "time": "club",
+   "sun_yaw": 0,
+   "mist": [
+    5,
+    20
+   ],
+   "subjects": [
+    {
+     "model": "creatures/raider",
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 180,
+     "scale": 1.0,
+     "tint": [
+      1.2,
+      0.6,
+      1.4
+     ],
+     "pose": {
+      "ArmR": [
+       160,
+       0,
+       30
+      ],
+      "ArmL": [
+       40,
+       0,
+       -50
+      ],
+      "LegL": [
+       20,
+       0,
+       0
+      ]
+     }
+    }
+   ],
+   "fx": [
+    {
+     "kind": "confetti",
+     "at": [
+      0,
+      0.5,
+      1.2
+     ],
+     "size": 1.0
+    },
+    {
+     "kind": "glow",
+     "at": [
+      1.5,
+      -1,
+      2
+     ],
+     "size": 1.0,
+     "color": [
+      1,
+      0.2,
+      0.7
+     ]
+    }
+   ],
+   "camera": {
+    "from": [
+     0.5,
+     -3.2,
+     0.7
+    ],
+    "at": [
+     0,
+     0,
+     1.3
+    ],
+    "lens": 26,
+    "roll": -6
+   }
+  },
+  "apprentice_mage": {
+   "stage": "field",
+   "time": "sunset",
+   "sun_yaw": -25,
+   "mist": [
+    4,
+    40
+   ],
+   "subjects": [
+    {
+     "human": "Female_Peasant",
+     "clip": "Spell_Simple_Shoot",
+     "phase": 0.45,
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 20,
+     "hold": "staff"
+    }
+   ],
+   "fx": [
+    {
+     "kind": "magic",
+     "at": [
+      0.3,
+      -0.6,
+      0.8
+     ],
+     "size": 0.8,
+     "color": [
+      1.0,
+      0.55,
+      0.2
+     ]
+    },
+    {
+     "kind": "embers",
+     "at": [
+      0.4,
+      -0.9,
+      1.1
+     ],
+     "size": 0.6,
+     "count": 60
+    }
+   ],
+   "camera": {
+    "from": [
+     1.3,
+     -3.2,
+     0.6
+    ],
+    "at": [
+     0,
+     0,
+     1.1
+    ],
+    "lens": 30,
+    "roll": -6
+   }
+  },
+  "cocktail_waitress": {
+   "stage": "club",
+   "time": "club",
+   "sun_yaw": 0,
+   "mist": [
+    5,
+    20
+   ],
+   "subjects": [
+    {
+     "human": "Female_Ranger",
+     "clip": "Dance_Loop",
+     "phase": 0.3,
+     "at": [
+      0,
+      0,
+      0
+     ],
+     "yaw": 15,
+     "tint": [
+      1.0,
+      0.55,
+      0.8
+     ],
+     "ears": [
+      0.95,
+      0.9,
+      0.95
+     ]
+    }
+   ],
+   "fx": [
+    {
+     "kind": "confetti",
+     "at": [
+      0,
+      0.5,
+      1.2
+     ],
+     "size": 1.0
+    },
+    {
+     "kind": "glow",
+     "at": [
+      1.5,
+      -1,
+      2
+     ],
+     "size": 1.0,
+     "color": [
+      1,
+      0.2,
+      0.7
+     ]
+    }
+   ],
+   "camera": {
+    "from": [
+     0.6,
+     -2.8,
+     1.0
+    ],
+    "at": [
+     0,
+     0,
+     1.2
+    ],
+    "lens": 30,
+    "roll": 5
+   }
+  }
+ }
+}

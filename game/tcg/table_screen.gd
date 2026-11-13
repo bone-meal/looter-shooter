@@ -182,8 +182,9 @@ func _fit() -> void:
 
 # ---- what the table shows ----
 
-# starters = data/tcg/starters.json "starters"; leaders = data/tcg/leaders.json "leaders".
-func open_pick(starters: Dictionary, leaders: Dictionary) -> void:
+# The deck choice before a match. choices = [{"key", "label"}]; picking one emits deck_chosen(key). note = a line under
+# the title (e.g. "Yours to keep, with 3 packs").
+func open_pick(heading: String, note: String, choices: Array) -> void:
 	visible = true
 	_m = null
 	_log = []
@@ -193,19 +194,23 @@ func open_pick(starters: Dictionary, leaders: Dictionary) -> void:
 	for n in _pick_box.get_children():
 		n.queue_free()
 	var title := Label.new()
-	title.text = "You got me Lobster?  -  pick your deck"
+	title.text = heading
 	title.add_theme_font_size_override("font_size", 24)
 	_pick_box.add_child(title)
+	if note != "":
+		var line := Label.new()
+		line.text = note
+		_pick_box.add_child(line)
 	var info := Label.new()
 	info.text = "A win against the House Dealer pays %d chips." % _prize
 	_pick_box.add_child(ChipArt.row(info))
-	for deck_id: String in starters:
-		var d: Dictionary = starters[deck_id]
+	for choice: Dictionary in choices:
+		var key := String(choice["key"])
 		var b := Button.new()
-		b.text = "%s  -  %s (%s)" % [d["name"], (leaders[String(d["leader"])] as Dictionary)["name"], d["style"]]
+		b.text = String(choice["label"])
 		b.custom_minimum_size = Vector2(460, 48)
 		b.add_theme_font_size_override("font_size", 19)
-		b.pressed.connect(func() -> void: _pick.visible = false; deck_chosen.emit(deck_id))
+		b.pressed.connect(func() -> void: _pick.visible = false; deck_chosen.emit(key))
 		_pick_box.add_child(b)
 	var out := Button.new()
 	out.text = "Leave the table"

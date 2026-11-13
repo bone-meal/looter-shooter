@@ -1,0 +1,180 @@
+{
+ "version": 1,
+ "_about": "Card layout in card pixels (card 600 x 840). layers: [x, y, w, h] of each picture in assets/tcg/frames/ (made by tools/blender/card_frames.py). boxes: where the game draws the art and the words.",
+ "size": [
+  600,
+  840
+ ],
+ "layers": {
+  "frame_tide_creature": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "cost": [
+   19,
+   23,
+   110,
+   102
+  ],
+  "attack": [
+   15,
+   707,
+   118,
+   117
+  ],
+  "health": [
+   477,
+   697,
+   98,
+   128
+  ],
+  "gem_legendary": [
+   282,
+   486,
+   36,
+   35
+  ],
+  "crest": [
+   47,
+   0,
+   506,
+   82
+  ],
+  "frame_waste_creature": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_crypt_spell": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_club_creature": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "gem_common": [
+   282,
+   486,
+   36,
+   35
+  ],
+  "gem_rare": [
+   282,
+   486,
+   36,
+   35
+  ],
+  "gem_epic": [
+   282,
+   486,
+   36,
+   35
+  ],
+  "frame_tide_spell": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_waste_spell": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_crypt_creature": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_aurelind_creature": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_aurelind_spell": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_club_spell": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_neutral_creature": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "frame_neutral_spell": [
+   0,
+   0,
+   600,
+   840
+  ],
+  "back": [
+   0,
+   0,
+   600,
+   840
+  ]
+ },
+ "boxes": {
+  "art": [
+   44,
+   39,
+   511,
+   380
+  ],
+  "name": [
+   60,
+   420,
+   480,
+   67
+  ],
+  "text": [
+   86,
+   516,
+   427,
+   220
+  ],
+  "cost": [
+   16,
+   16,
+   115,
+   115
+  ],
+  "attack": [
+   16,
+   708,
+   115,
+   115
+  ],
+  "health": [
+   468,
+   708,
+   115,
+   115
+  ],
+  "tribe": [
+   192,
+   765,
+   216,
+   52
+  ]
+ }
+}

@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "_about": "Card packs of You got me Lobster? (locked in diary/DECISIONS_TCG.md; numbers he edits). A pack holds `cards` cards: every card but the last rolls `slot` odds, the last rolls `last` odds (always rare or better). Leaders come at epic odds (each leader weighs like one epic card) and a faction's second leader weighs `second_leader` of that once the player owns a leader of that faction. Foils per card: rainbow / pony chance. Pity: an epic at the latest in pack `pity.epic`, a legendary in pack `pity.legendary` (the last card is raised). God pack: 1 in `god.one_in`, `god.cards` cards all rare or better with `god.odds`. A BOX = `box.packs` packs that together hold at least `box.legendaries` legendaries and `box.epics` epics. Prices in chips at the vending machine (rows: single, bundles, box; starter decks).",
+ "standard": {"cards": 5, "slot": {"common": 75, "rare": 20, "epic": 4, "legendary": 1}, "last": {"rare": 70, "epic": 22, "legendary": 8}},
+ "second_leader": 0.1,
+ "foil": {"rainbow": 0.02, "pony": 0.002},
+ "pity": {"epic": 15, "legendary": 45},
+ "god": {"one_in": 2000, "cards": 8, "odds": {"rare": 55, "epic": 30, "legendary": 15}},
+ "box": {"packs": 50, "legendaries": 5, "epics": 12},
+ "prices": {"single": 300, "bundle_5": 1400, "bundle_10": 2700, "box": 12000, "starter": 2000},
+ "rows": [
+  {"title": "Single pack", "items": [{"id": "single", "packs": 1}]},
+  {"title": "Pack bundles", "items": [{"id": "bundle_5", "packs": 5}, {"id": "bundle_10", "packs": 10}]},
+  {"title": "Pack box", "items": [{"id": "box", "packs": 50, "box": true}]}
+ ]
+}
