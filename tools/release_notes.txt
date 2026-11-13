@@ -2,4 +2,4 @@ Beta build for testers.
 
 Windows: unzip, run LooterShooter.exe (keep the .dll next to it).
 Linux: unzip, then `chmod +x LooterShooter.x86_64` and run it.
-macOS: not built yet.
+macOS (Intel build, runs on Apple Silicon through Rosetta): unzip, then right-click LooterShooter.app > Open the first time (the app is not notarized). If macOS says it is damaged, run `xattr -cr LooterShooter.app` in Terminal and open it again.
