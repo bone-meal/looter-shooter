@@ -21,6 +21,9 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(OUT))
 	var renderer := "forward_plus" if RenderingServer.get_rendering_device() != null else "compatibility"
 	_lines.append("renderer=%s adapter=%s" % [renderer, RenderingServer.get_video_adapter_name()])
+	for arg in OS.get_cmdline_user_args():  # tools/net_pair_check.tscn runs two copies: each names its own files
+		if arg.begins_with("--boot-tag="):
+			renderer = arg.get_slice("=", 1)
 	_lines.append("the game was ready to play %d ms after the program started" % Time.get_ticks_msec())
 	var screen: Variant = _find_with(get_tree().root, "run_chat").get("loading")
 	while screen is Control and (screen as Control).visible:  # the first frames are drawn under the loading picture
@@ -441,6 +444,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("COURSE RUN %s -> %s: reached pad %d, top %d u/s; %s" % [words[2], words[3], last, top, "; ".join(log_text)])
 			else:
 				_lines.append("COURSE %s: state %s, clock %.2f, checkpoint %d, best %.2f, last %.2f, on course %s, even ground %s, hud '%s'" % [" ".join(words.slice(1)), String(rules.get("state")), float(rules.get("time")), int(rules.get("checkpoint")), float(rules.get("best")), float(rules.get("last")), str(session.get("_on_course")), str(player.get("even_ground")), String((session.get("_player_hud") as Node).get("course_text"))])
+		"net":  # "!net wait_guest": wait (up to 120 s) until a second player is in the session; "!net <note>": who is connected
+			var link: Node = session.get("net")
+			if words.size() > 1 and words[1] == "wait_guest":
+				var began := Time.get_ticks_msec()
+				while (link.get("roster") as Dictionary).size() < 2 and Time.get_ticks_msec() - began < 120000:
+					await get_tree().create_timer(0.5, true, false, true).timeout
+			var shared: Node = link.get("rounds")
+			_lines.append("NET %s: can send %s, host %s, my id %d, roster %s, ghosts %d, net enemies %d, states seen %d, last run '%s'" % [" ".join(words.slice(1)), str(link.call("can_send")), str(link.call("is_host")), int(link.call("my_id")), str(link.get("roster")), (link.call("target_nodes") as Array).size(), (shared.get("_enemies") as Dictionary).size(), int(shared.get("states_seen")), String(session.get("run_note"))])
+		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give)
+			player.set("cheat_god", true)
 		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
 			var box: Node3D = session.get("_jukebox")
 			if box != null:
@@ -470,7 +483,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for enemy: Variant in waves.call("enemy_list"):
 				if is_instance_valid(enemy):
 					var hp: RefCounted = (enemy as Node).get("health")
-					alive.append("%s%s %.0f/%.0f" % [String((enemy as Node).get("enemy_id")), "" if String((enemy as Node).get("elite")) == "" else "(" + String((enemy as Node).get("elite")) + ")", float(hp.get("hp")), float(hp.get("max_hp"))])
+					var marks := ("P" if bool((enemy as Node).get("puppet")) else "") + ("I" if (enemy as Node).has_meta("island") else "") + ("A" if (enemy as Node).has_meta("arena") else "") + ("#%d" % int((enemy as Node).get_meta("net_id")) if (enemy as Node).has_meta("net_id") else "")
+					alive.append("%s%s %.0f/%.0f %s" % [String((enemy as Node).get("enemy_id")), "" if String((enemy as Node).get("elite")) == "" else "(" + String((enemy as Node).get("elite")) + ")", float(hp.get("hp")), float(hp.get("max_hp")), marks])
 			var lying := PackedStringArray()
 			for drop: Dictionary in (session.get("_field") as Node).get("_drops"):
 				lying.append(String(drop["item"]) if drop.has("item") else String((drop["gun"] as Dictionary)["tier"]))

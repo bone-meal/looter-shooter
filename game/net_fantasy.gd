@@ -87,10 +87,11 @@ func _host_tick(delta: float) -> void:
 	var turns := PackedFloat32Array()
 	var healths := PackedFloat32Array()
 	for id: int in _enemies.keys():
-		var enemy: Node3D = _enemies[id]
-		if not is_instance_valid(enemy):
+		var held: Variant = _enemies[id]  # (a typed variable cannot hold a freed creature: that error stopped every state after the first one was gone)
+		if not is_instance_valid(held):
 			_enemies.erase(id)
 			continue
+		var enemy: Node3D = held
 		ids.append(id)
 		spots.append(enemy.global_position)
 		turns.append(enemy.rotation.y)

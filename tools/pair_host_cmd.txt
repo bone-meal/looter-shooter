@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;/give points 9000;!net wait_guest;!wait 25;!net host_ready;!ticket goto;!wait 1;!ticket buy 0;!wait 1;!arena host_in;!wait 14;!arena host_w1;!snap w1;!wait 15;!arena host_mid;!wait 25;!arena host_late;!snap late;!wait 20;!arena host_end;!score host;!wait 30

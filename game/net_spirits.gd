@@ -57,6 +57,8 @@ func _snapshot() -> PackedFloat32Array:
 			break
 		if not is_instance_valid(e):
 			continue
+		if bool(e.get("puppet")) or e.has_meta("island") or e.has_meta("arena"):
+			continue  # shared for real (the island's rounds, the colosseum run): every machine already shows it
 		var kind := _kinds.find(e.enemy_id)
 		if kind < 0:
 			continue

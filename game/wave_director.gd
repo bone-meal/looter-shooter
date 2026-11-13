@@ -10,6 +10,7 @@ const BloodEffects = preload("res://game/blood_effects.gd")
 const DropRules = preload("res://core/drop_rules.gd")
 
 signal killed(where: Vector3, enemy_id: String, elite: String, wave: int)  # an enemy died here (the session rolls loot)
+signal arena_spawned(enemy: Node3D)  # one of the run's waves came in (online the host shows it to the others: game/net_rounds.gd)
 
 var _waves: WaveState
 var _enemy_stats: Dictionary
@@ -33,6 +34,8 @@ var wave_stats := Callable()  # func(stats: Dictionary, wave: int) -> Dictionary
 var wave_list := Callable()  # func(waves: Array, count: int) -> Array: the waves of a run (core/colosseum_rules.gd `run_waves`; unset = the data's first `count`)
 var run_fx := {}  # the run's effects, handed to every arena enemy (set by the session before start())
 var _shared_out := false  # the shared boss of this run is in (a second "boss" of a wave is our own)
+var shared_run := false  # online on the host: the run's waves are everybody's (each enemy is shown to the others), no separate shared boss
+var follow := {}  # online on a client in a run: the host's waves as told {wave, count, left, cleared}; nothing spawns here
 
 
 # Call before add_child.
@@ -58,6 +61,17 @@ func start(waves: int = 0) -> void:
 	_waves = WaveState.new(run)
 	_shared_out = false
 	_active = true
+	follow = {}
+
+
+# Online on a client: the run is the host's; this director only says what the host tells (wave, how many left).
+func follow_run(waves: int) -> void:
+	_active = true
+	follow = {"wave": 0, "count": waves, "left": -1, "cleared": false}
+
+
+func running() -> bool:
+	return _active
 
 
 # More enemies for the wave being fought (a modifier's late pack). They come in like the rest of the wave.
@@ -67,12 +81,13 @@ func send_in(ids: Array[String]) -> void:
 
 # True once every wave has been beaten.
 func is_cleared() -> bool:
-	return _waves.cleared
+	return bool(follow.get("cleared", false)) if not follow.is_empty() else _waves.cleared
 
 
 # Back to the pre-start state with fresh waves (after the player leaves the arena).
 func reset() -> void:
 	_active = false
+	follow = {}
 	_waves = WaveState.new(_waves_data)
 	var keep: Array = []
 	var shared := 0
@@ -138,25 +153,31 @@ func boss_ratio() -> float:
 
 
 func status_text() -> String:
-	return _waves.status() if _active else ""
+	return _waves.status() if _active and follow.is_empty() else ""
 
 
 # The wave being fought and how many there are (0, 0 while the waves are not running).
 func wave_number() -> int:
+	if not follow.is_empty():
+		return 0 if bool(follow["cleared"]) else int(follow["wave"])
 	return _waves.wave_number() if _active and not _waves.cleared else 0
 
 
 func wave_count() -> int:
+	if not follow.is_empty():
+		return int(follow["count"])
 	return _waves.wave_count() if _active else 0
 
 
 # Enemies left in this wave, -1 while the waves are not running.
 func enemies_left() -> int:
+	if not follow.is_empty():
+		return -1 if bool(follow["cleared"]) else int(follow["left"])
 	return _waves.left(_alive) if _active and not _waves.cleared else -1
 
 
 func _physics_process(_delta: float) -> void:
-	if not _active:
+	if not _active or not follow.is_empty():
 		return
 	var id := _waves.update(Time.get_ticks_msec() / 1000.0, _alive)
 	if id != "":
@@ -164,7 +185,7 @@ func _physics_process(_delta: float) -> void:
 
 
 func _spawn(id: String) -> void:
-	if id == "boss" and boss_handler.is_valid() and not _shared_out:  # only the clockwork bear is shared online; the wasteland bosses (and a twin of the bear) are each player's own
+	if id == "boss" and boss_handler.is_valid() and not _shared_out and not shared_run:  # only the clockwork bear is shared online; the wasteland bosses (and a twin of the bear) are each player's own
 		_shared_out = true
 		_alive += 1  # the shared boss counts as alive until it dies (or is found already dead)
 		boss_handler.call(self)
@@ -191,11 +212,18 @@ func _spawn(id: String) -> void:
 	_next_gate += 1
 	enemy.position = gate + Vector3(randf_range(-1.0, 1.0), 0.0, randf_range(-1.0, 1.0))
 	enemy.died.connect(_on_enemy_died)
+	enemy.set_meta("tier", _waves.wave_number())  # its wave: the loot it leaves (here and on the other machines)
+	enemy.set_meta("arena", true)
+	var shown := stats.duplicate()
+	shown["elite_name"] = enemy.elite  # its trait and whether it only has it from All Elite: the loot it leaves elsewhere too
+	shown["forced_elite"] = enemy.has_meta("forced_elite")
+	enemy.set_meta("net_stats", shown)  # what the other machines build its stand-in from
 	add_child(enemy)
 	_enemies.append(enemy)
 	_alive += 1
 	if id.begins_with("boss"):  # its health shows as the bar at the top
 		_boss = enemy
+	arena_spawned.emit(enemy)
 
 
 # Skeletons (not the boss) get an element with the configured chance, picked by weight. Returns "" for none.

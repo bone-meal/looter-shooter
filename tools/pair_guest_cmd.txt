@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 30;!net guest_ready;!wait 12;!net guest_go;!arena guest_in;!wait 6;!arena guest_w1;!snap w1;!score guest_before;!slay;!wait 3;!arena guest_after_slay;!score guest_after;!wait 12;!slay;!wait 3;!arena guest_mid;!net guest_mid;!wait 20;!slay;!wait 3;!arena guest_late;!snap late;!wait 20;!arena guest_end;!net guest_end;!score guest

@@ -116,6 +116,7 @@ var loading: Control  # game/loading_screen.gd, set before add_child (may be nul
 var player_name := ""  # set before add_child when playing online (the lobby name)
 var _save_key := ""  # which save file (the typed name)
 var _profile_name := ""  # saved with the inventory (see game/profile_io.gd)
+var run_note := ""  # why we went along with the last run or not (developer checks)
 var no_save := false  # scripted developer runs (tools/dev_boot.gd) leave the save file alone
 
 var _player: Player
@@ -572,8 +573,8 @@ func _ready() -> void:
 	_field.setup(_player.gun_db, _drops_cfg)
 	add_child(_field)
 	_director.killed.connect(_on_enemy_killed)
-	_director.wave_stats = func(stats: Dictionary, wave: int) -> Dictionary: return _colosseum.wave_stats(stats, wave, _run_fx)
-	_director.wave_list = func(waves: Array, count: int) -> Array: return _colosseum.run_waves(waves, count, _run_fx)
+	_director.wave_stats = func(stats: Dictionary, wave: int) -> Dictionary: return _colosseum.wave_stats(stats, wave, _director.run_fx)
+	_director.wave_list = func(waves: Array, count: int) -> Array: return _colosseum.run_waves(waves, count, _director.run_fx)
 	_rounds.director = _director
 	_rounds.land = _land
 	_rounds.shelters = _shelters
@@ -648,6 +649,7 @@ func _ready() -> void:
 			_start_run(ticket, mods, peer)
 			net.rounds.tell_run(ticket, mods, peer))
 		net.rounds.run_started.connect(_start_run)
+		net.rounds.in_run = func() -> bool: return _in_arena
 		net.rounds.seat_asked.connect(_on_seat_asked)
 		net.rounds.helm_input.connect(func(peer: int, throttle: float, rudder: float) -> void:
 			if _boat.helm() == peer:
@@ -1719,9 +1721,11 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		kill_counters.append("boss_kills")
 		xp_kind = "boss"
 	var island_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("island")
+	var arena_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("arena")  # one of a run's waves (ours, or the host's shown here)
 	var guns: Array = []  # the fantasy world has its own drops; the island's enemies drop no guns
-	if _in_arena and not island_kill:
-		guns = _colosseum_drops(where, enemy_id, elite != "", wave)
+	if arena_kill or (_in_arena and not island_kill):
+		if _in_arena:  # every player in the run rolls his own loot for every death he sees (a host who is not in the run: none)
+			guns = _colosseum_drops(where, enemy_id, elite != "", wave)
 	elif not _in_fantasy and not island_kill:
 		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())
 	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave
@@ -1849,7 +1853,14 @@ func _start_run(ticket: int, mods: PackedStringArray, buyer: int) -> void:
 	if buyer == _my_id():
 		_score.spend(int(entry["price"]))
 		save_profile()
+	run_note = "arena %s, aurelind %s, down %s, flying %s, on the islands %s" % [_in_arena, _in_fantasy, _player.downed, _flight_t >= 0.0, _on_island(_player.global_position)]
 	if _in_arena or _in_fantasy or _player.downed or _flight_t >= 0.0 or not _on_island(_player.global_position):
+		if net != null and net.can_send() and net.is_host() and not _director.running():  # the run is the host's, also when the host stays out of it
+			_run_ticket = ticket
+			_run_mods = mods
+			_director.run_fx = _colosseum.effects(mods)
+			_director.shared_run = true
+			_director.start(int(entry["waves"]))
 		return  # not there to go along
 	if _seat >= 0:
 		_leave_boat(true)
@@ -1866,8 +1877,17 @@ func _enter_arena(ticket: int, mods: PackedStringArray) -> void:
 	_in_arena = true
 	_player.pools.fill_all()  # every colosseum run starts with full pools
 	_set_run_fx(_colosseum.effects(mods))
-	_player.teleport(ARENA_SPAWN, 0.0)
-	_director.start(int(_colosseum.ticket(ticket)["waves"]))
+	var place := 0  # online the party stands side by side, not inside each other
+	if net != null and net.can_send():
+		var ids: Array = net.roster.keys()
+		ids.sort()
+		place = maxi(ids.find(_my_id()), 0)
+	_player.teleport(ARENA_SPAWN + Vector3(float(place % 3 - 1) * 2.2, 0.0, float(floori(float(place) / 3.0)) * 2.2), 0.0)
+	if net != null and net.rounds.is_client():
+		_director.follow_run(int(_colosseum.ticket(ticket)["waves"]))  # online the run is the host's: its waves are shown here
+	elif not (_director.running() and _director.shared_run):  # (a host already running the party's run just joins it)
+		_director.shared_run = net != null and net.can_send()
+		_director.start(int(_colosseum.ticket(ticket)["waves"]))
 	_player_hud.play_fade()
 
 
@@ -1914,9 +1934,55 @@ func _set_run_fx(fx: Dictionary) -> void:
 
 
 # Every frame of a run with modifiers: the ones that need a clock (Short Fuse, Toxic Sand, Closing Ring).
+# --- the colosseum run online: the host's wave director runs it for everybody (game/net_rounds.gd shows it) ---
+
+const RUN_REACH := 90.0  # metres from the arena's middle (the world's origin) that count as being in the run
+const RUN_EMPTY_SECONDS := 4.0
+var _run_retarget := 0.0
+var _run_empty := 0.0
+
+
+# The bodies in the colosseum: ours while we are in the run, and the others' standing in the arena.
+func _run_bodies() -> Array:
+	var out: Array = []
+	if _in_arena and not _player.downed and _player.health.hp > 0.0:
+		out.append(_player)
+	if net != null and net.can_send():
+		for body: Node3D in net.target_nodes():
+			if Vector2(body.global_position.x, body.global_position.z).length() < RUN_REACH:
+				out.append(body)
+	return out
+
+
+# Hosting a run: every wave enemy goes after the nearest body in the arena; nobody left in it ends the run.
+func _host_run(delta: float) -> void:
+	if not _director.running() or not _director.shared_run or not _director.follow.is_empty() or net == null or not net.can_send() or not net.is_host():
+		_run_empty = 0.0
+		return
+	_run_retarget -= delta
+	if _run_retarget > 0.0:
+		return
+	_run_retarget = 0.5
+	var bodies := _run_bodies()
+	if bodies.is_empty():
+		_run_empty += 0.5
+		if _run_empty >= RUN_EMPTY_SECONDS and not _in_arena:
+			_director.reset()  # everybody died or went home: the run is over
+		return
+	_run_empty = 0.0
+	for enemy: Variant in (_director.enemy_list() as Array):
+		if not is_instance_valid(enemy) or not (enemy as Node).has_meta("arena") or bool((enemy as Node).get("puppet")):
+			continue
+		var best: Node3D = bodies[0]
+		for body: Node3D in bodies:
+			if body.global_position.distance_squared_to((enemy as Node3D).global_position) < best.global_position.distance_squared_to((enemy as Node3D).global_position):
+				best = body
+		(enemy as Node3D).call("set_target", best)
+
+
 func _run_modifiers(delta: float) -> void:
 	var wave := _director.wave_number()
-	if _run_fx.has("wave_seconds") and wave > 0:
+	if _run_fx.has("wave_seconds") and wave > 0 and _director.follow.is_empty():  # (online the host's machine sends the late pack in)
 		if wave != _fuse_wave:
 			_fuse_wave = wave
 			_fuse_left = float(_run_fx["wave_seconds"])
@@ -3545,12 +3611,16 @@ func _fantasy_detail() -> void:
 
 func _leave_arena() -> void:
 	_field.clear()
+	var run_fx := _director.run_fx
 	_set_run_fx({})
 	if _reward != null:
 		_reward.queue_free()
 	_reward = null
 	_in_arena = false
-	_director.reset()
+	if _director.shared_run and _director.follow.is_empty() and not _run_bodies().is_empty():
+		_director.run_fx = run_fx  # hosting a run the others are still in: it goes on (game over for it comes when nobody is left)
+	else:
+		_director.reset()
 	_player.teleport(_island_spawn, 0.0)
 	_player_hud.play_fade()
 
@@ -3589,6 +3659,7 @@ func _process(delta: float) -> void:
 	_run_quest()
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)
+	_host_run(delta)
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
 		_self_revive_at = -1.0
 		_player.revive(1.0)

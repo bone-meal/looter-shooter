@@ -1,107 +1,291 @@
 {
-  "version": 1,
-  "_about": "A colosseum run (core/colosseum_rules.gd decides). tickets: bought with points at the painting; a run is the first `waves` waves of data/waves.json and ends with the reward chest. per_wave: every wave after the first makes its enemies this much tougher (0.12 = +12 % of the wave-1 number per wave). loot: tiers = the ladder, lowest first (pony is never reached by stepping up). trash_chance = share of ordinary kills that leave a gun; elites and bosses always leave one. bands: up to wave `to_wave` a gun is of `tier`, with chance `better` one tier higher. A boss's gun is boss_tiers_up above its wave's tier. final_boss: the boss of wave `wave` leaves `guns` guns picked by the weights in `tiers`, and with chance `treasure_chance` the item `treasure`. chest: `guns` guns chest_tiers_up above the tier of the run's last wave. armour: the chance that a kill also leaves a piece of armour (any armour item of data/items.json without no_drop), and slot_trait_chance = the share of those that are the variant with one more ready gun slot (data/items.json variants). modifiers: ticked on the board before going in; `loot` = the share each adds to every loot chance (all chances x (1 + the sum); the chest gets one more gun per chest.gun_per_loot of that sum); `effects` = what it changes, read by core/colosseum_rules.gd `effects` (numbers of the same key multiply): enemy_health / enemy_damage / enemy_speed (x), death_blast_radius + death_blast_damage (a dead enemy blows up), all_elite, player_health (x), ammo_start (share of every pool you start with), fog (density) + hide_bars, boss_count / enemy_count (x heads per wave), no_heal, wave_seconds + late_pack (too slow = that many elites more), boss_body_damage (x unless it is a headshot), vampire (share of a blow's damage the enemy heals), wave_delay (seconds between waves), blackout, ring_start / ring_end (metres, first to last wave) + ring_dps, still_seconds + still_element, berserk_below (share of health) + berserk_mult, blind, reload_time (x), jump_fatigue (x) + no_sprint.",
-  "tickets": [
-    {
-      "name": "Four waves",
-      "waves": 4,
-      "price": 2000
-    },
-    {
-      "name": "Eight waves",
-      "waves": 8,
-      "price": 5000
-    },
-    {
-      "name": "Twelve waves",
-      "waves": 12,
-      "price": 10000
-    }
+ "version": 1,
+ "_about": "A colosseum run (core/colosseum_rules.gd decides). tickets: bought with points at the painting; a run is the first `waves` waves of data/waves.json and ends with the reward chest. per_wave: every wave after the first makes its enemies this much tougher (0.12 = +12 % of the wave-1 number per wave). loot: tiers = the ladder, lowest first (pony is never reached by stepping up). trash_chance = share of ordinary kills that leave a gun; elites and bosses always leave one. bands: up to wave `to_wave` a gun is of `tier`, with chance `better` one tier higher. A boss's gun is boss_tiers_up above its wave's tier. final_boss: the boss of wave `wave` leaves `guns` guns picked by the weights in `tiers`, and with chance `treasure_chance` the item `treasure`. chest: `guns` guns chest_tiers_up above the tier of the run's last wave. armour: the chance that a kill also leaves a piece of armour (any armour item of data/items.json without no_drop), and slot_trait_chance = the share of those that are the variant with one more ready gun slot (data/items.json variants). modifiers: ticked on the board before going in; `loot` = the share each adds to every loot chance (all chances x (1 + the sum); the chest gets one more gun per chest.gun_per_loot of that sum); `effects` = what it changes, read by core/colosseum_rules.gd `effects` (numbers of the same key multiply): enemy_health / enemy_damage / enemy_speed (x), death_blast_radius + death_blast_damage (a dead enemy blows up), all_elite, player_health (x), ammo_start (share of every pool you start with), fog (density) + hide_bars, boss_count / enemy_count (x heads per wave), no_heal, wave_seconds + late_pack (too slow = that many elites more), boss_body_damage (x unless it is a headshot), vampire (share of a blow's damage the enemy heals), wave_delay (seconds between waves), blackout, ring_start / ring_end (metres, first to last wave) + ring_dps, still_seconds + still_element, berserk_below (share of health) + berserk_mult, blind, reload_time (x), jump_fatigue (x) + no_sprint.",
+ "tickets": [
+  {
+   "name": "Four waves",
+   "waves": 4,
+   "price": 2000
+  },
+  {
+   "name": "Eight waves",
+   "waves": 8,
+   "price": 5000
+  },
+  {
+   "name": "Twelve waves",
+   "waves": 12,
+   "price": 10000
+  }
+ ],
+ "per_wave": {
+  "health": 0.12,
+  "damage": 0.08,
+  "speed": 0.01
+ },
+ "loot": {
+  "tiers": [
+   "green",
+   "blue",
+   "purple",
+   "gold",
+   "orange",
+   "rainbow"
   ],
-  "per_wave": {
-    "health": 0.12,
-    "damage": 0.08,
-    "speed": 0.01
+  "trash_chance": 0.03,
+  "bands": [
+   {
+    "to_wave": 4,
+    "tier": "green",
+    "better": 0.01
+   },
+   {
+    "to_wave": 7,
+    "tier": "blue",
+    "better": 0.05
+   },
+   {
+    "to_wave": 9,
+    "tier": "purple",
+    "better": 0.05
+   },
+   {
+    "to_wave": 12,
+    "tier": "gold",
+    "better": 0.05
+   }
+  ],
+  "boss_tiers_up": 1,
+  "final_boss": {
+   "wave": 12,
+   "guns": 3,
+   "tiers": {
+    "orange": 60,
+    "rainbow": 30,
+    "pony": 10
+   },
+   "treasure": "phoons_treasure",
+   "treasure_chance": 0.1
   },
-  "loot": {
-    "tiers": [
-      "green",
-      "blue",
-      "purple",
-      "gold",
-      "orange",
-      "rainbow"
-    ],
-    "trash_chance": 0.03,
-    "bands": [
-      {
-        "to_wave": 4,
-        "tier": "green",
-        "better": 0.01
-      },
-      {
-        "to_wave": 7,
-        "tier": "blue",
-        "better": 0.05
-      },
-      {
-        "to_wave": 9,
-        "tier": "purple",
-        "better": 0.05
-      },
-      {
-        "to_wave": 12,
-        "tier": "gold",
-        "better": 0.05
-      }
-    ],
-    "boss_tiers_up": 1,
-    "final_boss": {
-      "wave": 12,
-      "guns": 3,
-      "tiers": {
-        "orange": 60,
-        "rainbow": 30,
-        "pony": 10
-      },
-      "treasure": "phoons_treasure",
-      "treasure_chance": 0.1
-    },
-    "chest": {
-      "guns": 2,
-      "tiers_up": 1,
-      "gun_per_loot": 1.0
-    },
-    "armour": {
-      "trash_chance": 0.01,
-      "elite_chance": 0.1,
-      "boss_chance": 0.35,
-      "slot_trait_chance": 0.08,
-      "slot_trait": "holster"
-    }
+  "chest": {
+   "guns": 2,
+   "tiers_up": 1,
+   "gun_per_loot": 1.0
   },
-  "modifiers": [
-    {"id": "thick_hides", "name": "Thick Hides", "desc": "Enemies have half as much health again.", "loot": 0.15, "effects": {"enemy_health": 1.5}},
-    {"id": "heavy_hitters", "name": "Heavy Hitters", "desc": "Enemies hit half as hard again.", "loot": 0.15, "effects": {"enemy_damage": 1.5}},
-    {"id": "quick_feet", "name": "Quick Feet", "desc": "Enemies are 30 % faster.", "loot": 0.1, "effects": {"enemy_speed": 1.3}},
-    {"id": "bad_blood", "name": "Bad Blood", "desc": "Enemies blow up when they die.", "loot": 0.1, "effects": {"death_blast_radius": 3.5, "death_blast_damage": 18}},
-    {"id": "all_elite", "name": "All Elite", "desc": "Every enemy has an elite trait (they do not drop like elites).", "loot": 0.3, "effects": {"all_elite": true}},
-    {"id": "glass_jaw", "name": "Glass Jaw", "desc": "You have half your health.", "loot": 0.25, "effects": {"player_health": 0.5}},
-    {"id": "dry_mags", "name": "Dry Mags", "desc": "You go in with half of every ammo pool.", "loot": 0.1, "effects": {"ammo_start": 0.5}},
-    {"id": "fog_bank", "name": "Fog Bank", "desc": "Thick fog, and no health bars over enemies.", "loot": 0.1, "effects": {"fog": 0.07, "hide_bars": true}},
-    {"id": "twin_bosses", "name": "Twin Bosses", "desc": "Two bosses on every boss wave.", "loot": 0.3, "effects": {"boss_count": 2}},
-    {"id": "packed_house", "name": "Packed House", "desc": "Half as many enemies again in every wave.", "loot": 0.2, "effects": {"enemy_count": 1.5}},
-    {"id": "one_life", "name": "One Life", "desc": "Nothing heals you during the run.", "loot": 0.05, "effects": {"no_heal": true}},
-    {"id": "short_fuse", "name": "Short Fuse", "desc": "45 seconds a wave: too slow and three elites more come in.", "loot": 0.15, "effects": {"wave_seconds": 45, "late_pack": 3}},
-    {"id": "bulletproof_bosses", "name": "Bulletproof Bosses", "desc": "Bosses take half damage, except from headshots.", "loot": 0.15, "effects": {"boss_body_damage": 0.5}},
-    {"id": "vampires", "name": "Vampires", "desc": "Enemies heal by what they hit you for.", "loot": 0.15, "effects": {"vampire": 1.0}},
-    {"id": "no_breather", "name": "No Breather", "desc": "No pause between waves.", "loot": 0.1, "effects": {"wave_delay": 0.0}},
-    {"id": "blackout", "name": "Blackout", "desc": "Lights out: only your torch and the muzzle flashes.", "loot": 0.15, "effects": {"blackout": true}},
-    {"id": "closing_ring", "name": "Closing Ring", "desc": "A ring of fire closes in with every wave.", "loot": 0.15, "effects": {"ring_start": 26.0, "ring_end": 9.0, "ring_dps": 14.0}},
-    {"id": "toxic_sand", "name": "Toxic Sand", "desc": "Stand still for 2 seconds and the sand poisons you.", "loot": 0.1, "effects": {"still_seconds": 2.0, "still_element": "toxic"}},
-    {"id": "berserkers", "name": "Berserkers", "desc": "Under 30 % health an enemy doubles its speed and damage.", "loot": 0.15, "effects": {"berserk_below": 0.3, "berserk_mult": 2.0}},
-    {"id": "blind_fire", "name": "Blind Fire", "desc": "No crosshair and no ammo counter.", "loot": 0.1, "effects": {"blind": true}},
-    {"id": "slow_hands", "name": "Slow Hands", "desc": "Reloads take half as long again.", "loot": 0.1, "effects": {"reload_time": 1.5}},
-    {"id": "lead_boots", "name": "Lead Boots", "desc": "Jumping tires you twice as fast, and no sprinting.", "loot": 0.1, "effects": {"jump_fatigue": 2.0, "no_sprint": true}}
-  ]
+  "armour": {
+   "trash_chance": 0.01,
+   "elite_chance": 0.1,
+   "boss_chance": 0.35,
+   "slot_trait_chance": 0.08,
+   "slot_trait": "holster"
+  }
+ },
+ "modifiers": [
+  {
+   "id": "thick_hides",
+   "name": "Thick Hides",
+   "desc": "Every enemy has 50 % more health.",
+   "loot": 0.15,
+   "effects": {
+    "enemy_health": 1.5
+   }
+  },
+  {
+   "id": "heavy_hitters",
+   "name": "Heavy Hitters",
+   "desc": "Every enemy hits 50 % harder.",
+   "loot": 0.15,
+   "effects": {
+    "enemy_damage": 1.5
+   }
+  },
+  {
+   "id": "quick_feet",
+   "name": "Quick Feet",
+   "desc": "Every enemy moves 30 % faster.",
+   "loot": 0.1,
+   "effects": {
+    "enemy_speed": 1.3
+   }
+  },
+  {
+   "id": "bad_blood",
+   "name": "Bad Blood",
+   "desc": "An enemy blows up where it dies: 18 damage to you if you stand within 3.5 m.",
+   "loot": 0.1,
+   "effects": {
+    "death_blast_radius": 3.5,
+    "death_blast_damage": 18
+   }
+  },
+  {
+   "id": "all_elite",
+   "name": "All Elite",
+   "desc": "Every enemy gets an elite trait (tough, swift, brutal or giant), but only true elites drop elite loot.",
+   "loot": 0.3,
+   "effects": {
+    "all_elite": true
+   }
+  },
+  {
+   "id": "glass_jaw",
+   "name": "Glass Jaw",
+   "desc": "Your health is halved for the whole run.",
+   "loot": 0.25,
+   "effects": {
+    "player_health": 0.5
+   }
+  },
+  {
+   "id": "dry_mags",
+   "name": "Dry Mags",
+   "desc": "You go in with only half of every ammo pool (nothing refills it in there).",
+   "loot": 0.1,
+   "effects": {
+    "ammo_start": 0.5
+   }
+  },
+  {
+   "id": "fog_bank",
+   "name": "Fog Bank",
+   "desc": "Thick fog over the arena, and no health bars over the enemies.",
+   "loot": 0.1,
+   "effects": {
+    "fog": 0.07,
+    "hide_bars": true
+   }
+  },
+  {
+   "id": "twin_bosses",
+   "name": "Twin Bosses",
+   "desc": "Every boss wave has two bosses instead of one.",
+   "loot": 0.3,
+   "effects": {
+    "boss_count": 2
+   }
+  },
+  {
+   "id": "packed_house",
+   "name": "Packed House",
+   "desc": "Every wave has 50 % more enemies.",
+   "loot": 0.2,
+   "effects": {
+    "enemy_count": 1.5
+   }
+  },
+  {
+   "id": "one_life",
+   "name": "One Life",
+   "desc": "Nothing heals you during the run: no regeneration, no healing items.",
+   "loot": 0.05,
+   "effects": {
+    "no_heal": true
+   }
+  },
+  {
+   "id": "short_fuse",
+   "name": "Short Fuse",
+   "desc": "Each wave has 45 seconds: too slow and 3 more enemies of that wave's kinds come in.",
+   "loot": 0.15,
+   "effects": {
+    "wave_seconds": 45,
+    "late_pack": 3
+   }
+  },
+  {
+   "id": "bulletproof_bosses",
+   "name": "Bulletproof Bosses",
+   "desc": "Bosses take half damage from body shots; headshots do full damage.",
+   "loot": 0.15,
+   "effects": {
+    "boss_body_damage": 0.5
+   }
+  },
+  {
+   "id": "vampires",
+   "name": "Vampires",
+   "desc": "Enemies heal themselves by the damage they deal to you.",
+   "loot": 0.15,
+   "effects": {
+    "vampire": 1.0
+   }
+  },
+  {
+   "id": "no_breather",
+   "name": "No Breather",
+   "desc": "The next wave starts the moment the last one is beaten.",
+   "loot": 0.1,
+   "effects": {
+    "wave_delay": 0.0
+   }
+  },
+  {
+   "id": "blackout",
+   "name": "Blackout",
+   "desc": "The arena goes dark: you see by a torch on your head and the muzzle flashes.",
+   "loot": 0.15,
+   "effects": {
+    "blackout": true
+   }
+  },
+  {
+   "id": "closing_ring",
+   "name": "Closing Ring",
+   "desc": "A ring of fire shrinks every wave (26 m across at the start down to 9 m): outside it you burn for 14 a second.",
+   "loot": 0.15,
+   "effects": {
+    "ring_start": 26.0,
+    "ring_end": 9.0,
+    "ring_dps": 14.0
+   }
+  },
+  {
+   "id": "toxic_sand",
+   "name": "Toxic Sand",
+   "desc": "Stand still for 2 seconds and the sand poisons you; keep moving.",
+   "loot": 0.1,
+   "effects": {
+    "still_seconds": 2.0,
+    "still_element": "toxic"
+   }
+  },
+  {
+   "id": "berserkers",
+   "name": "Berserkers",
+   "desc": "An enemy below 30 % health moves and hits twice as hard.",
+   "loot": 0.15,
+   "effects": {
+    "berserk_below": 0.3,
+    "berserk_mult": 2.0
+   }
+  },
+  {
+   "id": "blind_fire",
+   "name": "Blind Fire",
+   "desc": "No crosshair, no ammo counter and no gun bar on your screen.",
+   "loot": 0.1,
+   "effects": {
+    "blind": true
+   }
+  },
+  {
+   "id": "slow_hands",
+   "name": "Slow Hands",
+   "desc": "Reloading takes 50 % longer.",
+   "loot": 0.1,
+   "effects": {
+    "reload_time": 1.5
+   }
+  },
+  {
+   "id": "lead_boots",
+   "name": "Lead Boots",
+   "desc": "Jumping tires you twice as fast, and you cannot sprint.",
+   "loot": 0.1,
+   "effects": {
+    "jump_fatigue": 2.0,
+    "no_sprint": true
+   }
+  }
+ ]
 }

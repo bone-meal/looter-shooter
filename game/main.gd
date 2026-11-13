@@ -113,9 +113,42 @@ func _ready() -> void:
 
 	_show_only(_main_menu)
 	if OS.get_cmdline_user_args().has("--autostart"):  # developer check (tools/game_boot_check.tscn): skip the menu
-		_start_game()
-		if ResourceLoader.exists("res://tools/dev_boot.gd"):
+		var pair := ""
+		for arg in OS.get_cmdline_user_args():
+			if arg.begins_with("--net-host=") or arg.begins_with("--net-join="):
+				pair = arg
+		if pair == "":
+			_start_game()
+		else:
+			await _dev_pair(pair)  # tools/net_pair_check.tscn: two copies of the game, one hosting, one joining
+		if ResourceLoader.exists("res://tools/dev_boot.gd") and _session != null:
 			add_child((load("res://tools/dev_boot.gd") as GDScript).new())
+
+
+# Developer pair check: "--net-host=<file>" hosts, writes the session id into that file and starts play;
+# "--net-join=<file>" waits for that file and joins. Waits until the game session exists.
+func _dev_pair(arg: String) -> void:
+	var path := arg.get_slice("=", 1)
+	if arg.begins_with("--net-host="):
+		_net.host("Host")
+		var waited := 0.0
+		while _net.session_id == "" and waited < 60.0:
+			await get_tree().create_timer(0.5).timeout
+			waited += 0.5
+		var f := FileAccess.open(path, FileAccess.WRITE)
+		f.store_string(_net.session_id)
+		f.close()
+		_net.start_for_all()
+	else:
+		var waited := 0.0
+		while not FileAccess.file_exists(path) and waited < 90.0:
+			await get_tree().create_timer(0.5).timeout
+			waited += 0.5
+		_net.join(FileAccess.get_file_as_string(path).strip_edges(), "Guest")
+	var loading := 0.0
+	while _session == null and loading < 120.0:
+		await get_tree().create_timer(0.5).timeout
+		loading += 0.5
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -149,6 +182,8 @@ func _start_game() -> void:
 	_session.settings = _settings
 	_session.net = _net
 	_session.process_mode = Node.PROCESS_MODE_PAUSABLE
+	if OS.get_cmdline_user_args().has("--autostart"):
+		_session.set("no_save", true)  # a developer run never writes a save (also before its script takes over)
 	_session.player_name = _net.local_name() if _net.is_active() else _character
 	add_child(_session)
 	_session.look_changed.connect(_net.send_look)

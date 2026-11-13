@@ -3,7 +3,9 @@
 # results: which enemies exist and where, who died, which round it is, and what each hit PAID (a hit, a kill, a
 # headshot kill, a melee kill): the shooter's machine never pays itself for a host-run enemy. POWER-UPS are the
 # host's too: it says which one lies where, when one is gone, and what the whole party just got (it alone sees who
-# walked into one).
+# walked into one). THE COLOSSEUM RUN is the host's too: its wave director spawns every wave (`arena_spawned`), they go
+# to the others the same way as island enemies (with their numbers, as they differ by wave and modifiers), and the
+# run's wave / enemies left / cleared are told twice a second (`_arena`); a machine not in the run makes no stand-ins.
 # The host checks who sent a request, that the enemy exists and that the numbers are finite; like the shared boss it
 # does not cap the damage a client claims (director's decision).
 # Dependencies: game/net_session.gd (parent; `net`), game/island_rounds.gd (`rounds`), game/wave_director.gd
@@ -56,6 +58,7 @@ var power_near := Callable()  # func(at: Vector3) -> int: the power part lying a
 var box_near := Callable()  # func(at: Vector3) -> bool: that spot is at the mystery box
 var trap_near := Callable()  # func(at: Vector3) -> int: the trap whose lever is at that spot, -1 = none
 var on_gun_side := Callable()  # func() -> bool: our player is where island enemies can reach (not in Aurelind)
+var in_run := Callable()  # func() -> bool: our player is in the colosseum run (only then are its enemies shown here)
 var round_number := 0  # client: the round as the host last told it
 var round_kind := "normal"
 var round_left := 0
@@ -68,6 +71,9 @@ var _ask_timer := 0.0
 var _bound := {}  # ghost instance id -> true once its `struck` signal is connected
 var _asked := false  # client: we asked the host what is alive
 var _pending := {}  # client: net id -> [damage, blow] of this frame's hits (a shotgun's pellets go out as one hit)
+var _skipped := {}  # client: net id -> true for run enemies told while we were not in the run (made once we are)
+var _arena_timer := 0.0
+var states_seen := 0  # client: how many enemy states the host sent us (developer checks)
 
 
 func bind(island_rounds: Node, wave_director: Node3D, score: RefCounted) -> void:
@@ -79,6 +85,8 @@ func bind(island_rounds: Node, wave_director: Node3D, score: RefCounted) -> void
 	_pending.clear()
 	_asked = false
 	rounds.connect("spawned", _on_spawned)
+	if not director.is_connected("arena_spawned", _on_spawned):
+		director.connect("arena_spawned", _on_spawned)
 	rounds.connect("round_started", func(number: int, kind: String) -> void: _tell_round(number, kind, true))
 	rounds.connect("round_ended", func(number: int, kind: String) -> void: _tell_round(number, kind, false))
 
@@ -100,7 +108,7 @@ func is_client() -> bool:
 func _process(delta: float) -> void:
 	if rounds == null:
 		return
-	rounds.set("active", not is_client())  # alone or hosting: the rounds run here
+	rounds.set("active", not (net.is_active() and not net.is_host()))  # alone or hosting: the rounds run here (a joiner never, also not in its first moments before the channel is open: it made a round of its own then)
 	if not net.can_send():
 		_asked = false
 		return
@@ -117,6 +125,10 @@ func _process(delta: float) -> void:
 		if not _bound.has(body.get_instance_id()) and body.has_signal("struck"):
 			_bound[body.get_instance_id()] = true
 			body.connect("struck", _on_ghost_struck.bind(body))
+	_arena_timer -= delta
+	if _arena_timer <= 0.0 and bool(director.call("running")):
+		_arena_timer = 0.5
+		_arena.rpc(int(director.call("wave_number")), int(director.call("wave_count")), int(director.call("enemies_left")), bool(director.call("is_cleared")))
 	_state_timer += delta
 	if _state_timer < (0.1 if not _enemies.is_empty() else 1.0):
 		return
@@ -126,10 +138,11 @@ func _process(delta: float) -> void:
 	var turns := PackedFloat32Array()
 	var healths := PackedFloat32Array()
 	for id: int in _enemies.keys():
-		var enemy: Node3D = _enemies[id]
-		if not is_instance_valid(enemy):
+		var held: Variant = _enemies[id]  # (a typed variable cannot even hold a freed enemy: that error stopped every state after the first one was put away)
+		if not is_instance_valid(held):
 			_enemies.erase(id)
 			continue
+		var enemy: Node3D = held
 		ids.append(id)
 		spots.append(enemy.global_position)
 		turns.append(enemy.rotation.y)
@@ -148,7 +161,7 @@ func _on_spawned(enemy: Node3D) -> void:
 	enemy.set_meta("net_id", id)
 	enemy.connect("died", func(_e: Node) -> void: _on_real_died(id))
 	enemy.connect("attacked", func(origin: Vector3, aim: Vector3) -> void: _fire.rpc(id, origin, aim))
-	_spawn.rpc(id, String(enemy.get("enemy_id")), enemy.global_position, int(enemy.get_meta("tier")))
+	_spawn.rpc(id, String(enemy.get("enemy_id")), enemy.global_position, int(enemy.get_meta("tier")), enemy.get_meta("net_stats", {}))
 
 
 func _on_real_died(id: int) -> void:
@@ -172,17 +185,28 @@ func _round(number: int, kind: String, started: bool) -> void:
 		round_ended.emit(number, kind)
 
 
+# `run_stats` = a colosseum enemy's numbers ({} = an island enemy: built from the round here).
 @rpc("authority", "call_remote", "reliable")
-func _spawn(id: int, enemy_id: String, pos: Vector3, tier: int) -> void:
+func _spawn(id: int, enemy_id: String, pos: Vector3, tier: int, run_stats: Dictionary) -> void:
 	if rounds == null or _enemies.has(id) or not pos.is_finite():
 		return
-	var stats: Dictionary = rounds.call("stats_of", enemy_id, tier)
+	var from_run := not run_stats.is_empty()
+	if from_run and not (in_run.is_valid() and bool(in_run.call())):
+		_skipped[id] = true  # not in the run: nothing to show (made if we turn out to be in it after all)
+		return
+	_skipped.erase(id)
+	var stats: Dictionary = _clean_stats(run_stats) if from_run else rounds.call("stats_of", enemy_id, tier)
 	if stats.is_empty():
 		return
 	var puppet: Node3D = director.call("spawn_custom", enemy_id, stats, pos)
 	puppet.set("puppet", true)
 	puppet.set("net_pos", pos)
-	puppet.set_meta("island", true)
+	puppet.set_meta("net_id", id)
+	puppet.set_meta("arena" if from_run else "island", true)
+	if from_run:
+		puppet.set("elite", String(stats.get("elite_name", "")))
+		if bool(stats.get("forced_elite", false)):
+			puppet.set_meta("forced_elite", true)
 	puppet.set_meta("tier", tier)
 	puppet.set_meta("host_pays", true)  # the host says what our hits on it paid (_paid)
 	puppet.connect("puppet_hit", func(damage: float) -> void: _note_hit(id, damage))
@@ -210,11 +234,13 @@ func _state(ids: PackedInt32Array, spots: PackedVector3Array, turns: PackedFloat
 	round_left = left
 	round_number = number
 	fighting = in_round
+	states_seen += 1
 	var unknown := false
 	for i in ids.size():
 		var puppet: Variant = _enemies.get(ids[i])
 		if not is_instance_valid(puppet):
-			unknown = true
+			if not _skipped.has(ids[i]) or (in_run.is_valid() and bool(in_run.call())):
+				unknown = true
 			continue
 		if spots[i].is_finite():
 			puppet.set("net_pos", spots[i])
@@ -225,6 +251,9 @@ func _state(ids: PackedInt32Array, spots: PackedVector3Array, turns: PackedFloat
 			if is_instance_valid(_enemies[id]):
 				director.call("despawn", _enemies[id])
 			_enemies.erase(id)
+	for id: int in _skipped.keys():
+		if not ids.has(id):
+			_skipped.erase(id)
 	if unknown and _ask_timer <= 0.0:
 		_ask_timer = 1.0
 		_ask_all.rpc_id(1)
@@ -600,7 +629,7 @@ func _ask_all() -> void:
 			_window.rpc_id(peer, window, boards[window])
 	for id: int in _enemies:
 		if is_instance_valid(_enemies[id]):
-			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position, int(_enemies[id].get_meta("tier")))
+			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position, int(_enemies[id].get_meta("tier")), _enemies[id].get_meta("net_stats", {}))
 
 
 # --- requests from the other machines ---
@@ -647,6 +676,24 @@ func _effect(id: int, kind: String, amount: float, seconds: float) -> void:
 				enemy.call("push", Vector3(amount, 0.0, seconds).limit_length(20.0))  # push sends its x and z here
 
 
+# The colosseum run as the host has it: a client in the run shows this wave, count, enemies left and the clear.
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _arena(wave: int, count: int, left: int, cleared: bool) -> void:
+	if director == null or (director.get("follow") as Dictionary).is_empty():
+		return
+	director.set("follow", {"wave": clampi(wave, 0, 99), "count": clampi(count, 0, 99), "left": clampi(left, -1, 999), "cleared": cleared})
+
+
+# A run enemy's numbers from the host: only finite numbers and plain values are kept.
+func _clean_stats(stats: Dictionary) -> Dictionary:
+	var out := {}
+	for key: Variant in stats:
+		var value: Variant = stats[key]
+		if (value is float and is_finite(value)) or value is int or value is String or value is bool or value is Array or value is Dictionary:
+			out[String(key)] = value
+	return out if out.has("max_hp") and (out["max_hp"] is float or out["max_hp"] is int) and float(out["max_hp"]) > 0.0 else {}
+
+
 # Host migration: this machine is the new host. Its puppets cannot become real enemies (the old host held the
 # round), so the island is cleared and the round the party was in starts again here.
 func adopt_as_host() -> void:
@@ -657,3 +704,8 @@ func adopt_as_host() -> void:
 	if rounds != null and round_number > 0:
 		rounds.set("active", true)
 		rounds.call("skip_to", round_number)
+	var run: Dictionary = director.get("follow") if director != null else {}
+	if not run.is_empty() and not bool(run["cleared"]):  # the run we were following goes on here, from the wave it was at
+		director.call("start", int(run["count"]))
+		director.set("shared_run", true)
+		director.call("skip_to", maxi(int(run["wave"]), 1))

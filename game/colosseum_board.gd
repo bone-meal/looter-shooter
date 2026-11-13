@@ -9,6 +9,8 @@ const Widgets = preload("res://game/menu_widgets.gd")
 signal chosen(ticket: int, modifiers: PackedStringArray)
 signal closed
 
+const HOVER_HINT := "Point at a modifier to see what it does."
+
 var rules: RefCounted  # core/colosseum_rules.gd, set before add_child
 var tier_name := Callable()  # func(tier id) -> String, for the summary line
 
@@ -18,6 +20,7 @@ var _tickets: Array[Button] = []
 var _ticks := {}  # modifier id -> CheckBox
 var _have := Label.new()
 var _summary := Label.new()
+var _about := Label.new()  # what the modifier under the mouse does (also its tooltip)
 var _go: Button
 
 
@@ -61,11 +64,19 @@ func _ready() -> void:
 		for mod: Dictionary in mods:
 			var tick := CheckBox.new()
 			tick.text = "%s  (+%d %% loot)" % [String(mod["name"]), roundi(float(mod["loot"]) * 100.0)]
-			tick.tooltip_text = String(mod["desc"])
+			tick.tooltip_text = "%s\n+%d %% loot" % [String(mod["desc"]), roundi(float(mod["loot"]) * 100.0)]
 			tick.custom_minimum_size = Vector2(370, 0)
 			tick.toggled.connect(func(_on: bool) -> void: _refresh())
+			tick.mouse_entered.connect(func() -> void: _about.text = "%s: %s" % [String(mod["name"]), String(mod["desc"])])
+			tick.mouse_exited.connect(func() -> void: _about.text = HOVER_HINT)
 			grid.add_child(tick)
 			_ticks[String(mod["id"])] = tick
+	_about.text = HOVER_HINT
+	_about.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_about.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_about.custom_minimum_size = Vector2(760, 46)
+	_about.modulate = Color(0.95, 0.85, 0.6)
+	box.add_child(_about)
 	_summary.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	_summary.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_summary.custom_minimum_size = Vector2(760, 76)

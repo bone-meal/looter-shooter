@@ -417,7 +417,9 @@ func _move_tick(input: Vector2) -> void:
 			explosives.blast(global_position, _perk("shock_radius", 0.0), _perk("shock_damage", 0.0))
 	_was_grounded = grounded
 	var aiming := Input.is_action_pressed("aim")
-	var top := (_aim_units if aiming and _aim_units > 0.0 else _top_units) * move.unit * status.speed_multiplier() * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace
+	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
+	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
+	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
 	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
@@ -589,6 +591,8 @@ func take_damage(amount: float, element: String = "physical") -> void:
 		else:
 			_gun_sound(String(shield.cfg["block_sound"]))
 		return
+	if element == "fire":
+		amount *= _perk("fire_taken", 1.0)  # Blast Proof: fire and blasts hurt half as much
 	var taken := ArmorMath.incoming(amount * _world_damage, element, armor, randf())
 	if taken <= 0.0:
 		blocked.emit()
@@ -1251,6 +1255,8 @@ func _shoot() -> void:
 	var up := _camera.global_transform.basis.y
 	var spread := weapon.spread * lerpf(_perk("hip_spread_mult", 1.0), float(_views[_slot].get("ads_spread_mult", 1.0)), _motion.ads_eased())
 	var calm := _perk("calm_mult", 1.0) if _now() - _calm_since >= _perk("calm_seconds", INF) else 1.0  # Cold Blood: the first shot after a quiet while
+	if calm > 1.0:
+		spread *= _perk("calm_spread", 1.0)  # ... goes exactly where you aim
 	_calm_since = _now()
 	_kick_view()  # applies after this shot's direction is taken (the camera vectors above were read first)
 
