@@ -1,27 +1,26 @@
-Round 6 step 11: colosseum tickets, loot by wave, armour drops, 22 modifiers
+Fix online joining: candidates inside the description, host keeps the lobby
 
-Tickets (data/colosseum.json, core/colosseum_rules.gd, game/colosseum_board.gd):
-the painting opens a board; 4 / 8 / 12 waves for 2000 / 5000 / 10000 points;
-the buyer pays and the party goes in. Every wave is tougher (+12 % health,
-+8 % damage, +1 % speed a wave). A cleared run ends with the chest and the
-door; the arena no longer restarts by itself.
+Joining a friend failed with max connection attempts reached, and the host
+then closed the lobby. Two causes, both checked on the director's PC with the
+new tools/net_probe.tscn (a hidden host and joiner through the real public
+trackers):
 
-Loot by wave: ordinary kills leave a gun 3 % of the time (green in waves 1-4,
-blue 5-7, purple 8-9, gold 10-12, a small chance of one tier better), elites
-always, bosses one tier above their wave, the wave-12 boss three guns (orange
-60 / rainbow 30 / pony 10) and sometimes Phoon's Treasure. The chest holds two
-guns one tier above the run's last wave. No greys.
+1. tracker.openwebtorrent.com passes on only the answer's type and sdp and
+   drops our extra ice_candidates list. Tube threw such answers away, so a
+   join worked only when the one tracker that keeps the list delivered.
+   Now the candidates also go inside the sdp as a=candidate lines
+   (addons/tube/tube_tracker.gd sdp_with_candidates) and an answer without
+   the list is accepted; tools/webrtc_sdp_probe.tscn showed the WebRTC
+   library connects from candidates in the sdp alone.
 
-Armour now drops in the colosseum as things lying in the world
-(game/loot_field.gd spawn_item); rarely as the variant with a holster: one
-more ready gun slot (core/item_db.gd variants, data/items.json).
+2. game/net_session.gd left the session on ANY Tube error. After a joiner
+   failed, the host's join timeout kicked a peer Tube had already dropped,
+   Kick peer failed came back as an error, and the host closed the lobby.
+   Only failing to create or join a session ends it now.
 
-22 modifiers ticked on the board: each makes the run harder and every loot
-chance better; core/colosseum_rules.gd effects() turns them into one table
-read by the wave director, enemies, the player, the HUD and the session.
+Also: join tries 5 s x 6 instead of 2 s x 3, join timeout 10 s, two trackers
+that refuse our requests removed, three more added, a tracker's refusal
+reason is logged.
 
-Also: /wave command, dev steps !ticket !slay !arena !wear,
-tools/colosseum_check.tscn.
-
-Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

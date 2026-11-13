@@ -165,11 +165,31 @@ func send_answer(
 		"to_peer_id": p_to_peer_id_hash,
 		"answer": {
 			"type": description.type,
-			"sdp": description.sdp,
+			"sdp": sdp_with_candidates(description.sdp, ice_candidates),  # studio patch: see sdp_with_candidates
 			"ice_candidates": ice_candidates,
 		},
 		"offer_id": "0",
 	})
+
+
+## Studio patch (2026-11-13): the candidates also go INSIDE the session description, as a=candidate lines. Public
+## trackers may pass on only the answer's type and sdp and drop our extra "ice_candidates" field; the joiner then
+## got an answer without any address to reach the host ("answer data has no ice_candidates") and every join
+## failed with "max connection attempts reached". The WebRTC library reads candidates from the description itself
+## (checked on the GTX 1080 PC with tools/webrtc_sdp_probe.tscn).
+static func sdp_with_candidates(sdp: String, ice_candidates: Array) -> String:
+	var out := sdp
+	if not out.ends_with("\r\n"):
+		out += "\r\n"
+	for candidate in ice_candidates:
+		if not candidate is Dictionary or not (candidate as Dictionary).get("sdp") is String:
+			continue
+		var line: String = candidate["sdp"]
+		if not line.begins_with("a="):
+			line = "a=" + line
+		if not out.contains(line):
+			out += line + "\r\n"
+	return out
 
 
 func send_stop(p_info_hash: String, p_peer_id_hash: String) -> Error:
@@ -198,6 +218,9 @@ func _received_packet(p_packet: PackedByteArray):
 
 
 func _handle_announce(p_data: Dictionary):
+	if p_data.has("failure reason"):  # studio patch: say what the tracker refused
+		raise_warning("tracker refused: %s" % str(p_data["failure reason"]))
+		return
 	if not p_data.has("interval"):
 		raise_warning("announce data has no interval")
 		return
@@ -247,9 +270,8 @@ func _handle_answer(p_data: Dictionary):
 		raise_warning("type invalid data type")
 		return
 	
-	if not answer.has("ice_candidates"):
-		raise_warning("answer data has no ice_candidates")
-		return
+	if not answer.has("ice_candidates"):  # studio patch: the candidates are in the sdp too (sdp_with_candidates)
+		answer["ice_candidates"] = []
 	
 	if not answer.ice_candidates is Array:
 		raise_warning("ice_candidates invalid data type")

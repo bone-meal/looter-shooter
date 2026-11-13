@@ -1,14 +1,18 @@
 {
  "version": 1,
+ "_about": "Online play (game/net_session.gd, addons/tube). trackers: public WebTorrent trackers that pass the join handshake between players (more = more chances one works; dead ones are skipped). stun: servers that tell a player his public address. signaling_timeout_seconds x signaling_attempts = how long a join keeps trying before 'max connection attempts reached'. join_timeout_seconds: a connected player has this long to send his profile before the host lets him go. Checked 2026-11-13 with tools/net_probe.tscn: tracker.openwebtorrent.com passes only the answer's type and sdp (our candidate list is dropped, hence the candidates inside the sdp), tracker.androodev.com passes everything, open.ftorrent.com and tracker.files.fm refuse our requests ('Invalid request': removed).",
  "app_id": "k4rH8u3C426dyPX",
  "max_players": 6,
  "send_rate_hz": 15,
- "join_timeout_seconds": 5,
+ "join_timeout_seconds": 10,
+ "signaling_timeout_seconds": 5.0,
+ "signaling_attempts": 6,
  "trackers": [
   "wss://tracker.webtorrent.dev",
   "wss://tracker.openwebtorrent.com",
-  "wss://open.ftorrent.com",
-  "wss://tracker.androodev.com"
+  "wss://tracker.androodev.com",
+  "wss://tracker.btorrent.xyz",
+  "wss://tracker.ghostchu-services.top:443/announce"
  ],
  "stun": [
   "stun:stun.l.google.com:19302",

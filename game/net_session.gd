@@ -287,6 +287,8 @@ func _make_client(player_name: String) -> bool:
 	context.set("stun_servers_urls", stun)
 	_local_name = ProfileIO.current(player_name)["name"]
 	_client = client_script.new()
+	_client.set("peer_signaling_timeout", float(_config.get("signaling_timeout_seconds", 2.0)))
+	_client.set("peer_signaling_max_attempts", int(_config.get("signaling_attempts", 3)))
 	_client.set("context", context)
 	_client.set("multiplayer_root_node", self)
 	add_child(_client)
@@ -297,9 +299,18 @@ func _make_client(player_name: String) -> bool:
 	return true
 
 
-func _on_error(_code: int, message: String) -> void:
+# Tube's errors (addons/tube/tube_client.gd SessionError). Only failing to create or join a session ends it. The
+# others (a kick that found no peer, a tracker lost, local signaling) leave the session open: before 2026-11-13 any
+# of them made the HOST leave, which closed the lobby for everybody whenever one joiner's connection failed.
+const FATAL_ERRORS := [0, 1]  # CREATE_SESSION_FAILED, JOIN_SESSION_FAILED
+
+
+func _on_error(code: int, message: String) -> void:
 	if _migrating:
 		_mig_err = true
+		return
+	if not FATAL_ERRORS.has(code):
+		push_warning("online: %s (the session stays open)" % message)
 		return
 	failed.emit(message)
 	if _client != null:
