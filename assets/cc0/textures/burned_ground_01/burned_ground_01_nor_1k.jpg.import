@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://be3jf80lhq04c"
 path.s3tc="res://.godot/imported/burned_ground_01_nor_1k.jpg-10aac4f7348765d33fce87ed71817006.s3tc.ctex"
+path.etc2="res://.godot/imported/burned_ground_01_nor_1k.jpg-10aac4f7348765d33fce87ed71817006.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/burned_ground_01/burned_ground_01_nor_1k.jpg"
-dest_files=["res://.godot/imported/burned_ground_01_nor_1k.jpg-10aac4f7348765d33fce87ed71817006.s3tc.ctex"]
+dest_files=["res://.godot/imported/burned_ground_01_nor_1k.jpg-10aac4f7348765d33fce87ed71817006.s3tc.ctex", "res://.godot/imported/burned_ground_01_nor_1k.jpg-10aac4f7348765d33fce87ed71817006.etc2.ctex"]
 
 [params]
 

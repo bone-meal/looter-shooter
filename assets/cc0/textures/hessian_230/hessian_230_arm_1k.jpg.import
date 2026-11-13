@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bejvwmxqjnoqa"
 path.s3tc="res://.godot/imported/hessian_230_arm_1k.jpg-55d8971e6394ca1607cea5762d7ce5d4.s3tc.ctex"
+path.etc2="res://.godot/imported/hessian_230_arm_1k.jpg-55d8971e6394ca1607cea5762d7ce5d4.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/hessian_230/hessian_230_arm_1k.jpg"
-dest_files=["res://.godot/imported/hessian_230_arm_1k.jpg-55d8971e6394ca1607cea5762d7ce5d4.s3tc.ctex"]
+dest_files=["res://.godot/imported/hessian_230_arm_1k.jpg-55d8971e6394ca1607cea5762d7ce5d4.s3tc.ctex", "res://.godot/imported/hessian_230_arm_1k.jpg-55d8971e6394ca1607cea5762d7ce5d4.etc2.ctex"]
 
 [params]
 

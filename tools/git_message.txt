@@ -1,31 +1,4 @@
-Round 6 step 10: weather by round, buildable shield and boat, Gull Rock
+Release v1.05 with a macOS build
 
-Weather and light follow the round (data/island_weather.json, pure
-core/weather_rules.gd, game/island_weather.gd): fog from round 10, a storm
-with rain, lightning and thunder from round 20, a red sky while a boss round
-is fought. Worked out from the round number alone, so nothing is sent
-online. Rain is one MultiMesh whose shader moves the drops.
-
-Buildables (data/buildables.json, core/build_state.gd, game/build_site.gd):
-parts lie on the islands under warm beams, found for the whole party; each
-thing is built at its bench. Game over puts every part back.
-
-Shield (data/shield.json, core/shield_state.gd, game/shield_model.gd): on the
-back it stops hits from behind, held up (key X) it stops hits from ahead and
-the shoot key bashes; 15 hits, a boss's blow costs 3; a new one is taken at
-the bench. Other players see it in the hand or on the back.
-
-Boat (data/boat.json, core/boat_rules.gd, game/boat.gd, game/boat_model.gd):
-built at the slipway on Wreck Cay, steered by whoever sits at the tiller with
-the move keys; six seats, nobody shoots from it; it runs aground in shallow
-water and backs off; you get off onto the nearest sand. Online the host sails
-it from the helmsman's keys (never run between two machines).
-
-Gull Rock: a fifth island no bridge reaches. A backpack lost there washes up
-at the slipway.
-
-Also: /build command, dev steps !weather !build !shield !boat,
-tools/build_check.tscn, six new sounds.
-
-Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+macOS preset: universal + ad-hoc signing; project imports ETC2/ASTC textures (needed for Apple Silicon).
+tools/git_release builds Windows, Linux and macOS; tools/git_release_add attaches one build to an existing release.

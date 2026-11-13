@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://g5ak214ni0p2"
 path.s3tc="res://.godot/imported/Zombie_Atlas.png-d08021ded6832ff2e5a19624d3253dea.s3tc.ctex"
+path.etc2="res://.godot/imported/Zombie_Atlas.png-d08021ded6832ff2e5a19624d3253dea.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/zombie_apocalypse_kit_march_2024_20261110t052859z_1_001/weapons_blends/Zombie_Atlas.png"
-dest_files=["res://.godot/imported/Zombie_Atlas.png-d08021ded6832ff2e5a19624d3253dea.s3tc.ctex"]
+dest_files=["res://.godot/imported/Zombie_Atlas.png-d08021ded6832ff2e5a19624d3253dea.s3tc.ctex", "res://.godot/imported/Zombie_Atlas.png-d08021ded6832ff2e5a19624d3253dea.etc2.ctex"]
 
 [params]
 

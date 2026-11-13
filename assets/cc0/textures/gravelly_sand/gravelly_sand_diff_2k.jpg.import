@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://bhc6c7vkg2o5p"
 path.s3tc="res://.godot/imported/gravelly_sand_diff_2k.jpg-f9da9e7493b896d013477927c93a5f34.s3tc.ctex"
+path.etc2="res://.godot/imported/gravelly_sand_diff_2k.jpg-f9da9e7493b896d013477927c93a5f34.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/gravelly_sand/gravelly_sand_diff_2k.jpg"
-dest_files=["res://.godot/imported/gravelly_sand_diff_2k.jpg-f9da9e7493b896d013477927c93a5f34.s3tc.ctex"]
+dest_files=["res://.godot/imported/gravelly_sand_diff_2k.jpg-f9da9e7493b896d013477927c93a5f34.s3tc.ctex", "res://.godot/imported/gravelly_sand_diff_2k.jpg-f9da9e7493b896d013477927c93a5f34.etc2.ctex"]
 
 [params]
 

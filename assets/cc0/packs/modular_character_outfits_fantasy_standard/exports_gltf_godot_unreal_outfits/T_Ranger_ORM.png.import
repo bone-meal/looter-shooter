@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dthk2b1eb08kl"
 path.s3tc="res://.godot/imported/T_Ranger_ORM.png-7b06742620f99f80c88811f65ccce5ee.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Ranger_ORM.png-7b06742620f99f80c88811f65ccce5ee.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/modular_character_outfits_fantasy_standard/exports_gltf_godot_unreal_outfits/T_Ranger_ORM.png"
-dest_files=["res://.godot/imported/T_Ranger_ORM.png-7b06742620f99f80c88811f65ccce5ee.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Ranger_ORM.png-7b06742620f99f80c88811f65ccce5ee.s3tc.ctex", "res://.godot/imported/T_Ranger_ORM.png-7b06742620f99f80c88811f65ccce5ee.etc2.ctex"]
 
 [params]
 

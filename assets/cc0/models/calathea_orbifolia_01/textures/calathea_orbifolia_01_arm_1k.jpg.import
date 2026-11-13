@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://b6gfdosghvj2t"
 path.s3tc="res://.godot/imported/calathea_orbifolia_01_arm_1k.jpg-ed222b55f5dc6d692757d90ac861cf28.s3tc.ctex"
+path.etc2="res://.godot/imported/calathea_orbifolia_01_arm_1k.jpg-ed222b55f5dc6d692757d90ac861cf28.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/models/calathea_orbifolia_01/textures/calathea_orbifolia_01_arm_1k.jpg"
-dest_files=["res://.godot/imported/calathea_orbifolia_01_arm_1k.jpg-ed222b55f5dc6d692757d90ac861cf28.s3tc.ctex"]
+dest_files=["res://.godot/imported/calathea_orbifolia_01_arm_1k.jpg-ed222b55f5dc6d692757d90ac861cf28.s3tc.ctex", "res://.godot/imported/calathea_orbifolia_01_arm_1k.jpg-ed222b55f5dc6d692757d90ac861cf28.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbpfqkk0jvorc"
 path.s3tc="res://.godot/imported/T_Props_Crates_BaseColor.png-996a1303048de82f4e5f08803b0bd019.s3tc.ctex"
+path.etc2="res://.godot/imported/T_Props_Crates_BaseColor.png-996a1303048de82f4e5f08803b0bd019.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/packs/sci_fi_essentials_kit_standard/T_Props_Crates_BaseColor.png"
-dest_files=["res://.godot/imported/T_Props_Crates_BaseColor.png-996a1303048de82f4e5f08803b0bd019.s3tc.ctex"]
+dest_files=["res://.godot/imported/T_Props_Crates_BaseColor.png-996a1303048de82f4e5f08803b0bd019.s3tc.ctex", "res://.godot/imported/T_Props_Crates_BaseColor.png-996a1303048de82f4e5f08803b0bd019.etc2.ctex"]
 
 [params]
 

@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://kv2k1yx8c17m"
 path.s3tc="res://.godot/imported/medieval_blocks_02_nor_1k.jpg-d45ae916717b7ca73f3e0bf41348f4fc.s3tc.ctex"
+path.etc2="res://.godot/imported/medieval_blocks_02_nor_1k.jpg-d45ae916717b7ca73f3e0bf41348f4fc.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/medieval_blocks_02/medieval_blocks_02_nor_1k.jpg"
-dest_files=["res://.godot/imported/medieval_blocks_02_nor_1k.jpg-d45ae916717b7ca73f3e0bf41348f4fc.s3tc.ctex"]
+dest_files=["res://.godot/imported/medieval_blocks_02_nor_1k.jpg-d45ae916717b7ca73f3e0bf41348f4fc.s3tc.ctex", "res://.godot/imported/medieval_blocks_02_nor_1k.jpg-d45ae916717b7ca73f3e0bf41348f4fc.etc2.ctex"]
 
 [params]
 

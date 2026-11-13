@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://dhmqugcnidctv"
 path.s3tc="res://.godot/imported/namaqualand_boulder_04_diff_1k.jpg-c2ffb953117c18f19fbb8ac5ae7343b6.s3tc.ctex"
+path.etc2="res://.godot/imported/namaqualand_boulder_04_diff_1k.jpg-c2ffb953117c18f19fbb8ac5ae7343b6.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/models/namaqualand_boulder_04/textures/namaqualand_boulder_04_diff_1k.jpg"
-dest_files=["res://.godot/imported/namaqualand_boulder_04_diff_1k.jpg-c2ffb953117c18f19fbb8ac5ae7343b6.s3tc.ctex"]
+dest_files=["res://.godot/imported/namaqualand_boulder_04_diff_1k.jpg-c2ffb953117c18f19fbb8ac5ae7343b6.s3tc.ctex", "res://.godot/imported/namaqualand_boulder_04_diff_1k.jpg-c2ffb953117c18f19fbb8ac5ae7343b6.etc2.ctex"]
 
 [params]
 

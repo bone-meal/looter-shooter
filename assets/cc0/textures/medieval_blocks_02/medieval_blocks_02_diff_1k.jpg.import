@@ -4,15 +4,16 @@ importer="texture"
 type="CompressedTexture2D"
 uid="uid://cfuda8u5tcipd"
 path.s3tc="res://.godot/imported/medieval_blocks_02_diff_1k.jpg-dffa4a125df11e99f69d0cc6acf6ec49.s3tc.ctex"
+path.etc2="res://.godot/imported/medieval_blocks_02_diff_1k.jpg-dffa4a125df11e99f69d0cc6acf6ec49.etc2.ctex"
 metadata={
-"imported_formats": ["s3tc_bptc"],
+"imported_formats": ["s3tc_bptc", "etc2_astc"],
 "vram_texture": true
 }
 
 [deps]
 
 source_file="res://assets/cc0/textures/medieval_blocks_02/medieval_blocks_02_diff_1k.jpg"
-dest_files=["res://.godot/imported/medieval_blocks_02_diff_1k.jpg-dffa4a125df11e99f69d0cc6acf6ec49.s3tc.ctex"]
+dest_files=["res://.godot/imported/medieval_blocks_02_diff_1k.jpg-dffa4a125df11e99f69d0cc6acf6ec49.s3tc.ctex", "res://.godot/imported/medieval_blocks_02_diff_1k.jpg-dffa4a125df11e99f69d0cc6acf6ec49.etc2.ctex"]
 
 [params]
 
