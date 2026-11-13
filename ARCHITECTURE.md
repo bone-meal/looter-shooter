@@ -232,3 +232,7 @@ Run data validator:
 ## Icons (whole game)
 - tools/make_icons.py draws the icon sheet (assets/ui/icons_tint.png = the part that takes a colour + dark outline, icons_ink.png = fixed colours) and data/icons.json (shape -> cell). game/icon_art.gd `IconArt.draw(canvas, shape, rect, colour, alpha)` draws one. Users: the fantasy window and HUD, game/item_icons.gd (armour = the icon of its slot in the item's `color` from data/items.json; guns keep their drawn shapes), game/inventory_screen.gd (empty equipment slots show the faint icon of what goes there).
 - Tier names: game/tier_style.gd `draw_name` writes a tier's `tag` in its own `tag_font` (data/gun_loot.json; pony = "*PONY*" in assets/fonts/Chewy-Regular.ttf, bold and slanted), used by the HUD, the inventory tooltip and world drops.
+
+## Card game "You got me Lobster?" (design: diary/DECISIONS_TCG.md, build log: diary/TCG_PROGRESS.md)
+- Pure rules (core/tcg/, no rendering): card_db.gd (data/tcg/rules.json, keywords.json, cards.json, leaders.json by string id; `problems()`, `deck_problem()`, `pick_of()`), match_state.gd (one match: coin toss, mulligan, turns, mana 1-8, intents play / attack / power / end_turn / concede refused with a reason, the 12 keywords, traps, fatigue, burn, seeded RNG, event log `take_log()`; target code = creature uid or HERO - side for a leader), effects.gd (effect runner: damage, heal, draw, summon, buff, give, destroy, mana, crystal, bounce, add, roll, flip; targets; "per" counts). Check: tools/tcg_rules_check.
+

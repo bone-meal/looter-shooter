@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "_about": "The 12 keywords (locked). The rules are in core/tcg/match_state.gd; text = what the card's hover shows.",
+ "guard": {"name": "Guard", "text": "Enemies must attack a Guard first."},
+ "plated": {"name": "Plated", "text": "The first damage it takes is ignored."},
+ "rush": {"name": "Rush", "text": "Can attack creatures the turn it is played."},
+ "charge": {"name": "Charge", "text": "Can attack anything the turn it is played."},
+ "arrival": {"name": "Arrival", "text": "Does something when you play it."},
+ "last_gasp": {"name": "Last Gasp", "text": "Does something when it dies."},
+ "drain": {"name": "Drain", "text": "Damage it deals heals your leader."},
+ "venom": {"name": "Venom", "text": "Destroys any creature it damages."},
+ "twin_strike": {"name": "Twin Strike", "text": "Can attack twice each turn."},
+ "hidden": {"name": "Hidden", "text": "Cannot be attacked or picked by the enemy until it attacks."},
+ "empower": {"name": "Empower", "text": "Your spells deal more damage."},
+ "wind_up": {"name": "Wind-up", "text": "Gets +1/+1 at the start of your turn."}
+}

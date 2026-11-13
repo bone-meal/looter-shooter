@@ -1,0 +1,21 @@
+{
+ "version": 1,
+ "_about": "\"You got me Lobster?\" match rules (core/tcg/match_state.gd), locked in diary/DECISIONS_TCG.md. hero_health: a leader's health. mana_max: the most mana crystals (one more each own turn from 1). deck_size / copies / legendary_copies: deck legality (the leader is extra). first_hand / second_hand: opening cards; the second player also gets lucky_card. hand_max: a card drawn into a full hand burns. board_max: creatures a side. mulligans: redraws allowed at the start. fatigue_start: damage of the first draw from an empty deck, one more each time. power_cost: a leader's hero power (once a turn). turn_seconds / fuse_seconds: the turn timer and when its fuse shows (the table enforces it). max_factions: factions a deck may mix (neutral free). max_traps: hidden traps (Club) one side may have set at once.",
+ "hero_health": 20,
+ "mana_max": 8,
+ "deck_size": 20,
+ "copies": 2,
+ "legendary_copies": 1,
+ "first_hand": 3,
+ "second_hand": 4,
+ "lucky_card": "lucky_chip",
+ "hand_max": 10,
+ "board_max": 7,
+ "mulligans": 1,
+ "fatigue_start": 1,
+ "power_cost": 2,
+ "turn_seconds": 75,
+ "fuse_seconds": 15,
+ "max_factions": 2,
+ "max_traps": 3
+}

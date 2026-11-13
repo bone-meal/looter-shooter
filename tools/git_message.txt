@@ -1,8 +1,8 @@
-Card game step 1 and 2: worms from island bosses, casino coins shown as chips
+Card game step 3: the rules engine
 
-- Every island boss leaves 3 worms for each player (data/island_rounds.json boss.drops), picked up as one pile
-- The casino money is called chips everywhere with a poker chip icon (HUD, slot, blackjack and roulette screens, vendor, pachinko); the save key stays coins
-- /give chips, dev steps take and pachinko
+- core/tcg/card_db.gd, match_state.gd, effects.gd: pure rules of You got me Lobster? (coin toss, mulligan, mana 1 to 8, play, attack, hero power, end turn, concede, the 12 keywords, traps, fatigue, burn, seeded randomness, event log)
+- data/tcg/rules.json and keywords.json
+- tools/tcg_rules_check: 36 checks with a small test card set
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
