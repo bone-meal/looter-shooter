@@ -521,6 +521,28 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:
 				player.global_position = wall.global_position + wall.global_basis.z * 4.0
+		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg note" = the match in one line
+			var tcg: Node = session.get("_tcg")
+			if words[1] == "note":
+				var m: RefCounted = tcg.get("match_state")
+				if m == null:
+					_lines.append("TCG: hovered %s" % str(get_viewport().gui_get_hovered_control()))
+					_lines.append("TCG: no match, seated %s, chips %d" % [str(tcg.call("is_open")), int((session.get("_wallet") as RefCounted).get("balance"))])
+				else:
+					var sd: Array = m.get("sides")
+					var hov := get_viewport().gui_get_hovered_control()
+					_lines.append("TCG: hovered %s %s, viewport %s" % [str(hov), str(hov.get_path()) if hov != null else "", str(get_viewport().get_visible_rect())])
+					_lines.append("TCG: phase %s turn %d current %d winner %d | me %s hp %d mana %d/%d hand %d board %d deck %d | dealer %s hp %d hand %d board %d deck %d | chips %d" % [m.get("phase"), int(m.get("turn")), int(m.get("current")), int(m.get("winner")),
+						sd[0]["leader"], int(sd[0]["hp"]), int(sd[0]["mana"]), int(sd[0]["crystals"]), (sd[0]["hand"] as Array).size(), (sd[0]["board"] as Array).size(), (sd[0]["deck"] as Array).size(),
+						sd[1]["leader"], int(sd[1]["hp"]), (sd[1]["hand"] as Array).size(), (sd[1]["board"] as Array).size(), (sd[1]["deck"] as Array).size(), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "esc":
+				tcg.call("request_close")
+			elif words[1] == "move":  # our side: the move the AI would make, sent as if clicked (or keep the opening hand)
+				tcg.call("dev_move")
+			else:
+				var table: Node3D = (session.get("_casino") as Dictionary).get("card_table")
+				player.call("teleport", table.global_position + Vector3(0, 0.1, -1.6), 0.0)
+				tcg.call("dev_start", words[1], words.size() > 2 and words[2] == "auto")
 		"take":  # "!take <item id>": walk onto the nearest lying drop of that item and pick it up; logs how many we carry after
 			var field: Node = session.get("_field")
 			for d: Dictionary in field.get("_drops"):

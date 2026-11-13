@@ -1,5 +1,6 @@
 # Purpose: builds the casino annex on the club island (east of the club): shell with a door, carpet, neon, the giant pachinko machine that IS the back wall, four slot machines along the east wall, the blackjack and roulette tables with their dealers and two waitresses.
-# Dependencies: game/pachinko_wall.gd, game/slot_machine.gd, game/staff_crew.gd, game/blackjack_table.gd, game/roulette_table.gd. Walls and floor have colliders; decoration is visual only.
+# Also the card table on the beach outside the door with its House Dealer (data/tcg/table.json).
+# Dependencies: game/pachinko_wall.gd, game/slot_machine.gd, game/staff_crew.gd, game/blackjack_table.gd, game/roulette_table.gd, game/tcg/beach_table.gd. Walls and floor have colliders; decoration is visual only.
 extends RefCounted
 
 const PachinkoWall = preload("res://game/pachinko_wall.gd")
@@ -8,6 +9,7 @@ const StaffCrew = preload("res://game/staff_crew.gd")
 const BlackjackTable = preload("res://game/blackjack_table.gd")
 const RouletteTable = preload("res://game/roulette_table.gd")
 const GunVendor = preload("res://game/gun_vendor.gd")
+const BeachTable = preload("res://game/tcg/beach_table.gd")
 const DataStore = preload("res://core/data_store.gd")
 
 const H := 10.0
@@ -22,7 +24,7 @@ const Z0 := -7.0
 const Z1 := 6.0
 
 
-# Returns {"vendors" (Array of game/gun_vendor.gd), "pachinko", "slots" (Array), "blackjack", "roulette", "crew", "bj_dealer", "rt_dealer"}.
+# Returns {"vendors" (Array of game/gun_vendor.gd), "pachinko", "slots" (Array), "blackjack", "roulette", "crew", "bj_dealer", "rt_dealer", "card_table", "card_dealer"}.
 static func build(parent: Node3D, center: Vector3) -> Dictionary:
 	var root := Node3D.new()
 	root.position = center
@@ -71,7 +73,15 @@ static func build(parent: Node3D, center: Vector3) -> Dictionary:
 		root.add_child(v)
 		vendors.append(v)
 	_vendor_sign(root, 0.8 + 1.9, crates.size())
-	return {"vendors": vendors, "pachinko": wall, "slots": slots, "blackjack": bj, "roulette": rt, "crew": crew, "bj_dealer": bj_dealer, "rt_dealer": rt_dealer}
+	var house: Dictionary = DataStore.load_json("res://data/tcg/table.json")["house"]
+	var at := Vector3(float(house["at"][0]), float(house["at"][1]), float(house["at"][2]))
+	var card_table: BeachTable = BeachTable.new()
+	card_table.position = at
+	card_table.rotation_degrees.y = float(house["yaw"])
+	root.add_child(card_table)
+	var seat := at + Vector3(0, 0, 0.95).rotated(Vector3.UP, deg_to_rad(float(house["yaw"])))  # the dealer's side, facing the player
+	var card_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_gold", "long_wavy", "#c0392b", "smirk", 1), seat, float(house["yaw"]), null, String(house["dealer_npc"]))
+	return {"vendors": vendors, "pachinko": wall, "slots": slots, "blackjack": bj, "roulette": rt, "crew": crew, "bj_dealer": bj_dealer, "rt_dealer": rt_dealer, "card_table": card_table, "card_dealer": card_dealer}
 
 
 # Neon sign on the west wall above the gun vendor kiosks, plus a glowing floor strip under them, so players can find them.

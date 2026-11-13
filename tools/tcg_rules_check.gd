@@ -2,11 +2,14 @@
 # small test card set made here: coin toss, hands, mulligan, mana, every keyword, traps, powers, fatigue, burn, deck
 # legality, a dice card and determinism. Also checks the real data/tcg files when they exist.
 # Log tools/tcg_rules_check.log (TCG_RULES_CHECK_DONE problems=n).
-# Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd.
+# Also: every real card gets printed rules text, and every match event gets a log line (core/tcg/card_text.gd, event_text.gd).
+# Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd, core/tcg/card_text.gd, core/tcg/event_text.gd.
 extends Node
 
 const CardDb = preload("res://core/tcg/card_db.gd")
 const Match = preload("res://core/tcg/match_state.gd")
+const CardText = preload("res://core/tcg/card_text.gd")
+const EventText = preload("res://core/tcg/event_text.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -30,6 +33,7 @@ func _ready() -> void:
 	if not (real.get("cards") as Dictionary).is_empty():
 		var real_wrong: Array[String] = real.problems()
 		_say("data/tcg cards and leaders are well formed (%d cards, %d leaders)%s" % [(real.get("cards") as Dictionary).size(), (real.get("leaders") as Dictionary).size(), "" if real_wrong.is_empty() else ": " + "; ".join(real_wrong)], real_wrong.is_empty())
+		_check_texts(real)
 	_finish()
 
 
@@ -270,6 +274,38 @@ func _check_same_seed() -> void:
 	var a := _play_out(11)
 	var b := _play_out(11)
 	_say("the same seed plays out the same (%d events)" % a.size(), a == b and a.size() > 10)
+
+
+# Every card with keywords or effects has printed text; a whole match of the real starters gives a log line for every
+# event kind that needs one (no event left unnamed).
+func _check_texts(real: RefCounted) -> void:
+	var blank: PackedStringArray = []
+	for id: String in real.get("cards"):
+		var c: Dictionary = real.card(id)
+		if (not (c.get("keywords", []) as Array).is_empty() or not (c.get("effects", []) as Array).is_empty()) and CardText.of(real, c) == "":
+			blank.append(id)
+	_say("every real card has rules text%s" % ("" if blank.is_empty() else ": " + ", ".join(blank)), blank.is_empty())
+	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var decks: Array = []
+	for id: String in starters:
+		decks.append({"leader": starters[id]["leader"], "cards": starters[id]["cards"]})
+	var m: RefCounted = Match.new(real, decks.slice(0, 2), 11)
+	m.mulligan(0, [])
+	m.mulligan(1, [1])
+	var AiPlayer: GDScript = load("res://core/tcg/ai_player.gd")
+	for t in 40:
+		if m.get("phase") != "play":
+			break
+		AiPlayer.take_turn(m, int(m.get("current")))
+	var known := {}
+	var silent: PackedStringArray = []
+	for e: Dictionary in m.take_log():
+		if String(e["e"]) == "summon":
+			known[int(e["uid"])] = String(e["card"])
+		var quiet: bool = (String(e["e"]) == "summon" and bool(e["from_hand"])) or (String(e["e"]) == "draw" and int(e["side"]) != 0) or (String(e["e"]) == "heal" and int(e["amount"]) == 0) or (String(e["e"]) == "buff" and int(e["attack"]) == 0 and int(e["health"]) == 0)
+		if not quiet and EventText.line(real, e, 0, known, ["You", "Dealer"]) == "" and not silent.has(String(e["e"])):
+			silent.append(String(e["e"]))
+	_say("a starter match ends (%s) and every event has a log line%s" % [m.get("phase"), "" if silent.is_empty() else ": no line for " + ", ".join(silent)], silent.is_empty() and m.get("phase") == "over")
 
 
 func _play_out(seed_value: int) -> Array:

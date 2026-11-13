@@ -1,8 +1,11 @@
-Card game step 4: the computer opponent and the simulator
+Card game step 5: first playable table against the House Dealer
 
-- core/tcg/ai_player.gd: one difficulty for the House Dealer and the simulator (mulligan, dearest playable card, removal, trades, breaks Guards together, lethal)
-- tools/tcg_sim: the AI plays every pair of starter decks 400 times and reports win rates and the going-first edge
-- data/tcg/leaders.json (the 10 leaders and hero powers), cards.json (first slice: the Tide and Crypt starters, tokens, Lucky Chip), starters.json
+- Beach table outside the casino door with the House Dealer Lottie (data/tcg/table.json, game/tcg/beach_table.gd)
+- F to sit, pick a starter, coin toss, mulligan, play, hover zoom, turn timer with fuse, Esc = Concede?, 20 chips for a win
+- 2D table screen and plain card faces (game/tcg/table_screen.gd, card_face.gd, card_table.gd)
+- Card rules text and match log lines written from the data (core/tcg/card_text.gd, event_text.gd)
+- tcg_rules_check: every card has text, a starter match names every event
+- Dev steps !tcg deck [auto], !tcg move, !tcg esc, !tcg note
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

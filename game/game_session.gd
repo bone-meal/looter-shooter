@@ -49,6 +49,7 @@ const SlotMachine = preload("res://game/slot_machine.gd")
 const SlotScreen = preload("res://game/slot_screen.gd")
 const SlotMath = preload("res://core/slot_math.gd")
 const CasinoGames = preload("res://game/casino_games.gd")
+const CardTable = preload("res://game/tcg/card_table.gd")
 const ChatBox = preload("res://game/chat_box.gd")
 const ChatCommand = preload("res://core/chat_command.gd")
 const AdminCommands = preload("res://game/admin_commands.gd")
@@ -249,6 +250,7 @@ var _slot_machines: Array = []
 var _slot_machine: SlotMachine
 var _slot_pending: Dictionary = {}
 var _games := CasinoGames.new()
+var _tcg := CardTable.new()  # the card game table on the club beach (built with the club)
 var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data/colosseum.json)
 var _board := ColosseumBoard.new()  # the ticket board at the painting
 var _run_ticket := 0  # the ticket of the colosseum run we are in
@@ -569,6 +571,8 @@ func _ready() -> void:
 	_games.round_finished.connect(save_profile)
 	_games.left.connect(save_profile)
 	add_child(_games)
+	_tcg.finished.connect(save_profile)
+	add_child(_tcg)
 	add_child(custom_layer)
 	_load_profile()
 	_update_pots()
@@ -713,7 +717,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _flight_t >= 0.0:
 		return
@@ -743,6 +747,9 @@ func close_inventory() -> bool:
 		return true
 	if _games.is_open():
 		_games.request_close()
+		return true
+	if _tcg.is_open():
+		_tcg.request_close()
 		return true
 	if _slot_screen.visible:
 		_slot_screen.close()
@@ -983,7 +990,7 @@ func _trade_target() -> int:
 
 
 func _hold_trade(delta: float) -> void:
-	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
 	if busy or not Input.is_action_pressed("interact") or _trade_target() == 0 or not _field.nearest(_player.global_position).is_empty():
 		_trade_hold = 0.0
 		return
@@ -1294,7 +1301,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or _games.is_open() or _flight_t >= 0.0:
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or _games.is_open() or _tcg.is_open() or _flight_t >= 0.0:
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1401,6 +1408,8 @@ func _prompt() -> String:
 	var table := _games.spot_near(_player.global_position)
 	if table != "":
 		return "[%s] Sit at the %s table (free chips)" % [key, table]
+	if _tcg.spot_near(_player.global_position):
+		return "[%s] Play You got me Lobster? against the House Dealer (a win pays chips)" % key
 	if _near_pachinko():
 		return "[%s] Launch a pachinko ball (%d chips, hold to keep firing): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
 	var food: String = _crow_cfg["food_item"]
@@ -1479,6 +1488,8 @@ func _interact() -> void:
 		_open_slots(_slot_near())
 	elif _games.spot_near(_player.global_position) != "":
 		_games.open(_games.spot_near(_player.global_position))
+	elif _tcg.spot_near(_player.global_position):
+		_tcg.open()
 	elif _near_pachinko():
 		_launch_pachinko()
 	elif _near(_crow_a_pos, CROW_RANGE):
@@ -1577,7 +1588,7 @@ func _near_pachinko() -> bool:
 
 
 func _hold_pachinko(delta: float) -> void:
-	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _inventory_screen.visible
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _inventory_screen.visible
 	if busy or not Input.is_action_pressed("interact") or not _near_pachinko():
 		_pachinko_hold = 0.0
 		return
@@ -3749,6 +3760,7 @@ func _build_club() -> void:
 	for m in _slot_machines:
 		m.finished.connect(_on_slot_finished)
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
+	_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud)
 	(_casino["blackjack"] as Node3D).connect("changed", func(op: String, args: Array) -> void: table_event.emit(op, args))
 	_jukebox = Jukebox.new()
 	_jukebox.position = ClubIsland.CENTER + JUKEBOX_AT

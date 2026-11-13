@@ -162,7 +162,7 @@ func power(side: int, target := -1) -> String:
 		return "pick a target"
 	s["mana"] = int(s["mana"]) - int(rules["power_cost"])
 	s["power_used"] = true
-	_event({"e": "power", "side": side})
+	_event({"e": "power", "side": side, "leader": s["leader"]})
 	Effects.run(self, side, effects, "power", -1, target)
 	settle()
 	return ""

@@ -22,6 +22,11 @@
    "greet": ["Round and round, {player}. Pick a number.", "Red or black, {player}?"],
    "idle": ["Round she goes...", "No more bets!", "Zero is always watching."]
   },
+  "dealer_cards": {
+   "name": "Lottie", "title": "Card dealer",
+   "greet": ["Fancy a game of Lobster, {player}? Press F.", "Cards are dealt, {player}. Sit down."],
+   "idle": ["Guards first, darlings.", "Twenty cards, twenty health.", "Who wants to lose to a bunny?"]
+  },
   "waitress_mint": {
    "name": "Mint", "title": "Waitress",
    "greet": ["Drinks, {player}? On the house. Almost.", "Hi {player}! Mind the jackpot crowd."],
