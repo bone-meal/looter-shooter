@@ -1,12 +1,4 @@
-Card game steps 7-9 (first pass): card art, frames, logo, foils, collection, pack rolls
-
-- 161 card and leader pictures rendered from our models and the CC0 characters (tools/blender/card_art.py, card_art_auto.py)
-- Faction frames, gems, badges, legendary crest and card back modelled and rendered in Blender (tools/blender/card_frames.py)
-- The logo painted (tools/paint_logo.py); card fonts Cinzel, Alegreya, Lilita One (OFL)
-- game/tcg/card_face.gd draws the real cards; game/tcg/card_shine.gd rainbow and pony foil shine
-- core/tcg/collection.gd saved in the profile: the first sit-down gives a starter deck and 3 packs, deck slots, the record
-- core/tcg/pack_roll.gd and data/tcg/packs.json: odds, leaders, foils, pity, god pack, box guarantees
-- tcg_rules_check: collection and pack checks; tools/tcg_card_shot draws sample cards
+Architecture map: card look, collection and packs
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
