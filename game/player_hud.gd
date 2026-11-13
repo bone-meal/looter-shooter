@@ -337,6 +337,12 @@ func _draw_weapons(view: Vector2) -> void:
 			draw_string(_font, Vector2(x + 8, top + 18), InputSetup.label(player.settings, "knife"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
 			ItemIcons.draw(self, "knife", Rect2(x + 24, top + 4, 100, 34), WHITE)
 			draw_string(_font, Vector2(x + 8, top + 54), KnifeModels.db().name_of(player.knife), HORIZONTAL_ALIGNMENT_RIGHT, SLOT_W - 16.0, 15, WHITE)
+		elif player.hand_index() == Player.SHIELD:  # the shield held up: its name and the hits it still takes
+			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), BACK)
+			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), WHITE, false, 2.0)
+			draw_string(_font, Vector2(x + 8, top + 18), InputSetup.label(player.settings, "shield"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
+			draw_string(_font, Vector2(x + 8, top + 36), String(player.shield.cfg["name"]), HORIZONTAL_ALIGNMENT_RIGHT, SLOT_W - 16.0, 15, WHITE)
+			draw_string(_font, Vector2(x + 8, top + 56), "%d / %d" % [player.shield.hits_left, player.shield.max_hits()], HORIZONTAL_ALIGNMENT_RIGHT, SLOT_W - 16.0, 18, WHITE)
 		return
 	draw_rect(Rect2(x, top, SLOT_W, SLOT_H), BACK)
 	draw_rect(Rect2(x, top, SLOT_W, SLOT_H), WHITE, false, 2.0)
@@ -413,6 +419,16 @@ func _draw_holsters(view: Vector2) -> void:
 		var rounds: int = inventory.loaded[holster]
 		if rounds >= 0:
 			draw_string(_font, r.end - Vector2(34, 4), str(rounds), HORIZONTAL_ALIGNMENT_RIGHT, 30, 12, BAD if rounds == 0 else WHITE)
+	if player.shield.owned:  # the buildable shield: its key, and a plate that empties as it takes hits
+		var slot := Rect2(x + (count + 1) * (box.x + 6.0), y, 56.0, box.y)
+		var up: bool = player.hand_index() == Player.SHIELD
+		draw_rect(slot, BACK)
+		draw_rect(slot, WHITE if up else DIM, false, 2.0 if up else 1.0)
+		draw_string(_font, slot.position + Vector2(4, 13), InputSetup.label(player.settings, "shield"), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, WHITE if up else DIM)
+		var share := float(player.shield.hits_left) / maxf(float(player.shield.max_hits()), 1.0)
+		var plate := Rect2(slot.position + Vector2(22, 8), Vector2(22, 30))
+		draw_rect(Rect2(plate.position + Vector2(0, plate.size.y * (1.0 - share)), Vector2(plate.size.x, plate.size.y * share)), BAD if share <= 0.25 else WHITE)
+		draw_rect(plate, WHITE, false, 1.0)
 
 
 func _draw_top(view: Vector2) -> void:

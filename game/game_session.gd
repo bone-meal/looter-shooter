@@ -63,6 +63,11 @@ const MysteryBox = preload("res://core/mystery_box.gd")
 const MysteryBoxNode = preload("res://game/mystery_box_node.gd")
 const TrapState = preload("res://core/trap_state.gd")
 const Traps = preload("res://game/traps.gd")
+const IslandWeather = preload("res://game/island_weather.gd")
+const BuildState = preload("res://core/build_state.gd")
+const BuildSite = preload("res://game/build_site.gd")
+const BoatRules = preload("res://core/boat_rules.gd")
+const Boat = preload("res://game/boat.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
 const GameOverScreen = preload("res://game/game_over_screen.gd")
@@ -162,6 +167,22 @@ var _upgrade_node := PerkMachine.new()
 var _traps: TrapState
 var _trap_cfg: Dictionary  # data/traps.json
 var _trap_nodes := Traps.new()
+var _weather := IslandWeather.new()  # fog, storm and red sky by round (data/island_weather.json)
+var _builds: BuildState  # the shield and the boat: parts found, things built (data/buildables.json)
+var _build_cfg: Dictionary
+var _build_site := BuildSite.new()
+var _build_parts: Array = []  # per thing: Array[Vector2], where its parts lie (metres from the land's middle)
+var _build_benches: Array[Vector2] = []  # per thing: its bench
+var _boat: BoatRules  # the buildable boat (data/boat.json): where it is, who sits in it
+var _boat_node := Boat.new()
+var _boat_thing := -1  # its number among the buildables
+var _boat_start := Vector2.ZERO  # where it floats once built, and the way its bow points there
+var _boat_start_yaw := 0.0
+var _seat := -1  # our seat aboard (0 = the tiller), -1 = not aboard
+var _helm_keys := Vector2.ZERO  # hosting: throttle (x) and rudder (y) of a client at the tiller
+var _boat_tell := 0.0  # seconds to the next boat message (host: its state; client at the tiller: its keys)
+var _boat_goal := Vector3.ZERO  # as a client: x, z and yaw the host last told, glided toward
+var _ashore_until := 0.0  # as a client: until then the host's list may still name us in the seat we just left
 var _trap_centres: Array[Vector2] = []
 var _trap_levers: Array[Vector2] = []
 var _trap_shown: Array[bool] = []
@@ -249,6 +270,23 @@ func _ready() -> void:
 	_bench_spot = _land.on_island(String(_power_cfg["bench"]["island"]), _power_cfg["bench"]["at"])
 	_land.keep_clear.append_array(_part_spots)
 	_land.keep_clear.append(_bench_spot)
+	_build_cfg = DataStore.load_json("res://data/buildables.json")
+	_builds = BuildState.new(_build_cfg)
+	for thing: Dictionary in _build_cfg["things"]:
+		var lying: Array[Vector2] = []
+		for part: Dictionary in thing["parts"]:
+			lying.append(_land.on_island(String(part["island"]), part["at"]))
+		_build_parts.append(lying)
+		_build_benches.append(_land.on_island(String(thing["bench"]["island"]), thing["bench"]["at"]))
+		_land.keep_clear.append_array(lying)
+	_land.keep_clear.append_array(_build_benches)
+	var boat_cfg: Dictionary = DataStore.load_json("res://data/boat.json")
+	_boat = BoatRules.new(boat_cfg)
+	_boat_thing = _builds.index_of("boat")
+	_boat_start = _land.on_island(String(boat_cfg["start"]["island"]), boat_cfg["start"]["at"])
+	_boat_start_yaw = _toward_middle(_boat_start)  # that turns -Z, the bow, away from the island
+	_boat.place(_boat_start, _boat_start_yaw)
+	_boat_node.setup(boat_cfg)
 	var box_cfg: Dictionary = DataStore.load_json("res://data/mystery_box.json")
 	_box = MysteryBox.new(box_cfg, _rng)
 	for place: Dictionary in box_cfg["spots"]:
@@ -288,6 +326,16 @@ func _ready() -> void:
 	_power_station.setup(parts, _flat(_bench_spot), _toward_middle(_bench_spot))
 	add_child(_power_station)
 	_show_power()
+	var sites: Array = []
+	for thing in _builds.ids.size():
+		var spots: Array[Vector3] = []
+		for spot: Vector2 in _build_parts[thing]:
+			spots.append(_flat(spot))
+		sites.append({"id": _builds.ids[thing], "parts": spots, "bench": _flat(_build_benches[thing]), "yaw": _toward_middle(_build_benches[thing])})
+	_build_site.setup(sites)
+	add_child(_build_site)
+	add_child(_boat_node)
+	_show_builds()
 	add_child(_box_node)
 	_box_node.stand(_flat(_box_spots[0]))
 	_upgrade_node.title = "Re-forge"
@@ -348,6 +396,8 @@ func _ready() -> void:
 	_sounds.set("folder", "res://assets/audio/game/")
 	add_child(_sounds)
 	_sounds.call("setup", DataStore.load_json("res://data/sounds.json"))
+	_weather.setup(DataStore.load_json("res://data/island_weather.json"), _render_style, _sounds)
+	add_child(_weather)
 	_explosives.sounds = _sounds
 	add_child(_skill_fx)
 	LoadClock.mark("crows, lifeguard, effects")
@@ -479,6 +529,15 @@ func _ready() -> void:
 		net.rounds.power = _power
 		net.rounds.power_near = _power_thing_at
 		net.rounds.power_bits.connect(_on_power_bits)
+		net.rounds.builds = _builds
+		net.rounds.build_near = _build_thing_at
+		net.rounds.build_bits.connect(_on_build_bits)
+		net.rounds.boat_near = _near_boat
+		net.rounds.seat_asked.connect(_on_seat_asked)
+		net.rounds.helm_input.connect(func(peer: int, throttle: float, rudder: float) -> void:
+			if _boat.helm() == peer:
+				_helm_keys = Vector2(throttle, rudder))
+		net.rounds.boat_state.connect(_on_boat_state)
 		net.rounds.box_near = func(at: Vector3) -> bool: return _box.state != "moving" and Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z).distance_to(_box_spots[_box.spot]) <= float(_box.cfg["reach"]) + 1.0
 		net.rounds.box_asked.connect(_on_box_asked)
 		net.rounds.box_state.connect(_on_box_state)
@@ -498,6 +557,7 @@ func _ready() -> void:
 		net.downs.states_changed.connect(_show_downs)
 		_player.down_check = _goes_down
 		_player.went_down.connect(_on_went_down)
+		_player.shield_broke.connect(func() -> void: _player_hud.notice("Your %s broke. Take a new one at its bench." % String(_player.shield.cfg["name"])))
 		if net.is_active():
 			_build_fantasy()
 	apply_settings()
@@ -506,6 +566,7 @@ func _ready() -> void:
 func apply_settings() -> void:
 	_player.apply_settings()
 	_render_style.apply(settings.graphics, settings.shaders, settings.picks)
+	_weather.look_changed(settings.graphics, _island_side())
 	if _in_fantasy:
 		_fantasy_detail()
 		_fantasy.enter(_player.global_position)
@@ -1074,6 +1135,10 @@ func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
 	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _games.is_open() or _flight_t >= 0.0:
 		return ""
+	if _seat >= 0:
+		if _seat == 0:
+			return "At the tiller: %s / %s sail, %s / %s turn.  [%s] Get off" % [_key("move_forward"), _key("move_back"), _key("move_left"), _key("move_right"), key]
+		return "Aboard the %s.  [%s] Get off" % [String(_boat.cfg["name"]), key]
 	if _player.downed:
 		if _out:
 			return "Watching %s. You are back when the next round starts.  [%s] next player" % [net.roster.get(_watched, "the island"), InputSetup.label(settings, "shoot")]
@@ -1084,6 +1149,10 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	if _boat_here():
+		if _boat.aboard() >= _boat.seats.size():
+			return "The %s is full." % String(_boat.cfg["name"])
+		return "[%s] Climb aboard the %s%s" % [key, String(_boat.cfg["name"]), " and take the tiller" if _boat.helm() == 0 else ""]
 	if _box_here():
 		match _box.state:
 			"idle":
@@ -1124,6 +1193,17 @@ func _prompt() -> String:
 		return "The power switch needs %d parts (%d found)." % [_part_spots.size(), _power.found_count()]
 	if thing >= 0:
 		return "[%s] Take the %s (part of the power switch)" % [key, _power_cfg["parts"][thing]["name"]]
+	var piece := _build_thing_at(_player.global_position) if _island_side() else -1
+	if piece >= 0:
+		var what := BuildState.thing_of(piece)
+		var built_name: String = _builds.names[what]
+		if BuildState.part_of(piece) != BuildState.BENCH:
+			return "[%s] Take the %s (part of the %s)" % [key, _build_cfg["things"][what]["parts"][BuildState.part_of(piece)]["name"], built_name]
+		if _builds.built(what):
+			return "[%s] Take a %s" % [key, built_name]
+		if _builds.all_found(what):
+			return "[%s] Build the %s" % [key, built_name]
+		return "The %s needs %d parts (%d found)." % [built_name, _builds.part_count(what), _builds.found_count(what)]
 	var window := _window_here()
 	if window >= 0 and _shelters.rules.boards[window] < _shelters.rules.full():
 		return "[hold %s] Nail a board back (%d of %d)" % [key, _shelters.rules.boards[window], _shelters.rules.full()]
@@ -1185,9 +1265,13 @@ func _prompt() -> String:
 func _interact() -> void:
 	if _player.downed or _revive_target != 0:
 		return  # lying down, or busy helping somebody up (the key is held for that)
-	if _time < _trade_ask_until:
+	if _seat >= 0:
+		_leave_boat(false)
+	elif _time < _trade_ask_until:
 		_trade_ask_until = 0.0
 		net.trade.answer(true)
+	elif _boat_here():
+		_board_boat()
 	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		_take_pack()
 	elif _box_here():
@@ -1200,6 +1284,8 @@ func _interact() -> void:
 		_buy_perk(_perk_here())
 	elif _island_side() and _power_thing_at(_player.global_position) >= 0:
 		_use_power_thing(_power_thing_at(_player.global_position))
+	elif _island_side() and _build_thing_at(_player.global_position) >= 0:
+		_use_build_thing(_build_thing_at(_player.global_position))
 	elif _wall_buy_here() >= 0:
 		_buy_from_wall(_wall_buy_here())
 	elif _debris_here() >= 0:
@@ -1706,12 +1792,25 @@ func _drop_pack(at: Vector3) -> void:
 		_pack = null
 		_player_hud.notice("The backpack you left before is gone for good.")
 	if InventoryState.bundle_size(bundle) > 0:
-		_place_pack(Island.CENTER + _land.wash_up(at.x - Island.CENTER.x, at.z - Island.CENTER.z), bundle)  # went down in the water: it washes up on the sand
+		var lies := _land.wash_up(at.x - Island.CENTER.x, at.z - Island.CENTER.z)  # went down in the water: it washes up on the sand
+		if not _bridged(_land.island_near(lies.x, lies.z)):  # on an island only the boat reaches: the boat is gone with the run, so it washes up at the slipway
+			lies = _land.wash_up(_build_benches[_boat_thing].x, _build_benches[_boat_thing].y)
+		_place_pack(Island.CENTER + lies, bundle)
 	for entry in DataStore.load_json("res://data/player.json")["starting_items"]:
 		_player.inventory.add(String(entry[0]), int(entry[1]))
 	_player.refresh_held()
 	_player.refresh_equipment()
 	_inventory_screen.in_hand = _player.hand_index()
+
+
+# True when a bridge or sandbar goes to this island (the spawn island counts): it can be walked to.
+func _bridged(island: int) -> bool:
+	if island == 0:
+		return true
+	for way: Dictionary in _land.bridges:
+		if int(way["from"]) == island or int(way["to"]) == island:
+			return true
+	return false
 
 
 func _place_pack(at: Vector3, bundle: Dictionary) -> void:
@@ -1879,6 +1978,14 @@ func _close_debris() -> void:
 	_lose_perks()
 	_second_wind_used = false
 	_self_revive_at = -1.0
+	_builds.reset()
+	if _seat >= 0:
+		_put_ashore()
+	_boat.empty()
+	_boat.place(_boat_start, _boat_start_yaw)
+	_show_builds()
+	_player.shield.drop()
+	_player.refresh_held()
 
 
 # --- perks and the power switch (core/perk_state.gd, core/power_state.gd decide) ---
@@ -1988,6 +2095,232 @@ func _power_changed(what: int) -> void:
 	else:
 		_sounds.call("play", "part_take")
 		_player_hud.notice("Power switch: %d of %d parts found." % [_power.found_count(), _part_spots.size()])
+
+
+# --- buildables: the shield and the boat (core/build_state.gd decides, game/build_site.gd shows) ---
+
+# What of the buildables lies at a world spot, as BuildState.code_of(thing, part): a part not yet found, or a thing's
+# bench (while there is something to do there: build it, or take a shield from it). -1 = nothing.
+func _build_thing_at(at: Vector3) -> int:
+	var spot := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
+	var reach := float(_build_cfg["reach"])
+	for thing in _builds.ids.size():
+		var lying: Array = _build_parts[thing]
+		for part in lying.size():
+			if not _builds.found(thing)[part] and spot.distance_to(lying[part]) <= reach:
+				return BuildState.code_of(thing, part)
+		if spot.distance_to(_build_benches[thing]) <= reach + 0.6 and (not _builds.built(thing) or (_builds.ids[thing] == "shield" and not _player.shield.owned)):
+			return BuildState.code_of(thing, BuildState.BENCH)
+	return -1
+
+
+# Interact at a part or a bench. Finding and building is for the whole party (online the host does it); taking a
+# shield from the bench of a built one is each player's own.
+func _use_build_thing(code: int) -> void:
+	var thing := BuildState.thing_of(code)
+	if BuildState.part_of(code) == BuildState.BENCH:
+		if _builds.built(thing):
+			if _builds.ids[thing] == "shield" and _player.shield.give():
+				_sounds.call("play", "part_take")
+				_player.refresh_held()
+				_player_hud.notice("%s: on your back it stops hits from behind. [%s] holds it up: it stops hits from ahead and [%s] bashes." % [_builds.names[thing], _key("shield"), _key("shoot")])
+			return
+		if not _builds.all_found(thing):
+			return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_build(code)
+		return
+	if _builds.apply(code):
+		_builds_changed(code)
+		if net != null:
+			net.rounds.tell_build_state(_builds.to_bits())
+
+
+# The buildables' state as the host says it (as a client; on the host after a client's ask).
+func _on_build_bits(bits: int) -> void:
+	var before := _builds.to_bits()
+	_builds.set_bits(bits)
+	var fresh := bits & ~before  # what is new: tell about the first new thing
+	var at := 0
+	var told := -1
+	for thing in _builds.ids.size():
+		for part in _builds.part_count(thing):
+			if told < 0 and (fresh >> at) & 1 == 1:
+				told = BuildState.code_of(thing, part)
+			at += 1
+		if (fresh >> at) & 1 == 1:
+			told = BuildState.code_of(thing, BuildState.BENCH)
+		at += 1
+	_builds_changed(told)
+
+
+# Shows the new state; `code` = what just happened (a part found, a thing built; -1 = nothing to tell).
+func _builds_changed(code: int) -> void:
+	_show_builds()
+	if code < 0 or not _island_side():
+		return
+	var thing := BuildState.thing_of(code)
+	if BuildState.part_of(code) == BuildState.BENCH:
+		_sounds.call("play", "build_done")
+		_player_hud.callout("%s built" % _builds.names[thing], Color(1.0, 0.85, 0.45))
+	else:
+		_sounds.call("play", "part_take")
+		_player_hud.notice("%s: %d of %d parts found." % [_builds.names[thing], _builds.found_count(thing), _builds.part_count(thing)])
+
+
+func _show_builds() -> void:
+	for thing in _builds.ids.size():
+		_build_site.show_state(thing, _builds.found(thing), _builds.built(thing))
+	_boat_node.visible = _builds.built(_boat_thing)
+	if _boat_node.visible:
+		_boat_node.show_at(Island.CENTER + Vector3(_boat.x, _land.sea_level, _boat.z), _boat.yaw, _time)
+
+
+# --- the boat (core/boat_rules.gd decides; alone or hosting we sail it, a client shows what the host says) ---
+
+# The boat in one line, and the sand nearest to it (test scripts).
+func boat_note() -> String:
+	var shore := _land.wash_up(_boat.x, _boat.z)
+	return "built %s at %.1f %.1f yaw %.0f speed %.2f aground %s depth %.2f seats %s our seat %d carried %s | shore %.1f m away on %s" % [str(_builds.built(_boat_thing)), _boat.x, _boat.z, rad_to_deg(_boat.yaw), _boat.speed, str(_boat.aground), _water_depth(_boat.x, _boat.z), str(_boat.seats), _seat, str(_player.carried),
+		Vector2(shore.x - _boat.x, shore.z - _boat.z).length(), String(_land.islands[_land.island_near(_boat.x, _boat.z)]["name"])]
+
+
+func boat_shore() -> Vector3:
+	return Island.CENTER + _land.wash_up(_boat.x, _boat.z) + Vector3(0.0, 0.1, 0.0)
+
+
+# Metres of water at a spot of the land's map: 0 on land, under a bridge and beyond the islands' waters.
+func _water_depth(x: float, z: float) -> float:
+	if not _land.within(x, z) or _land.deck_at(x, z) >= 0:
+		return 0.0
+	return _land.sea_level - _land.height_at(x, z)
+
+
+# True when a world spot is near enough to the built boat to climb aboard (the host asks this about a client).
+func _near_boat(at: Vector3) -> bool:
+	return _builds.built(_boat_thing) and Vector2(at.x - Island.CENTER.x - _boat.x, at.z - Island.CENTER.z - _boat.z).length() <= float(_boat.cfg["board_reach"])
+
+
+func _boat_here() -> bool:
+	return _seat < 0 and _island_side() and not _player.carried and _near_boat(_player.global_position)
+
+
+# Interact beside the boat: the first free seat (the tiller first). Online the host seats us.
+func _board_boat() -> void:
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_seat(true)
+	elif _boat.sit(_my_id()) < 0:
+		_player_hud.notice("The %s is full." % String(_boat.cfg["name"]))
+	else:
+		_boat_tell = 0.0
+
+
+# Interact aboard: off onto the nearest sand, when the boat lies close enough to it.
+func _leave_boat(anyhow: bool) -> void:
+	var shore := _land.wash_up(_boat.x, _boat.z)
+	if not anyhow and Vector2(shore.x - _boat.x, shore.z - _boat.z).length() > float(_boat.cfg["land_reach"]):
+		_player_hud.notice("Too far from the shore to get off.")
+		return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_seat(false)
+		_ashore_until = _time + 0.8
+	_boat.leave(_my_id())
+	_boat_tell = 0.0
+	_put_ashore()
+
+
+# We are no longer aboard: onto the sand nearest the boat.
+func _put_ashore() -> void:
+	_seat = -1
+	_player.carried = false
+	var shore := _land.wash_up(_boat.x, _boat.z)
+	_player.teleport(Island.CENTER + shore + Vector3(0.0, 0.1, 0.0), _player.look_yaw())
+
+
+# Hosting: a client wants a seat (the host checked that it stands by the boat) or gives its seat up.
+func _on_seat_asked(peer: int, aboard: bool) -> void:
+	if not _builds.built(_boat_thing):
+		return
+	if aboard:
+		_boat.sit(peer)
+	else:
+		_boat.leave(peer)
+	_boat_tell = 0.0
+
+
+# As a client: the boat as the host runs it. A big jump (it was just built, or put back) is taken at once.
+func _on_boat_state(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array) -> void:
+	_boat_goal = Vector3(x, z, yaw)
+	_boat.speed = speed
+	if Vector2(x - _boat.x, z - _boat.z).length() > 15.0:
+		_boat.place(Vector2(x, z), yaw)
+		_boat.speed = speed
+	for seat in mini(seats.size(), _boat.seats.size()):
+		_boat.seats[seat] = 0 if (seats[seat] == _my_id() and _time < _ashore_until) else seats[seat]
+
+
+# Every frame while the boat is built: sail it (alone or hosting) or follow the host, show it, and keep whoever of
+# us is aboard in his seat. A helmsman's keys are the move keys.
+func _run_boat(delta: float) -> void:
+	if not _builds.built(_boat_thing):
+		return
+	var me := _my_id()
+	var steering := _boat.helm() == me and _player.controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var keys := Vector2(Input.get_axis("move_back", "move_forward"), Input.get_axis("move_left", "move_right")) if steering else Vector2.ZERO
+	_boat_tell -= delta
+	if net != null and net.rounds.is_client():
+		var glide := minf(delta * 8.0, 1.0)
+		_boat.x = lerpf(_boat.x, _boat_goal.x, glide)
+		_boat.z = lerpf(_boat.z, _boat_goal.y, glide)
+		_boat.yaw = lerp_angle(_boat.yaw, _boat_goal.z, glide)
+		if _boat.helm() == me and _boat_tell <= 0.0:
+			_boat_tell = 0.05
+			net.rounds.send_helm(keys.x, keys.y)
+	else:
+		if _boat.helm() != me:
+			keys = _helm_keys if _boat.helm() != 0 else Vector2.ZERO
+		var was_aground := _boat.aground
+		_boat.step(keys.x, keys.y, delta, _water_depth)
+		if _boat.aground and not was_aground and _boat.seat_of(me) >= 0:
+			_player_hud.notice("Aground.")
+		if net != null and net.can_send() and _boat_tell <= 0.0:
+			_boat_tell = 0.1 if (_boat.aboard() > 0 or absf(_boat.speed) > 0.05) else 1.0
+			for seat in _boat.seats.size():  # somebody who left the game does not keep a seat
+				if _boat.seats[seat] != 0 and _boat.seats[seat] != me and not net.roster.has(_boat.seats[seat]):
+					_boat.leave(_boat.seats[seat])
+			net.rounds.tell_boat(_boat.x, _boat.z, _boat.yaw, _boat.speed, PackedInt32Array(_boat.seats))
+	_boat_node.show_at(Island.CENTER + Vector3(_boat.x, _land.sea_level, _boat.z), _boat.yaw, _time)
+	var was := _seat
+	_seat = _boat.seat_of(me)
+	if _seat < 0:
+		if was >= 0:
+			_put_ashore()  # the host took our seat away
+		return
+	if _player.downed or _in_arena or _in_fantasy:
+		_leave_boat(true)
+		return
+	var place := _boat.seat_place(_seat)
+	_player.carried = true
+	_player.global_position = Island.CENTER + Vector3(place.x, _land.sea_level + place.y, place.z)
+
+
+# Admin command: a thing built without its parts ("" = all of them); the shield is also put on the typist's back.
+func cheat_build(id: String) -> String:
+	if net != null and net.rounds.is_client():
+		return "Only the host can do that."
+	if id != "" and _builds.index_of(id) < 0:
+		return "Buildables: %s" % ", ".join(PackedStringArray(_builds.ids))
+	for thing in _builds.ids.size():
+		if id == "" or _builds.ids[thing] == id:
+			for part in _builds.part_count(thing):
+				_builds.take(thing, part)
+			if _builds.build(thing):
+				_builds_changed(BuildState.code_of(thing, BuildState.BENCH))
+	if net != null:
+		net.rounds.tell_build_state(_builds.to_bits())
+	if (id == "" or id == "shield") and _player.shield.give():
+		_player.refresh_held()
+	return "Built: %s." % (id if id != "" else ", ".join(PackedStringArray(_builds.ids)))
 
 
 # Admin commands: the power on without the parts; a perk (or all of them) for nothing.
@@ -2400,6 +2733,21 @@ func _clear_powers() -> void:
 	_power_field.clear()
 
 
+# The islands' weather follows the round (game/island_weather.gd); a boss round's red sky only while it is fought.
+func _run_weather(delta: float) -> void:
+	var here := _island_side()
+	var watching: bool = net != null and net.rounds.is_client()
+	var fought: bool = net.rounds.fighting if watching else _rounds.rules.fighting()
+	var kind: String = net.rounds.round_kind if watching else _rounds.rules.kind
+	var spot := _player.global_position - Island.CENTER
+	_weather.update(delta, here, _island_round(), kind if fought else "normal", here and _shelters.rules.hut_of(spot.x, spot.z) >= 0)
+
+
+# The weather on screen in one line (test scripts).
+func weather_note() -> String:
+	return _weather.describe()
+
+
 # True while our player is on the islands (not in the colosseum, Aurelind or the club).
 func _island_side() -> bool:
 	return not _in_arena and not _in_fantasy and _on_island(_player.global_position)
@@ -2568,6 +2916,8 @@ func _process(delta: float) -> void:
 		save_profile()
 	_power_field.deciding = _rounds.active
 	_run_machines(delta)
+	_run_weather(delta)
+	_run_boat(delta)
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
 		_self_revive_at = -1.0
 		_player.revive(1.0)

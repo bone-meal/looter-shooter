@@ -94,6 +94,8 @@ func run(text: String, near: Node3D) -> PackedStringArray:
 			out.append(String(session.call("drop_power", String(args[0]) if not args.is_empty() else "", near)))
 		"switch":
 			out.append(String(session.call("cheat_power")))
+		"build":
+			out.append(String(session.call("cheat_build", String(args[0]) if not args.is_empty() else "")))
 		"perk":
 			out.append(String(session.call("cheat_perk", String(args[0]) if not args.is_empty() else "")))
 		"kill":

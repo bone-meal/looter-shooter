@@ -32,6 +32,12 @@
    "tint": "#ffffff"
   },
   {
+   "id": "boat_planks",
+   "set": "weathered_brown_planks",
+   "tile": 1.8,
+   "tint": "#ffffff"
+  },
+  {
    "id": "painting_frame",
    "set": "weathered_brown_planks",
    "tile": 1.2,

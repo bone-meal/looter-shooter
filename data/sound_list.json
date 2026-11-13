@@ -137,6 +137,30 @@
     {
      "id": "trap_fire",
      "label": "A fire trap runs"
+    },
+    {
+     "id": "build_done",
+     "label": "A buildable is put together"
+    },
+    {
+     "id": "shield_block",
+     "label": "Shield: a blow is stopped"
+    },
+    {
+     "id": "shield_bash",
+     "label": "Shield: bash"
+    },
+    {
+     "id": "shield_break",
+     "label": "Shield: it breaks"
+    },
+    {
+     "id": "thunder",
+     "label": "Weather: thunder"
+    },
+    {
+     "id": "ambience_island_storm",
+     "label": "Weather: rain and wind (storm rounds)"
     }
    ]
   },

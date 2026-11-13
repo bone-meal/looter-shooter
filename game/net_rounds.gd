@@ -24,6 +24,10 @@ signal power_taken(kind: String)  # on a client: somebody took it, so the whole 
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
 signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
+signal seat_asked(peer: int, aboard: bool)  # on the host: a client standing by the boat wants a seat, or gives its seat up
+signal helm_input(peer: int, throttle: float, rudder: float)  # on the host: what a client does with the keys at the tiller
+signal boat_state(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array)  # on a client: the boat as the host runs it
+signal build_bits(bits: int)  # the buildables' state changed (core/build_state.gd `set_bits`): on a client, and on the host after a client's ask
 signal power_bits(bits: int)  # the power's state changed (core/power_state.gd `set_bits`): on a client, and on the host after a client's ask
 signal box_asked(peer: int, action: int)  # on the host: a client standing at the mystery box asks to spin (0) or to take the gun (1)
 signal box_state(state: String, spot: int, owner: int, gun: Dictionary, took: bool)  # on a client: what the box does now
@@ -38,6 +42,9 @@ var card: RefCounted  # our own score card
 var land: RefCounted  # core/archipelago.gd of this machine (which debris is cleared)
 var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
 var power: RefCounted  # core/power_state.gd of this machine
+var builds: RefCounted  # core/build_state.gd of this machine
+var boat_near := Callable()  # func(at: Vector3) -> bool: that spot is near enough to the boat to climb aboard
+var build_near := Callable()  # func(at: Vector3) -> int: the code (BuildState.code_of) of the part or bench at that spot, -1 = none
 var power_near := Callable()  # func(at: Vector3) -> int: the power part lying at that spot, SWITCH at the workbench, -1 = neither
 var box_near := Callable()  # func(at: Vector3) -> bool: that spot is at the mystery box
 var trap_near := Callable()  # func(at: Vector3) -> int: the trap whose lever is at that spot, -1 = none
@@ -341,6 +348,71 @@ func _power_bits(bits: int) -> void:
 	power_bits.emit(bits)
 
 
+# --- buildables (shield, boat): parts are found and things built for the whole party; the host checks who stands where ---
+
+func ask_build(code: int) -> void:
+	if is_client():
+		_build_ask.rpc_id(1, code)
+
+
+func tell_build_state(bits: int) -> void:
+	if net.can_send() and net.is_host():
+		_build_bits.rpc(bits)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _build_ask(code: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body == null or builds == null or not build_near.is_valid() or code < 0 or int(build_near.call(body.global_position)) != code:
+		return
+	if bool(builds.call("apply", code)):
+		_build_bits.rpc(int(builds.call("to_bits")))
+		build_bits.emit(int(builds.call("to_bits")))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _build_bits(bits: int) -> void:
+	build_bits.emit(bits)
+
+
+# --- the boat: the host sails it; a client asks for a seat and, at the tiller, sends what its keys say ---
+
+func ask_seat(aboard: bool) -> void:
+	if is_client():
+		_seat_ask.rpc_id(1, aboard)
+
+
+func send_helm(throttle: float, rudder: float) -> void:
+	if is_client():
+		_helm.rpc_id(1, throttle, rudder)
+
+
+func tell_boat(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array) -> void:
+	if net.can_send() and net.is_host():
+		_boat.rpc(x, z, yaw, speed, seats)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _seat_ask(aboard: bool) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body != null and (not aboard or (boat_near.is_valid() and bool(boat_near.call(body.global_position)))):
+		seat_asked.emit(peer, aboard)
+
+
+@rpc("any_peer", "call_remote", "unreliable_ordered")
+func _helm(throttle: float, rudder: float) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	if net.is_host() and net.roster.has(peer) and is_finite(throttle) and is_finite(rudder):
+		helm_input.emit(peer, clampf(throttle, -1.0, 1.0), clampf(rudder, -1.0, 1.0))
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _boat(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array) -> void:
+	boat_state.emit(x, z, yaw, speed, seats)
+
+
 # --- the mystery box and the traps: a client asks, the host checks where it stands and its session decides ---
 
 func ask_box(action: int) -> void:
@@ -461,6 +533,8 @@ func _ask_all() -> void:
 			_debris_open.rpc_id(peer, index, false)
 	if power != null:
 		_power_bits.rpc_id(peer, int(power.call("to_bits")))
+	if builds != null:
+		_build_bits.rpc_id(peer, int(builds.call("to_bits")))
 	if shelters != null:
 		var boards: PackedInt32Array = shelters.get("boards")
 		for window in boards.size():

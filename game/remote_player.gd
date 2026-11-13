@@ -11,6 +11,7 @@ const RUN_SPEED := 7.0  # same as the player walk speed
 const CigaretteModel = preload("res://game/cigarette_model.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
+const ShieldModel = preload("res://game/shield_model.gd")
 const DataStore = preload("res://core/data_store.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
 
@@ -31,6 +32,7 @@ var _badge: Sprite3D
 var _held_id := ""
 var _down := false  # see set_down()
 var _held_model: Node3D
+var _slung: MeshInstance3D  # the shield on this player's back, while he carries one and holds something else
 var _smoking := false
 var _emote := ""
 var _emote_t := 0.0
@@ -124,6 +126,8 @@ func set_appearance(look: Dictionary) -> void:
 func _rebuild() -> void:
 	if _held_model != null and _held_model.get_parent() != null:
 		_held_model.get_parent().remove_child(_held_model)  # it may hang in the old body's hand
+	if _slung != null and _slung.get_parent() != null:
+		_slung.get_parent().remove_child(_slung)
 	if _model != null:
 		_model.queue_free()
 	appearance = AppearanceData.db().sanitize(appearance)
@@ -136,6 +140,7 @@ func _rebuild() -> void:
 	_cigarette = null
 	_apply_smoking()
 	_place_held()
+	_place_slung()
 	_emote_t = 0.0
 
 
@@ -170,8 +175,16 @@ func _apply_smoking() -> void:
 		_cigarette.visible = _smoking
 
 
-# Shows the weapon this player holds (empty or unknown ID = hands empty).
-func set_held(id: String) -> void:
+# Shows what this player holds: a gun's body id, "knife:<type>", "shield" (held up), or nothing; "|shield" behind it
+# = a shield hangs on his back (game/player.gd `held_id`). Empty or unknown = hands empty.
+func set_held(shown: String) -> void:
+	var on_back := shown.ends_with("|shield")
+	if on_back != (_slung != null and _slung.visible):
+		if _slung == null:
+			_slung = ShieldModel.build()
+		_slung.visible = on_back
+		_place_slung()
+	var id := shown.trim_suffix("|shield")
 	if id == _held_id:
 		return
 	_held_id = id
@@ -180,8 +193,21 @@ func set_held(id: String) -> void:
 		_held_model = null
 	if id.is_empty():
 		return
-	_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(id)
+	if id == "shield":
+		_held_model = ShieldModel.build()
+	else:
+		_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(id)
 	_place_held()
+
+
+# The slung shield hangs on a rigged body's back; a code-built body has no place for it and shows none.
+func _place_slung() -> void:
+	if _slung == null or _model == null:
+		return
+	if _slung.get_parent() != null:
+		_slung.get_parent().remove_child(_slung)
+	if _model.has_method("back_anchor"):
+		(_model.call("back_anchor") as Node3D).add_child(_slung)
 
 
 # Puts the held weapon in the right hand of a rigged body, or at the fixed spot in front of a code-built one.

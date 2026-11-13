@@ -1,24 +1,31 @@
-Round 6 step 9b + 9c: mystery box, upgrade machine, traps
+Round 6 step 10: weather by round, buildable shield and boat, Gull Rock
 
-Mystery box: 950 points a spin, three seconds later it offers a rolled gun
-(green or better, luck grows with the round, never pony) for ten seconds.
-After four to eight spins a seagull carries the box to another island. It
-works without power. The gun takes a free ready slot, else the place of the
-gun in hand, else it lies at your feet.
+Weather and light follow the round (data/island_weather.json, pure
+core/weather_rules.gd, game/island_weather.gd): fog from round 10, a storm
+with rain, lightning and thunder from round 20, a red sky while a boss round
+is fought. Worked out from the round number alone, so nothing is sent
+online. Rain is one MultiMesh whose shader moves the drops.
 
-Upgrade machine on Far Shoal (needs power): interact rolls the gun in hand
-anew at the same tier for 5000 points; the reload key makes it one tier
-higher and rolls it anew for 10000 times the new tier's number, up to
-rainbow. A plain gun becomes a Common one for 5000. Hand-made guns are
-refused.
+Buildables (data/buildables.json, core/build_state.gd, game/build_site.gd):
+parts lie on the islands under warm beams, found for the whole party; each
+thing is built at its bench. Game over puts every part back.
 
-Traps (need power, no points for their kills): a Storm Coil on each hut
-(1000 points, 25 s, 60 s cooldown) takes half the health of enemies round
-the hut every quarter second, and a Fire Pit on Painter's Key (750 points,
-20 s) burns enemies and players standing in it.
+Shield (data/shield.json, core/shield_state.gd, game/shield_model.gd): on the
+back it stops hits from behind, held up (key X) it stops hits from ahead and
+the shoot key bashes; 15 hits, a boss's blow costs 3; a new one is taken at
+the bench. Other players see it in the hand or on the back.
 
-Pure rules in core/mystery_box.gd and core/trap_state.gd. Online the host
-decides box and traps (never run between two machines).
+Boat (data/boat.json, core/boat_rules.gd, game/boat.gd, game/boat_model.gd):
+built at the slipway on Wreck Cay, steered by whoever sits at the tiller with
+the move keys; six seats, nobody shoots from it; it runs aground in shallow
+water and backs off; you get off onto the nearest sand. Online the host sails
+it from the helmsman's keys (never run between two machines).
+
+Gull Rock: a fifth island no bridge reaches. A backpack lost there washes up
+at the slipway.
+
+Also: /build command, dev steps !weather !build !shield !boat,
+tools/build_check.tscn, six new sounds.
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

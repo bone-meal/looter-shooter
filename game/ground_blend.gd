@@ -19,7 +19,7 @@ render_mode cull_back;
 
 uniform vec3 flat_color : source_color = vec3(0.9, 0.8, 0.55);
 #ifdef TEXTURED
-uniform vec3 patches[4];  // each island's grass patch: world x, world z, radius (0 = none)
+uniform vec3 patches[6];  // each island's grass patch: world x, world z, radius (0 = none)
 uniform float water_level = -0.4;
 uniform vec3 tiles = vec3(1.5, 2.0, 7.5);
 uniform vec3 sand_tint : source_color = vec3(1.0);
@@ -58,7 +58,7 @@ void fragment() {
 	vec2 uv_shore = p / tiles.z;
 	float ragged = texture(grass_diff, p / (tiles.y * 6.3)).g;
 	float grass = 0.0;
-	for (int i = 0; i < 4; i++) {
+	for (int i = 0; i < 6; i++) {
 		float from_center = distance(p, patches[i].xy) + (ragged - 0.3) * 6.0;
 		grass = max(grass, (1.0 - smoothstep(patches[i].z - 1.0, patches[i].z + 1.0, from_center)) * step(0.5, patches[i].z));
 	}
@@ -93,14 +93,14 @@ static var _shaders := {}  # "#define ..." prefix -> Shader
 static var _toon := false
 
 
-# The one island ground material. patches = up to four grass patches, each (world x, world z, radius).
+# The one island ground material. patches = up to six grass patches (one per island), each (world x, world z, radius).
 static func material(flat: Color, patches: PackedVector3Array, water_level: float) -> ShaderMaterial:
 	if _material == null:
 		_material = ShaderMaterial.new()
 	_material.set_shader_parameter("flat_color", flat)
-	var four := patches.duplicate()
-	four.resize(4)  # unused ones stay (0, 0, 0)
-	_material.set_shader_parameter("patches", four)
+	var six := patches.duplicate()
+	six.resize(6)  # unused ones stay (0, 0, 0)
+	_material.set_shader_parameter("patches", six)
 	_material.set_shader_parameter("water_level", water_level)
 	_refresh()
 	return _material

@@ -1,0 +1,28 @@
+{
+  "version": 1,
+  "_about": "The islands' buildables (core/build_state.gd decides, game/build_site.gd shows them). Each thing has parts lying on the islands ([x, z] from that island's middle; found for the whole party by interacting) and a bench where it is built once every part is found. The shield (data/shield.json): once built, every player takes one at the bench, and a new one whenever his broke. The boat (data/boat.json): built at the slipway, it then floats there. Game over puts every part back and takes built things away. reach = metres to a part or bench.",
+  "reach": 2.4,
+  "things": [
+    {
+      "id": "shield",
+      "name": "Hatch Shield",
+      "parts": [
+        {"name": "Hatch door", "island": "home", "at": [-14.0, -28.0]},
+        {"name": "Coil of rope", "island": "home", "at": [30.0, 4.0]},
+        {"name": "Iron bands", "island": "painter", "at": [14.0, 12.0]}
+      ],
+      "bench": {"island": "home", "at": [-14.0, -2.0]}
+    },
+    {
+      "id": "boat",
+      "name": "Skiff",
+      "parts": [
+        {"name": "Hull planks", "island": "painter", "at": [19.0, 7.0]},
+        {"name": "Tiller", "island": "shoal", "at": [16.0, -14.0]},
+        {"name": "Pot of tar", "island": "shoal", "at": [-18.0, 0.0]},
+        {"name": "Sailcloth", "island": "wreck", "at": [-14.0, 14.0]}
+      ],
+      "bench": {"island": "wreck", "at": [4.0, 22.0]}
+    }
+  ]
+}

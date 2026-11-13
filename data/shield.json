@@ -1,0 +1,13 @@
+{
+  "version": 1,
+  "_about": "The buildable shield (core/shield_state.gd decides, game/player.gd carries it, game/shield_model.gd is the model; where its parts lie and where it is built: data/buildables.json). hits = blocked hits it lasts; boss_cost = hits a boss's blow costs. arc_deg = the slice it covers: centred straight BEHIND you while it hangs on your back, straight AHEAD while it is in hand; a hit from inside the slice does no damage. move_speed = top speed with it in hand (Source units, as data/weapons.json). bash (the shoot key with it in hand): damage to every enemy within reach_m inside bash arc_deg ahead, they are thrown back by push (m/s), interval and hit_at in seconds as data/knives.json attacks, wear = hits a bash costs the shield. view = where it sits in first person (metres from the eye, degrees).",
+  "name": "Hatch Shield",
+  "hits": 15,
+  "boss_cost": 3,
+  "arc_deg": 150,
+  "move_speed": 220,
+  "bash": {"damage": 140, "reach_m": 2.4, "arc_deg": 100, "push": 9.0, "interval": 0.9, "hit_at": 0.15, "wear": 0, "sound": "shield_bash", "hit_sound": "shield_block"},
+  "block_sound": "shield_block",
+  "break_sound": "shield_break",
+  "view": {"position": [-0.36, -0.62, -0.7], "rotation": [4.0, 14.0, 3.0], "scale": 1.0}
+}

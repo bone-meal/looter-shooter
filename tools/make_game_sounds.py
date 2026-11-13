@@ -1,5 +1,5 @@
 # Purpose: developer-time script. Synthesises the gun side's sounds and every enemy's attack sound (no recordings)
-# into assets/audio/game/<name>.wav: the round stings, one shot per kind of gun, reloads, the dry click, explosions, and the blows,
+# into assets/audio/game/<name>.wav: the round stings, the islands' weather (thunder, the storm's rain loop), one shot per kind of gun, reloads, the dry click, explosions, and the blows,
 # bites, shots and wind-up of enemies and fantasy creatures. Which sound belongs to which gun or enemy is data
 # (data/weapons.json "sound" / "reload_sound", "attack_sound" in data/enemies.json and data/fantasy/enemies.json);
 # how loud and how far it carries is data/sounds.json. Uses the helpers of tools/make_fantasy_sounds.py.
@@ -61,6 +61,15 @@ def main():
     save("upgrade_done", mix(lowpass(tone(glide(200, 1200, 1.2), 1.2, "saw"), 3000) * env(n(1.2), 0.5, 0.8) * 0.5, at(crack(0.2, 300, 2500, 0.8), 1.15), at(note(988, 1.2, "sine", 0.5), 1.2)), 0.65)
     save("trap_zap", mix(band(noise(1.5), 1500, 7000) * (0.5 + 0.5 * np.sign(np.sin(2 * np.pi * 55 * np.arange(n(1.5)) / RATE))) * env(n(1.5), 0.02, 0.7) * 0.6, tone(110, 1.5, "saw") * env(n(1.5), 0.02, 0.7) * 0.3), 0.6)
     save("trap_fire", mix(lowpass(noise(1.8), 1500) * env(n(1.8), 0.15, 0.8), band(noise(1.8), 300, 900) * env(n(1.8), 0.3, 0.7) * 0.6), 0.65)
+    # --- the islands' weather: a thunderclap, and the storm rounds' looping bed (rain over a low wind with gusts, single drops ticking) ---
+    save("thunder", mix(crack(0.25, 70, 900, 1.4, 1.5) * 0.7, at(lowpass(noise(3.2), glide(500, 50, 3.2)) * env(n(3.2), 0.04, 1.5), 0.05), at(lowpass(noise(2.0), 120) * env(n(2.0), 0.3, 1.2) * 0.8, 0.9)), 0.85)
+    patter = highpass(noise(13.5), 5000) * (F.rng.uniform(0, 1, n(13.5)) > 0.985)
+    save("amb_island_storm", mix(0.22 * band(noise(13.5), 700, 4200), 0.5 * F.breeze(13.5, 150, 800, 0.55), 0.12 * patter), 0.5, True)
+    # --- buildables: a thing is hammered together; the shield stops a blow, bashes, and breaks ---
+    save("build_done", mix(crack(0.12, 220, 1500, 0.9, 4.0), at(crack(0.12, 240, 1600, 0.9, 4.0), 0.22), at(crack(0.12, 200, 1400, 1.0, 4.0), 0.44), at(note(523, 0.5, "sine", 0.4), 0.6), at(note(784, 0.9, "sine", 0.45), 0.72)), 0.7)
+    save("shield_block", mix(tone(glide(170, 90, 0.16), 0.16) * env(n(0.16), 0.002, 2.5), band(noise(0.1), 300, 1800) * env(n(0.1), 0.001, 3.0) * 0.7, at(tone(1900, 0.08) * env(n(0.08), 0.001, 4) * 0.15, 0.0)), 0.7)
+    save("shield_bash", mix(band(noise(0.22), 250, glide(600, 2200, 0.22)) * env(n(0.22), 0.08, 1.2) * 0.6, at(tone(glide(140, 60, 0.2), 0.2) * env(n(0.2), 0.002, 2.5), 0.14)), 0.7)
+    save("shield_break", mix(crack(0.3, 110, 900, 1.3, 2.0), at(band(noise(0.5), 400, 3000) * env(n(0.5), 0.01, 1.8) * 0.6, 0.05), at(crack(0.2, 160, 1300, 0.8, 3.0), 0.22), at(crack(0.15, 200, 1700, 0.6, 3.0), 0.4)), 0.8)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

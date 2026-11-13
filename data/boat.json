@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "_about": "The buildable boat (core/boat_rules.gd decides, game/boat.gd shows it; its parts and slipway: data/buildables.json). start = where it floats once built ([x, z] from that island's middle), bow pointing out to sea. Speeds in metres a second: max_speed ahead, reverse_speed astern; accel = how fast it picks up speed, brake = how fast the opposite throttle stops it, drag = how fast it slows with the keys let go (all m/s a second). turn_rate_deg = degrees a second at turn_full_at m/s or faster (slower = it turns less; standing still it does not turn). draught = the water it needs under it (metres): where the sea is shallower it runs aground and stops; it can always back off toward deeper water. half_length = bow and stern are checked this far from its middle. seats = where the people aboard are, [right, up, back] in metres from its middle at the waterline; seat 0 is the helm: whoever sits there steers with the move keys. Nobody aboard can shoot. board_reach = metres from its middle within which you can climb aboard; land_reach = how near dry sand it must lie for you to get off. bob = how it rocks (metres, degrees, seconds per wave).",
+  "name": "Skiff",
+  "start": {"island": "wreck", "at": [5.0, 29.3]},
+  "max_speed": 9.0,
+  "reverse_speed": 3.0,
+  "accel": 3.5,
+  "brake": 6.0,
+  "drag": 1.2,
+  "turn_rate_deg": 55.0,
+  "turn_full_at": 3.0,
+  "draught": 0.5,
+  "half_length": 2.3,
+  "seats": [[0.0, 0.08, 1.45], [-0.4, 0.08, 0.45], [0.4, 0.08, 0.45], [-0.4, 0.08, -0.55], [0.4, 0.08, -0.55], [0.0, 0.08, -1.5]],
+  "board_reach": 5.5,
+  "land_reach": 8.0,
+  "bob": {"height": 0.05, "roll_deg": 2.5, "pitch_deg": 1.2, "seconds": 2.8}
+}

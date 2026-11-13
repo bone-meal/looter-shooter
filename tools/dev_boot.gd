@@ -279,6 +279,31 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var at: Vector3 = player.global_position - Vector3(500, 0, 0)
 				_lines.append("DEBRIS %s: on island %d, y %.2f, land %s, deck %d, debris here %d, cleared %s, reachable %s, points %d" % [" ".join(words.slice(1)), int(land.call("island_near", at.x, at.z)), at.y,
 					str(land.call("on_land", at.x, at.z)), int(land.call("deck_at", at.x, at.z)), int(session.call("_debris_here")), str(land.call("open_list")), str(land.call("reachable")), int((session.call("score") as RefCounted).get("points"))])
+		"shield":  # "!shield <note>": whether a shield is carried, the hits it still takes, whether it is held up, our health
+			var carried: RefCounted = player.get("shield")
+			_lines.append("SHIELD %s: owned %s, hits %d of %d, in hand %s, hand %d, held '%s', health %.0f" % [" ".join(words.slice(1)), str(carried.get("owned")), int(carried.get("hits_left")), int(carried.call("max_hits")), str(int(player.call("hand_index")) == -2), int(player.call("hand_index")), String(player.call("held_id")), float((player.get("health") as RefCounted).get("hp"))])
+		"build":  # "!build goto shield 1": stand at part 1 of the shield; "!build goto boat bench": at its bench; "!build <note>": what is found and built
+			var state: RefCounted = session.get("_builds")
+			if words.size() > 3 and words[1] == "goto":
+				var which := int(state.call("index_of", words[2]))
+				var to: Vector2 = (session.get("_build_benches") as Array)[which] if words[3] == "bench" else ((session.get("_build_parts") as Array)[which] as Array)[int(words[3])]
+				player.call("teleport", Vector3(500.0 + to.x + 0.9, 0.15, to.y + 0.9), 0.0)
+				player.call("look_at_point", Vector3(500.0 + to.x, 0.6, to.y))
+			else:
+				var told := PackedStringArray()
+				for which in (state.get("ids") as Array).size():
+					told.append("%s %d of %d%s" % [String((state.get("ids") as Array)[which]), int(state.call("found_count", which)), int(state.call("part_count", which)), " BUILT" if bool(state.call("built", which)) else ""])
+				_lines.append("BUILD %s: %s | here %d" % [" ".join(words.slice(1)), ", ".join(told), int(session.call("_build_thing_at", player.global_position))])
+		"boat":  # "!boat goto": stand on the sand nearest the boat, looking at it; "!boat <note>": where it is, its speed, who sits in it, our place
+			if words.size() > 1 and words[1] == "goto":
+				player.call("teleport", session.call("boat_shore"), 0.0)
+				var hull: Node3D = session.get("_boat_node")
+				player.call("look_at_point", hull.global_position + Vector3(0, 0.6, 0))
+			else:
+				var me: Vector3 = player.global_position - Vector3(500, 0, 0)
+				_lines.append("BOAT %s: %s | we are at %.1f %.1f %.1f" % [" ".join(words.slice(1)), String(session.call("boat_note")), me.x, me.y, me.z])
+		"weather":  # "!weather <note>": the islands' weather on screen now (stage, fog, sun, rain drops, the looping sound)
+			_lines.append("WEATHER %s: %s" % [" ".join(words.slice(1)), String(session.call("weather_note"))])
 		"powers":  # "!powers <note>": the power-ups lying around and running, and what points are multiplied by
 			var rules: RefCounted = session.get("_powerups")
 			var running := PackedStringArray()
@@ -684,7 +709,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for enemy: Variant in session.call("director").call("enemy_list"):
 				if is_instance_valid(enemy) and (nearest == null or (enemy as Node3D).global_position.distance_to(player.global_position) < nearest.global_position.distance_to(player.global_position)):
 					nearest = enemy
-			if nearest != null:  # "!face head" aims at its head
+			if nearest != null and words.size() > 1 and words[1] == "away":  # "!face away" turns our back on it
+				player.call("look_at_point", player.global_position * 2.0 - nearest.global_position + Vector3(0, 1.6, 0))
+			elif nearest != null:  # "!face head" aims at its head
 				player.call("look_at_point", nearest.global_position + Vector3(0, float(nearest.call("head_height")) * (0.93 if words.size() > 1 and words[1] == "head" else 0.55), 0))
 		"fight":  # fantasy world: health, mana, ward and the creatures around, for the log
 			var hub: Node = session.call("fantasy")

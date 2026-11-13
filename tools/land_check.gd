@@ -22,7 +22,7 @@ func _ready() -> void:
 		for j in range(i + 1, land.islands.size()):
 			var gap := (land.islands[i]["at"] as Vector2).distance_to(land.islands[j]["at"]) - float(land.islands[i]["radius"]) - float(land.islands[j]["radius"])
 			apart = apart and gap > 8.0
-	_say("%d islands (%s), none nearer than 8 m to another" % [land.islands.size(), ", ".join(names)], apart and land.islands.size() >= 2 and land.islands.size() <= 4)
+	_say("%d islands (%s), none nearer than 8 m to another" % [land.islands.size(), ", ".join(names)], apart and land.islands.size() >= 2 and land.islands.size() <= 6)
 	var ways := PackedStringArray()
 	var ways_fine := land.bridges.size() >= 1
 	var last_price := 0
@@ -76,12 +76,17 @@ func _ready() -> void:
 	var mid: Vector2 = land.bridges[0]["mid"]
 	var before: Vector2 = mid + ((land.bridges[0]["a"] as Vector2) - mid).normalized() * 2.5
 	_say("standing 2.5 m before the first debris: it is the one near, and it leads to %s" % land.far_side(0, before.x, before.y), land.debris_near(before.x, before.y) == 0 and land.far_side(0, before.x, before.y) == String(land.islands[1]["name"]) and land.debris_near(0.0, 0.0) == -1)
-	_say("before anything is cleared only the spawn island can be reached", land.reachable() == ([true, false, false, false] as Array[bool]))
-	_say("clearing the first debris opens the second island; clearing it twice does nothing", land.open(0) and not land.open(0) and land.reachable() == ([true, true, false, false] as Array[bool]) and land.debris_near(before.x, before.y) == -1 and land.open_list() == PackedInt32Array([0]))
+	_say("before anything is cleared only the spawn island can be reached", land.reachable().slice(0, 4) == ([true, false, false, false] as Array[bool]))
+	_say("clearing the first debris opens the second island; clearing it twice does nothing", land.open(0) and not land.open(0) and land.reachable().slice(0, 4) == ([true, true, false, false] as Array[bool]) and land.debris_near(before.x, before.y) == -1 and land.open_list() == PackedInt32Array([0]))
 	land.open(3)
-	_say("the dearest debris joins the last island straight to the spawn island", land.reachable() == ([true, true, false, true] as Array[bool]))
+	_say("the dearest debris joins the last island straight to the spawn island", land.reachable().slice(0, 4) == ([true, true, false, true] as Array[bool]))
 	land.close_all()
-	_say("game over closes every way again", land.open_list().is_empty() and land.reachable() == ([true, false, false, false] as Array[bool]))
+	for way in land.bridges.size():
+		land.open(way)
+	var by_boat := land.index_of("gull")
+	_say("with every way cleared the bridged islands are reached, and Gull Rock (no bridge) still is not: only the boat goes there", by_boat >= 0 and land.reachable().count(true) == land.islands.size() - 1 and not land.reachable()[by_boat])
+	land.close_all()
+	_say("game over closes every way again", land.open_list().is_empty() and land.reachable().slice(0, 4) == ([true, false, false, false] as Array[bool]))
 
 	var arena: Dictionary = land.place_of("painting_arena")
 	var fantasy: Dictionary = land.place_of("painting_fantasy")

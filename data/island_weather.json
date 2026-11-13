@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "_about": "Weather and light on the islands by round (core/weather_rules.gd decides, game/island_weather.gd shows it). A round gets the LAST stage whose from_round it has reached. density = fog added per metre (0.01 hides about 40 % of a thing 50 m away); density_per_round is added for every round past from_round, up to density_max. fog_color = the fog and the cover over the sky. sky_tint multiplies the photo sky (and with it the light in the shade). sky_cover 0..1 = how much of the sky the fog colour hides. sun = share of the sun's brightness left, sun_color multiplies its colour. rain 0..1 = share of the graphics tier's drops. bed = the looping sound (data/sounds.json ambience). boss: laid over the stage while a boss round is being fought (its colours replace the stage's, its sun multiplies, density_add is added). lightning: only in a stage with rain; a flash every flash_every [shortest, longest] seconds, `flashes` flickers of flash_seconds each at `sun` times the normal sun, thunder thunder_after [shortest, longest] seconds later. rain: drops per graphics tier (0 = no rain drawn), box = metres round the camera the drops live in, fall = metres a second (x, y, z), streak and width in metres, near_cut = drops nearer than this are hidden (near_cut_indoors while standing in a hut, so none fall through the roof). blend_seconds = how long one weather takes to become the next; leave_seconds = how fast it clears when you leave the islands by air.",
+  "blend_seconds": 8.0,
+  "leave_seconds": 1.5,
+  "stages": [
+    {"id": "clear", "from_round": 1},
+    {"id": "fog", "from_round": 10, "density": 0.012, "density_per_round": 0.001, "density_max": 0.021, "fog_color": "#b9c4c8", "sky_tint": "#b8c0c4", "sky_cover": 0.6, "sun": 0.7, "sun_color": "#f2f4f5"},
+    {"id": "storm", "from_round": 20, "density": 0.02, "density_per_round": 0.0006, "density_max": 0.028, "fog_color": "#5d6a74", "sky_tint": "#8791a0", "sky_cover": 0.7, "sun": 0.4, "sun_color": "#cdd8e6", "rain": 1.0, "bed": "island_storm"}
+  ],
+  "boss": {"fog_color": "#a82a22", "sky_tint": "#ff5a48", "sky_cover": 0.5, "sun": 0.85, "sun_color": "#ff9080", "density_add": 0.002},
+  "lightning": {"flash_every": [7.0, 18.0], "flash_seconds": 0.1, "flashes": 2, "sun": 3.0, "thunder_after": [0.4, 2.2], "sound": "thunder"},
+  "rain": {
+    "drops": {"potato": 0, "low": 250, "medium": 500, "high": 800, "ultimate": 1200},
+    "box": [26.0, 16.0, 26.0],
+    "fall": [4.0, -24.0, 1.5],
+    "streak": 0.8,
+    "width": 0.014,
+    "color": "#cfd9e4",
+    "alpha": 0.4,
+    "near_cut": 0.8,
+    "near_cut_indoors": 7.5
+  }
+}

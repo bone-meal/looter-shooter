@@ -9,6 +9,7 @@ signal damaged
 signal died  # health hit zero; the game session decides where to respawn
 signal went_down  # health hit zero where a teammate can still help: lying there until revive() or finish_off()
 signal blocked  # a hit was fully blocked by armor
+signal shield_broke  # the buildable shield took its last hit
 
 const WeaponState = preload("res://core/weapon_state.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
@@ -25,6 +26,8 @@ const SettingsState = preload("res://core/settings_state.gd")
 const AmmoPools = preload("res://core/ammo_pools.gd")
 const MeleeState = preload("res://core/melee_state.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
+const ShieldState = preload("res://core/shield_state.gd")
+const ShieldModel = preload("res://game/shield_model.gd")
 const ArmorMath = preload("res://core/armor_math.gd")
 const StatusState = preload("res://core/status_state.gd")
 const CigaretteModel = preload("res://game/cigarette_model.gd")
@@ -52,6 +55,7 @@ const THIRD_PERSON_HOLD := Vector3(0.26, -0.3, -0.5)  # weapon position relative
 const CAMERA_PADDING := 0.25
 const ORBIT_CAM := Vector3(0.0, 0.3, 3.4)  # camera offset while orbiting with H held
 const KNIFE := -1  # `_hand` when the knife is out instead of a holstered gun
+const SHIELD := -2  # `_hand` while the buildable shield is held up
 const LOOT_HOLD := Vector3(0.28, -0.26, -0.55)  # first-person position of something else held in the hand (the staff)
 const MAX_STEP := 1.0 / 30.0  # longest movement step, so a frame hitch can't tunnel through floors
 const FALL_LIMIT := -6.0
@@ -125,6 +129,11 @@ var _knife_model: Node3D
 var _knife_twin: Node3D  # the second one of a type held in both hands, else null
 var _knife_out := false
 var _melee := MeleeState.new()
+var shield := ShieldState.new()  # the buildable shield (data/shield.json): the session hands one out at the bench
+var _shield_out := false  # it is in hand (covers ahead); otherwise it hangs on the back (covers behind)
+var _shield_model: MeshInstance3D  # the one held up
+var _shield_back: MeshInstance3D  # the one on the body's back
+var _hand_before := 0  # what was in hand before the shield came up
 var _melee_kind := ""  # the attack whose blow has yet to land
 var _weapon_stats: Dictionary  # data/weapons.json entries
 var _base_views: Array[Dictionary] = []
@@ -250,6 +259,12 @@ func _ready() -> void:
 			var hand: Array = view.get("shoulder_grip", [0.0, -0.12, 0.03])
 			grip.position = Vector3(hand[0], hand[1], hand[2])
 			model.add_child(grip)
+	shield.setup(DataStore.load_json("res://data/shield.json"))
+	_shield_model = ShieldModel.build()
+	_shield_model.visible = false
+	_head.add_child(_shield_model)
+	_shield_back = ShieldModel.build()
+	_shield_back.visible = false
 	set_knife(knife)
 	refresh_held()
 	refresh_equipment()
@@ -283,6 +298,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		use_skill(1)
 	elif event.is_action_pressed("knife"):
 		select_hand(KNIFE)
+	elif event.is_action_pressed("shield"):
+		select_hand(_hand_before if _hand == SHIELD else SHIELD)  # up, or back onto the back
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_UP and not InputSetup.used(settings, "mouse:%d" % MOUSE_BUTTON_WHEEL_UP):
 		_cycle_hand(-1)  # the wheel switches guns only in a direction no control is bound to
 	elif event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_WHEEL_DOWN and not InputSetup.used(settings, "mouse:%d" % MOUSE_BUTTON_WHEEL_DOWN):
@@ -474,6 +491,8 @@ func _move_and_shoot(delta: float) -> void:
 		weapon.update(_now())
 	elif _knife_out:
 		_use_knife()
+	elif _shield_out:
+		_use_shield()
 	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
@@ -540,9 +559,22 @@ func take_damage(amount: float, element: String = "physical") -> void:
 	if damage_gate.is_valid():
 		amount = float(damage_gate.call(amount, element))
 	var attacker: Variant = struck_by
+	var from := struck_from
 	struck_by = null
 	struck_from = Vector3.INF
 	if cheat_god or downed or amount <= 0.0:
+		return
+	if is_instance_valid(attacker):
+		from = (attacker as Node3D).global_position
+	if shield.owned and not guns_locked and from.is_finite() and shield.stops(_bearing_to(from), _shield_out):
+		blocked.emit()  # the shield took it: in hand it covers ahead, on the back behind
+		var boss: bool = is_instance_valid(attacker) and str((attacker as Object).get("enemy_id")).begins_with("boss")
+		if shield.wear(int(shield.cfg["boss_cost"]) if boss else 1):
+			_gun_sound(String(shield.cfg["break_sound"]))
+			shield_broke.emit()
+			refresh_held()
+		else:
+			_gun_sound(String(shield.cfg["block_sound"]))
 		return
 	var taken := ArmorMath.incoming(amount * _world_damage, element, armor, randf())
 	if taken <= 0.0:
@@ -573,6 +605,14 @@ func _hurt(amount: float) -> void:
 			went_down.emit()
 			return
 		finish_off()
+
+
+# The angle between where we look and a world point, flat on the ground: 0 = straight ahead, PI = straight behind.
+func _bearing_to(point: Vector3) -> float:
+	var to := Vector2(point.x - global_position.x, point.z - global_position.z)
+	if to.length_squared() < 0.0001:
+		return 0.0
+	return absf(Vector2(-sin(_yaw), -cos(_yaw)).angle_to(to))
 
 
 # A teammate got us back on our feet, with this share of our health.
@@ -629,11 +669,15 @@ func held_weapon() -> WeaponState:
 	return weapon if _holding else null
 
 
-# What is in hand, for other machines to show: a gun's body id, "knife:<type>" for the knife, "" for nothing.
+# What is in hand, for other machines to show: a gun's body id, "knife:<type>" for the knife, "shield" for the
+# shield held up, "" for nothing; "|shield" is added while the shield hangs on the back.
 func held_id() -> String:
+	if _shield_out:
+		return "shield"
+	var slung := "|shield" if shield.owned and not guns_locked else ""  # on the back, for others to see
 	if _knife_out:
-		return "knife:" + knife
-	return inventory.holster_body(_hand) if _holding else ""
+		return "knife:" + knife + slung
+	return (inventory.holster_body(_hand) if _holding else "") + slung
 
 
 # The rolled gun in hand ({} for a plain weapon, the knife or nothing).
@@ -655,11 +699,14 @@ func knife_out() -> bool:
 	return _knife_out
 
 
-# Takes the gun of a holster in hand, or the knife (KNIFE). An empty or closed holster is ignored. Putting a gun
+# Takes the gun of a holster in hand, the knife (KNIFE) or the shield (SHIELD, only while one is carried). An empty
+# or closed holster is ignored. Putting a gun
 # away stops its reload; putting the knife away stops its swing.
 func select_hand(index: int) -> void:
-	if index == _hand or (index != KNIFE and (index >= inventory.holster_count or inventory.holster_body(index) == "")):
+	if index == _hand or (index == SHIELD and not shield.owned) or (index >= 0 and (index >= inventory.holster_count or inventory.holster_body(index) == "")):
 		return
+	if index == SHIELD:
+		_hand_before = _hand
 	weapon.cancel_reload()
 	_melee.cancel()
 	_melee_kind = ""
@@ -725,6 +772,10 @@ func refresh_held() -> void:
 	_knife_model.visible = false
 	if _knife_twin != null:
 		_knife_twin.visible = false
+	_shield_model.visible = false
+	_shield_out = false
+	if _hand == SHIELD and not shield.owned:  # it broke or was lost: back to what was in hand before
+		_hand = _hand_before if _hand_before != SHIELD else KNIFE
 	_top_units = float(_move_cfg["base_speed"])  # the knife and empty hands run at full speed
 	_aim_units = 0.0
 	_held_gun = {}
@@ -736,13 +787,26 @@ func refresh_held() -> void:
 		if inventory.holster_body(i) == "":
 			_ready_weapons[i] = null
 			_ready_keys[i] = 0
-	if _hand != KNIFE and inventory.holster_body(_hand) == "":
+	if _hand >= 0 and inventory.holster_body(_hand) == "":
 		_hand = KNIFE
 		for i in inventory.holster_count:
 			if inventory.holster_body(i) != "":
 				_hand = i
 				break
+	_sling_shield()
 	if guns_locked:  # Aurelind before its story is done: the staff is out, no gun and no knife
+		_apply_health_cap()
+		return
+	if _hand == SHIELD:
+		_shield_out = true
+		_shield_model.visible = true
+		_top_units = float(shield.cfg["move_speed"])
+		if _body != null and _body.has_method("support"):
+			_body.call("support", null)
+			if _body.has_method("grip"):
+				_body.call("grip", null)
+		_motion.reset()
+		_sling_shield()
 		_apply_health_cap()
 		return
 	if _hand == KNIFE:
@@ -842,6 +906,8 @@ func _select_slot(index: int) -> void:
 func set_appearance(look: Dictionary) -> void:
 	appearance = AppearanceData.db().sanitize(look)
 	var was_smoking := _cigarette != null and _cigarette.visible
+	if _shield_back != null and _shield_back.get_parent() != null:
+		_shield_back.get_parent().remove_child(_shield_back)  # it hangs on the body that is about to go
 	if _visual != null:
 		_visual.queue_free()
 	_visual = Node3D.new()
@@ -864,6 +930,7 @@ func set_appearance(look: Dictionary) -> void:
 		(_body.call("head_anchor") as Node3D).add_child(_cigarette)
 	else:
 		_body.get_node("Torso/Head").add_child(_cigarette)
+	_sling_shield()
 
 
 # Forces first/third person (used while riding the crow).
@@ -883,7 +950,7 @@ func _apply_view() -> void:
 func _animate_walk(delta: float) -> void:
 	var speed := Vector2(velocity.x, velocity.z).length()
 	_walk_phase += speed * delta * 1.6
-	BodyMotion.animate(_body, clampf(speed / move.base_speed, 0.0, 1.0), _walk_phase, _now(), _holding or _knife_out)
+	BodyMotion.animate(_body, clampf(speed / move.base_speed, 0.0, 1.0), _walk_phase, _now(), _holding or _knife_out or _shield_out)
 
 
 # Out of the round: from now on the camera follows `body` (another player) from behind, turned by our mouse, and
@@ -938,6 +1005,8 @@ func _animate_weapon(delta: float) -> void:
 		_camera.fov = settings.fov
 		if _knife_out:
 			_animate_knife()
+		elif _shield_out:
+			_animate_shield()
 		return
 	var wants_ads := not third_person and Input.is_action_pressed("aim") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
 	_motion.update(delta, wants_ads, weapon.reload_fraction(_now()))
@@ -986,6 +1055,86 @@ func _update_view_kick(delta: float) -> void:
 # The data/weapons.json entry of the gun in hand ({} when the hands hold something else).
 func _weapon_data() -> Dictionary:
 	return _weapon_stats.get(inventory.holster_body(_hand), {}) if _holding else {}
+
+
+# The shield held up: the shoot button bashes (data/shield.json "bash"); the blow lands a moment after the click.
+func _use_shield() -> void:
+	var now := _now()
+	var bash: Dictionary = shield.cfg["bash"]
+	if controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_action_pressed("shoot") and _melee.try_start("bash", bash, now):
+		_melee_kind = "bash"
+		_gun_sound(String(bash.get("sound", "")))
+	if _melee_kind == "bash" and _melee.lands(now):
+		_melee_kind = ""
+		_shield_bash(bash)
+
+
+# The bash lands: every enemy close ahead is hurt and thrown back.
+func _shield_bash(bash: Dictionary) -> void:
+	var reach := float(bash["reach_m"])
+	var ball := SphereShape3D.new()
+	ball.radius = reach
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = ball
+	query.transform = Transform3D(Basis.IDENTITY, global_position + Vector3(0.0, 1.0, 0.0))
+	query.collision_mask = 2  # enemies
+	var half := deg_to_rad(float(bash["arc_deg"])) * 0.5
+	var dealt := float(bash["damage"]) * (1.0 + bonus_damage_pct / 100.0)
+	var struck := 0
+	for found: Dictionary in get_world_3d().direct_space_state.intersect_shape(query, 12):
+		var enemy: Object = found["collider"]
+		if not enemy.has_method("on_hit") or not (enemy is Node3D) or _bearing_to((enemy as Node3D).global_position) > half:
+			continue
+		var at: Vector3 = (enemy as Node3D).global_position + Vector3(0.0, 1.0, 0.0)
+		var away := ((enemy as Node3D).global_position - global_position) * Vector3(1, 0, 1)
+		if score != null:
+			score.blow = "melee"
+		enemy.call("on_hit", dealt, at, -away.normalized())
+		if score != null:
+			score.blow = ""
+			if enemy.has_method("head_hit") and not enemy.get("health").is_dead() and not enemy.has_meta("host_pays"):
+				score.hit()
+		if enemy.has_method("push"):
+			enemy.call("push", away.normalized() * float(bash["push"]))
+		if damage_numbers != null:
+			damage_numbers.spawn(at, dealt)
+		struck += 1
+	if struck > 0:
+		_gun_sound(String(bash.get("hit_sound", "")))
+		if shield.wear(int(bash.get("wear", 0))):
+			_gun_sound(String(shield.cfg["break_sound"]))
+			shield_broke.emit()
+			refresh_held()
+
+
+# The shield held up in first person: low on the left, thrust forward by a bash. In third person it sits on the
+# body's right hand.
+func _animate_shield() -> void:
+	if third_person and _body != null and _body.has_method("hand_anchor"):
+		_shield_model.global_transform = (_body.call("hand_anchor") as Node3D).global_transform * Transform3D(Basis.IDENTITY, Vector3(0.0, 0.1, -0.12))
+		return
+	var view: Dictionary = shield.cfg["view"]
+	var at: Array = view["position"]
+	var turn: Array = view["rotation"]
+	var t := _melee.swing(_now())
+	var arc := sin(t * PI) if (t < 1.0 and _melee.kind == "bash") else 0.0
+	_shield_model.scale = Vector3.ONE * float(view["scale"])
+	_shield_model.position = (_third_person_hold if third_person else Vector3(at[0], at[1], at[2])) + Vector3(0.1, 0.06, -0.32) * arc
+	_shield_model.rotation_degrees = Vector3(float(turn[0]) - 8.0 * arc, turn[1], turn[2])
+
+
+# Hangs the second shield model on the body's back while a shield is carried but not held up (others and the
+# third-person view see it there). Bodies without a back to hang it on show none.
+func _sling_shield() -> void:
+	if _shield_back == null:
+		return
+	var back: Node3D = _body.call("back_anchor") if (_body != null and _body.has_method("back_anchor")) else null
+	if _shield_back.get_parent() != back:
+		if _shield_back.get_parent() != null:
+			_shield_back.get_parent().remove_child(_shield_back)
+		if back != null:
+			back.add_child(_shield_back)
+	_shield_back.visible = shield.owned and not _shield_out and not guns_locked
 
 
 # The knife in hand: the shoot button slashes, the aim button stabs (data/knives.json "attacks"). The blow lands a

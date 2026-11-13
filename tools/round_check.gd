@@ -1,11 +1,12 @@
 # Purpose: developer check of the island's rounds (core/round_rules.gd with data/island_rounds.json): the data is
 # sound, rounds grow as designed, boss and special rounds come when they should, enemies get tougher, and a played-
-# through run (enemies killed a few seconds after they come ashore) keeps to the alive cap and the pacing.
+# through run (enemies killed a few seconds after they come ashore) keeps to the alive cap and the pacing; and of the weather by round (core/weather_rules.gd with data/island_weather.json).
 # Log tools/round_check.log (ends ROUND_CHECK_DONE problems=n).
-# Dependencies: core/round_rules.gd, core/data_store.gd, core/settings_state.gd (the graphics tiers).
+# Dependencies: core/round_rules.gd, core/weather_rules.gd, core/data_store.gd, core/settings_state.gd (the graphics tiers).
 extends Node
 
 const RoundRules = preload("res://core/round_rules.gd")
+const WeatherRules = preload("res://core/weather_rules.gd")
 const DataStore = preload("res://core/data_store.gd")
 const SettingsState = preload("res://core/settings_state.gd")
 
@@ -110,6 +111,27 @@ func _ready() -> void:
 	_say("the clock stood still for the 500 s nobody was there: nothing comes at once", rules.update(now + 1.0, 0) == "")
 	rules.stop()
 	_say("game over: back to before round 1", rules.number == 0 and not rules.running() and rules.left(0) == 0)
+
+	# --- the weather by round (core/weather_rules.gd with data/island_weather.json) ---
+	var weather := WeatherRules.new()
+	weather.setup(DataStore.load_json("res://data/island_weather.json"))
+	var wrong := weather.problems()
+	_say("the weather data is sound%s" % ("" if wrong.is_empty() else ": " + "; ".join(wrong)), wrong.is_empty())
+	var mild := weather.of_round(9, "normal")
+	_say("rounds 1-9 are clear: nothing added, nothing dimmed", float(mild["weight"]) == 0.0 and float(mild["density"]) == 0.0 and float(mild["sun"]) == 1.0 and float(mild["rain"]) == 0.0 and weather.of_round(0, "boss") == WeatherRules.CLEAR)
+	var fog := weather.of_round(10, "normal")
+	var thick := weather.of_round(19, "normal")
+	_say("fog from round 10 (%.4f a metre) and thicker by round 19 (%.4f), no rain yet, the sun dimmed to %.2f" % [float(fog["density"]), float(thick["density"]), float(fog["sun"])],
+		String(fog["stage"]) == "fog" and float(fog["density"]) > 0.0 and float(thick["density"]) > float(fog["density"]) and float(fog["rain"]) == 0.0 and float(fog["sun"]) < 1.0)
+	var storm := weather.of_round(20, "normal")
+	var endless := weather.of_round(90, "normal")
+	_say("a storm from round 20: rain, the bed '%s', darker than the fog, and its fog stops growing at %.4f" % [String(storm["bed"]), float(endless["density"])],
+		String(storm["stage"]) == "storm" and float(storm["rain"]) > 0.0 and String(storm["bed"]) != "" and float(storm["sun"]) < float(fog["sun"]) and float(endless["density"]) <= float((weather.stage_of(90) as Dictionary)["density_max"]) + 0.00001)
+	var red := weather.of_round(5, "boss")
+	var red_storm := weather.of_round(20, "boss")
+	_say("a boss round lays the red sky over clear weather and over the storm (which keeps its rain)",
+		float(red["weight"]) == 1.0 and (red["sky_tint"] as Color).r > (red["sky_tint"] as Color).b * 2.0 and float(red["rain"]) == 0.0 and float(red_storm["rain"]) > 0.0 and red_storm["sky_tint"] == red["sky_tint"] and float(red_storm["density"]) > float(storm["density"]))
+	_say("every graphics tier has its number of drops (ultimate %d, potato %d)" % [weather.drops_for("ultimate"), weather.drops_for("potato")], weather.drops_for("ultimate") > weather.drops_for("low") and weather.drops_for("potato") == 0)
 
 	_lines.append("ROUND_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/round_check.log", FileAccess.WRITE)

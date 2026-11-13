@@ -34,6 +34,7 @@ var _player: AnimationPlayer
 var _tree: AnimationTree
 var _anchor: Node3D
 var _hand: Node3D
+var _back: Node3D  # back_anchor(), made when first asked for
 var _reach: TwoBoneIK3D  # left arm reaching for a long gun's support point
 var _reach_target: Node3D
 var _grip: TwoBoneIK3D  # right arm reaching for the grip of a gun carried on the shoulder
@@ -410,6 +411,17 @@ func head_anchor() -> Node3D:
 # A point in the right hand, turned so a weapon model placed on it points where the hand points.
 func hand_anchor() -> Node3D:
 	return _hand
+
+
+# A point just behind the chest that follows it, turned so a thing placed on it faces away from the back (made the
+# first time it is asked for).
+func back_anchor() -> Node3D:
+	if _back == null:
+		var chest := _skeleton.get_bone_global_rest(_skeleton.find_bone("spine_03"))
+		_back = Node3D.new()
+		_back.transform = chest.affine_inverse() * Transform3D(Basis.IDENTITY, chest.origin + Vector3(0.0, -0.08, -0.19))
+		attach("spine_03").add_child(_back)
+	return _back
 
 
 # Two-handed hold for long guns: the left hand reaches `target` (the "Support" point of a weapon model). Null = let go.
