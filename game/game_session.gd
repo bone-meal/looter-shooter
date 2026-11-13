@@ -27,6 +27,9 @@ const LoadClock = preload("res://game/load_clock.gd")
 const PlayerHud = preload("res://game/player_hud.gd")
 const EnemyBars = preload("res://game/enemy_bars.gd")
 const PaintingArt = preload("res://game/painting_art.gd")
+const CrosshairStyle = preload("res://core/crosshair_style.gd")
+const CrosshairView = preload("res://game/crosshair_view.gd")
+const PhotoMode = preload("res://game/photo_mode.gd")
 const SettingsState = preload("res://core/settings_state.gd")
 const ProfileIO = preload("res://game/profile_io.gd")
 const Lifeguard = preload("res://game/lifeguard.gd")
@@ -120,7 +123,9 @@ var _overlay := DebugOverlay.new()
 var _scope := ScopeOverlay.new()
 var _player_hud := PlayerHud.new()
 var _bars := EnemyBars.new()
-var _cross := Label.new()
+var _cross := CrosshairView.new()  # the player's crosshair (Settings > Crosshair)
+var _cross_styles := CrosshairStyle.new()
+var _photo := PhotoMode.new()  # F10: free camera and pictures into the Pictures folder
 var _hud_timer := 0.0
 var _painting := Vector3.ZERO
 var _painting_fantasy := Vector3.ZERO
@@ -480,6 +485,8 @@ func _ready() -> void:
 	_player.position = island["spawn"]
 	add_child(_player)
 	LoadClock.mark("player (body, guns)")
+	add_child(_photo)
+	_photo.setup(_player, settings)
 	_player.damaged.connect(_player_hud.flash)
 	_player.died.connect(_on_player_died)
 	_player.blocked.connect(_player_hud.notice.bind("Blocked!"))
@@ -670,6 +677,7 @@ func apply_settings() -> void:
 		_fantasy.enter(_player.global_position)
 	_overlay.visible = settings.show_debug
 	_player_hud.show_speed = settings.show_debug
+	_cross.show_style(_cross_styles.clean(settings.crosshair) if not settings.crosshair.is_empty() else _cross_styles.preset(0))
 
 
 func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
@@ -693,6 +701,9 @@ func _unhandled_input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("card") and not _inventory_screen.visible:
 		_open_card()
+	elif event.is_action_pressed("photo_mode") and not _inventory_screen.visible and not _photo.active:
+		_photo.enter(net == null or not net.can_send())  # alone the game stands still meanwhile
+		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("inventory"):
 		_toggle_inventory()
 	elif event.is_action_pressed("interact") and not _inventory_screen.visible:
@@ -3588,8 +3599,8 @@ func _build_hud() -> void:
 	layer.add_child(_player_hud)
 	_hud.position = Vector2(12, 8)
 	layer.add_child(_hud)
-	_cross.text = "+"
-	_cross.set_anchors_and_offsets_preset(Control.PRESET_CENTER)
+	_cross_styles.setup(DataStore.load_json("res://data/crosshairs.json"))
+	_cross.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	layer.add_child(_cross)
 	layer.add_child(_overlay)
 	layer.add_child(_scoreboard)

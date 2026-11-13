@@ -334,6 +334,47 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					session.call("_on_float_shot", int(words[1]) - 1, thing)
 			else:
 				_lines.append("SONG %s: unlocked %s, files %s, playing %s (secret %d)" % [" ".join(words.slice(1)), str(book.get("unlocked")), str(book.get("files")), str((session.get("_music") as AudioStreamPlayer).playing), int(session.get("_music_secret"))])
+		"crosshair":  # "!crosshair menu": Settings > Crosshair over the game; "!crosshair n": click design n (1-based); "!crosshair code <code>": paste a share code; "!crosshair close"; "!crosshair <note>": what the HUD shows
+			var main := _find_with(get_tree().root, "_show_only")
+			var page: Node = main.get("_crosshair_menu")
+			if words.size() > 1 and words[1] == "menu":
+				main.call("_show_only", page)
+			elif words.size() > 1 and words[1] == "close":
+				main.call("_show_only", null)  # NOT main._close_controls: that writes the settings file, and a test must not change his crosshair
+			elif words.size() > 2 and words[1] == "code":
+				(page.get("_code") as LineEdit).text = words[2]
+				page.call("_use_code")
+			elif words.size() > 1 and words[1].is_valid_int():
+				page.call("_pick", int(words[1]) - 1)
+			else:
+				var shown: Dictionary = (session.get("_cross") as Control).get("style")
+				var styles: RefCounted = page.get("styles")
+				_lines.append("CROSSHAIR %s: HUD '%s' (design %d), code %s, saved %s, note '%s'" % [" ".join(words.slice(1)), String(shown.get("name", "")), int(styles.call("preset_of", shown)) + 1, String(styles.call("code_of", shown)), str(not ((session.get("settings") as RefCounted).get("crosshair") as Dictionary).is_empty()), (page.get("_note") as Label).text])
+		"inspect":  # "!inspect": the inspect key; "!inspect <note>": what is being looked over and the pose now
+			if words.size() == 1:
+				player.call("start_inspect")
+			else:
+				var pose: Array = player.call("inspect_pose")
+				_lines.append("INSPECT %s: '%s', moved %s, turned %s" % [" ".join(words.slice(1)), String(player.call("inspecting")), str(pose[0]), str(pose[1])])
+		"photo":  # "!photo on": photo mode (pictures go to tools/userdata/photos, not his Pictures folder); "!photo off"; "!photo take"; "!photo fly x y z" (metres in the view); "!photo zoom n"; "!photo <note>"
+			var photo: Node = session.get("_photo")
+			photo.set("folder_override", ProjectSettings.globalize_path(OUT + "photos"))
+			if words.size() > 1 and words[1] == "on":
+				photo.call("enter", true)
+			elif words.size() > 1 and words[1] == "off":
+				photo.call("leave")
+			elif words.size() > 1 and words[1] == "take":
+				photo.call("take")
+				await get_tree().create_timer(0.5).timeout
+			elif words.size() > 4 and words[1] == "fly":
+				var cam: Camera3D = photo.get("_camera")
+				cam.global_position += cam.global_basis * Vector3(float(words[2]), float(words[3]), float(words[4]))
+				cam.global_position = (photo.get("rules") as RefCounted).call("keep_near", player.global_position + Vector3(0, 1.6, 0), cam.global_position)
+			elif words.size() > 2 and words[1] == "zoom":
+				var lens: Camera3D = photo.get("_camera")
+				lens.fov = float((photo.get("rules") as RefCounted).call("zoomed", lens.fov, int(words[2])))
+			else:
+				_lines.append("PHOTO %s: on %s, paused %s, picture '%s' (%s), camera %.1f m from the head, fov %d, screens hidden %d" % [" ".join(words.slice(1)), str(photo.get("active")), str(get_tree().paused), String(photo.get("last_path")), str(FileAccess.file_exists(String(photo.get("last_path")))), ((photo.get("_camera") as Camera3D).global_position - player.global_position - Vector3(0, 1.6, 0)).length(), int((photo.get("_camera") as Camera3D).fov), (photo.get("_hidden") as Array).size()])
 		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
 			var box: Node3D = session.get("_jukebox")
 			if box != null:

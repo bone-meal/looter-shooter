@@ -25,6 +25,7 @@ var bindings := {}  # action -> up to three codes ["key:87", "mouse:4"]; missing
 var dev_commands := true  # chat commands such as /give (game/admin_commands.gd). Director 2026-11-10: ON IN RELEASE BUILDS TOO for now (was: debug builds only)
 var volume := 1.0  # master volume 0..1
 var muted_sounds: Array = []  # sound ids switched off on the Sounds page (data/sound_list.json, game/sound_board.gd)
+var crosshair := {}  # the player's crosshair (Settings > Crosshair): field id -> number + "name"; {} = the first preset. Cleaned by core/crosshair_style.gd where used
 
 
 func to_dict() -> Dictionary:
@@ -43,6 +44,7 @@ func to_dict() -> Dictionary:
 		"dev_commands": dev_commands,
 		"volume": volume,
 		"muted_sounds": muted_sounds,
+		"crosshair": crosshair,
 	}
 
 
@@ -60,6 +62,8 @@ func from_dict(d: Dictionary) -> void:
 	volume = clampf(float(d.get("volume", volume)), 0.0, 1.0)
 	var quiet: Variant = d.get("muted_sounds", [])
 	muted_sounds = (quiet as Array).duplicate() if quiet is Array else []
+	var aim: Variant = d.get("crosshair", {})
+	crosshair = (aim as Dictionary).duplicate() if aim is Dictionary else {}
 	var picked: Variant = d.get("picks", {})
 	picks = {}
 	if picked is Dictionary:

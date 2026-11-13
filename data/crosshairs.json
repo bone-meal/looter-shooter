@@ -1,0 +1,374 @@
+{
+ "_about": "Crosshairs. `fields`: every setting of a crosshair with its limits and step (lengths are pixels on a 1080-line screen, scaled with the window); `arms` = which lines show: 1 top + 2 right + 4 bottom + 8 left (turned by `angle`). `presets`: the 30 ready-made designs shown in Settings > Crosshair; a preset names only what differs from the defaults. `code_prefix`: the start of a share code (core/crosshair_style.gd).",
+ "code_prefix": "XH1-",
+ "fields": [
+  {
+   "id": "length",
+   "label": "Line length",
+   "min": 0,
+   "max": 40,
+   "step": 0.5,
+   "default": 7
+  },
+  {
+   "id": "thickness",
+   "label": "Thickness",
+   "min": 0.5,
+   "max": 10,
+   "step": 0.5,
+   "default": 2
+  },
+  {
+   "id": "gap",
+   "label": "Gap",
+   "min": -10,
+   "max": 30,
+   "step": 0.5,
+   "default": 4
+  },
+  {
+   "id": "dot",
+   "label": "Centre dot",
+   "min": 0,
+   "max": 12,
+   "step": 0.5,
+   "default": 0
+  },
+  {
+   "id": "outline",
+   "label": "Outline",
+   "min": 0,
+   "max": 4,
+   "step": 0.5,
+   "default": 1
+  },
+  {
+   "id": "ring",
+   "label": "Ring radius",
+   "min": 0,
+   "max": 40,
+   "step": 0.5,
+   "default": 0
+  },
+  {
+   "id": "ring_width",
+   "label": "Ring thickness",
+   "min": 0.5,
+   "max": 6,
+   "step": 0.5,
+   "default": 1.5
+  },
+  {
+   "id": "angle",
+   "label": "Turn",
+   "min": 0,
+   "max": 90,
+   "step": 5,
+   "default": 0
+  },
+  {
+   "id": "arms",
+   "label": "Arms",
+   "min": 0,
+   "max": 15,
+   "step": 1,
+   "default": 15
+  },
+  {
+   "id": "red",
+   "label": "Red",
+   "min": 0,
+   "max": 255,
+   "step": 1,
+   "default": 80
+  },
+  {
+   "id": "green",
+   "label": "Green",
+   "min": 0,
+   "max": 255,
+   "step": 1,
+   "default": 255
+  },
+  {
+   "id": "blue",
+   "label": "Blue",
+   "min": 0,
+   "max": 255,
+   "step": 1,
+   "default": 80
+  },
+  {
+   "id": "alpha",
+   "label": "Opacity",
+   "min": 0.05,
+   "max": 1,
+   "step": 0.05,
+   "default": 1
+  }
+ ],
+ "presets": [
+  {
+   "name": "Classic",
+   "red": 80,
+   "green": 255,
+   "blue": 80
+  },
+  {
+   "name": "Classic White",
+   "red": 255,
+   "green": 255,
+   "blue": 255
+  },
+  {
+   "name": "Small",
+   "red": 80,
+   "green": 255,
+   "blue": 80,
+   "length": 4,
+   "thickness": 1.5,
+   "gap": 2
+  },
+  {
+   "name": "Thick",
+   "red": 255,
+   "green": 230,
+   "blue": 40,
+   "length": 8,
+   "thickness": 4,
+   "gap": 5
+  },
+  {
+   "name": "Tight",
+   "red": 0,
+   "green": 230,
+   "blue": 255,
+   "length": 5,
+   "gap": 0
+  },
+  {
+   "name": "Wide Gap",
+   "red": 80,
+   "green": 255,
+   "blue": 80,
+   "length": 6,
+   "gap": 12
+  },
+  {
+   "name": "Long Lines",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "length": 18,
+   "gap": 6,
+   "thickness": 1.5
+  },
+  {
+   "name": "Plus",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "length": 6,
+   "gap": -1,
+   "thickness": 2
+  },
+  {
+   "name": "Dot",
+   "red": 80,
+   "green": 255,
+   "blue": 80,
+   "length": 0,
+   "dot": 3
+  },
+  {
+   "name": "Big Dot",
+   "red": 255,
+   "green": 50,
+   "blue": 50,
+   "length": 0,
+   "dot": 7
+  },
+  {
+   "name": "Pinpoint",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "length": 0,
+   "dot": 1.5,
+   "outline": 0.5
+  },
+  {
+   "name": "Cross Dot",
+   "red": 0,
+   "green": 230,
+   "blue": 255,
+   "dot": 2
+  },
+  {
+   "name": "T Cross",
+   "red": 255,
+   "green": 150,
+   "blue": 30,
+   "arms": 14
+  },
+  {
+   "name": "T Dot",
+   "red": 80,
+   "green": 255,
+   "blue": 80,
+   "arms": 14,
+   "dot": 2
+  },
+  {
+   "name": "X",
+   "red": 255,
+   "green": 60,
+   "blue": 220,
+   "angle": 45
+  },
+  {
+   "name": "X Dot",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "angle": 45,
+   "dot": 2,
+   "gap": 5
+  },
+  {
+   "name": "Ring",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "length": 0,
+   "ring": 12,
+   "ring_width": 1.5
+  },
+  {
+   "name": "Ring Dot",
+   "red": 80,
+   "green": 255,
+   "blue": 80,
+   "length": 0,
+   "ring": 10,
+   "dot": 2
+  },
+  {
+   "name": "Big Ring",
+   "red": 0,
+   "green": 230,
+   "blue": 255,
+   "length": 0,
+   "ring": 26,
+   "ring_width": 1,
+   "dot": 1.5
+  },
+  {
+   "name": "Ring Cross",
+   "red": 255,
+   "green": 230,
+   "blue": 40,
+   "length": 5,
+   "gap": 13,
+   "ring": 10,
+   "ring_width": 1
+  },
+  {
+   "name": "Chevron",
+   "red": 255,
+   "green": 150,
+   "blue": 30,
+   "arms": 6,
+   "angle": 45,
+   "gap": 0,
+   "length": 9
+  },
+  {
+   "name": "Chevron Dot",
+   "red": 255,
+   "green": 140,
+   "blue": 190,
+   "arms": 6,
+   "angle": 45,
+   "gap": 3,
+   "length": 7,
+   "dot": 2
+  },
+  {
+   "name": "Bars",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "arms": 10,
+   "length": 12,
+   "gap": 8
+  },
+  {
+   "name": "Pillars",
+   "red": 180,
+   "green": 255,
+   "blue": 60,
+   "arms": 5,
+   "length": 10,
+   "gap": 6
+  },
+  {
+   "name": "Sniper",
+   "red": 230,
+   "green": 230,
+   "blue": 230,
+   "length": 30,
+   "gap": 10,
+   "thickness": 1,
+   "outline": 0.5
+  },
+  {
+   "name": "Ghost",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "alpha": 0.45,
+   "outline": 0
+  },
+  {
+   "name": "No Outline",
+   "red": 60,
+   "green": 140,
+   "blue": 255,
+   "outline": 0,
+   "thickness": 2.5
+  },
+  {
+   "name": "Heavy Outline",
+   "red": 255,
+   "green": 255,
+   "blue": 255,
+   "outline": 3,
+   "thickness": 2,
+   "length": 6
+  },
+  {
+   "name": "Purple Haze",
+   "red": 170,
+   "green": 110,
+   "blue": 255,
+   "ring": 6,
+   "ring_width": 1,
+   "length": 4,
+   "gap": 8,
+   "dot": 1.5
+  },
+  {
+   "name": "Lime Star",
+   "red": 180,
+   "green": 255,
+   "blue": 60,
+   "angle": 45,
+   "length": 5,
+   "gap": 2,
+   "dot": 2,
+   "ring": 14,
+   "ring_width": 1
+  }
+ ]
+}

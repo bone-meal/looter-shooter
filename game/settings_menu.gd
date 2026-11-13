@@ -1,5 +1,5 @@
 # Purpose: settings screen (mouse sensitivity, FOV, graphics preset and the player's own graphics choices with what each does,
-# lighting shaders, renderer, vsync, fullscreen, fps cap, debug HUD); used from start and pause menus. Scrolls in a small window.
+# lighting shaders, renderer, vsync, fullscreen, fps cap, debug HUD; buttons to the Crosshair, Sounds and Controls pages); used from start and pause menus. Scrolls in a small window.
 # Dependencies: game/menu_widgets.gd, core/settings_state.gd, core/data_store.gd, data/graphics.json "options". Emits changed on every edit and closed on Back.
 extends Control
 
@@ -11,6 +11,7 @@ signal changed
 signal closed
 signal controls_pressed
 signal sounds_pressed
+signal crosshair_pressed
 
 var settings: SettingsState  # set before add_child
 
@@ -46,6 +47,7 @@ func _ready() -> void:
 	_check(box, "Debug overlay (graphs)", settings.show_debug, func(on: bool) -> void: settings.show_debug = on)
 	_slider(box, "Master volume", 0.0, 1.0, 0.05, settings.volume, "%.2f",
 		func(v: float) -> void: settings.volume = v)
+	Widgets.button(box, "Crosshair", func() -> void: crosshair_pressed.emit())
 	Widgets.button(box, "Sounds", func() -> void: sounds_pressed.emit())
 	Widgets.button(box, "Controls", func() -> void: controls_pressed.emit())
 	Widgets.button(box, "Back", func() -> void: closed.emit())

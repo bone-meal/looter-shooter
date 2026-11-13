@@ -12,6 +12,7 @@ const PauseMenu = preload("res://game/pause_menu.gd")
 const SettingsMenu = preload("res://game/settings_menu.gd")
 const ControlsMenu = preload("res://game/controls_menu.gd")
 const SoundMenu = preload("res://game/sound_menu.gd")
+const CrosshairMenu = preload("res://game/crosshair_menu.gd")
 const LoadingScreen = preload("res://game/loading_screen.gd")
 const LoadClock = preload("res://game/load_clock.gd")
 const NetSession = preload("res://game/net_session.gd")
@@ -28,6 +29,7 @@ var _pause_menu: Control
 var _settings_menu: Control
 var _controls_menu: Control
 var _sound_menu: Control
+var _crosshair_menu: Control
 var _loading: Control  # the picture shown while a session is built or Aurelind is entered
 var _settings_return: Control  # menu to show again when settings closes
 var _session: Node3D
@@ -80,6 +82,7 @@ func _ready() -> void:
 	_settings_menu.closed.connect(_close_settings)
 	_settings_menu.controls_pressed.connect(_open_controls)
 	_settings_menu.sounds_pressed.connect(func() -> void: _show_only(_sound_menu))
+	_settings_menu.crosshair_pressed.connect(func() -> void: _show_only(_crosshair_menu))
 	layer.add_child(_settings_menu)
 
 	_controls_menu = ControlsMenu.new()
@@ -93,6 +96,12 @@ func _ready() -> void:
 	_sound_menu.changed.connect(_on_settings_changed)
 	_sound_menu.closed.connect(_close_controls)  # saves and goes back to the settings, like the controls page
 	layer.add_child(_sound_menu)
+
+	_crosshair_menu = CrosshairMenu.new()
+	_crosshair_menu.settings = _settings
+	_crosshair_menu.changed.connect(_on_settings_changed)
+	_crosshair_menu.closed.connect(_close_controls)  # saves and goes back to the settings
+	layer.add_child(_crosshair_menu)
 
 	_lobby = LobbyMenu.new()
 	_lobby.net = _net
@@ -114,7 +123,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _session != null and _session.close_inventory():
 		pass
-	elif _controls_menu.visible:
+	elif _controls_menu.visible or _crosshair_menu.visible:
 		_close_controls()
 	elif _settings_menu.visible:
 		_close_settings()
@@ -240,7 +249,7 @@ func _on_settings_changed() -> void:
 
 # Shows one menu (or none) and frees the mouse whenever a menu is up.
 func _show_only(menu: Control) -> void:
-	for m in [_main_menu, _save_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _lobby]:
+	for m in [_main_menu, _save_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _crosshair_menu, _lobby]:
 		m.visible = (m == menu)
 	if menu != null:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

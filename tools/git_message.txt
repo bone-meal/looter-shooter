@@ -1,17 +1,18 @@
-Round 6 step 13: the main quest, ten hidden songs and the jukebox
+Round 6 step 14: crosshairs, inspect key and photo mode
 
-The Drowned Bell, a seven-step quest across the islands: read the log book,
-bring the power back, fill the brine jars with kills by the wreck, shoot out
-three old lamps, build the boat, ring the bell on Gull Rock and beat what
-answers it. Every word lives in data/zombies/writing/quest.txt so the story
-can be rewritten without touching code; the steps and places are in
-data/zombies/quest.json. The host decides progress, it resets at game over,
-and each completion gives a random hand-made unique plus points.
+Settings now has a Crosshair page: 30 ready-made crosshairs shown as
+pictures, sliders for every setting (length, thickness, gap, centre dot,
+outline, ring, turn, arms, colour, opacity) and a share code to copy to a
+friend and paste back. The choice is saved with the settings and the HUD
+draws it.
 
-Ten hidden songs: three glass floats each are hidden on the islands; shooting
-all three unlocks and plays that song. The songs are the director's own files
-dropped into assets/music as Artist - Title.mp3 (ogg and wav work too). The
-club has a jukebox that plays any song unlocked by the character.
+The inspect key (V) looks over what is in hand: a move of its own for each
+of the 8 gun bodies, each of the 13 knife types and the staff in Aurelind.
+Shooting, aiming, reloading or switching stops it.
+
+Photo mode (F10): the screens go away and a free camera flies near the
+character (shown in third person); alone the game stands still. The shoot
+key saves a picture into the Pictures folder, Looter Shooter Photos.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

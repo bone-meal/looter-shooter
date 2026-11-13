@@ -1,0 +1,11 @@
+{
+ "_about": "Photo mode (key F10 by default): the game's screens go away and a free camera flies from where you stand. Alone the world stands still; online it goes on (others cannot be paused) and your character stands still. `folder` = the folder made inside the computer's Pictures folder for the pictures (when the computer has none, the game's own user folder 'screenshots' is used). `reach` = how far in metres the camera may fly from your character. Speeds in metres a second (`fast` while sprint is held), field of view range in degrees, `roll` degrees a second.",
+ "folder": "Looter Shooter Photos",
+ "reach": 25.0,
+ "speed": 4.0,
+ "fast": 12.0,
+ "fov_min": 15.0,
+ "fov_max": 110.0,
+ "fov_step": 5.0,
+ "roll": 45.0
+}

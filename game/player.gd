@@ -20,6 +20,7 @@ const RiggedBody = preload("res://game/rigged_body.gd")
 const GunPartsView = preload("res://game/gun_parts_view.gd")
 const AppearanceData = preload("res://game/appearance_data.gd")
 const ViewmodelMotion = preload("res://core/viewmodel_motion.gd")
+const InspectMoves = preload("res://core/inspect_moves.gd")
 const DataStore = preload("res://core/data_store.gd")
 const HealthState = preload("res://core/health_state.gd")
 const SettingsState = preload("res://core/settings_state.gd")
@@ -176,6 +177,9 @@ var struck_by: Node3D  # whoever is about to hurt us: set by the attacker just b
 var struck_from := Vector3.INF  # where a hit without an attacker node comes from (a projectile)
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
+var inspect_moves := InspectMoves.new()  # data/inspect.json: the inspect key's move for each gun body, knife type and the staff
+var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
+var _inspect_at := 0.0
 var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
 var downed := false  # lying on the ground waiting for a revive: no moving, no shooting, nothing hurts any more
 var down_check := Callable()  # the session's: func() -> bool: true = going down here means waiting for a revive, not dying
@@ -196,6 +200,7 @@ func _ready() -> void:
 	health = HealthState.new(float(player_data["max_hp"]))
 	_base_max_hp = health.max_hp
 	items = ItemDb.new(DataStore.load_json("res://data/items.json"))
+	inspect_moves.setup(DataStore.load_json("res://data/inspect.json"))
 	inventory = InventoryState.new(items)
 	gun_db = GunDb.new(DataStore.load_json("res://data/gun_loot.json"), DataStore.load_json("res://data/gun_parts.json"), DataStore.load_json("res://data/manufacturers.json"), DataStore.load_json("res://data/weapons.json"), DataStore.load_json("res://data/skills.json"), DataStore.load_json("res://data/gun_uniques.json"))
 	inventory.set_gun_db(gun_db)
@@ -293,6 +298,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("reload"):
 		if _holding:
 			_reload()
+	elif event.is_action_pressed("inspect"):
+		start_inspect()
 	elif event.is_action_pressed("skill_1"):
 		use_skill(0)
 	elif event.is_action_pressed("skill_2"):
@@ -1025,8 +1032,9 @@ func _animate_weapon(delta: float) -> void:
 	if third_person and view.has("shoulder_hold"):
 		var on_shoulder: Array = view["shoulder_hold"]
 		base = Vector3(on_shoulder[0], on_shoulder[1], on_shoulder[2])
-	model.position = base.lerp(_ads_positions[_slot], aim) + Vector3(0.0, -0.16, 0.04) * curve + Vector3(0.0, back * 0.25, back) * kick
-	model.rotation_degrees = Vector3(float(view.get("recoil_pitch", 6.0)) * kick + 20.0 * curve, 0.0, 35.0 * curve)
+	var look := inspect_pose()
+	model.position = base.lerp(_ads_positions[_slot], aim) + Vector3(0.0, -0.16, 0.04) * curve + Vector3(0.0, back * 0.25, back) * kick + (look[0] as Vector3)
+	model.rotation_degrees = Vector3(float(view.get("recoil_pitch", 6.0)) * kick + 20.0 * curve, 0.0, 35.0 * curve) + (look[1] as Vector3)
 	var slide := _slides[_slot]
 	if slide != null:
 		slide.position.z = 0.05 * kick
@@ -1204,6 +1212,9 @@ func _animate_knife() -> void:
 	elif t < 1.0:
 		move_by = Vector3(lerpf(0.1, -0.32, t), 0.04 * arc, -0.12 * arc)
 		turn_by = Vector3(-10.0 * arc, lerpf(-35.0, 70.0, t), lerpf(20.0, -50.0, t))
+	var look := inspect_pose()
+	move_by += look[0] as Vector3
+	turn_by += look[1] as Vector3
 	_knife_model.scale = Vector3.ONE * size
 	_knife_model.position = rest + move_by
 	_knife_model.rotation_degrees = Vector3(turn[0], turn[1], turn[2]) + turn_by
@@ -1502,6 +1513,41 @@ func on_enemy_killed(elite: String, enemy_id: String) -> void:
 		elif elite != "":
 			secs = maxf(secs, 3.0)
 		skills.reduce_all(secs, now)
+
+
+# The inspect key: the thing in hand is looked over (first person only; others do not see it).
+func start_inspect() -> void:
+	var id := _inspect_target()
+	if id != "" and inspect_moves.has(id) and not third_person and not downed:
+		_inspect_id = id
+		_inspect_at = _now()
+
+
+# [metres, degrees] to add to the model in hand this frame. Shooting, aiming, reloading, a swing, switching what is
+# in hand or the third-person view stop the inspect at once.
+func inspect_pose() -> Array:
+	if _inspect_id == "":
+		return [Vector3.ZERO, Vector3.ZERO]
+	var busy := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and (Input.is_action_pressed("shoot") or Input.is_action_pressed("aim"))
+	var t := _now() - _inspect_at
+	if busy or third_person or downed or channelling or weapon.is_reloading() or _melee_kind != "" or _inspect_target() != _inspect_id or t >= inspect_moves.length(_inspect_id):
+		_inspect_id = ""
+		return [Vector3.ZERO, Vector3.ZERO]
+	return inspect_moves.pose(_inspect_id, t)
+
+
+func inspecting() -> String:
+	return _inspect_id
+
+
+func _inspect_target() -> String:
+	if _holding:
+		return "gun:" + inventory.holster_body(_hand)
+	if _knife_out:
+		return "knife:" + knife
+	if knife_stowed and not _shield_out:
+		return "staff"
+	return ""
 
 
 func _now() -> float:

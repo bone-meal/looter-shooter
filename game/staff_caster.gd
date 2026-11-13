@@ -68,6 +68,9 @@ func _process(delta: float) -> void:
 	else:  # first person: low on the right, leaning away so the stone sits right of the crosshair
 		_staff.position = Vector3(0.36, -0.82 + raise + sin(_time * 1.7) * 0.008, -0.55)
 		_staff.rotation_degrees = Vector3(-36.0 - (12.0 if channelling else 0.0), 0.0, -4.0)
+		var look: Array = _player.call("inspect_pose")  # the inspect key twirls it (data/inspect.json "staff")
+		_staff.position += look[0] as Vector3
+		_staff.rotation_degrees += look[1] as Vector3
 	var want: bool = bool(_player.get("controls_enabled")) and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not bool(world.combat.warding)
 	_swing = maxf(_swing - delta * 4.0, 0.0)
 	_staff.rotation_degrees.x -= 55.0 * sin(_swing * PI)  # the strike: the head dips forward and comes back
