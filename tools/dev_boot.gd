@@ -375,6 +375,72 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				lens.fov = float((photo.get("rules") as RefCounted).call("zoomed", lens.fov, int(words[2])))
 			else:
 				_lines.append("PHOTO %s: on %s, paused %s, picture '%s' (%s), camera %.1f m from the head, fov %d, screens hidden %d" % [" ".join(words.slice(1)), str(photo.get("active")), str(get_tree().paused), String(photo.get("last_path")), str(FileAccess.file_exists(String(photo.get("last_path")))), ((photo.get("_camera") as Camera3D).global_position - player.global_position - Vector3(0, 1.6, 0)).length(), int((photo.get("_camera") as Camera3D).fov), (photo.get("_hidden") as Array).size()])
+		"course":  # "!course goto n": stand on pad n of the hop course (0 = start); "!course run a b": a scripted hopper (sprint, forward, faces the next pad, perfect hops on small pads, no strafing) from pad a toward pad b; "!course <note>": clock, state, best
+			var rules: RefCounted = session.get("_course")
+			if words.size() > 2 and words[1] == "goto":
+				if session.get("_course_root") == null:
+					session.call("_go_to_course")
+				session.call("_put_on_course", int(words[2]))
+			elif words.size() > 3 and words[1] == "run":
+				if session.get("_course_root") == null:
+					session.call("_go_to_course")
+				session.call("_put_on_course", int(words[2]))
+				await get_tree().create_timer(0.5, true, false, true).timeout
+				var root: Node3D = session.get("_course_root")
+				var pads: Array = rules.get("pads")
+				var last := int(words[2])
+				var goal := int(words[3])
+				var log_text := PackedStringArray()
+				var began := Time.get_ticks_msec()
+				var top := 0
+				Input.action_press("move_forward")
+				Input.action_press("sprint")
+				while Time.get_ticks_msec() - began < 60000 and last < goal:
+					var local: Vector3 = player.global_position - root.position
+					if local.y < -2.0:
+						log_text.append("FELL after pad %d" % last)
+						break
+					var flight: Vector3 = player.get("velocity")
+					var speed := Vector2(flight.x, flight.z).length()
+					top = maxi(top, int(player.call("speed_units")))
+					var target: Dictionary = pads[mini(last + 1, pads.size() - 1)]
+					var aim := Vector3(float(target["at"][0]), 0.0, float(target["at"][1]))
+					if player.is_on_floor():
+						var under := int(rules.call("pad_at", local.x, local.z))
+						if under > last:
+							last = under
+							log_text.append("pad %d at %.2f s, %d u/s" % [under, float(Time.get_ticks_msec() - began) / 1000.0, int(player.call("speed_units"))])
+							if last >= goal:
+								break
+							target = pads[mini(last + 1, pads.size() - 1)]
+							aim = Vector3(float(target["at"][0]), 0.0, float(target["at"][1]))
+						player.call("look_at_point", root.position + aim + Vector3(0, 1.6, 0))
+						var here: Dictionary = pads[maxi(under, 0)]
+						var small := maxf(float(here["size"][0]), float(here["size"][1])) <= 2.5 and String(here["kind"]) == "pad"
+						var ahead := local + Vector3(flight.x, 0.0, flight.z) * 0.06
+						var leaving := int(rules.call("pad_at", ahead.x, ahead.z)) != under
+						var far := Vector2(aim.x - local.x, aim.z - local.z).length()
+						if small or leaving or (far <= speed * 0.72 and far > 1.0):
+							_tap("jump", true)
+							await get_tree().process_frame
+							_tap("jump", false)
+					else:  # in the air: hold back while the flight would carry well past the target's middle (as a player brakes)
+						var fall_left := (flight.y + sqrt(maxf(flight.y * flight.y + 2.0 * 20.32 * maxf(local.y, 0.0), 0.0))) / 20.32
+						var landing := Vector2(local.x + flight.x * fall_left, local.z + flight.z * fall_left)
+						var past := (landing - Vector2(aim.x, aim.z)).dot(Vector2(flight.x, flight.z).normalized()) if speed > 0.1 else 0.0
+						if past > 0.8:
+							Input.action_release("move_forward")
+							Input.action_press("move_back")
+						else:
+							Input.action_release("move_back")
+							Input.action_press("move_forward")
+					await get_tree().process_frame
+				Input.action_release("move_forward")
+				Input.action_release("move_back")
+				Input.action_release("sprint")
+				_lines.append("COURSE RUN %s -> %s: reached pad %d, top %d u/s; %s" % [words[2], words[3], last, top, "; ".join(log_text)])
+			else:
+				_lines.append("COURSE %s: state %s, clock %.2f, checkpoint %d, best %.2f, last %.2f, on course %s, even ground %s, hud '%s'" % [" ".join(words.slice(1)), String(rules.get("state")), float(rules.get("time")), int(rules.get("checkpoint")), float(rules.get("best")), float(rules.get("last")), str(session.get("_on_course")), str(player.get("even_ground")), String((session.get("_player_hud") as Node).get("course_text"))])
 		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
 			var box: Node3D = session.get("_jukebox")
 			if box != null:

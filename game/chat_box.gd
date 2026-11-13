@@ -87,16 +87,28 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var base := Vector2(16, size.y - 205.0)  # above the health ring and its text
-	var shown := 0
+	var shown: Array = []  # [line, alpha], newest first
 	for i in range(_lines.size() - 1, -1, -1):
 		var line: Array = _lines[i]
 		var alpha := 1.0 if _entry.visible else clampf(FADE_AFTER + 1.0 - float(line[2]), 0.0, 1.0)
 		if alpha <= 0.0:
 			continue
-		var at := base - Vector2(0, 20.0 * float(shown))
+		shown.append([line, alpha])
+		if shown.size() >= SHOWN:
+			break
+	if shown.is_empty():
+		return
+	var widest := 0.0
+	var brightest := 0.0
+	for pair: Array in shown:
+		widest = maxf(widest, _font.get_string_size(String(pair[0][0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x)
+		brightest = maxf(brightest, float(pair[1]))
+	var top := base.y - 20.0 * float(shown.size() - 1) - 16.0
+	draw_rect(Rect2(base.x - 8.0, top - 4.0, widest + 16.0, base.y - top + 10.0), Color(0.12, 0.12, 0.13, 0.42 * brightest))  # a faint box so the lines stay readable on bright sand and sky
+	for n in shown.size():
+		var line: Array = shown[n][0]
+		var alpha := float(shown[n][1])
+		var at := base - Vector2(0, 20.0 * float(n))
 		var color: Color = line[1]
 		draw_string(_font, at + Vector2(1, 1), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(0, 0, 0, 0.7 * alpha))
 		draw_string(_font, at, String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, Color(color.r, color.g, color.b, alpha))
-		shown += 1
-		if shown >= SHOWN:
-			break

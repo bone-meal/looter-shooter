@@ -1,0 +1,287 @@
+{
+ "_about": "The hop course: a practice course for the movement, floating high in the sky away from the islands. `center` = where its middle is in the world (metres; y = the top of the start pad). `door` = the sign on the islands that takes you there (island + metres from that island's middle). `pads`: every platform in the order you hop them, `at` = [x, z] metres from `center`, `size` = [width x, depth z] in metres, `kind` start / pad / checkpoint / finish, `stage` = which part of the course. `stages`: name shown on the HUD, `speed` = the speed in Source units a second the stage is built for (400 = knife out and sprinting; 480 = the bunny-hop cap, only reached by air strafing), `strafe` = true when the stage cannot be done without air strafing (tools/course_check proves both). `fall_below` = metres under the pads at which you are put back on your last checkpoint (the clock runs on; before the first checkpoint it starts again). `thickness` = how thick a platform is. `edge_reach` = how far past a platform's edge the round body still stands (taking off) or already lands, each side, in metres (capsule radius 0.4 x sin 45 degrees): hops are measured edge to edge minus twice this.",
+ "center": [
+  1500.0,
+  60.0,
+  0.0
+ ],
+ "door": {
+  "island": "home",
+  "at": [
+   12.0,
+   -6.0
+  ]
+ },
+ "fall_below": 3.0,
+ "thickness": 1.0,
+ "stages": [
+  {
+   "name": "Start",
+   "speed": 400,
+   "strafe": false
+  },
+  {
+   "name": "Warm-up",
+   "speed": 400,
+   "strafe": false
+  },
+  {
+   "name": "The Bend",
+   "speed": 400,
+   "strafe": false
+  },
+  {
+   "name": "Stepping Stones",
+   "speed": 400,
+   "strafe": false
+  },
+  {
+   "name": "The Leap",
+   "speed": 480,
+   "strafe": true
+  }
+ ],
+ "pads": [
+  {
+   "at": [
+    0.0,
+    0.0
+   ],
+   "size": [
+    8,
+    8
+   ],
+   "stage": 0,
+   "kind": "start"
+  },
+  {
+   "at": [
+    0.0,
+    -7.5
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 1,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    0.0,
+    -13.0
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 1,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    0.0,
+    -19.0
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 1,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    0.0,
+    -25.5
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 1,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    0.0,
+    -32.5
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 1,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    0.0,
+    -40.0
+   ],
+   "size": [
+    6,
+    6
+   ],
+   "stage": 1,
+   "kind": "checkpoint"
+  },
+  {
+   "at": [
+    -2.78,
+    -48.56
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 2,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -7.48,
+    -55.03
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 2,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -13.96,
+    -59.73
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 2,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -22.04,
+    -62.36
+   ],
+   "size": [
+    3,
+    3
+   ],
+   "stage": 2,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -31.54,
+    -62.36
+   ],
+   "size": [
+    6,
+    6
+   ],
+   "stage": 2,
+   "kind": "checkpoint"
+  },
+  {
+   "at": [
+    -39.64,
+    -62.36
+   ],
+   "size": [
+    2.2,
+    2.2
+   ],
+   "stage": 3,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -45.84,
+    -62.36
+   ],
+   "size": [
+    2.2,
+    2.2
+   ],
+   "stage": 3,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -52.24,
+    -62.36
+   ],
+   "size": [
+    2.2,
+    2.2
+   ],
+   "stage": 3,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -58.64,
+    -62.36
+   ],
+   "size": [
+    2.2,
+    2.2
+   ],
+   "stage": 3,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -65.04,
+    -62.36
+   ],
+   "size": [
+    2.2,
+    2.2
+   ],
+   "stage": 3,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -73.34,
+    -62.36
+   ],
+   "size": [
+    6,
+    6
+   ],
+   "stage": 3,
+   "kind": "checkpoint"
+  },
+  {
+   "at": [
+    -89.84,
+    -62.36
+   ],
+   "size": [
+    26,
+    4
+   ],
+   "stage": 4,
+   "kind": "pad"
+  },
+  {
+   "at": [
+    -115.34,
+    -62.36
+   ],
+   "size": [
+    8,
+    8
+   ],
+   "stage": 4,
+   "kind": "finish"
+  }
+ ],
+ "edge_reach": 0.28
+}

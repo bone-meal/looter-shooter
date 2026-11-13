@@ -73,6 +73,9 @@ def main():
     # --- secrets: a hidden float or a quest lamp is hit (a glassy clink), a quest step is done (a low bell with a bright chord) ---
     save("secret_clink", mix(tone(2350, 0.5) * env(n(0.5), 0.001, 3.0) * 0.6, tone(3520, 0.35) * env(n(0.35), 0.001, 4.0) * 0.35, at(tone(2790, 0.4) * env(n(0.4), 0.001, 3.5) * 0.3, 0.05)), 0.55)
     save("quest_step", mix(tone(196, 2.4) * env(n(2.4), 0.003, 1.2) * 0.8, tone(392.5, 2.0) * env(n(2.0), 0.003, 1.4) * 0.35, tone(588, 1.6) * env(n(1.6), 0.003, 1.6) * 0.2, at(note(784, 0.9, "sine", 0.35), 0.35), at(note(988, 1.1, "sine", 0.35), 0.5)), 0.7)
+    save("course_go", mix(note(660, 0.18, "square", 0.25), at(note(990, 0.25, "square", 0.25), 0.12)), 0.5)
+    save("course_checkpoint", mix(note(880, 0.2, "sine", 0.5), at(note(1175, 0.3, "sine", 0.45), 0.09), at(note(1320, 0.35, "sine", 0.3), 0.18)), 0.6)
+    save("course_finish", mix(note(523, 0.3, "sine", 0.45), at(note(659, 0.3, "sine", 0.45), 0.12), at(note(784, 0.3, "sine", 0.45), 0.24), at(note(1047, 0.8, "sine", 0.5), 0.36)), 0.7)
     # --- guns ---
     save("shot_pistol", crack(0.16, 190, 2500, 0.8))
     save("shot_rifle", crack(0.22, 150, 1800, 1.0))

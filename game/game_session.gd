@@ -30,6 +30,8 @@ const PaintingArt = preload("res://game/painting_art.gd")
 const CrosshairStyle = preload("res://core/crosshair_style.gd")
 const CrosshairView = preload("res://game/crosshair_view.gd")
 const PhotoMode = preload("res://game/photo_mode.gd")
+const CourseRules = preload("res://core/course_rules.gd")
+const BhopCourse = preload("res://game/bhop_course.gd")
 const SettingsState = preload("res://core/settings_state.gd")
 const ProfileIO = preload("res://game/profile_io.gd")
 const Lifeguard = preload("res://game/lifeguard.gd")
@@ -102,7 +104,7 @@ const PACHINKO_HOLD_EVERY := 0.15
 const SLOT_RANGE := 2.0
 const TRADE_RANGE := 4.0  # metres: look at a player this near and hold the interact key to ask for a trade
 const TRADE_HOLD := 0.6  # seconds the key must be held
-const CLUB_NEAR := 300.0  # metres from the club's middle within which its inside is built and runs
+const CLUB_NEAR := 150.0  # metres from the club's middle within which its inside is built and runs (was 300: the boat at the islands' east edge came within 267 m and built the club under a loading picture)
 
 signal look_changed(look: Dictionary)
 signal table_event(op: String, args: Array)  # our blackjack table actions, sent to other players so they can watch
@@ -126,6 +128,12 @@ var _bars := EnemyBars.new()
 var _cross := CrosshairView.new()  # the player's crosshair (Settings > Crosshair)
 var _cross_styles := CrosshairStyle.new()
 var _photo := PhotoMode.new()  # F10: free camera and pictures into the Pictures folder
+var _course := CourseRules.new()  # the hop course in the sky (data/course.json): clock, checkpoints, best time
+var _course_root: Node3D  # built on the first trip there
+var _course_door := Vector3.ZERO  # the arch on Home Sand
+var _course_spot := Vector2.ZERO
+var _on_course := false
+const COURSE_DOOR_REACH := 2.6
 var _hud_timer := 0.0
 var _painting := Vector3.ZERO
 var _painting_fantasy := Vector3.ZERO
@@ -313,6 +321,10 @@ func _ready() -> void:
 	_bench_spot = _land.on_island(String(_power_cfg["bench"]["island"]), _power_cfg["bench"]["at"])
 	_land.keep_clear.append_array(_part_spots)
 	_land.keep_clear.append(_bench_spot)
+	_course.setup(DataStore.load_json("res://data/course.json"))
+	_course_spot = _land.on_island(String(_course.cfg["door"]["island"]), _course.cfg["door"]["at"])
+	_course_door = _flat(_course_spot)
+	_land.keep_clear.append(_course_spot)
 	_build_cfg = DataStore.load_json("res://data/buildables.json")
 	_builds = BuildState.new(_build_cfg)
 	for thing: Dictionary in _build_cfg["things"]:
@@ -374,6 +386,7 @@ func _ready() -> void:
 			_trap_levers.append((hut["at"] as Vector2) + Vector2(2.3 * cos(yaw) + 1.9 * sin(yaw), -2.3 * sin(yaw) + 1.9 * cos(yaw)))
 	var island := Island.build(self, _land)
 	_debris = island["debris"]
+	BhopCourse.build_door(self, _course_door, _toward_middle(_course_spot))
 	for id: String in _perk_spots:
 		var machine := PerkMachine.new()
 		machine.title = _perks.name_of(id)
@@ -1125,7 +1138,7 @@ func travel(place: String) -> String:
 		if not _in_fantasy:
 			_enter_fantasy()
 		return "Moved to Aurelind." if place == "fantasy" else _fantasy.travel(place)
-	if place in ["island", "club", "arena"]:
+	if place in ["island", "club", "arena", "course"]:
 		if _in_arena:
 			_leave_arena()
 		elif _in_fantasy:
@@ -1137,8 +1150,10 @@ func travel(place: String) -> String:
 			_player.teleport(_club_spawn, 0.0)
 		"arena":
 			_enter_arena(_colosseum.ticket_count() - 1, PackedStringArray())
+		"course":
+			_go_to_course()
 		_:
-			return "Unknown place %s. Places: island, club, arena, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
+			return "Unknown place %s. Places: island, club, arena, course, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
 	return "Moved to %s." % place
 
 
@@ -1168,6 +1183,7 @@ func _load_profile() -> void:
 		_best_round = maxi(int(extra.get("best_round", 0)), 0)
 		_smoke.left = clampf(float(extra.get("cigarette_left", 0.0)), 0.0, _smoke.full())
 		_songs.from_list(extra.get("songs"))
+		_course.best = maxf(float(extra.get("course_best", 0.0)), 0.0) if (extra.get("course_best") is float or extra.get("course_best") is int) else 0.0
 		_bank.from_dict(extra.get("bank"), _player.inventory)
 		var lying: Variant = extra.get("pack")
 		if lying is Dictionary and lying.get("at") is Array and (lying["at"] as Array).size() == 3 and InventoryState.bundle_size(lying) > 0:
@@ -1214,7 +1230,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list()}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1371,6 +1387,10 @@ func _prompt() -> String:
 		return "The crow wants %s (%d/%d fed)" % [_player.items.item_name(food), _fed, needed]
 	if _near(_crow_b_pos, CROW_RANGE):
 		return "[%s] Ride the crow home" % key
+	if _island_side() and _near(_course_door, COURSE_DOOR_REACH):
+		return "[%s] The hop course%s" % [key, ("  (your best %s)" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""]
+	if _course_exit_here():
+		return "[%s] Back to the islands" % key
 	if _near_painting():
 		return "[%s] The colosseum: buy a ticket for the party" % key
 	if _near_fantasy_exit():
@@ -1415,6 +1435,10 @@ func _interact() -> void:
 		_use_power_thing(_power_thing_at(_player.global_position))
 	elif _island_side() and _build_thing_at(_player.global_position) >= 0:
 		_use_build_thing(_build_thing_at(_player.global_position))
+	elif _island_side() and _near(_course_door, COURSE_DOOR_REACH):
+		travel("course")
+	elif _course_exit_here():
+		travel("island")
 	elif _wall_buy_here() >= 0:
 		_buy_from_wall(_wall_buy_here())
 	elif _debris_here() >= 0:
@@ -3291,6 +3315,69 @@ func _close_jukebox() -> void:
 
 # Every frame: a worn cigarette burns while we are on the gun side (the islands, the colosseum; not the club, the
 # casino or Aurelind); when it is done it turns into a butt in the mouth. The HUD shows what is left.
+# --- the hop course (core/course_rules.gd decides, game/bhop_course.gd builds it; data/course.json) ---
+
+func _go_to_course() -> void:
+	if _course_root == null:
+		_course_root = BhopCourse.build(self, _course)
+	_course.reset()
+	_put_on_course(_course.start_index())
+
+
+func _put_on_course(index: int) -> void:
+	var spot := _course.stand_on(index)
+	_player.teleport(_course_root.position + (spot["at"] as Vector3) + Vector3(0, 0.1, 0), float(spot["yaw"]))
+
+
+func _course_exit_here() -> bool:
+	if not _on_course or not _player.is_on_floor():
+		return false
+	var local := _player.global_position - _course_root.position
+	var under := _course.pad_at(local.x, local.z)
+	return under >= 0 and under in [_course.start_index(), _course.finish_index()]
+
+
+# Every frame: is the player on the course (everybody moves the same there), the clock, falls, checkpoints, the finish.
+func _run_course(delta: float) -> void:
+	var local := (_player.global_position - _course_root.position) if _course_root != null else Vector3(0, -1000, 0)
+	var here := _course_root != null and Vector2(local.x, local.z).length() < 400.0 and local.y > -60.0
+	if here != _on_course:
+		_on_course = here
+		_player.even_ground = here
+		_player_hud.course_text = ""
+		if here:
+			_course.reset()
+	if not here:
+		return
+	var under := _course.pad_at(local.x, local.z) if _player.is_on_floor() and local.y > -0.6 else -1
+	var fallen := local.y < -float(_course.cfg.get("fall_below", 3.0))
+	match _course.update(delta, under, fallen):
+		"fell":
+			_put_on_course(_course.checkpoint)
+		"restart":
+			_put_on_course(_course.start_index())
+		"start":
+			_sounds.call("play", "course_go")
+		"checkpoint":
+			_sounds.call("play", "course_checkpoint")
+			_player_hud.notice("Checkpoint  %s" % CourseRules.clock(_course.time))
+		"finish":
+			_sounds.call("play", "course_finish")
+			_player_hud.callout("Finished  %s" % CourseRules.clock(_course.last), Color(0.95, 0.8, 0.35))
+		"record":
+			_sounds.call("play", "course_finish")
+			_player_hud.callout("New best  %s" % CourseRules.clock(_course.best), Color(1.0, 0.85, 0.3))
+			save_profile()
+	var best := ("   best %s" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""
+	match _course.state:
+		CourseRules.READY:
+			_player_hud.course_text = "HOP COURSE  leave the start pad to start the clock (knife out is fastest)%s" % best
+		CourseRules.RUNNING:
+			_player_hud.course_text = "%s   %s   stage %d / %d%s" % [CourseRules.clock(_course.time), _course.stage_name(maxi(_course.checkpoint + 1, 1)), _course.stage_of(maxi(_course.checkpoint + 1, 1)), _course.stage_count(), best]
+		_:
+			_player_hud.course_text = "Finished in %s%s   walk back onto the start pad to go again" % [CourseRules.clock(_course.last), best]
+
+
 func _run_cigarette(delta: float) -> void:
 	var worn: Dictionary = _player.inventory.equipment.get("mouth", {})
 	if worn.is_empty() or String(worn["id"]) != String(_smoke.cfg["item"]):
@@ -3498,6 +3585,7 @@ func _process(delta: float) -> void:
 	_run_weather(delta)
 	_run_boat(delta)
 	_run_cigarette(delta)
+	_run_course(delta)
 	_run_quest()
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)

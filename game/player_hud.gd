@@ -46,6 +46,7 @@ var player: CharacterBody3D
 var wave_text := ""
 var blind := false  # a colosseum modifier: no holster bar and no ammo counter
 var quest_text := ""  # the main quest's tracker (top left; "" = hidden)
+var course_text := ""  # the hop course's clock, stage and best time (top middle; "" = hidden)
 var cigarette := -1.0  # 0..1 of the lit cigarette left (-1 = none worn): a thin bar under the health ring
 var cigarette_warn := false  # nearly burnt out: the bar is red
 var show_speed := false  # ground speed in Source units under the crosshair (on with the debug HUD)
@@ -167,6 +168,8 @@ func _draw() -> void:
 	_draw_weapons(view)
 	_draw_points(view)
 	_draw_top(view)
+	if course_text != "":
+		_text(Vector2(0, 92.0), course_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 24, Color(0.75, 0.95, 1.0))
 	if quest_text != "":
 		var lines := quest_text.split("\n")
 		draw_string(_font, Vector2(MARGIN, 96.0), lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.6, 0.85, 1.0))
@@ -201,6 +204,11 @@ func _draw_points(view: Vector2) -> void:
 		return
 	var right := view.x - MARGIN
 	var base := view.y - MARGIN - SLOT_H - 32.0
+	var widest := _font.get_string_size("%d" % int(_score.points), HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
+	for other: Dictionary in party:
+		widest = maxf(widest, _font.get_string_size("%s   %d" % [other["name"], other["points"]], HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x)
+	var top := base - 30.0 if party.is_empty() else base - 40.0 - 20.0 * float(party.size() - 1) - 15.0
+	draw_rect(Rect2(right - widest - 12.0, top, widest + 20.0, base - top + 10.0), Color(0.12, 0.12, 0.13, 0.42))  # a faint box behind our points and the party's
 	_text(Vector2(right - 300.0, base), "%d" % int(_score.points), HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 34, POINTS)
 	for i in party.size():
 		var other: Dictionary = party[i]

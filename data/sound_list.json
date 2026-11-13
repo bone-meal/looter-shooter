@@ -163,6 +163,18 @@
      "label": "Main quest: a step is done"
     },
     {
+     "id": "course_go",
+     "label": "Hop course: the clock starts"
+    },
+    {
+     "id": "course_checkpoint",
+     "label": "Hop course: a checkpoint"
+    },
+    {
+     "id": "course_finish",
+     "label": "Hop course: the finish"
+    },
+    {
      "id": "thunder",
      "label": "Weather: thunder"
     },

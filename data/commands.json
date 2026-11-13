@@ -4,7 +4,7 @@
  "commands": [
   {"name": "help", "usage": "/help [command]", "help": "Lists the commands, or explains one.", "scope": "self"},
   {"name": "give", "usage": "/give gun [tier] [body] | unique <id|all> | item <id> [count] | coins <amount> | points <amount> | ammo | knife <type>", "help": "Puts a rolled gun, a pony unique or an item in your inventory, gives casino coins or points, fills every ammo pool, or changes your knife type (/give knife lists them). Tiers: grey green blue purple gold orange rainbow pony.", "scope": "self"},
-  {"name": "tp", "usage": "/tp <island|club|arena|fantasy|place name> | <x> <y> <z>", "help": "Moves you to a place or to coordinates. In the fantasy world, place = a region or town name.", "scope": "self"},
+  {"name": "tp", "usage": "/tp <island|club|arena|course|fantasy|place name> | <x> <y> <z>", "help": "Moves you to a place or to coordinates. In the fantasy world, place = a region or town name.", "scope": "self"},
   {"name": "heal", "usage": "/heal", "help": "Fills your health and mana.", "scope": "self"},
   {"name": "god", "usage": "/god", "help": "Switches taking damage off or on.", "scope": "self"},
   {"name": "fly", "usage": "/fly", "help": "Switches free flight off or on: you move where you look, no gravity.", "scope": "self"},

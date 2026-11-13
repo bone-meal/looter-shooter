@@ -50,20 +50,15 @@ func step(throttle: float, rudder: float, delta: float, depth: Callable) -> void
 	var to_x := x + ahead.x * speed * delta
 	var to_z := z + ahead.y * speed * delta
 	var need := float(cfg["draught"])
-	var now := _least_depth(x, z, depth)
-	var then := _least_depth(to_x, to_z, depth)
-	aground = then < need and then <= now  # too shallow there, and not a way off: it stops
+	var lead := ahead * float(cfg["half_length"]) * signf(speed)  # the end that goes first: the bow ahead, the stern astern
+	var now := float(depth.call(x + lead.x, z + lead.y))
+	var then := float(depth.call(to_x + lead.x, to_z + lead.y))
+	aground = then < need and then <= now  # the leading end would go shallower (or out of the islands' waters): it stops
 	if aground:
 		speed = 0.0
 		return
 	x = to_x
 	z = to_z
-
-
-# The shallowest water under bow, middle and stern with the boat's middle at (at_x, at_z).
-func _least_depth(at_x: float, at_z: float, depth: Callable) -> float:
-	var ahead := forward() * float(cfg["half_length"])
-	return minf(float(depth.call(at_x, at_z)), minf(float(depth.call(at_x + ahead.x, at_z + ahead.y)), float(depth.call(at_x - ahead.x, at_z - ahead.y))))
 
 
 # A seat's place on the map: Vector3(x, metres above the waterline, z).

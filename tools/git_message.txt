@@ -1,18 +1,20 @@
-Round 6 step 14: crosshairs, inspect key and photo mode
+Round 6 step 15: the hop course, HUD boxes and a boat fix
 
-Settings now has a Crosshair page: 30 ready-made crosshairs shown as
-pictures, sliders for every setting (length, thickness, gap, centre dot,
-outline, ring, turn, arms, colour, opacity) and a share code to copy to a
-friend and paste back. The choice is saved with the settings and the HUD
-draws it.
+A practice course for the movement floats high over the sea, reached
+through a stone arch on Home Sand (or /tp course): 20 platforms in four
+stages (Warm-up, The Bend, Stepping Stones and The Leap, which needs air
+strafing). The clock starts when you leave the start pad, checkpoints keep
+your place after a fall, and the best time is saved with the character.
+On the course everybody moves the same: no speed bonus, perks or auto-hop
+boots.
 
-The inspect key (V) looks over what is in hand: a move of its own for each
-of the 8 gun bodies, each of the 13 knife types and the staff in Aurelind.
-Shooting, aiming, reloading or switching stops it.
+A faint grey box now sits behind the chat lines in the bottom left and
+behind the points (yours and the party's) so the text stays readable.
 
-Photo mode (F10): the screens go away and a free camera flies near the
-character (shown in third person); alone the game stands still. The shoot
-key saves a picture into the Pictures folder, Looter Shooter Photos.
+Boat: sailed to the edge of the islands' waters (toward the colosseum or
+the club) it got stuck for good, with the crew in it. It now checks the
+end that goes first, so it stops at the edge and can always back off; and
+the club is no longer built while sailing near that edge.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

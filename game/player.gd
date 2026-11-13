@@ -178,6 +178,7 @@ var struck_from := Vector3.INF  # where a hit without an attacker node comes fro
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
 var inspect_moves := InspectMoves.new()  # data/inspect.json: the inspect key's move for each gun body, knife type and the staff
+var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
 var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
@@ -420,13 +421,17 @@ func _move_tick(input: Vector2) -> void:
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
 	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
+	move.no_fatigue = armor["abilities"].has("auto_bhop") and not even_ground
+	if even_ground:  # the hop course: the gun's own speed and the sprint, nothing else
+		top = (_aim_units if aiming and _aim_units > 0.0 else _top_units) * move.unit * cheat_speed
+		sprint_top = top * _sprint_multiplier
 	if cheat_fly:  # the whole movement follows the view, up and down included
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * sprint_top * 2.0
 	else:
 		var wish := (Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, input.y)).normalized()
 		var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not aiming and _crouch < 0.5 and not run_fx.has("no_sprint")
 		var now_top := sprint_top if sprinting else top * lerpf(1.0, float(_move_cfg["crouch_factor"]), _crouch)
-		var hop: bool = armor["abilities"].has("auto_bhop") and Input.is_action_pressed("jump")  # the boots hop for you
+		var hop: bool = armor["abilities"].has("auto_bhop") and Input.is_action_pressed("jump") and not even_ground  # the boots hop for you
 		var jump := grounded and controls_enabled and not downed and (_now() <= _jump_until or hop)
 		if jump:
 			_jump_until = 0.0
