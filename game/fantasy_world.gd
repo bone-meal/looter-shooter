@@ -53,7 +53,10 @@ signal said(text: String, color: Color)  # a line for the chat box (quest text)
 signal boss_move(text: String, color: Color)  # a boss starts one of its special attacks (the HUD flashes its name)
 signal fade  # the screen should fade (a door was used)
 signal changed  # bag, skills or quests changed: the HUD redraws, the session saves
+signal spell_cast(spell_name: String, mix: String)  # a spell left the staff (the session counts it: core/stat_book.gd)
+signal worked(skill: String, item: String, count: int, made: bool)  # gathered (made false) or crafted (made true)
 
+var spell_uses := Callable()  # func(group "spells" | "spell_mixes", id) -> times cast (set by the session; the Spells page shows it)
 var data: Dictionary  # everything core/fantasy_data.gd loaded: world, quests, gear, skilling, spells, enemies, layouts, props, text
 var terrain: FantasyTerrain
 var layout: FantasyLayout  # where every house, prop, tree and fishing spot stands (drawing, colliders and creatures all ask it)
@@ -269,6 +272,7 @@ func interact() -> void:
 
 func _on_cast(spell: Dictionary, sequence: String, origin: Vector3, aim: Vector3) -> void:
 	panel.note_cast(spell, sequence)
+	spell_cast.emit(String(spell.get("name", "")), String(spell.get("substance", "")))
 	squads.note_cast(sequence)
 	sound("cast_" + String((spell.get("look", {}) as Dictionary).get("shape", "puff")), origin)
 	if String(spell.get("secret", "")) != "":

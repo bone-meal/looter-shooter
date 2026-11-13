@@ -13,10 +13,16 @@ const ITEM_WIDTH := 240.0
 
 # Card of a rolled gun at `place`: name in its tier colour, stats compared with `against` (another rolled gun, or {}),
 # parts and buffs. Returns where it was drawn.
+const WKILLS_COLOR := Color(1.0, 0.55, 0.15)
+
+
 static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Dictionary, against: Dictionary, place: Vector2, view: Vector2, note: String) -> Rect2:
 	var stats := GunStats.final_stats(gun_db, gun)
 	var other: Dictionary = {} if against.is_empty() else GunStats.final_stats(gun_db, against)
 	var lines: Array = []  # [text, colour]
+	if gun.has("wkills"):  # the kill counter: on the gun model too (game/wkills_display.gd)
+		lines.append(["W kills  Confirmed kills: %d" % int(gun["wkills"]), WKILLS_COLOR])
+		lines.append(["This gun counts every kill made with it.", Color(0.95, 0.65, 0.35)])
 	lines.append(["Damage %.1f%s" % [stats["damage"], _diff_text(float(stats["damage"]), other, "damage", 1)], _delta_color(float(stats["damage"]), other, "damage", true)])
 	lines.append(["Fire rate %.2f/s%s" % [stats["fire_rate"], _diff_text(float(stats["fire_rate"]), other, "fire_rate", 2)], _delta_color(float(stats["fire_rate"]), other, "fire_rate", true)])
 	lines.append(["Magazine %d%s" % [stats["mag_size"], _diff_text(float(stats["mag_size"]), other, "mag_size", 0)], _delta_color(float(stats["mag_size"]), other, "mag_size", true)])

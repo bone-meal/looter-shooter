@@ -6,6 +6,7 @@ var xp := 0
 var spent := {}  # stat id -> points spent
 var traits: Array = []  # trait id per slot ("" = empty)
 var counters := {}  # counter id -> int
+var stat_values := {}  # "stat" achievement key -> the highest reading seen (core/achievement_reader.gd)
 var unlocked: Array = []  # achievement ids
 var callsign := ""
 var emblem := ""
@@ -162,13 +163,48 @@ func value_of(counter: String) -> int:
 	return _level if counter == "level" else int(counters.get(counter, 0))
 
 
+# How far an achievement has got: its counter, or its stat reading.
+func progress_of(a: Dictionary) -> int:
+	return int(stat_values.get(String(a["stat"]), 0)) if a.has("stat") else value_of(String(a["counter"]))
+
+
 func _check(counter: String) -> void:
 	var all: Dictionary = _ach["achievements"]
 	for id: String in all:
 		var a: Dictionary = all[id]
-		if String(a["counter"]) == counter and not unlocked.has(id) and value_of(counter) >= int(a["goal"]):
+		if String(a.get("counter", "")) == counter and not unlocked.has(id) and value_of(counter) >= int(a["goal"]):
 			unlocked.append(id)
 			_fresh.append(id)
+
+
+# Every key the "stat" achievements read (the session reads these from the combat record).
+func stat_keys() -> Array:
+	var out: Array = []
+	for id: String in _ach["achievements"]:
+		var a: Dictionary = _ach["achievements"][id]
+		if a.has("stat") and not out.has(String(a["stat"])):
+			out.append(String(a["stat"]))
+	return out
+
+
+# New readings (key -> int): each keeps its highest value, then stat achievements that reached their goal unlock.
+func read_stats(values: Dictionary) -> void:
+	for key: String in values:
+		stat_values[key] = maxi(int(stat_values.get(key, 0)), int(values[key]))
+	var all: Dictionary = _ach["achievements"]
+	for id: String in all:
+		var a: Dictionary = all[id]
+		if a.has("stat") and not unlocked.has(id) and progress_of(a) >= int(a["goal"]):
+			unlocked.append(id)
+			_fresh.append(id)
+
+
+# Whether achievement `a` is earned by these counters, stat readings and level (loading and the host check).
+func _earned(a: Dictionary, counts: Dictionary, stats: Dictionary, lvl: int) -> bool:
+	if a.has("stat"):
+		return int(stats.get(String(a["stat"]), 0)) >= int(a["goal"])
+	var counter := String(a["counter"])
+	return (lvl if counter == "level" else int(counts.get(counter, 0))) >= int(a["goal"])
 
 
 # Achievements unlocked since the last call (the session shows a notice for each).
@@ -256,7 +292,7 @@ func stat_text(id: String) -> String:
 # --- save and validation ---
 
 func to_dict() -> Dictionary:
-	return {"v": 1, "xp": xp, "spent": spent.duplicate(), "traits": traits.duplicate(), "counters": counters.duplicate(),
+	return {"v": 1, "xp": xp, "spent": spent.duplicate(), "traits": traits.duplicate(), "counters": counters.duplicate(), "stats": stat_values.duplicate(),
 		"unlocked": unlocked.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}}
 
 
@@ -278,11 +314,17 @@ func from_dict(d: Variant) -> void:
 	if src.get("counters") is Dictionary:
 		for key: String in src["counters"]:
 			counters[key] = maxi(int(src["counters"][key]), 0)
+	stat_values = {}
+	if src.get("stats") is Dictionary:
+		var keys := stat_keys()
+		for key: String in src["stats"]:
+			if keys.has(key):
+				stat_values[key] = maxi(int(src["stats"][key]), 0)
 	unlocked = []
 	if src.get("unlocked") is Array:
 		for id: Variant in src["unlocked"]:
 			var a: Variant = _ach["achievements"].get(String(id))
-			if a is Dictionary and value_of(String((a as Dictionary)["counter"])) >= int((a as Dictionary)["goal"]) and not unlocked.has(String(id)):
+			if a is Dictionary and _earned(a, counters, stat_values, _level) and not unlocked.has(String(id)):
 				unlocked.append(String(id))
 	var open := trait_slots_open()
 	for i in traits.size():
@@ -335,6 +377,8 @@ func check(d: Variant) -> String:
 			seen.append(t)
 	var counter_raw: Variant = src.get("counters", {})
 	var counts: Dictionary = counter_raw if counter_raw is Dictionary else {}
+	var stats_raw: Variant = src.get("stats", {})
+	var stats: Dictionary = stats_raw if stats_raw is Dictionary else {}
 	var open_emblems: Array = [String(_ach["default_emblem"])]
 	var open_titles: Array = [String(_ach["default_title"])]
 	var unlocked_raw: Variant = src.get("unlocked", [])
@@ -343,9 +387,7 @@ func check(d: Variant) -> String:
 			var a: Variant = _ach["achievements"].get(String(id))
 			if not a is Dictionary:
 				return "unknown achievement"
-			var counter := String((a as Dictionary)["counter"])
-			var have := lvl if counter == "level" else int(counts.get(counter, 0))
-			if have < int((a as Dictionary)["goal"]):
+			if not _earned(a, counts, stats, lvl):
 				return "achievement %s not earned" % String(id)
 			open_emblems.append(String((a as Dictionary)["emblem"]))
 			open_titles.append(String((a as Dictionary)["title"]))

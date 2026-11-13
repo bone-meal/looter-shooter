@@ -17,6 +17,7 @@ var matched: Array  # data/gun_parts.json "matched": bonus for parts by the gun'
 var uniques: Dictionary  # data/gun_uniques.json "uniques": hand-made pony guns by id (core/gun_gen.gd unique)
 var unique_bonus: Dictionary  # stat bonus every unique gets on top of its rolls
 var unique_chance: float  # how often a pony-tier drop is a unique
+var wkills_chance: float  # data/gun_loot.json: share of rolled guns that carry the "W kills" counter
 
 
 func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weapon_data: Dictionary, skill_data: Dictionary = {}, unique_data: Dictionary = {}) -> void:
@@ -27,6 +28,7 @@ func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weap
 	tiers = loot["tiers"]
 	buffs = loot["buffs"]
 	base_crit_chance = float(loot["base_crit_chance"])
+	wkills_chance = float(loot.get("wkills_chance", 0.0))
 	slots = part_data["slots"]
 	bodies = part_data["bodies"]
 	parts = part_data["parts"]

@@ -6,6 +6,8 @@ const POOL_SIZE := 24
 const LIFETIME := 0.8
 const RISE_SPEED := 1.6
 
+signal shown(amount: float)  # a number of our damage came up (the session keeps the total: core/stat_book.gd)
+
 var _labels: Array[Label3D] = []
 var _ages: PackedFloat32Array = PackedFloat32Array()
 var _starts: PackedVector3Array = PackedVector3Array()
@@ -31,6 +33,7 @@ func _ready() -> void:
 
 
 func spawn(at: Vector3, amount: float) -> void:
+	shown.emit(amount)
 	var label := _labels[_next]
 	_starts[_next] = at + Vector3(randf_range(-0.3, 0.3), 0.2, randf_range(-0.3, 0.3))
 	_ages[_next] = 0.0

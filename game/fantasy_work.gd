@@ -119,6 +119,7 @@ func _process(delta: float) -> void:
 	var def: Dictionary = world.skilling["nodes"][String(_node["id"])]
 	world.sound("gather_" + String(def["skill"]), world.world_of(at))
 	world.give(String(def["gives"]), 1)
+	world.worked.emit(String(def["skill"]), String(def["gives"]), 1, false)
 	world.gain_xp(String(def["skill"]), int(def["xp"]))
 	if randf() < float(_cfg["deplete_chance"]):
 		world.gather.spend(_node, float(def["respawn"]))
@@ -163,5 +164,6 @@ func make(recipe: Dictionary) -> String:
 	world.sound("craft_" + String(recipe["station"]))
 	for item: String in recipe["out"]:
 		world.give(item, int(recipe["out"][item]))
+		world.worked.emit(String(recipe["skill"]), item, int(recipe["out"][item]), true)
 	world.gain_xp(String(recipe["skill"]), int(recipe["xp"]))
 	return ""

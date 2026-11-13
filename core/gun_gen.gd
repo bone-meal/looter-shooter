@@ -4,6 +4,7 @@
 extends RefCounted
 
 const SkillState = preload("res://core/skill_state.gd")
+const WKILLS_MAX := 9999999  # the counter shows 7 digits
 const VERSION := 2  # 1 = guns from before skills existed (no "skills" key, still legal)
 const EPS := 0.002
 
@@ -74,8 +75,25 @@ static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0
 			if body == "" or String(db.uniques[id]["body"]) == body:
 				fitting.append(id)
 		if not fitting.is_empty():
-			return unique(db, String(fitting[rng.randi_range(0, fitting.size() - 1)]))
+			gun = unique(db, String(fitting[rng.randi_range(0, fitting.size() - 1)]))
+	if rng.randf() < db.wkills_chance:
+		gun["wkills"] = 0  # the "W kills" counter: kills made with it are counted on it (kept through re-rolls: keep_wkills)
 	return gun
+
+
+# A newly rolled gun that replaces `old` (the upgrade machine): it keeps old's W kills counter and its count.
+static func keep_wkills(old: Dictionary, made: Dictionary) -> Dictionary:
+	if old.has("wkills"):
+		made["wkills"] = int(old["wkills"])
+	return made
+
+
+# One more kill made with this gun; false when it has no counter.
+static func count_kill(gun: Dictionary) -> bool:
+	if not gun.has("wkills"):
+		return false
+	gun["wkills"] = mini(int(gun["wkills"]) + 1, WKILLS_MAX)
+	return true
 
 
 # The one legal gun for a unique id (data/gun_uniques.json), or {} for an unknown id: top tier, the listed parts all by the
@@ -112,6 +130,12 @@ static func _weighted(options: Array, weights: Dictionary, rng: RandomNumberGene
 
 # Returns "" when the gun is legal, otherwise a short reason. The host calls this before trusting a gun from a client or a save.
 static func validate(db: RefCounted, gun: Dictionary) -> String:
+	if gun.has("wkills"):
+		var count: Variant = gun["wkills"]
+		if not (count is int or count is float) or float(count) < 0.0 or float(count) > float(WKILLS_MAX) or not is_equal_approx(float(count), roundf(float(count))):
+			return "bad W kills count"
+		gun = gun.duplicate()
+		gun.erase("wkills")  # the counter says nothing about the rest of the gun
 	if gun.has("unique"):  # a unique is legal only as the exact gun its id stands for
 		var real := unique(db, String(gun["unique"]))
 		return "" if not real.is_empty() and _same(real, gun) else "unknown or edited unique"

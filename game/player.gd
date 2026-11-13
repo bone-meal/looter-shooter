@@ -21,6 +21,7 @@ const GunPartsView = preload("res://game/gun_parts_view.gd")
 const AppearanceData = preload("res://game/appearance_data.gd")
 const ViewmodelMotion = preload("res://core/viewmodel_motion.gd")
 const InspectMoves = preload("res://core/inspect_moves.gd")
+const WKillsDisplay = preload("res://game/wkills_display.gd")
 const DataStore = preload("res://core/data_store.gd")
 const HealthState = preload("res://core/health_state.gd")
 const SettingsState = preload("res://core/settings_state.gd")
@@ -178,6 +179,9 @@ var struck_from := Vector3.INF  # where a hit without an attacker node comes fro
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
 var inspect_moves := InspectMoves.new()  # data/inspect.json: the inspect key's move for each gun body, knife type and the staff
+var shots_fired := 0  # since the session last took them into the record
+var shots_hit := 0
+var hurt_total := 0.0  # damage taken, likewise
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
@@ -610,6 +614,7 @@ func take_damage(amount: float, element: String = "physical") -> void:
 
 
 func _hurt(amount: float) -> void:
+	hurt_total += maxf(amount, 0.0)
 	health.take_damage(amount)
 	damaged.emit()
 	if health.is_dead():
@@ -867,7 +872,10 @@ func refresh_held() -> void:
 # Gives the model of a gun body the parts, skin, sights and view tuning of the rolled gun in hand (only when the
 # gun changed).
 func _dress_body(index: int) -> void:
-	var h := _held_gun.hash()
+	WKillsDisplay.show(_models[index], _held_gun)  # the kill counter changes with every kill: not part of the dressing below
+	var plain := _held_gun.duplicate()
+	plain.erase("wkills")
+	var h := plain.hash()
 	if int(_gun_hash.get(index, 0)) == h:
 		return
 	_gun_hash[index] = h
@@ -884,6 +892,7 @@ func _dress_body(index: int) -> void:
 
 # A plain weapon: its body's model goes back to stock if a rolled gun dressed it before.
 func _undress_body(index: int) -> void:
+	WKillsDisplay.show(_models[index], {})  # a plain gun has no counter
 	if not _gun_hash.has(index):
 		return
 	_gun_hash.erase(index)
@@ -1293,6 +1302,9 @@ func _shoot() -> void:
 		for collider in totals:
 			if collider.has_method("head_hit") and not collider.health.is_dead() and not collider.has_meta("host_pays"):
 				score.hit()  # one hit per enemy per shot, however many pellets landed; the killing shot is paid as the kill
+	shots_fired += 1  # the record (core/stat_book.gd via the session): a shotgun blast is one shot, a hit if any pellet landed
+	if not totals.is_empty():
+		shots_hit += 1
 	if damage_numbers != null:
 		for collider in totals:
 			damage_numbers.spawn(spots[collider], totals[collider])
@@ -1524,6 +1536,12 @@ func on_enemy_killed(elite: String, enemy_id: String) -> void:
 		elif elite != "":
 			secs = maxf(secs, 3.0)
 		skills.reduce_all(secs, now)
+
+
+# A kill was counted on the gun in hand (core/gun_gen.gd count_kill): its counter on the model shows the new number.
+func refresh_wkills() -> void:
+	if _holding:
+		WKillsDisplay.show(_models[_slot], _held_gun)
 
 
 # The inspect key: the thing in hand is looked over (first person only; others do not see it).

@@ -30,6 +30,9 @@ const PaintingArt = preload("res://game/painting_art.gd")
 const CrosshairStyle = preload("res://core/crosshair_style.gd")
 const CrosshairView = preload("res://game/crosshair_view.gd")
 const PhotoMode = preload("res://game/photo_mode.gd")
+const StatBook = preload("res://core/stat_book.gd")
+const AchievementReader = preload("res://core/achievement_reader.gd")
+const CombatReport = preload("res://game/combat_report.gd")
 const CourseRules = preload("res://core/course_rules.gd")
 const BhopCourse = preload("res://game/bhop_course.gd")
 const SettingsState = preload("res://core/settings_state.gd")
@@ -129,6 +132,10 @@ var _bars := EnemyBars.new()
 var _cross := CrosshairView.new()  # the player's crosshair (Settings > Crosshair)
 var _cross_styles := CrosshairStyle.new()
 var _photo := PhotoMode.new()  # F10: free camera and pictures into the Pictures folder
+var _stats := StatBook.new()  # everything this character has done (the Combat Report on the card; saved as "stats")
+var _last_wave := 0  # the colosseum wave last seen (a higher one = the one before was cleared)
+var _stat_from := Vector3.INF  # where the player stood last frame (distance travelled)
+var _ach_wait := 2.0  # seconds to the next reading of the stat achievements
 var _course := CourseRules.new()  # the hop course in the sky (data/course.json): clock, checkpoints, best time
 var _course_root: Node3D  # built on the first trip there
 var _course_door := Vector3.ZERO  # the arch on Home Sand
@@ -501,6 +508,7 @@ func _ready() -> void:
 	LoadClock.mark("player (body, guns)")
 	add_child(_photo)
 	_photo.setup(_player, settings)
+	_numbers.shown.connect(func(amount: float) -> void: _stats.add("damage_dealt", amount))
 	_player.damaged.connect(_player_hud.flash)
 	_player.died.connect(_on_player_died)
 	_player.blocked.connect(_player_hud.notice.bind("Blocked!"))
@@ -535,6 +543,7 @@ func _ready() -> void:
 	custom_layer.layer = 6
 	custom_layer.add_child(_customizer)
 	_card_screen.progress = _progress
+	_card_screen.report = _combat_report
 	_card_screen.changed.connect(_on_card_changed)
 	_card_screen.closed.connect(_on_card_closed)
 	custom_layer.add_child(_card_screen)
@@ -782,8 +791,20 @@ func _on_card_changed() -> void:
 	card_changed.emit(_progress.to_dict())
 
 
+# The small line on the card banner: from the combat record (core/stat_book.gd).
 func _card_line() -> String:
-	return "Kills %d   Elites %d   Bosses %d   Chests %d" % [_progress.value_of("kills"), _progress.value_of("elite_kills"), _progress.value_of("boss_kills"), _progress.value_of("chests")]
+	_read_achievements()
+	return "Kills %s  Bosses %s  Achievements %d/%d  Played %s" % [_short(_stats.total("kills")), _short(_stats.total("boss_kills")),
+		(_progress.unlocked as Array).size(), _progress.achievement_defs().size(), StatBook.duration(_stats.total("seconds_played"))]
+
+
+# 950 / 12.4k / 3.1M: short enough for the card banner.
+static func _short(value: float) -> String:
+	if value >= 1000000.0:
+		return "%.1fM" % (value / 1000000.0)
+	if value >= 10000.0:
+		return "%.1fk" % (value / 1000.0)
+	return str(floori(value))
 
 
 # Pushes stat/trait bonuses into the player and the callsign into NPC greetings.
@@ -1185,6 +1206,7 @@ func _load_profile() -> void:
 		_best_round = maxi(int(extra.get("best_round", 0)), 0)
 		_smoke.left = clampf(float(extra.get("cigarette_left", 0.0)), 0.0, _smoke.full())
 		_songs.from_list(extra.get("songs"))
+		_stats.from_dict(extra.get("stats"))
 		_course.best = maxf(float(extra.get("course_best", 0.0)), 0.0) if (extra.get("course_best") is float or extra.get("course_best") is int) else 0.0
 		_bank.from_dict(extra.get("bank"), _player.inventory)
 		var lying: Variant = extra.get("pack")
@@ -1232,7 +1254,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best}
+		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict()}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1692,6 +1714,7 @@ func _pick_up(drop: Dictionary) -> void:
 		return
 	if _player.inventory.add_gun(drop["gun"]):
 		var gun: Dictionary = _field.take(drop)
+		_stats.add("guns_picked_up")
 		_player.refresh_held()
 		save_profile()
 		_player_hud.notice("Picked up %s" % GunStats.display_name(_player.gun_db, gun))
@@ -1705,7 +1728,14 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 	var lucky := _rng.randf() < _perks.num("double_kill_chance", 0.0)  # Lucky Strike: this kill pays double
 	if lucky:
 		_score.mult *= 2
+	var by_gun := String(_score.blow) != "melee" and String(_score.blow) != "other" and _player.hand_index() >= 0  # (read before kill() resets nothing: the blow is still ours)
+	if String(_score.blow) != "other":  # our kill (online somebody else's is "other"): the record
+		_count_kill(enemy_id, elite, String(_score.blow))
 	var paid := _score.kill()  # paid by how the blow landed (the player sets `blow` around its hits); nothing in Aurelind
+	var in_hand_gun: Dictionary = _player.inventory.holster_gun(_player.hand_index()) if by_gun else {}
+	if by_gun and paid > 0 and GunGen.count_kill(in_hand_gun):
+		_player.refresh_wkills()  # W kills: the gun in hand counts it
+		_stats.best("wkills_best", float(in_hand_gun["wkills"]))
 	if lucky:
 		_score.mult = maxi(_score.mult >> 1, 1)
 	if paid > 0 and _player.hand_index() >= 0 and _rng.randf() < _perks.num("ammo_chance", 0.0):  # Scavenger: rounds for the gun in hand
@@ -1751,6 +1781,7 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		if tier == "rainbow" or tier == "pony":
 			_player_hud.notice("%s DROP!" % String(_player.gun_db.tier(tier)["name"]).to_upper())
 			kill_counters.append("rare_drops")
+			_stats.add("rare_drops")
 	_award(xp_kind, kill_counters)
 
 
@@ -1792,6 +1823,7 @@ func _luck_mult() -> float:
 func _open_chest() -> void:
 	_reward.open_chest()
 	_award("chest", ["chests"])
+	_stats.add("chests")
 	var found: Array[String] = []
 	var lost := false
 	for drop in LootRoll.roll(_loot_tables["arena_chest"], _rng):
@@ -1866,6 +1898,7 @@ func _start_run(ticket: int, mods: PackedStringArray, buyer: int) -> void:
 		_leave_boat(true)
 	if _board.visible:
 		_close_board()
+	_stats.add("colosseum_runs")
 	_enter_arena(ticket, mods)
 	_player_hud.notice("%s: %d waves%s" % [String(entry["name"]), int(entry["waves"]), "" if buyer == _my_id() else " (%s bought the ticket)" % String(net.roster.get(buyer, "a teammate"))])
 
@@ -2045,6 +2078,7 @@ func _show_ring(radius: float) -> void:
 
 func _on_player_died() -> void:
 	_progress.count("deaths", 1)
+	_stats.add("deaths")
 	_progress_notices(0)
 	if _in_arena:
 		_leave_arena()
@@ -2080,6 +2114,7 @@ func _island_round() -> int:
 
 func _on_went_down() -> void:
 	_score.downs += 1
+	_stats.add("downs")
 	if net == null or not net.can_send():  # alone with Second Wind: up again by ourselves in a moment, this once
 		_second_wind_used = true
 		_self_revive_at = _time + _perks.num("self_revive_seconds", 3.0)
@@ -2127,6 +2162,7 @@ func _on_revived(share: float) -> void:
 
 func _on_gave_revive() -> void:
 	_score.revives += 1
+	_stats.add("revives")
 	_player_hud.notice("You helped a teammate up.")
 
 
@@ -2205,6 +2241,7 @@ func _island_bodies() -> Array:
 func _end_run(reached: int, at: Vector3, drop: bool) -> void:
 	var record := reached > _best_round
 	_best_round = maxi(_best_round, reached)
+	_stats.add("island_games_over")
 	_game_over.show_run(reached, _best_round, record, PackedStringArray(["Kills %d        Points earned %d" % [_score.kills - _run_kills, _run_earned], "Everything you carried lies in a backpack where you went down." if (drop or _pack != null) else "You were still standing: you keep what you carry."]))
 	if drop:
 		_drop_pack(at)
@@ -2299,6 +2336,8 @@ func _on_round_ended(number: int, kind: String) -> void:
 	if kind == "special" and _rounds.active and _powerups.has(parting):  # the last one of a special round leaves this
 		_drop_power(parting, _director.last_killed.global_position if is_instance_valid(_director.last_killed) else _island_spawn)
 	_player_hud.notice("Round %d survived" % number)
+	if _island_side():
+		_stats.add("island_rounds")
 	_sounds.call("play", "sting_round_end")
 	save_profile()
 
@@ -2349,6 +2388,7 @@ func _buy_from_wall(index: int) -> void:
 		_player.pools.fill(body)
 		_player_hud.notice("%s: ammo refilled." % _player.items.item_name(body))
 	_score.spend(cost)
+	_stats.add("wall_buys")
 	_sounds.call("play", "wall_buy")
 	save_profile()
 
@@ -2371,6 +2411,7 @@ func _buy_debris(index: int) -> void:
 		net.rounds.ask_debris(index)
 		return
 	_score.spend(_land.price(index))
+	_stats.add("debris_cleared")
 	_open_debris(index, true)
 	if net != null:
 		net.rounds.tell_debris(index)
@@ -2455,6 +2496,7 @@ func _buy_perk(id: String) -> void:
 		_player_hud.notice("%s costs %d points (you have %d)." % [_perks.name_of(id), _perks.price(id), _score.points])
 		return
 	_perks.add(id)
+	_stats.add("perks_bought")
 	_perks_changed(true)
 	_sounds.call("play", "perk_buy")
 	_player_hud.notice("%s: %s" % [_perks.name_of(id), _perks.desc(id)])
@@ -2821,6 +2863,8 @@ func _use_box() -> void:
 	if action == 0 and not _score.can_afford(int(_box.cfg["price"])):
 		_player_hud.notice("A spin costs %d points (you have %d)." % [int(_box.cfg["price"]), _score.points])
 		return
+	if action == 0:
+		_stats.add("box_spins")
 	if net != null and net.rounds.is_client():
 		net.rounds.ask_box(action)
 	else:
@@ -2947,8 +2991,9 @@ func _upgrade(up: bool) -> void:
 		return
 	var hand := _player.hand_index()
 	var old: Dictionary = _player.inventory.holster_gun(hand)
-	var made := GunGen.generate(_player.gun_db, _rng, 0.0, _player.inventory.holster_body(hand), String(offer["to"]) if up else String(old["tier"]))
+	var made := GunGen.keep_wkills(old, GunGen.generate(_player.gun_db, _rng, 0.0, _player.inventory.holster_body(hand), String(offer["to"]) if up else String(old["tier"])))  # a W kills counter stays with it
 	_player.inventory.set_holster_gun(hand, made)
+	_stats.add("upgrades")
 	_player.refresh_held()
 	_sounds.call("play", "upgrade_done")
 	_player_hud.notice("%s" % GunStats.display_name(_player.gun_db, made))
@@ -3091,6 +3136,7 @@ func _on_window_set(window: int, boards: int) -> void:
 
 func _on_nail_paid(points: int) -> void:
 	_score.give(points * _score.mult)
+	_stats.add("boards_nailed")
 
 
 # Nobody swims: a player wading deeper than data wade_depth is carried back to the island last stood on.
@@ -3145,6 +3191,8 @@ func _apply_power(kind: String) -> void:
 		return
 	var entry: Dictionary = _powerups.cfg["kinds"][kind]
 	_powerups.start(kind, _time, _perks.num("power_time_mult", 1.0))
+	if _island_side():
+		_stats.add_to("powerups", kind)
 	if kind == "carpenter":
 		_shelters.rules.board_all()
 		_shelters.refresh()
@@ -3271,6 +3319,7 @@ func _quest_reward() -> void:
 	_chat.add_line(_quest.quest_line("finished"), Color(1.0, 0.85, 0.45))
 	_player_hud.callout(_quest.quest_line("name"), Color(1.0, 0.85, 0.45))
 	_score.give(int(reward.get("points", 0)))
+	_stats.add("main_quests")
 	var which := String(reward.get("unique", ""))
 	if which == "any":
 		var ids: Array = _player.gun_db.uniques.keys()
@@ -3339,6 +3388,7 @@ func _on_float_shot(secret: int, thing: int) -> void:
 		_song_floats.show_shot(secret, thing, true)
 		return
 	_song_floats.show_secret(secret, false)
+	_stats.add("songs_found")
 	save_profile()
 	_play_song(secret)
 
@@ -3428,9 +3478,11 @@ func _run_course(delta: float) -> void:
 			_sounds.call("play", "course_checkpoint")
 			_player_hud.notice("Checkpoint  %s" % CourseRules.clock(_course.time))
 		"finish":
+			_stats.add("course_runs")
 			_sounds.call("play", "course_finish")
 			_player_hud.callout("Finished  %s" % CourseRules.clock(_course.last), Color(0.95, 0.8, 0.35))
 		"record":
+			_stats.add("course_runs")
 			_sounds.call("play", "course_finish")
 			_player_hud.callout("New best  %s" % CourseRules.clock(_course.best), Color(1.0, 0.85, 0.3))
 			save_profile()
@@ -3444,6 +3496,97 @@ func _run_course(delta: float) -> void:
 			_player_hud.course_text = "Finished in %s%s   walk back onto the start pad to go again" % [CourseRules.clock(_course.last), best]
 
 
+# --- the record of everything (core/stat_book.gd; shown by game/combat_report.gd on the card) ---
+
+# One of our kills: by what, of what, where.
+func _count_kill(enemy_id: String, elite: String, blow: String) -> void:
+	_stats.add("kills")
+	_stats.add_to("kills_by_enemy", enemy_id)
+	var weapon := "other"
+	if blow == "melee":
+		weapon = "knife:" + _player.knife
+	elif _player.hand_index() >= 0:
+		weapon = "gun:" + _player.inventory.holster_body(_player.hand_index())
+	elif _in_fantasy:
+		weapon = "staff"
+	_stats.add_to("kills_by_weapon", weapon)
+	if blow == "headshot":
+		_stats.add("headshots")
+	if elite != "":
+		_stats.add("elite_kills")
+	if enemy_id.begins_with("boss"):
+		_stats.add("boss_kills")
+
+
+# Every frame: time played, distance travelled, top speed, the colosseum's waves cleared.
+func _run_stats(delta: float) -> void:
+	_stats.tick(delta)
+	if _player.shots_fired > 0 or _player.hurt_total > 0.0:  # what the player counted since the last frame
+		_stats.add("shots_fired", float(_player.shots_fired))
+		_stats.add("shots_hit", float(_player.shots_hit))
+		_stats.add("damage_taken", _player.hurt_total)
+		_player.shots_fired = 0
+		_player.shots_hit = 0
+		_player.hurt_total = 0.0
+	var here := _player.global_position
+	if _stat_from.is_finite() and not _player.carried and _flight_t < 0.0:
+		var step := Vector2(here.x - _stat_from.x, here.z - _stat_from.z).length()
+		if step < 3.0:  # (a teleport is not a walk)
+			_stats.add("metres", step)
+	_stat_from = here
+	_stats.best("top_speed", float(_player.speed_units()))
+	var wave := _director.wave_number() if _in_arena else 0
+	if wave > _last_wave and _last_wave > 0:
+		_stats.add("colosseum_waves", float(wave - _last_wave))  # (the last wave of a won run is counted with the win)
+	_last_wave = wave
+	_ach_wait -= delta
+	if _ach_wait <= 0.0:
+		_ach_wait = 2.0
+		_read_achievements()
+
+
+# Stat achievements (data/achievements.json "stat"): reads every key from the record and unlocks what reached its goal.
+func _read_achievements() -> void:
+	var extra := {"best_round": _best_round, "course_best": _course.best}
+	if _fantasy != null:
+		extra["quests_done"] = (_fantasy.quests.done as Array).size()
+		var levels: Dictionary = _fantasy.skills.levels()
+		var sum := 0
+		for id: String in levels:
+			extra["skill:" + id] = int(levels[id])
+			sum += int(levels[id])
+		extra["skill_total"] = sum
+	var values := {}
+	for key: String in _progress.stat_keys():
+		values[key] = AchievementReader.read(key, _stats, extra)
+	_progress.read_stats(values)
+	_progress_notices(0)
+
+
+# The card's Combat Report: the record, with the names it needs.
+func _combat_report() -> Dictionary:
+	var knives := KnifeModels.db()
+	var ctx := {
+		"gun_name": func(body: String) -> String: return String(_player.gun_db.bodies[body]["name"]) if _player.gun_db.bodies.has(body) else body.capitalize(),
+		"knife_name": func(kind: String) -> String: return String(knives.name_of(kind)),
+		"item_name": func(id: String) -> String: return String(_fantasy.bag.item_name(id)) if _fantasy != null else id.replace("_", " ").capitalize(),
+		"skill_name": func(id: String) -> String: return String(_fantasy.skills.skill_name(id)) if _fantasy != null else id.capitalize(),
+		"enemy_name": func(id: String) -> String: return _enemy_name(id),
+		"best_round": _best_round,
+		"course_best": _course.best,
+		"quests_done": (_fantasy.quests.done as Array).size() if _fantasy != null else 0,
+		"level": _progress.level(),
+	}
+	var report := CombatReport.build(_stats, ctx)
+	report["look"] = _player.appearance
+	return report
+
+
+func _enemy_name(id: String) -> String:
+	var named: Dictionary = DataStore.load_json("res://data/combat_report.json").get("enemy_names", {})
+	return String(named.get(id, id.replace("_", " ").capitalize()))
+
+
 func _run_cigarette(delta: float) -> void:
 	var worn: Dictionary = _player.inventory.equipment.get("mouth", {})
 	if worn.is_empty() or String(worn["id"]) != String(_smoke.cfg["item"]):
@@ -3454,6 +3597,7 @@ func _run_cigarette(delta: float) -> void:
 		_player.inventory.equipment["mouth"] = {"id": String(_smoke.cfg["burnt"]), "count": 1}
 		_player.refresh_equipment()
 		_player_hud.notice("Your cigarette burnt out. Reward chests in the colosseum hold fresh ones.")
+		_stats.add("cigarettes")
 		save_profile()
 	_player_hud.cigarette = _smoke.share()
 	_player_hud.cigarette_warn = _smoke.warning()
@@ -3523,6 +3667,14 @@ func _build_fantasy() -> void:
 	_fantasy.fade.connect(_player_hud.play_fade)
 	_fantasy.said.connect(func(text: String, color: Color) -> void: _chat.add_line(text, color))
 	_fantasy.changed.connect(func() -> void: _fantasy_dirty = true)
+	_fantasy.spell_cast.connect(func(spell_name: String, mix: String) -> void:
+		_stats.add("spells_cast")
+		_stats.add_to("spells", spell_name)
+		_stats.add_to("spell_mixes", mix))
+	_fantasy.worked.connect(func(skill: String, item: String, count: int, made: bool) -> void:
+		_stats.add_to("skill_actions", skill)
+		_stats.add_to("made" if made else "gathered", item, float(count)))
+	_fantasy.spell_uses = func(group: String, id: String) -> float: return _stats.count_in(group, id)
 	_fantasy_exit = _fantasy.exit_world()
 	Island.build_painting(self, _fantasy_exit, PaintingArt.island_texture())
 	if net != null and net.is_active():
@@ -3656,6 +3808,7 @@ func _process(delta: float) -> void:
 	_run_boat(delta)
 	_run_cigarette(delta)
 	_run_course(delta)
+	_run_stats(delta)
 	_run_quest()
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)
@@ -3680,6 +3833,9 @@ func _process(delta: float) -> void:
 	if _in_arena and _reward == null and _director.is_cleared():
 		_reward = RewardArea.new()  # the run is won: the chest, then the door back to the island
 		add_child(_reward)
+		_stats.add("colosseum_won")
+		_stats.add("colosseum_waves")
+		_stats.best("colosseum_longest", float(_director.wave_count()))
 		_player_hud.callout("Colosseum cleared", Color(1.0, 0.85, 0.4))
 	var scope: float = _player.sight_amount()
 	_scope.kind = _player.sight_kind()

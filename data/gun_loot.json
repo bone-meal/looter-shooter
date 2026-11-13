@@ -37,7 +37,9 @@
    "name": "Crit chance"
   }
  },
- "base_crit_chance": 0.05,
+ "wkills_chance": 0.25,
+  "_wkills": "W kills: this share of rolled guns (drops, chests, crates, the mystery box, the upgrade machine's new rolls) carries a kill counter; it stays through every re-roll and upgrade (core/gun_gen.gd).",
+  "base_crit_chance": 0.05,
  "tiers": [
   {
    "id": "grey",

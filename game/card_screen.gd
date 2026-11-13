@@ -1,15 +1,18 @@
-# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots) and Achievements (progress and rewards). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
-# Dependencies: core/progress_state.gd (set `progress` before open), game/player_card.gd, game/emblem_art.gd, game/menu_widgets.gd.
+# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards) and the Combat Report (everything done, with a portrait). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
+# Dependencies: core/progress_state.gd (set `progress` before open), game/player_card.gd, game/emblem_art.gd, game/menu_widgets.gd, game/achievement_grid.gd, game/combat_report_tab.gd.
 extends Control
 
 const PlayerCard = preload("res://game/player_card.gd")
 const EmblemArt = preload("res://game/emblem_art.gd")
 const Widgets = preload("res://game/menu_widgets.gd")
+const CombatReportTab = preload("res://game/combat_report_tab.gd")
+const AchievementGrid = preload("res://game/achievement_grid.gd")
 
 signal changed
 signal closed
 
 var progress: RefCounted  # core/progress_state.gd instance owned by the session
+var report := Callable()  # func() -> {"look", "under_portrait", "sections"}: the Combat Report (game/combat_report.gd), set by the session
 
 var _card: Control
 var _tabs: TabContainer
@@ -20,13 +23,11 @@ var _info := ""  # one stats line shown on the card (set by the session)
 class EmblemTile extends Control:
 	signal picked(id: String)
 	var emblem_id := ""
-	var shape := "chevron"
-	var c1 := Color.WHITE
-	var c2 := Color.GRAY
+	var def := {}  # one entry of data/achievements.json "emblems"
 	var selected := false
 
 	func _init() -> void:
-		custom_minimum_size = Vector2(58, 58)
+		custom_minimum_size = Vector2(52, 52)
 
 	func _gui_input(event: InputEvent) -> void:
 		if event is InputEventMouseButton and event.pressed and event.button_index == MOUSE_BUTTON_LEFT:
@@ -35,7 +36,7 @@ class EmblemTile extends Control:
 	func _draw() -> void:
 		draw_rect(Rect2(Vector2.ZERO, size), Color(0.14, 0.16, 0.22))
 		draw_rect(Rect2(Vector2.ZERO, size), Color(1.0, 0.85, 0.3) if selected else Color(1, 1, 1, 0.15), false, 3.0 if selected else 1.0)
-		EmblemArt.draw(self, shape, size * 0.5, 22.0, c1, c2)
+		EmblemArt.draw_def(self, def, size * 0.5, 21.0)
 
 
 func _ready() -> void:
@@ -80,9 +81,13 @@ func _refresh() -> void:
 	_tabs.add_child(_stats_tab())
 	_tabs.add_child(_traits_tab())
 	_tabs.add_child(_achievements_tab())
-	for i in 4:
-		_tabs.set_tab_title(i, ["Card", "Stats", "Traits", "Achievements"][i])
-	_tabs.current_tab = clampi(current, 0, 3)
+	var record := CombatReportTab.new()
+	record.build(report.call() if report.is_valid() else {})
+	_tabs.add_child(record)
+	var names := ["Card", "Stats", "Traits", "Achievements", "Combat Report"]
+	for i in names.size():
+		_tabs.set_tab_title(i, names[i])
+	_tabs.current_tab = clampi(current, 0, names.size() - 1)
 
 
 func _show_card() -> void:
@@ -135,18 +140,21 @@ func _card_tab() -> Control:
 	page.add_child(titles)
 	page.add_child(_label("Emblem (earn more with achievements)"))
 	var grid := GridContainer.new()
-	grid.columns = 12
+	grid.columns = 16
 	for id: String in progress.emblems_open():
-		var def: Dictionary = progress.emblem_def(id)
 		var tile := EmblemTile.new()
 		tile.emblem_id = id
-		tile.shape = String(def["shape"])
-		tile.c1 = Color.html(String(def["c1"]))
-		tile.c2 = Color.html(String(def["c2"]))
+		tile.def = progress.emblem_def(id)
+		tile.tooltip_text = String(tile.def["name"])
 		tile.selected = id == progress.emblem
 		tile.picked.connect(func(picked: String) -> void: _set_card(progress.callsign, picked, progress.title))
 		grid.add_child(tile)
-	page.add_child(grid)
+	var shelf := ScrollContainer.new()  # (every emblem open is 8 rows: they scroll)
+	shelf.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	shelf.custom_minimum_size = Vector2(0, 300)
+	shelf.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	shelf.add_child(grid)
+	page.add_child(shelf)
 	return page
 
 
@@ -224,21 +232,4 @@ func _traits_tab() -> Control:
 
 
 func _achievements_tab() -> Control:
-	var scroll := ScrollContainer.new()
-	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	var page := _page()
-	page.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(page)
-	var defs: Dictionary = progress.achievement_defs()
-	for id: String in defs:
-		var a: Dictionary = defs[id]
-		var done: bool = progress.unlocked.has(id)
-		var have := mini(progress.value_of(String(a["counter"])), int(a["goal"]))
-		var rewards: Array[String] = []
-		if String(a["emblem"]) != "":
-			rewards.append("emblem: %s" % String((progress.emblem_def(String(a["emblem"])))["name"]))
-		if String(a["title"]) != "":
-			rewards.append("title: %s" % progress.title_name(String(a["title"])))
-		var text := "%s %s  -  %s  (%d / %d)   reward %s" % ["[x]" if done else "[ ]", a["name"], a["desc"], have, int(a["goal"]), ", ".join(rewards)]
-		page.add_child(_label(text, 16, Color(0.5, 0.95, 0.55) if done else Color(1, 1, 1, 0.6)))
-	return scroll
+	return AchievementGrid.build(progress)

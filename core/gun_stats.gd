@@ -86,6 +86,10 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 
 
 static func display_name(db: RefCounted, gun: Dictionary) -> String:
+	return ("W kills " if gun.has("wkills") else "") + _plain_name(db, gun)
+
+
+static func _plain_name(db: RefCounted, gun: Dictionary) -> String:
 	var maker: String = String(db.makers[String(gun["maker"])]["name"])
 	var body: String = String(db.bodies[String(gun["body"])]["name"])
 	var tier_def: Dictionary = db.tier(String(gun["tier"]))

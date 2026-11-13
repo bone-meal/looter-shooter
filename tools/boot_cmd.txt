@@ -1,1 +1,1 @@
-!uncap;!wait 2;/god;!wait 1;!snap idle
+!uncap;!wait 2;/god;!wait 6;!snap idle

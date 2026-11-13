@@ -1,22 +1,11 @@
-Shared colosseum runs online, perks that fit the game, modifier texts
+Round 6 stats list: W kills counter, Combat Report tab, spell use counts, 100 achievements with 100 emblems and titles
 
-The colosseum run is now one run for the whole party: the host runs every
-wave and the others see the same enemies, hit them (the host pays the
-points) and each rolls his own loot. Wave, enemies left and the clear are
-shown on every machine; nobody left in the arena ends the run.
-
-Found and fixed with a new two-copies-on-one-PC online test: once a single
-island enemy was gone on the host, the host stopped sending enemy positions
-(a freed enemy in a typed variable stopped the update every frame), so
-teammates saw frozen stand-ins that never went away; the same in Aurelind.
-A joiner also no longer runs a round of its own in its first moments.
-
-Perks: Trade Winds also stops anything slowing you, Blast Proof halves
-fire and blast damage, Run and Gun lets you aim at full speed, Cold Blood's
-quiet first shot also has no spread.
-
-Colosseum board: every modifier says exactly what it does, under the list
-when you point at it and in its tooltip.
+- W kills: one rolled gun in four counts its kills, shown on the gun model and in its card, kept through re-rolls
+- Combat Report: 5th player card tab with a live portrait and the whole record (kills by enemy and weapon, damage, time, islands, colosseum, Aurelind skilling and spells)
+- Aurelind spell page shows how often each mix and spell was cast
+- 100 new achievements read from the record, each with its own emblem and title: 90 layered emblems drawn in code and 10 painted ones
+- Achievements tab is an icon grid with hover details; the card banner line reads the record
+- tools/achievement_check, tools/wkills_check, tools/emblem_shot, tools/wkills_shot
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,0 +1,19 @@
+{
+ "_about": "Names the Combat Report (player card) shows for enemy ids that have no name of their own in the data. Missing ids are shown with their id written out.",
+ "enemy_names": {
+  "boss": "Clockwork Bear",
+  "boss_butcher": "The Butcher",
+  "boss_tyrant": "The Tyrant",
+  "boss_dome_beast": "Dome Beast",
+  "boss_warlord": "The Warlord",
+  "boss_overseer": "The Overseer",
+  "drowned": "Drowned",
+  "drowned_runner": "Drowned Runner",
+  "swimmer": "Swimmer",
+  "sea_crawler": "Sea Crawler",
+  "tide_brute": "Tide Brute",
+  "chaser": "Skeleton Swordsman",
+  "shooter": "Skeleton Archer",
+  "scav_gunner": "Scav Gunner"
+ }
+}

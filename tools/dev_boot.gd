@@ -454,6 +454,50 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			_lines.append("NET %s: can send %s, host %s, my id %d, roster %s, ghosts %d, net enemies %d, states seen %d, last run '%s'" % [" ".join(words.slice(1)), str(link.call("can_send")), str(link.call("is_host")), int(link.call("my_id")), str(link.get("roster")), (link.call("target_nodes") as Array).size(), (shared.get("_enemies") as Dictionary).size(), int(shared.get("states_seen")), String(session.get("run_note"))])
 		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give)
 			player.set("cheat_god", true)
+		"wkills":  # "!wkills 5": the rolled gun in hand gets the W kills counter at 5 (a plain gun becomes a rolled one first); "!wkills <note>": what it shows
+			var hand_now := int(player.call("hand_index"))
+			var bag: RefCounted = player.get("inventory")
+			if words.size() > 1 and words[1].is_valid_int() and hand_now >= 0:
+				var gun: Dictionary = bag.call("holster_gun", hand_now)
+				if gun.is_empty():
+					gun = load("res://core/gun_gen.gd").call("generate", player.get("gun_db"), RandomNumberGenerator.new(), 0.0, String(bag.call("holster_body", hand_now)), "purple")
+					bag.call("set_holster_gun", hand_now, gun)
+				gun["wkills"] = int(words[1])
+				player.call("refresh_held")
+			else:
+				var held: Dictionary = bag.call("holster_gun", hand_now) if hand_now >= 0 else {}
+				_lines.append("WKILLS %s: gun in hand '%s', counter %s" % [" ".join(words.slice(1)), String(load("res://core/gun_stats.gd").call("display_name", player.get("gun_db"), held)) if not held.is_empty() else "plain", str(held.get("wkills", "none"))])
+		"card":  # "!card 4": the player card (P) open on tab 4 (0 = Card ... 4 = Combat Report); "!card close"; "!card <note>": the record's main numbers
+			var screen: Control = session.get("_card_screen")
+			if words.size() > 1 and words[1] == "close":
+				screen.call("close")
+			elif words.size() > 1 and words[1].is_valid_int():
+				session.call("_open_card")
+				await get_tree().process_frame
+				(screen.get("_tabs") as TabContainer).current_tab = int(words[1])
+			else:
+				var book: RefCounted = session.get("_stats")
+				_lines.append("CARD %s: totals %s | kills by enemy %s | by weapon %s | gathered %s | spells %s" % [" ".join(words.slice(1)), JSON.stringify(book.get("totals")), str(book.call("group", "kills_by_enemy")), str(book.call("group", "kills_by_weapon")), str(book.call("group", "gathered")), str(book.call("group", "spells"))])
+		"mouse":  # "!mouse 300 400": the mouse moves to that window spot (tooltips show after their delay)
+			var at := Vector2(float(words[1]), float(words[2]))
+			get_viewport().warp_mouse(at)
+			var motion := InputEventMouseMotion.new()
+			motion.position = at
+			motion.global_position = at
+			motion.relative = Vector2(1, 0)
+			get_viewport().push_input(motion)
+		"record":  # "!record kills 500" / "!record kills_by_enemy:harvest_king 1": adds to the combat record (core/stat_book.gd)
+			var book: RefCounted = session.get("_stats")
+			if words[1].contains(":"):
+				book.call("add_to", words[1].get_slice(":", 0), words[1].substr(words[1].find(":") + 1), float(words[2]))
+			else:
+				book.call("add", words[1], float(words[2]))
+		"ach":  # "!ach <note>": reads the stat achievements now and lists what is unlocked; "!ach wear <emblem> <title>": puts them on the card
+			session.call("_read_achievements")
+			var progress: RefCounted = session.get("_progress")
+			if words.size() > 3 and words[1] == "wear":
+				progress.call("set_card", progress.get("callsign"), words[2], words[3])
+			_lines.append("ACH %s: %d unlocked %s | emblem %s title %s" % [" ".join(words.slice(1)), (progress.get("unlocked") as Array).size(), str(progress.get("unlocked")), str(progress.get("emblem")), str(progress.get("title"))])
 		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
 			var box: Node3D = session.get("_jukebox")
 			if box != null:

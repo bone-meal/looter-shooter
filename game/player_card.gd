@@ -4,14 +4,14 @@ extends Control
 
 const EmblemArt = preload("res://game/emblem_art.gd")
 
-const SIZE := Vector2(460.0, 116.0)
+const SIZE := Vector2(580.0, 116.0)
 
 var _callsign := ""
 var _title := ""
 var _level := 1
 var _ratio := 0.0
-var _shape := "chevron"
-var _c1 := Color.WHITE
+var _emblem := {}  # one entry of data/achievements.json "emblems"
+var _c1 := Color.WHITE  # the card's colours, from the emblem
 var _c2 := Color.GRAY
 var _line := ""
 var _font: Font = ThemeDB.fallback_font
@@ -27,9 +27,9 @@ func show_card(callsign: String, title_text: String, level: int, xp_ratio: float
 	_title = title_text
 	_level = level
 	_ratio = clampf(xp_ratio, 0.0, 1.0)
-	_shape = String(emblem_def["shape"])
-	_c1 = Color.html(String(emblem_def["c1"]))
-	_c2 = Color.html(String(emblem_def["c2"]))
+	_emblem = emblem_def
+	_c1 = Color.html(String(emblem_def.get("c1", emblem_def.get("c4", "#ffffff"))))
+	_c2 = Color.html(String(emblem_def.get("c2", emblem_def.get("c3", "#888888"))))
 	_line = line
 	queue_redraw()
 
@@ -42,7 +42,7 @@ func _draw() -> void:
 	var frame := Rect2(Vector2(10, 12), Vector2(92, 92))
 	draw_rect(frame, Color(0.14, 0.16, 0.22))
 	draw_rect(frame, accent, false, 2.0)
-	EmblemArt.draw(self, _shape, frame.get_center(), 36.0, _c1, _c2)
+	EmblemArt.draw_def(self, _emblem, frame.get_center(), 40.0)
 	var name_text := _callsign if _callsign != "" else "Unnamed"
 	draw_string(_font, Vector2(116, 46), name_text, HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 200.0, 32, Color(1, 1, 1, 0.95))
 	draw_string(_font, Vector2(116, 70), _title, HORIZONTAL_ALIGNMENT_LEFT, SIZE.x - 130.0, 18, accent)

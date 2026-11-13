@@ -7,12 +7,10 @@ const EmblemArt = preload("res://game/emblem_art.gd")
 
 # Draws the emblem into a 64x64 viewport (updated once) and shows it as this sprite's texture.
 class Canvas extends Control:
-	var shape := "chevron"
-	var c1 := Color.WHITE
-	var c2 := Color.GRAY
+	var def := {}  # one entry of data/achievements.json "emblems"
 
 	func _draw() -> void:
-		EmblemArt.draw(self, shape, Vector2(32, 32), 27.0, c1, c2)
+		EmblemArt.draw_def(self, def, Vector2(32, 32), 29.0)
 
 
 var _viewport: SubViewport
@@ -35,8 +33,6 @@ func _init() -> void:
 
 
 func show_emblem(emblem_def: Dictionary) -> void:
-	_canvas.shape = String(emblem_def["shape"])
-	_canvas.c1 = Color.html(String(emblem_def["c1"]))
-	_canvas.c2 = Color.html(String(emblem_def["c2"]))
+	_canvas.def = emblem_def
 	_canvas.queue_redraw()
 	_viewport.render_target_update_mode = SubViewport.UPDATE_ONCE
