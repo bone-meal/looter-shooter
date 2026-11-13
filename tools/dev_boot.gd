@@ -199,6 +199,35 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var land: RefCounted = session.get("_land")
 			var mid: Vector2 = (land.get("islands") as Array)[int(words[1])]["at"]
 			player.call("teleport", Vector3(500.0 + mid.x + (float(words[2]) if words.size() > 3 else 0.0), 0.2, mid.y + (float(words[3]) if words.size() > 3 else 3.0)), 0.0)
+		"box":  # "!box goto": stand at the mystery box; "!box <note>": what it does, where, whose gun, what is in our hands
+			var box: RefCounted = session.get("_box")
+			var spot: Vector2 = (session.get("_box_spots") as Array)[int(box.get("spot"))]
+			if words.size() > 1 and words[1] == "goto":
+				player.call("teleport", Vector3(500.0 + spot.x + 1.3, 0.15, spot.y + 1.3), 0.0)
+				player.call("look_at_point", Vector3(500.0 + spot.x, 0.9, spot.y))
+			else:
+				var bag: RefCounted = player.get("inventory")
+				var held := PackedStringArray()
+				for i in int(bag.get("holster_count")):
+					var rolled: Dictionary = bag.call("holster_gun", i)
+					held.append("%s%s" % [String(bag.call("holster_body", i)), "" if rolled.is_empty() else " (" + String(rolled["tier"]) + ")"])
+				_lines.append("BOX %s: %s on spot %d, offers %s, ready [%s], points %d" % [" ".join(words.slice(1)), String(box.get("state")), int(box.get("spot")), str((session.get("_box_gun") as Dictionary).get("tier", "-")) + " " + str((session.get("_box_gun") as Dictionary).get("body", "")), ", ".join(held), int((session.call("score") as RefCounted).get("points"))])
+		"upgrade":  # "!upgrade goto": stand at the upgrade machine
+			var spot: Vector2 = session.get("_upgrade_spot")
+			player.call("teleport", Vector3(500.0 + spot.x + 1.2, 0.15, spot.y + 1.2), 0.0)
+			player.call("look_at_point", Vector3(500.0 + spot.x, 1.2, spot.y))
+		"trap":  # "!trap goto 3": stand at trap n's lever; "!trap <note>": which run, the living enemies, health
+			if words.size() > 2 and words[1] == "goto":
+				var spot: Vector2 = (session.get("_trap_levers") as Array)[int(words[2])]
+				var middle: Vector2 = (session.get("_trap_centres") as Array)[int(words[2])]
+				player.call("teleport", Vector3(500.0 + spot.x, 0.15, spot.y), 0.0)
+				player.call("look_at_point", Vector3(500.0 + middle.x, 1.0, middle.y))
+			else:
+				var timing: RefCounted = session.get("_traps")
+				var on := PackedStringArray()
+				for i in (session.get("_trap_levers") as Array).size():
+					on.append("%d:%s" % [i, "runs %.0f s" % float(timing.call("left", i, float(session.get("_time")))) if bool(timing.call("running", i, float(session.get("_time")))) else ("waits %.0f s" % float(timing.call("wait", i, float(session.get("_time")))))])
+				_lines.append("TRAP %s: %s | enemies %d | health %d | points %d" % [" ".join(words.slice(1)), ", ".join(on), (session.call("director").call("enemy_list") as Array).size(), roundi(float(player.get("health").hp)), int((session.call("score") as RefCounted).get("points"))])
 		"perk":  # "!perk goto iron_gut": stand at that perk's machine; "!perk <note>": perks carried, health, holsters, power
 			if words.size() > 2 and words[1] == "goto":
 				var spot: Vector2 = (session.get("_perk_spots") as Dictionary)[words[2]]

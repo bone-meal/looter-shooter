@@ -1,0 +1,57 @@
+{
+ "version": 1,
+ "_about": "Traps (need power; core/trap_state.gd, game/traps.gd). Each is switched on at its lever for `price` points, runs `seconds`, then cools down `cooldown` seconds. electric = a coil on a hut's roof (`hut` = which shelter): every `tick` seconds enemies within `radius` of the hut but outside it lose `trash_share` of their full health (a boss `boss_share`); fire = a pit (island + at): enemies within `radius` burn, and so does a player standing in it (`player_damage` a tick). Their kills pay nobody.",
+ "tick": 0.25,
+ "reach": 2.2,
+ "electric": {
+  "trash_share": 0.5,
+  "boss_share": 0.03
+ },
+ "fire": {
+  "burn_dps": 60.0,
+  "burn_seconds": 1.5,
+  "player_damage": 6.0
+ },
+ "traps": [
+  {
+   "kind": "electric",
+   "name": "Storm Coil",
+   "hut": 0,
+   "price": 1000,
+   "seconds": 25.0,
+   "cooldown": 60.0,
+   "radius": 8.5
+  },
+  {
+   "kind": "electric",
+   "name": "Storm Coil",
+   "hut": 1,
+   "price": 1000,
+   "seconds": 25.0,
+   "cooldown": 60.0,
+   "radius": 8.5
+  },
+  {
+   "kind": "electric",
+   "name": "Storm Coil",
+   "hut": 2,
+   "price": 1000,
+   "seconds": 25.0,
+   "cooldown": 60.0,
+   "radius": 8.5
+  },
+  {
+   "kind": "fire",
+   "name": "Fire Pit",
+   "island": "painter",
+   "at": [
+    4.4,
+    7.9
+   ],
+   "price": 750,
+   "seconds": 20.0,
+   "cooldown": 45.0,
+   "radius": 6.0
+  }
+ ]
+}

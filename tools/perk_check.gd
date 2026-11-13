@@ -8,6 +8,8 @@ const PerkState = preload("res://core/perk_state.gd")
 const PowerState = preload("res://core/power_state.gd")
 const Archipelago = preload("res://core/archipelago.gd")
 const DataStore = preload("res://core/data_store.gd")
+const MysteryBox = preload("res://core/mystery_box.gd")
+const TrapState = preload("res://core/trap_state.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -77,6 +79,40 @@ func _ready() -> void:
 	_say("the state travels as one number (%d)" % bits, copy.on and copy.all_found() and bits == 15)
 	power.reset()
 	_say("game over: dark, the parts lie there again", not power.on and power.found_count() == 0 and power.to_bits() == 0)
+
+	# the mystery box and the traps
+	var box_cfg: Dictionary = DataStore.load_json("res://data/mystery_box.json")
+	var box := MysteryBox.new(box_cfg, rng)
+	var spins := 0
+	var moved := false
+	var clock := 0.0
+	var other_spot := true
+	while spins < 20 and not moved:
+		var started := box.spin(clock)
+		var again := box.spin(clock)
+		spins += 1
+		clock += float(box_cfg["spin_seconds"]) + 0.1
+		var offered := box.update(clock, rng) == "offer"
+		var before := box.spot
+		box.take(clock, rng)
+		moved = box.state == "moving"
+		other_spot = other_spot and started and not again and offered and (not moved or box.spot != before)
+	clock += float(box_cfg["move_seconds"]) + 0.1
+	_say("the box: one spin at a time, an offer after %.0f s, carried off to another spot after %d spins (%d to %d allowed), then idle again" % [float(box_cfg["spin_seconds"]), spins, int(box_cfg["moves_after"][0]), int(box_cfg["moves_after"][1])],
+		other_spot and moved and spins >= int(box_cfg["moves_after"][0]) and spins <= int(box_cfg["moves_after"][1]) and box.update(clock, rng) == "landed" and box.state == "idle" and (box_cfg["spots"] as Array).size() >= 2)
+	box.spin(clock)
+	clock += float(box_cfg["spin_seconds"]) + float(box_cfg["take_seconds"]) + 0.2
+	box.update(clock - float(box_cfg["take_seconds"]), rng)
+	_say("an offer nobody takes runs out; luck grows with the round (%.2f at round 1, %.2f at round 20)" % [box.luck(1), box.luck(20)], box.update(clock, rng) in ["idle", "move"] and box.luck(20) > box.luck(1))
+	box.reset(rng)
+	_say("game over: the box is back on its first spot", box.spot == 0 and box.state == "idle")
+	var trap_cfg: Dictionary = DataStore.load_json("res://data/traps.json")
+	var traps := TrapState.new(trap_cfg["traps"])
+	var first: Dictionary = trap_cfg["traps"][0]
+	_say("a trap: off until paid for, runs %.0f s, then waits %.0f s more" % [float(first["seconds"]), float(first["cooldown"])], not traps.running(0, 10.0) and traps.start(0, 10.0) and traps.running(0, 10.0 + float(first["seconds"]) - 0.1) and not traps.start(0, 11.0)
+		and not traps.running(0, 10.0 + float(first["seconds"]) + 0.1) and traps.wait(0, 10.0 + float(first["seconds"]) + 1.0) > 0.0 and traps.start(0, 10.0 + float(first["seconds"]) + float(first["cooldown"]) + 0.1))
+	traps.reset()
+	_say("game over: every trap off and ready; %d traps in the data, each with a price" % (trap_cfg["traps"] as Array).size(), traps.wait(0, 0.0) == 0.0 and (trap_cfg["traps"] as Array).all(func(entry: Dictionary) -> bool: return int(entry["price"]) > 0 and float(entry["radius"]) > 1.0))
 
 	_lines.append("PERK_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/perk_check.log", FileAccess.WRITE)

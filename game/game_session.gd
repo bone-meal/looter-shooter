@@ -59,6 +59,10 @@ const NetRounds = preload("res://game/net_rounds.gd")
 const PowerState = preload("res://core/power_state.gd")
 const PerkMachine = preload("res://game/perk_machine.gd")
 const PowerStation = preload("res://game/power_station.gd")
+const MysteryBox = preload("res://core/mystery_box.gd")
+const MysteryBoxNode = preload("res://game/mystery_box_node.gd")
+const TrapState = preload("res://core/trap_state.gd")
+const Traps = preload("res://game/traps.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
 const GameOverScreen = preload("res://game/game_over_screen.gd")
@@ -147,6 +151,21 @@ var _power_cfg: Dictionary  # data/power.json
 var _power_station := PowerStation.new()
 var _part_spots: Array[Vector2] = []
 var _bench_spot := Vector2.ZERO
+var _box: MysteryBox  # the mystery box: where it stands, spinning, offering (the party's; the host decides)
+var _box_node := MysteryBoxNode.new()
+var _box_spots: Array[Vector2] = []
+var _box_owner := 0  # who spun it (a peer id; 1 alone)
+var _box_gun := {}  # the gun on offer
+var _upgrade_cfg: Dictionary  # data/upgrade_machine.json
+var _upgrade_spot := Vector2.ZERO
+var _upgrade_node := PerkMachine.new()
+var _traps: TrapState
+var _trap_cfg: Dictionary  # data/traps.json
+var _trap_nodes := Traps.new()
+var _trap_centres: Array[Vector2] = []
+var _trap_levers: Array[Vector2] = []
+var _trap_shown: Array[bool] = []
+var _trap_tick := 0.0
 var _second_wind_used := false  # alone: the one self-revive of this run is spent
 var _self_revive_at := -1.0  # alone with Second Wind: when we get back up (-1 = not lying)
 var _shelters := Shelters.new()  # the huts and their window boards
@@ -230,6 +249,28 @@ func _ready() -> void:
 	_bench_spot = _land.on_island(String(_power_cfg["bench"]["island"]), _power_cfg["bench"]["at"])
 	_land.keep_clear.append_array(_part_spots)
 	_land.keep_clear.append(_bench_spot)
+	var box_cfg: Dictionary = DataStore.load_json("res://data/mystery_box.json")
+	_box = MysteryBox.new(box_cfg, _rng)
+	for place: Dictionary in box_cfg["spots"]:
+		_box_spots.append(_land.on_island(String(place["island"]), place["at"]))
+	_land.keep_clear.append_array(_box_spots)
+	_upgrade_cfg = DataStore.load_json("res://data/upgrade_machine.json")
+	_upgrade_spot = _land.on_island(String(_upgrade_cfg["island"]), _upgrade_cfg["at"])
+	_land.keep_clear.append(_upgrade_spot)
+	_trap_cfg = DataStore.load_json("res://data/traps.json")
+	_traps = TrapState.new(_trap_cfg["traps"])
+	for trap: Dictionary in _trap_cfg["traps"]:
+		if String(trap["kind"]) == "fire":
+			var pit := _land.on_island(String(trap["island"]), trap["at"])
+			var inland: Vector2 = ((_land.islands[_land.island_near(pit.x, pit.y)]["at"] as Vector2) - pit).normalized()
+			_trap_centres.append(pit)
+			_trap_levers.append(pit + inland * (float(trap["radius"]) + 1.5))
+			_land.keep_clear.append(pit)
+		else:  # a coil on a hut: its lever stands inside, beside the door
+			var hut: Dictionary = _land.shelters[int(trap["hut"])]
+			var yaw := float(hut["yaw"])
+			_trap_centres.append(hut["at"])
+			_trap_levers.append((hut["at"] as Vector2) + Vector2(2.3 * cos(yaw) + 1.9 * sin(yaw), -2.3 * sin(yaw) + 1.9 * cos(yaw)))
 	var island := Island.build(self, _land)
 	_debris = island["debris"]
 	for id: String in _perk_spots:
@@ -247,6 +288,18 @@ func _ready() -> void:
 	_power_station.setup(parts, _flat(_bench_spot), _toward_middle(_bench_spot))
 	add_child(_power_station)
 	_show_power()
+	add_child(_box_node)
+	_box_node.stand(_flat(_box_spots[0]))
+	_upgrade_node.title = "Re-forge"
+	_upgrade_node.price = int(_upgrade_cfg["reroll"])
+	_upgrade_node.tint = Color(0.75, 0.35, 0.95)
+	_upgrade_node.position = _flat(_upgrade_spot)
+	_upgrade_node.rotation.y = _toward_middle(_upgrade_spot)
+	add_child(_upgrade_node)
+	add_child(_trap_nodes)
+	for i in _trap_centres.size():
+		_trap_nodes.add(String(_trap_cfg["traps"][i]["kind"]), _flat(_trap_centres[i]), _flat(_trap_levers[i]), float(_trap_cfg["traps"][i]["radius"]))
+		_trap_shown.append(false)
 	_shelters.setup(_land.shelters, _land.cfg["windows"])
 	_shelters.tore.connect(_on_board_torn)
 	add_child(_shelters)
@@ -426,6 +479,12 @@ func _ready() -> void:
 		net.rounds.power = _power
 		net.rounds.power_near = _power_thing_at
 		net.rounds.power_bits.connect(_on_power_bits)
+		net.rounds.box_near = func(at: Vector3) -> bool: return _box.state != "moving" and Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z).distance_to(_box_spots[_box.spot]) <= float(_box.cfg["reach"]) + 1.0
+		net.rounds.box_asked.connect(_on_box_asked)
+		net.rounds.box_state.connect(_on_box_state)
+		net.rounds.trap_near = _trap_at
+		net.rounds.trap_asked.connect(_start_trap)
+		net.rounds.trap_started.connect(_on_trap_started)
 		net.rounds.window_set.connect(_on_window_set)
 		net.rounds.nail_paid.connect(_on_nail_paid)
 		var downs: Dictionary = _rounds.config()["downs"]
@@ -1025,6 +1084,28 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
+	if _box_here():
+		match _box.state:
+			"idle":
+				return "[%s] Mystery box (%d points)" % [key, int(_box.cfg["price"])]
+			"offer":
+				if _box_owner == _my_id():
+					return "[%s] Take the %s" % [key, GunStats.display_name(_player.gun_db, _box_gun)]
+				return "%s: for whoever spun the box" % GunStats.display_name(_player.gun_db, _box_gun)
+			_:
+				return "The box is spinning ..."
+	if _at_upgrade():
+		return _upgrade_prompt(key)
+	var lever := _trap_at(_player.global_position) if _island_side() else -1
+	if lever >= 0:
+		var trap_name := String(_trap_cfg["traps"][lever]["name"])
+		if not _power.on:
+			return "%s: no power" % trap_name
+		if _traps.running(lever, _time):
+			return "%s is running (%d s)" % [trap_name, ceili(_traps.left(lever, _time))]
+		if _traps.wait(lever, _time) > 0.0:
+			return "%s cools down (%d s)" % [trap_name, ceili(_traps.wait(lever, _time))]
+		return "[%s] Switch on the %s (%d points)" % [key, trap_name, int(_trap_cfg["traps"][lever]["price"])]
 	var perk := _perk_here()
 	if perk != "":
 		if not _power.on:
@@ -1109,6 +1190,12 @@ func _interact() -> void:
 		net.trade.answer(true)
 	elif _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		_take_pack()
+	elif _box_here():
+		_use_box()
+	elif _at_upgrade():
+		_upgrade(false)
+	elif _island_side() and _trap_at(_player.global_position) >= 0:
+		_use_trap(_trap_at(_player.global_position))
 	elif _perk_here() != "":
 		_buy_perk(_perk_here())
 	elif _island_side() and _power_thing_at(_player.global_position) >= 0:
@@ -1785,6 +1872,10 @@ func _close_debris() -> void:
 	_shelters.refresh()
 	_power.reset()
 	_show_power()
+	_box.reset(_rng)
+	_box_gun = {}
+	_box_node.stand(_flat(_box_spots[0]))
+	_traps.reset()
 	_lose_perks()
 	_second_wind_used = false
 	_self_revive_at = -1.0
@@ -1925,6 +2016,248 @@ func _show_power() -> void:
 	_power_station.show_state(_power.found, _power.on)
 	for id: String in _perk_machines:
 		(_perk_machines[id] as Node).call("set_powered", _power.on)
+	if _upgrade_node.is_inside_tree():
+		_upgrade_node.set_powered(_power.on)
+
+
+# --- the mystery box, the upgrade machine and the traps ---
+
+# Who we are among the players (1 when playing alone).
+func _my_id() -> int:
+	return net.my_id() if net != null and net.can_send() else 1
+
+
+func _box_here() -> bool:
+	if not _island_side() or _box.state == "moving":
+		return false
+	return Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z).distance_to(_box_spots[_box.spot]) <= float(_box.cfg["reach"])
+
+
+# Interact at the box: a spin, or the gun it offers us. Online the host does it.
+func _use_box() -> void:
+	var action := 0 if _box.state == "idle" else (1 if _box.state == "offer" and _box_owner == _my_id() else -1)
+	if action < 0:
+		return
+	if action == 0 and not _score.can_afford(int(_box.cfg["price"])):
+		_player_hud.notice("A spin costs %d points (you have %d)." % [int(_box.cfg["price"]), _score.points])
+		return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_box(action)
+	else:
+		_on_box_asked(_my_id(), action)
+
+
+# Alone or hosting: somebody at the box spins it (0) or takes the gun that is theirs (1).
+func _on_box_asked(peer: int, action: int) -> void:
+	if action == 0 and _box.spin(_time):
+		_box_owner = peer
+		_box_gun = {}
+		_box_changed("idle", false)
+	elif action == 1 and _box.state == "offer" and peer == _box_owner:
+		_box.take(_time, _rng)
+		_box_changed("offer", true)
+
+
+# The box does something new: show it, pay or take what is ours, tell the others. `before` = what it did until now.
+func _box_changed(before: String, took: bool) -> void:
+	var mine := _box_owner == _my_id()
+	match _box.state:
+		"spinning":
+			_box_node.spin()
+			if mine:
+				_score.spend(int(_box.cfg["price"]))
+			if _box_here():
+				_sounds.call("play", "box_spin")
+		"offer":
+			_box_node.offer(String(_box_gun.get("body", "pistol_basic")))
+		"moving":
+			_box_node.fly_to(_flat(_box_spots[_box.spot]), float(_box.cfg["move_seconds"]))
+			if _island_side():
+				_sounds.call("play", "box_gull")
+				_player_hud.notice("A seagull carries the box off to %s." % _land.islands[_land.island_near(_box_spots[_box.spot].x, _box_spots[_box.spot].y)]["name"])
+		_:
+			_box_node.stand(_flat(_box_spots[_box.spot]))
+	if took and mine and before == "offer" and not _box_gun.is_empty():
+		_keep_gun(_box_gun)
+	if net != null:
+		net.rounds.tell_box(_box.state, _box.spot, _box_owner, _box_gun, took)
+
+
+# As a client: what the host's box does now.
+func _on_box_state(state: String, spot: int, owner: int, gun: Dictionary, took: bool) -> void:
+	var before := _box.state
+	var offered := _box_gun
+	_box.mirror(state, spot)
+	_box_owner = owner
+	if state == "offer" and GunGen.validate(_player.gun_db, gun) == "":
+		_box_gun = gun
+	if took:
+		_box_gun = offered
+	_box_changed(before, took)
+	if state != "offer":
+		_box_gun = {}
+
+
+# A rolled gun becomes ours: into a free ready slot, else in place of the gun in hand (which goes to the backpack),
+# else onto the ground at our feet.
+func _keep_gun(gun: Dictionary) -> void:
+	var holster: int = _player.inventory.free_holster()
+	if holster < 0:
+		holster = maxi(_player.hand_index(), 0)
+		if not _player.inventory.stow_holster(holster):
+			_field.spawn(gun, _player.global_position)
+			_player_hud.notice("Your backpack is full: the gun lies at your feet.")
+			return
+	_player.inventory.add_gun(gun)
+	_player.refresh_held()
+	_player.select_hand(holster)
+	_inventory_screen.in_hand = _player.hand_index()
+	_player_hud.notice("%s" % GunStats.display_name(_player.gun_db, gun))
+	save_profile()
+
+
+func _at_upgrade() -> bool:
+	return _island_side() and Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z).distance_to(_upgrade_spot) <= float(_upgrade_cfg["reach"])
+
+
+# What the upgrade machine can do with the gun in hand: {"why": text} when nothing, else "reroll" (points, -1 = not
+# for this gun), "up" (points, -1 = no higher tier) and "to" (the higher tier's id).
+func _upgrade_offer() -> Dictionary:
+	if not _power.on:
+		return {"why": "The upgrade machine has no power."}
+	var hand := _player.hand_index()
+	var body: String = _player.inventory.holster_body(hand) if hand >= 0 else ""
+	if body == "":
+		return {"why": "Upgrade machine: hold the gun you want worked on."}
+	var gun: Dictionary = _player.inventory.holster_gun(hand)
+	var db: RefCounted = _player.gun_db
+	if gun.is_empty():
+		return {"reroll": -1, "up": int(_upgrade_cfg["plain_to_first"]), "to": String(db.tiers[0]["id"])}
+	if gun.has("unique"):
+		return {"why": "Hand-made guns cannot be rolled anew."}
+	var tier: int = db.tier_index(String(gun["tier"]))
+	var higher: bool = tier < int(db.tier_index(String(_upgrade_cfg["top_tier"])))
+	return {"reroll": int(_upgrade_cfg["reroll"]), "up": int(_upgrade_cfg["tier_up"]) * (tier + 1) if higher else -1, "to": String(db.tiers[tier + 1]["id"]) if higher else ""}
+
+
+func _upgrade_prompt(key: String) -> String:
+	var offer := _upgrade_offer()
+	if offer.has("why"):
+		return String(offer["why"])
+	var parts := PackedStringArray()
+	if int(offer["reroll"]) >= 0:
+		parts.append("[%s] Roll it anew, same tier (%d points)" % [key, int(offer["reroll"])])
+	if int(offer["up"]) >= 0:
+		parts.append("[%s] Make it %s and roll it anew (%d points)" % [key if int(offer["reroll"]) < 0 else InputSetup.label(settings, "reload"), _player.gun_db.tier(String(offer["to"]))["name"], int(offer["up"])])
+	return "    ".join(parts)
+
+
+# The machine works on the gun in hand: `up` = one tier higher, else the same tier; everything else is rolled anew.
+func _upgrade(up: bool) -> void:
+	var offer := _upgrade_offer()
+	if offer.has("why"):
+		return
+	if int(offer["reroll"]) < 0:
+		up = true  # a plain gun can only become a rolled one
+	var cost := int(offer["up"]) if up else int(offer["reroll"])
+	if cost < 0:
+		return
+	if not _score.spend(cost):
+		_player_hud.notice("That costs %d points (you have %d)." % [cost, _score.points])
+		return
+	var hand := _player.hand_index()
+	var old: Dictionary = _player.inventory.holster_gun(hand)
+	var made := GunGen.generate(_player.gun_db, _rng, 0.0, _player.inventory.holster_body(hand), String(offer["to"]) if up else String(old["tier"]))
+	_player.inventory.set_holster_gun(hand, made)
+	_player.refresh_held()
+	_sounds.call("play", "upgrade_done")
+	_player_hud.notice("%s" % GunStats.display_name(_player.gun_db, made))
+	save_profile()
+
+
+# The trap whose lever stands at a world spot, -1 = none.
+func _trap_at(at: Vector3) -> int:
+	var spot := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
+	for i in _trap_levers.size():
+		if spot.distance_to(_trap_levers[i]) <= float(_trap_cfg["reach"]):
+			return i
+	return -1
+
+
+func _use_trap(trap: int) -> void:
+	if not _power.on or _traps.wait(trap, _time) > 0.0:
+		return
+	if not _score.can_afford(int(_trap_cfg["traps"][trap]["price"])):
+		_player_hud.notice("That costs %d points (you have %d)." % [int(_trap_cfg["traps"][trap]["price"]), _score.points])
+		return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_trap(trap)
+	else:
+		_start_trap(_my_id(), trap)
+
+
+# Alone or hosting: `peer` switches a trap on (it pays when that is us).
+func _start_trap(peer: int, trap: int) -> void:
+	if not _power.on or not _traps.start(trap, _time):
+		return
+	if peer == _my_id():
+		_score.spend(int(_trap_cfg["traps"][trap]["price"]))
+	if net != null:
+		net.rounds.tell_trap(trap, peer)
+
+
+# As a client: the host says a trap runs.
+func _on_trap_started(trap: int, by: int) -> void:
+	if trap >= 0 and trap < _trap_levers.size() and _traps.start(trap, _time) and by == _my_id():
+		_score.spend(int(_trap_cfg["traps"][trap]["price"]))
+
+
+# Every frame: the box's clock (where the rounds run), the upgrade machine's second key, and the traps: shown
+# running or not, hurting enemies where the rounds run and our own player in a fire.
+func _run_machines(delta: float) -> void:
+	if _rounds.active:
+		var before := _box.state
+		var happened := _box.update(_time, _rng)
+		if happened == "offer":
+			_box_gun = GunGen.generate(_player.gun_db, _rng, _box.luck(_rounds.rules.number), "", "", String(_box.cfg["min_tier"]))
+		if happened != "":
+			_box_changed(before, false)
+	if _at_upgrade() and Input.is_action_just_pressed("reload") and not _inventory_screen.visible:
+		_upgrade(true)
+	_trap_tick -= delta
+	var tick := _trap_tick <= 0.0
+	if tick:
+		_trap_tick = float(_trap_cfg["tick"])
+	for i in _trap_centres.size():
+		var on := _traps.running(i, _time)
+		if on != _trap_shown[i]:
+			_trap_shown[i] = on
+			_trap_nodes.show_running(i, on)
+			if on and _near(_flat(_trap_centres[i]), 40.0):
+				_sounds.call("play", "trap_zap" if String(_trap_cfg["traps"][i]["kind"]) == "electric" else "trap_fire")
+		if not on or not tick:
+			continue
+		var trap: Dictionary = _trap_cfg["traps"][i]
+		var fire := String(trap["kind"]) == "fire"
+		var radius := float(trap["radius"])
+		if fire and _island_side() and Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z).distance_to(_trap_centres[i]) <= radius:
+			_player.take_damage(float(_trap_cfg["fire"]["player_damage"]), "fire")
+		if not _rounds.active:
+			continue
+		var blow := String(_score.blow)
+		_score.blow = "other"  # a trap's kills pay nobody
+		for enemy: Variant in _director.enemy_list().duplicate():
+			if not is_instance_valid(enemy) or not (enemy as Node).has_meta("island"):
+				continue
+			var at := Vector2((enemy as Node3D).global_position.x - Island.CENTER.x, (enemy as Node3D).global_position.z - Island.CENTER.z)
+			if at.distance_to(_trap_centres[i]) > radius:
+				continue
+			if fire:
+				(enemy as Node).call("apply_burn", float(_trap_cfg["fire"]["burn_dps"]), float(_trap_cfg["fire"]["burn_seconds"]))
+			elif _shelters.rules.hut_of(at.x, at.y) != int(trap["hut"]):  # the coil spares what is already inside
+				var boss := String((enemy as Node).get("enemy_id")).begins_with("boss")
+				(enemy as Node).call("on_hit", float((enemy as Node).get("health").max_hp) * float(_trap_cfg["electric"]["boss_share" if boss else "trash_share"]))
+		_score.blow = blow
 
 
 # --- shelter windows (core/shelter_rules.gd decides; game/shelters.gd shows the boards) ---
@@ -2234,6 +2567,7 @@ func _process(delta: float) -> void:
 		_fantasy_saved_at = _time
 		save_profile()
 	_power_field.deciding = _rounds.active
+	_run_machines(delta)
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
 		_self_revive_at = -1.0
 		_player.revive(1.0)

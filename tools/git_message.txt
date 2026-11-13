@@ -1,21 +1,24 @@
-Round 6 step 9a: the power switch and fifteen perk machines
+Round 6 step 9b + 9c: mystery box, upgrade machine, traps
 
-Power: three parts lie on Home Sand; with all three the switch is built and
-thrown at the workbench on Painter's Key. Perk machines work only while the
-power is on; game over turns it off and puts the parts back.
+Mystery box: 950 points a spin, three seconds later it offers a rolled gun
+(green or better, luck grows with the round, never pony) for ten seconds.
+After four to eight spins a seagull carries the box to another island. It
+works without power. The gun takes a free ready slot, else the place of the
+gun in hand, else it lies at your feet.
 
-Perks (data/perks.json, limit six, all lost on going down): Second Wind,
-Hair Trigger, Trade Winds, Blast Proof on Home Sand; Iron Gut, Steady Hand,
-Deep Pockets, Run and Gun on Painter's Key; Quickhands, Scavenger,
-Backdraft, Thick Skin on Far Shoal; Cold Blood, Third Holster, Lucky Strike
-on Wreck Cay. Their numbers are data and are read where they act (player,
-session, power-ups). The perks carried show as coloured tags on the HUD.
+Upgrade machine on Far Shoal (needs power): interact rolls the gun in hand
+anew at the same tier for 5000 points; the reload key makes it one tier
+higher and rolls it anew for 10000 times the new tier's number, up to
+rainbow. A plain gun becomes a Common one for 5000. Hand-made guns are
+refused.
 
-An island boss leaves the perk power-up a quarter of the time: a random
-perk for everyone, over the limit too.
+Traps (need power, no points for their kills): a Storm Coil on each hut
+(1000 points, 25 s, 60 s cooldown) takes half the health of enemies round
+the hut every quarter second, and a Fire Pit on Painter's Key (750 points,
+20 s) burns enemies and players standing in it.
 
-Admin commands /switch and /perk, check tools/perk_check.tscn. Online the
-host decides the power state (never run between two machines).
+Pure rules in core/mystery_box.gd and core/trap_state.gd. Online the host
+decides box and traps (never run between two machines).
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

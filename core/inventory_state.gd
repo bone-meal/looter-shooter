@@ -135,6 +135,11 @@ func take_holster(index: int) -> Dictionary:
 	return stack
 
 
+# The rolled gun in a ready slot is swapped for another one of the same body (the upgrade machine); its rounds stay.
+func set_holster_gun(index: int, gun: Dictionary) -> void:
+	holsters[index] = {"id": "gun", "count": 1, "gun": gun}
+
+
 # Puts the gun of a ready slot away into the backpack (its rounds go back to its pool); false when the bag is full.
 func stow_holster(index: int) -> bool:
 	if holsters[index].is_empty():

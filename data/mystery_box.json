@@ -1,0 +1,46 @@
+{
+ "version": 1,
+ "_about": "The mystery box (core/mystery_box.gd, game/mystery_box_node.gd). A spin costs `price` points, takes `spin_seconds` and offers a rolled gun for `take_seconds`: tier from `min_tier` up, luck = luck_base + luck_per_round x the round (never pony: that tier has no weight). After `moves_after` [fewest, most] spins a seagull carries the box to another of `spots` (island + at [x, z] from that island's middle) in `move_seconds`. It works without power. Game over puts it back on the first spot.",
+ "price": 950,
+ "spin_seconds": 3.0,
+ "take_seconds": 10.0,
+ "move_seconds": 5.0,
+ "moves_after": [
+  4,
+  8
+ ],
+ "luck_base": 0.3,
+ "luck_per_round": 0.06,
+ "min_tier": "green",
+ "reach": 2.8,
+ "spots": [
+  {
+   "island": "home",
+   "at": [
+    6.6,
+    -12.4
+   ]
+  },
+  {
+   "island": "painter",
+   "at": [
+    6.6,
+    -12.4
+   ]
+  },
+  {
+   "island": "shoal",
+   "at": [
+    -2.0,
+    -13.9
+   ]
+  },
+  {
+   "island": "wreck",
+   "at": [
+    12.1,
+    -7.0
+   ]
+  }
+ ]
+}

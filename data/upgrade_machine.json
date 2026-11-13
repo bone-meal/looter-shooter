@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "_about": "The upgrade machine (needs power). With a gun in hand: `reroll` points = the same tier with everything rolled anew (parts, numbers, buffs, skills); `tier_up` x the number of the new tier (green 1, blue 2 ...) = one tier higher and rolled anew, up to `top_tier`; a plain gun becomes the first tier for `plain_to_first`. Hand-made guns are refused.",
+ "island": "shoal",
+ "at": [
+  -1.1,
+  8.9
+ ],
+ "reach": 2.8,
+ "reroll": 5000,
+ "tier_up": 10000,
+ "plain_to_first": 5000,
+ "top_tier": "rainbow"
+}

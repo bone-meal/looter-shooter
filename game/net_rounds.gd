@@ -25,6 +25,10 @@ signal debris_opened(index: int, show_it: bool)  # on a client: that way is clea
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
 signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
 signal power_bits(bits: int)  # the power's state changed (core/power_state.gd `set_bits`): on a client, and on the host after a client's ask
+signal box_asked(peer: int, action: int)  # on the host: a client standing at the mystery box asks to spin (0) or to take the gun (1)
+signal box_state(state: String, spot: int, owner: int, gun: Dictionary, took: bool)  # on a client: what the box does now
+signal trap_asked(peer: int, trap: int)  # on the host: a client standing at a trap's lever wants it on
+signal trap_started(trap: int, by: int)  # on a client: that trap runs now, switched on by that player
 signal debris_billed(index: int)  # on a client: the host cleared the debris we asked for; we pay its price
 
 var net: Node3D
@@ -35,6 +39,8 @@ var land: RefCounted  # core/archipelago.gd of this machine (which debris is cle
 var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
 var power: RefCounted  # core/power_state.gd of this machine
 var power_near := Callable()  # func(at: Vector3) -> int: the power part lying at that spot, SWITCH at the workbench, -1 = neither
+var box_near := Callable()  # func(at: Vector3) -> bool: that spot is at the mystery box
+var trap_near := Callable()  # func(at: Vector3) -> int: the trap whose lever is at that spot, -1 = none
 var on_gun_side := Callable()  # func() -> bool: our player is where island enemies can reach (not in Aurelind)
 var round_number := 0  # client: the round as the host last told it
 var round_kind := "normal"
@@ -333,6 +339,54 @@ func _power_ask(what: int) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _power_bits(bits: int) -> void:
 	power_bits.emit(bits)
+
+
+# --- the mystery box and the traps: a client asks, the host checks where it stands and its session decides ---
+
+func ask_box(action: int) -> void:
+	if is_client():
+		_box_ask.rpc_id(1, action)
+
+
+func tell_box(state: String, spot: int, owner: int, gun: Dictionary, took: bool) -> void:
+	if net.can_send() and net.is_host():
+		_box.rpc(state, spot, owner, gun, took)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _box_ask(action: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body != null and box_near.is_valid() and bool(box_near.call(body.global_position)) and (action == 0 or action == 1):
+		box_asked.emit(peer, action)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _box(state: String, spot: int, owner: int, gun: Dictionary, took: bool) -> void:
+	box_state.emit(state, spot, owner, gun, took)
+
+
+func ask_trap(trap: int) -> void:
+	if is_client():
+		_trap_ask.rpc_id(1, trap)
+
+
+func tell_trap(trap: int, by: int) -> void:
+	if net.can_send() and net.is_host():
+		_trap.rpc(trap, by)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _trap_ask(trap: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body != null and trap_near.is_valid() and trap >= 0 and int(trap_near.call(body.global_position)) == trap:
+		trap_asked.emit(peer, trap)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _trap(trap: int, by: int) -> void:
+	trap_started.emit(trap, by)
 
 
 # --- power-ups: only the host speaks ---
