@@ -40,6 +40,7 @@ var _watching := false
 var _seats: Array = []  # the host's seats view
 var _mirror: RefCounted  # the match as the host last said
 var _side := 0  # our side (spectators look from side 0)
+var _mats_shown := false  # both players' mats laid for this match
 var _who: Array = ["", ""]
 var _known := {}
 var _deck_name := ""
@@ -138,6 +139,7 @@ func _leave() -> void:
 	_at = -1
 	_watching = false
 	_mirror = null
+	_mats_shown = false
 	_screen.close()
 	_hud.visible = true
 	_player.controls_enabled = true
@@ -150,6 +152,7 @@ func _again() -> void:
 		return
 	_watching = false
 	_mirror = null
+	_mats_shown = false
 	net_tcg.call("sit", _at)
 	_screen.open_pick("Waiting for a second player", "Someone sits across from you and you both pick a deck.", [])
 
@@ -163,7 +166,8 @@ func _on_deck(key: String) -> void:
 	if collection == null or net_tcg == null or _at < 0:
 		return
 	var slot := int(key.get_slice(":", 1))
-	var deck: Dictionary = (collection.get("decks") as Array)[slot]
+	var deck: Dictionary = ((collection.get("decks") as Array)[slot] as Dictionary).duplicate()
+	deck["mat"] = MatBook.current(collection, DataStore.load_json("res://data/tcg/mats.json"))  # the other player sees it on their far half
 	_deck_name = String(deck.get("name", ""))
 	net_tcg.call("deck", deck)
 	_screen.open_pick("Deck in: %s" % _deck_name, "Waiting for the other player's deck.", [])
@@ -210,6 +214,12 @@ func _on_message(what: String, args: Array) -> void:
 		"result":
 			if int(args[0]) == _at:
 				_result(int(args[1]), args[2], args[3], me)
+		"void":  # the host left (or we did): no win, no loss
+			_seats = []
+			if _at >= 0:
+				var playing := _mirror != null
+				_leave()
+				_hud.call("notice", "The host left: the card match is void (no win, no loss)." if playing else "The host left: the card table was cleared.")
 
 
 func _show(args: Array) -> void:
@@ -222,6 +232,12 @@ func _show(args: Array) -> void:
 	_mirror.call("restore", args[1])
 	var seats: Array = (_seats[_at] as Dictionary).get("peers", [0, 0]) if _at < _seats.size() else [0, 0]
 	_side = maxi(seats.find(me), 0)
+	if not _mats_shown and args.size() > 5:  # each half shows its player's mat (a watcher sees side 0's near)
+		var mats: Dictionary = DataStore.load_json("res://data/tcg/mats.json")
+		var by_side: Array = args[5]
+		var pick := func(id: String) -> String: return id if (mats["mats"] as Dictionary).has(id) else String(mats.get("default", ""))
+		(_tables[_at] as Node3D).call("set_mats", pick.call(String(by_side[_side])), pick.call(String(by_side[1 - _side])))
+		_mats_shown = true
 	_who = args[3]
 	var names := (_who as Array).duplicate()
 	if not _watching:
@@ -260,4 +276,5 @@ func _result(winner: int, peers: Array, names: Array, me: int) -> void:
 		text = "%s wins." % names[winner]
 	_screen.show_result(text)
 	_mirror = null
+	_mats_shown = false
 	_watching = side < 0

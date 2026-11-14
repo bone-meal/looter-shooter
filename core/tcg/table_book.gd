@@ -7,8 +7,9 @@
 #   "seats" [view]            who sits where, for everyone (view = seats_view())
 #   "pick" [table]            both seats are taken: pick your deck
 #   "countdown" [table, s]    both decks are in: the match starts in s seconds
-#   "match" [table, snapshot, events, names, turn_left]   the match as it stands, after every change (everyone sees all:
-#                             spectators see everything incl. hands, locked); names = the two players' names by side
+#   "match" [table, snapshot, events, names, turn_left, mats]   the match as it stands, after every change (everyone sees all:
+#                             spectators see everything incl. hands, locked); names = the two players' names by side,
+#                             mats = each side's play mat id (sent with the deck; letters, digits and _ only)
 #   "refused" [why]           an intent or deck was refused
 #   "result" [table, winner, peers, names]   winner = side 0 / 1 (2 = both fell), peers / names by side
 # Dependencies: core/tcg/match_state.gd, core/tcg/ai_player.gd (do_move); a card db handed in.
@@ -98,6 +99,9 @@ func deck(peer: int, chosen: Dictionary, names: Dictionary) -> Array:
 	if chosen.get("cards") is Array:
 		for id: Variant in chosen["cards"]:
 			(clean["cards"] as Array).append(String(id))
+	var mat := String(chosen.get("mat", "")).left(32)
+	var safe := RegEx.create_from_string("^[a-z0-9_]*$")
+	clean["mat"] = mat if safe.search(mat) != null else ""
 	var why: String = db.deck_problem(clean)
 	if why != "":
 		return [[peer, "refused", ["That deck cannot be played: " + why]]]
@@ -175,7 +179,8 @@ func _after(i: int, names: Dictionary) -> Array:
 	var m: RefCounted = t["match"]
 	var seats: Array = t["seats"]
 	var who := [String(names.get(seats[0], "Player")), String(names.get(seats[1], "Player"))]
-	var out: Array = [[0, "match", [i, m.call("snapshot"), m.call("take_log"), who, float(t["turn_left"])]]]
+	var mats := [String((t["decks"][0] as Dictionary).get("mat", "")), String((t["decks"][1] as Dictionary).get("mat", ""))]
+	var out: Array = [[0, "match", [i, m.call("snapshot"), m.call("take_log"), who, float(t["turn_left"]), mats]]]
 	if String(m.get("phase")) == "over":
 		out.append([0, "result", [i, int(m.get("winner")), seats.duplicate(), who]])
 		_clear(t)

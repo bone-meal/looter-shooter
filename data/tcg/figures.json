@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Small 3D figures standing on legendary creatures on the card table (locked: legendary and up, capped per table, off on Potato). figures: card id -> model (assets/models/<model>.gltf) and height in metres on the table. per_tier: the most figures on one table at each graphics tier (data/graphics.json ids). Numbers are placeholders.",
+ "_about": "Small 3D figures standing on legendary creatures on the card table (locked: legendary and up, capped per table, off on Potato). figures: card id -> model (assets/models/<model>.gltf) or person (an NPC look as in game/staff_crew.gd: a rigged body held at clip + time, prop = a weapon id in the hand) and height in metres on the table. per_tier: the most figures on one table at each graphics tier (data/graphics.json ids). Numbers are placeholders.",
  "per_tier": {"potato": 0, "low": 2, "medium": 3, "high": 4, "ultimate": 6},
  "figures": {
   "bell_keeper": {"model": "fantasy/creatures/tidewarden", "height": 0.11},
@@ -11,6 +11,9 @@
   "cinderwyrm": {"model": "fantasy/creatures/cinderwyrm", "height": 0.12},
   "tempest_roc": {"model": "fantasy/creatures/tempest_roc", "height": 0.12},
   "the_tyrant": {"model": "creatures/boss_tyrant", "height": 0.12},
-  "the_overseer": {"model": "creatures/boss_overseer", "height": 0.12}
+  "the_overseer": {"model": "creatures/boss_overseer", "height": 0.12},
+  "mira_kestrel": {"person": {"gender": "female", "height": 1.0, "weight": 0.95, "bust": 0.3, "glutes": 0.3, "skin": 3, "hair": "ponytail", "hair_color": "#3b2a1e", "face": "neutral", "outfit": "ranger"}, "clip": "Pistol_Aim_Neutral", "time": 0.2, "prop": "pistol_basic", "height": 0.11},
+  "high_roller": {"person": {"gender": "male", "height": 1.0, "weight": 1.0, "bust": 0.0, "glutes": 0.3, "skin": 1, "hair": "sidepart", "hair_color": "#1a1a1a", "face": "smirk", "outfit": "tuxedo"}, "clip": "Idle_FoldArms", "time": 0.5, "height": 0.115},
+  "pachinko_queen": {"person": {"gender": "female", "height": 1.0, "weight": 0.95, "bust": 0.3, "glutes": 0.3, "skin": 2, "hair": "twin_tails", "hair_color": "#ff7eb6", "face": "happy", "outfit": "idol_stage"}, "clip": "Dance", "time": 0.6, "height": 0.11}
  }
 }

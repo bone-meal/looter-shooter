@@ -1,9 +1,11 @@
-Card game balance: 25 health, second player opens with 5 cards, starters re-tuned
+Card game open items: opponent mat online, void on host change, human figures, HUD clear of the mat, ring fixed
 
-Director chose 25 leader health and a 5-card second hand: the first player now wins 52 percent of simulated games (was 59).
-Five starter decks re-tuned for the ring; crypt against tide is still the one edge the wrong way.
-Pack opening stops drawing the club behind its own backdrop (low-end), NEW tags no longer cut off in Open all.
-Rules check reads health and hands from data; the measure dev step also logs video and ram.
+Each player's play mat goes to the host with the deck; the far half shows the opponent's mat (made-up ids dropped).
+When the connection drops (host migration or leaving) the player-table match is void: no win, no loss, table cleared.
+Mira Kestrel, the High Roller and the Pachinko Queen stand on the table as small rigged figures.
+END TURN moves to the right edge and the log to the top right over the 3D table.
+Starters re-tuned: every ring edge now points the right way (crypt beats tide 59 percent at 800 games).
+Checks read starter cards from data; dev steps tcg mat and the tcgvoid pair test.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -601,6 +601,10 @@ func _show_3d() -> void:
 			face.mouse_filter = Control.MOUSE_FILTER_IGNORE if on else Control.MOUSE_FILTER_STOP
 	if not on:
 		return
+	# over the 3D table: END TURN at the right edge on the centre line and the log up in the sky, both clear of the mat
+	_end.position = Vector2(size.x - 162.0, 296.0)
+	_turn.position = Vector2(_end.position.x - 16.0, 262.0)
+	_log_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	var sides: Array = _m.get("sides")
 	view3d.call("show_cards", _hand_row.get_children(), _my_row.get_children(), _foe_row.get_children(), (sides[1 - _me]["hand"] as Array).size(),
 		[String(sides[_me]["leader"]), String(sides[1 - _me]["leader"])], [(sides[_me]["deck"] as Array).size(), (sides[1 - _me]["deck"] as Array).size()])

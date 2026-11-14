@@ -523,7 +523,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:
 				player.global_position = wall.global_position + wall.global_basis.z * 4.0
-		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg look" = view of the tables; "!tcg put <card> [foe]" = a creature onto the mat; "!tcg ptable <i> / pdeck / pmove / pnote" = the player tables online; "!tcg note" = the match in one line
+		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg look" = view of the tables; "!tcg put <card> [foe]" = a creature onto the mat; "!tcg mat <id>" = own and lay that play mat; "!tcg ptable <i> / pdeck / pmove / pnote" = the player tables online; "!tcg note" = the match in one line
 			var tcg: Node = session.get("_tcg")
 			if words[1] == "note":
 				var m: RefCounted = tcg.get("match_state")
@@ -565,7 +565,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					session.get("_card_screen").call("close")
 					return
 				var owned: RefCounted = session.get("_cards")
-				if owned.call("count", "drowned_deckhand") <= 0:
+				if String(owned.get("starter")) == "":
 					var starters: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json"))["starters"]
 					owned.call("give_starter", "tide", starters["tide"], "standard")
 					owned.call("add", "harbor_gull", "rainbow")
@@ -589,6 +589,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					(binder.get("_open_button") as Button).pressed.emit()
 				elif opening != null:
 					opening.call("dev_step", words[2])
+			elif words[1] == "mat":  # "!tcg mat <id>": own that play mat and lay it as ours
+				var mb: GDScript = load("res://core/tcg/mat_book.gd")
+				var mats_cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))
+				mb.call("give", session.get("_cards"), words[2])
+				mb.call("choose", session.get("_cards"), mats_cfg, words[2])
+				_lines.append("TCG MAT %s: now %s" % [words[2], mb.call("current", session.get("_cards"), mats_cfg)])
 			elif words[1] == "put":  # "!tcg put <card> [foe]": a creature onto our side (or the dealer's) of the running match, then a redraw
 				var m2: RefCounted = tcg.get("match_state")
 				if m2 != null:

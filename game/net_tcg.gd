@@ -2,7 +2,7 @@
 # core/tcg/table_book.gd: the HOST keeps the book of the three player tables and runs every match there; players send
 # only intents (sit, leave, their deck, moves); what the book answers goes to the players concerned or to everyone
 # (all see the seats and every match, spectators included). This machine hears it through `message`
-# (seats / pick / countdown / match / refused / result). A client's claims are type-checked here, judged by the book.
+# (seats / pick / countdown / match / refused / result, and "void" when the connection drops: host migration or leaving). A client's claims are type-checked here, judged by the book.
 # Host quits = the match is void (a new host's book is empty; the session drops the table on host change).
 # Dependencies: game/net_session.gd (parent; `net`), core/tcg/table_book.gd, core/tcg/card_db.gd. Node name "Tcg".
 extends Node
@@ -17,6 +17,8 @@ const TABLES := 3
 var net: Node3D
 var book: RefCounted  # only the host's is used
 var _tick := 0.0
+var _was_up := false  # the connection was up last frame
+var _spots: Array = []
 
 
 func _ready() -> void:
@@ -41,6 +43,7 @@ func intent(move: Dictionary) -> void:
 
 # The host's book learns where the tables stand once its club is built.
 func set_spots(spots: Array) -> void:
+	_spots = spots
 	book.call("set_spots", spots)
 
 
@@ -98,6 +101,13 @@ func _to_client(what: String, args: Array) -> void:
 
 
 func _process(delta: float) -> void:
+	var up: bool = net.can_send()
+	if _was_up and not up:  # host gone (migration) or session left: locked "host quits = void"; the book starts empty
+		book = TableBook.new(book.get("db"), TABLES)
+		if not _spots.is_empty():
+			book.call("set_spots", _spots)
+		message.emit("void", [])
+	_was_up = up
 	_tick += delta
 	if _tick < 0.25 or not net.can_send() or not net.is_host():
 		return

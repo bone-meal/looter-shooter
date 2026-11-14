@@ -6,10 +6,12 @@
 # and asks this view which face is under the mouse (`pick`). Pictures come from game/tcg/card_bake.gd.
 # Legendary creatures get a small 3D figure standing on their card (data/tcg/figures.json; how many per table by the
 # graphics tier, none on Potato; wasteland models painted in their enemy colours like the game does).
-# Dependencies: game/tcg/card_bake.gd, data/tcg/mat_layout.json, data/tcg/figures.json, data/enemies.json; the table
+# Dependencies: game/tcg/card_bake.gd, data/tcg/mat_layout.json, data/tcg/figures.json, data/enemies.json, game/npc_body.gd + game/weapon_models.gd (people); the table
 # node (game/tcg/beach_table.gd) handed in.
 extends Node3D
 
+const NpcBody = preload("res://game/npc_body.gd")
+const WeaponModels = preload("res://game/weapon_models.gd")
 const TOP := 0.818  # the mat's surface in table space
 const PX := 0.00138  # metres per pixel of the mat picture (1.42 m / 1024 px)
 const CARD := Vector2(0.108, 0.151)
@@ -153,15 +155,24 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 func _stand(uid: int, id: String, at: Vector3, s: float) -> void:
 	if not _figures.has(uid):
 		var f: Dictionary = _figures_cfg["figures"][id]
-		var model := String(f["model"])
-		if not _models.has(model):
-			var path := "res://assets/models/%s.gltf" % model
-			if not ResourceLoader.exists(path):
-				return
-			_models[model] = load(path)
-		var node: Node3D = (_models[model] as PackedScene).instantiate()
-		_paint(node, model.get_file())
-		add_child(node)
+		var node: Node3D
+		if f.has("person"):  # a person: a rigged NPC body (one merged mesh) held still in one moment of a clip
+			node = NpcBody.build(f["person"])
+			add_child(node)
+			if node.has_method("hold"):
+				node.call("hold", String(f.get("clip", "Idle")), float(f.get("time", 0.0)))
+			if f.has("prop") and node.has_method("hand_anchor"):
+				(node.call("hand_anchor") as Node3D).add_child(WeaponModels.build(String(f["prop"])))
+		else:
+			var model := String(f["model"])
+			if not _models.has(model):
+				var path := "res://assets/models/%s.gltf" % model
+				if not ResourceLoader.exists(path):
+					return
+				_models[model] = load(path)
+			node = (_models[model] as PackedScene).instantiate()
+			_paint(node, model.get_file())
+			add_child(node)
 		var box := _bounds(node)
 		var k := float(f.get("height", 0.11)) / maxf(box.size.y, 0.01)
 		node.scale = Vector3(k, k, k)

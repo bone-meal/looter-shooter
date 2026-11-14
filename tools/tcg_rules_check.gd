@@ -383,14 +383,16 @@ func _check_every_card(real: RefCounted) -> void:
 func _check_collection(real: RefCounted) -> void:
 	var Collection: GDScript = load("res://core/tcg/collection.gd")
 	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var pair := _pair(starters, 0)
+	var other := _pair(starters, 1)
 	var c: RefCounted = Collection.new()
 	_say("a new collection has no deck to play", (c.call("playable", real) as Dictionary).is_empty())
 	c.call("give_starter", "tide", starters["tide"], "standard")
-	_say("the starter gift: 20 cards, the leader, 3 packs, a playable deck in slot 1", int(c.call("count", "drowned_deckhand")) == 2 and int(c.call("count", "tide_brute", "*", true)) == 1 and int(c.call("pack_count")) == 3 and (c.call("playable", real) as Dictionary).has(0))
-	c.call("add", "harbor_gull", "pony")
-	_say("finishes are counted apart and together", int(c.call("count", "harbor_gull", "pony")) == 1 and int(c.call("count", "harbor_gull")) == 3)
-	_say("removing more than owned is refused", not bool(c.call("remove", "harbor_gull", "pony", 2)) and bool(c.call("remove", "harbor_gull", "pony", 1)) and int(c.call("count", "harbor_gull")) == 2)
-	c.call("remove", "drowned_deckhand", "", 2)
+	_say("the starter gift: 20 cards, the leader, 3 packs, a playable deck in slot 1", int(c.call("count", pair)) == 2 and int(c.call("count", "tide_brute", "*", true)) == 1 and int(c.call("pack_count")) == 3 and (c.call("playable", real) as Dictionary).has(0))
+	c.call("add", other, "pony")
+	_say("finishes are counted apart and together", int(c.call("count", other, "pony")) == 1 and int(c.call("count", other)) == 3)
+	_say("removing more than owned is refused", not bool(c.call("remove", other, "pony", 2)) and bool(c.call("remove", other, "pony", 1)) and int(c.call("count", other)) == 2)
+	c.call("remove", pair, "", 2)
 	_say("a deck missing a card is not playable", not (c.call("playable", real) as Dictionary).has(0))
 	c.call("record_result", true, "Lottie", "Rising Tide", true, "tide")
 	c.call("record_result", true, "Bonk", "Rising Tide", false)
@@ -400,7 +402,7 @@ func _check_collection(real: RefCounted) -> void:
 	(saved["cards"] as Dictionary)["no_such_card"] = {"": 3}
 	var back: RefCounted = Collection.new()
 	back.call("from_dict", JSON.parse_string(JSON.stringify(saved)), real)
-	_say("save and load keep the collection and drop unknown cards", int(back.call("count", "harbor_gull")) == 2 and int(back.call("count", "no_such_card")) == 0 and int(back.call("pack_count")) == 3 and String(back.get("starter")) == "tide" and int((back.get("record") as Dictionary)["house"]["wins"]) == 1)
+	_say("save and load keep the collection and drop unknown cards", int(back.call("count", other)) == 2 and int(back.call("count", "no_such_card")) == 0 and int(back.call("pack_count")) == 3 and String(back.get("starter")) == "tide" and int((back.get("record") as Dictionary)["house"]["wins"]) == 1)
 
 
 # The binder list and the deck builder.
@@ -409,6 +411,7 @@ func _check_binder(real: RefCounted) -> void:
 	var DeckEdit: GDScript = load("res://core/tcg/deck_edit.gd")
 	var Collection: GDScript = load("res://core/tcg/collection.gd")
 	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var pair := _pair(starters, 0)
 	var c: RefCounted = Collection.new()
 	var nums: Dictionary = BinderList.call("numbers", real)
 	_say("the binder numbers all 160 cards and leaders (no tokens)", nums.size() == 160 and not nums.has("slimelet"))
@@ -428,9 +431,9 @@ func _check_binder(real: RefCounted) -> void:
 	_say("the newest order survives save and load", back.get("got") == c.get("got"))
 	var deck := {"name": "Test", "leader": "", "cards": []}
 	_say("a leader you do not own cannot lead", String(DeckEdit.call("set_leader", real, c, deck, "warlord")) != "" and String(DeckEdit.call("set_leader", real, c, deck, "tide_brute")) == "")
-	DeckEdit.call("add", real, c, deck, "drowned_deckhand")
-	DeckEdit.call("add", real, c, deck, "drowned_deckhand")
-	_say("no third copy, no card you do not own", String(DeckEdit.call("add", real, c, deck, "drowned_deckhand")) != "" and String(DeckEdit.call("add", real, c, deck, "brawn_buckshot")) != "" and (deck["cards"] as Array).size() == 2)
+	DeckEdit.call("add", real, c, deck, pair)
+	DeckEdit.call("add", real, c, deck, pair)
+	_say("no third copy, no card you do not own", String(DeckEdit.call("add", real, c, deck, pair)) != "" and String(DeckEdit.call("add", real, c, deck, "brawn_buckshot")) != "" and (deck["cards"] as Array).size() == 2)
 	for i in 3:
 		c.call("add", "brawn_buckshot")
 		c.call("add", "field_slime")
@@ -499,11 +502,17 @@ func _check_tables(real: RefCounted) -> void:
 	var broken: Dictionary = (starters["tide"] as Dictionary).duplicate(true)
 	(broken["cards"] as Array).pop_back()
 	_say("an illegal deck is refused", _msg(book.call("deck", 11, broken, names), 11, "refused"))
-	book.call("deck", 11, starters["tide"], names)
-	out = book.call("deck", 22, starters["crypt"], names)
+	var with_mat: Dictionary = (starters["tide"] as Dictionary).duplicate(true)
+	with_mat["mat"] = "neon_club"
+	var odd_mat: Dictionary = (starters["crypt"] as Dictionary).duplicate(true)
+	odd_mat["mat"] = "../../secret"
+	book.call("deck", 11, with_mat, names)
+	out = book.call("deck", 22, odd_mat, names)
 	_say("both decks in: a countdown", _msg(out, 0, "countdown"))
 	out = book.call("tick", 6.0, names, {})
 	_say("the countdown ends in a match everyone sees", _msg(out, 0, "match"))
+	var shown: Array = _args_of(out, 0, "match")
+	_say("the match carries both mats; a made-up path is dropped (%s)" % str(shown[5] if shown.size() > 5 else "none"), shown.size() > 5 and shown[5] == ["neon_club", ""])
 	var m: RefCounted = (book.get("tables") as Array)[0]["match"]
 	book.call("intent", 11, {"do": "mulligan", "indices": []}, names)
 	book.call("intent", 22, {"do": "mulligan", "indices": []}, names)
@@ -519,6 +528,16 @@ func _check_tables(real: RefCounted) -> void:
 	out = book.call("tick", 0.1, names, {11: Vector3(30, 0, 0), 22: Vector3.ZERO})
 	var res: Array = _args_of(out, 0, "result")
 	_say("walking off mid-match loses it and frees the table", not res.is_empty() and int(res[1]) == 1 and int(book.call("table_of", 11)) == -1 and int(book.call("table_of", 22)) == -1)
+
+
+# The n-th card the Tide starter holds two of (the starters are re-tuned now and then: no card names here).
+func _pair(starters: Dictionary, n: int) -> String:
+	var cards: Array = starters["tide"]["cards"]
+	var found: Array = []
+	for id: Variant in cards:
+		if cards.count(id) == 2 and not found.has(id):
+			found.append(id)
+	return String(found[n])
 
 
 func _msg(out: Array, peer: int, what: String) -> bool:
