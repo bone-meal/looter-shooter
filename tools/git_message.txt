@@ -1,11 +1,8 @@
-Card game online: player tables, legendary figures
+Card game achievements: 30 tcg achievements, emblems and titles
 
-- Three player card tables online: sit, the other player sits, both pick a deck, 5 s countdown, the host runs the match (core/tcg/table_book.gd, game/net_tcg.gd, game/tcg/player_table.gd)
-- Clients hold a mirror of the host's match and send only intents; everyone sees seats and matches (spectators see all)
-- Walking off or dropping out mid-match loses it; a win against a player records the result, pays 50 chips and gives the win-milestone mats
-- Small 3D figures of legendary creatures stand on their cards (per graphics tier, none on Potato); your leader card shows above your hand
-- Tested on one PC with two copies of the game: a full match, the winner got the record and 50 chips
-- Dev: !go club, !tcg ptable / pdeck / pmove / pnote / put; tools/pair_set.txt picks the pair test command set
+core/tcg/tcg_stats.gd writes matches, wins, streaks, packs, god packs and foils to the record; collection readings feed ctx achievements.
+Six new emblem symbols, four painted emblems, a You got me Lobster section in the Combat Report.
+achievement_check expects 144 achievements and checks the card stat keys; boot check photographs the report.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

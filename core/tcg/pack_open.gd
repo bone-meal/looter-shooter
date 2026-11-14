@@ -56,14 +56,16 @@ static func commit(owned: RefCounted, rolled: Dictionary) -> Array:
 	return out
 
 
-# Every pack left, at once: {"packs": n, "cards": [...], "gods": n, "mats": [ids]}.
+# Every pack left, at once: {"packs": n, "cards": [...], "gods": n, "mats": [ids], "rolls": [{"cards", "god", "kind"} per pack]}.
 static func open_all(db: RefCounted, owned: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, mats: Dictionary = {}) -> Dictionary:
-	var out := {"packs": 0, "cards": [], "gods": 0, "mats": []}
+	var out := {"packs": 0, "cards": [], "gods": 0, "mats": [], "rolls": []}
 	while next_kind(owned) != "":
 		var rolled := roll(db, owned, cfg, rng, mats)
 		if String(rolled["mat"]) != "":
 			(out["mats"] as Array).append(rolled["mat"])
-		(out["cards"] as Array).append_array(commit(owned, rolled))
+		var got := commit(owned, rolled)
+		(out["cards"] as Array).append_array(got)
+		(out["rolls"] as Array).append({"cards": got, "god": bool(rolled["god"]), "kind": String(rolled["kind"])})
 		out["packs"] = int(out["packs"]) + 1
 		if bool(rolled["god"]):
 			out["gods"] = int(out["gods"]) + 1

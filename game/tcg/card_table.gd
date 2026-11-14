@@ -20,6 +20,7 @@ const CardBake = preload("res://game/tcg/card_bake.gd")
 const DataStore = preload("res://core/data_store.gd")
 const Collection = preload("res://core/tcg/collection.gd")
 const MatBook = preload("res://core/tcg/mat_book.gd")
+const TcgStats = preload("res://core/tcg/tcg_stats.gd")
 
 signal finished  # a match ended (chips may have changed): the session saves
 signal left
@@ -29,6 +30,8 @@ const DEALER := 1
 
 var autopilot := false  # dev runs: the AI plays our side too
 var graphics := "high"  # graphics tier id, set by the session: how many 3D figures stand on the table
+var stats: RefCounted  # the combat record (core/stat_book.gd), set by the session: the card game's achievements
+var _full_counted := false  # the full-mat reading is taken once a match
 var match_state: RefCounted  # MatchState, or null between matches
 var collection: RefCounted  # core/tcg/collection.gd (the session owns it and saves it)
 var _db: RefCounted
@@ -173,6 +176,7 @@ func _start(key: String) -> void:
 	_played_cards = (mine["cards"] as Array).duplicate()
 	match_state = MatchState.new(_db, [{"leader": mine["leader"], "cards": mine["cards"]}, {"leader": theirs["leader"], "cards": theirs["cards"]}], _rng.randi())
 	_view.set("graphics", graphics)
+	_full_counted = false
 	if collection != null:  # each half of the table shows its player's mat (the House Dealer's from data/tcg/table.json)
 		var mats: Dictionary = DataStore.load_json("res://data/tcg/mats.json")
 		_table.call("set_mats", MatBook.current(collection, mats), String((_cfg["house"] as Dictionary).get("mat", mats.get("default", ""))))
@@ -212,6 +216,8 @@ func _after_move() -> void:
 		lines.append(EventText.line(_db, e, ME, _known, _who))
 	_screen.add_log(lines)
 	_screen.show_match(match_state, ME, _who)
+	if not _full_counted:
+		_full_counted = TcgStats.full_board(stats, match_state, ME)
 	if match_state.get("phase") == "over":
 		_finish(int(match_state.get("winner")))
 
@@ -233,6 +239,7 @@ func _finish(winner: int) -> void:
 	if winner != 2:
 		var mine: Dictionary = {"leader": (match_state.get("sides") as Array)[ME]["leader"], "cards": _played_cards}
 		collection.call("record_result", winner == ME, String(_who[DEALER]), _deck, true, _starter_of(mine))
+		TcgStats.match_end(stats, match_state, ME, true, _starter_of(mine), 0)
 	var text := "A draw - both leaders fell."
 	if winner == ME:
 		var prize := int(_cfg["prize_vs_ai"])

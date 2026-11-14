@@ -15,6 +15,7 @@ const PackOpen = preload("res://core/tcg/pack_open.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 const PackSound = preload("res://game/tcg/pack_sound.gd")
 const SoundBoard = preload("res://game/sound_board.gd")
+const TcgStats = preload("res://core/tcg/tcg_stats.gd")
 
 signal changed  # cards joined the collection: save
 signal closed
@@ -37,6 +38,7 @@ static var opened_one := false  # "Open all" shows once a pack was opened by han
 var db: RefCounted
 var owned: RefCounted
 var cfg: Dictionary
+var stats: RefCounted  # the combat record (core/stat_book.gd): packs, god packs and foils count for achievements
 var mats: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))
 
 var _rng := RandomNumberGenerator.new()
@@ -207,6 +209,7 @@ func _torn() -> void:
 	_play(PackSound.tear(), "card_tear")
 	var got := PackOpen.commit(owned, _rolled)
 	var god := bool(_rolled.get("god", false))
+	TcgStats.pack(stats, got, god, String(_rolled.get("kind", "standard")))
 	var mat := String(_rolled.get("mat", ""))
 	_rolled = {}
 	opened_one = true
@@ -377,6 +380,8 @@ func _done() -> void:
 func _open_all() -> void:
 	_clear_faces()
 	var got := PackOpen.open_all(db, owned, cfg, _rng, mats)
+	for roll: Dictionary in got["rolls"]:
+		TcgStats.pack(stats, roll["cards"], bool(roll["god"]), String(roll["kind"]))
 	changed.emit()
 	_state = "all"
 	_hint.text = ""

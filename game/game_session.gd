@@ -52,6 +52,7 @@ const CasinoGames = preload("res://game/casino_games.gd")
 const CardTable = preload("res://game/tcg/card_table.gd")
 const CardShop = preload("res://game/tcg/card_shop.gd")
 const PlayerTable = preload("res://game/tcg/player_table.gd")
+const TcgStats = preload("res://core/tcg/tcg_stats.gd")
 const CardCollection = preload("res://core/tcg/collection.gd")
 const CardDb = preload("res://core/tcg/card_db.gd")
 const ChatBox = preload("res://game/chat_box.gd")
@@ -257,6 +258,7 @@ var _games := CasinoGames.new()
 var _tcg := CardTable.new()  # the card game table on the club beach (built with the club)
 var _cards := CardCollection.new()  # the card game collection (saved in extra "tcg")
 var _shop := CardShop.new()  # the card vending machine in the casino (built with the club)
+var _tcg_mats: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))  # for the card game's achievement readings
 var _ptables := PlayerTable.new()  # the three card tables where players play each other online (built with the club)
 var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data/colosseum.json)
 var _board := ColosseumBoard.new()  # the ticket board at the painting
@@ -555,6 +557,7 @@ func _ready() -> void:
 	_card_screen.report = _combat_report
 	_card_screen.cards = _cards
 	_card_screen.card_db = CardDb.from_files()
+	_card_screen.stats = _stats
 	_card_screen.changed.connect(_on_card_changed)
 	_card_screen.closed.connect(_on_card_closed)
 	custom_layer.add_child(_card_screen)
@@ -3622,6 +3625,7 @@ func _read_achievements() -> void:
 			extra["skill:" + id] = int(levels[id])
 			sum += int(levels[id])
 		extra["skill_total"] = sum
+	extra.merge(TcgStats.readings(_cards, _card_screen.card_db, _tcg_mats), true)  # the card game's collection readings
 	var values := {}
 	for key: String in _progress.stat_keys():
 		values[key] = AchievementReader.read(key, _stats, extra)
@@ -3638,6 +3642,7 @@ func _combat_report() -> Dictionary:
 		"item_name": func(id: String) -> String: return String(_fantasy.bag.item_name(id)) if _fantasy != null else id.replace("_", " ").capitalize(),
 		"skill_name": func(id: String) -> String: return String(_fantasy.skills.skill_name(id)) if _fantasy != null else id.capitalize(),
 		"enemy_name": func(id: String) -> String: return _enemy_name(id),
+		"leader_name": func(id: String) -> String: return String(((_card_screen.card_db.get("leaders") as Dictionary).get(id, {}) as Dictionary).get("name", id.capitalize())),
 		"best_round": _best_round,
 		"course_best": _course.best,
 		"quests_done": (_fantasy.quests.done as Array).size() if _fantasy != null else 0,
@@ -3808,8 +3813,10 @@ func _build_club() -> void:
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
 	_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards)
 	_tcg.graphics = settings.graphics
+	_tcg.stats = _stats
 	_ptables.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards, net.tcg if net != null else null)
 	_ptables.graphics = settings.graphics
+	_ptables.stats = _stats
 	if net != null:  # the host's book learns where the player tables stand (walking away from one mid-match loses it)
 		var spots: Array = []
 		for t: Node3D in _casino.get("player_tables", []):

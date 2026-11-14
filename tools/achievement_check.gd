@@ -1,7 +1,7 @@
 # Purpose: developer check of achievements, titles and emblems (data/achievements.json): every reward exists, every
 # emblem's frame / symbol / picture is real, every stat key reads, stat achievements unlock from the record, survive a
 # save, and a joiner's card is checked against its readings. Log tools/achievement_check.log (ACHIEVEMENT_CHECK_DONE problems=n).
-# Dependencies: core/progress_state.gd, core/achievement_reader.gd, core/stat_book.gd, game/emblem_art.gd, core/data_store.gd.
+# Dependencies: core/progress_state.gd, core/tcg/tcg_stats.gd, core/achievement_reader.gd, core/stat_book.gd, game/emblem_art.gd, core/data_store.gd.
 extends Node
 
 const ProgressState = preload("res://core/progress_state.gd")
@@ -9,6 +9,7 @@ const AchievementReader = preload("res://core/achievement_reader.gd")
 const StatBook = preload("res://core/stat_book.gd")
 const EmblemArt = preload("res://game/emblem_art.gd")
 const DataStore = preload("res://core/data_store.gd")
+const TcgStats = preload("res://core/tcg/tcg_stats.gd")
 const KINDS := ["total", "group", "sum", "count", "prefix", "countprefix", "every", "ctx", "below"]
 
 var _lines := PackedStringArray()
@@ -33,7 +34,7 @@ func _ready() -> void:
 				wrong.append("%s: unknown stat key %s" % [id, a["stat"]])
 		elif not a.has("counter"):
 			wrong.append("%s: neither counter nor stat" % id)
-	_say("%d achievements (%d read from the record), every reward and key known%s" % [all.size(), stat_count, "" if wrong.is_empty() else ": " + "; ".join(wrong)], wrong.is_empty() and all.size() >= 114)
+	_say("%d achievements (%d read from the record), every reward and key known%s" % [all.size(), stat_count, "" if wrong.is_empty() else ": " + "; ".join(wrong)], wrong.is_empty() and all.size() >= 144)
 	var pictures := 0
 	var layered := 0
 	wrong.clear()
@@ -47,7 +48,7 @@ func _ready() -> void:
 			layered += 1
 			if not EmblemArt.FRAMES.has(String(e["frame"])) or not EmblemArt.SYMBOLS.has(String(e["symbol"])):
 				wrong.append("%s: unknown frame or symbol" % id)
-	_say("%d emblems: %d layered, %d painted, all drawable%s" % [ach["emblems"].size(), layered, pictures, "" if wrong.is_empty() else ": " + "; ".join(wrong)], wrong.is_empty() and layered == 90 and pictures == 10)
+	_say("%d emblems: %d layered, %d painted, all drawable%s" % [ach["emblems"].size(), layered, pictures, "" if wrong.is_empty() else ": " + "; ".join(wrong)], wrong.is_empty() and layered == 116 and pictures == 14)
 	var seen := {}
 	var titles_used := 0
 	for id: String in all:
@@ -55,7 +56,9 @@ func _ready() -> void:
 		if not seen.has(t):
 			seen[t] = true
 			titles_used += 1
-	_say("%d titles, %d different ones given by achievements" % [ach["titles"].size(), titles_used], titles_used >= 114)
+	var tcg := all.keys().filter(func(id: String) -> bool: return id.begins_with("tcg_"))
+	_say("%d card game achievements" % tcg.size(), tcg.size() == 30)
+	_say("%d titles, %d different ones given by achievements" % [ach["titles"].size(), titles_used], titles_used >= 144)
 	# readings
 	var book := StatBook.new()
 	book.add("kills", 60.0)
@@ -75,6 +78,12 @@ func _ready() -> void:
 		var got := AchievementReader.read(key, book, extra)
 		if got != int(reads[key]):
 			off.append("%s = %d (want %d)" % [key, got, reads[key]])
+	var cards_book := StatBook.new()
+	TcgStats.pack(cards_book, [{"finish": "rainbow"}, {"finish": "pony"}, {"finish": ""}], true, "box")
+	var tcg_reads := {"total:tcg_packs": 1, "total:tcg_box_packs": 1, "total:tcg_god": 1, "total:tcg_rainbow": 1, "total:tcg_pony": 1}
+	for key: String in tcg_reads:
+		if AchievementReader.read(key, cards_book, {}) != int(tcg_reads[key]):
+			off.append("%s after one box pack" % key)
 	_say("every kind of stat key reads right%s" % ("" if off.is_empty() else ": " + "; ".join(off)), off.is_empty())
 	# unlocking, saving, host check
 	var p := ProgressState.new(cfg, ach)

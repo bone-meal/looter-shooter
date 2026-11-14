@@ -1,4 +1,4 @@
-# Purpose: paints the 10 painted player-card emblems (assets/ui/emblems/<name>.png, 256 px) -- our own subjects.
+# Purpose: paints the 14 painted player-card emblems (10 of round 6, 4 of the card game) (assets/ui/emblems/<name>.png, 256 px) -- our own subjects.
 # Dependencies: tools/paint_lib.py, python3 with pycairo, numpy, Pillow. Usage: python3 tools/paint_emblems.py assets/ui/emblems [names...]
 import sys, math, random
 from paint_lib import *
@@ -618,9 +618,139 @@ def phoenix():
     return compose(s, blurred(f, 2), p, e)
 
 
+# ---- the card game's four (TCG_ACHIEVEMENTS.md, locked) ----
+
+def card_shape(ctx, x, y, w, h, ang, face, edge, inner=None):
+    ctx.save(); ctx.translate(x, y); ctx.rotate(ang)
+    ctx.rectangle(-w / 2, -h / 2, w, h); fill(ctx, rgb(face))
+    ctx.rectangle(-w / 2, -h / 2, w, h); stroke(ctx, rgb(edge), 3)
+    if inner:
+        ctx.rectangle(-w / 2 + 6, -h / 2 + 6, w - 12, h * 0.55); fill(ctx, rgb(inner))
+    ctx.restore()
+
+
+def table_top(ctx, y, mat='#1f6a48'):
+    poly(ctx, [(40, y), (472, y), (512, y + 70), (0, y + 70)])
+    lin(ctx, 0, y, 0, y + 70, [(0, rgb('#a0703c')), (1, rgb('#5a3a1c'))]); ctx.fill()
+    poly(ctx, [(70, y + 6), (442, y + 6), (470, y + 52), (42, y + 52)]); fill(ctx, rgb(mat))
+    for x0 in (60, 430):
+        ctx.rectangle(x0, y + 70, 22, 120); fill(ctx, rgb('#4a2e14'))
+
+
+# 6. Lion of the Sand: the game's logo rising over a card table at dusk.
+def lion_sand():
+    s, c = layer()
+    lin(c, 0, 0, 0, S, [(0, rgb('#2a1450')), (0.55, rgb('#c0503a')), (0.7, rgb('#f0a050')), (1, rgb('#c89a60'))]); c.paint()
+    glow(c, 256, 330, 200, rgb('#ffb060'), 0.6)
+    poly(c, [(0, 380), (512, 360), (512, 512), (0, 512)]); fill(c, rgb('#d8b078'))
+    table_top(c, 330)
+    logo = Image.open('assets/tcg/logo.png').convert('RGBA').resize((330, 330), Image.LANCZOS)
+    base = compose(s)
+    base.alpha_composite(logo, (91, 20))
+    return base
+
+
+# 7. The Golden Lobster: a golden lobster holding a fanned hand of cards, chips on a beach table.
+def golden_lobster():
+    s, c = layer()
+    lin(c, 0, 0, 0, S, [(0, rgb('#6ab8e8')), (0.55, rgb('#f8e0a0')), (1, rgb('#d8b078'))]); c.paint()
+    table_top(c, 360, '#8a2030')
+    r = random.Random(7)
+    ch, cc = layer()
+    for _ in range(9):  # chips
+        x, y = r.uniform(80, 430), r.uniform(372, 412)
+        cc.save(); cc.translate(x, y); cc.scale(1, 0.45)
+        cc.arc(0, 0, 18, 0, math.tau); fill(cc, rgb(r.choice(['#c01010', '#202020', '#1840c0', '#18a040'])))
+        cc.arc(0, 0, 18, 0, math.tau); stroke(cc, (1, 1, 1, 0.9), 3); cc.restore()
+    g, gc = layer()
+    glow(gc, 256, 250, 190, rgb('#ffd060'), 0.5)
+    gold = [(0, rgb('#fff0a0')), (0.5, rgb('#e8b030')), (1, rgb('#7a4a08'))]
+    for i, (w, h) in enumerate([(70, 46), (64, 40), (56, 34), (48, 28)]):  # tail segments
+        gc.save(); gc.translate(256, 300 + i * 30); gc.scale(w / 50.0, h / 50.0)
+        gc.arc(0, 0, 50, 0, math.tau); gc.restore()
+        rad(gc, 240, 290 + i * 30, 4, 80, gold); gc.fill()
+    poly(gc, [(220, 420), (256, 400), (292, 420), (256, 446)]); rad(gc, 256, 420, 2, 40, gold); gc.fill()  # tail fan
+    gc.save(); gc.translate(256, 230); gc.scale(1.0, 1.25); gc.arc(0, 0, 52, 0, math.tau); gc.restore()  # body
+    rad(gc, 240, 210, 4, 80, gold); gc.fill()
+    for sx in (-1, 1):  # antennae, eyes, legs
+        gc.move_to(256 + sx * 14, 175); gc.curve_to(256 + sx * 60, 110, 256 + sx * 120, 90, 256 + sx * 170, 60); stroke(gc, rgb('#c08a20'), 3)
+        gc.arc(256 + sx * 18, 182, 7, 0, math.tau); fill(gc, rgb('#2a1404'))
+        for k in range(3):
+            gc.move_to(256 + sx * 40, 240 + k * 16); gc.line_to(256 + sx * 85, 262 + k * 20); stroke(gc, rgb('#b07818'), 6)
+    # left claw holds the fan of cards; right claw raised
+    for sx, ang in ((-1, -0.5), (1, 0.6)):
+        gc.move_to(256 + sx * 44, 215); gc.curve_to(256 + sx * 90, 200, 256 + sx * 110, 170, 256 + sx * 120, 140); stroke(gc, rgb('#c88a20'), 16)
+        gc.save(); gc.translate(256 + sx * 128, 118); gc.rotate(ang)
+        gc.save(); gc.scale(1.0, 1.5); gc.arc(0, 0, 26, 0, math.tau); gc.restore()
+        rad(gc, -6, -10, 2, 46, gold); gc.fill()
+        gc.move_to(0, -10); gc.line_to(-10 * sx, -44); stroke(gc, rgb('#2a1404'), 4)
+        gc.restore()
+    cards, kc = layer()
+    for i in range(5):
+        a = -0.7 + i * 0.35
+        card_shape(kc, 96 + math.sin(a) * 30, 96 - math.cos(a) * 10, 54, 76, a, '#f8f0e0', '#c09030', ['#c02040', '#2050c0', '#20a050', '#a030c0', '#e0a020'][i])
+    return compose(s, ch, g, cards)
+
+
+# 24. Golden Tear: a pack torn open in a burst of golden light, eight cards fanning out of it.
+def golden_tear():
+    s, c = layer()
+    rad(c, 256, 300, 10, 380, [(0, rgb('#fff6c0')), (0.3, rgb('#e0a020')), (1, rgb('#2a1004'))]); c.paint()
+    for i in range(24):  # rays
+        a = i * math.tau / 24
+        c.move_to(256, 320); c.line_to(256 + math.cos(a) * 400, 320 + math.sin(a) * 400); stroke(c, (1, 0.9, 0.5, 0.25), 10)
+    k, kc = layer()
+    for i in range(8):
+        a = -1.05 + i * 0.3
+        x = 256 + math.sin(a) * 120
+        y = 250 - math.cos(a) * 90
+        card_shape(kc, x, y, 70, 100, a, '#fff8e0', '#e0b030', ['#40c040', '#3070e0', '#a040e0', '#f09020', '#40c040', '#3070e0', '#a040e0', '#f09020'][i])
+    p, pc = layer()
+    poly(pc, [(176, 330), (336, 330), (346, 470), (166, 470)])  # the pack
+    lin(pc, 166, 330, 346, 470, [(0, rgb('#c0204a')), (0.5, rgb('#ff6080')), (1, rgb('#700a20'))]); pc.fill()
+    pc.rectangle(166, 448, 180, 22); fill(pc, rgb('#e0b040'))
+    pts = [(176, 330)]  # the torn edge, glowing gold
+    for i in range(1, 16):
+        pts.append((176 + i * 10, 330 + (8 if i % 2 else -6)))
+    pc.move_to(*pts[0])
+    for q in pts[1:]:
+        pc.line_to(*q)
+    stroke(pc, rgb('#fff0a0'), 6)
+    glow(pc, 256, 330, 120, rgb('#fff0a0'), 0.7)
+    sp, sc = layer()
+    r = random.Random(24)
+    for _ in range(40):
+        x, y = r.uniform(40, 470), r.uniform(40, 470)
+        sc.arc(x, y, r.uniform(1.5, 4), 0, math.tau); fill(sc, (1, 0.95, 0.6, r.uniform(0.5, 1)))
+    return compose(s, k, p, sp)
+
+
+# 28. The Full Binder: an open leather binder, every pocket full, cards glowing in their rarity colours.
+def full_binder():
+    s, c = layer()
+    rad(c, 256, 256, 20, 360, [(0, rgb('#4a2a50')), (1, rgb('#120814'))]); c.paint()
+    poly(c, [(40, 110), (472, 110), (490, 420), (22, 420)])  # leather
+    lin(c, 0, 110, 0, 420, [(0, rgb('#8a5428')), (1, rgb('#4a2a12'))]); c.fill()
+    c.rectangle(250, 110, 12, 310); fill(c, rgb('#2a160a'))
+    for x0 in (52, 268):  # pages
+        poly(c, [(x0, 124), (x0 + 192, 124), (x0 + 196, 408), (x0 - 4, 408)]); fill(c, rgb('#1a1a20'))
+    k, kc = layer()
+    cols = ['#40d040', '#3a7aff', '#b050ff', '#ffa020']
+    r = random.Random(28)
+    for page, x0 in enumerate((60, 276)):
+        for i in range(9):
+            x = x0 + 30 + (i % 3) * 62
+            y = 168 + (i // 3) * 92
+            col = r.choice(cols)
+            glow(kc, x, y, 34, rgb(col), 0.45)
+            card_shape(kc, x, y, 50, 74, 0, '#f4ecd8', col, col)
+    return compose(s, k)
+
+
 ALL = [("crow_vigil", crow_vigil), ("clockwork_heart", clockwork_heart), ("golden_tally", golden_tally), ("storm_light", storm_light),
        ("drowned_bell", drowned_bell), ("jukebox", jukebox), ("sunset_arena", sunset_arena), ("pallid_crown", pallid_crown),
-       ("five_sigils", five_sigils), ("phoenix", phoenix)]
+       ("five_sigils", five_sigils), ("phoenix", phoenix),
+       ("lion_sand", lion_sand), ("golden_lobster", golden_lobster), ("golden_tear", golden_tear), ("full_binder", full_binder)]
 
 if __name__ == "__main__":
     for i, (name, fn) in enumerate(ALL):

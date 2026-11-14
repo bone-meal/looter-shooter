@@ -15,6 +15,7 @@ signal closed
 var progress: RefCounted  # core/progress_state.gd instance owned by the session
 var cards: RefCounted  # core/tcg/collection.gd, set by the session
 var card_db: RefCounted  # core/tcg/card_db.gd, set by the session
+var stats: RefCounted  # the combat record (core/stat_book.gd), for the card game's achievements
 var report := Callable()  # func() -> {"look", "under_portrait", "sections"}: the Combat Report (game/combat_report.gd), set by the session
 
 var _card: Control
@@ -94,6 +95,7 @@ func _refresh() -> void:
 	if cards != null and card_db != null:
 		if _binder == null:
 			_binder = BinderTab.new()
+			_binder.set("stats", stats)
 			_binder.build(card_db, cards)
 			_binder.changed.connect(func() -> void: changed.emit())
 		_tabs.add_child(_binder)

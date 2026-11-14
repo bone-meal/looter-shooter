@@ -67,6 +67,18 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 	var made: Array = []
 	for pair: Array in book.top("made", TOP):
 		made.append([_call(ctx, "item_name", String(pair[0])), _n(float(pair[1]))])
+	var lobster := [  # the card game (its own record of W/L per opponent and deck stays on the card game's side)
+		["Matches played", _n(book.total("tcg_games"))],
+		["Wins against players", _n(book.total("tcg_wins_player"))],
+		["Best win streak", _n(book.total("tcg_best_streak"))],
+		["House Dealer beaten", _n(book.total("tcg_wins_ai"))],
+		["Flawless wins", _n(book.total("tcg_flawless"))],
+		["Packs opened", _n(book.total("tcg_packs"))],
+		["God packs", _n(book.total("tcg_god"))],
+		["Foils pulled", _n(book.total("tcg_rainbow") + book.total("tcg_pony"))],
+	]
+	for pair: Array in book.top("tcg_wins_leader", 0):
+		lobster.append(["Wins with %s" % _call(ctx, "leader_name", String(pair[0])), _n(float(pair[1]))])
 	var time_rows := [
 		["This session", StatBook.duration(book.session_seconds)],
 		["In total", StatBook.duration(book.total("seconds_played"))],
@@ -88,6 +100,7 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 			{"title": "Aurelind", "rows": aurelind},
 			{"title": "Gathered in Aurelind", "rows": gathered},
 			{"title": "Made in Aurelind", "rows": made},
+			{"title": "You got me Lobster?", "rows": lobster},
 		],
 	}
 

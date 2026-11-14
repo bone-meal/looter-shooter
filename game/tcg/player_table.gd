@@ -17,12 +17,15 @@ const TableScreen = preload("res://game/tcg/table_screen.gd")
 const TableView = preload("res://game/tcg/table_view.gd")
 const CardBake = preload("res://game/tcg/card_bake.gd")
 const DataStore = preload("res://core/data_store.gd")
+const TcgStats = preload("res://core/tcg/tcg_stats.gd")
 
 signal finished  # a result came in (record, chips): the session saves
 
 var collection: RefCounted
 var net_tcg: Node  # game/net_tcg.gd, or null offline
 var graphics := "high"
+var stats: RefCounted  # the combat record (core/stat_book.gd): the card game's achievements
+var _full_counted := false
 var _db: RefCounted
 var _cfg: Dictionary
 var _wallet: RefCounted
@@ -212,6 +215,7 @@ func _on_message(what: String, args: Array) -> void:
 func _show(args: Array) -> void:
 	var me: int = net_tcg.get("net").call("my_id")
 	if _mirror == null:
+		_full_counted = false
 		_mirror = MatchState.new(_db, [{"leader": "tide_brute", "cards": []}, {"leader": "tide_brute", "cards": []}], 1)
 		_known = {}
 		_screen.set("view3d", _view_for(_at))
@@ -229,6 +233,8 @@ func _show(args: Array) -> void:
 		lines.append(EventText.line(_db, e, _side, _known, names))
 	_screen.add_log(lines)
 	_screen.show_match(_mirror, _side, names)
+	if not _watching and not _full_counted:
+		_full_counted = TcgStats.full_board(stats, _mirror, _side)
 	_screen.set_timer(float(args[4]), float(_db.get("rules")["fuse_seconds"]), int(_mirror.get("current")) == _side and not _watching)
 
 
@@ -237,6 +243,8 @@ func _result(winner: int, peers: Array, names: Array, me: int) -> void:
 	var text := "A draw - both leaders fell."
 	if side >= 0 and winner != 2:
 		collection.call("record_result", winner == side, String(names[1 - side]), _deck_name, false)
+		if _mirror != null:
+			TcgStats.match_end(stats, _mirror, side, false, "", int((collection.get("record") as Dictionary)["best_streak"]))
 		var mats: Dictionary = DataStore.load_json("res://data/tcg/mats.json")
 		var earned: Array = MatBook.milestones(collection, mats)
 		if winner == side:

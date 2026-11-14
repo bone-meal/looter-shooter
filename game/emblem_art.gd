@@ -6,7 +6,7 @@
 extends RefCounted
 
 const FRAMES := ["disc", "shield", "hex", "diamond", "badge", "banner", "laurel", "wings", "square", "cog"]
-const SYMBOLS := ["skull", "swords", "anchor", "wave", "palm", "bell", "crow", "gear", "knife", "wheat", "axe", "pickaxe", "anvil", "fish", "flask", "orb", "moon", "sun", "mountain", "tower", "key", "eye", "feather", "hourglass", "compass", "trident", "horseshoe", "dice", "spade", "ship", "bullet", "crosshair", "snowflake", "leaf", "flower", "paw", "fist", "tentacle", "lantern", "note", "boot", "bear", "chevron", "target", "flame", "shield", "crown", "star", "diamond", "coin", "bolt", "clover", "heart", "bunny"]
+const SYMBOLS := ["skull", "swords", "anchor", "wave", "palm", "bell", "crow", "gear", "knife", "wheat", "axe", "pickaxe", "anvil", "fish", "flask", "orb", "moon", "sun", "mountain", "tower", "key", "eye", "feather", "hourglass", "compass", "trident", "horseshoe", "dice", "spade", "ship", "bullet", "crosshair", "snowflake", "leaf", "flower", "paw", "fist", "tentacle", "lantern", "note", "boot", "bear", "chevron", "target", "flame", "shield", "crown", "star", "diamond", "coin", "bolt", "clover", "heart", "bunny", "card", "fan", "lobster", "pack", "binder", "chip"]
 
 static var _pictures := {}  # res:// path -> Texture2D (painted emblems, loaded once)
 
@@ -126,6 +126,50 @@ static func draw(ci: CanvasItem, shape: String, center: Vector2, r: float, c1: C
 			ci.draw_circle(center + Vector2(0.36, -0.3) * r, r * 0.45, c1)
 			_poly(ci, [Vector2(-0.78, -0.12), Vector2(0.78, -0.12), Vector2(0.0, 0.9)], center, r, c1)
 			ci.draw_circle(center + Vector2(-0.4, -0.38) * r, r * 0.12, c2)
+		"card":  # a playing card with a pip
+			_poly(ci, [Vector2(-0.55, -0.85), Vector2(0.55, -0.85), Vector2(0.55, 0.85), Vector2(-0.55, 0.85)], center, r, c1)
+			_poly(ci, [Vector2(-0.4, -0.68), Vector2(0.4, -0.68), Vector2(0.4, 0.1), Vector2(-0.4, 0.1)], center, r, c2)
+			ci.draw_circle(center + Vector2(0.0, 0.45) * r, r * 0.16, c2)
+		"fan":  # a hand of four cards fanned
+			for i in 4:
+				var ang := -0.6 + float(i) * 0.4
+				var pts: Array = []
+				for q: Vector2 in [Vector2(-0.3, -0.85), Vector2(0.3, -0.85), Vector2(0.3, 0.35), Vector2(-0.3, 0.35)]:
+					pts.append(q.rotated(ang) + Vector2(0.0, 0.45))
+				_poly(ci, pts, center, r, c1 if i % 2 == 0 else c1.darkened(0.15))
+				ci.draw_circle(center + (Vector2(0.0, -0.5).rotated(ang) + Vector2(0.0, 0.45)) * r, r * 0.08, c2)
+		"lobster":  # body, tail, two raised claws
+			ci.draw_circle(center + Vector2(0.0, -0.05) * r, r * 0.3, c1)
+			for k in 3:
+				ci.draw_circle(center + Vector2(0.0, 0.3 + k * 0.2) * r, r * (0.24 - k * 0.04), c1)
+			_poly(ci, [Vector2(-0.25, 0.85), Vector2(0.25, 0.85), Vector2(0.0, 0.7)], center, r, c1)
+			for sx: float in [-1.0, 1.0]:
+				_line(ci, Vector2(0.2 * sx, -0.1), Vector2(0.55 * sx, -0.45), center, r, c1, 0.12)
+				ci.draw_circle(center + Vector2(0.62 * sx, -0.62) * r, r * 0.2, c1)
+				_line(ci, Vector2(0.62 * sx, -0.62), Vector2(0.5 * sx, -0.92), center, r, c2, 0.06)
+			ci.draw_circle(center + Vector2(-0.1, -0.15) * r, r * 0.05, c2)
+			ci.draw_circle(center + Vector2(0.1, -0.15) * r, r * 0.05, c2)
+		"pack":  # a foil pack with crimped ends
+			_poly(ci, [Vector2(-0.55, -0.85), Vector2(0.55, -0.85), Vector2(0.55, 0.85), Vector2(-0.55, 0.85)], center, r, c1)
+			_poly(ci, [Vector2(-0.55, -0.85), Vector2(0.55, -0.85), Vector2(0.55, -0.62), Vector2(-0.55, -0.62)], center, r, c2)
+			_poly(ci, [Vector2(-0.55, 0.62), Vector2(0.55, 0.62), Vector2(0.55, 0.85), Vector2(-0.55, 0.85)], center, r, c2)
+			ci.draw_circle(center, r * 0.22, c2)
+		"binder":  # an open binder: two pages of pockets and rings
+			for sx: float in [-1.0, 1.0]:
+				_poly(ci, [Vector2(0.05 * sx, -0.7), Vector2(0.92 * sx, -0.7), Vector2(0.92 * sx, 0.7), Vector2(0.05 * sx, 0.7)], center, r, c1)
+				for i in 4:
+					var px := (0.26 + float(i % 2) * 0.38) * sx
+					var py := -0.32 + float(floori(i / 2.0)) * 0.62
+					_poly(ci, [Vector2(px - 0.14, py - 0.24), Vector2(px + 0.14, py - 0.24), Vector2(px + 0.14, py + 0.24), Vector2(px - 0.14, py + 0.24)], center, r, c2)
+			for k in 3:
+				ci.draw_circle(center + Vector2(0.0, -0.45 + k * 0.45) * r, r * 0.07, c2)
+		"chip":  # a poker chip: rim stripes and a centre
+			ci.draw_circle(center, r * 0.9, c1)
+			for i in 8:
+				var a8 := float(i) * TAU / 8.0
+				_line(ci, Vector2.from_angle(a8) * 0.62, Vector2.from_angle(a8) * 0.88, center, r, c2, 0.16)
+			ci.draw_circle(center, r * 0.5, c2)
+			ci.draw_circle(center, r * 0.38, c1)
 		"bunny":
 			_poly(ci, [Vector2(-0.45, -0.1), Vector2(-0.3, -0.95), Vector2(-0.1, -0.1)], center, r, c1)
 			_poly(ci, [Vector2(0.1, -0.1), Vector2(0.3, -0.95), Vector2(0.45, -0.1)], center, r, c1)

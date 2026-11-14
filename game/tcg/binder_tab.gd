@@ -27,6 +27,7 @@ const GOLD := Color(1.0, 0.82, 0.4)
 
 var db: RefCounted
 var owned: RefCounted
+var stats: RefCounted  # the combat record, handed to the pack opening
 
 var _filter: Dictionary = BinderList.ALL.duplicate()
 var _list: Array = []
@@ -295,6 +296,7 @@ func _build_browse(stack: VBoxContainer) -> void:
 	_info.text = "Hover a card to see it."
 	_browse_panel.add_child(_info)
 	_open_button = _button(_browse_panel, "Open packs", func() -> void:
+		_opening.set("stats", stats)
 		_opening.call("open", db, owned, JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/packs.json"))))
 	_button(_browse_panel, "Decks", func() -> void: _open_slots())
 	_button(_browse_panel, "Play mats", func() -> void: _show_mats())
