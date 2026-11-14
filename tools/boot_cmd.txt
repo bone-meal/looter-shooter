@@ -1,1 +1,1 @@
-!wait 3;/give gun orange ak47 25;/give gun purple m16 12;/give gun rainbow sniper_basic 40;!wait 1;!snap sea1_hub;!measure sea1_hub
+!wait 3;/give gun orange ak47 25;/give gun purple m16 12;/give gun rainbow sniper_basic 18;/give item venom_ring 1;/give item cigarette 3;!inv;!wait 1;!inv hover 0;!wait 0.5;!snap inv_all;!measure inv_open;!inv tab guns tier;!wait 0.5;!snap inv_guns;!inv;!inv bank;!wait 1;!snap inv_bank

@@ -1,9 +1,14 @@
-Sea world step 1a-1c: item levels, more makers parts buffs, gun traits
+Inventory redesign: looter-shooter layout with docked item card
 
-- Item level 1-70 on guns (damage grows with it); island and colosseum drops capped at 20, every drop source passes its level; old guns count as level 1
-- 8 makers, 6 part variants per slot (12 new part models), 22 combos, 28 small buffs with their effects
-- Traits: a new layer above buffs (12 build-defining effects; purple and gold one, orange and up two), checked by the host, shown on the gun card
-- Checks: tools/item_level_check, tools/gun_trait_check
+Header tabs Guns / Gear / Items / All and a sort button; left the 3D
+character with the 18 gear slots (or the bank's slots at the bank);
+middle the READY gun cards and the 36-slot backpack; right the docked
+item card with Equip / Unequip / Wear / Take off / Drop; bottom bar with
+chips, points and keys. Shared look in game/ui_skin.gd for all new UI.
+Drawn in three layers so moving the mouse redraws only outlines: window
+open costs 7 ms on the GTX 1080 instead of 25 ms. The portrait poses and
+renders at 15 Hz. New check tools/inv_screen_check (0 problems); dev
+steps !inv tab and !inv bank.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

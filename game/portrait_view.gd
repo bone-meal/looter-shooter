@@ -1,5 +1,5 @@
 # Purpose: a portrait of the character as he looks now (rigged body, or the code-built one when the packs are
-# missing), standing in its idle pose under studio light in its own little world: the Combat Report's picture.
+# missing), standing in its idle pose under studio light in its own little world: the Combat Report's and the inventory's picture.
 # Dependencies: game/rigged_body.gd, game/body_builder.gd.
 extends SubViewportContainer
 
@@ -8,6 +8,8 @@ const BodyBuilder = preload("res://game/body_builder.gd")
 
 var _port := SubViewport.new()
 var _model: Node3D
+var _since := 1.0
+const STEP := 1.0 / 15.0  # the breathing is posed and drawn 15 times a second, not every frame (cheap on low-end machines)
 
 
 func _init() -> void:
@@ -16,6 +18,7 @@ func _init() -> void:
 	_port.own_world_3d = true
 	_port.size = Vector2i(300, 420)
 	_port.msaa_3d = Viewport.MSAA_DISABLED
+	_port.render_target_update_mode = SubViewport.UPDATE_ONCE
 	add_child(_port)
 	var env := Environment.new()
 	env.background_mode = Environment.BG_COLOR
@@ -52,6 +55,11 @@ func show_look(look: Dictionary) -> void:
 	_port.add_child(_model)
 
 
-func _process(_delta: float) -> void:
-	if _model != null and is_visible_in_tree() and _model.has_method("animate"):
+func _process(delta: float) -> void:
+	_since += delta
+	if _model == null or not is_visible_in_tree() or _since < STEP:
+		return
+	_since = 0.0
+	if _model.has_method("animate"):
 		_model.call("animate", 0.0, false)  # the idle pose, breathing
+	_port.render_target_update_mode = SubViewport.UPDATE_ONCE

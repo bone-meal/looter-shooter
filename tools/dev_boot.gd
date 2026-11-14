@@ -145,9 +145,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			window.call("open_station", words[1])
 			if words.size() > 2:
 				window.call("pick", words[2])
-		"inv":  # the inventory window: "!inv" opens or shuts it, "!inv hover 5" puts the mouse on slot 5 (0-35), "!inv drop" presses the drop key, "!inv shift on|off" holds Shift, "!inv log" lists rolled guns and what lies on the ground
+		"inv":  # the inventory window: "!inv" opens or shuts it, "!inv hover 5" puts the mouse on slot 5 (0-35), "!inv drop" presses the drop key, "!inv shift on|off" holds Shift, "!inv log" lists rolled guns and what lies on the ground, "!inv tab guns tier" picks a tab and sort
 			var window: Control = session.get("_inventory_screen")
 			match words[1] if words.size() > 1 else "":
+				"bank":  # "!inv bank": the window as the bank opens it (the bank's slots on the left)
+					session.call("_open_bank")
+				"tab":  # "!inv tab guns|gear|items|all [sort]": the header's tab and sort (slot, tier, level, type)
+					window.set("tab", words[2])
+					if words.size() > 3:
+						window.set("sort_by", words[3])
 				"hover":  # a backpack slot (0-35), a holster ("h0".."h3") or "knife"
 					if words[2] == "knife":
 						window.set("_mouse", (window.call("_holster_rect", int(player.get("inventory").get("holster_count"))) as Rect2).get_center())
