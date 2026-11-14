@@ -1,11 +1,18 @@
-# Purpose: the world effects of gun skills (Nova Burst, Chain Lightning, Gravity Well, Frost Pulse, Swarm Drones, and the Rally Cry ring): damage, knockback, pulls, freezes plus pooled visuals (rings, bolts, wells, drones). No allocation per frame.
-# Dependencies: core/skill_state.gd (rolled numbers), game/explosives.gd (blast), game/damage_numbers.gd (optional), enemies from source.enemy_list() (game/wave_director.gd) with on_hit / push / apply_freeze / apply_vulnerable / apply_slow (game/enemy.gd).
+# Purpose: the world effects of gun skills: hands each cast to its effect (Nova Burst, Chain Lightning, Gravity Well,
+# Frost Pulse, Swarm Drones and the Rally Cry ring here; lingering areas in game/skill_zones.gd, blasts and missiles in
+# game/skill_strikes.gd, decoy / clone / turret / blades in game/skill_summons.gd) and holds the shared helpers they
+# use (enemies near a spot, pooled rings and bolts, bursts, damage numbers). What a skill does to the caster is
+# core/skill_self.gd, applied by game/player.gd. No allocation per frame.
+# Dependencies: core/skill_state.gd (rolled numbers), game/explosives.gd (blast), game/damage_numbers.gd (optional), enemies from source.enemy_list() (game/wave_director.gd) with on_hit / push / apply_freeze / apply_vulnerable / apply_slow / apply_burn / set_target (game/enemy.gd).
 extends Node3D
 
 const SkillState = preload("res://core/skill_state.gd")
+const SkillZones = preload("res://game/skill_zones.gd")
+const SkillStrikes = preload("res://game/skill_strikes.gd")
+const SkillSummons = preload("res://game/skill_summons.gd")
 
-const RING_POOL := 4
-const BOLT_POOL := 16
+const RING_POOL := 8
+const BOLT_POOL := 32
 const WELL_MAX := 2
 const DRONE_MAX := 4
 const RING_TIME := 0.45
@@ -17,6 +24,9 @@ var source  # has enemy_list()
 var explosives  # Explosives (blast), or null
 var numbers  # DamageNumbers or null
 var follow: Node3D  # the drones orbit this (the player)
+var zones := SkillZones.new()
+var strikes := SkillStrikes.new()
+var summons := SkillSummons.new()
 
 var _rings: Array[MeshInstance3D] = []
 var _ring_age := PackedFloat32Array()
@@ -42,6 +52,9 @@ var _drone_range := 25.0
 
 func _ready() -> void:
 	physics_interpolation_mode = Node.PHYSICS_INTERPOLATION_MODE_OFF
+	for part: Node3D in [zones, strikes, summons]:
+		part.set("fx", self)
+		add_child(part)
 	for _i in RING_POOL:
 		var cyl := CylinderMesh.new()
 		cyl.top_radius = 1.0
@@ -107,8 +120,105 @@ func cast(db: RefCounted, entry: Dictionary, base_damage: float, feet: Vector3, 
 			_frost(db, entry, feet)
 		"swarm_drones":
 			_start_drones(db, entry, base_damage)
-		"rally_cry":
-			_ring(feet, 4.0, Color(1.0, 0.85, 0.3))
+		"rally_cry", "bullet_storm", "blood_rush", "full_clip", "overshield":  # the caster's own (core/skill_self.gd): a ring to show it
+			ring(feet, 4.0, colour_of(db, entry))
+		"fire_trail_dash":
+			var flat := Vector3(forward.x, 0.0, forward.z).normalized()
+			zones.burn_line(db, entry, base_damage, feet, feet + flat * SkillState.value(db, entry, "distance"))
+		"time_bubble", "inferno_ring", "storm_call", "war_banner":
+			zones.start(db, entry, base_damage, feet)
+		"plague_cloud", "thunder_totem":
+			zones.start(db, entry, base_damage, aim_point)
+		"orbital_strike", "meteor_shower", "sticky_mines", "rocket_barrage":
+			strikes.start(db, entry, base_damage, eye, aim_point)
+		"vacuum_pulse":
+			_vacuum(db, entry, base_damage, feet, forward)
+		"ice_lance":
+			strikes.lance(db, entry, base_damage, eye, forward)
+		"harpoon_yank":
+			strikes.harpoon(db, entry, base_damage, eye, forward, feet)
+		"decoy_hologram":
+			summons.decoy(db, entry, base_damage, aim_point)
+		"mirror_clone", "sentry_turret", "spinning_blades":
+			summons.start(db, entry, base_damage, feet)
+		# shockwave_slam: the player leaps and calls slam() on landing; phase_step: the player blinks (rings only)
+
+
+# Shockwave Slam lands: damage and stun round the spot.
+func slam(db: RefCounted, entry: Dictionary, base: float, at: Vector3) -> void:
+	var radius := SkillState.value(db, entry, "radius")
+	var dmg := base * SkillState.value(db, entry, "damage")
+	var stun := SkillState.value(db, entry, "stun")
+	ring(at, radius, colour_of(db, entry))
+	for e in near(at, radius):
+		var center: Vector3 = e.global_position + Vector3(0, e.head_height() * 0.5, 0)
+		e.on_hit(dmg, center, Vector3.UP)
+		e.apply_freeze(stun)
+		number(center, dmg)
+
+
+# Vacuum Pulse: a cone ahead (about 35 degrees each side) drags enemies to the caster.
+func _vacuum(db: RefCounted, entry: Dictionary, base: float, origin: Vector3, forward: Vector3) -> void:
+	var length := SkillState.value(db, entry, "length")
+	var dmg := base * SkillState.value(db, entry, "damage")
+	var pull := SkillState.value(db, entry, "pull")
+	var flat := Vector3(forward.x, 0.0, forward.z).normalized()
+	ring(origin + flat * 2.0, 2.5, colour_of(db, entry))
+	for e in near(origin, length):
+		var to: Vector3 = (e.global_position - origin) * Vector3(1, 0, 1)
+		if to.length() < 0.5 or flat.dot(to.normalized()) < 0.82:
+			continue
+		var center: Vector3 = e.global_position + Vector3(0, e.head_height() * 0.5, 0)
+		e.on_hit(dmg, center, Vector3.UP)
+		e.push(-to.normalized() * pull)
+		bolt(origin + Vector3(0, 1.2, 0), center, colour_of(db, entry))
+		number(center, dmg)
+
+
+# The skill's own colour (data/skills.json "color").
+func colour_of(db: RefCounted, entry: Dictionary) -> Color:
+	var c: Array = db.skill_def(String(entry["id"])).get("color", [1, 1, 1])
+	return Color(float(c[0]), float(c[1]), float(c[2]))
+
+
+# A blast that hurts enemies only: through game/explosives.gd when there is one (flash, points), else here.
+func burst(point: Vector3, radius: float, damage: float, colour: Color) -> void:
+	ring(point, radius, colour)
+	if explosives != null:
+		explosives.blast(point, radius, damage)
+		return
+	for e in near(point, radius):
+		var center: Vector3 = e.global_position + Vector3(0, e.head_height() * 0.5, 0)
+		e.on_hit(damage, center, Vector3.UP)
+		number(center, damage)
+
+
+# Every running skill effect stops at once (areas, strikes, helpers, wells, drones): a world change or a check.
+func clear_all() -> void:
+	zones.clear()
+	strikes.clear()
+	summons.clear()
+	for i in WELL_MAX:
+		_well_until[i] = 0.0
+		_wells[i].visible = false
+	_drone_count = 0
+	for d in _drones:
+		d.visible = false
+
+
+# The War Banner stands and `pos` is within its reach (the player asks before a shot and a hit).
+func near_banner(pos: Vector3) -> bool:
+	return zones.near_banner(pos)
+
+
+# A glowing see-through material (shared by the effect parts).
+static func glow(colour: Color) -> StandardMaterial3D:
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.albedo_color = colour
+	return mat
 
 
 func active_wells() -> int:
@@ -127,17 +237,17 @@ func _nova(db: RefCounted, entry: Dictionary, base: float, origin: Vector3) -> v
 	var radius := SkillState.value(db, entry, "radius")
 	var dmg := base * SkillState.value(db, entry, "damage")
 	var knock := SkillState.value(db, entry, "knock")
-	_ring(origin, radius, Color(1.0, 0.6, 0.2))
-	for e in _near(origin, radius):
+	ring(origin, radius, Color(1.0, 0.6, 0.2))
+	for e in near(origin, radius):
 		var center: Vector3 = e.global_position + Vector3(0, e.head_height() * 0.5, 0)
 		var away: Vector3 = e.global_position - origin
 		e.on_hit(dmg, center, Vector3.UP)
 		e.push(Vector3(away.x, 0.0, away.z).normalized() * knock)
-		_number(center, dmg)
+		number(center, dmg)
 
 
 func _chain(db: RefCounted, entry: Dictionary, base: float, origin: Vector3, forward: Vector3) -> void:
-	var cur = _pick_target(origin, forward)
+	var cur = pick_target(origin, forward)
 	if cur == null:
 		return
 	var jumps := roundi(SkillState.value(db, entry, "jumps"))
@@ -149,14 +259,14 @@ func _chain(db: RefCounted, entry: Dictionary, base: float, origin: Vector3, for
 	var from := origin + forward * 0.5 + Vector3(0, -0.15, 0)
 	for _n in jumps + 1:
 		var center: Vector3 = cur.global_position + Vector3(0, cur.head_height() * 0.5, 0)
-		_bolt(from, center, Color(0.7, 0.85, 1.0))
+		bolt(from, center, Color(0.7, 0.85, 1.0))
 		cur.on_hit(dmg, center, Vector3.UP)
 		cur.apply_vulnerable(vuln, 4.0)
-		_number(center, dmg)
+		number(center, dmg)
 		hit.append(cur)
 		dmg *= keep
 		from = center
-		cur = _nearest(center, reach, hit)
+		cur = nearest(center, reach, hit)
 		if cur == null:
 			break
 
@@ -166,8 +276,8 @@ func _frost(db: RefCounted, entry: Dictionary, origin: Vector3) -> void:
 	var seconds := SkillState.value(db, entry, "seconds")
 	var vuln := 1.0 + SkillState.value(db, entry, "vuln") / 100.0
 	var boss_slow := SkillState.value(db, entry, "boss_slow")
-	_ring(origin, radius, Color(0.5, 0.85, 1.0))
-	for e in _near(origin, radius):
+	ring(origin, radius, Color(0.5, 0.85, 1.0))
+	for e in near(origin, radius):
 		if String(e.enemy_id).begins_with("boss"):
 			e.apply_slow(boss_slow, seconds)
 		else:
@@ -183,7 +293,7 @@ func _start_well(db: RefCounted, entry: Dictionary, base: float, point: Vector3)
 			break
 		if _well_until[i] < _well_until[slot]:
 			slot = i
-	_well_until[slot] = _now() + SkillState.value(db, entry, "seconds")
+	_well_until[slot] = now() + SkillState.value(db, entry, "seconds")
 	_well_pos[slot] = point
 	_well_radius[slot] = SkillState.value(db, entry, "radius")
 	_well_pull[slot] = SkillState.value(db, entry, "pull")
@@ -194,7 +304,7 @@ func _start_well(db: RefCounted, entry: Dictionary, base: float, point: Vector3)
 
 func _start_drones(db: RefCounted, entry: Dictionary, base: float) -> void:
 	_drone_count = clampi(roundi(SkillState.value(db, entry, "drones")), 1, DRONE_MAX)
-	_drone_until = _now() + SkillState.value(db, entry, "seconds")
+	_drone_until = now() + SkillState.value(db, entry, "seconds")
 	_drone_damage = base * SkillState.value(db, entry, "damage")
 	_drone_interval = 1.0 / maxf(SkillState.value(db, entry, "shots_per_second"), 0.1)
 	_drone_range = SkillState.value(db, entry, "range")
@@ -204,50 +314,50 @@ func _start_drones(db: RefCounted, entry: Dictionary, base: float) -> void:
 
 
 func _physics_process(delta: float) -> void:
-	var now := _now()
+	var t_now := now()
 	for i in WELL_MAX:
 		if _well_until[i] <= 0.0:
 			continue
 		var pos := _well_pos[i]
-		if now >= _well_until[i]:
+		if t_now >= _well_until[i]:
 			_well_until[i] = 0.0
 			_wells[i].visible = false
-			_ring(pos, _well_radius[i], Color(0.7, 0.3, 1.0))
+			ring(pos, _well_radius[i], Color(0.7, 0.3, 1.0))
 			if explosives != null:
 				explosives.blast(pos, _well_radius[i], _well_damage[i])
 			continue
-		for e in _near(pos, _well_radius[i]):
+		for e in near(pos, _well_radius[i]):
 			var toward: Vector3 = pos - e.global_position
 			toward.y = 0.0
 			if toward.length() > 1.0:
 				e.push(toward.normalized() * _well_pull[i])
-		var pulse := 1.0 + 0.15 * sin(now * 8.0)
+		var pulse := 1.0 + 0.15 * sin(t_now * 8.0)
 		_wells[i].scale = Vector3.ONE * pulse * (0.8 + _well_radius[i] * 0.1)
 	if _drone_count > 0:
-		_step_drones(delta, now)
+		_step_drones(delta, t_now)
 
 
-func _step_drones(delta: float, now: float) -> void:
-	if now >= _drone_until or follow == null:
+func _step_drones(delta: float, t_now: float) -> void:
+	if t_now >= _drone_until or follow == null:
 		_drone_count = 0
 		for d in _drones:
 			d.visible = false
 		return
 	var center := follow.global_position
 	for i in _drone_count:
-		var angle := now * 1.6 + float(i) * TAU / float(_drone_count)
-		var pos := center + Vector3(cos(angle) * 1.6, 2.4 + 0.2 * sin(now * 3.0 + float(i)), sin(angle) * 1.6)
+		var angle := t_now * 1.6 + float(i) * TAU / float(_drone_count)
+		var pos := center + Vector3(cos(angle) * 1.6, 2.4 + 0.2 * sin(t_now * 3.0 + float(i)), sin(angle) * 1.6)
 		_drones[i].global_position = pos
 		_drone_timer[i] -= delta
 		if _drone_timer[i] > 0.0:
 			continue
 		_drone_timer[i] = _drone_interval
-		var target = _nearest(pos, _drone_range, NONE)
+		var target = nearest(pos, _drone_range, NONE)
 		if target == null:
 			continue
 		var spot: Vector3 = target.global_position + Vector3(0, target.head_height() * 0.5, 0)
 		target.on_hit(_drone_damage, spot, Vector3.UP)
-		_bolt(pos, spot, Color(0.5, 1.0, 0.9))
+		bolt(pos, spot, Color(0.5, 1.0, 0.9))
 
 
 func _process(delta: float) -> void:
@@ -256,12 +366,12 @@ func _process(delta: float) -> void:
 			continue
 		_ring_age[i] += delta
 		var k := clampf(_ring_age[i] / RING_TIME, 0.0, 1.0)
-		var ring := _rings[i]
-		ring.scale = Vector3(_ring_max[i] * k, 1.0, _ring_max[i] * k)
-		var mat := ring.material_override as StandardMaterial3D
+		var shown := _rings[i]
+		shown.scale = Vector3(_ring_max[i] * k, 1.0, _ring_max[i] * k)
+		var mat := shown.material_override as StandardMaterial3D
 		mat.albedo_color = Color(mat.albedo_color, 0.45 * (1.0 - k))
 		if k >= 1.0:
-			ring.visible = false
+			shown.visible = false
 	for i in BOLT_POOL:
 		if _bolt_age[i] >= BOLT_TIME:
 			continue
@@ -270,7 +380,7 @@ func _process(delta: float) -> void:
 			_bolts[i].visible = false
 
 
-func _ring(at: Vector3, radius: float, color: Color) -> void:
+func ring(at: Vector3, radius: float, color: Color) -> void:
 	var i := _next_ring
 	_next_ring = (_next_ring + 1) % RING_POOL
 	_ring_age[i] = 0.0
@@ -281,23 +391,23 @@ func _ring(at: Vector3, radius: float, color: Color) -> void:
 	_rings[i].visible = true
 
 
-func _bolt(a: Vector3, b: Vector3, color: Color) -> void:
+func bolt(a: Vector3, b: Vector3, color: Color) -> void:
 	var i := _next_bolt
 	_next_bolt = (_next_bolt + 1) % BOLT_POOL
 	_bolt_age[i] = 0.0
 	var span := a.distance_to(b)
 	if span < 0.05:
 		return
-	var bolt := _bolts[i]
+	var shaft := _bolts[i]
 	var up := Vector3.UP if absf((b - a).normalized().y) < 0.99 else Vector3.RIGHT
-	bolt.visible = true
-	bolt.look_at_from_position((a + b) * 0.5, b, up)
-	bolt.scale = Vector3(1.0, 1.0, span)
-	(bolt.material_override as StandardMaterial3D).albedo_color = Color(color, 0.9)
+	shaft.visible = true
+	shaft.look_at_from_position((a + b) * 0.5, b, up)
+	shaft.scale = Vector3(1.0, 1.0, span)
+	(shaft.material_override as StandardMaterial3D).albedo_color = Color(color, 0.9)
 
 
 # Enemies within `radius` of `point` (a fresh array: fine for a skill cast, not for per-frame use outside wells).
-func _near(point: Vector3, radius: float) -> Array:
+func near(point: Vector3, radius: float) -> Array:
 	var out: Array = []
 	if source == null:
 		return out
@@ -308,7 +418,7 @@ func _near(point: Vector3, radius: float) -> Array:
 
 
 # The closest living enemy within `radius` of `point` that is not in `skip`, or null.
-func _nearest(point: Vector3, radius: float, skip: Array):
+func nearest(point: Vector3, radius: float, skip: Array):
 	var best = null
 	var best_d := radius
 	if source == null:
@@ -324,7 +434,7 @@ func _nearest(point: Vector3, radius: float, skip: Array):
 
 
 # The enemy closest to the crosshair line (within 40 m), else the nearest one within 12 m.
-func _pick_target(origin: Vector3, forward: Vector3):
+func pick_target(origin: Vector3, forward: Vector3):
 	var best = null
 	var best_dot := 0.9
 	if source == null:
@@ -340,13 +450,13 @@ func _pick_target(origin: Vector3, forward: Vector3):
 		if dot > best_dot:
 			best_dot = dot
 			best = e
-	return best if best != null else _nearest(origin, 12.0, NONE)
+	return best if best != null else nearest(origin, 12.0, NONE)
 
 
-func _number(at: Vector3, amount: float) -> void:
+func number(at: Vector3, amount: float) -> void:
 	if numbers != null:
 		numbers.spawn(at, amount)
 
 
-func _now() -> float:
+func now() -> float:
 	return Time.get_ticks_msec() / 1000.0

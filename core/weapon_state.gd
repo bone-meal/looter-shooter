@@ -11,6 +11,7 @@ var ammo: int
 var pellets := 1  # hitscan rays per shot (shotguns)
 var projectile := {}  # non-empty for rocket/grenade launchers (see game/explosives.gd)
 var pool: RefCounted  # core/ammo_pools.gd: spare rounds for this weapon's body (null = reloads cost nothing)
+var rate_mult := 1.0  # the fire rate is multiplied by this (gun skill Bullet Storm, core/skill_self.gd)
 
 var _fire_interval: float
 var _reload_time: float
@@ -58,8 +59,17 @@ func try_fire(now: float) -> bool:
 	if is_reloading() or ammo <= 0 or now < _next_fire_time:
 		return false
 	ammo -= 1
-	_next_fire_time = now + _fire_interval
+	_next_fire_time = now + _fire_interval / maxf(rate_mult, 0.1)
 	return true
+
+
+# Fills the magazine at once from the spare rounds (gun skill Full Clip). Returns the rounds put in.
+func refill() -> int:
+	var need := mag_size - ammo
+	var got := need if pool == null else int(pool.take(weapon_id, need))
+	ammo += got
+	_reload_done_time = -1.0
+	return got
 
 
 # Putting the gun away stops a reload: the magazine stays as it was.

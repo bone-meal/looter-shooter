@@ -124,6 +124,11 @@ func set_target(target: Node3D) -> void:
 	_target = target
 
 
+# What it chases now (a gun skill's decoy hands it back afterwards: game/skill_summons.gd).
+func current_target() -> Node3D:
+	return _target
+
+
 # How far its blow or shot reaches (metres).
 func reach() -> float:
 	return float(_stats["attack_range"])

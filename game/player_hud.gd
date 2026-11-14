@@ -12,6 +12,8 @@ const KnifeModels = preload("res://game/knife_models.gd")
 const Player = preload("res://game/player.gd")
 
 const ItemIcons = preload("res://game/item_icons.gd")
+const IconArt = preload("res://game/icon_art.gd")
+const UiSkin = preload("res://game/ui_skin.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const InputSetup = preload("res://game/input_setup.gd")
 const GunStats = preload("res://core/gun_stats.gd")
@@ -298,6 +300,9 @@ func _draw_health(c: Vector2) -> void:
 	if ratio > 0.0:
 		draw_arc(c, RING_RADIUS, -PI * 0.5, -PI * 0.5 + TAU * ratio, 48, color, RING_WIDTH, true)
 	draw_arc(c, RING_RADIUS - 11.0, 0.0, TAU, 48, DIM, 1.5, true)
+	var shield: float = player.overshield_left()
+	if shield > 0.0:  # gun skill Overshield: a blue band outside the ring, as a share of max health
+		draw_arc(c, RING_RADIUS + RING_WIDTH * 0.5 + 4.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(shield / player.health.max_hp, 0.0, 1.0), 48, Color(0.5, 0.85, 1.0, 0.95), 5.0, true)
 	# heart icon
 	draw_circle(c + Vector2(-6, -6), 7.0, color)
 	draw_circle(c + Vector2(6, -6), 7.0, color)
@@ -396,21 +401,28 @@ func _draw_weapons(view: Vector2) -> void:
 	_draw_skills(x, top, tint)
 
 
-# The held gun's Q/E skills, left of the weapon slot: key, name, cooldown fill and seconds left.
-func _draw_skills(x: float, top: float, tint: Color) -> void:
+# The held gun's Q/E skills, left of the weapon slot: the skill's icon in its colour, its key, its name, and while it
+# cools down a dark shade drawn back from the top with the seconds left.
+func _draw_skills(x: float, top: float, _tint: Color) -> void:
 	var count: int = player.skill_count()
 	for i in count:
 		var r := Rect2(x - (count - i) * (SKILL_W + 6.0), top + SLOT_H - SKILL_H, SKILL_W, SKILL_H)
 		var left: float = player.skill_cooldown_left(i)
 		var total: float = maxf(player.skill_cooldown_total(i), 0.01)
-		draw_rect(r, BACK)
-		if left > 0.0:
-			draw_rect(Rect2(r.position.x, r.position.y, r.size.x * (1.0 - left / total), r.size.y), Color(1, 1, 1, 0.12))
-		draw_rect(r, tint if left <= 0.0 else DIM, false, 2.0)
-		draw_string(_font, r.position + Vector2(6, 17), InputSetup.label(player.settings, "skill_%d" % (i + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
-		draw_string(_font, r.position + Vector2(6, 36), player.skill_name(i), HORIZONTAL_ALIGNMENT_LEFT, SKILL_W - 12.0, 13, tint if left <= 0.0 else DIM)
-		if left > 0.0:
-			draw_string(_font, r.position + Vector2(SKILL_W - 46.0, 17), "%.1fs" % left, HORIZONTAL_ALIGNMENT_RIGHT, 40, 13, WARN)
+		var look: Array = player.skill_look(i)
+		var colour: Color = look[1]
+		var ready := left <= 0.0
+		UiSkin.panel(self, r, UiSkin.INK, Color(colour, 0.9) if ready else UiSkin.EDGE, 8)
+		var icon := Rect2(r.position + Vector2(5, 4), Vector2(SKILL_H - 8.0, SKILL_H - 8.0))
+		IconArt.draw(self, String(look[0]), icon, colour, 1.0 if ready else 0.35)
+		if not ready:
+			var shade := icon.size.y * clampf(left / total, 0.0, 1.0)
+			draw_rect(Rect2(icon.position, Vector2(icon.size.x, shade)), Color(0, 0, 0, 0.55))
+			draw_string_outline(_font, Vector2(icon.position.x, icon.get_center().y + 6.0), "%.0f" % ceilf(left), HORIZONTAL_ALIGNMENT_CENTER, icon.size.x, 16, 4, Color(0, 0, 0, 0.9))
+			draw_string(_font, Vector2(icon.position.x, icon.get_center().y + 6.0), "%.0f" % ceilf(left), HORIZONTAL_ALIGNMENT_CENTER, icon.size.x, 16, WHITE)
+		var tx := icon.end.x + 8.0
+		UiSkin.key_cap(self, _font, Vector2(tx, r.position.y + 5.0), InputSetup.label(player.settings, "skill_%d" % (i + 1)))
+		draw_string(_font, Vector2(tx, r.end.y - 7.0), player.skill_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 6.0, 13, WHITE if ready else DIM)
 
 
 # What is carried ready, in the order of its keys: gun 1, gun 2, the knife, then the guns of extra holsters. Each

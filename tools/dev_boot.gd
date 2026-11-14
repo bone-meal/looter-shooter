@@ -86,6 +86,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var release := InputEventAction.new()
 			release.action = words[1]
 			Input.parse_input_event(release)
+		"skills":  # "!skills <q skill> [e skill]": the gun in hand gets these Q / E skills at best quality (a dev-only edit of a rolled gun)
+			var hand := int(player.get("_hand"))
+			var inv: RefCounted = player.get("inventory")
+			if hand >= 0 and not (inv.call("holster_gun", hand) as Dictionary).is_empty():
+				var picked: Array = []
+				for w in words.slice(1):
+					picked.append({"id": w, "q": 1.0})
+				(inv.get("holsters")[hand]["gun"] as Dictionary)["skills"] = picked
+				player.call("refresh_held")
+			else:
+				_lines.append("SKILLS: no rolled gun in hand")
 		"hold":  # keeps an action down until !release (what holding the mouse button or a key does)
 			Input.action_press(words[1])
 		"release":

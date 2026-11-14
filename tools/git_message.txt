@@ -1,14 +1,16 @@
-Inventory redesign: looter-shooter layout with docked item card
+Gun skills pass 2: 24 new Q/E skills (30 in all) with icons
 
-Header tabs Guns / Gear / Items / All and a sort button; left the 3D
-character with the 18 gear slots (or the bank's slots at the bank);
-middle the READY gun cards and the 36-slot backpack; right the docked
-item card with Equip / Unequip / Wear / Take off / Drop; bottom bar with
-chips, points and keys. Shared look in game/ui_skin.gd for all new UI.
-Drawn in three layers so moving the mouse redraws only outlines: window
-open costs 7 ms on the GTX 1080 instead of 25 ms. The portrait poses and
-renders at 15 Hz. New check tools/inv_screen_check (0 problems); dev
-steps !inv tab and !inv bank.
+Sea step 1d. New skills: Fire Trail Dash, Orbital Strike, Bullet Storm,
+Decoy Hologram, Shockwave Slam, Vacuum Pulse, Time Bubble, Rocket
+Barrage, Plague Cloud, Blood Rush, Mirror Clone, Meteor Shower, Sticky
+Mines, Sentry Turret, Thunder Totem, Phase Step, Inferno Ring, Storm
+Call, Spinning Blades, Full Clip, Ice Lance, War Banner, Harpoon Yank,
+Overshield. Effects split into game/skill_zones.gd, skill_strikes.gd and
+skill_summons.gd; the caster's own effects are pure rules in
+core/skill_self.gd. 30 skill icons on the icon sheet; HUD Q/E boxes and
+the inventory card show them; overshield band on the health ring. Check
+tools/skill_pass2_check 0 problems; all running at once 6.5 ms on the
+GTX 1080 Compatibility.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

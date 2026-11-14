@@ -1,47 +1,1040 @@
 {
- "version": 1,
+ "version": 2,
  "skills": {
   "nova_burst": {
    "name": "Nova Burst",
    "desc": "Ring blast around you: radius {radius} m, x{damage} gun damage, knocks enemies back.",
-   "tags": ["CROWD"],
-   "cooldown": [28, 20],
-   "params": {"radius": [6, 9], "damage": [3, 5], "knock": [8, 14]}
+   "tags": [
+    "CROWD"
+   ],
+   "cooldown": [
+    28,
+    20
+   ],
+   "params": {
+    "radius": [
+     6,
+     9
+    ],
+    "damage": [
+     3,
+     5
+    ],
+    "knock": [
+     8,
+     14
+    ]
+   },
+   "icon": "sk_nova",
+   "color": [
+    1.0,
+    0.6,
+    0.2
+   ]
   },
   "chain_lightning": {
    "name": "Chain Lightning",
    "desc": "Lightning hits your target and jumps to {jumps} more enemies, x{damage} gun damage, shocked enemies take +{vuln}% damage for 4 s.",
-   "tags": ["SHOCK"],
-   "cooldown": [20, 14],
-   "params": {"jumps": [6, 10], "damage": [2, 3], "keep": [0.8, 0.9], "jump_range": [8, 10], "vuln": [10, 20]}
+   "tags": [
+    "SHOCK"
+   ],
+   "cooldown": [
+    20,
+    14
+   ],
+   "params": {
+    "jumps": [
+     6,
+     10
+    ],
+    "damage": [
+     2,
+     3
+    ],
+    "keep": [
+     0.8,
+     0.9
+    ],
+    "jump_range": [
+     8,
+     10
+    ],
+    "vuln": [
+     10,
+     20
+    ]
+   },
+   "icon": "sk_chain",
+   "color": [
+    0.7,
+    0.85,
+    1.0
+   ]
   },
   "gravity_well": {
    "name": "Gravity Well",
    "desc": "Throw an orb: pulls enemies within {radius} m for {seconds} s, then detonates for x{damage} gun damage.",
-   "tags": ["CROWD", "EXPLOSIVE"],
-   "cooldown": [34, 26],
-   "params": {"radius": [6, 8], "seconds": [3, 5], "pull": [6, 9], "damage": [4, 6]}
+   "tags": [
+    "CROWD",
+    "EXPLOSIVE"
+   ],
+   "cooldown": [
+    34,
+    26
+   ],
+   "params": {
+    "radius": [
+     6,
+     8
+    ],
+    "seconds": [
+     3,
+     5
+    ],
+    "pull": [
+     6,
+     9
+    ],
+    "damage": [
+     4,
+     6
+    ]
+   },
+   "icon": "sk_well",
+   "color": [
+    0.7,
+    0.35,
+    1.0
+   ]
   },
   "frost_pulse": {
    "name": "Frost Pulse",
    "desc": "Freezes enemies within {radius} m for {seconds} s (bosses are only slowed). Frozen enemies take +{vuln}% damage.",
-   "tags": ["FROST", "CROWD"],
-   "cooldown": [38, 28],
-   "params": {"radius": [8, 12], "seconds": [2.5, 4], "vuln": [25, 40], "boss_slow": [0.5, 0.7]}
+   "tags": [
+    "FROST",
+    "CROWD"
+   ],
+   "cooldown": [
+    38,
+    28
+   ],
+   "params": {
+    "radius": [
+     8,
+     12
+    ],
+    "seconds": [
+     2.5,
+     4
+    ],
+    "vuln": [
+     25,
+     40
+    ],
+    "boss_slow": [
+     0.5,
+     0.7
+    ]
+   },
+   "icon": "sk_frost",
+   "color": [
+    0.55,
+    0.85,
+    1.0
+   ]
   },
   "swarm_drones": {
    "name": "Swarm Drones",
    "desc": "{drones} drones shoot the nearest enemies for {seconds} s, each shot {damage} of your gun damage.",
-   "tags": ["SUMMON"],
-   "cooldown": [36, 26],
-   "params": {"drones": [3, 4], "seconds": [10, 14], "damage": [0.2, 0.3], "shots_per_second": [2, 2], "range": [25, 25]}
+   "tags": [
+    "SUMMON"
+   ],
+   "cooldown": [
+    36,
+    26
+   ],
+   "params": {
+    "drones": [
+     3,
+     4
+    ],
+    "seconds": [
+     10,
+     14
+    ],
+    "damage": [
+     0.2,
+     0.3
+    ],
+    "shots_per_second": [
+     2,
+     2
+    ],
+    "range": [
+     25,
+     25
+    ]
+   },
+   "icon": "sk_drones",
+   "color": [
+    0.5,
+    1.0,
+    0.9
+   ]
   },
   "rally_cry": {
    "name": "Rally Cry",
    "desc": "For {seconds} s you deal +{damage}% damage and heal {regen}% max health per second.",
-   "tags": ["TEAM", "HEAL"],
-   "cooldown": [45, 34],
-   "params": {"seconds": [8, 8], "damage": [20, 30], "regen": [2, 4]}
+   "tags": [
+    "TEAM",
+    "HEAL"
+   ],
+   "cooldown": [
+    45,
+    34
+   ],
+   "params": {
+    "seconds": [
+     8,
+     8
+    ],
+    "damage": [
+     20,
+     30
+    ],
+    "regen": [
+     2,
+     4
+    ]
+   },
+   "icon": "sk_rally",
+   "color": [
+    1.0,
+    0.85,
+    0.3
+   ]
+  },
+  "fire_trail_dash": {
+   "name": "Fire Trail Dash",
+   "desc": "Dash {distance} m ahead. The path burns for {seconds} s: enemies on it catch fire for x{burn} gun damage a second.",
+   "tags": [
+    "FIRE",
+    "MOVE"
+   ],
+   "cooldown": [
+    16,
+    11
+   ],
+   "params": {
+    "distance": [
+     8,
+     12
+    ],
+    "seconds": [
+     5,
+     5
+    ],
+    "burn": [
+     0.6,
+     1.0
+    ],
+    "width": [
+     2.2,
+     2.6
+    ]
+   },
+   "icon": "sk_dash",
+   "color": [
+    1.0,
+    0.45,
+    0.15
+   ]
+  },
+  "orbital_strike": {
+   "name": "Orbital Strike",
+   "desc": "Mark the spot you aim at. {delay} s later a beam hits {radius} m round it for x{damage} gun damage.",
+   "tags": [
+    "EXPLOSIVE"
+   ],
+   "cooldown": [
+    50,
+    38
+   ],
+   "params": {
+    "delay": [
+     2,
+     2
+    ],
+    "radius": [
+     5,
+     7
+    ],
+    "damage": [
+     10,
+     14
+    ]
+   },
+   "icon": "sk_orbital",
+   "color": [
+    1.0,
+    0.95,
+    0.6
+   ]
+  },
+  "bullet_storm": {
+   "name": "Bullet Storm",
+   "desc": "For {seconds} s the gun fires x{rate} as fast and uses no ammo.",
+   "tags": [
+    "CRIT"
+   ],
+   "cooldown": [
+    44,
+    34
+   ],
+   "params": {
+    "seconds": [
+     5,
+     7
+    ],
+    "rate": [
+     2,
+     2.5
+    ]
+   },
+   "icon": "sk_storm",
+   "color": [
+    1.0,
+    0.8,
+    0.3
+   ]
+  },
+  "decoy_hologram": {
+   "name": "Decoy Hologram",
+   "desc": "A hologram of you at the crosshair draws every enemy within {reach} m for {seconds} s, then bursts {radius} m for x{damage} gun damage.",
+   "tags": [
+    "CROWD",
+    "SUMMON"
+   ],
+   "cooldown": [
+    30,
+    22
+   ],
+   "params": {
+    "seconds": [
+     6,
+     9
+    ],
+    "reach": [
+     15,
+     15
+    ],
+    "radius": [
+     5,
+     5
+    ],
+    "damage": [
+     3,
+     5
+    ]
+   },
+   "icon": "sk_decoy",
+   "color": [
+    0.4,
+    0.9,
+    1.0
+   ]
+  },
+  "shockwave_slam": {
+   "name": "Shockwave Slam",
+   "desc": "Leap up and slam down: {radius} m, x{damage} gun damage, stuns {stun} s.",
+   "tags": [
+    "CROWD",
+    "MOVE"
+   ],
+   "cooldown": [
+    22,
+    16
+   ],
+   "params": {
+    "radius": [
+     5,
+     7
+    ],
+    "damage": [
+     2,
+     3
+    ],
+    "stun": [
+     1.5,
+     2.5
+    ],
+    "leap": [
+     7,
+     7
+    ]
+   },
+   "icon": "sk_slam",
+   "color": [
+    0.95,
+    0.75,
+    0.45
+   ]
+  },
+  "vacuum_pulse": {
+   "name": "Vacuum Pulse",
+   "desc": "A {length} m cone drags enemies to you for x{damage} gun damage.",
+   "tags": [
+    "CROWD"
+   ],
+   "cooldown": [
+    18,
+    12
+   ],
+   "params": {
+    "length": [
+     12,
+     12
+    ],
+    "damage": [
+     1,
+     2
+    ],
+    "pull": [
+     14,
+     18
+    ]
+   },
+   "icon": "sk_vacuum",
+   "color": [
+    0.6,
+    0.8,
+    1.0
+   ]
+  },
+  "time_bubble": {
+   "name": "Time Bubble",
+   "desc": "A {radius} m bubble round you for {seconds} s: enemies inside move at {speed}% speed.",
+   "tags": [
+    "CROWD",
+    "TEAM"
+   ],
+   "cooldown": [
+    40,
+    30
+   ],
+   "params": {
+    "radius": [
+     10,
+     10
+    ],
+    "seconds": [
+     5,
+     8
+    ],
+    "speed": [
+     45,
+     30
+    ]
+   },
+   "icon": "sk_bubble",
+   "color": [
+    0.75,
+    0.6,
+    1.0
+   ]
+  },
+  "rocket_barrage": {
+   "name": "Rocket Barrage",
+   "desc": "{rockets} homing rockets, each at a different enemy within {range} m, x{damage} gun damage in {radius} m.",
+   "tags": [
+    "EXPLOSIVE"
+   ],
+   "cooldown": [
+    32,
+    24
+   ],
+   "params": {
+    "rockets": [
+     8,
+     14
+    ],
+    "damage": [
+     1.5,
+     2
+    ],
+    "radius": [
+     2.5,
+     2.5
+    ],
+    "range": [
+     35,
+     35
+    ]
+   },
+   "icon": "sk_rockets",
+   "color": [
+    1.0,
+    0.55,
+    0.3
+   ]
+  },
+  "plague_cloud": {
+   "name": "Plague Cloud",
+   "desc": "A {radius} m toxic cloud at the crosshair for {seconds} s: x{damage} gun damage a second and {slow}% slower inside.",
+   "tags": [
+    "TOXIC",
+    "CROWD"
+   ],
+   "cooldown": [
+    26,
+    18
+   ],
+   "params": {
+    "radius": [
+     5,
+     7
+    ],
+    "seconds": [
+     6,
+     9
+    ],
+    "damage": [
+     0.5,
+     0.8
+    ],
+    "slow": [
+     20,
+     30
+    ]
+   },
+   "icon": "sk_plague",
+   "color": [
+    0.55,
+    0.95,
+    0.35
+   ]
+  },
+  "blood_rush": {
+   "name": "Blood Rush",
+   "desc": "Heal {heal}% at once; for {seconds} s move {speed}% faster and heal {leech}% of the damage you deal.",
+   "tags": [
+    "HEAL",
+    "MOVE"
+   ],
+   "cooldown": [
+    32,
+    24
+   ],
+   "params": {
+    "heal": [
+     25,
+     40
+    ],
+    "seconds": [
+     6,
+     6
+    ],
+    "speed": [
+     30,
+     50
+    ],
+    "leech": [
+     5,
+     8
+    ]
+   },
+   "icon": "sk_blood",
+   "color": [
+    1.0,
+    0.3,
+    0.35
+   ]
+  },
+  "mirror_clone": {
+   "name": "Mirror Clone",
+   "desc": "A clone beside you shoots for {seconds} s at {damage}% of your gun damage.",
+   "tags": [
+    "SUMMON"
+   ],
+   "cooldown": [
+    36,
+    26
+   ],
+   "params": {
+    "seconds": [
+     8,
+     12
+    ],
+    "damage": [
+     50,
+     70
+    ],
+    "shots_per_second": [
+     4,
+     4
+    ],
+    "range": [
+     30,
+     30
+    ]
+   },
+   "icon": "sk_clone",
+   "color": [
+    0.55,
+    0.75,
+    1.0
+   ]
+  },
+  "meteor_shower": {
+   "name": "Meteor Shower",
+   "desc": "{meteors} meteors fall across {area} m at the crosshair over {seconds} s, each x{damage} gun damage in {radius} m.",
+   "tags": [
+    "FIRE",
+    "EXPLOSIVE"
+   ],
+   "cooldown": [
+    52,
+    40
+   ],
+   "params": {
+    "meteors": [
+     6,
+     10
+    ],
+    "area": [
+     14,
+     14
+    ],
+    "seconds": [
+     5,
+     5
+    ],
+    "damage": [
+     2.5,
+     3.5
+    ],
+    "radius": [
+     3,
+     3
+    ]
+   },
+   "icon": "sk_meteor",
+   "color": [
+    1.0,
+    0.5,
+    0.2
+   ]
+  },
+  "sticky_mines": {
+   "name": "Sticky Mines",
+   "desc": "Scatter {mines} mines round the crosshair. Each bursts {radius} m for x{damage} gun damage when an enemy comes near (they last {seconds} s).",
+   "tags": [
+    "EXPLOSIVE"
+   ],
+   "cooldown": [
+    28,
+    20
+   ],
+   "params": {
+    "mines": [
+     3,
+     5
+    ],
+    "radius": [
+     4,
+     4
+    ],
+    "damage": [
+     3,
+     4
+    ],
+    "seconds": [
+     20,
+     20
+    ],
+    "trigger": [
+     2.5,
+     2.5
+    ]
+   },
+   "icon": "sk_mines",
+   "color": [
+    1.0,
+    0.4,
+    0.3
+   ]
+  },
+  "sentry_turret": {
+   "name": "Sentry Turret",
+   "desc": "Drop a turret that shoots enemies within {range} m for {seconds} s, each shot {damage}% of your gun damage.",
+   "tags": [
+    "SUMMON"
+   ],
+   "cooldown": [
+    38,
+    28
+   ],
+   "params": {
+    "seconds": [
+     12,
+     16
+    ],
+    "damage": [
+     35,
+     55
+    ],
+    "shots_per_second": [
+     3,
+     3
+    ],
+    "range": [
+     25,
+     25
+    ]
+   },
+   "icon": "sk_turret",
+   "color": [
+    0.85,
+    0.9,
+    0.95
+   ]
+  },
+  "thunder_totem": {
+   "name": "Thunder Totem",
+   "desc": "Plant a totem at the crosshair for {seconds} s: every {every} s it strikes {targets} enemies within {radius} m for x{damage} gun damage.",
+   "tags": [
+    "SHOCK"
+   ],
+   "cooldown": [
+    30,
+    22
+   ],
+   "params": {
+    "seconds": [
+     8,
+     12
+    ],
+    "every": [
+     0.8,
+     0.8
+    ],
+    "targets": [
+     2,
+     3
+    ],
+    "radius": [
+     9,
+     9
+    ],
+    "damage": [
+     0.8,
+     1.2
+    ]
+   },
+   "icon": "sk_totem",
+   "color": [
+    0.65,
+    0.8,
+    1.0
+   ]
+  },
+  "phase_step": {
+   "name": "Phase Step",
+   "desc": "Blink {distance} m ahead. Your next {shots} shots within {seconds} s deal x{damage} damage.",
+   "tags": [
+    "MOVE",
+    "CRIT"
+   ],
+   "cooldown": [
+    14,
+    9
+   ],
+   "params": {
+    "distance": [
+     8,
+     12
+    ],
+    "shots": [
+     3,
+     3
+    ],
+    "seconds": [
+     4,
+     4
+    ],
+    "damage": [
+     1.5,
+     2
+    ]
+   },
+   "icon": "sk_phase",
+   "color": [
+    0.7,
+    0.5,
+    1.0
+   ]
+  },
+  "inferno_ring": {
+   "name": "Inferno Ring",
+   "desc": "A ring of fire {radius} m round you for {seconds} s sets enemies inside alight for x{burn} gun damage a second.",
+   "tags": [
+    "FIRE",
+    "CROWD"
+   ],
+   "cooldown": [
+    30,
+    22
+   ],
+   "params": {
+    "radius": [
+     6,
+     8
+    ],
+    "seconds": [
+     6,
+     8
+    ],
+    "burn": [
+     0.4,
+     0.7
+    ]
+   },
+   "icon": "sk_inferno",
+   "color": [
+    1.0,
+    0.4,
+    0.1
+   ]
+  },
+  "storm_call": {
+   "name": "Storm Call",
+   "desc": "For {seconds} s lightning strikes an enemy within {radius} m of you every {every} s for x{damage} gun damage.",
+   "tags": [
+    "SHOCK"
+   ],
+   "cooldown": [
+    36,
+    26
+   ],
+   "params": {
+    "seconds": [
+     6,
+     8
+    ],
+    "radius": [
+     18,
+     18
+    ],
+    "every": [
+     0.5,
+     0.5
+    ],
+    "damage": [
+     1.5,
+     2.5
+    ]
+   },
+   "icon": "sk_stormcall",
+   "color": [
+    0.75,
+    0.85,
+    1.0
+   ]
+  },
+  "spinning_blades": {
+   "name": "Spinning Blades",
+   "desc": "{blades} blades circle you for {seconds} s, cutting enemies they touch for x{damage} gun damage.",
+   "tags": [
+    "SUMMON",
+    "CROWD"
+   ],
+   "cooldown": [
+    28,
+    20
+   ],
+   "params": {
+    "blades": [
+     3,
+     4
+    ],
+    "seconds": [
+     8,
+     12
+    ],
+    "damage": [
+     0.4,
+     0.6
+    ],
+    "orbit": [
+     2.5,
+     2.5
+    ]
+   },
+   "icon": "sk_blades",
+   "color": [
+    0.9,
+    0.95,
+    1.0
+   ]
+  },
+  "full_clip": {
+   "name": "Full Clip",
+   "desc": "Every ready gun is reloaded at once, and for {seconds} s you deal +{damage}% damage.",
+   "tags": [
+    "CRIT"
+   ],
+   "cooldown": [
+    26,
+    18
+   ],
+   "params": {
+    "seconds": [
+     8,
+     8
+    ],
+    "damage": [
+     20,
+     35
+    ]
+   },
+   "icon": "sk_clip",
+   "color": [
+    1.0,
+    0.85,
+    0.4
+   ]
+  },
+  "ice_lance": {
+   "name": "Ice Lance",
+   "desc": "A lance flies {length} m through every enemy on its line for x{damage} gun damage and freezes them {freeze} s.",
+   "tags": [
+    "FROST"
+   ],
+   "cooldown": [
+    20,
+    14
+   ],
+   "params": {
+    "length": [
+     30,
+     30
+    ],
+    "damage": [
+     4,
+     6
+    ],
+    "freeze": [
+     1,
+     2
+    ],
+    "width": [
+     1.2,
+     1.2
+    ]
+   },
+   "icon": "sk_lance",
+   "color": [
+    0.6,
+    0.9,
+    1.0
+   ]
+  },
+  "war_banner": {
+   "name": "War Banner",
+   "desc": "Plant a banner for {seconds} s: within {radius} m of it you deal +{damage}% damage and take {guard}% less.",
+   "tags": [
+    "TEAM"
+   ],
+   "cooldown": [
+    42,
+    32
+   ],
+   "params": {
+    "seconds": [
+     10,
+     14
+    ],
+    "radius": [
+     8,
+     8
+    ],
+    "damage": [
+     15,
+     25
+    ],
+    "guard": [
+     15,
+     25
+    ]
+   },
+   "icon": "sk_banner",
+   "color": [
+    1.0,
+    0.75,
+    0.3
+   ]
+  },
+  "harpoon_yank": {
+   "name": "Harpoon Yank",
+   "desc": "Harpoon the enemy you aim at (up to {range} m), drag it to you and stun it {stun} s; x{damage} gun damage.",
+   "tags": [
+    "CROWD"
+   ],
+   "cooldown": [
+    16,
+    11
+   ],
+   "params": {
+    "range": [
+     40,
+     40
+    ],
+    "stun": [
+     1.5,
+     1.5
+    ],
+    "damage": [
+     3,
+     4
+    ],
+    "pull": [
+     22,
+     22
+    ]
+   },
+   "icon": "sk_harpoon",
+   "color": [
+    0.8,
+    0.85,
+    0.9
+   ]
+  },
+  "overshield": {
+   "name": "Overshield",
+   "desc": "A shield of {shield}% of your max health soaks damage for {seconds} s.",
+   "tags": [
+    "HEAL"
+   ],
+   "cooldown": [
+    34,
+    26
+   ],
+   "params": {
+    "shield": [
+     30,
+     50
+    ],
+    "seconds": [
+     8,
+     8
+    ]
+   },
+   "icon": "sk_overshield",
+   "color": [
+    0.5,
+    0.85,
+    1.0
+   ]
   }
  }
 }

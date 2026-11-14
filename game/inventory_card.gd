@@ -5,6 +5,7 @@
 extends RefCounted
 
 const UiSkin = preload("res://game/ui_skin.gd")
+const IconArt = preload("res://game/icon_art.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const GunStats = preload("res://core/gun_stats.gd")
@@ -100,31 +101,34 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		var dps_was := float(other["damage"]) * float(other["fire_rate"])
 		canvas.draw_string(font, Vector2(x, y), "%+.0f" % (dps - dps_was), HORIZONTAL_ALIGNMENT_RIGHT, w, 15, UiSkin.GOOD if dps >= dps_was else UiSkin.BAD)
 	y += 16.0
-	var lines: Array = []  # [text, colour, boxed]
+	var lines: Array = []  # [text, colour, boxed, icon shape ("" = none)]
 	for tr: Dictionary in gun.get("traits", []):
 		var tdef: Dictionary = db.trait_def(String(tr["id"]))
 		if not tdef.is_empty():
-			lines.append(["%s  -  %s" % [tdef["name"], _fill(tdef, float(tr["q"]))], TRAIT_COLOUR, true])
+			lines.append(["%s  -  %s" % [tdef["name"], _fill(tdef, float(tr["q"]))], TRAIT_COLOUR, true, ""])
 	for b: Dictionary in gun["buffs"]:
 		var bdef: Dictionary = db.buff_def(String(b["id"]))
-		lines.append(["%s: %s" % [bdef["name"], _fill(bdef, float(b["q"]))], BUFF_COLOUR, false])
+		lines.append(["%s: %s" % [bdef["name"], _fill(bdef, float(b["q"]))], BUFF_COLOUR, false, ""])
 	for combo: Dictionary in stats.get("combos", []):
-		lines.append([String(combo["desc"]), COMBO_COLOUR, false])
+		lines.append([String(combo["desc"]), COMBO_COLOUR, false, ""])
 	var skill_list: Array = gun.get("skills", [])
 	for i in skill_list.size():
 		var sdef: Dictionary = db.skill_def(String((skill_list[i] as Dictionary)["id"]))
-		lines.append(["[%s] %s  -  cooldown %.0f s" % ["Q" if i == 0 else "E", sdef["name"], SkillState.cooldown(db, skill_list[i], tier_id)], SKILL_COLOUR, false])
+		var sc: Array = sdef.get("color", [SKILL_COLOUR.r, SKILL_COLOUR.g, SKILL_COLOUR.b])
+		var text := "[%s] %s   %.0f s\n%s" % ["Q" if i == 0 else "E", sdef["name"], SkillState.cooldown(db, skill_list[i], tier_id), SkillState.describe(db, skill_list[i])]
+		lines.append([text, Color(float(sc[0]), float(sc[1]), float(sc[2])), false, String(sdef.get("icon", ""))])
 	var gun_parts: Dictionary = gun["parts"]
 	var part_names: Array[String] = []
 	for part_slot: String in db.slots:
 		if gun_parts.has(part_slot):
 			part_names.append(String(db.parts[part_slot][String((gun_parts[part_slot] as Dictionary)["kind"])]["name"]))
 	if not part_names.is_empty():
-		lines.append(["Parts: " + ", ".join(part_names), UiSkin.TEXT_DIM, false])
+		lines.append(["Parts: " + ", ".join(part_names), UiSkin.TEXT_DIM, false, ""])
 	if stats.has("unique"):
-		lines.append(["\"%s\"" % String((stats["unique"] as Dictionary).get("flavor", "")), Color(1.0, 0.55, 0.7), false])
+		lines.append(["\"%s\"" % String((stats["unique"] as Dictionary).get("flavor", "")), Color(1.0, 0.55, 0.7), false, ""])
 	for line: Array in lines:
-		var text_h := font.get_multiline_string_size(String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 16.0, 14).y
+		var indent := 40.0 if String(line[3]) != "" else (6.0 if bool(line[2]) else 0.0)  # a skill's icon sits left of its text
+		var text_h := maxf(font.get_multiline_string_size(String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 10.0 - indent, 14).y, 34.0 if indent > 30.0 else 0.0)
 		if y + text_h + 14.0 > foot - 8.0:
 			canvas.draw_string(font, Vector2(x, foot - 12.0), "...", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, UiSkin.TEXT_DIM)
 			break
@@ -132,7 +136,9 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		if bool(line[2]):  # traits get a box of their own
 			canvas.draw_rect(Rect2(x - 6.0, y - 2.0, w + 12.0, text_h + 10.0), Color(TRAIT_COLOUR, 0.12))
 			canvas.draw_rect(Rect2(x - 6.0, y - 2.0, 3.0, text_h + 10.0), TRAIT_COLOUR)
-		canvas.draw_multiline_string(font, Vector2(x + (6.0 if bool(line[2]) else 0.0), y + 14.0), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 16.0, 14, -1, line[1])
+		if String(line[3]) != "":
+			IconArt.draw(canvas, String(line[3]), Rect2(x, y, 34.0, 34.0), line[1])
+		canvas.draw_multiline_string(font, Vector2(x + indent, y + 14.0), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 10.0 - indent, 14, -1, line[1])
 		y += text_h + (8.0 if bool(line[2]) else 2.0)
 
 

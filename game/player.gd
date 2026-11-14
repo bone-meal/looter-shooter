@@ -15,6 +15,7 @@ const WeaponState = preload("res://core/weapon_state.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 const SkillState = preload("res://core/skill_state.gd")
+const SkillSelf = preload("res://core/skill_self.gd")
 const BodyBuilder = preload("res://game/body_builder.gd")
 const RiggedBody = preload("res://game/rigged_body.gd")
 const GunPartsView = preload("res://game/gun_parts_view.gd")
@@ -90,6 +91,12 @@ var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
 var sounds: Node  # the game's sound player (data/sounds.json), set by game/game_session.gd
 var skill_fx: Node3D  # world effects of gun skills (game/skill_effects.gd), set by game/game_session.gd
 var skills := SkillState.new()  # cooldowns of the Q/E gun skills
+var self_fx := SkillSelf.new()  # what the Q/E skills do to us (storm, rush, phase, clip, shield, banner)
+var _slam_entry := {}  # Shockwave Slam in the air: it lands with the next touch of the ground (or after SLAM_WAIT)
+var _slam_base := 0.0
+var _slam_until := 0.0
+const SLAM_WAIT := 2.5
+const SHOVE_FADE := 30.0  # m/s each second: how fast a shove (`_shove`) dies away (see _move_tick)
 
 var move: MoveRules  # how the body moves: friction, air strafing, jump fatigue (data/movement.json)
 var _move_cfg := {}
@@ -424,6 +431,9 @@ func _step_up(delta: float) -> void:
 # this feeds it the keys and the top speed that applies right now and moves the body.
 func _move_tick(input: Vector2) -> void:
 	var grounded := is_on_floor()
+	if not _slam_entry.is_empty() and ((grounded and not _was_grounded) or _now() >= _slam_until):
+		skill_fx.slam(gun_db, _slam_entry, _slam_base, global_position)  # Shockwave Slam lands
+		_slam_entry = {}
 	if grounded and not _was_grounded:
 		move.land(_fall_speed)
 		if _fall_speed >= _perk("shock_fall", INF) and explosives != null:  # Blast Proof: a hard landing throws a shockwave
@@ -432,7 +442,7 @@ func _move_tick(input: Vector2) -> void:
 	var aiming := Input.is_action_pressed("aim")
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
-	var rush := 1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0
+	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now())
 	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
@@ -466,7 +476,7 @@ func _move_tick(input: Vector2) -> void:
 	if _shove != Vector3.ZERO:  # what blew or dragged the body is not its own speed
 		var flat := Vector2(velocity.x - _shove.x, velocity.z - _shove.z).limit_length(own)
 		velocity = Vector3(flat.x, velocity.y, flat.y)
-		_shove = _shove.move_toward(Vector3.ZERO, 30.0 * move.tick)
+		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * move.tick)
 
 
 # Crouching: the view sinks, the body gets shorter (it fits under things) and walking slows. Standing up waits for head room.
@@ -525,6 +535,7 @@ func _move_and_shoot(delta: float) -> void:
 	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
+		weapon.rate_mult = self_fx.rate_mult(_now())  # Bullet Storm
 		if weapon.try_fire(_now()):
 			_shoot()
 			_motion.fire()
@@ -620,6 +631,9 @@ func take_damage(amount: float, element: String = "physical") -> void:
 		(attacker as Object).call("apply_burn", _perk("burn_dps", 0.0), _perk("burn_seconds", 0.0))
 		var away: Vector3 = ((attacker as Node3D).global_position - global_position) * Vector3(1, 0, 1)
 		(attacker as Object).call("push", away.normalized() * _perk("push", 0.0))
+	taken = self_fx.incoming(taken, _now(), _near_banner())  # War Banner guard, then the Overshield soaks
+	if taken <= 0.0:
+		return
 	_hurt(taken)
 	if not _held_gun.is_empty():
 		_traits.on_hurt(_held_stats.get("traits", {}), _now())  # trait Last Stand
@@ -1286,7 +1300,7 @@ func _shoot() -> void:
 	var buffs: Dictionary = _held_stats.get("buffs", {})
 	var gun_traits: Dictionary = _held_stats.get("traits", {})
 	var free := _traits.on_shot(gun_traits, _now())  # trait Last Stand: no ammo used
-	if free or (buffs.has("free_shot") and randf() * 100.0 < float(buffs["free_shot"])):
+	if free or self_fx.free_ammo(_now()) or (buffs.has("free_shot") and randf() * 100.0 < float(buffs["free_shot"])):
 		weapon.ammo = mini(weapon.ammo + 1, weapon.mag_size)
 	if not weapon.projectile.is_empty():
 		var aim := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
@@ -1324,6 +1338,7 @@ func _shoot() -> void:
 	if not totals.is_empty():
 		shots_hit += 1
 	_traits.after_shot(not totals.is_empty())
+	self_fx.on_shot(_now())  # Phase Step: one charged shot spent
 	if damage_numbers != null:
 		for collider in totals:
 			damage_numbers.spawn(spots[collider], totals[collider])
@@ -1353,6 +1368,7 @@ func _damage_mult() -> float:
 		mult *= 1.0 + float(buffs["glass_cannon"]) / 100.0
 	if now < _rally_until:
 		mult *= 1.0 + _rally_dmg / 100.0
+	mult *= self_fx.damage_mult(now, _near_banner())  # Full Clip, War Banner, Phase Step
 	return mult * (1.0 + bonus_damage_pct / 100.0)
 
 
@@ -1452,6 +1468,8 @@ func _gun_hit_effects(target: Node, point: Vector3, dealt: float, hp_before: flo
 	var buffs: Dictionary = _held_stats["buffs"]
 	if buffs.has("lifesteal"):
 		health.heal(dealt * float(buffs["lifesteal"]) / 100.0)
+	if self_fx.leech_pct(_now()) > 0.0:
+		health.heal(dealt * self_fx.leech_pct(_now()) / 100.0)  # Blood Rush
 	if buffs.has("slow_on_hit") and target.has_method("apply_slow"):
 		target.apply_slow(float(buffs["slow_on_hit"]) / 100.0, 2.0)
 	if buffs.has("burn_chance") and target.has_method("apply_burn") and randf() * 100.0 < float(buffs["burn_chance"]):
@@ -1577,7 +1595,71 @@ func use_skill(index: int) -> void:
 		_rally_until = now + SkillState.value(gun_db, entry, "seconds")
 		_rally_dmg = SkillState.value(gun_db, entry, "damage")
 		_rally_regen = SkillState.value(gun_db, entry, "regen")
-	skill_fx.cast(gun_db, entry, weapon.damage, global_position, eye, forward, aim)
+	var feet := global_position
+	_self_skill(entry, forward, now)
+	skill_fx.cast(gun_db, entry, weapon.damage, feet, eye, forward, aim)
+
+
+# The part of a Q/E skill that acts on us (core/skill_self.gd keeps the timers); world effects are game/skill_effects.gd.
+func _self_skill(entry: Dictionary, forward: Vector3, now: float) -> void:
+	var v := func(param: String) -> float: return SkillState.value(gun_db, entry, param)
+	var flat := Vector3(forward.x, 0.0, forward.z).normalized()
+	match String(entry["id"]):
+		"bullet_storm":
+			self_fx.start_storm(now, v.call("seconds"), v.call("rate"))
+		"blood_rush":
+			health.heal(health.max_hp * float(v.call("heal")) / 100.0)
+			self_fx.start_rush(now, v.call("seconds"), v.call("speed"), v.call("leech"))
+		"full_clip":
+			for w in _ready_weapons:
+				if w != null:
+					w.refill()
+			weapon.refill()
+			for i in inventory.holster_count:
+				if _ready_weapons[i] != null:
+					inventory.loaded[i] = _ready_weapons[i].ammo
+			self_fx.start_clip(now, v.call("seconds"), v.call("damage"))
+		"overshield":
+			self_fx.start_shield(now, v.call("seconds"), health.max_hp * float(v.call("shield")) / 100.0)
+		"war_banner":
+			self_fx.start_banner(now, v.call("seconds"), v.call("damage"), v.call("guard"))
+		"fire_trail_dash":  # a shove that dies away over exactly the dash distance
+			_shove = flat * sqrt(2.0 * SHOVE_FADE * float(v.call("distance")))
+		"phase_step":
+			_blink(flat, v.call("distance"))
+			self_fx.start_phase(now, v.call("seconds"), roundi(float(v.call("shots"))), v.call("damage"))
+		"shockwave_slam":
+			velocity.y = maxf(velocity.y, float(v.call("leap")))
+			_slam_entry = entry
+			_slam_base = weapon.damage
+			_slam_until = now + SLAM_WAIT
+
+
+# Phase Step: straight ahead up to `distance` m, stopping short of anything in the way.
+func _blink(flat: Vector3, distance: float) -> void:
+	var from := global_position + Vector3(0, 1.0, 0)
+	var query := PhysicsRayQueryParameters3D.create(from, from + flat * distance)
+	query.exclude = [get_rid()]
+	query.collision_mask = 1
+	var hit := get_world_3d().direct_space_state.intersect_ray(query)
+	var go := distance if hit.is_empty() else maxf(from.distance_to(hit.position) - 0.6, 0.0)
+	global_position += flat * go
+	_tick_from = global_position
+
+
+# Where we face, flat (gun skills place things beside us: game/skill_summons.gd).
+func aim_flat() -> Vector3:
+	return Basis(Vector3.UP, _yaw) * Vector3(0, 0, -1)
+
+
+# We stand by our own War Banner (game/skill_zones.gd).
+func _near_banner() -> bool:
+	return skill_fx != null and self_fx.banner_active(_now()) and skill_fx.near_banner(global_position)
+
+
+# What is left of the Overshield (the HUD shows it on the health ring).
+func overshield_left() -> float:
+	return self_fx.shield_left(_now())
 
 
 # How many skills the held gun has (HUD).
@@ -1588,6 +1670,14 @@ func skill_count() -> int:
 func skill_name(index: int) -> String:
 	var entry: Dictionary = (_held_gun["skills"] as Array)[index]
 	return String(gun_db.skill_def(String(entry["id"]))["name"])
+
+
+# The skill's icon shape and colour (data/skills.json "icon", "color"; the HUD draws them with game/icon_art.gd).
+func skill_look(index: int) -> Array:
+	var entry: Dictionary = (_held_gun["skills"] as Array)[index]
+	var def: Dictionary = gun_db.skill_def(String(entry["id"]))
+	var c: Array = def.get("color", [1, 1, 1])
+	return [String(def.get("icon", "")), Color(float(c[0]), float(c[1]), float(c[2]))]
 
 
 # Seconds left on the cooldown of the held gun's skill `index` (0 = ready).

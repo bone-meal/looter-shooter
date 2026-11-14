@@ -534,6 +534,213 @@ SHAPES = [("staff", staff), ("robe", robe), ("axe", axe), ("pickaxe", pickaxe), 
     ("boots", boots), ("sabatons", sabatons)]
 
 
+# ---------------- gun skills (Q / E): drawn in the tint layer, the HUD colours them with the skill's own colour ----------------
+def sk_nova(c):
+    c.ring(8, 8, 92, 92, 7, LIGHT)
+    c.ring(26, 26, 74, 74, 5, MID)
+    c.poly(star(50, 50, 18, 7, 8), LIGHT)
+
+def sk_chain(c):
+    c.poly([(58, 4), (26, 52), (46, 52), (34, 96), (76, 40), (54, 40), (70, 4)], LIGHT)
+    c.poly([(58, 4), (44, 30), (52, 30), (70, 4)], WHITE)
+
+def sk_well(c):
+    for k in range(3):
+        c.arc(10 + k * 12, 10 + k * 12, 90 - k * 12, 90 - k * 12, 20 + k * 70, 250 + k * 70, 5, MID if k % 2 else LIGHT)
+    c.oval(38, 38, 62, 62, (30, 20, 50, 255))
+
+def sk_frost(c):
+    for a in range(0, 180, 60):
+        r = math.radians(a)
+        dx, dy = math.cos(r) * 42, math.sin(r) * 42
+        c.line([(50 - dx, 50 - dy), (50 + dx, 50 + dy)], 6, LIGHT)
+        for s in (-1, 1):
+            ex, ey = 50 + s * dx * 0.62, 50 + s * dy * 0.62
+            for turn in (-0.7, 0.7):
+                q = r + (0 if s > 0 else math.pi) + turn * 1.0
+                c.line([(ex, ey), (ex + math.cos(q) * 14, ey + math.sin(q) * 14)], 4, MID)
+
+def sk_drones(c):
+    for x, y in ((28, 34), (72, 30), (50, 72)):
+        c.poly([(x - 14, y), (x, y - 8), (x + 14, y), (x, y + 8)], LIGHT)
+        c.line([(x - 18, y - 9), (x + 18, y - 9)], 2.5, MID)
+        c.oval(x - 3, y - 3, x + 3, y + 3, DARK)
+
+def sk_rally(c):
+    c.poly([(16, 40), (44, 30), (74, 12), (74, 88), (44, 70), (16, 60)], LIGHT)
+    c.poly([(16, 40), (30, 36), (30, 64), (16, 60)], MID)
+    for k in range(3):
+        c.arc(64 - k * 2, 30 - k * 10, 96 + k * 4, 70 + k * 10, -40, 40, 3, MID)
+
+def sk_dash(c):
+    c.poly([(54, 20), (92, 50), (54, 80), (62, 50)], LIGHT)
+    for y, x0 in ((30, 8), (50, 2), (70, 8)):
+        c.line([(x0, y), (46, y)], 5, MID)
+    c.poly([(14, 86), (22, 70), (30, 82), (38, 66), (46, 86)], (255, 160, 60, 255))
+
+def sk_orbital(c):
+    c.poly([(40, 0), (60, 0), (58, 70), (42, 70)], LIGHT)
+    c.ring(16, 66, 84, 94, 4, MID)
+    c.ring(32, 72, 68, 88, 3, LIGHT)
+
+def sk_storm(c):
+    for k, y in enumerate((20, 44, 68)):
+        x = 14 + k * 8
+        c.poly([(x, y - 6), (x + 50, y - 6), (x + 62, y), (x + 50, y + 6), (x, y + 6)], LIGHT if k != 1 else MID)
+        c.poly([(x + 50, y - 6), (x + 62, y), (x + 50, y + 6)], (255, 220, 120, 255))
+    c.line([(6, 92), (94, 92)], 3, MID)
+
+def sk_decoy(c):
+    c.oval(36, 8, 64, 36, LIGHT)
+    c.poly([(30, 40), (70, 40), (78, 92), (22, 92)], MID)
+    for y in range(46, 92, 10):
+        c.line([(26, y), (74, y)], 2, (255, 255, 255, 120))
+
+def sk_slam(c):
+    c.poly([(36, 6), (64, 6), (64, 36), (78, 36), (50, 62), (22, 36), (36, 36)], LIGHT)
+    c.chord(8, 70, 92, 100, 180, 360, MID)
+    for x in (14, 86):
+        c.line([(50, 84), (x, 66)], 3, LIGHT)
+
+def sk_vacuum(c):
+    c.poly([(94, 14), (94, 86), (22, 56), (22, 44)], MID)
+    for k in range(3):
+        x = 40 + k * 18
+        c.arc(x - 8, 50 - 10 - k * 8, x + 8, 50 + 10 + k * 8, 110, 250, 4, LIGHT)
+    c.oval(6, 40, 26, 60, LIGHT)
+
+def sk_bubble(c):
+    c.ring(6, 6, 94, 94, 5, LIGHT)
+    c.oval(10, 10, 90, 90, (255, 255, 255, 40))
+    c.ring(34, 34, 66, 66, 3, MID)
+    c.line([(50, 50), (50, 36)], 3, MID)
+    c.line([(50, 50), (60, 56)], 3, MID)
+    c.arc(18, 14, 52, 48, 200, 260, 4, (255, 255, 255, 200))
+
+def sk_rockets(c):
+    for x, y in ((22, 70), (50, 56), (78, 70)):
+        c.poly([(x - 6, y), (x, y - 40), (x + 6, y)], LIGHT)
+        c.poly([(x - 10, y + 2), (x - 6, y - 8), (x + 6, y - 8), (x + 10, y + 2)], MID)
+        c.poly([(x - 4, y + 2), (x, y + 18), (x + 4, y + 2)], (255, 170, 60, 255))
+
+def sk_plague(c):
+    for x, y, r in ((34, 54, 26), (62, 46, 28), (50, 68, 24), (74, 66, 18)):
+        c.oval(x - r, y - r, x + r, y + r, MID)
+    for x, y, r in ((34, 50, 18), (62, 42, 18)):
+        c.oval(x - r, y - r, x + r, y + r, LIGHT)
+    c.oval(26, 40, 40, 54, DARK)
+    c.oval(52, 40, 66, 54, DARK)
+
+def sk_blood(c):
+    c.poly([(50, 4), (76, 48), (78, 66), (66, 86), (50, 92), (34, 86), (22, 66), (24, 48)], LIGHT)
+    c.poly([(34, 56), (40, 48), (44, 70), (40, 80)], (255, 255, 255, 160))
+    c.line([(56, 60), (74, 60)], 4, WHITE)
+    c.line([(65, 51), (65, 69)], 4, WHITE)
+
+def sk_clone(c):
+    for dx, v in ((14, MID), (-8, LIGHT)):
+        c.oval(38 + dx, 10, 62 + dx, 34, v)
+        c.poly([(30 + dx, 38), (70 + dx, 38), (76 + dx, 92), (24 + dx, 92)], v)
+
+def sk_meteor(c):
+    c.poly([(6, 6), (60, 46), (46, 60)], MID)
+    c.poly([(20, 4), (66, 40), (40, 30)], LIGHT)
+    c.oval(48, 48, 92, 92, LIGHT)
+    c.oval(58, 58, 70, 70, MID)
+    c.oval(74, 70, 84, 80, MID)
+
+def sk_mines(c):
+    for x, y in ((28, 62), (70, 64), (50, 34)):
+        c.oval(x - 16, y - 8, x + 16, y + 10, MID)
+        c.oval(x - 12, y - 10, x + 12, y + 4, LIGHT)
+        c.oval(x - 3, y - 6, x + 3, y, (255, 70, 60, 255))
+
+def sk_turret(c):
+    c.poly([(26, 92), (74, 92), (64, 66), (36, 66)], MID)
+    c.oval(30, 36, 70, 72, LIGHT)
+    c.poly([(60, 44), (96, 38), (96, 50), (62, 56)], LIGHT)
+    c.oval(42, 46, 54, 58, DARK)
+
+def sk_totem(c):
+    c.poly([(36, 30), (64, 30), (60, 94), (40, 94)], MID)
+    c.poly([(30, 18), (70, 18), (64, 34), (36, 34)], LIGHT)
+    c.poly([(50, 0), (40, 18), (52, 16), (46, 30), (62, 12), (50, 14)], (255, 255, 160, 255))
+    c.line([(14, 40), (30, 50)], 3, LIGHT)
+    c.line([(86, 40), (70, 50)], 3, LIGHT)
+
+def sk_phase(c):
+    c.oval(8, 34, 36, 66, (255, 255, 255, 70))
+    c.oval(30, 30, 62, 70, MID)
+    c.poly([(60, 22), (96, 50), (60, 78), (68, 50)], LIGHT)
+    for y in (40, 50, 60):
+        c.line([(4, y), (24, y)], 2.5, (255, 255, 255, 120))
+
+def sk_inferno(c):
+    c.ring(10, 30, 90, 90, 6, MID)
+    for x in (16, 32, 50, 68, 84):
+        y = 60 if x in (16, 84) else (40 if x == 50 else 50)
+        c.poly([(x - 8, y + 26), (x, y), (x + 8, y + 26)], LIGHT)
+
+def sk_stormcall(c):
+    c.oval(10, 8, 50, 40, MID)
+    c.oval(34, 4, 80, 40, LIGHT)
+    c.oval(56, 14, 92, 42, MID)
+    c.poly([(52, 40), (36, 70), (50, 70), (40, 96), (68, 60), (54, 60), (64, 40)], (255, 255, 170, 255))
+
+def sk_blades(c):
+    c.ring(14, 14, 86, 86, 3, MID)
+    for a in (0, 120, 240):
+        r = math.radians(a - 90)
+        x, y = 50 + math.cos(r) * 36, 50 + math.sin(r) * 36
+        q = r + math.pi / 2
+        c.poly([(x - math.cos(q) * 16, y - math.sin(q) * 16), (x + math.cos(r) * 6, y + math.sin(r) * 6), (x + math.cos(q) * 16, y + math.sin(q) * 16), (x - math.cos(r) * 4, y - math.sin(r) * 4)], LIGHT)
+    c.oval(42, 42, 58, 58, LIGHT)
+
+def sk_clip(c):
+    c.poly([(30, 24), (66, 24), (72, 94), (36, 94)], MID)
+    for k in range(4):
+        y = 6 + k * 6
+        c.poly([(36 + k, y + 18), (44 + k, y + 4), (52 + k, y + 18)], (232, 190, 84, 255))
+    c.line([(40, 50), (62, 50)], 3, LIGHT)
+    c.line([(42, 66), (64, 66)], 3, LIGHT)
+    c.line([(44, 82), (66, 82)], 3, LIGHT)
+
+def sk_lance(c):
+    c.poly([(4, 92), (70, 26), (76, 32), (10, 98)], MID)
+    c.poly([(66, 22), (96, 4), (80, 34)], LIGHT)
+    for x, y in ((30, 56), (48, 40)):
+        c.poly(star(x, y, 10, 3, 4), (230, 245, 255, 255))
+
+def sk_banner(c):
+    c.line([(26, 6), (26, 96)], 6, WOOD)
+    c.poly([(30, 10), (86, 10), (74, 30), (86, 50), (30, 50)], LIGHT)
+    c.poly(star(52, 30, 12, 5), MID)
+    c.ring(6, 82, 46, 98, 3, MID)
+
+def sk_harpoon(c):
+    c.line([(8, 92), (66, 34)], 5, STEEL)
+    c.poly([(60, 28), (94, 6), (72, 40)], LIGHT)
+    c.poly([(60, 28), (52, 20), (64, 24)], LIGHT)
+    c.poly([(72, 40), (80, 48), (76, 36)], LIGHT)
+    c.arc(0, 60, 40, 100, 200, 340, 3, (200, 190, 170, 255))
+
+def sk_overshield(c):
+    c.poly([(50, 4), (90, 18), (86, 60), (50, 96), (14, 60), (10, 18)], MID)
+    c.poly([(50, 14), (80, 25), (77, 58), (50, 86), (23, 58), (20, 25)], LIGHT)
+    c.line([(50, 32), (50, 68)], 6, WHITE)
+    c.line([(32, 50), (68, 50)], 6, WHITE)
+
+SKILL_ICONS = [("sk_nova", sk_nova), ("sk_chain", sk_chain), ("sk_well", sk_well), ("sk_frost", sk_frost), ("sk_drones", sk_drones),
+    ("sk_rally", sk_rally), ("sk_dash", sk_dash), ("sk_orbital", sk_orbital), ("sk_storm", sk_storm), ("sk_decoy", sk_decoy), ("sk_slam", sk_slam),
+    ("sk_vacuum", sk_vacuum), ("sk_bubble", sk_bubble), ("sk_rockets", sk_rockets), ("sk_plague", sk_plague), ("sk_blood", sk_blood), ("sk_clone", sk_clone),
+    ("sk_meteor", sk_meteor), ("sk_mines", sk_mines), ("sk_turret", sk_turret), ("sk_totem", sk_totem), ("sk_phase", sk_phase), ("sk_inferno", sk_inferno),
+    ("sk_stormcall", sk_stormcall), ("sk_blades", sk_blades), ("sk_clip", sk_clip), ("sk_lance", sk_lance), ("sk_banner", sk_banner),
+    ("sk_harpoon", sk_harpoon), ("sk_overshield", sk_overshield)]
+
+
+SHAPES += SKILL_ICONS  # appended: the cells of the older icons stay where they were
+
+
 def main():
     rows = (len(SHAPES) + COLUMNS - 1) // COLUMNS
     tint_sheet = Image.new("RGBA", (COLUMNS * CELL, rows * CELL), (0, 0, 0, 0))
