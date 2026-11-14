@@ -4,7 +4,8 @@
 # the camera, two are tucked to the back, then each click turns the front card over, lowest rarity first, highest last,
 # with its rarity glow and chime (a legendary shakes and glows longer first); turned cards line up below, "NEW" on
 # cards not owned before. "Open all" (after the first pack opened by hand this session) opens the rest at once and
-# shows what came out. Cards count once the tear is finished (saved at once through `changed`).
+# shows what came out. Cards count once the tear is finished (saved at once through `changed`). A pack's rare play mat
+# (data/tcg/mats.json) is named in the title.
 # Drawn in a 1152 x 648 stage scaled to the window height.
 # Dependencies: core/tcg/pack_open.gd, game/tcg/card_face.gd, game/tcg/pack_sound.gd, game/sound_board.gd,
 # assets/tcg/pack.png; db (core/tcg/card_db.gd), owned (core/tcg/collection.gd), cfg (data/tcg/packs.json) handed in.
@@ -36,6 +37,7 @@ static var opened_one := false  # "Open all" shows once a pack was opened by han
 var db: RefCounted
 var owned: RefCounted
 var cfg: Dictionary
+var mats: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))
 
 var _rng := RandomNumberGenerator.new()
 var _stage := Control.new()
@@ -174,7 +176,7 @@ func _stage_input(event: InputEvent) -> void:
 			var band := Rect2(r.position - Vector2(30, 30), Vector2(r.size.x + 60, r.size.y * 0.28 + 30))
 			if mb.pressed and band.has_point(mb.position):
 				if _rolled.is_empty():
-					_rolled = PackOpen.roll(db, owned, cfg, _rng)
+					_rolled = PackOpen.roll(db, owned, cfg, _rng, mats)
 				_drag_from = mb.position.x
 			elif not mb.pressed and _drag_from >= 0.0:
 				_drag_from = -1.0
@@ -205,6 +207,7 @@ func _torn() -> void:
 	_play(PackSound.tear(), "card_tear")
 	var got := PackOpen.commit(owned, _rolled)
 	var god := bool(_rolled.get("god", false))
+	var mat := String(_rolled.get("mat", ""))
 	_rolled = {}
 	opened_one = true
 	changed.emit()
@@ -212,6 +215,9 @@ func _torn() -> void:
 	var n := got.size()
 	_cards = got.slice(n - 2) + got.slice(0, n - 2)
 	_title.text = "GOD PACK!" if god else ""
+	if mat != "":
+		var news := "NEW PLAY MAT: %s!" % String(mats["mats"][mat]["name"]).to_upper()
+		_title.text = (_title.text + "  " + news) if god else news
 	_hint.text = ""
 	_set_buttons([])
 	_state = "rise"
@@ -370,7 +376,7 @@ func _done() -> void:
 
 func _open_all() -> void:
 	_clear_faces()
-	var got := PackOpen.open_all(db, owned, cfg, _rng)
+	var got := PackOpen.open_all(db, owned, cfg, _rng, mats)
 	changed.emit()
 	_state = "all"
 	_hint.text = ""
@@ -389,6 +395,8 @@ func _open_all() -> void:
 	_title.text = "%d PACKS OPENED%s" % [int(got["packs"]), "  -  %d GOD PACK%s!" % [int(got["gods"]), "" if int(got["gods"]) == 1 else "S"] if int(got["gods"]) > 0 else ""]
 	_hint.position.y = 62
 	_hint.text = "%d legendary  -  %d epic  -  %d rare  -  %d common  -  %d new" % [counts["legendary"], counts["epic"], counts["rare"], counts["common"], news]
+	for m: Variant in got["mats"]:
+		_hint.text += "  -  NEW MAT: %s" % mats["mats"][String(m)]["name"]
 	var order: Array = best.values()
 	var rank := {"legendary": 0, "epic": 1, "rare": 2, "common": 3}
 	order.sort_custom(func(a: Dictionary, b: Dictionary) -> bool: return int(rank[a["card"]["rarity"]]) < int(rank[b["card"]["rarity"]]))
@@ -431,7 +439,7 @@ func dev_step(what: String) -> void:
 			if _state != "stack" or _left() <= 0:
 				return
 			if _rolled.is_empty():
-				_rolled = PackOpen.roll(db, owned, cfg, _rng)
+				_rolled = PackOpen.roll(db, owned, cfg, _rng, mats)
 			_tear = 0.5 if what == "half" else 1.0
 			_stage.queue_redraw()
 			if what == "tear":

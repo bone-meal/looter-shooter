@@ -1,0 +1,20 @@
+{
+ "version": 1,
+ "_about": "Play mats of \"You got me Lobster?\" (locked: unlocked by a MIX of rare pulls from packs, buying at the card machine and win milestones; every name, odd and price here is a placeholder to edit). Each mat: name, picture assets/tcg/mats/<id>.jpg (made by tools/paint_mats.py), how it comes: \"start\" (everyone owns it), \"pack\" (a rare pull: each opened pack has a 1 in pack_one_in chance to bring one pack mat the player does not own yet), \"buy\" (price in chips at the card machine) or \"wins\" (that many wins against players: the achievements Ten Up / Table Boss / Lion of the Sand, build step 13b). The table shows each player's own mat on their half.",
+ "default": "beach_felt",
+ "pack_one_in": 60,
+ "mats": {
+  "beach_felt": {"name": "Beach Felt", "start": true},
+  "tide_pool": {"name": "Tide Pool", "pack": true},
+  "scrapyard": {"name": "Scrapyard", "pack": true},
+  "crypt_floor": {"name": "Crypt Floor", "pack": true},
+  "wheat_field": {"name": "Wheat Field", "pack": true},
+  "neon_club": {"name": "Neon Club", "pack": true},
+  "driftwood": {"name": "Driftwood", "pack": true},
+  "royal_velvet": {"name": "Royal Velvet", "buy": 5000},
+  "lobster_red": {"name": "Lobster Red", "buy": 5000},
+  "card_sharp": {"name": "Card Sharp", "wins": 10},
+  "table_boss": {"name": "Table Boss", "wins": 25},
+  "lion_of_the_sand": {"name": "Lion of the Sand", "wins": 50}
+ }
+}

@@ -1,0 +1,69 @@
+{
+ "version": 1,
+ "_about": "Where things lie on a play mat of \"You got me Lobster?\" (locked 2026-11-14: creature spots on an ARC, the leader's portrait spot at the back nearest the player, like Hearthstone's hero portrait). Pixels on the 1024 x 608 mat picture; y = distance from the centre line toward the owner (the near half); angle in degrees. The far half is the same turned half a circle. Used by tools/paint_mats.py and the 3D table view (cards land on these spots).",
+ "size": [
+  1024,
+  608
+ ],
+ "card": [
+  78,
+  108
+ ],
+ "creatures": [
+  [
+   182,
+   152,
+   14.0
+  ],
+  [
+   292,
+   119,
+   9.3
+  ],
+  [
+   402,
+   99,
+   4.7
+  ],
+  [
+   512,
+   92,
+   -0.0
+  ],
+  [
+   622,
+   99,
+   -4.7
+  ],
+  [
+   732,
+   119,
+   -9.3
+  ],
+  [
+   842,
+   152,
+   -14.0
+  ]
+ ],
+ "leader": {
+  "at": [
+   512,
+   222
+  ],
+  "size": [
+   124,
+   124
+  ]
+ },
+ "deck": [
+  942,
+  170,
+  8
+ ],
+ "discard": [
+  82,
+  170,
+  -8
+ ]
+}

@@ -25,7 +25,7 @@ const Z0 := -7.0
 const Z1 := 6.0
 
 
-# Returns {"vendors" (Array of game/gun_vendor.gd), "pachinko", "slots" (Array), "blackjack", "roulette", "crew", "bj_dealer", "rt_dealer", "card_table", "card_dealer", "card_vendor"}.
+# Returns {"vendors" (Array of game/gun_vendor.gd), "pachinko", "slots" (Array), "blackjack", "roulette", "crew", "bj_dealer", "rt_dealer", "card_table", "card_dealer", "card_vendor", "player_tables" (Array)}.
 static func build(parent: Node3D, center: Vector3) -> Dictionary:
 	var root := Node3D.new()
 	root.position = center
@@ -82,12 +82,19 @@ static func build(parent: Node3D, center: Vector3) -> Dictionary:
 	root.add_child(card_table)
 	var seat := at + Vector3(0, 0, 0.95).rotated(Vector3.UP, deg_to_rad(float(house["yaw"])))  # the dealer's side, facing the player
 	var card_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_gold", "long_wavy", "#c0392b", "smirk", 1), seat, float(house["yaw"]), null, String(house["dealer_npc"]))
+	var player_tables: Array = []  # the other three tables (locked: four on the beach): two players play there (online, build step 13)
+	for t: Dictionary in DataStore.load_json("res://data/tcg/table.json").get("tables", []):
+		var pt: BeachTable = BeachTable.new()
+		pt.position = Vector3(float(t["at"][0]), float(t["at"][1]), float(t["at"][2]))
+		pt.rotation_degrees.y = float(t.get("yaw", 0.0))
+		root.add_child(pt)
+		player_tables.append(pt)
 	var card_vendor: CardVendor = CardVendor.new()  # the card vending machine: north-west corner, facing the room
 	card_vendor.position = Vector3(13.0, 0.0, -4.6)
 	card_vendor.rotation_degrees.y = 90.0
 	root.add_child(card_vendor)
 	crew.add_obstacle(Vector3(13.0, 0.0, -4.6), 0.6, 0.9)
-	return {"vendors": vendors, "pachinko": wall, "slots": slots, "blackjack": bj, "roulette": rt, "crew": crew, "bj_dealer": bj_dealer, "rt_dealer": rt_dealer, "card_table": card_table, "card_dealer": card_dealer, "card_vendor": card_vendor}
+	return {"vendors": vendors, "pachinko": wall, "slots": slots, "blackjack": bj, "roulette": rt, "crew": crew, "bj_dealer": bj_dealer, "rt_dealer": rt_dealer, "card_table": card_table, "card_dealer": card_dealer, "card_vendor": card_vendor, "player_tables": player_tables}
 
 
 # Neon sign on the west wall above the gun vendor kiosks, plus a glowing floor strip under them, so players can find them.

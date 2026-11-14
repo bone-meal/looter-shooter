@@ -6,7 +6,7 @@
 # the full set has its locked shape, every starter is legal, and 40 AI matches of one-of decks play every card.
 # The binder's list (core/tcg/binder_list.gd) and the deck builder's rules (core/tcg/deck_edit.gd) too.
 # Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd, core/tcg/card_text.gd, core/tcg/event_text.gd,
-# core/tcg/binder_list.gd, core/tcg/deck_edit.gd, core/tcg/collection.gd, core/tcg/pack_open.gd.
+# core/tcg/binder_list.gd, core/tcg/deck_edit.gd, core/tcg/collection.gd, core/tcg/pack_open.gd, core/tcg/mat_book.gd, core/wallet.gd.
 extends Node
 
 const CardDb = preload("res://core/tcg/card_db.gd")
@@ -454,6 +454,26 @@ func _check_binder(real: RefCounted) -> void:
 		all_new = all_new and bool(card["new"]) == (int(o.call("count", String(card["id"]), "*", bool(card["leader"]))) == got.filter(func(x: Dictionary) -> bool: return x["id"] == card["id"]).size())
 	_say("a torn pack: one pack less, its cards owned, new ones marked", got.size() >= 5 and int(o.call("pack_count")) == 3 and all_new)
 	var rest: Dictionary = PackOpen.call("open_all", real, o, cfg, rng)
+	# play mats (core/tcg/mat_book.gd)
+	var MatBook: GDScript = load("res://core/tcg/mat_book.gd")
+	var mats: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))
+	var mo: RefCounted = Collection.new()
+	_say("everyone has the start mat and uses it", bool(MatBook.call("owns", mo, mats, "beach_felt")) and String(MatBook.call("current", mo, mats)) == "beach_felt" and not bool(MatBook.call("choose", mo, mats, "neon_club")))
+	var sure := mats.duplicate(true)
+	sure["pack_one_in"] = 1
+	var pulled := {}
+	for i in 10:
+		var m := String(MatBook.call("pull", mo, sure, rng))
+		if m != "":
+			MatBook.call("give", mo, m)
+			pulled[m] = true
+	_say("pack pulls give each pack mat once, then none", pulled.size() == 6 and String(MatBook.call("pull", mo, sure, rng)) == "")
+	var purse: RefCounted = load("res://core/wallet.gd").new()
+	purse.set("balance", 6000)
+	_say("a machine mat costs its chips once", String(MatBook.call("buy", mo, mats, purse, "royal_velvet")) == "" and int(purse.get("balance")) == 1000 and String(MatBook.call("buy", mo, mats, purse, "lobster_red")) != "" and String(MatBook.call("buy", mo, mats, purse, "card_sharp")) != "")
+	(mo.get("record") as Dictionary)["wins"] = 25
+	var earned: Array = MatBook.call("milestones", mo, mats)
+	_say("10 and 25 wins give their mats, not the 50", earned.size() == 2 and earned.has("card_sharp") and earned.has("table_boss") and bool(MatBook.call("choose", mo, mats, "table_boss")))
 	_say("Open all opens the rest, box packs last", int(rest["packs"]) == 3 and int(o.call("pack_count")) == 0 and String(PackOpen.call("next_kind", o)) == "" and int((o.get("box") as Dictionary)["left"]) == 0)
 
 

@@ -1,7 +1,8 @@
 {
  "version": 1,
- "_about": "The card table on the club island beach (build step 5: one table, the House Dealer). at = metres from the club island's centre (the casino door is at about 17, 0, 6), yaw = degrees (the dealer sits on the table's +z side, the player stands on the -z side). Prizes in chips (locked: 50 for a win against a player, 20 against the House Dealer). dealer_pause = seconds between the House Dealer's moves. sit_range = how close F works. The four tables of step 12 come later.",
- "house": {"at": [20.0, 0.0, 11.0], "yaw": 0.0, "dealer_npc": "dealer_cards"},
+ "_about": "The card table on the club island beach (build step 5: one table, the House Dealer). at = metres from the club island's centre (the casino door is at about 17, 0, 6), yaw = degrees (the dealer sits on the table's +z side, the player stands on the -z side). Prizes in chips (locked: 50 for a win against a player, 20 against the House Dealer). dealer_pause = seconds between the House Dealer's moves. sit_range = how close F works. mat = the House Dealer's play mat (data/tcg/mats.json). tables = the other three tables of the four (players against each other; they open for play online, build step 13).",
+ "house": {"at": [20.0, 0.0, 11.0], "yaw": 0.0, "dealer_npc": "dealer_cards", "mat": "lobster_red"},
+ "tables": [{"at": [16.5, 0.0, 11.0], "yaw": 0.0}, {"at": [13.0, 0.0, 11.0], "yaw": 0.0}, {"at": [16.5, 0.0, 14.5], "yaw": 0.0}],
  "prize_vs_ai": 20,
  "prize_vs_player": 50,
  "dealer_pause": 0.9,

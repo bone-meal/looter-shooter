@@ -127,8 +127,9 @@ func _fit() -> void:
 	size = view / k
 
 
-# cfg = data/tcg/packs.json; starters = data/tcg/starters.json "starters"; leaders = id -> {"name"}.
-func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary) -> void:
+# cfg = data/tcg/packs.json; starters = data/tcg/starters.json "starters"; leaders = id -> {"name"};
+# mats = data/tcg/mats.json (the play mats sold here show under a second tab of the bottom row).
+func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary, mats: Dictionary = {}) -> void:
 	var dim := ColorRect.new()
 	dim.color = Color(0.03, 0.0, 0.03, 0.55)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -208,16 +209,56 @@ func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary) -> void:
 		row1.add_child(t)
 		_tiles[id] = t
 	# row 2: starter decks by their leader
-	var title2 := Label.new()
-	title2.text = "STARTER DECKS"
-	title2.add_theme_font_override("font", CardFace.font("title"))
-	title2.add_theme_font_size_override("font_size", 20)
-	title2.add_theme_color_override("font_color", GOLD)
-	v.add_child(title2)
+	var tabs := HBoxContainer.new()
+	tabs.add_theme_constant_override("separation", 26)
+	v.add_child(tabs)
 	var row2 := HBoxContainer.new()
 	row2.add_theme_constant_override("separation", 12)
 	row2.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.add_child(row2)
+	var row3 := HBoxContainer.new()  # play mats, behind the second tab
+	row3.add_theme_constant_override("separation", 12)
+	row3.alignment = BoxContainer.ALIGNMENT_CENTER
+	row3.visible = false
+	v.add_child(row3)
+	var tab_labels: Array = []
+	for pair: Array in [["STARTER DECKS", row2], ["PLAY MATS", row3]]:
+		var title2 := Label.new()
+		title2.text = String(pair[0])
+		title2.add_theme_font_override("font", CardFace.font("title"))
+		title2.add_theme_font_size_override("font_size", 20)
+		title2.mouse_filter = Control.MOUSE_FILTER_STOP
+		title2.mouse_default_cursor_shape = Control.CURSOR_POINTING_HAND
+		tabs.add_child(title2)
+		tab_labels.append(title2)
+		if pair[0] == "PLAY MATS" and mats.is_empty():
+			title2.visible = false
+	var pick_tab := func(i: int) -> void:
+		row2.visible = i == 0
+		row3.visible = i == 1
+		for k in tab_labels.size():
+			(tab_labels[k] as Label).add_theme_color_override("font_color", GOLD if k == i else Color(1, 1, 1, 0.45))
+	for k in tab_labels.size():
+		(tab_labels[k] as Label).gui_input.connect(func(e: InputEvent) -> void:
+			if e is InputEventMouseButton and e.pressed and (e as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+				pick_tab.call(k))
+	pick_tab.call(0)
+	for mid: String in mats.get("mats", {}):
+		var m: Dictionary = mats["mats"][mid]
+		if not m.has("buy"):
+			continue
+		var mt := Tile.new()
+		mt.title_size = 16
+		var mpath := "res://assets/tcg/mats/%s.jpg" % mid
+		mt.picture = load(mpath) if ResourceLoader.exists(mpath) else null
+		mt.art_cover = true
+		mt.title = String(m["name"])
+		mt.price = int(m["buy"])
+		mt.custom_minimum_size = Vector2(230, 166)
+		var mkey := "mat:" + mid
+		mt.clicked.connect(func() -> void: buy.emit(mkey))
+		row3.add_child(mt)
+		_tiles[mkey] = mt
 	var longest := 0.0
 	for sid: String in starters:
 		longest = maxf(longest, CardFace.font("title").get_string_size(String(starters[sid]["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x)

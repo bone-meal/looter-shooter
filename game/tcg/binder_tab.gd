@@ -3,7 +3,8 @@
 # page, use the arrow keys, the mouse wheel or the < > buttons to turn; hovering a card shows it big. "Decks" opens
 # the five slots: pick one and the binder becomes the deck builder (click a card to put it in, click a row of the
 # list to take it out, click a leader to lead the deck; mana curve and whether the deck can be played).
-# "Open packs" starts the pack opening over the whole screen (game/tcg/pack_opening.gd).
+# "Open packs" starts the pack opening over the whole screen (game/tcg/pack_opening.gd). "Play mats" lists every mat
+# (owned ones to pick for your half of the table, locked ones dim with how they come; core/tcg/mat_book.gd).
 # Dependencies: core/tcg/binder_list.gd, core/tcg/deck_edit.gd, game/tcg/card_face.gd, game/tcg/card_shine.gd, game/tcg/pack_opening.gd, data/tcg/packs.json;
 # db (core/tcg/card_db.gd) and owned (core/tcg/collection.gd) handed in by build().
 extends VBoxContainer
@@ -12,6 +13,7 @@ const BinderList = preload("res://core/tcg/binder_list.gd")
 const DeckEdit = preload("res://core/tcg/deck_edit.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 const PackOpening = preload("res://game/tcg/pack_opening.gd")
+const MatBook = preload("res://core/tcg/mat_book.gd")
 
 signal changed  # a deck slot was saved, or packs were opened
 
@@ -45,6 +47,9 @@ var _rows := VBoxContainer.new()
 var _curve: ManaCurve
 var _status := Label.new()
 var _open_button: Button
+var _mat_panel := VBoxContainer.new()
+var _mat_list := VBoxContainer.new()
+var _mats_cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))
 var _opening: Control
 var _slot := -1  # deck slot being built, -1 = just browsing
 var _deck: Dictionary = {}
@@ -136,6 +141,34 @@ class Spread extends Control:
 					press_x = -1.0
 					if absf(dx) > 60.0:
 						turn.emit(1 if dx < 0.0 else -1)
+
+
+# One play mat in the list: its picture, name and (locked) how it comes.
+class MatTile extends Control:
+	signal picked(id: String)
+	var id := ""
+	var title := ""
+	var note := ""
+	var owned := false
+	var chosen := false
+	var tex: Texture2D
+
+	func _init() -> void:
+		custom_minimum_size = Vector2(266, 128)
+
+	func _gui_input(event: InputEvent) -> void:
+		if owned and event is InputEventMouseButton and event.pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			picked.emit(id)
+
+	func _draw() -> void:
+		var r := Rect2(Vector2(4, 4), size - Vector2(8, 30))
+		if tex != null:
+			draw_texture_rect(tex, r, false, Color.WHITE if owned else Color(0.35, 0.35, 0.4))
+		draw_rect(r, Color(1.0, 0.82, 0.4) if chosen else Color(1, 1, 1, 0.25), false, 4.0 if chosen else 1.0)
+		var f: Font = CardFace.font("title")
+		draw_string(f, Vector2(6, size.y - 8), title + ("  (in use)" if chosen else ""), HORIZONTAL_ALIGNMENT_LEFT, size.x - 12, 14, Color.WHITE if owned else Color(1, 1, 1, 0.5))
+		if not owned:
+			draw_string(f, r.get_center() + Vector2(-r.size.x * 0.45, 5), note, HORIZONTAL_ALIGNMENT_CENTER, r.size.x * 0.9, 13, Color(1.0, 0.85, 0.5))
 
 
 # The mana curve: one bar per cost, 0 ... 8+.
@@ -264,6 +297,18 @@ func _build_browse(stack: VBoxContainer) -> void:
 	_open_button = _button(_browse_panel, "Open packs", func() -> void:
 		_opening.call("open", db, owned, JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/packs.json"))))
 	_button(_browse_panel, "Decks", func() -> void: _open_slots())
+	_button(_browse_panel, "Play mats", func() -> void: _show_mats())
+	stack.add_child(_mat_panel)
+	_mat_panel.visible = false
+	_mat_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	var mat_scroll := ScrollContainer.new()
+	mat_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	mat_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	mat_scroll.add_child(_mat_list)
+	_mat_panel.add_child(mat_scroll)
+	_button(_mat_panel, "Back", func() -> void:
+		_mat_panel.visible = false
+		_browse_panel.visible = true)
 	var layer := CanvasLayer.new()  # over the whole menu, Close button included
 	layer.layer = 60
 	add_child(layer)
@@ -495,6 +540,32 @@ func _on_card(face: Control, _right: bool) -> void:
 	else:
 		why = DeckEdit.add(db, owned, _deck, String(e["id"]))
 	_show_deck(why)
+
+
+# ---- play mats ----
+
+func _show_mats() -> void:
+	_browse_panel.visible = false
+	_mat_panel.visible = true
+	for child in _mat_list.get_children():
+		_mat_list.remove_child(child)
+		child.queue_free()
+	var now := MatBook.current(owned, _mats_cfg)
+	for id: String in _mats_cfg["mats"]:
+		var t := MatTile.new()
+		t.id = id
+		t.title = String(_mats_cfg["mats"][id]["name"])
+		t.note = MatBook.how(_mats_cfg, id)
+		t.owned = MatBook.owns(owned, _mats_cfg, id)
+		t.chosen = id == now
+		var pic := "res://assets/tcg/mats/%s.jpg" % id
+		t.tex = load(pic) as Texture2D if ResourceLoader.exists(pic) else null  # not cached: twelve big pictures
+		t.tooltip_text = t.note
+		t.picked.connect(func(which: String) -> void:
+			MatBook.choose(owned, _mats_cfg, which)
+			changed.emit()
+			_show_mats())
+		_mat_list.add_child(t)
 
 
 # ---- decks ----

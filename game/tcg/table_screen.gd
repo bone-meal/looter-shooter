@@ -1,7 +1,8 @@
-# Purpose: the card table's screen for the first playable (build step 5; the 3D table view replaces the mat part in step
-# 12): deck pick, mulligan, both leaders, both rows of creatures, your hand, hero power, End Turn, the turn timer with
-# its fuse, a match log, a big hover view with keyword help, the "Concede?" prompt and the result. Collects clicks into
-# intents only; game/tcg/card_table.gd runs the match.
+# Purpose: the card table's screen: deck pick, mulligan, both leaders, both rows of creatures, your hand, hero power,
+# End Turn, the turn timer with its fuse, a match log, a big hover view with keyword help, the "Concede?" prompt and the
+# result. Collects clicks into intents only; game/tcg/card_table.gd runs the match. With a 3D table view
+# (game/tcg/table_view.gd, step 12) the felt turns see-through, the card rows stay but are invisible, and the mouse is
+# asked of the 3D view (which face is under it); hold Alt to look around.
 # Dependencies: game/tcg/card_face.gd, core/tcg/card_text.gd, core/tcg/match_state.gd (read only, handed in), game/chip_art.gd.
 extends Control
 
@@ -53,6 +54,9 @@ var _pick_box := VBoxContainer.new()
 var _center := PanelContainer.new()
 var _center_text := Label.new()
 var _center_buttons := HBoxContainer.new()
+var view3d: Node3D  # game/tcg/table_view.gd, or null for the flat 2D table
+var _felt: ColorRect
+var _hovered: Variant = null  # the face under the mouse in 3D
 
 
 func _ready() -> void:
@@ -64,6 +68,7 @@ func _ready() -> void:
 	felt.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	felt.gui_input.connect(_on_felt_input)
 	add_child(felt)
+	_felt = felt
 	var v := VBoxContainer.new()
 	v.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	v.offset_left = 16
@@ -255,6 +260,8 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 		_cancel_quiet()
 	_turn.text = ("Your turn" if my_turn else "%s's turn" % who[int(m.get("current"))]) if m.get("phase") == "play" else ""
 	_mark_all()
+	if view3d != null and not view3d.visible:
+		view3d.call("enter")
 
 
 func add_log(lines: PackedStringArray) -> void:
@@ -297,6 +304,8 @@ func flash(why: String) -> void:
 
 func close() -> void:
 	visible = false
+	if view3d != null:
+		view3d.call("leave")
 	_center.visible = false
 	_pick.visible = false
 	_m = null
@@ -401,8 +410,41 @@ func _cancel_quiet() -> void:
 
 
 func _on_felt_input(event: InputEvent) -> void:
+	if view3d != null and view3d.visible:
+		_felt_3d(event)
+		return
 	var click := event as InputEventMouseButton
 	if click != null and click.pressed:
+		_cancel()
+
+
+# The 3D table: the mouse asks the view what is under it; clicks go where a click on that 2D face would go.
+func _felt_3d(event: InputEvent) -> void:
+	var motion := event as InputEventMouseMotion
+	if motion != null and Input.is_key_pressed(KEY_ALT):
+		view3d.call("free_look", motion.relative)
+		return
+	var under: Variant = view3d.call("pick", get_viewport().get_mouse_position())
+	if motion != null:
+		if under != _hovered:
+			if _hovered is Control:
+				_on_hover(_hovered, false)
+			_hovered = under
+			if under is Control:
+				_on_hover(under, true)
+		return
+	var click := event as InputEventMouseButton
+	if click == null or not click.pressed or not (click.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]):
+		return
+	if under is Control:
+		_on_card(under, click.button_index == MOUSE_BUTTON_RIGHT)
+	elif under is Dictionary and bool((under as Dictionary).get("leader", false)) and click.button_index == MOUSE_BUTTON_LEFT:
+		var code := HERO - (_me if int(under["side"]) == 0 else 1 - _me)
+		if _mode != "" and _valid.has(code):
+			_fire(code)
+		else:
+			_cancel()
+	else:
 		_cancel()
 
 
@@ -469,6 +511,22 @@ func _mark_all() -> void:
 			face.mark(col)
 	_foe_bar.modulate = C_PICK if _mode != "" and _valid.has(HERO - (1 - _me)) else Color.WHITE
 	_my_bar.modulate = C_PICK if _mode != "" and _valid.has(HERO - _me) else Color.WHITE
+	_show_3d()
+
+
+# Hands the 3D view what the rows hold (after every change of cards or outlines).
+func _show_3d() -> void:
+	var on := view3d != null and _m != null
+	_felt.color.a = 0.0 if on else 0.97
+	for row: Control in [_foe_row, _my_row, _hand_row]:
+		row.modulate.a = 0.0 if on else 1.0
+		for face: Control in row.get_children():  # unseen faces must not catch the mouse
+			face.mouse_filter = Control.MOUSE_FILTER_IGNORE if on else Control.MOUSE_FILTER_STOP
+	if not on:
+		return
+	var sides: Array = _m.get("sides")
+	view3d.call("show_cards", _hand_row.get_children(), _my_row.get_children(), _foe_row.get_children(), (sides[1 - _me]["hand"] as Array).size(),
+		[String(sides[_me]["leader"]), String(sides[1 - _me]["leader"])], [(sides[_me]["deck"] as Array).size(), (sides[1 - _me]["deck"] as Array).size()])
 
 
 func _set_rows_visible(on: bool) -> void:

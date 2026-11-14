@@ -521,7 +521,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:
 				player.global_position = wall.global_position + wall.global_basis.z * 4.0
-		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg note" = the match in one line
+		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg look" = view of the tables; "!tcg note" = the match in one line
 			var tcg: Node = session.get("_tcg")
 			if words[1] == "note":
 				var m: RefCounted = tcg.get("match_state")
@@ -550,7 +550,14 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					shop.call("_on_buy", words[3])
 					var owned: RefCounted = session.get("_cards")
 					_lines.append("TCG SHOP %s: packs %d, box %s, chips %d" % [words[3], int(owned.call("pack_count")), str(owned.get("box")), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "look":  # "!tcg look": stand on the beach looking at the four card tables
+				var house_table: Node3D = (session.get("_casino") as Dictionary).get("card_table")
+				player.call("teleport", house_table.global_position + Vector3(-1.8, 0.1, -3.2), 0.0)
+				player.call("look_at_point", house_table.global_position + Vector3(-1.8, 0.4, 1.5))
 			elif words[1] == "binder":  # "!tcg binder [decks]": the player card's Binder tab (owning the Tide starter at least); "decks" = the builder on slot 1
+				if words.size() > 2 and words[2] == "close":
+					session.get("_card_screen").call("close")
+					return
 				var owned: RefCounted = session.get("_cards")
 				if owned.call("count", "reef_crab") <= 0:
 					var starters: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json"))["starters"]

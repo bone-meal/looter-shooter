@@ -15,8 +15,11 @@ const AiPlayer = preload("res://core/tcg/ai_player.gd")
 const EventText = preload("res://core/tcg/event_text.gd")
 const Wallet = preload("res://core/wallet.gd")
 const TableScreen = preload("res://game/tcg/table_screen.gd")
+const TableView = preload("res://game/tcg/table_view.gd")
+const CardBake = preload("res://game/tcg/card_bake.gd")
 const DataStore = preload("res://core/data_store.gd")
 const Collection = preload("res://core/tcg/collection.gd")
+const MatBook = preload("res://core/tcg/mat_book.gd")
 
 signal finished  # a match ended (chips may have changed): the session saves
 signal left
@@ -70,6 +73,14 @@ func setup(wallet: Wallet, casino: Dictionary, layer: CanvasLayer, player: Chara
 	_screen.intent.connect(_on_intent)
 	_screen.again.connect(_open_pick)
 	_screen.leave.connect(_leave)
+	var view := TableView.new()  # the 3D cards on the table (step 12); the screen keeps the rules of clicking
+	view.visible = false
+	var bake := CardBake.new()
+	bake.db = _db
+	view.add_child(bake)
+	view.bake = bake
+	_table.add_child(view)
+	_screen.set("view3d", view)
 
 
 func is_open() -> bool:
@@ -155,6 +166,9 @@ func _start(key: String) -> void:
 	var theirs: Dictionary = _starters[others[_rng.randi_range(0, others.size() - 1)]]
 	_played_cards = (mine["cards"] as Array).duplicate()
 	match_state = MatchState.new(_db, [{"leader": mine["leader"], "cards": mine["cards"]}, {"leader": theirs["leader"], "cards": theirs["cards"]}], _rng.randi())
+	if collection != null:  # each half of the table shows its player's mat (the House Dealer's from data/tcg/table.json)
+		var mats: Dictionary = DataStore.load_json("res://data/tcg/mats.json")
+		_table.call("set_mats", MatBook.current(collection, mats), String((_cfg["house"] as Dictionary).get("mat", mats.get("default", ""))))
 	_known = {}
 	_turn_left = float(_db.get("rules")["turn_seconds"])
 	match_state.call("mulligan", DEALER, AiPlayer.mulligan(match_state, DEALER))
