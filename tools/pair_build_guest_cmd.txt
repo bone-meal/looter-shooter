@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!net wait_guest;!wait 6;!boat goto;!wait 1;!key interact;!wait 2;!boat g_aboard;!wait 8;!boat g_host_aboard;!hold move_forward;!wait 2;!boat g_s1;!wait 2;!boat g_s2;!hold move_right;!wait 2;!release move_right;!release move_forward;!boat g_s3;!wait 3;!boat g_stopped;!snap boat_guest;!key interact;!wait 2;!boat g_off

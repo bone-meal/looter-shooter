@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!net wait_guest;!tcg binder;!wait 1;!tcg binder close;!trade g_before;!trade wait_ask;!trade yes;!trade wait_open;!trade g_open;!wait 1;!trade card harbor_gull;!wait 4;!trade ready;!wait 4;!trade confirm;!wait 4;!trade g_after;!snap trade_guest;!wait 4;!trade g_end

@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;!net wait_guest;!wait 2;/build boat;!boat h_a;!boat wait_other;!boat h_guest_aboard;!boat goto;!wait 1;!key interact;!wait 2;!boat h_aboard;!wait 4;!boat h_s1;!wait 2;!boat h_s2;!snap boat_host;!wait 3;!boat h_s3;!wait 6;!boat h_end

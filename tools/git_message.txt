@@ -1,11 +1,7 @@
-Card game open items: opponent mat online, void on host change, human figures, HUD clear of the mat, ring fixed
+Two-copy online tests: dev steps and command sets for islands, downs, power-ups, parts, boat and trading
 
-Each player's play mat goes to the host with the deck; the far half shows the opponent's mat (made-up ids dropped).
-When the connection drops (host migration or leaving) the player-table match is void: no win, no loss, table cleared.
-Mira Kestrel, the High Roller and the Pachinko Queen stand on the table as small rigged figures.
-END TURN moves to the right edge and the log to the top right over the 3D table.
-Starters re-tuned: every ring edge now points the right way (crypt beats tide 59 percent at 800 games).
-Checks read starter cards from data; dev steps tcg mat and the tcgvoid pair test.
+Dev steps for testing two copies on one PC: hurt, downs with waits for down and up, net to_other, immortal off, powers goto, power note, boat wait_other, trade (ask, answer, wait, offer gun or card, ready, confirm), rounds shows what a client was told.
+Command sets tools/pair_islands, pair_build, pair_trade, pair_tcgvoid. All of these ran on two copies without a bug in the game.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

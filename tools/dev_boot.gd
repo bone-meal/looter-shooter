@@ -242,7 +242,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var power: RefCounted = session.get("_power")
 				_lines.append("PERK %s: carried %s, health %d / %d, ready slots %d, power parts %d on %s, points %d" % [" ".join(words.slice(1)), str((session.get("_perks") as RefCounted).get("owned")), roundi(float(player.get("health").hp)), roundi(float(player.get("health").max_hp)),
 					int((player.get("inventory") as RefCounted).get("holster_count")), int(power.call("found_count")), str(power.get("on")), int((session.call("score") as RefCounted).get("points"))])
-		"power":  # "!power part 1": stand at power part n; "!power bench": stand at the workbench
+		"power":  # "!power part 1": stand at power part n; "!power bench": stand at the workbench; "!power <note>": parts found and the switch
+			if not (words[1] in ["bench", "part"]):
+				var ps: RefCounted = session.get("_power")
+				_lines.append("POWER %s: found %d, all %s, on %s" % [" ".join(words.slice(1)), int(ps.call("found_count")), str(ps.call("all_found")), str(ps.get("on"))])
+				return
 			var spot: Vector2 = session.get("_bench_spot") if words[1] == "bench" else (session.get("_part_spots") as Array)[int(words[2])]
 			player.call("teleport", Vector3(500.0 + spot.x + 1.2, 0.15, spot.y + 1.2), 0.0)
 			player.call("look_at_point", Vector3(500.0 + spot.x, 0.8, spot.y))
@@ -297,7 +301,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				for which in (state.get("ids") as Array).size():
 					told.append("%s %d of %d%s" % [String((state.get("ids") as Array)[which]), int(state.call("found_count", which)), int(state.call("part_count", which)), " BUILT" if bool(state.call("built", which)) else ""])
 				_lines.append("BUILD %s: %s | here %d" % [" ".join(words.slice(1)), ", ".join(told), int(session.call("_build_thing_at", player.global_position))])
-		"boat":  # "!boat goto": stand on the sand nearest the boat, looking at it; "!boat <note>": where it is, its speed, who sits in it, our place
+		"boat":  # "!boat goto": stand on the sand nearest the boat, looking at it; "!boat <note>": where it is, its speed, who sits in it, our place; "!boat wait_other": wait until another player sits in it
+			if words.size() > 1 and words[1] == "wait_other":  # "!boat wait_other": wait (up to 60 s) until another player sits in the boat
+				var link: Node = session.get("net")
+				var began := Time.get_ticks_msec()
+				var seen := false
+				while not seen and Time.get_ticks_msec() - began < 60000:
+					var seats_line := String(session.call("boat_note")).get_slice("seats [", 1).get_slice("]", 0)
+					for id: int in (link.get("roster") as Dictionary):
+						if id != int(link.call("my_id")) and seats_line.contains(str(id)):
+							seen = true
+					await get_tree().create_timer(0.25, true, false, true).timeout
+				return
 			if words.size() > 1 and words[1] == "goto":
 				player.call("teleport", session.call("boat_shore"), 0.0)
 				var hull: Node3D = session.get("_boat_node")
@@ -446,16 +461,68 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("COURSE %s: state %s, clock %.2f, checkpoint %d, best %.2f, last %.2f, on course %s, even ground %s, hud '%s'" % [" ".join(words.slice(1)), String(rules.get("state")), float(rules.get("time")), int(rules.get("checkpoint")), float(rules.get("best")), float(rules.get("last")), str(session.get("_on_course")), str(player.get("even_ground")), String((session.get("_player_hud") as Node).get("course_text"))])
 		"net":  # "!net wait_guest": wait (up to 120 s) until a second player is in the session; "!net <note>": who is connected
 			var link: Node = session.get("net")
+			if words.size() > 1 and words[1] == "to_other":  # "!net to_other": stand 1 m from the other player, facing them
+				for id: int in (link.get("roster") as Dictionary):
+					var body: Node3D = link.call("player_node", id)
+					if id != int(link.call("my_id")) and body != null:
+						player.call("teleport", body.global_position + Vector3(0, 0.2, 1.0), 0.0)
+						break
 			if words.size() > 1 and words[1] == "wait_guest":
 				var began := Time.get_ticks_msec()
 				while (link.get("roster") as Dictionary).size() < 2 and Time.get_ticks_msec() - began < 120000:
 					await get_tree().create_timer(0.5, true, false, true).timeout
 			var shared: Node = link.get("rounds")
 			_lines.append("NET %s: can send %s, host %s, my id %d, roster %s, ghosts %d, net enemies %d, states seen %d, last run '%s'" % [" ".join(words.slice(1)), str(link.call("can_send")), str(link.call("is_host")), int(link.call("my_id")), str(link.get("roster")), (link.call("target_nodes") as Array).size(), (shared.get("_enemies") as Dictionary).size(), int(shared.get("states_seen")), String(session.get("run_note"))])
+		"trade":  # online trading: "!trade ask <name>", "!trade yes" (answer an ask), "!trade gun" (offer the first rolled gun in the bag), "!trade card <id>" (offer one copy), "!trade ready", "!trade confirm", "!trade <note>"
+			var ts: Control = session.get("_trade_screen")
+			var inv: RefCounted = player.get("inventory")
+			match words[1]:
+				"ask":
+					_lines.append("TRADE ask: %s" % String(session.call("_trade_by_name", words[2])))
+				"yes":
+					((session.get("net") as Node).get("trade") as Node).call("answer", true)
+				"wait_ask", "wait_open":  # wait (up to 30 s) until somebody asks us / the trade window is open
+					var began := Time.get_ticks_msec()
+					while Time.get_ticks_msec() - began < 30000:
+						if (words[1] == "wait_ask" and String(session.get("_trade_asker")) != "") or (words[1] == "wait_open" and bool(ts.call("is_open"))):
+							break
+						await get_tree().create_timer(0.25, true, false, true).timeout
+				"gun":
+					for slot in 36:
+						var g: Dictionary = inv.call("gun_at", slot)
+						if not g.is_empty():
+							ts.offered.emit({"ref": slot, "gun": g})
+							break
+				"card":
+					(ts.get("offered_cards") as Dictionary)[1000] = {"card": words[2], "finish": "", "leader": false}
+					ts.offered.emit({"ref": 1000, "card": words[2], "finish": "", "leader": false})
+				"ready":
+					ts.ready_set.emit(true)
+				"confirm":
+					ts.confirmed.emit()
+				_:
+					var guns := 0
+					for slot in 36:
+						if not (inv.call("gun_at", slot) as Dictionary).is_empty():
+							guns += 1
+					var owned: RefCounted = session.get("_cards")
+					_lines.append("TRADE %s: window open %s, rolled guns %d, harbor_gull %d, total cards %d" % [" ".join(words.slice(1)), str(ts.call("is_open")), guns, int(owned.call("count", "harbor_gull")), int(owned.call("total")) if owned.has_method("total") else -1])
+		"hurt":  # "!hurt 40": we take that much damage (going down online needs it)
+			player.call("take_damage", float(words[1]))
+		"downs":  # "!downs <note>": who is down or out online, whether we lie down, our health; "!downs wait_down" waits (up to 60 s) until somebody is down, "!downs wait_up" until we are up again
+			var dl: Node = session.get("net")
+			if words.size() > 1 and words[1] in ["wait_down", "wait_up"]:
+				var began := Time.get_ticks_msec()
+				while Time.get_ticks_msec() - began < 60000:
+					var lying: bool = (dl.get("downs") as Node).get("states").values().has("down")
+					if (words[1] == "wait_down" and lying) or (words[1] == "wait_up" and not bool(player.get("downed"))):
+						break
+					await get_tree().create_timer(0.25, true, false, true).timeout
+			_lines.append("DOWNS %s: states %s, me downed %s, hp %d, revives %d, downs %d" % [" ".join(words.slice(1)), str((dl.get("downs") as Node).get("states")), str(player.get("downed")), int(player.get("health").hp), int(session.call("score").get("revives")), int(session.call("score").get("downs"))])
 		"go":  # "!go club": travel there without the chat command (a joiner may not use /tp)
 			session.call("travel", words[1])
-		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give)
-			player.set("cheat_god", true)
+		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give); "!immortal off" ends it
+			player.set("cheat_god", not (words.size() > 1 and words[1] == "off"))
 		"wkills":  # "!wkills 5": the rolled gun in hand gets the W kills counter at 5 (a plain gun becomes a rolled one first); "!wkills <note>": what it shows
 			var hand_now := int(player.call("hand_index"))
 			var bag: RefCounted = player.get("inventory")
@@ -656,7 +723,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				", ".join(alive), ", ".join(lying), int((session.call("score") as RefCounted).get("points")), int((player.get("inventory") as RefCounted).get("holster_count")), str(session.get("_run_mods"))])
 		"weather":  # "!weather <note>": the islands' weather on screen now (stage, fog, sun, rain drops, the looping sound)
 			_lines.append("WEATHER %s: %s" % [" ".join(words.slice(1)), String(session.call("weather_note"))])
-		"powers":  # "!powers <note>": the power-ups lying around and running, and what points are multiplied by
+		"powers":  # "!powers <note>": the power-ups lying around and running, and what points are multiplied by; "!powers goto": stand on the first one lying
+			if words.size() > 1 and words[1] == "goto":
+				var field: Node = session.get("_power_field")
+				var ids: PackedInt32Array = field.get("_ids")
+				for i in ids.size():
+					if ids[i] != 0:
+						player.call("teleport", (field.get("_holders")[i] as Node3D).global_position + Vector3(0, 0.2, 0), 0.0)
+						break
+				return
 			var rules: RefCounted = session.get("_powerups")
 			var running := PackedStringArray()
 			for kind: String in rules.call("timed"):
@@ -705,7 +780,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for enemy: Variant in island.get("_alive"):
 				if is_instance_valid(enemy):
 					spots.append("%s %.0fm y%.1f hp%d%s" % [String(enemy.get("enemy_id")), (enemy as Node3D).global_position.distance_to(player.global_position), (enemy as Node3D).global_position.y, int(enemy.health.hp), " crawling" if bool(enemy.call("crawling")) else ""])
-			_lines.append("ROUNDS %s: round %d %s, fighting %s, left %d, alive %d [%s], player hp %d" % [" ".join(words.slice(1)), int(rules.get("number")), String(rules.get("kind")), str(rules.call("fighting")), int(island.call("left")), int(island.call("alive")), ", ".join(spots), int(player.get("health").hp)])
+			var nr: Node = (session.get("net") as Node).get("rounds")
+			_lines.append("ROUNDS %s: round %d %s, fighting %s, left %d, alive %d [%s], player hp %d | as told by the host: round %d left %d fighting %s, puppets %d" % [" ".join(words.slice(1)), int(rules.get("number")), String(rules.get("kind")), str(rules.call("fighting")), int(island.call("left")), int(island.call("alive")), ", ".join(spots.slice(0, 4)), int(player.get("health").hp),
+				int(nr.get("round_number")), int(nr.get("round_left")), str(nr.get("fighting")), (nr.get("_enemies") as Dictionary).size()])
 		"ammo":  # "!ammo <note>": what is in hand, the rounds in it and in its pool, every holster, the knife type
 			var bag: RefCounted = player.get("inventory")
 			var pools: RefCounted = player.get("pools")

@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;!net wait_guest;!tcg binder;!wait 1;!tcg binder close;/give gun purple;/give gun blue;/give gun green;/give gun purple;!wait 2;!trade h_before;!trade ask Guest;!trade wait_open;!trade h_open;!wait 1;!trade gun;!wait 4;!trade ready;!wait 4;!trade confirm;!wait 4;!trade h_after;!snap trade_host;!wait 4;!trade h_end
