@@ -1,4 +1,9 @@
-Architecture map: card look, collection and packs
+Card game: art pass 2 and the card machine
+
+- All 161 card pictures re-rendered: spells show a creature taking the hit or the blessing, slimes framed, club and night scenes lit, lucky chip scene
+- Card machine in the casino: shop window with pack, bundle, box and starter deck tiles, chip prices, odds button, bounce and pop-up on a buy
+- core/tcg/pack_shop.gd buys with chips; pack and box pictures (tools/paint_pack.py)
+- Foil shine kept off the rules text
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -436,6 +436,15 @@ func _check_packs(real: RefCounted) -> void:
 				epic_n += 1 if String(card["rarity"]) == "epic" else 0
 		ok = ok and leg_n >= 5 and epic_n >= 12
 	_say("20 boxes of 50 packs each hold at least 5 legendaries and 12 epics", ok)
+	var Wallet: GDScript = load("res://core/wallet.gd")
+	var Shop: GDScript = load("res://core/tcg/pack_shop.gd")
+	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var w: RefCounted = Wallet.new(15000)
+	var buyer: RefCounted = Collection.new()
+	var a: String = Shop.buy("box", w, buyer, cfg, starters)
+	var b2: String = Shop.buy("bundle_5", w, buyer, cfg, starters)
+	var c2: String = Shop.buy("starter:crypt", w, buyer, cfg, starters)
+	_say("the machine: a box (12 000) and a 5-bundle (1 400) bought, then a starter refused for want of chips", a == "" and b2 == "" and c2 != "" and int(buyer.call("pack_count")) == 55 and int((buyer.get("box") as Dictionary)["left"]) == 50 and int(w.get("balance")) == 1600)
 
 
 func _play_out(seed_value: int) -> Array:

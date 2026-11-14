@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp club;!wait 6;!tcg club;!wait 1;!tcg move;!wait 1;!tcg move;!mouse 400 600;!wait 0.6;!tcg note;!snap tcg_play;!tcg aurelind auto;!wait 110;!tcg note;!snap tcg_over;!tcg esc;!wait 1;!tcg note;!third;!wait 1;!snap tcg_table
+!uncap;!wait 2;/give chips 20000;/tp club;!wait 6;!tcg shop buy bundle_5;!mouse 700 330;!wait 0.4;!snap tcg_shop;!tcg club;!wait 1;!tcg move;!wait 1;!mouse 400 600;!wait 0.6;!tcg note;!snap tcg_play;!tcg aurelind auto;!wait 110;!tcg note;!snap tcg_over;!tcg esc;!wait 1;!tcg note

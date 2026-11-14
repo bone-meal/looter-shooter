@@ -104,13 +104,19 @@ def spell_scene(cid, c):
     does = [e.get("do") for e in effects]
     f = c["faction"]
     subjects, fx = [], []
+    victim = {"tide": "raider_scrapper", "waste": "drowned_deckhand", "crypt": "forest_wolf", "aurelind": "skeleton_swordsman",
+              "club": "raider_brute", "neutral": "moss_goblin"}[f]
+    friend = {"tide": "drowned_sailor", "waste": "raider_scrapper", "crypt": "skeleton_swordsman", "aurelind": "forest_wolf",
+              "club": "cocktail_waitress", "neutral": "arena_gladiator"}[f]
     if "summon" in does:
         token = next(e["card"] for e in effects if e.get("do") == "summon")
         n = max(e.get("count", 1) for e in effects if e.get("do") == "summon")
         for i in range(min(n, 3)):
             subjects.append({"card": token, "at": [(i - (min(n, 3) - 1) / 2) * 1.3, i % 2 * 0.8, 0]})
-    elif any(d in does for d in ("buff", "give", "heal")) and f != "neutral":
-        pass  # a glowing beam on the place
+    elif any(d in does for d in ("damage", "destroy", "bounce")):
+        subjects.append({"card": victim, "at": [0, 1.0, 0]})  # the one it hits
+    elif any(d in does for d in ("buff", "give", "heal", "draw")):
+        subjects.append({"card": friend, "at": [0, 0.6, 0]})  # the one it helps
     colors = {"tide": (0.4, 0.8, 1.0), "waste": (1.0, 0.6, 0.2), "crypt": (0.5, 1.0, 0.7), "aurelind": (1.0, 0.5, 0.15), "club": (1.0, 0.3, 0.8), "neutral": (1.0, 0.9, 0.6)}
     col = list(colors[f])
     name = c.get("name", cid).lower()

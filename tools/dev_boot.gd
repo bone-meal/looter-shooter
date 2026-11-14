@@ -521,7 +521,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:
 				player.global_position = wall.global_position + wall.global_basis.z * 4.0
-		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg note" = the match in one line
+		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg note" = the match in one line
 			var tcg: Node = session.get("_tcg")
 			if words[1] == "note":
 				var m: RefCounted = tcg.get("match_state")
@@ -537,6 +537,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						sd[1]["leader"], int(sd[1]["hp"]), (sd[1]["hand"] as Array).size(), (sd[1]["board"] as Array).size(), (sd[1]["deck"] as Array).size(), int((session.get("_wallet") as RefCounted).get("balance"))])
 			elif words[1] == "esc":
 				tcg.call("request_close")
+			elif words[1] == "shop":  # stand at the card vending machine and open it; "!tcg shop buy <item>" buys too
+				var shop: Node = session.get("_shop")
+				var machine: Node3D = (session.get("_casino") as Dictionary).get("card_vendor")
+				player.call("teleport", machine.call("front") + Vector3(0, 0.1, 0), 0.0)
+				player.call("look_at_point", machine.global_position + Vector3(0, 1.4, 0))
+				shop.call("open")
+				if words.size() > 3:
+					shop.call("_on_buy", words[3])
+					var owned: RefCounted = session.get("_cards")
+					_lines.append("TCG SHOP %s: packs %d, box %s, chips %d" % [words[3], int(owned.call("pack_count")), str(owned.get("box")), int((session.get("_wallet") as RefCounted).get("balance"))])
 			elif words[1] == "move":  # our side: the move the AI would make, sent as if clicked (or keep the opening hand)
 				tcg.call("dev_move")
 			else:

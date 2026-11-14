@@ -30,6 +30,9 @@ void fragment() {
 	vec2 cell = floor(p * vec2(90.0, 126.0));
 	float glitter = step(pony > 0.5 ? 0.985 : 0.993, hash(cell + floor(t * (pony > 0.5 ? 8.0 : 3.0))));
 	float amount = (pony > 0.5 ? 0.38 + 0.1 * sin(TIME * 2.0) : 0.22) * sweep;
+	float plaque = step(0.6, p.y) * step(p.y, 0.89) * step(0.12, p.x) * step(p.x, 0.88);
+	amount *= 1.0 - plaque * 0.75;  // the rules text stays readable
+	glitter *= 1.0 - plaque;
 	vec3 col = base.rgb + foil * amount + vec3(glitter) * (0.6 + pony * 0.6);
 	COLOR = vec4(col, base.a);
 }

@@ -584,7 +584,9 @@ def auto_camera(card_id, roots):
     size = max(hi.z - lo.z, (hi.x - lo.x) * 0.75, 0.4)
     dist = size * 1.25 + 0.5
     at = Vector((centre.x, centre.y, lo.z + (hi.z - lo.z) * 0.55))
-    return {"from": [at.x + side * dist * 0.38, at.y - dist, lo.z + size * 0.22 + 0.15], "at": [at.x, at.y + size * 0.3, at.z + size * 0.08],
+    lo.z = max(lo.z, 0.0)  # models reaching below the ground (slimes) must not pull the camera under it
+    at.z = max(at.z, 0.35)
+    return {"from": [at.x + side * dist * 0.38, at.y - dist, max(lo.z + size * 0.22 + 0.15, 0.3)], "at": [at.x, at.y + size * 0.3, at.z + size * 0.08],
             "focus": [at.x, at.y, at.z], "lens": 28, "roll": side * (4 + h % 7)}
 
 
@@ -670,7 +672,7 @@ def render(card_id, recipe, samples):
     focus = recipe["camera"].get("focus", recipe["camera"]["at"])
     for f in recipe.get("fx", []):
         fx(f["kind"], f["at"], rng, f.get("size", 1), f.get("color"), f.get("count"))
-    lighting(sun_dir, sun_c, haze, focus, recipe.get("light", 1.0))
+    lighting(sun_dir, sun_c, haze, focus, recipe.get("light", 1.8 if recipe.get("time") in ("club", "night", "cave") else 1.0))
     camera(scene, recipe["camera"])
     paint_over(scene, recipe.get("paint", 5), hor, recipe.get("mist", (4, 40)))
     scene.cycles.samples = samples

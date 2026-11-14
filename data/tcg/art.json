@@ -526,6 +526,65 @@
     "lens": 30,
     "roll": 5
    }
+  },
+  "lucky_chip": {
+   "stage": "club",
+   "time": "club",
+   "sun_yaw": 0,
+   "mist": [
+    5,
+    20
+   ],
+   "subjects": [],
+   "fx": [
+    {
+     "kind": "chips",
+     "at": [
+      0,
+      0.6,
+      0.9
+     ],
+     "size": 1.6,
+     "count": 45
+    },
+    {
+     "kind": "glow",
+     "at": [
+      0,
+      0.2,
+      1.4
+     ],
+     "size": 2.0,
+     "color": [
+      1,
+      0.75,
+      0.3
+     ]
+    },
+    {
+     "kind": "confetti",
+     "at": [
+      0,
+      0.6,
+      1.2
+     ],
+     "size": 1.2
+    }
+   ],
+   "camera": {
+    "from": [
+     0.4,
+     -2.4,
+     1.0
+    ],
+    "at": [
+     0,
+     0.6,
+     0.9
+    ],
+    "lens": 32,
+    "roll": -8
+   }
   }
  }
 }
