@@ -1,7 +1,7 @@
 # Purpose: turns the character's record (core/stat_book.gd) into the Combat Report's sections: what is shown, in which
 # order, with which names. `ctx` hands in the names the record does not know: callables gun_name(body),
 # knife_name(type), item_name(id), skill_name(id), enemy_name(id), and plain values best_round, course_best,
-# quests_done, level. Returns {"under_portrait": [lines], "sections": [{"title", "rows": [[label, value]]}]}.
+# quests_done, level, tcg_record (the card game record: vs / decks = {name: [wins, losses]}). Returns {"under_portrait": [lines], "sections": [{"title", "rows": [[label, value]]}]}.
 # Dependencies: core/stat_book.gd.
 extends RefCounted
 
@@ -67,7 +67,7 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 	var made: Array = []
 	for pair: Array in book.top("made", TOP):
 		made.append([_call(ctx, "item_name", String(pair[0])), _n(float(pair[1]))])
-	var lobster := [  # the card game (its own record of W/L per opponent and deck stays on the card game's side)
+	var lobster := [  # the card game (W/L per opponent and per deck: the two sections after it, from ctx tcg_record)
 		["Matches played", _n(book.total("tcg_games"))],
 		["Wins against players", _n(book.total("tcg_wins_player"))],
 		["Best win streak", _n(book.total("tcg_best_streak"))],
@@ -79,6 +79,9 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 	]
 	for pair: Array in book.top("tcg_wins_leader", 0):
 		lobster.append(["Wins with %s" % _call(ctx, "leader_name", String(pair[0])), _n(float(pair[1]))])
+	var tcg: Dictionary = ctx.get("tcg_record", {})
+	var by_opponent := _wins_losses(tcg.get("vs", {}))
+	var by_deck := _wins_losses(tcg.get("decks", {}))
 	var time_rows := [
 		["This session", StatBook.duration(book.session_seconds)],
 		["In total", StatBook.duration(book.total("seconds_played"))],
@@ -101,8 +104,28 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 			{"title": "Gathered in Aurelind", "rows": gathered},
 			{"title": "Made in Aurelind", "rows": made},
 			{"title": "You got me Lobster?", "rows": lobster},
+			{"title": "Card wins - losses by player", "rows": by_opponent},
+			{"title": "Card wins - losses by deck", "rows": by_deck},
 		],
 	}
+
+
+# The card game's record by opponent or by deck ({name: [wins, losses]}): the most played first, "W - L" each.
+static func _wins_losses(table: Variant) -> Array:
+	var rows: Array = []
+	if not table is Dictionary:
+		return [["Nothing yet.", ""]]
+	var names: Array = (table as Dictionary).keys()
+	names.sort_custom(func(a: Variant, b: Variant) -> bool: return _played(table[a]) > _played(table[b]))
+	for name: Variant in names.slice(0, TOP):
+		var row: Variant = table[name]
+		if row is Array and (row as Array).size() >= 2:
+			rows.append([String(name) if String(name) != "" else "(no name)", "%d - %d" % [int(row[0]), int(row[1])]])
+	return rows if not rows.is_empty() else [["Nothing yet.", ""]]
+
+
+static func _played(row: Variant) -> int:
+	return int(row[0]) + int(row[1]) if row is Array and (row as Array).size() >= 2 else 0
 
 
 # "gun:ak47" -> the gun's name, "knife:karambit" -> the knife's, "staff" and "other" as words.

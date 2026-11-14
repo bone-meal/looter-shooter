@@ -175,6 +175,7 @@ func _start(key: String) -> void:
 	var theirs: Dictionary = _starters[others[_rng.randi_range(0, others.size() - 1)]]
 	_played_cards = (mine["cards"] as Array).duplicate()
 	match_state = MatchState.new(_db, [{"leader": mine["leader"], "cards": mine["cards"]}, {"leader": theirs["leader"], "cards": theirs["cards"]}], _rng.randi())
+	_screen.finishes = [collection.call("best_finishes", mine["cards"]), {}]  # ME = side 0; the dealer plays plain cards
 	_view.set("graphics", graphics)
 	_full_counted = false
 	if collection != null:  # each half of the table shows its player's mat (the House Dealer's from data/tcg/table.json)
@@ -207,7 +208,8 @@ func _on_intent(move: Dictionary) -> void:
 # Turns what happened into log lines, redraws, and settles the end of the match.
 func _after_move() -> void:
 	var lines: PackedStringArray = []
-	for e: Dictionary in match_state.call("take_log"):
+	var events: Array = match_state.call("take_log")
+	for e: Dictionary in events:
 		if String(e["e"]) == "summon":
 			_known[int(e["uid"])] = String(e["card"])
 		if String(e["e"]) == "turn":
@@ -215,6 +217,7 @@ func _after_move() -> void:
 			_wait = float(_cfg["dealer_pause"])
 		lines.append(EventText.line(_db, e, ME, _known, _who))
 	_screen.add_log(lines)
+	_screen.add_events(events)
 	_screen.show_match(match_state, ME, _who)
 	if not _full_counted:
 		_full_counted = TcgStats.full_board(stats, match_state, ME)

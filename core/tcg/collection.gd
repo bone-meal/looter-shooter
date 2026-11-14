@@ -160,6 +160,19 @@ func playable(db: RefCounted) -> Dictionary:
 	return out
 
 
+# The best foil this collection owns of each of these cards (pony over rainbow; plain cards are left out): how they
+# look on the card table.
+func best_finishes(ids: Array) -> Dictionary:
+	var out := {}
+	for id: Variant in ids:
+		var key := String(id)
+		if count(key, "pony") > 0:
+			out[key] = "pony"
+		elif count(key, "rainbow") > 0:
+			out[key] = "rainbow"
+	return out
+
+
 # ---- the record ----
 
 # vs_ai: a match against the House Dealer (her own record; never the player W/L, streak or milestones).

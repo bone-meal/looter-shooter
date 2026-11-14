@@ -54,6 +54,7 @@ func _ready() -> void:
 		_check_packs(real)
 		_check_binder(real)
 		_check_tables(real)
+		_check_budget()
 	_finish()
 
 
@@ -504,6 +505,7 @@ func _check_tables(real: RefCounted) -> void:
 	_say("an illegal deck is refused", _msg(book.call("deck", 11, broken, names), 11, "refused"))
 	var with_mat: Dictionary = (starters["tide"] as Dictionary).duplicate(true)
 	with_mat["mat"] = "neon_club"
+	with_mat["finishes"] = {String(with_mat["cards"][0]): "pony", "not_in_deck": "pony", String(with_mat["cards"][2]): "gold"}
 	var odd_mat: Dictionary = (starters["crypt"] as Dictionary).duplicate(true)
 	odd_mat["mat"] = "../../secret"
 	book.call("deck", 11, with_mat, names)
@@ -513,6 +515,7 @@ func _check_tables(real: RefCounted) -> void:
 	_say("the countdown ends in a match everyone sees", _msg(out, 0, "match"))
 	var shown: Array = _args_of(out, 0, "match")
 	_say("the match carries both mats; a made-up path is dropped (%s)" % str(shown[5] if shown.size() > 5 else "none"), shown.size() > 5 and shown[5] == ["neon_club", ""])
+	_say("the match carries each side's foils; cards not in the deck and made-up finishes are dropped (%s)" % str(shown[6] if shown.size() > 6 else "none"), shown.size() > 6 and shown[6] == [{String(with_mat["cards"][0]): "pony"}, {}])
 	var m: RefCounted = (book.get("tables") as Array)[0]["match"]
 	book.call("intent", 11, {"do": "mulligan", "indices": []}, names)
 	book.call("intent", 22, {"do": "mulligan", "indices": []}, names)
@@ -528,6 +531,30 @@ func _check_tables(real: RefCounted) -> void:
 	out = book.call("tick", 0.1, names, {11: Vector3(30, 0, 0), 22: Vector3.ZERO})
 	var res: Array = _args_of(out, 0, "result")
 	_say("walking off mid-match loses it and frees the table", not res.is_empty() and int(res[1]) == 1 and int(book.call("table_of", 11)) == -1 and int(book.call("table_of", 22)) == -1)
+
+
+# The stat budget (data/tcg/budget.json, core/tcg/card_budget.gd): every card priced; off-budget cards are listed as
+# information for the director (balance is the simulator's job).
+func _check_budget() -> void:
+	var Budget: GDScript = load("res://core/tcg/card_budget.gd")
+	var budget: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/budget.json"))
+	var cards: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/cards.json")) as Dictionary)["cards"]
+	var off: Array = []
+	var priced := 0
+	for id: String in cards:
+		var c: Dictionary = cards[id]
+		if String(c.get("rarity", "")) == "token":
+			continue
+		priced += 1
+		var g: float = Budget.call("gap", c, budget, cards)
+		if absf(g) > float(budget["tolerance"]):
+			off.append([id, g])
+	_say("every card can be priced against the budget (%d cards)" % priced, priced >= 150)
+	off.sort_custom(func(a: Array, b: Array) -> bool: return absf(float(a[1])) > absf(float(b[1])))
+	var worst := PackedStringArray()
+	for pair: Array in off.slice(0, 8):
+		worst.append("%s %+.1f" % [pair[0], float(pair[1])])
+	_lines.append("info off the stat budget by more than %.1f: %d cards (worst: %s)" % [float(budget["tolerance"]), off.size(), ", ".join(worst)])
 
 
 # The n-th card the Tide starter holds two of (the starters are re-tuned now and then: no card names here).

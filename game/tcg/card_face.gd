@@ -1,4 +1,4 @@
-# Purpose: draws one card of "You got me Lobster?" as a Control: the card's art (assets/tcg/art/<id>.jpg), its faction
+# Purpose: draws one card of "You got me Lobster?" as a Control: the card's art (game/tcg/card_art.gd: atlas pages), its faction
 # frame and the layers over it (cost gem, attack and health badges, rarity gem, legendary crest; assets/tcg/frames/,
 # placed by data/tcg/card_layout.json), then the words (name on the banner, rules text on the plaque, numbers, tribe)
 # in the card fonts. Shows a card in the hand, a creature on the mat (live numbers: green when raised above the card,
@@ -8,6 +8,7 @@
 # assets/tcg/, assets/fonts/.
 extends Control
 
+const CardArt = preload("res://game/tcg/card_art.gd")
 const CardText = preload("res://core/tcg/card_text.gd")
 const CardShine = preload("res://game/tcg/card_shine.gd")
 
@@ -121,8 +122,7 @@ func _draw() -> void:
 	var boxes: Dictionary = _layout["boxes"]
 	if _art_id != id:
 		_art_id = id
-		var path := "res://assets/tcg/art/%s.jpg" % id
-		_art = load(path) if ResourceLoader.exists(path) else null
+		_art = CardArt.of(id)
 	var art := _art
 	var art_box := _box(boxes["art"], k)
 	if art != null:  # cover the window, keep the picture's shape

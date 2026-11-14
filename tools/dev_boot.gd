@@ -662,6 +662,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				mb.call("give", session.get("_cards"), words[2])
 				mb.call("choose", session.get("_cards"), mats_cfg, words[2])
 				_lines.append("TCG MAT %s: now %s" % [words[2], mb.call("current", session.get("_cards"), mats_cfg)])
+			elif words[1] == "foil":  # "!tcg foil <card> <rainbow|pony>": that card looks like that foil on our side of the House table
+				((tcg.get("_screen") as Control).get("finishes")[0] as Dictionary)[words[2]] = words[3]
 			elif words[1] == "put":  # "!tcg put <card> [foe]": a creature onto our side (or the dealer's) of the running match, then a redraw
 				var m2: RefCounted = tcg.get("match_state")
 				if m2 != null:

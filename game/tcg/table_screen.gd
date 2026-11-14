@@ -6,6 +6,7 @@
 # Dependencies: game/tcg/card_face.gd, core/tcg/card_text.gd, core/tcg/match_state.gd (read only, handed in), game/chip_art.gd.
 extends Control
 
+const CardArt = preload("res://game/tcg/card_art.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 const CardText = preload("res://core/tcg/card_text.gd")
 const ChipArt = preload("res://game/chip_art.gd")
@@ -58,6 +59,8 @@ var _center := PanelContainer.new()
 var _center_text := Label.new()
 var _center_buttons := HBoxContainer.new()
 var view3d: Node3D  # game/tcg/table_view.gd, or null for the flat 2D table
+var _events: Array = []  # the last move's match events, played on the 3D table after its next redraw
+var finishes: Array = [{}, {}]  # by match side: card id -> "rainbow" / "pony", how that player's foils look (core/tcg/collection.gd best_finishes)
 var _felt: ColorRect
 var _hovered: Variant = null  # the face under the mouse in 3D
 
@@ -248,8 +251,7 @@ func open_pick(heading: String, note: String, choices: Array) -> void:
 	for choice: Dictionary in choices:
 		var key := String(choice["key"])
 		var t := TableHud.DeckTile.new()
-		var art := "res://assets/tcg/art/%s.jpg" % String(choice.get("leader", ""))
-		t.art = load(art) if ResourceLoader.exists(art) else null
+		t.art = CardArt.of(String(choice.get("leader", "")))
 		t.title = String(choice.get("name", choice["label"]))
 		t.sub = String(choice.get("sub", ""))
 		t.pressed.connect(func() -> void: _pick.visible = false; deck_chosen.emit(key))
@@ -268,6 +270,12 @@ func set_prize(chips: int) -> void:
 
 
 # Redraws everything from the match. me = the side this screen plays; who = the two names.
+# What the last move did (core/tcg/match_state.gd log): the 3D table animates it after the redraw (slides, lunges,
+# numbers, crumbles). Call before show_match.
+func add_events(events: Array) -> void:
+	_events.append_array(events)
+
+
 func show_match(m: RefCounted, me: int, who: Array) -> void:
 	_m = m
 	_me = me
@@ -283,8 +291,7 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 		var badge: Control = pair[0]
 		var side: Dictionary = pair[1]
 		var lid := String(side["leader"])
-		var art := "res://assets/tcg/art/%s.jpg" % lid
-		badge.set("art", load(art) if ResourceLoader.exists(art) else null)
+		badge.set("art", CardArt.of(lid))
 		badge.set("faction", CardFace.FACTION_COLORS.get(String(leaders[lid].get("faction", "neutral")), Color.GRAY))
 		badge.set("title", "%s - %s" % [pair[2], leaders[lid].get("name", lid)])
 		badge.call("set_hp", int(side["hp"]))
@@ -296,8 +303,7 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 		badge.set("traps", (side["traps"] as Array).size())
 		badge.queue_redraw()
 	var p: Dictionary = m.call("power_of", me)
-	var my_art := "res://assets/tcg/art/%s.jpg" % String(mine["leader"])
-	_power.art = load(my_art) if ResourceLoader.exists(my_art) else null
+	_power.art = CardArt.of(String(mine["leader"]))
 	_power.cost = int(m.get("rules")["power_cost"])
 	_power.used = bool(mine["power_used"])
 	_power.usable = my_turn and not bool(mine["power_used"]) and int(mine["mana"]) >= int(m.get("rules")["power_cost"])
@@ -551,6 +557,7 @@ func _fill_row(row: HBoxContainer, list: Array, card_size: Vector2, hand: bool) 
 		gone.queue_free()
 	for i in list.size():
 		var face: CardFace = row.get_child(i)
+		var side := _me
 		if hand:
 			face.slot = i
 			face.show_card(_m.get("db"), String(list[i]))
@@ -558,6 +565,10 @@ func _fill_row(row: HBoxContainer, list: Array, card_size: Vector2, hand: bool) 
 			var c: Dictionary = list[i]
 			face.slot = int(c["uid"])
 			face.show_card(_m.get("db"), String(c["card"]), c)
+			side = int(c.get("side", _me))
+		var look := String((finishes[clampi(side, 0, 1)] as Dictionary).get(String(face.id), ""))
+		if look != face.finish:
+			face.set_finish(look)
 
 
 func _mark_all() -> void:
@@ -600,6 +611,7 @@ func _show_3d() -> void:
 		for face: Control in row.get_children():  # unseen faces must not catch the mouse
 			face.mouse_filter = Control.MOUSE_FILTER_IGNORE if on else Control.MOUSE_FILTER_STOP
 	if not on:
+		_events = []
 		return
 	# over the 3D table: END TURN at the right edge on the centre line and the log up in the sky, both clear of the mat
 	_end.position = Vector2(size.x - 162.0, 296.0)
@@ -608,6 +620,9 @@ func _show_3d() -> void:
 	var sides: Array = _m.get("sides")
 	view3d.call("show_cards", _hand_row.get_children(), _my_row.get_children(), _foe_row.get_children(), (sides[1 - _me]["hand"] as Array).size(),
 		[String(sides[_me]["leader"]), String(sides[1 - _me]["leader"])], [(sides[_me]["deck"] as Array).size(), (sides[1 - _me]["deck"] as Array).size()])
+	if not _events.is_empty():
+		view3d.call("play", _events, _me)
+		_events = []
 
 
 func _set_rows_visible(on: bool) -> void:

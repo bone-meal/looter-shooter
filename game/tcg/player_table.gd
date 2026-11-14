@@ -168,6 +168,7 @@ func _on_deck(key: String) -> void:
 	var slot := int(key.get_slice(":", 1))
 	var deck: Dictionary = ((collection.get("decks") as Array)[slot] as Dictionary).duplicate()
 	deck["mat"] = MatBook.current(collection, DataStore.load_json("res://data/tcg/mats.json"))  # the other player sees it on their far half
+	deck["finishes"] = collection.call("best_finishes", deck.get("cards", []))  # and our foils as foils
 	_deck_name = String(deck.get("name", ""))
 	net_tcg.call("deck", deck)
 	_screen.open_pick("Deck in: %s" % _deck_name, "Waiting for the other player's deck.", [])
@@ -238,6 +239,8 @@ func _show(args: Array) -> void:
 		var pick := func(id: String) -> String: return id if (mats["mats"] as Dictionary).has(id) else String(mats.get("default", ""))
 		(_tables[_at] as Node3D).call("set_mats", pick.call(String(by_side[_side])), pick.call(String(by_side[1 - _side])))
 		_mats_shown = true
+	if args.size() > 6 and args[6] is Array and (args[6] as Array).size() == 2 and args[6][0] is Dictionary and args[6][1] is Dictionary:
+		_screen.finishes = args[6]
 	_who = args[3]
 	var names := (_who as Array).duplicate()
 	if not _watching:
@@ -248,6 +251,7 @@ func _show(args: Array) -> void:
 			_known[int(e["uid"])] = String(e["card"])
 		lines.append(EventText.line(_db, e, _side, _known, names))
 	_screen.add_log(lines)
+	_screen.add_events(args[2])
 	_screen.show_match(_mirror, _side, names)
 	if not _watching and not _full_counted:
 		_full_counted = TcgStats.full_board(stats, _mirror, _side)

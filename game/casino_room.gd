@@ -80,8 +80,8 @@ static func build(parent: Node3D, center: Vector3) -> Dictionary:
 	card_table.position = at
 	card_table.rotation_degrees.y = float(house["yaw"])
 	root.add_child(card_table)
-	var seat := at + Vector3(0, 0, 0.95).rotated(Vector3.UP, deg_to_rad(float(house["yaw"])))  # the dealer's side, facing the player
-	var card_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_gold", "long_wavy", "#c0392b", "smirk", 1), seat, float(house["yaw"]), null, String(house["dealer_npc"]))
+	var seat := at + Vector3(0, 0, 0.85).rotated(Vector3.UP, deg_to_rad(float(house["yaw"])))  # on the dealer's stool, facing the player
+	var card_dealer: Node3D = crew.add("sit", StaffCrew.look("casino_gold", "long_wavy", "#c0392b", "smirk", 1), seat, float(house["yaw"]), null, String(house["dealer_npc"]))
 	var player_tables: Array = []  # the other three tables (locked: four on the beach): two players play there (online, build step 13)
 	for t: Dictionary in DataStore.load_json("res://data/tcg/table.json").get("tables", []):
 		var pt: BeachTable = BeachTable.new()

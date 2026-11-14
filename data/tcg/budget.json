@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "_about": "The stat budget of the card game (locked build step 3; read by core/tcg/card_budget.gd, reported by tools/tcg_rules_check as information, never a failure: the starter decks are balanced by tools/tcg_sim). A creature of cost N may hold creature_per_cost x N + creature_base points of attack + health; a spell of cost N spell_per_cost x N + spell_base points of effect. Rarer cards get a little more (rarity). Keywords and effects spend points (keywords; effects per amount, or flat where marked). Targets multiply what an effect is worth (all_enemies hits more than one). Triggers that can happen again (turn_end ...) multiply it too. A card is off budget when what it holds differs from its budget by more than tolerance. Every number is a placeholder for the director.",
+ "creature_per_cost": 2.0,
+ "creature_base": 1.0,
+ "spell_per_cost": 2.0,
+ "spell_base": 0.5,
+ "tolerance": 1.5,
+ "rarity": {"common": 0.0, "rare": 0.5, "epic": 1.0, "legendary": 2.0},
+ "keywords": {"guard": 0.5, "plated": 1.0, "rush": 0.5, "charge": 1.5, "arrival": 0.0, "last_gasp": 0.0, "drain": 1.0, "venom": 1.5, "twin_strike": 2.0, "hidden": 1.0, "empower": 1.0, "wind_up": 1.5},
+ "effects": {"damage": 1.0, "heal": 0.5, "draw": 1.5, "buff": 1.0, "mana": 1.0, "summon": 1.0, "destroy_flat": 4.0, "bounce_flat": 2.0, "give_flat": 0.0, "roll_flat": 1.5, "flip_flat": 1.0, "add_flat": 2.0},
+ "targets": {"all_enemies": 2.0, "all_enemy_creatures": 2.0, "all_creatures": 1.5, "all_friendly_creatures": 2.0, "all_other_friendly": 1.5, "random_enemy": 0.8, "random_enemy_creature": 0.8},
+ "repeats": {"turn_end": 2.0, "turn_start": 2.0, "spell_cast": 2.0, "attack": 1.5, "friendly_death": 1.5}
+}

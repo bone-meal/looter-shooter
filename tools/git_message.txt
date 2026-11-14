@@ -1,7 +1,10 @@
-Two-copy online tests: dev steps and command sets for islands, downs, power-ups, parts, boat and trading
+Card game: the rest of the locked design (animations, foils, pony figures, record, seated dealer, budget, art atlas)
 
-Dev steps for testing two copies on one PC: hurt, downs with waits for down and up, net to_other, immortal off, powers goto, power note, boat wait_other, trade (ask, answer, wait, offer gun or card, ready, confirm), rounds shows what a client was told.
-Command sets tools/pair_islands, pair_build, pair_trade, pair_tcgvoid. All of these ran on two copies without a bug in the game.
+Table animations: creatures slide in, attackers lunge, damage and heal numbers rise, the dead crumble to dust, drawn cards slide from the deck.
+Foils move on the 3D table and each player's foils show (sent online with the deck); a pony foil bursts into pastel sparkles and stands as a figure.
+Combat Report shows card wins and losses by player and by deck. The House Dealer sits at her table.
+Stat budget data/tcg/budget.json with core/tcg/card_budget.gd, listed by tcg_rules_check.
+Card art packed into 14 VRAM-compressed atlas pages with mipmaps (tools/pack_card_atlas.py, game/tcg/card_art.gd).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

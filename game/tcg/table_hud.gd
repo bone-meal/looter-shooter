@@ -66,8 +66,8 @@ class LeaderBadge extends Control:
 				var a := TAU * i / 32.0
 				var o := Vector2(cos(a), sin(a))
 				pts.append(c + o * 38.0)
-				uvs.append((src.position + (o * 0.5 + Vector2(0.5, 0.5)) * src.size) / ts)
-			draw_colored_polygon(pts, Color.WHITE, uvs, art)
+				uvs.append(LeaderBadgeArt.uv(art, src.position + (o * 0.5 + Vector2(0.5, 0.5)) * src.size))
+			draw_colored_polygon(pts, Color.WHITE, uvs, LeaderBadgeArt.base(art))
 		if hit > 0.0:
 			draw_circle(c, 38, Color(1, 0, 0, 0.5 * hit))
 		LeaderBadgeArt.ring(self, c, faction)
@@ -137,6 +137,16 @@ class DeckTile extends Control:
 
 # Shared drawing of the pieces: ring, health drop, numbers, mana crystals, little card icons.
 class LeaderBadgeArt:
+	# Card art may be a region of an atlas page (game/tcg/card_art.gd): polygons take the page and page UVs.
+	static func base(art: Texture2D) -> Texture2D:
+		return (art as AtlasTexture).atlas if art is AtlasTexture else art
+
+	static func uv(art: Texture2D, px: Vector2) -> Vector2:
+		if art is AtlasTexture:
+			var region := (art as AtlasTexture).region
+			return (region.position + px) / (art as AtlasTexture).atlas.get_size()
+		return px / art.get_size()
+
 	static func ring(ci: CanvasItem, c: Vector2, faction: Color) -> void:
 		ci.draw_arc(c, 40, 0, TAU, 48, faction.lightened(0.2), 5.0, true)
 		ci.draw_arc(c, 43.5, 0, TAU, 48, Color(1.0, 0.82, 0.35), 2.5, true)
@@ -229,8 +239,8 @@ class PowerButton extends Control:
 			for i in 28:
 				var o := Vector2.from_angle(TAU * i / 28.0)
 				pts.append(c + o * 26.0)
-				uvs.append((src.position + (o * 0.5 + Vector2(0.5, 0.5)) * src.size) / ts)
-			draw_colored_polygon(pts, Color.WHITE if usable else Color(0.45, 0.45, 0.5), uvs, art)
+				uvs.append(LeaderBadgeArt.uv(art, src.position + (o * 0.5 + Vector2(0.5, 0.5)) * src.size))
+			draw_colored_polygon(pts, Color.WHITE if usable else Color(0.45, 0.45, 0.5), uvs, LeaderBadgeArt.base(art))
 		draw_arc(c, 29, 0, TAU, 40, Color(1.0, 0.82, 0.35) if (usable or lit) else Color(0.6, 0.55, 0.4), 3.0, true)
 		LeaderBadgeArt.crystal(self, c + Vector2(0, -29), 11.0, 2)
 		LeaderBadgeArt.number(self, c + Vector2(0, -29), str(cost), 15, Color.WHITE)

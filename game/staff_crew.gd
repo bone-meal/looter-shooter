@@ -24,7 +24,7 @@ static func look(outfit: String, hair: String, hair_color: String, face: String,
 	}
 
 
-# role: "idle", "deal", "dance" (arg = dance id) or "walk" (arg = Array of Vector3 points, crew-local). npc_id (data/npcs.json) gives her a name, speech and a head that follows the camera.
+# role: "idle", "deal", "sit" (seated, held still in the Sitting_Idle clip; rigged bodies only, others stand), "dance" (arg = dance id) or "walk" (arg = Array of Vector3 points, crew-local). npc_id (data/npcs.json) gives her a name, speech and a head that follows the camera.
 func add(role: String, the_look: Dictionary, pos: Vector3, yaw_deg: float, arg: Variant = null, npc_id: String = "") -> Node3D:
 	var model := NpcBody.build(the_look)
 	model.position = pos
@@ -32,6 +32,11 @@ func add(role: String, the_look: Dictionary, pos: Vector3, yaw_deg: float, arg: 
 	add_child(model)
 	if npc_id != "":
 		NpcChatter.new().setup(model, npc_id)
+	if role == "sit":
+		if model.has_method("hold"):
+			model.call("hold", "Sitting_Idle", 0.4)
+		else:
+			role = "idle"  # the old code-built body has no sitting pose
 	_staff.append({"model": model, "role": role, "arg": arg, "phase": float(_staff.size()) * 1.7, "leg": 0, "wait": 0.0, "pos": pos})
 	return model
 

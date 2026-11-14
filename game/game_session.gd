@@ -3643,6 +3643,7 @@ func _combat_report() -> Dictionary:
 		"skill_name": func(id: String) -> String: return String(_fantasy.skills.skill_name(id)) if _fantasy != null else id.capitalize(),
 		"enemy_name": func(id: String) -> String: return _enemy_name(id),
 		"leader_name": func(id: String) -> String: return String(((_card_screen.card_db.get("leaders") as Dictionary).get(id, {}) as Dictionary).get("name", id.capitalize())),
+		"tcg_record": _cards.record if _cards != null else {},
 		"best_round": _best_round,
 		"course_best": _course.best,
 		"quests_done": (_fantasy.quests.done as Array).size() if _fantasy != null else 0,

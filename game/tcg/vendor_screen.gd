@@ -6,6 +6,7 @@
 # Dependencies: game/chip_art.gd, game/tcg/card_face.gd (fonts), assets/tcg/pack.png, box.png, logo.png, art/<leader>.jpg.
 extends Control
 
+const CardArt = preload("res://game/tcg/card_art.gd")
 const ChipArt = preload("res://game/chip_art.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 
@@ -267,8 +268,7 @@ func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary, mats: Dic
 		var d: Dictionary = starters[sid]
 		var t := Tile.new()
 		t.title_size = deck_size
-		var path := "res://assets/tcg/art/%s.jpg" % d["leader"]
-		t.picture = load(path) if ResourceLoader.exists(path) else null
+		t.picture = CardArt.of(String(d["leader"]))
 		t.art_cover = true
 		t.title = String(d["name"])
 		t.price = int(prices["starter"])

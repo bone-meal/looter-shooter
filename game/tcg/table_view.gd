@@ -11,6 +11,8 @@
 extends Node3D
 
 const NpcBody = preload("res://game/npc_body.gd")
+const CardShine3D = preload("res://game/tcg/card_shine_3d.gd")
+const NUMBER_FONT = preload("res://assets/fonts/LilitaOne.ttf")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const TOP := 0.818  # the mat's surface in table space
 const PX := 0.00138  # metres per pixel of the mat picture (1.42 m / 1024 px)
@@ -30,6 +32,10 @@ var _cards: Array = []  # {"node", "face", "half": Vector2, "home": Transform3D}
 var _pool: Array = []  # spare card nodes
 var _decks: Array = []  # two stacks
 var _hover: Node3D
+var _prev := {}  # creature uid -> {"at": Transform3D, "mat": Material} as it lay before the last redraw (crumble, damage on the dead)
+var _hand_nodes: Array = []  # my hand's card nodes, in order (the newest last)
+var _moves: Array = []  # running slides and lunges on card nodes (stopped by the next redraw)
+static var _ghost_quad: QuadMesh
 var _yaw := 0.0
 var _pitch := 0.0
 const CAM_HOME := Vector3(0.0, 1.62, -1.0)
@@ -97,6 +103,16 @@ func _place_camera() -> void:
 # What the table shows. faces = the screen's CardFace controls: hand (mine, in order), mine and foe (creatures, in
 # board order); foe_hand = how many cards the other side holds; leaders = [my leader id, theirs]; decks = [mine, theirs].
 func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Array, decks: Array) -> void:
+	for tw: Variant in _moves:
+		if (tw as Tween).is_valid():
+			(tw as Tween).kill()
+	_moves = []
+	_prev = {}
+	for c: Dictionary in _cards:
+		var was: Variant = c["face"]
+		if was is Control and not ((was as Control).get("creature") as Dictionary).is_empty():
+			_prev[int((was as Control).get("slot"))] = {"at": c["home"], "mat": (c["node"] as MeshInstance3D).material_override}
+	_hand_nodes = []
 	for c: Dictionary in _cards:
 		(c["node"] as Node3D).visible = false
 		_pool.append(c["node"])
@@ -108,6 +124,7 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 		var spread := minf(0.11, 1.1 / maxf(n, 1))
 		var at := Vector3(-t * spread, TOP + 0.035 - absf(t) * 0.004, -0.58 + absf(t) * 0.006)  # low and close: your leader shows above it
 		_add(hand[i], Transform3D(Basis.from_euler(Vector3(deg_to_rad(-38.0), deg_to_rad(180.0 + t * 4.0), 0.0)), at), HAND)
+		_hand_nodes.append((_cards.back() as Dictionary)["node"])
 	for i in foe_hand:  # their hand: backs at the far edge
 		var t := (float(i) - float(foe_hand - 1) * 0.5)
 		_add(null, Transform3D(Basis.from_euler(Vector3(deg_to_rad(-90.0), deg_to_rad(t * 3.0), 0.0)), Vector3(t * 0.06, TOP + 0.002 + i * 0.0005, 0.48)), HAND * 0.8)
@@ -123,7 +140,8 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 			var where := _flat(float(spot[0]), float(spot[1]), float(spot[2]), s)
 			_add(list[i], where, CARD)
 			var id := String((list[i] as Control).get("id"))
-			if standing.size() < cap and (_figures_cfg.get("figures", {}) as Dictionary).has(id):
+			var pony := String((list[i] as Control).get("finish")) == "pony" and (_figures_cfg.get("pony", {}) as Dictionary).has(id)
+			if standing.size() < cap and ((_figures_cfg.get("figures", {}) as Dictionary).has(id) or pony):  # legendary and up: legendaries, and any pony foil
 				var uid := int((list[i] as Control).get("slot"))
 				standing[uid] = true
 				_stand(uid, id, where.origin, s)
@@ -154,7 +172,7 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 # A legendary's figure on its card, facing the other side of the table.
 func _stand(uid: int, id: String, at: Vector3, s: float) -> void:
 	if not _figures.has(uid):
-		var f: Dictionary = _figures_cfg["figures"][id]
+		var f: Dictionary = _figures_cfg["figures"][id] if (_figures_cfg["figures"] as Dictionary).has(id) else _figures_cfg["pony"][id]
 		var node: Node3D
 		if f.has("person"):  # a person: a rigged NPC body (one merged mesh) held still in one moment of a clip
 			node = NpcBody.build(f["person"])
@@ -181,6 +199,178 @@ func _stand(uid: int, id: String, at: Vector3, s: float) -> void:
 	var fig: Node3D = _figures[uid]
 	fig.position = Vector3(at.x, TOP + 0.004 + float(fig.get_meta("lift", 0.0)), at.z)
 	fig.rotation = Vector3(0, 0.0 if s > 0.0 else PI, 0)  # models face +z: mine look across at theirs
+
+
+# What just happened, shown on the table after the redraw (cheap tweens, locked): new creatures slide in from the
+# hand, attackers lunge at their target and spring back, damage and healing rise as numbers, the dead crumble to dust,
+# my drawn card slides out of my deck; a pony foil coming down bursts into pastel sparkles. events = the match log of
+# that move (core/tcg/match_state.gd), me = our side.
+func play(events: Array, me: int) -> void:
+	var at := 0.0
+	for e: Dictionary in events:
+		match String(e.get("e", "")):
+			"summon":
+				var node := _node_of(int(e["uid"]))
+				if node != null:
+					var mine := int(e["side"]) == me
+					_slide(node, Vector3(0.0, TOP + 0.06, -0.5 if mine else 0.45), at)
+					if _finish_of(node) == "pony":
+						_sparkle(node.position, at + 0.28)
+				at += 0.1
+			"attack":
+				var node := _node_of(int(e["uid"]))
+				var to: Variant = _spot_of(int(e["target"]), me)
+				if node != null and to != null:
+					_lunge(node, to, at)
+				at += 0.3
+			"damage":
+				var to: Variant = _spot_of(int(e["target"]), me)
+				if to != null and int(e.get("amount", 0)) > 0:
+					_number(to, "-%d" % int(e["amount"]), Color(1.0, 0.32, 0.25), at)
+			"heal":
+				var to: Variant = _spot_of(int(e["target"]), me)
+				if to != null and int(e.get("amount", 0)) > 0:
+					_number(to, "+%d" % int(e["amount"]), Color(0.4, 1.0, 0.45), at)
+			"death":
+				var was: Dictionary = _prev.get(int(e["uid"]), {})
+				if not was.is_empty():
+					_crumble(was, at + 0.15)
+			"draw":
+				if int(e["side"]) == me and not _hand_nodes.is_empty():
+					var node: Node3D = _hand_nodes.back()
+					_slide(node, (_decks[0] as Node3D).position + Vector3(0, 0.03, 0), at)
+
+
+func _node_of(uid: int) -> Node3D:
+	for c: Dictionary in _cards:
+		var face: Variant = c["face"]
+		if face is Control and int((face as Control).get("slot")) == uid and not ((face as Control).get("creature") as Dictionary).is_empty():
+			return c["node"]
+	return null
+
+
+func _finish_of(node: Node3D) -> String:
+	for c: Dictionary in _cards:
+		if c["node"] == node and c["face"] is Control:
+			return String((c["face"] as Control).get("finish"))
+	return ""
+
+
+# A target code of the match (creature uid, or -10 - side for a leader) as a point on the table; null = not shown.
+func _spot_of(code: int, me: int) -> Variant:
+	if code >= 0:
+		var node := _node_of(code)
+		if node != null:
+			return node.position
+		if _prev.has(code):
+			return ((_prev[code] as Dictionary)["at"] as Transform3D).origin
+		return null
+	var k := 0 if -10 - code == me else 1
+	for c: Dictionary in _cards:
+		if c["face"] is Dictionary and int((c["face"] as Dictionary).get("side", -1)) == k:
+			return (c["node"] as Node3D).position
+	return null
+
+
+func _slide(node: Node3D, from: Vector3, delay: float) -> void:
+	var home := node.position
+	node.position = from
+	var tw := create_tween()
+	tw.tween_interval(delay)
+	tw.tween_property(node, "position", home, 0.28).set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	_moves.append(tw)
+
+
+func _lunge(node: Node3D, to: Vector3, delay: float) -> void:
+	var home := node.position
+	var hit := home.lerp(Vector3(to.x, home.y + 0.025, to.z), 0.7)
+	var tw := create_tween()
+	tw.tween_interval(delay)
+	tw.tween_property(node, "position", hit, 0.12).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tw.tween_property(node, "position", home, 0.18).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_OUT)
+	_moves.append(tw)
+
+
+func _number(at: Vector3, text: String, color: Color, delay: float) -> void:
+	var label := Label3D.new()
+	label.text = text
+	label.font = NUMBER_FONT
+	label.font_size = 72
+	label.outline_size = 14
+	label.pixel_size = 0.0007
+	label.modulate = color
+	label.outline_modulate = Color(0.1, 0.02, 0.02)
+	label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	label.no_depth_test = true
+	label.position = at + Vector3(0, 0.05, 0)
+	label.visible = false
+	add_child(label)
+	var tw := label.create_tween()
+	tw.tween_interval(delay)
+	tw.tween_callback(func() -> void: label.visible = true)
+	tw.tween_property(label, "position:y", label.position.y + 0.07, 0.9).set_ease(Tween.EASE_OUT)
+	tw.parallel().tween_property(label, "modulate:a", 0.0, 0.5).set_delay(0.4)
+	tw.tween_callback(label.queue_free)
+
+
+# A creature that died: its card shrinks and spins away while a puff of dust goes up.
+func _crumble(was: Dictionary, delay: float) -> void:
+	if _ghost_quad == null:
+		_ghost_quad = QuadMesh.new()
+		_ghost_quad.size = Vector2.ONE
+	var ghost := MeshInstance3D.new()
+	ghost.mesh = _ghost_quad
+	ghost.transform = was["at"]
+	ghost.scale = Vector3(CARD.x, CARD.y, 1.0)
+	ghost.material_override = was["mat"]
+	add_child(ghost)
+	var dust := _burst(ghost.position, 14, [Color(0.82, 0.78, 0.68), Color(0.55, 0.5, 0.45)], 0.006)
+	var tw := ghost.create_tween()
+	tw.tween_interval(delay)
+	tw.tween_callback(func() -> void: dust.emitting = true)
+	tw.tween_property(ghost, "scale", Vector3(0.001, 0.001, 1.0), 0.45).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_IN)
+	tw.parallel().tween_property(ghost, "rotation:y", ghost.rotation.y + 1.4, 0.45)
+	tw.tween_callback(ghost.queue_free)
+
+
+# A pony foil coming down: pastel sparkles (the pony guns' colours, game/pony_skin.gd).
+func _sparkle(at: Vector3, delay: float) -> void:
+	var spark := _burst(at, 28, [Color(1.0, 0.6, 0.85), Color(0.6, 1.0, 0.85), Color(0.75, 0.65, 1.0), Color(1.0, 0.95, 0.55), Color(0.55, 0.85, 1.0)], 0.005)
+	var tw := spark.create_tween()
+	tw.tween_interval(delay)
+	tw.tween_callback(func() -> void: spark.emitting = true)
+
+
+# A one-shot puff of little bits (CPU particles: cheap on the Compatibility renderer); frees itself afterwards.
+func _burst(at: Vector3, amount: int, colors: Array, bit: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.one_shot = true
+	p.emitting = false
+	p.amount = amount
+	p.lifetime = 0.8
+	p.explosiveness = 0.9
+	p.direction = Vector3.UP
+	p.spread = 60.0
+	p.initial_velocity_min = 0.12
+	p.initial_velocity_max = 0.3
+	p.gravity = Vector3(0, -0.5, 0)
+	var box := BoxMesh.new()
+	box.size = Vector3(bit, bit, bit)
+	var m := StandardMaterial3D.new()
+	m.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	m.vertex_color_use_as_albedo = true
+	box.material = m
+	p.mesh = box
+	var ramp := Gradient.new()
+	ramp.offsets = PackedFloat32Array()
+	ramp.colors = PackedColorArray()
+	for i in colors.size():
+		ramp.add_point(float(i) / maxf(colors.size() - 1, 1), colors[i])
+	p.color_initial_ramp = ramp
+	p.position = at + Vector3(0, 0.01, 0)
+	p.finished.connect(p.queue_free)
+	add_child(p)
+	return p
 
 
 # The model's size in its own space (all meshes together).
@@ -245,9 +435,12 @@ func _add(face: Variant, where: Transform3D, size: Vector2) -> void:
 		id = String(face["id"])
 	var want := "%s|%s|%s" % [id, finish, str(live)]
 	node.set_meta("want", want)  # a reused node may still have an older picture on its way
-	bake.call("texture", id, finish, func(tex: Texture2D) -> void:
+	bake.call("texture", id, "", func(tex: Texture2D) -> void:  # baked plain: a foil's shine moves on the table (game/tcg/card_shine_3d.gd)
 		if is_instance_valid(node) and node.get_meta("want", "") == want:
-			node.material_override = _material(tex), live)
+			var look: Material = _material(tex)
+			if finish != "":
+				look = CardShine3D.material(tex, finish)
+			node.material_override = look, live)
 
 
 func _new_card() -> MeshInstance3D:
