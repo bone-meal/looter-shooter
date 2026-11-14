@@ -1,1 +1,1 @@
-!wait 3;!ach grant 100;!wait 1.5;!measure hub_hall;!hub at -32.3 4;!look 0 5;!wait 1;!snap trophy_room;!measure trophy_room;!hub at -35.3 -1.4;!look 0 -12;!wait 0.5;!snap trophy_look;!hub note look;!hub at -12.3 -4;!look 90 -20;!wait 0.4;!snap hub_table;!hub at 0 1.9;!look 0 -28;!key interact;!wait 1;!hub at 0 -11;!hold interact;!wait 6;!release interact;!wait 3;!hub note after;!snap island_after;!measure island_after_hub
+!wait 3;/give gun orange ak47 25;/give gun purple m16 12;/give gun rainbow sniper_basic 40;!wait 1;!snap sea1_hub;!measure sea1_hub

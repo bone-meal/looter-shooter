@@ -1,5 +1,5 @@
 # Purpose: read-only lookup over the gun loot data: tiers, manufacturers, parts, buffs, rolled-stat definitions and the base weapons that guns are built on. Pure data, no nodes.
-# Dependencies: none. Data: data/gun_loot.json, gun_parts.json, manufacturers.json, weapons.json, skills.json, gun_uniques.json (checked by tools/validate_data.gd).
+# Dependencies: none. Data: data/gun_loot.json, gun_parts.json, manufacturers.json, weapons.json, skills.json, gun_uniques.json (checked by tools/validate_data.gd), gun_traits.json (read here).
 extends RefCounted
 
 var stats: Dictionary
@@ -18,6 +18,8 @@ var uniques: Dictionary  # data/gun_uniques.json "uniques": hand-made pony guns 
 var unique_bonus: Dictionary  # stat bonus every unique gets on top of its rolls
 var unique_chance: float  # how often a pony-tier drop is a unique
 var wkills_chance: float  # data/gun_loot.json: share of rolled guns that carry the "W kills" counter
+var traits: Array  # data/gun_traits.json "traits": the big build-defining effects (game/gun_traits.gd)
+var trait_slots: Dictionary  # data/gun_traits.json "slots_by_tier": tier id -> how many traits it rolls
 
 
 func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weapon_data: Dictionary, skill_data: Dictionary = {}, unique_data: Dictionary = {}) -> void:
@@ -37,6 +39,9 @@ func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weap
 	makers = maker_data["makers"]
 	weapons = weapon_data["weapons"]
 	skills = skill_data.get("skills", {})
+	var trait_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_traits.json"))
+	traits = (trait_data as Dictionary).get("traits", []) if trait_data is Dictionary else []
+	trait_slots = (trait_data as Dictionary).get("slots_by_tier", {}) if trait_data is Dictionary else {}
 
 
 func tier_index(id: String) -> int:
@@ -48,6 +53,17 @@ func tier_index(id: String) -> int:
 
 func tier(id: String) -> Dictionary:
 	return tiers[tier_index(id)]
+
+
+func trait_def(id: String) -> Dictionary:
+	for t: Dictionary in traits:
+		if String(t["id"]) == id:
+			return t
+	return {}
+
+
+func trait_count(tier_id: String) -> int:
+	return int(trait_slots.get(tier_id, 0))
 
 
 func buff_def(id: String) -> Dictionary:

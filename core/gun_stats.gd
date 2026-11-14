@@ -1,8 +1,9 @@
 # Purpose: pure final stats of a gun: base weapon stats x part modifiers (boosted by the part's manufacturer) x part combos (core/gun_combos.gd) x rolled stat bonuses, plus buff values and a display name. No nodes.
-# Dependencies: core/gun_db.gd. Output of final_stats is shaped like a data/weapons.json entry so core/weapon_state.gd can use it, with extra keys: crit_chance, recoil (multiplier), ads_fov (multiplier), move_speed (the body's, shifted by the parts), buffs {id: value}, combos, and unique (its data entry) for hand-made guns.
+# Dependencies: core/gun_db.gd, core/item_level.gd (damage grows with the gun's item level). Output of final_stats is shaped like a data/weapons.json entry so core/weapon_state.gd can use it, with extra keys: crit_chance, recoil (multiplier), ads_fov (multiplier), move_speed (the body's, shifted by the parts), buffs {id: value}, combos, and unique (its data entry) for hand-made guns.
 extends RefCounted
 
 const GunCombos = preload("res://core/gun_combos.gd")
+const ItemLevel = preload("res://core/item_level.gd")
 
 const MIN_RELOAD := 0.2
 const MIN_SPREAD := 0.001
@@ -59,7 +60,8 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 				bonus[stat] = float(bonus[stat]) + float(db.unique_bonus[stat])
 		out["unique"] = db.uniques[String(gun["unique"])]
 	# 3. apply
-	out["damage"] = float(base["damage"]) * maxf(0.1, 1.0 + float(bonus["damage"]))
+	out["damage"] = float(base["damage"]) * maxf(0.1, 1.0 + float(bonus["damage"])) * ItemLevel.damage_mult(ItemLevel.of(gun))  # item level
+	out["lvl"] = ItemLevel.of(gun)
 	out["fire_rate"] = float(base["fire_rate"]) * maxf(0.1, 1.0 + float(bonus["fire_rate"]))
 	out["mag_size"] = maxi(1, roundi(float(base["mag_size"]) * maxf(0.1, 1.0 + float(bonus["mag_size"]))))
 	out["reload_time"] = maxf(MIN_RELOAD, float(base["reload_time"]) * (1.0 + float(bonus["reload_time"])))
@@ -81,6 +83,12 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 		for id: String in given:
 			buff_values[id] = float(buff_values.get(id, 0.0)) + float(given[id])
 	out["buffs"] = buff_values
+	var trait_values: Dictionary = {}  # the big effects (data/gun_traits.json, game/gun_traits.gd)
+	for tr: Dictionary in gun.get("traits", []):
+		var tdef: Dictionary = db.trait_def(String(tr["id"]))
+		if not tdef.is_empty():
+			trait_values[String(tr["id"])] = lerpf(float(tdef["min"]), float(tdef["max"]), float(tr["q"]))
+	out["traits"] = trait_values
 	out["combos"] = combo_list
 	return out
 

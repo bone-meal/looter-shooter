@@ -12,6 +12,7 @@ const DamageNumbers = preload("res://game/damage_numbers.gd")
 const InventoryScreen = preload("res://game/inventory_screen.gd")
 const LootRoll = preload("res://core/loot_roll.gd")
 const GunGen = preload("res://core/gun_gen.gd")
+const ItemLevel = preload("res://core/item_level.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const DropRules = preload("res://core/drop_rules.gd")
 const LootField = preload("res://game/loot_field.gd")
@@ -117,6 +118,7 @@ const SLOT_RANGE := 2.0
 const TRADE_RANGE := 4.0  # metres: look at a player this near and hold the interact key to ask for a trade
 const TRADE_HOLD := 0.6  # seconds the key must be held
 const CLUB_NEAR := 150.0  # metres from the club's middle within which its inside is built and runs (was 300: the boat at the islands' east edge came within 267 m and built the club under a loading picture)
+const PACK_RANGE := 15.0  # gun trait Pack Hunter (game/gun_traits.gd)
 
 signal look_changed(look: Dictionary)
 signal table_event(op: String, args: Array)  # our blackjack table actions, sent to other players so they can watch
@@ -1773,7 +1775,8 @@ func _buy_crate(crate: Dictionary) -> void:
 	if not _wallet.can_afford(price):
 		_player_hud.notice("A %s costs %d chips (you have %d)." % [crate["name"], price, _wallet.balance])
 		return
-	var gun := GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]))
+	var band := ItemLevel.island_band()
+	var gun := GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]), ItemLevel.roll(_rng, band.x, band.y))
 	if not _player.inventory.add_gun(gun):
 		_player_hud.notice("Inventory full: make room first.")
 		return
@@ -1850,9 +1853,9 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		if _in_arena:  # every player in the run rolls his own loot for every death he sees (a host who is not in the run: none)
 			guns = _colosseum_drops(where, enemy_id, elite != "", wave)
 	elif not _in_fantasy and not island_kill:
-		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult())
-	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave
-		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony"))
+		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult(), ItemLevel.for_wave(wave))
+	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave (a weak pony: the island's level)
+		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony", "", ItemLevel.for_round(_rounds.rules.number) if island_kill else ItemLevel.for_wave(wave)))
 	if island_kill and _quest_host():  # the main quest: its boss, or a kill by the brine jars
 		if _director.last_killed.has_meta("quest_boss") and _quest.boss_killed():
 			_quest_advance()
@@ -1896,7 +1899,7 @@ func _colosseum_drops(where: Vector3, enemy_id: String, elite: bool, wave: int) 
 	var loot := _luck_mult() * _colosseum.loot_mult(_run_mods)
 	var guns: Array = []
 	for tier: String in _colosseum.kill_tiers(_rng, wave, kind, loot):
-		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", tier))
+		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", tier, "", ItemLevel.for_wave(wave)))
 	var things: Array[String] = []
 	if _colosseum.armour_drops(_rng, kind, loot):
 		var pieces := _player.items.armour_drops()
@@ -1929,7 +1932,7 @@ func _open_chest() -> void:
 		lost = lost or left > 0
 		found.append("%s x%d" % [_player.items.item_name(drop["id"]), drop["count"] - left])
 	for tier: String in _colosseum.chest_tiers(int(_colosseum.ticket(_run_ticket)["waves"]), _run_mods):  # by the ticket: one tier above its last wave
-		var gun := GunGen.generate(_player.gun_db, _rng, 0.0, "", tier)
+		var gun := GunGen.generate(_player.gun_db, _rng, 0.0, "", tier, "", ItemLevel.for_wave(int(_colosseum.ticket(_run_ticket)["waves"])))
 		if _player.inventory.add_gun(gun):
 			found.append(GunStats.display_name(_player.gun_db, gun))
 		else:
@@ -3089,7 +3092,8 @@ func _upgrade(up: bool) -> void:
 		return
 	var hand := _player.hand_index()
 	var old: Dictionary = _player.inventory.holster_gun(hand)
-	var made := GunGen.keep_wkills(old, GunGen.generate(_player.gun_db, _rng, 0.0, _player.inventory.holster_body(hand), String(offer["to"]) if up else String(old["tier"])))  # a W kills counter stays with it
+	var level := maxi(ItemLevel.of(old), ItemLevel.for_round(_rounds.rules.number))  # never a lower item level than it had
+	var made := GunGen.keep_wkills(old, GunGen.generate(_player.gun_db, _rng, 0.0, _player.inventory.holster_body(hand), String(offer["to"]) if up else String(old["tier"]), "", level))  # a W kills counter stays with it
 	_player.inventory.set_holster_gun(hand, made)
 	_stats.add("upgrades")
 	_player.refresh_held()
@@ -3142,7 +3146,7 @@ func _run_machines(delta: float) -> void:
 		var before := _box.state
 		var happened := _box.update(_time, _rng)
 		if happened == "offer":
-			_box_gun = GunGen.generate(_player.gun_db, _rng, _box.luck(_rounds.rules.number), "", "", String(_box.cfg["min_tier"]))
+			_box_gun = GunGen.generate(_player.gun_db, _rng, _box.luck(_rounds.rules.number), "", "", String(_box.cfg["min_tier"]), ItemLevel.for_round(_rounds.rules.number))
 		if happened != "":
 			_box_changed(before, false)
 	if _at_upgrade() and Input.is_action_just_pressed("reload") and not _inventory_screen.visible:
@@ -3808,6 +3812,11 @@ func _leave_fantasy() -> void:
 # Called every second and at once when the player changes world.
 func _rest_worlds() -> void:
 	_rest_in = 1.0
+	_player.allies_close = 0  # gun trait Pack Hunter: teammates within 15 m
+	if net != null and net.can_send():
+		for spot: Vector3 in net.other_positions():
+			if spot.distance_to(_player.global_position) <= PACK_RANGE:
+				_player.allies_close += 1
 	_score.paused = _in_fantasy  # the points game is the gun side's
 	_player_hud.show_points = not _in_fantasy
 	if _player.knife_stowed != _in_fantasy:  # in Aurelind the hand without a gun holds the staff, not the knife

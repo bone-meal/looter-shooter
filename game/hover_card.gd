@@ -14,6 +14,7 @@ const ITEM_WIDTH := 240.0
 # Card of a rolled gun at `place`: name in its tier colour, stats compared with `against` (another rolled gun, or {}),
 # parts and buffs. Returns where it was drawn.
 const WKILLS_COLOR := Color(1.0, 0.55, 0.15)
+const TRAIT_COLOR := Color(1.0, 0.42, 0.3)  # gun traits (red-orange, above the buffs)
 
 
 static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Dictionary, against: Dictionary, place: Vector2, view: Vector2, note: String) -> Rect2:
@@ -23,6 +24,7 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 	if gun.has("wkills"):  # the kill counter: on the gun model too (game/wkills_display.gd)
 		lines.append(["W kills  Confirmed kills: %d" % int(gun["wkills"]), WKILLS_COLOR])
 		lines.append(["This gun counts every kill made with it.", Color(0.95, 0.65, 0.35)])
+	lines.append(["Item level %d%s" % [int(stats["lvl"]), "" if other.is_empty() else "  (%+d)" % (int(stats["lvl"]) - int(other["lvl"]))], Color(0.9, 0.9, 0.6)])
 	lines.append(["Damage %.1f%s" % [stats["damage"], _diff_text(float(stats["damage"]), other, "damage", 1)], _delta_color(float(stats["damage"]), other, "damage", true)])
 	lines.append(["Fire rate %.2f/s%s" % [stats["fire_rate"], _diff_text(float(stats["fire_rate"]), other, "fire_rate", 2)], _delta_color(float(stats["fire_rate"]), other, "fire_rate", true)])
 	lines.append(["Magazine %d%s" % [stats["mag_size"], _diff_text(float(stats["mag_size"]), other, "mag_size", 0)], _delta_color(float(stats["mag_size"]), other, "mag_size", true)])
@@ -50,6 +52,13 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 		var def: Dictionary = gun_db.buff_def(String(b["id"]))
 		var value := lerpf(float(def["min"]), float(def["max"]), float(b["q"]))
 		lines.append(["%s: %s" % [def["name"], String(def["desc"]) % (("%.1f" % value) if value < 10.0 else ("%.0f" % value))], Color(1.0, 0.8, 0.4)])
+	for tr: Dictionary in gun.get("traits", []):  # the big effects, in their own colour (data/gun_traits.json)
+		var tdef: Dictionary = gun_db.trait_def(String(tr["id"]))
+		if tdef.is_empty():
+			continue
+		var tvalue := lerpf(float(tdef["min"]), float(tdef["max"]), float(tr["q"]))
+		for wrapped in _wrap("TRAIT %s: %s" % [tdef["name"], String(tdef["desc"]) % (("%.1f" % tvalue) if tvalue < 10.0 else ("%.0f" % tvalue))], 50):
+			lines.append([wrapped, TRAIT_COLOR])
 	var skill_list: Array = gun.get("skills", [])
 	for i in skill_list.size():
 		var entry: Dictionary = skill_list[i]

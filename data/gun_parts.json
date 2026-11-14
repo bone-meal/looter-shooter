@@ -1,5 +1,5 @@
 {
- "version": 2,
+ "version": 3,
  "slots": [
   "barrel",
   "mag",
@@ -130,6 +130,51 @@
       1.0
      ]
     }
+   },
+   "fluted": {
+    "name": "Fluted Barrel",
+    "model": "barrel_fluted",
+    "mods": {
+     "fire_rate": 0.08,
+     "recoil": 0.05,
+     "move_speed": 0.03
+    },
+    "view": {
+     "barrel_scale": [
+      0.85,
+      1.05
+     ]
+    }
+   },
+   "ported": {
+    "name": "Ported Barrel",
+    "model": "barrel_ported",
+    "mods": {
+     "recoil": -0.2,
+     "spread": 0.05
+    },
+    "view": {
+     "barrel_scale": [
+      1.15,
+      0.95
+     ]
+    }
+   },
+   "bull": {
+    "name": "Bull Barrel",
+    "model": "barrel_bull",
+    "mods": {
+     "damage": 0.22,
+     "fire_rate": -0.12,
+     "reload_time": 0.05,
+     "move_speed": -0.05
+    },
+    "view": {
+     "barrel_scale": [
+      1.7,
+      1.1
+     ]
+    }
    }
   },
   "mag": {
@@ -168,6 +213,42 @@
     },
     "view": {
      "model": "mag_fast"
+    }
+   },
+   "twin": {
+    "name": "Twin Mags",
+    "model": "mag_twin",
+    "mods": {
+     "reload_time": -0.15,
+     "mag_size": 0.2,
+     "move_speed": -0.01
+    },
+    "view": {
+     "model": "mag_twin"
+    }
+   },
+   "box": {
+    "name": "Box Mag",
+    "model": "mag_box",
+    "mods": {
+     "mag_size": 0.7,
+     "reload_time": 0.2,
+     "move_speed": -0.03
+    },
+    "view": {
+     "model": "mag_box"
+    }
+   },
+   "slim": {
+    "name": "Slim Mag",
+    "model": "mag_slim",
+    "mods": {
+     "mag_size": -0.2,
+     "fire_rate": 0.05,
+     "move_speed": 0.015
+    },
+    "view": {
+     "model": "mag_slim"
     }
    }
   },
@@ -209,6 +290,46 @@
      "model": "sight_holo",
      "eye": 0.038
     }
+   },
+   "peep": {
+    "name": "Peep Sight",
+    "model": "sight_peep",
+    "mods": {
+     "spread": -0.05,
+     "crit_chance": 0.02,
+     "ads_fov": -0.05
+    },
+    "view": {
+     "model": "sight_peep",
+     "eye": 0.03
+    }
+   },
+   "long_scope": {
+    "name": "Long Scope",
+    "model": "sight_long_scope",
+    "mods": {
+     "spread": -0.25,
+     "ads_fov": -0.6,
+     "fire_rate": -0.05,
+     "move_speed": -0.015
+    },
+    "view": {
+     "model": "sight_long_scope",
+     "eye": 0.046
+    }
+   },
+   "thermal": {
+    "name": "Thermal Sight",
+    "model": "sight_thermal",
+    "mods": {
+     "crit_chance": 0.05,
+     "ads_fov": -0.2,
+     "spread": -0.05
+    },
+    "view": {
+     "model": "sight_thermal",
+     "eye": 0.044
+    }
    }
   },
   "muzzle": {
@@ -243,6 +364,39 @@
     },
     "view": {
      "model": "muzzle_flash_hider"
+    }
+   },
+   "brake": {
+    "name": "Muzzle Brake",
+    "model": "muzzle_brake",
+    "mods": {
+     "recoil": -0.4,
+     "spread": 0.05
+    },
+    "view": {
+     "model": "muzzle_brake"
+    }
+   },
+   "choke": {
+    "name": "Choke",
+    "model": "muzzle_choke",
+    "mods": {
+     "spread": -0.2,
+     "damage": 0.03
+    },
+    "view": {
+     "model": "muzzle_choke"
+    }
+   },
+   "bayonet": {
+    "name": "Bayonet",
+    "model": "muzzle_bayonet",
+    "mods": {
+     "crit_chance": 0.03,
+     "move_speed": -0.01
+    },
+    "view": {
+     "model": "muzzle_bayonet"
     }
    }
   },
@@ -280,6 +434,41 @@
     },
     "view": {
      "model": "grip_stubby"
+    }
+   },
+   "folding": {
+    "name": "Folding Grip",
+    "model": "grip_folding",
+    "mods": {
+     "move_speed": 0.015,
+     "recoil": 0.05,
+     "reload_time": -0.03
+    },
+    "view": {
+     "model": "grip_folding"
+    }
+   },
+   "bipod": {
+    "name": "Bipod Grip",
+    "model": "grip_bipod",
+    "mods": {
+     "recoil": -0.4,
+     "spread": -0.1,
+     "move_speed": -0.03
+    },
+    "view": {
+     "model": "grip_bipod"
+    }
+   },
+   "skeleton": {
+    "name": "Skeleton Grip",
+    "model": "grip_skeleton",
+    "mods": {
+     "reload_time": -0.08,
+     "fire_rate": 0.03
+    },
+    "view": {
+     "model": "grip_skeleton"
     }
    }
   }
@@ -516,6 +705,104 @@
     "slow_on_hit": 12
    },
    "desc": "Holo sight with a stubby grip: close work. Hits slow enemies by 12%, +6% fire rate, +3% crit chance."
+  },
+  {
+   "id": "longshot",
+   "name": "Longshot",
+   "needs": {
+    "barrel": "bull",
+    "sight": "long_scope",
+    "grip": "bipod"
+   },
+   "mods": {
+    "damage": 0.15,
+    "spread": -0.25,
+    "recoil": -0.2
+   },
+   "buffs": {
+    "far_reach": 20
+   },
+   "desc": "Bull barrel, long scope and bipod: a sniper's nest. +15% damage, tighter spread, steadier; +20% damage beyond 30 m."
+  },
+  {
+   "id": "boarding_party",
+   "name": "Boarder",
+   "needs": {
+    "barrel": "fluted",
+    "muzzle": "bayonet",
+    "grip": "folding"
+   },
+   "mods": {
+    "fire_rate": 0.1,
+    "move_speed": 0.03
+   },
+   "buffs": {
+    "point_blank": 20
+   },
+   "desc": "Fluted barrel, bayonet and folding grip: close quarters. Faster fire and feet; +20% damage within 8 m."
+  },
+  {
+   "id": "heat_seeker",
+   "name": "Heat Seeker",
+   "needs": {
+    "sight": "thermal",
+    "muzzle": "choke"
+   },
+   "mods": {
+    "crit_chance": 0.05
+   },
+   "buffs": {
+    "kindling": 25
+   },
+   "desc": "Thermal sight and choke: +5% crit chance, +25% damage to burning enemies."
+  },
+  {
+   "id": "quartermaster",
+   "name": "Quartermaster",
+   "needs": {
+    "mag": "twin",
+    "grip": "skeleton"
+   },
+   "mods": {
+    "reload_time": -0.15
+   },
+   "buffs": {
+    "opener": 40
+   },
+   "desc": "Twin mags and skeleton grip: much faster reloads, and the first shot of a full magazine deals +40% damage."
+  },
+  {
+   "id": "broadside",
+   "name": "Broadside",
+   "needs": {
+    "barrel": "ported",
+    "mag": "box",
+    "muzzle": "brake"
+   },
+   "mods": {
+    "mag_size": 0.3,
+    "recoil": -0.25
+   },
+   "buffs": {
+    "crowd_pleaser": 3
+   },
+   "desc": "Ported barrel, box mag and muzzle brake: hold the line. Bigger magazine, far less recoil, +3% damage for each enemy within 10 m."
+  },
+  {
+   "id": "needle",
+   "name": "Needle",
+   "needs": {
+    "sight": "peep",
+    "mag": "slim"
+   },
+   "mods": {
+    "spread": -0.15,
+    "fire_rate": 0.05
+   },
+   "buffs": {
+    "headshot_damage": 15
+   },
+   "desc": "Peep sight and slim mag: light and precise. Tighter spread, faster fire, headshots +15% damage."
   }
  ],
  "matched": [

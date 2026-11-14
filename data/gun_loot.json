@@ -1,5 +1,5 @@
 {
- "version": 3,
+ "version": 4,
  "stats": {
   "damage": {
    "max": 0.35,
@@ -38,8 +38,8 @@
   }
  },
  "wkills_chance": 0.25,
-  "_wkills": "W kills: this share of rolled guns (drops, chests, crates, the mystery box, the upgrade machine's new rolls) carries a kill counter; it stays through every re-roll and upgrade (core/gun_gen.gd).",
-  "base_crit_chance": 0.05,
+ "_wkills": "W kills: this share of rolled guns (drops, chests, crates, the mystery box, the upgrade machine's new rolls) carries a kill counter; it stays through every re-roll and upgrade (core/gun_gen.gd).",
+ "base_crit_chance": 0.05,
  "tiers": [
   {
    "id": "grey",
@@ -318,6 +318,118 @@
    "desc": "Critical hits mark enemies: +%s%% damage taken for 6 s",
    "min": 15.0,
    "max": 25.0,
+   "scale": 1.0
+  },
+  {
+   "id": "headshot_damage",
+   "name": "Marksman",
+   "desc": "Headshots deal +%s%% damage",
+   "min": 10.0,
+   "max": 40.0,
+   "scale": 1.0
+  },
+  {
+   "id": "opener",
+   "name": "Opener",
+   "desc": "The first shot of a full magazine deals +%s%% damage",
+   "min": 30.0,
+   "max": 120.0,
+   "scale": 1.0
+  },
+  {
+   "id": "last_word",
+   "name": "Last Word",
+   "desc": "The last round of a magazine deals +%s%% damage",
+   "min": 50.0,
+   "max": 200.0,
+   "scale": 1.0
+  },
+  {
+   "id": "point_blank",
+   "name": "Point Blank",
+   "desc": "+%s%% damage to enemies within 8 m",
+   "min": 10.0,
+   "max": 35.0,
+   "scale": 1.0
+  },
+  {
+   "id": "far_reach",
+   "name": "Far Reach",
+   "desc": "+%s%% damage to enemies beyond 30 m",
+   "min": 10.0,
+   "max": 35.0,
+   "scale": 1.0
+  },
+  {
+   "id": "adrenaline",
+   "name": "Adrenaline",
+   "desc": "Kills give +%s%% move speed for 4 s",
+   "min": 5.0,
+   "max": 20.0,
+   "scale": 1.0
+  },
+  {
+   "id": "second_breath",
+   "name": "Second Breath",
+   "desc": "Kills heal %s health",
+   "min": 5.0,
+   "max": 25.0,
+   "scale": 1.0
+  },
+  {
+   "id": "big_game",
+   "name": "Big Game",
+   "desc": "+%s%% damage to elites and bosses",
+   "min": 10.0,
+   "max": 40.0,
+   "scale": 1.0
+  },
+  {
+   "id": "kindling",
+   "name": "Kindling",
+   "desc": "+%s%% damage to burning enemies",
+   "min": 10.0,
+   "max": 40.0,
+   "scale": 1.0
+  },
+  {
+   "id": "desperado",
+   "name": "Desperado",
+   "desc": "+%s%% damage while below 35%% health",
+   "min": 15.0,
+   "max": 50.0,
+   "scale": 1.0
+  },
+  {
+   "id": "pristine",
+   "name": "Pristine",
+   "desc": "+%s%% damage while at full health",
+   "min": 8.0,
+   "max": 25.0,
+   "scale": 1.0
+  },
+  {
+   "id": "steady",
+   "name": "Steady Hands",
+   "desc": "+%s%% damage while aiming down sights",
+   "min": 5.0,
+   "max": 20.0,
+   "scale": 1.0
+  },
+  {
+   "id": "hip_shooter",
+   "name": "Hip Shooter",
+   "desc": "+%s%% damage when firing from the hip",
+   "min": 5.0,
+   "max": 20.0,
+   "scale": 1.0
+  },
+  {
+   "id": "crowd_pleaser",
+   "name": "Crowd Pleaser",
+   "desc": "+%s%% damage for each enemy within 10 m (up to 5)",
+   "min": 2.0,
+   "max": 6.0,
    "scale": 1.0
   }
  ],

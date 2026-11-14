@@ -376,6 +376,11 @@ func apply_slow(amount: float, seconds: float) -> void:
 	_slow_until = Time.get_ticks_msec() / 1000.0 + seconds
 
 
+# Burning right now (gun buff Kindling: core data/gun_loot.json).
+func is_burning() -> bool:
+	return Time.get_ticks_msec() / 1000.0 < _burn_until
+
+
 func apply_burn(dps: float, seconds: float) -> void:
 	if puppet:
 		puppet_effect.emit("burn", dps, seconds)

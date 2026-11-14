@@ -1,0 +1,19 @@
+{
+ "_about": "Gun TRAITS (locked 2026-11-14, diary/DECISIONS_SEA.md: a layer above the small buffs, like Borderlands anointments): build-defining effects. A gun of a tier listed in slots_by_tier rolls that many (purple and gold one, orange and up two), each at a quality inside its tier's range, never the same twice; the value goes from min to max with the quality. Effects: game/gun_traits.gd. desc is printf-style (one %s for the value, a literal % written %%). ALL NUMBERS ARE PLACEHOLDERS FOR THE DIRECTOR.",
+ "version": 1,
+ "slots_by_tier": {"purple": 1, "gold": 1, "orange": 2, "rainbow": 2, "pony": 2},
+ "traits": [
+  {"id": "ricochet", "name": "Ricochet", "desc": "Every hit bounces to the nearest other enemy within 10 m for %s%% of its damage", "min": 20.0, "max": 50.0},
+  {"id": "overcharge", "name": "Overcharge", "desc": "Every 5th shot deals +%s%% damage and bursts", "min": 100.0, "max": 250.0},
+  {"id": "last_stand", "name": "Last Stand", "desc": "Falling below 25%% health: no ammo used for %s s (once every 30 s)", "min": 4.0, "max": 10.0},
+  {"id": "pack_hunter", "name": "Pack Hunter", "desc": "+%s%% damage for each teammate within 15 m", "min": 5.0, "max": 15.0},
+  {"id": "quick_change", "name": "Quick Change", "desc": "Swapping to this gun: its next magazine deals +%s%% damage", "min": 15.0, "max": 40.0},
+  {"id": "chain_reaction", "name": "Chain Reaction", "desc": "Kills explode for %s%% of the killing blow's damage", "min": 40.0, "max": 120.0},
+  {"id": "blood_tide", "name": "Blood Tide", "desc": "Kills heal %s%% of your health and refill a third of the magazine", "min": 3.0, "max": 8.0},
+  {"id": "tempest", "name": "Tempest", "desc": "Every hit has a %s%% chance to burn AND shock", "min": 8.0, "max": 20.0},
+  {"id": "executioner", "name": "Executioner", "desc": "Enemies below 25%% health take +%s%% damage", "min": 25.0, "max": 75.0},
+  {"id": "momentum", "name": "Momentum", "desc": "Each hit in a row adds 2%% damage, up to +%s%%; a miss starts over", "min": 20.0, "max": 60.0},
+  {"id": "twin_shot", "name": "Twin Shot", "desc": "%s%% chance a shot hits twice", "min": 10.0, "max": 25.0},
+  {"id": "skill_surge", "name": "Skill Surge", "desc": "Kills take %s s off your gun skills' cooldowns", "min": 0.5, "max": 2.0}
+ ]
+}

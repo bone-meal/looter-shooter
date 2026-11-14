@@ -11,7 +11,7 @@ static func wave_luck(cfg: Dictionary, wave: int) -> float:
 
 
 # Returns the guns an enemy drops: its own entry (chance, floor, count) plus the elite bonus drop. May be empty.
-static func roll_drops(db: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, enemy_id: String, elite: bool, wave: int, luck_mult: float = 1.0) -> Array:
+static func roll_drops(db: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, enemy_id: String, elite: bool, wave: int, luck_mult: float = 1.0, lvl: int = 1) -> Array:
 	var guns: Array = []
 	var luck := wave_luck(cfg, wave) * luck_mult
 	var entries: Array = []
@@ -23,7 +23,7 @@ static func roll_drops(db: RefCounted, cfg: Dictionary, rng: RandomNumberGenerat
 		if rng.randf() > float(e["chance"]):
 			continue
 		for _i in int(e["count"]):
-			guns.append(GunGen.generate(db, rng, luck, "", "", String(e["min_tier"])))
+			guns.append(GunGen.generate(db, rng, luck, "", "", String(e["min_tier"]), lvl))
 	return guns
 
 

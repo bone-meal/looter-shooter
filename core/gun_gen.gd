@@ -1,11 +1,12 @@
 # Purpose: pure gun generation and checking. Rolls a gun (body, manufacturer, tier, parts, stat rolls, buffs) from a seeded RNG, and validates a gun dictionary so the host can reject edited guns.
-# Dependencies: core/gun_db.gd. A gun is {"v", "body", "maker", "tier", "parts": {slot: {"kind", "maker"}}, "rolls": {stat: quality 0..1}, "buffs": [{"id", "q"}], "skills": [{"id", "q"}]}: IDs and rolled values only, so it saves and sends as plain data.
+# Dependencies: core/gun_db.gd, core/item_level.gd. A gun is {"v", "lvl", "body", "maker", "tier", "parts": {slot: {"kind", "maker"}}, "rolls": {stat: quality 0..1}, "buffs": [{"id", "q"}], "skills": [{"id", "q"}], "traits": [{"id", "q"}]}: IDs and rolled values only, so it saves and sends as plain data. "lvl" = item level and "traits" = the big effects (both v3 on; older guns count as level 1 with no traits).
 # A hand-made unique (data/gun_uniques.json) carries one more key, "unique": id, and must match that id's gun exactly.
 extends RefCounted
 
 const SkillState = preload("res://core/skill_state.gd")
+const ItemLevel = preload("res://core/item_level.gd")
 const WKILLS_MAX := 9999999  # the counter shows 7 digits
-const VERSION := 2  # 1 = guns from before skills existed (no "skills" key, still legal)
+const VERSION := 3  # 3 = item level "lvl" + traits; 2 = skills without a level; 1 = before skills (both still legal, level 1, no traits)
 const EPS := 0.002
 
 
@@ -28,8 +29,8 @@ static func pick_tier(db: RefCounted, rng: RandomNumberGenerator, luck: float = 
 	return String(db.tiers[db.tiers.size() - 1]["id"])
 
 
-# body "" = random body, tier_id "" = rolled by pick_tier (with the min_tier floor).
-static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0.0, body: String = "", tier_id: String = "", min_tier: String = "") -> Dictionary:
+# body "" = random body, tier_id "" = rolled by pick_tier (with the min_tier floor); lvl = the item level where it drops.
+static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0.0, body: String = "", tier_id: String = "", min_tier: String = "", lvl: int = 1) -> Dictionary:
 	var body_ids: Array = db.bodies.keys()
 	var body_id := body if body != "" else String(body_ids[rng.randi_range(0, body_ids.size() - 1)])
 	var tid := tier_id if tier_id != "" else pick_tier(db, rng, luck, min_tier)
@@ -38,7 +39,7 @@ static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0
 	var maker_id := String(maker_ids[rng.randi_range(0, maker_ids.size() - 1)])
 	var q_lo: float = float(tier["quality"][0])
 	var q_hi: float = float(tier["quality"][1])
-	var gun := {"v": VERSION, "body": body_id, "maker": maker_id, "tier": tid, "parts": {}, "rolls": {}, "buffs": [], "skills": []}
+	var gun := {"v": VERSION, "lvl": clampi(lvl, 1, ItemLevel.max_level()), "body": body_id, "maker": maker_id, "tier": tid, "parts": {}, "rolls": {}, "buffs": [], "skills": [], "traits": []}
 	# parts
 	var fill: float = float(tier["part_fill"])
 	var gun_parts: Dictionary = gun["parts"]
@@ -69,19 +70,27 @@ static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0
 		candidates.erase(id)
 		gun_buffs.append({"id": id, "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)})
 	gun["skills"] = SkillState.roll(db, rng, tid)
+	var trait_pool: Array = []  # traits: the big effects, purple and up (data/gun_traits.json)
+	for t: Dictionary in db.traits:
+		trait_pool.append(String(t["id"]))
+	for _n in mini(db.trait_count(tid), trait_pool.size()):
+		var trait_id := String(trait_pool[rng.randi_range(0, trait_pool.size() - 1)])
+		trait_pool.erase(trait_id)
+		(gun["traits"] as Array).append({"id": trait_id, "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)})
 	if tid == String(db.tiers[db.tiers.size() - 1]["id"]) and rng.randf() < db.unique_chance:  # a top-tier drop may be a hand-made unique
 		var fitting: Array = []
 		for id: String in db.uniques:
 			if body == "" or String(db.uniques[id]["body"]) == body:
 				fitting.append(id)
 		if not fitting.is_empty():
-			gun = unique(db, String(fitting[rng.randi_range(0, fitting.size() - 1)]))
+			gun = unique(db, String(fitting[rng.randi_range(0, fitting.size() - 1)]), int(gun["lvl"]))
 	if rng.randf() < db.wkills_chance:
 		gun["wkills"] = 0  # the "W kills" counter: kills made with it are counted on it (kept through re-rolls: keep_wkills)
 	return gun
 
 
 # A newly rolled gun that replaces `old` (the upgrade machine): it keeps old's W kills counter and its count.
+# (Its level is the new roll's own.)
 static func keep_wkills(old: Dictionary, made: Dictionary) -> Dictionary:
 	if old.has("wkills"):
 		made["wkills"] = int(old["wkills"])
@@ -96,14 +105,14 @@ static func count_kill(gun: Dictionary) -> bool:
 	return true
 
 
-# The one legal gun for a unique id (data/gun_uniques.json), or {} for an unknown id: top tier, the listed parts all by the
-# gun's own maker, every stat rolled at the maximum, the listed buffs and skills at full quality.
-static func unique(db: RefCounted, id: String) -> Dictionary:
+# The one legal gun for a unique id (data/gun_uniques.json) at item level lvl, or {} for an unknown id: top tier, the
+# listed parts all by the gun's own maker, every stat rolled at the maximum, the listed buffs and skills at full quality.
+static func unique(db: RefCounted, id: String, lvl: int = 1) -> Dictionary:
 	if not db.uniques.has(id):
 		return {}
 	var def: Dictionary = db.uniques[id]
 	var maker := String(def["maker"])
-	var gun := {"v": VERSION, "unique": id, "body": String(def["body"]), "maker": maker, "tier": String(db.tiers[db.tiers.size() - 1]["id"]), "parts": {}, "rolls": {}, "buffs": [], "skills": []}
+	var gun := {"v": VERSION, "lvl": clampi(lvl, 1, ItemLevel.max_level()), "unique": id, "body": String(def["body"]), "maker": maker, "tier": String(db.tiers[db.tiers.size() - 1]["id"]), "parts": {}, "rolls": {}, "buffs": [], "skills": [], "traits": []}
 	var kinds: Dictionary = def["parts"]
 	for slot: String in kinds:
 		gun["parts"][slot] = {"kind": String(kinds[slot]), "maker": maker}
@@ -113,6 +122,8 @@ static func unique(db: RefCounted, id: String) -> Dictionary:
 		(gun["buffs"] as Array).append({"id": buff_id, "q": 1.0})
 	for skill_id: String in def["skills"]:
 		(gun["skills"] as Array).append({"id": skill_id, "q": 1.0})
+	for trait_id: String in def.get("traits", []):
+		(gun["traits"] as Array).append({"id": trait_id, "q": 1.0})
 	return gun
 
 
@@ -136,8 +147,15 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 			return "bad W kills count"
 		gun = gun.duplicate()
 		gun.erase("wkills")  # the counter says nothing about the rest of the gun
-	if gun.has("unique"):  # a unique is legal only as the exact gun its id stands for
-		var real := unique(db, String(gun["unique"]))
+	var level_problem := _level_problem(gun)
+	if level_problem != "":
+		return level_problem
+	if gun.has("unique"):  # a unique is legal only as the exact gun its id stands for (at its level; old ones had none)
+		var real := unique(db, String(gun["unique"]), ItemLevel.of(gun))
+		if not gun.has("lvl"):
+			real.erase("lvl")
+			real.erase("traits")
+			real["v"] = gun.get("v", 2)
 		return "" if not real.is_empty() and _same(real, gun) else "unknown or edited unique"
 	for key in ["v", "body", "maker", "tier", "parts", "rolls", "buffs"]:
 		if not gun.has(key):
@@ -145,7 +163,7 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 	if not (gun["parts"] is Dictionary) or not (gun["rolls"] is Dictionary) or not (gun["buffs"] is Array):
 		return "wrong field types"
 	var version := int(gun["v"])
-	if version != VERSION and version != 1:
+	if version < 1 or version > VERSION:
 		return "unknown version"
 	if version == 1 and gun.has("skills"):
 		return "old gun with skills"
@@ -190,10 +208,45 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 		var bq: float = float(bd.get("q", -1.0))
 		if bq < lo or bq > hi:
 			return "buff out of tier range"
-	if version == VERSION:
+	if version >= 3:
+		var trait_problem := _trait_problem(db, gun, lo, hi)
+		if trait_problem != "":
+			return trait_problem
+	if version >= 2:
 		if not gun.has("skills"):
 			return "missing skills"
 		return SkillState.check(db, String(gun["tier"]), gun["skills"], EPS)
+	return ""
+
+
+# Version 3 guns carry exactly their tier's number of traits, each known, never twice, at a quality inside the tier's range.
+static func _trait_problem(db: RefCounted, gun: Dictionary, lo: float, hi: float) -> String:
+	var list: Variant = gun.get("traits")
+	if not (list is Array) or (list as Array).size() != db.trait_count(String(gun["tier"])):
+		return "wrong number of traits"
+	var seen: Array[String] = []
+	for t: Variant in list:
+		if not (t is Dictionary):
+			return "bad trait"
+		var id := String((t as Dictionary).get("id", ""))
+		if db.trait_def(id).is_empty() or seen.has(id):
+			return "unknown or repeated trait"
+		seen.append(id)
+		var q := float((t as Dictionary).get("q", -1.0))
+		if q < lo or q > hi:
+			return "trait out of tier range"
+	return ""
+
+
+# Version 3 guns carry a whole item level inside 1..max; older ones carry none.
+static func _level_problem(gun: Dictionary) -> String:
+	var version := int(gun.get("v", 0))
+	if version >= 3:
+		var lvl: Variant = gun.get("lvl")
+		if not (lvl is int or lvl is float) or not is_equal_approx(float(lvl), roundf(float(lvl))) or int(lvl) < 1 or int(lvl) > ItemLevel.max_level():
+			return "bad item level"
+	elif gun.has("lvl") or gun.has("traits"):
+		return "old gun with an item level or traits"
 	return ""
 
 

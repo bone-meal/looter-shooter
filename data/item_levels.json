@@ -1,0 +1,11 @@
+{
+ "_about": "Item level of guns (and armour from step 1d), locked in diary/DECISIONS_SEA.md batch 5: drops from later sea regions are stronger, so old gear falls behind. A gun of level L deals base x damage_growth^(L-1). Sea region n drops levels 10(n-1)+1 .. 10n (region_band). The island and the colosseum are capped at level island_cap (= region 1-2 strength: a pony from there is a weak pony): the island's level rises one every rounds_per_level rounds, the colosseum's with its wave. Crates, the mystery box and the upgrade machine roll inside island_band. Guns from before item levels (v1 / v2) count as level 1. ALL NUMBERS ARE PLACEHOLDERS FOR THE DIRECTOR.",
+ "version": 1,
+ "max": 70,
+ "damage_growth": 1.045,
+ "region_band": 10,
+ "island_cap": 20,
+ "island_band": [1, 20],
+ "rounds_per_level": 2,
+ "colosseum_levels": [2, 3, 5, 6, 8, 9, 11, 12, 14, 16, 18, 20]
+}

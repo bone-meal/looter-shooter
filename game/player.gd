@@ -38,6 +38,7 @@ const DamageNumbers = preload("res://game/damage_numbers.gd")
 const ItemDb = preload("res://core/item_db.gd")
 const GunDb = preload("res://core/gun_db.gd")
 const GunStats = preload("res://core/gun_stats.gd")
+const GunTraits = preload("res://game/gun_traits.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const DancePoses = preload("res://game/dance_poses.gd")
 const BodyMotion = preload("res://game/body_motion.gd")
@@ -65,6 +66,8 @@ const BERSERK_MAX := 10
 const BERSERK_SECONDS := 3.0
 const GLASS_HEALTH := 0.65  # max health multiplier with the Glass Cannon buff
 const OVERKILL_RANGE := 5.0
+const CROWD_RANGE := 10.0  # gun buff Crowd Pleaser
+const CROWD_MAX := 5
 const OPTIC_KICK := 0.7  # degrees: view kick per shot through an optic part (the hidden gun cannot show recoil)
 const VIEW_KICK_RECOVERY := 5.0  # per second: how fast the scoped view settles back after a shot
 
@@ -178,6 +181,11 @@ var damage_gate: Callable  # fantasy world (game/combat_tools.gd): every hit is 
 var struck_by: Node3D  # whoever is about to hurt us: set by the attacker just before take_damage (may stay null)
 var struck_from := Vector3.INF  # where a hit without an attacker node comes from (a projectile)
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
+var _rush_until := 0.0  # gun buff Adrenaline: faster after a kill until then
+var _rush_pct := 0.0
+var _crowd := 0  # gun buff Crowd Pleaser: enemies within 10 m, counted once per shot
+var allies_close := 0  # teammates within 15 m (set by the session a few times a second): gun trait Pack Hunter
+var _traits := GunTraits.new()  # what the held gun's traits do (game/gun_traits.gd)
 var guns_locked := false  # fantasy world (game/fantasy_world.gd): guns stay holstered until its story is finished
 var inspect_moves := InspectMoves.new()  # data/inspect.json: the inspect key's move for each gun body, knife type and the staff
 var shots_fired := 0  # since the session last took them into the record
@@ -424,7 +432,8 @@ func _move_tick(input: Vector2) -> void:
 	var aiming := Input.is_action_pressed("aim")
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
-	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace
+	var rush := 1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0
+	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
 	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
@@ -612,6 +621,8 @@ func take_damage(amount: float, element: String = "physical") -> void:
 		var away: Vector3 = ((attacker as Node3D).global_position - global_position) * Vector3(1, 0, 1)
 		(attacker as Object).call("push", away.normalized() * _perk("push", 0.0))
 	_hurt(taken)
+	if not _held_gun.is_empty():
+		_traits.on_hurt(_held_stats.get("traits", {}), _now())  # trait Last Stand
 
 
 func _hurt(amount: float) -> void:
@@ -854,6 +865,8 @@ func refresh_held() -> void:
 		_held_stats = GunStats.final_stats(gun_db, _held_gun)
 		_dress_body(index)
 		stats = _held_stats
+		_traits.player = self
+		_traits.on_swapped(_held_stats.get("traits", {}), int(_held_stats.get("mag_size", 0)))
 	var key := (body.hash() if _held_gun.is_empty() else _held_gun.hash()) + (int(perks.get("stamp")) if perks != null else 0) + run_fx.hash()  # a perk bought or lost: the gun's numbers are worked out again
 	if _ready_weapons[_hand] == null or _ready_keys[_hand] != key or inventory.loaded[_hand] == InventoryState.FRESH:
 		var made := WeaponState.new(body, _with_perks(stats))
@@ -1271,13 +1284,16 @@ func _shoot() -> void:
 	_kick_view()  # applies after this shot's direction is taken (the camera vectors above were read first)
 
 	var buffs: Dictionary = _held_stats.get("buffs", {})
-	if buffs.has("free_shot") and randf() * 100.0 < float(buffs["free_shot"]):
+	var gun_traits: Dictionary = _held_stats.get("traits", {})
+	var free := _traits.on_shot(gun_traits, _now())  # trait Last Stand: no ammo used
+	if free or (buffs.has("free_shot") and randf() * 100.0 < float(buffs["free_shot"])):
 		weapon.ammo = mini(weapon.ammo + 1, weapon.mag_size)
 	if not weapon.projectile.is_empty():
 		var aim := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
 		explosives.fire(_head.global_position + aim * 0.6, aim, weapon.projectile)
 		return
 
+	_crowd = _enemies_near(CROWD_RANGE) if buffs.has("crowd_pleaser") else 0
 	var totals := {}  # collider -> damage dealt this shot (one number per target, even for shotgun pellets)
 	var spots := {}
 	for pellet in weapon.pellets:
@@ -1290,6 +1306,7 @@ func _shoot() -> void:
 			var head: bool = hit.collider.has_method("head_hit") and hit.collider.head_hit(hit.position, head_share)
 			if head:
 				dealt *= head_mult * _perk("head_mult", 1.0)
+			dealt *= _situational(hit.collider, hit.position, head) * _traits.damage_mult(gun_traits, hit.collider)
 			var hp_before := _hp_of(hit.collider)
 			if score != null:
 				score.blow = "headshot" if head else ""  # a kill by this pellet is paid as what it was (the session hears of the kill)
@@ -1306,6 +1323,7 @@ func _shoot() -> void:
 	shots_fired += 1  # the record (core/stat_book.gd via the session): a shotgun blast is one shot, a hit if any pellet landed
 	if not totals.is_empty():
 		shots_hit += 1
+	_traits.after_shot(not totals.is_empty())
 	if damage_numbers != null:
 		for collider in totals:
 			damage_numbers.spawn(spots[collider], totals[collider])
@@ -1428,7 +1446,8 @@ func _hp_of(target: Node) -> float:
 	return float(target.health.hp) if target.get("health") != null else 0.0
 
 
-# Gun buffs that trigger on a hit: leech, burn, slow, shock, explosive, ammo on kill, slayer's mark, overkill splash.
+# Gun buffs that trigger on a hit: leech, burn, slow, shock, explosive, ammo on kill, slayer's mark, overkill splash,
+# and on a kill: adrenaline, second breath.
 func _gun_hit_effects(target: Node, point: Vector3, dealt: float, hp_before: float) -> void:
 	var buffs: Dictionary = _held_stats["buffs"]
 	if buffs.has("lifesteal"):
@@ -1449,6 +1468,64 @@ func _gun_hit_effects(target: Node, point: Vector3, dealt: float, hp_before: flo
 		weapon.ammo = mini(weapon.ammo + roundi(float(weapon.mag_size) * float(buffs["reload_on_kill"]) / 100.0), weapon.mag_size)
 	if buffs.has("overkill_splash") and killed and dealt > hp_before:
 		_spill(target, point, (dealt - hp_before) * float(buffs["overkill_splash"]) / 100.0)
+	if killed and buffs.has("adrenaline"):
+		_rush_until = _now() + 4.0
+		_rush_pct = float(buffs["adrenaline"])
+	if killed and buffs.has("second_breath"):
+		health.heal(float(buffs["second_breath"]))
+	var gun_traits: Dictionary = _held_stats.get("traits", {})
+	if not gun_traits.is_empty():
+		_traits.on_hit(gun_traits, target, point, dealt)
+		if killed:
+			_traits.on_kill(gun_traits, point, dealt, _now())
+
+
+# Gun buffs that change one pellet's damage by the moment: where it hit, who it hit, how we are doing (data/gun_loot.json).
+func _situational(target: Node, point: Vector3, head: bool) -> float:
+	var buffs: Dictionary = _held_stats.get("buffs", {})
+	if buffs.is_empty():
+		return 1.0
+	var mult := 1.0
+	if head and buffs.has("headshot_damage"):
+		mult *= 1.0 + float(buffs["headshot_damage"]) / 100.0
+	if buffs.has("opener") and weapon.ammo == weapon.mag_size - 1:  # (the shot already took its round)
+		mult *= 1.0 + float(buffs["opener"]) / 100.0
+	if buffs.has("last_word") and weapon.ammo == 0:
+		mult *= 1.0 + float(buffs["last_word"]) / 100.0
+	var far := point.distance_to(_camera.global_position)
+	if buffs.has("point_blank") and far <= 8.0:
+		mult *= 1.0 + float(buffs["point_blank"]) / 100.0
+	if buffs.has("far_reach") and far >= 30.0:
+		mult *= 1.0 + float(buffs["far_reach"]) / 100.0
+	if buffs.has("big_game"):
+		var affix: Variant = target.get("elite")
+		var kind: Variant = target.get("enemy_id")
+		if (affix is String and affix != "") or (kind is String and String(kind).begins_with("boss")):
+			mult *= 1.0 + float(buffs["big_game"]) / 100.0
+	if buffs.has("kindling") and target.has_method("is_burning") and target.is_burning():
+		mult *= 1.0 + float(buffs["kindling"]) / 100.0
+	if buffs.has("desperado") and health.hp < health.max_hp * 0.35:
+		mult *= 1.0 + float(buffs["desperado"]) / 100.0
+	if buffs.has("pristine") and health.hp >= health.max_hp - 0.01:
+		mult *= 1.0 + float(buffs["pristine"]) / 100.0
+	var aiming := _motion.ads_eased() > 0.5
+	if buffs.has("steady") and aiming:
+		mult *= 1.0 + float(buffs["steady"]) / 100.0
+	if buffs.has("hip_shooter") and not aiming:
+		mult *= 1.0 + float(buffs["hip_shooter"]) / 100.0
+	if _crowd > 0:
+		mult *= 1.0 + float(buffs["crowd_pleaser"]) * float(mini(_crowd, CROWD_MAX)) / 100.0
+	return mult
+
+
+func _enemies_near(reach: float) -> int:
+	if explosives == null or explosives.source == null:
+		return 0
+	var n := 0
+	for e in explosives.source.enemy_list():
+		if is_instance_valid(e) and not e.health.is_dead() and e.global_position.distance_to(global_position) <= reach:
+			n += 1
+	return n
 
 
 # Overkill Splash: damage that was more than enough to kill goes to the nearest other enemy within range.

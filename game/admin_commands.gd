@@ -133,7 +133,8 @@ func _give(args: Array) -> String:
 				return "Unknown tier %s." % tier
 			if body != "" and not player.gun_db.bodies.has(body):
 				return "Unknown gun body %s. Bodies: %s" % [body, ", ".join(player.gun_db.bodies.keys())]
-			var gun := GunGen.generate(player.gun_db, _rng, 0.0, body, tier)
+			var level := int(args[3]) if args.size() > 3 and String(args[3]).is_valid_int() else 1  # item level
+			var gun := GunGen.generate(player.gun_db, _rng, 0.0, body, tier, "", level)
 			return _hand_over(gun)
 		"unique":
 			var id := String(args[1]) if args.size() > 1 else ""
