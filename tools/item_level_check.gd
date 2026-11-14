@@ -19,7 +19,7 @@ func _ready() -> void:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
 	var gun := GunGen.generate(db, rng, 0.0, "ak47", "purple", "", 15)
-	_say("a rolled gun carries its level (15) and version 3", int(gun["lvl"]) == 15 and int(gun["v"]) == 3)
+	_say("a rolled gun carries its level (15) and version 4", int(gun["lvl"]) == 15 and int(gun["v"]) == 4)
 	_say("the host accepts it", GunGen.validate(db, gun) == "")
 	var bad := gun.duplicate(true)
 	bad["lvl"] = 0

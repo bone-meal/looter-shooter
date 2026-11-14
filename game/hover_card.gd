@@ -15,6 +15,7 @@ const ITEM_WIDTH := 240.0
 # parts and buffs. Returns where it was drawn.
 const WKILLS_COLOR := Color(1.0, 0.55, 0.15)
 const TRAIT_COLOR := Color(1.0, 0.42, 0.3)  # gun traits (red-orange, above the buffs)
+const SEA_COLOR := Color(0.35, 0.9, 0.85)  # a sea affix (data/sea_affixes.json)
 
 
 static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Dictionary, against: Dictionary, place: Vector2, view: Vector2, note: String) -> Rect2:
@@ -57,8 +58,12 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 		if tdef.is_empty():
 			continue
 		var tvalue := lerpf(float(tdef["min"]), float(tdef["max"]), float(tr["q"]))
-		for wrapped in _wrap("TRAIT %s: %s" % [tdef["name"], String(tdef["desc"]) % (("%.1f" % tvalue) if tvalue < 10.0 else ("%.0f" % tvalue))], 50):
-			lines.append([wrapped, TRAIT_COLOR])
+		var pony_trait := String(tdef.get("family", "")) != ""
+		for wrapped in _wrap("%s %s: %s" % ["PONY" if pony_trait else "TRAIT", tdef["name"], String(tdef["desc"]) % (("%.1f" % tvalue) if tvalue < 10.0 else ("%.0f" % tvalue))], 50):
+			lines.append([wrapped, TierStyle.family_colour(gun_db, String(tdef["family"])) if pony_trait else TRAIT_COLOR])
+	if gun.has("sea"):
+		for wrapped in _wrap("SEA " + GunStats.sea_text(gun_db, gun), 50):
+			lines.append([wrapped, SEA_COLOR])
 	var skill_list: Array = gun.get("skills", [])
 	for i in skill_list.size():
 		var entry: Dictionary = skill_list[i]

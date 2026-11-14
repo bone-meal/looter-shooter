@@ -17,7 +17,7 @@ func _ready() -> void:
 	var db := GunDb.new(_json("gun_loot"), _json("gun_parts"), _json("manufacturers"), _json("weapons"), _json("skills"), _json("gun_uniques"))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
-	_say("12 traits read", db.traits.size() == 12)
+	_say("12 common traits read (+ the pony-only ones: tools/loot_1e_check)", db.common_traits().size() == 12)
 	var formats := true
 	for t: Dictionary in db.traits:
 		formats = formats and not (String(t["desc"]) % "5").is_empty()

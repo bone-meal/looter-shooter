@@ -59,7 +59,8 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	model.scale = Vector3.ONE * 2.6
 	model.rotation_degrees.y = 90.0
 	if String(gun_db.tier(tier_id).get("skin", "")) == "pony":
-		PonySkin.apply(model, true)
+		var family := String(gun.get("family", ""))
+		PonySkin.apply(model, true, family, gun_db.family_def(family))
 	var holder := Node3D.new()
 	holder.position.y = 0.9
 	holder.add_child(model)

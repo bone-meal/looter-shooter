@@ -6,7 +6,7 @@ extends RefCounted
 const SkillState = preload("res://core/skill_state.gd")
 const ItemLevel = preload("res://core/item_level.gd")
 const WKILLS_MAX := 9999999  # the counter shows 7 digits
-const VERSION := 3  # 3 = item level "lvl" + traits; 2 = skills without a level; 1 = before skills (both still legal, level 1, no traits)
+const VERSION := 4  # 4 = pony "family" + "sea" affix; 3 = item level "lvl" + traits; 2 = skills without a level; 1 = before skills (all still legal)
 const EPS := 0.002
 
 
@@ -70,13 +70,24 @@ static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0
 		candidates.erase(id)
 		gun_buffs.append({"id": id, "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)})
 	gun["skills"] = SkillState.roll(db, rng, tid)
-	var trait_pool: Array = []  # traits: the big effects, purple and up (data/gun_traits.json)
-	for t: Dictionary in db.traits:
-		trait_pool.append(String(t["id"]))
-	for _n in mini(db.trait_count(tid), trait_pool.size()):
+	var trait_pool: Array = db.common_traits()  # traits: the big effects, purple and up (data/gun_traits.json)
+	var wanted: int = db.trait_count(tid)
+	if is_pony(db, tid) and not db.families.is_empty():  # a pony belongs to a family: its first trait is one of the family's own
+		var family_ids: Array = db.families.keys()
+		var family := String(family_ids[rng.randi_range(0, family_ids.size() - 1)])
+		gun["family"] = family
+		var own: Array = db.family_def(family)["traits"]
+		if wanted > 0:
+			(gun["traits"] as Array).append({"id": String(own[rng.randi_range(0, own.size() - 1)]), "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)})
+			wanted -= 1
+	for _n in mini(wanted, trait_pool.size()):
 		var trait_id := String(trait_pool[rng.randi_range(0, trait_pool.size() - 1)])
 		trait_pool.erase(trait_id)
 		(gun["traits"] as Array).append({"id": trait_id, "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)})
+	if rng.randf() < db.sea_chance(int(gun["lvl"])):  # late-region guns: a sea affix (data/sea_affixes.json)
+		var affix_ids: Array = (db.sea.get("affixes", {}) as Dictionary).keys()
+		if not affix_ids.is_empty():
+			gun["sea"] = {"id": String(affix_ids[rng.randi_range(0, affix_ids.size() - 1)]), "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)}
 	if tid == String(db.tiers[db.tiers.size() - 1]["id"]) and rng.randf() < db.unique_chance:  # a top-tier drop may be a hand-made unique
 		var fitting: Array = []
 		for id: String in db.uniques:
@@ -124,7 +135,16 @@ static func unique(db: RefCounted, id: String, lvl: int = 1) -> Dictionary:
 		(gun["skills"] as Array).append({"id": skill_id, "q": 1.0})
 	for trait_id: String in def.get("traits", []):
 		(gun["traits"] as Array).append({"id": trait_id, "q": 1.0})
+	if def.has("family"):
+		gun["family"] = String(def["family"])
+	if def.has("sea"):
+		gun["sea"] = {"id": String(def["sea"]), "q": 1.0}
 	return gun
+
+
+# The pony tier (its skin is the pony one): its guns carry a family.
+static func is_pony(db: RefCounted, tier_id: String) -> bool:
+	return String(db.tier(tier_id).get("skin", "")) == "pony"
 
 
 static func _weighted(options: Array, weights: Dictionary, rng: RandomNumberGenerator) -> String:
@@ -156,6 +176,8 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 			real.erase("lvl")
 			real.erase("traits")
 			real["v"] = gun.get("v", 2)
+		elif int(gun.get("v", 0)) == 3 and not real.has("family") and not real.has("sea"):
+			real["v"] = 3  # saved before families and sea affixes
 		return "" if not real.is_empty() and _same(real, gun) else "unknown or edited unique"
 	for key in ["v", "body", "maker", "tier", "parts", "rolls", "buffs"]:
 		if not gun.has(key):
@@ -212,6 +234,9 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 		var trait_problem := _trait_problem(db, gun, lo, hi)
 		if trait_problem != "":
 			return trait_problem
+	var sea_problem := _family_and_sea_problem(db, gun, version, lo, hi)
+	if sea_problem != "":
+		return sea_problem
 	if version >= 2:
 		if not gun.has("skills"):
 			return "missing skills"
@@ -235,6 +260,41 @@ static func _trait_problem(db: RefCounted, gun: Dictionary, lo: float, hi: float
 		var q := float((t as Dictionary).get("q", -1.0))
 		if q < lo or q > hi:
 			return "trait out of tier range"
+	return ""
+
+
+# Version 4: a pony gun carries a known family and exactly one of that family's traits (others none); a sea affix
+# is known, inside the tier's quality and only on a gun of a high enough level. Older guns carry neither.
+static func _family_and_sea_problem(db: RefCounted, gun: Dictionary, version: int, lo: float, hi: float) -> String:
+	if version < 4:
+		if gun.has("family") or gun.has("sea"):
+			return "old gun with a family or sea affix"
+		for t: Variant in gun.get("traits", []):
+			if t is Dictionary and String(db.trait_def(String((t as Dictionary).get("id", ""))).get("family", "")) != "":
+				return "old gun with a pony-only trait"
+		return ""
+	var pony := is_pony(db, String(gun["tier"]))
+	var family := String(gun.get("family", ""))
+	if pony != gun.has("family") or (pony and not db.families.is_empty() and db.family_def(family).is_empty()):
+		return "wrong pony family"
+	var own := 0
+	for t: Dictionary in gun.get("traits", []):
+		var of := String(db.trait_def(String(t["id"])).get("family", ""))
+		if of != "" and of != family:
+			return "another family's trait"
+		if of != "":
+			own += 1
+	if pony and db.trait_count(String(gun["tier"])) > 0 and own != 1:
+		return "a pony needs one trait of its family"
+	if gun.has("sea"):
+		var affix: Variant = gun["sea"]
+		if not (affix is Dictionary) or db.sea_def(String((affix as Dictionary).get("id", ""))).is_empty():
+			return "unknown sea affix"
+		var q := float((affix as Dictionary).get("q", -1.0))
+		if q < lo or q > hi:
+			return "sea affix out of tier range"
+		if db.sea_chance(ItemLevel.of(gun)) <= 0.0:
+			return "sea affix below its level"
 	return ""
 
 

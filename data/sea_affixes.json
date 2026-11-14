@@ -1,0 +1,175 @@
+{
+ "version": 1,
+ "_about": "SEA AFFIXES (locked 2026-11-14 batch 5, diary/DECISIONS_SEA.md: late-region guns roll an extra sea affix). A gun dropped at item level min_level or higher may roll ONE (gun key \"sea\": {id, q}); the chance grows with the level (chance_by_level: [level, chance] steps, the highest step at or below the level counts). Its prefix goes into the gun's name. stats: multiplier bonuses added like a part's (min..max by quality; reload_time / spread negative = better); buffs: added to the gun's buff of that id (the existing buff effects in game/player.gd do the work). Names and numbers are my placeholders.",
+ "min_level": 31,
+ "chance_by_level": [
+  [
+   31,
+   0.2
+  ],
+  [
+   41,
+   0.35
+  ],
+  [
+   51,
+   0.5
+  ],
+  [
+   61,
+   0.75
+  ]
+ ],
+ "affixes": {
+  "brined": {
+   "name": "Brined",
+   "stats": {
+    "damage": [
+     0.06,
+     0.12
+    ]
+   },
+   "buffs": {
+    "slow_on_hit": [
+     8,
+     15
+    ]
+   }
+  },
+  "tidebound": {
+   "name": "Tidebound",
+   "stats": {
+    "mag_size": [
+     0.15,
+     0.3
+    ]
+   },
+   "buffs": {
+    "reload_on_kill": [
+     8,
+     15
+    ]
+   }
+  },
+  "stormwrack": {
+   "name": "Stormwrack",
+   "stats": {
+    "fire_rate": [
+     0.06,
+     0.12
+    ]
+   },
+   "buffs": {
+    "shock_chance": [
+     8,
+     15
+    ]
+   }
+  },
+  "krakenkissed": {
+   "name": "Kraken-Kissed",
+   "stats": {
+    "damage": [
+     0.04,
+     0.08
+    ]
+   },
+   "buffs": {
+    "lifesteal": [
+     2,
+     4
+    ]
+   }
+  },
+  "saltglass": {
+   "name": "Saltglass",
+   "stats": {
+    "spread": [
+     -0.15,
+     -0.3
+    ]
+   },
+   "buffs": {
+    "crit_damage": [
+     15,
+     30
+    ]
+   }
+  },
+  "deepcurrent": {
+   "name": "Deepcurrent",
+   "stats": {
+    "reload_time": [
+     -0.1,
+     -0.2
+    ]
+   },
+   "buffs": {
+    "free_shot": [
+     5,
+     10
+    ]
+   }
+  },
+  "riptide": {
+   "name": "Riptide",
+   "stats": {
+    "fire_rate": [
+     0.05,
+     0.1
+    ]
+   },
+   "buffs": {
+    "burn_chance": [
+     8,
+     15
+    ]
+   }
+  },
+  "mariners": {
+   "name": "Mariner's",
+   "stats": {
+    "move_speed": [
+     0.03,
+     0.06
+    ]
+   },
+   "buffs": {
+    "adrenaline": [
+     10,
+     20
+    ]
+   }
+  },
+  "galeblessed": {
+   "name": "Gale-Blessed",
+   "stats": {
+    "recoil": [
+     -0.15,
+     -0.3
+    ]
+   },
+   "buffs": {
+    "far_reach": [
+     10,
+     20
+    ]
+   }
+  },
+  "coralforged": {
+   "name": "Coral-Forged",
+   "stats": {
+    "damage": [
+     0.05,
+     0.1
+    ]
+   },
+   "buffs": {
+    "explosive_chance": [
+     6,
+     12
+    ]
+   }
+  }
+ }
+}

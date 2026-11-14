@@ -19,6 +19,12 @@ static func color(db: RefCounted, tier_id: String, t: float) -> Color:
 
 
 # True when the tier's colour changes over time (screens redraw every frame while one is visible).
+# A pony family's own colour (data/pony_families.json hue / sat), for its trait line on the gun card.
+static func family_colour(db: RefCounted, family: String) -> Color:
+	var look: Dictionary = db.family_def(family)
+	return Color.from_hsv(float(look.get("hue", 0.85)), clampf(float(look.get("sat", 0.45)) + 0.2, 0.0, 1.0), 1.0)
+
+
 static func animated(db: RefCounted, tier_id: String) -> bool:
 	return String(db.tier(tier_id)["animated"]) != "none"
 

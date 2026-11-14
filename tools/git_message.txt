@@ -1,16 +1,13 @@
-Gun skills pass 2: 24 new Q/E skills (30 in all) with icons
+Pony families and sea affixes (sea step 1e, first part)
 
-Sea step 1d. New skills: Fire Trail Dash, Orbital Strike, Bullet Storm,
-Decoy Hologram, Shockwave Slam, Vacuum Pulse, Time Bubble, Rocket
-Barrage, Plague Cloud, Blood Rush, Mirror Clone, Meteor Shower, Sticky
-Mines, Sentry Turret, Thunder Totem, Phase Step, Inferno Ring, Storm
-Call, Spinning Blades, Full Clip, Ice Lance, War Banner, Harpoon Yank,
-Overshield. Effects split into game/skill_zones.gd, skill_strikes.gd and
-skill_summons.gd; the caster's own effects are pure rules in
-core/skill_self.gd. 30 skill icons on the icon sheet; HUD Q/E boxes and
-the inventory card show them; overshield band on the health ring. Check
-tools/skill_pass2_check 0 problems; all running at once 6.5 ms on the
-GTX 1080 Compatibility.
+Gun version 4. Six pony families (Thunderhoof, Emberhoof, Moonmane,
+Seafoam, Glitterhoof, Stardust): each has its own skin colours and two
+pony-only traits, and every pony gun carries one of its family's traits.
+Ten sea affixes roll on guns from item level 31 (chance rises with the
+level): stat bends plus a buff, their word in the gun's name and a teal
+line on the card. The host refuses edited families, foreign pony traits
+and affixes below their level; older guns stay legal. Check
+tools/loot_1e_check 0 problems.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

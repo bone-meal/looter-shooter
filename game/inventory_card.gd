@@ -17,6 +17,7 @@ const TRAIT_COLOUR := Color(1.0, 0.42, 0.3)
 const BUFF_COLOUR := Color(1.0, 0.8, 0.4)
 const COMBO_COLOUR := Color(0.6, 1.0, 0.7)
 const SKILL_COLOUR := Color(0.5, 0.95, 1.0)
+const SEA_COLOUR := Color(0.35, 0.9, 0.85)
 
 
 # Draws the card for `what` inside r and returns its buttons [[Rect2, action id]].
@@ -102,10 +103,15 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		canvas.draw_string(font, Vector2(x, y), "%+.0f" % (dps - dps_was), HORIZONTAL_ALIGNMENT_RIGHT, w, 15, UiSkin.GOOD if dps >= dps_was else UiSkin.BAD)
 	y += 16.0
 	var lines: Array = []  # [text, colour, boxed, icon shape ("" = none)]
+	if gun.has("family"):
+		lines.append(["%s family" % String(db.family_def(String(gun["family"])).get("name", "")), TierStyle.family_colour(db, String(gun["family"])), false, ""])
 	for tr: Dictionary in gun.get("traits", []):
 		var tdef: Dictionary = db.trait_def(String(tr["id"]))
 		if not tdef.is_empty():
-			lines.append(["%s  -  %s" % [tdef["name"], _fill(tdef, float(tr["q"]))], TRAIT_COLOUR, true, ""])
+			var of := String(tdef.get("family", ""))  # a pony-only trait wears its family's colour
+			lines.append(["%s  -  %s" % [tdef["name"], _fill(tdef, float(tr["q"]))], TierStyle.family_colour(db, of) if of != "" else TRAIT_COLOUR, true, ""])
+	if gun.has("sea"):
+		lines.append([GunStats.sea_text(db, gun), SEA_COLOUR, true, ""])
 	for b: Dictionary in gun["buffs"]:
 		var bdef: Dictionary = db.buff_def(String(b["id"]))
 		lines.append(["%s: %s" % [bdef["name"], _fill(bdef, float(b["q"]))], BUFF_COLOUR, false, ""])
@@ -134,8 +140,8 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 			break
 		y += 10.0
 		if bool(line[2]):  # traits get a box of their own
-			canvas.draw_rect(Rect2(x - 6.0, y - 2.0, w + 12.0, text_h + 10.0), Color(TRAIT_COLOUR, 0.12))
-			canvas.draw_rect(Rect2(x - 6.0, y - 2.0, 3.0, text_h + 10.0), TRAIT_COLOUR)
+			canvas.draw_rect(Rect2(x - 6.0, y - 2.0, w + 12.0, text_h + 10.0), Color(line[1], 0.12))  # in the line's own colour
+			canvas.draw_rect(Rect2(x - 6.0, y - 2.0, 3.0, text_h + 10.0), line[1])
 		if String(line[3]) != "":
 			IconArt.draw(canvas, String(line[3]), Rect2(x, y, 34.0, 34.0), line[1])
 		canvas.draw_multiline_string(font, Vector2(x + indent, y + 14.0), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 10.0 - indent, 14, -1, line[1])

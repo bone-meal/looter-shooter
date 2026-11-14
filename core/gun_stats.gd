@@ -59,6 +59,23 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 			else:
 				bonus[stat] = float(bonus[stat]) + float(db.unique_bonus[stat])
 		out["unique"] = db.uniques[String(gun["unique"])]
+	# 2c. a sea affix bends some stats (data/sea_affixes.json; its buffs are added below)
+	var affix: Dictionary = {}
+	var affix_q := 0.0
+	if gun.has("sea"):
+		affix = db.sea_def(String((gun["sea"] as Dictionary)["id"]))
+		affix_q = float((gun["sea"] as Dictionary)["q"])
+		var bends: Dictionary = affix.get("stats", {})
+		for stat: String in bends:
+			var span: Array = bends[stat]
+			var amount := lerpf(float(span[0]), float(span[1]), affix_q)
+			if stat == "crit_chance":
+				crit += amount
+			else:
+				bonus[stat] = float(bonus[stat]) + amount
+		out["sea"] = {"id": String((gun["sea"] as Dictionary)["id"]), "name": String(affix.get("name", "")), "q": affix_q}
+	if gun.has("family"):
+		out["family"] = String(gun["family"])
 	# 3. apply
 	out["damage"] = float(base["damage"]) * maxf(0.1, 1.0 + float(bonus["damage"])) * ItemLevel.damage_mult(ItemLevel.of(gun))  # item level
 	out["lvl"] = ItemLevel.of(gun)
@@ -82,6 +99,10 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 		var given: Dictionary = combo.get("buffs", {})
 		for id: String in given:
 			buff_values[id] = float(buff_values.get(id, 0.0)) + float(given[id])
+	var affix_buffs: Dictionary = affix.get("buffs", {})
+	for id: String in affix_buffs:  # the sea affix's buffs add to a rolled buff of the same kind
+		var span: Array = affix_buffs[id]
+		buff_values[id] = float(buff_values.get(id, 0.0)) + lerpf(float(span[0]), float(span[1]), affix_q)
 	out["buffs"] = buff_values
 	var trait_values: Dictionary = {}  # the big effects (data/gun_traits.json, game/gun_traits.gd)
 	for tr: Dictionary in gun.get("traits", []):
@@ -93,6 +114,27 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 	return out
 
 
+const STAT_WORDS := {"damage": "damage", "fire_rate": "fire rate", "mag_size": "magazine", "reload_time": "reload time", "spread": "spread", "recoil": "recoil", "ads_fov": "zoom", "move_speed": "carry speed", "crit_chance": "crit chance"}
+
+
+# The sea affix in words for the gun card: "Brined: +9% damage, Slow on Hit +11" ("" without one).
+static func sea_text(db: RefCounted, gun: Dictionary) -> String:
+	if not gun.has("sea"):
+		return ""
+	var affix: Dictionary = db.sea_def(String((gun["sea"] as Dictionary)["id"]))
+	var q := float((gun["sea"] as Dictionary)["q"])
+	var parts: Array[String] = []
+	var bends: Dictionary = affix.get("stats", {})
+	for stat: String in bends:
+		var span: Array = bends[stat]
+		parts.append("%+.0f%% %s" % [lerpf(float(span[0]), float(span[1]), q) * 100.0, STAT_WORDS.get(stat, stat)])
+	var given: Dictionary = affix.get("buffs", {})
+	for id: String in given:
+		var span: Array = given[id]
+		parts.append("%s +%.0f" % [String(db.buff_def(id).get("name", id)), lerpf(float(span[0]), float(span[1]), q)])
+	return "%s: %s" % [String(affix.get("name", "")), ", ".join(parts)]
+
+
 static func display_name(db: RefCounted, gun: Dictionary) -> String:
 	return ("W kills " if gun.has("wkills") else "") + _plain_name(db, gun)
 
@@ -102,6 +144,10 @@ static func _plain_name(db: RefCounted, gun: Dictionary) -> String:
 	var body: String = String(db.bodies[String(gun["body"])]["name"])
 	var tier_def: Dictionary = db.tier(String(gun["tier"]))
 	var tier: String = String(tier_def.get("tag", tier_def["name"]))
+	if gun.has("family"):  # a pony's family follows its tag: "*PONY* Thunderhoof ..."
+		tier += " " + String(db.family_def(String(gun["family"])).get("name", ""))
+	if gun.has("sea"):  # the sea affix's word comes next: "Mythic Brined ..."
+		tier += " " + String(db.sea_def(String((gun["sea"] as Dictionary)["id"])).get("name", ""))
 	if gun.has("unique") and db.uniques.has(String(gun["unique"])):
 		return "%s %s" % [tier, db.uniques[String(gun["unique"])]["name"]]
 	for combo: Dictionary in GunCombos.active(db, gun):  # the strongest named combo goes into the name

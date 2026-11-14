@@ -20,6 +20,8 @@ var unique_chance: float  # how often a pony-tier drop is a unique
 var wkills_chance: float  # data/gun_loot.json: share of rolled guns that carry the "W kills" counter
 var traits: Array  # data/gun_traits.json "traits": the big build-defining effects (game/gun_traits.gd)
 var trait_slots: Dictionary  # data/gun_traits.json "slots_by_tier": tier id -> how many traits it rolls
+var families: Dictionary  # data/pony_families.json "families": pony family id -> {name, hue, span, sat, traits}
+var sea: Dictionary  # data/sea_affixes.json (min_level, chance_by_level, affixes)
 
 
 func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weapon_data: Dictionary, skill_data: Dictionary = {}, unique_data: Dictionary = {}) -> void:
@@ -42,6 +44,10 @@ func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weap
 	var trait_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_traits.json"))
 	traits = (trait_data as Dictionary).get("traits", []) if trait_data is Dictionary else []
 	trait_slots = (trait_data as Dictionary).get("slots_by_tier", {}) if trait_data is Dictionary else {}
+	var family_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/pony_families.json"))
+	families = (family_data as Dictionary).get("families", {}) if family_data is Dictionary else {}
+	var sea_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea_affixes.json"))
+	sea = sea_data if sea_data is Dictionary else {"affixes": {}}
 
 
 func tier_index(id: String) -> int:
@@ -60,6 +66,34 @@ func trait_def(id: String) -> Dictionary:
 		if String(t["id"]) == id:
 			return t
 	return {}
+
+
+# The traits any gun may roll (pony-only family traits left out).
+func common_traits() -> Array[String]:
+	var out: Array[String] = []
+	for t: Dictionary in traits:
+		if String(t.get("family", "")) == "":
+			out.append(String(t["id"]))
+	return out
+
+
+func family_def(id: String) -> Dictionary:
+	return families.get(id, {})
+
+
+func sea_def(id: String) -> Dictionary:
+	return (sea.get("affixes", {}) as Dictionary).get(id, {})
+
+
+# The chance a gun of item level `lvl` rolls a sea affix (0 below min_level).
+func sea_chance(lvl: int) -> float:
+	var chance := 0.0
+	if lvl < int(sea.get("min_level", 9999)):
+		return 0.0
+	for step: Array in sea.get("chance_by_level", []):
+		if lvl >= int(step[0]):
+			chance = float(step[1])
+	return chance
 
 
 func trait_count(tier_id: String) -> int:

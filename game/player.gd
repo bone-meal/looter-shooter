@@ -909,7 +909,8 @@ func _dress_body(index: int) -> void:
 	_gun_hash[index] = h
 	var eye := GunPartsView.apply(_models[index], _held_gun, gun_db)  # an optic raises the line the eye aims along
 	_ads_positions[index] = _base_ads[index] if eye <= 0.0 else Vector3(_base_ads[index].x, -eye * _models[index].scale.y, _base_ads[index].z)
-	PonySkin.apply(_models[index], String(gun_db.tier(String(_held_gun["tier"])).get("skin", "")) == "pony")
+	var family := String(_held_gun.get("family", ""))
+	PonySkin.apply(_models[index], String(gun_db.tier(String(_held_gun["tier"])).get("skin", "")) == "pony", family, gun_db.family_def(family))
 	var view: Dictionary = _base_views[index].duplicate()
 	view["optic"] = String((_held_gun.get("parts", {}) as Dictionary).get("sight", {}).get("kind", "")) if eye > 0.0 else ""
 	view["ads_fov"] = float(view.get("ads_fov", 60.0)) * float(_held_stats["ads_fov"])
@@ -1495,7 +1496,7 @@ func _gun_hit_effects(target: Node, point: Vector3, dealt: float, hp_before: flo
 	if not gun_traits.is_empty():
 		_traits.on_hit(gun_traits, target, point, dealt)
 		if killed:
-			_traits.on_kill(gun_traits, point, dealt, _now())
+			_traits.on_kill(gun_traits, point, dealt, _now(), target)
 
 
 # Gun buffs that change one pellet's damage by the moment: where it hit, who it hit, how we are doing (data/gun_loot.json).

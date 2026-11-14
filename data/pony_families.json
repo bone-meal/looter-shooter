@@ -1,0 +1,66 @@
+{
+ "version": 1,
+ "_about": "PONY FAMILIES (locked 2026-11-14 batch 6, diary/DECISIONS_SEA.md: more variety inside pony, no tier above it). Every pony gun belongs to one family: its skin's colours (game/pony_skin.gd: hue = the middle of its colours 0..1, span = how far they swing, sat = how strong) and ONE of its two traits comes from the family's own pony-only traits (data/gun_traits.json, field family); the other trait is from the common pool. Names, colours and numbers are my placeholders for the director.",
+ "families": {
+  "thunderhoof": {
+   "name": "Thunderhoof",
+   "hue": 0.66,
+   "span": 0.1,
+   "sat": 0.55,
+   "traits": [
+    "storm_hoof",
+    "static_mane"
+   ]
+  },
+  "emberhoof": {
+   "name": "Emberhoof",
+   "hue": 0.04,
+   "span": 0.07,
+   "sat": 0.65,
+   "traits": [
+    "cinder_trail",
+    "firestorm_mane"
+   ]
+  },
+  "moonmane": {
+   "name": "Moonmane",
+   "hue": 0.6,
+   "span": 0.05,
+   "sat": 0.22,
+   "traits": [
+    "moonlit",
+    "eclipse"
+   ]
+  },
+  "seafoam": {
+   "name": "Seafoam",
+   "hue": 0.47,
+   "span": 0.07,
+   "sat": 0.45,
+   "traits": [
+    "undertow",
+    "tidal_surge"
+   ]
+  },
+  "glitterhoof": {
+   "name": "Glitterhoof",
+   "hue": 0.88,
+   "span": 0.18,
+   "sat": 0.45,
+   "traits": [
+    "glitter_bomb",
+    "prism_mane"
+   ]
+  },
+  "stardust": {
+   "name": "Stardust",
+   "hue": 0.76,
+   "span": 0.12,
+   "sat": 0.5,
+   "traits": [
+    "comet_tail",
+    "gravity_mane"
+   ]
+  }
+ }
+}
