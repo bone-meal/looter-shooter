@@ -114,6 +114,9 @@ func _draw() -> void:
 		_layer("back", k)
 		return
 	var c: Dictionary = db.card(id)
+	var leader := c.is_empty()  # a leader shown as a card (binder, deck builder): its health and hero power
+	if leader:
+		c = _leader_card()
 	var kind := "creature" if String(c["type"]) == "creature" else "spell"
 	var boxes: Dictionary = _layout["boxes"]
 	if _art_id != id:
@@ -139,7 +142,8 @@ func _draw() -> void:
 		_layer("gem_" + String(c["rarity"]), k)
 	_layer("cost", k)
 	if kind == "creature":
-		_layer("attack", k)
+		if not leader:
+			_layer("attack", k)
 		_layer("health", k)
 	# words
 	_centered(_box(boxes["name"], k), String(c.get("name", id)), font("title"), 30.0 * k, Color(1, 0.97, 0.9), 6.0 * k)
@@ -154,7 +158,8 @@ func _draw() -> void:
 			hp_col = RED if int(creature["hp"]) < int(creature["max_hp"]) else (GREEN if int(creature["max_hp"]) > hp else Color.WHITE)
 			atk = int(creature["atk"])
 			hp = int(creature["hp"])
-		_centered(_box(boxes["attack"], k), str(atk), font("number"), 60.0 * k, atk_col, 10.0 * k)
+		if not leader:
+			_centered(_box(boxes["attack"], k), str(atk), font("number"), 60.0 * k, atk_col, 10.0 * k)
 		_centered(_box(boxes["health"], k), str(hp), font("number"), 60.0 * k, hp_col, 10.0 * k)
 	var tribe := String(c.get("tribe", "")).capitalize() if kind == "creature" else String(c["type"]).capitalize()
 	_centered(_box(boxes["tribe"], k), tribe, font("title"), 20.0 * k, Color(1, 0.94, 0.8), 4.0 * k)
@@ -162,9 +167,18 @@ func _draw() -> void:
 	if not creature.is_empty():  # live keywords (given ones too, lost ones gone)
 		shown = c.duplicate()
 		shown["keywords"] = (creature["kw"] as Dictionary).keys()
-	_rules(_box(boxes["text"], k), CardText.of(db, shown), String(c.get("flavor", "")), k)
+	_rules(_box(boxes["text"], k), String(c["power_text"]) if leader else CardText.of(db, shown), String(c.get("flavor", "")), k)
 	if not creature.is_empty() and (creature["kw"] as Dictionary).has("guard"):  # a Guard wears a silver shield ring
 		draw_arc(art_box.get_center(), art_box.size.y * 0.55, 0, TAU, 48, Color(0.9, 0.92, 1.0, 0.7), 6.0 * k)
+
+
+func _leader_card() -> Dictionary:
+	var l: Dictionary = (db.get("leaders") as Dictionary).get(id, {})
+	var power: Dictionary = l.get("power", {})
+	var rules: Dictionary = db.get("rules")
+	return {"faction": String(l.get("faction", "neutral")), "type": "creature", "rarity": "legendary", "cost": int(rules["power_cost"]),
+		"attack": 0, "health": int(rules["hero_health"]), "name": String(l.get("name", id)), "tribe": "leader",
+		"flavor": String(l.get("flavor", "")), "power_text": "%s: %s" % [power.get("name", "Power"), CardText.of(db, {"effects": power.get("effects", [])})]}
 
 
 func _layer(layer: String, k: float) -> void:

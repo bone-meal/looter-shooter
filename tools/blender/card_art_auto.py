@@ -201,6 +201,10 @@ def recipe(cid, c):
         r["fx"].append({"kind": "spray", "at": [0.3, 1.5, 0.0], "size": 0.8, "count": 180})
     if c.get("rarity") == "legendary" or c.get("leader"):
         r["fx"].append({"kind": "beam", "at": [0, 0.6, 0], "size": 1.5, "color": [1.0, 0.85, 0.5]})
+        # grander: a slow ring of golden motes and a warm rim light behind
+        r["fx"].append({"kind": "magic", "at": [0, 0.5, 0.2], "size": 2.0, "color": [1.0, 0.82, 0.4], "count": 90})
+        r["fx"].append({"kind": "glow", "at": [0, 2.5, 2.2], "size": 2.0, "color": [1.0, 0.75, 0.4]})
+        r["light"] = 2.2 if r["time"] in ("club", "night", "cave") else 1.25
         r["time"] = {"club": "club", "crypt": "night"}.get(f, "sunset")
     return r
 

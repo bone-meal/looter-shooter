@@ -1,5 +1,5 @@
-# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards) and the Combat Report (everything done, with a portrait). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
-# Dependencies: core/progress_state.gd (set `progress` before open), game/player_card.gd, game/emblem_art.gd, game/menu_widgets.gd, game/achievement_grid.gd, game/combat_report_tab.gd.
+# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards), the Combat Report (everything done, with a portrait) and the card game Binder (the banner hides there to give the pages room). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
+# Dependencies: core/progress_state.gd (set `progress` before open), game/player_card.gd, game/emblem_art.gd, game/menu_widgets.gd, game/achievement_grid.gd, game/combat_report_tab.gd, game/tcg/binder_tab.gd (set `cards` and `card_db`).
 extends Control
 
 const PlayerCard = preload("res://game/player_card.gd")
@@ -7,16 +7,20 @@ const EmblemArt = preload("res://game/emblem_art.gd")
 const Widgets = preload("res://game/menu_widgets.gd")
 const CombatReportTab = preload("res://game/combat_report_tab.gd")
 const AchievementGrid = preload("res://game/achievement_grid.gd")
+const BinderTab = preload("res://game/tcg/binder_tab.gd")
 
 signal changed
 signal closed
 
 var progress: RefCounted  # core/progress_state.gd instance owned by the session
+var cards: RefCounted  # core/tcg/collection.gd, set by the session
+var card_db: RefCounted  # core/tcg/card_db.gd, set by the session
 var report := Callable()  # func() -> {"look", "under_portrait", "sections"}: the Combat Report (game/combat_report.gd), set by the session
 
 var _card: Control
 var _tabs: TabContainer
 var _info := ""  # one stats line shown on the card (set by the session)
+var _binder: Control  # kept between openings: its page, filters and the deck being built
 
 
 # Small clickable emblem tile.
@@ -54,6 +58,7 @@ func _ready() -> void:
 	box.add_child(_card)
 	_tabs = TabContainer.new()
 	_tabs.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_tabs.tab_changed.connect(func(_i: int) -> void: _card.visible = _tabs.get_current_tab_control() != _binder or _binder == null)
 	box.add_child(_tabs)
 	Widgets.button(box, "Close (Esc)", close)
 
@@ -75,7 +80,8 @@ func _refresh() -> void:
 	var current := _tabs.current_tab
 	for child in _tabs.get_children():
 		_tabs.remove_child(child)
-		child.queue_free()
+		if child != _binder:
+			child.queue_free()
 	_show_card()
 	_tabs.add_child(_card_tab())
 	_tabs.add_child(_stats_tab())
@@ -85,9 +91,18 @@ func _refresh() -> void:
 	record.build(report.call() if report.is_valid() else {})
 	_tabs.add_child(record)
 	var names := ["Card", "Stats", "Traits", "Achievements", "Combat Report"]
+	if cards != null and card_db != null:
+		if _binder == null:
+			_binder = BinderTab.new()
+			_binder.build(card_db, cards)
+			_binder.changed.connect(func() -> void: changed.emit())
+		_tabs.add_child(_binder)
+		_binder.refresh()
+		names.append("Binder")
 	for i in names.size():
 		_tabs.set_tab_title(i, names[i])
 	_tabs.current_tab = clampi(current, 0, names.size() - 1)
+	_card.visible = _binder == null or _tabs.get_current_tab_control() != _binder
 
 
 func _show_card() -> void:

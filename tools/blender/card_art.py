@@ -252,6 +252,52 @@ def props(rng, names, n, xr, yr, scale=(0.8, 1.4)):
         load_model("fantasy/" + name, (x, rng.uniform(*yr), 0), rng.uniform(0, 360), rng.uniform(*scale), {})
 
 
+def flame_volume(rng):
+    """Fire as glowing smoke: noise density that thins toward the tip (Generated Z), emission yellow at the root to red at the top."""
+    m = bpy.data.materials.new("flame")
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.remove(nt.nodes["Principled BSDF"])
+    vol = nt.nodes.new("ShaderNodeVolumePrincipled")
+    vol.inputs["Color"].default_value = (0.05, 0.02, 0.01, 1)
+    coord = nt.nodes.new("ShaderNodeTexCoord")
+    sep = nt.nodes.new("ShaderNodeSeparateXYZ"); nt.links.new(coord.outputs["Generated"], sep.inputs[0])
+    noise = nt.nodes.new("ShaderNodeTexNoise"); noise.inputs["Scale"].default_value = 7.0; noise.inputs["Detail"].default_value = 8
+    noise.inputs["Roughness"].default_value = 0.7; noise.inputs["Distortion"].default_value = 2.0
+    noise.noise_dimensions = "4D"; noise.inputs["W"].default_value = rng.uniform(0, 10)
+    stretch = nt.nodes.new("ShaderNodeMapping"); stretch.inputs["Scale"].default_value = (1.6, 1.6, 0.6)  # tall licks
+    nt.links.new(coord.outputs["Object"], stretch.inputs["Vector"]); nt.links.new(stretch.outputs["Vector"], noise.inputs["Vector"])
+    fade = nt.nodes.new("ShaderNodeMath"); fade.operation = "SUBTRACT"; fade.inputs[0].default_value = 1.0
+    nt.links.new(sep.outputs["Z"], fade.inputs[1])
+    # thinner toward the cone's skin too: distance from the axis (Generated X/Y about 0.5)
+    ax = nt.nodes.new("ShaderNodeVectorMath"); ax.operation = "SUBTRACT"; ax.inputs[1].default_value = (0.5, 0.5, 0.0)
+    nt.links.new(coord.outputs["Generated"], ax.inputs[0])
+    flat = nt.nodes.new("ShaderNodeVectorMath"); flat.operation = "MULTIPLY"; flat.inputs[1].default_value = (2.0, 2.0, 0.0)
+    nt.links.new(ax.outputs[0], flat.inputs[0])
+    rad = nt.nodes.new("ShaderNodeVectorMath"); rad.operation = "LENGTH"; nt.links.new(flat.outputs[0], rad.inputs[0])
+    edge = nt.nodes.new("ShaderNodeMapRange"); edge.inputs["From Min"].default_value = 1.0; edge.inputs["From Max"].default_value = 0.2
+    nt.links.new(rad.outputs["Value"], edge.inputs["Value"])
+    both = nt.nodes.new("ShaderNodeMath"); both.operation = "MULTIPLY"
+    nt.links.new(fade.outputs[0], both.inputs[0]); nt.links.new(edge.outputs["Result"], both.inputs[1])
+    fade = both
+    mul = nt.nodes.new("ShaderNodeMath"); mul.operation = "MULTIPLY"
+    nt.links.new(noise.outputs["Fac"], mul.inputs[0]); nt.links.new(fade.outputs[0], mul.inputs[1])
+    sharp = nt.nodes.new("ShaderNodeMapRange"); sharp.inputs["From Min"].default_value = 0.25; sharp.inputs["From Max"].default_value = 0.45
+    nt.links.new(mul.outputs[0], sharp.inputs["Value"])
+    dens = nt.nodes.new("ShaderNodeMath"); dens.operation = "MULTIPLY"; dens.inputs[1].default_value = 2.0
+    nt.links.new(sharp.outputs["Result"], dens.inputs[0]); nt.links.new(dens.outputs[0], vol.inputs["Density"])
+    glow = nt.nodes.new("ShaderNodeMath"); glow.operation = "MULTIPLY"; glow.inputs[1].default_value = 24.0
+    nt.links.new(sharp.outputs["Result"], glow.inputs[0]); nt.links.new(glow.outputs[0], vol.inputs["Emission Strength"])
+    col = nt.nodes.new("ShaderNodeValToRGB")
+    e = col.color_ramp.elements
+    e[0].position = 0.05; e[0].color = (1.0, 0.75, 0.2, 1)
+    e[1].position = 0.85; e[1].color = (0.7, 0.04, 0.0, 1)
+    mid = e.new(0.4); mid.color = (1.0, 0.3, 0.02, 1)
+    nt.links.new(sep.outputs["Z"], col.inputs["Fac"]); nt.links.new(col.outputs["Color"], vol.inputs["Emission Color"])
+    nt.links.new(vol.outputs[0], nt.nodes["Material Output"].inputs["Volume"])
+    return m
+
+
 def volume(at, size, color, density, rng):
     """A soft cloud of smoke / dust / mist (Cycles volume shaped by noise inside a ball)."""
     bpy.ops.mesh.primitive_ico_sphere_add(radius=1, location=at, subdivisions=3)
@@ -360,8 +406,41 @@ def detail(m):
     b.inputs["Roughness"].default_value = max(b.inputs["Roughness"].default_value, 0.45)
 
 
+def _times(m, color):
+    """Multiplies a material's base colour by `color`, after whatever texture / vertex colour already feeds it."""
+    nt = m.node_tree
+    b = nt.nodes.get("Principled BSDF")
+    if b is None:
+        return
+    sock = b.inputs["Base Color"]
+    if not sock.is_linked:
+        c = sock.default_value
+        sock.default_value = (c[0] * color[0], c[1] * color[1], c[2] * color[2], 1)
+        return
+    src = sock.links[0].from_socket
+    mix = nt.nodes.new("ShaderNodeMix"); mix.data_type = "RGBA"; mix.blend_type = "MULTIPLY"
+    mix.inputs["Factor"].default_value = 1.0
+    mix.inputs["B"].default_value = (*color, 1)
+    nt.links.new(src, mix.inputs["A"])
+    nt.links.new(mix.outputs["Result"], sock)
+
+
+def enemy_colors(rel):
+    """The colours the game paints a wasteland model with (game/character_models.gd): "body"/"hide" take the enemy's
+    body_color, "cloth" its colour darkened toward brown, "eye" glows in its colour. Empty for models the game leaves as is."""
+    file = rel.split("/")[-1]
+    for e in json.load(open(os.path.join(ROOT, "data", "enemies.json")))["enemies"].values():
+        if e.get("model") == file and "body_color" in e:
+            body, acc = [x * 0.6 for x in e["body_color"]], e["color"]  # darker than in game: Cycles + AgX lifts mid tones
+            cloth = [acc[i] * 0.3 + (0.22, 0.18, 0.14)[i] * 0.7 for i in range(3)]
+            return {"body": body, "hide": body, "cloth": cloth, "eye": acc}
+    return {}
+
+
 def load_model(rel, at, yaw, scale, pose, tint=None):
     path = os.path.join(ROOT, "assets", "models", rel + ".gltf")
+    colors = enemy_colors(rel)
+    done = set()
     before = set(bpy.data.objects)
     bpy.ops.import_scene.gltf(filepath=path)
     new = [o for o in bpy.data.objects if o not in before]
@@ -377,15 +456,22 @@ def load_model(rel, at, yaw, scale, pose, tint=None):
             o.rotation_euler = Euler((o.rotation_euler.x + math.radians(r[0]), o.rotation_euler.y + math.radians(r[1]), o.rotation_euler.z + math.radians(r[2])))
         if o.type == "MESH":
             for slot in o.material_slots:
-                if slot.material and slot.material.use_nodes and not slot.material.get("detailed"):
-                    detail(slot.material)
+                m = slot.material
+                if m and m.use_nodes and m.name not in done:
+                    done.add(m.name)
+                    key = m.name.split(".")[0]
+                    if key == "eye" and "eye" in colors:
+                        c = colors["eye"]; b = m.node_tree.nodes.get("Principled BSDF")
+                        b.inputs["Emission Color"].default_value = (*c, 1); b.inputs["Emission Strength"].default_value = 6.0
+                    elif key in colors:
+                        _times(m, colors[key])
+                if m and m.use_nodes and not m.get("detailed"):
+                    detail(m)
         if tint and o.type == "MESH":
             for slot in o.material_slots:
-                if slot.material and slot.material.use_nodes:
-                    b = slot.material.node_tree.nodes.get("Principled BSDF")
-                    if b:
-                        c = b.inputs["Base Color"].default_value
-                        b.inputs["Base Color"].default_value = (c[0] * tint[0], c[1] * tint[1], c[2] * tint[2], 1)
+                if slot.material and slot.material.use_nodes and not slot.material.get("tinted"):
+                    slot.material["tinted"] = True  # shared materials: tint once
+                    _times(slot.material, tint)
     root.location = at
     root.rotation_euler = (0, 0, math.radians(yaw))
     root.scale = (scale, scale, scale)
@@ -492,22 +578,22 @@ def fx(kind, at, rng, size=1.0, color=None, count=None):
             d = Vector((rng.gauss(0, 1), rng.gauss(0, 0.6), abs(rng.gauss(0, 1)))) * size
             sphere(rng.uniform(0.006, 0.025) * size, at + d, foam if i % 3 == 0 else m, 8, (1, 1, rng.uniform(1, 2.5)))
     elif kind in ("sparks", "embers"):
-        c = color or ((1.0, 0.6, 0.15) if kind == "sparks" else (1.0, 0.35, 0.05))
-        m = mat(kind, c, emit=c, strength=25)
+        c = color or ((1.0, 0.5, 0.08) if kind == "sparks" else (1.0, 0.22, 0.02))
+        m = mat(kind, c, emit=c, strength=3.5)  # low enough that AgX keeps the colour instead of burning to white
         for i in range(count or 50):
             d = Vector((rng.gauss(0, 1), rng.gauss(0, 1), rng.gauss(0.6, 0.8))) * size
-            o = sphere(rng.uniform(0.004, 0.012) * size, at + d, m, 6, (1, 1, rng.uniform(2, 6)))
+            o = sphere(rng.uniform(0.003, 0.008) * size, at + d, m, 6, (1, 1, rng.uniform(2, 5)))
             look(o, at + d * 2); o.rotation_euler.x += math.pi / 2
-    elif kind == "fire":  # flame tongues
-        for i in range(count or 18):
-            c = (1.0, rng.uniform(0.25, 0.6), 0.05)
-            m = mat("flame%d" % i, c, emit=c, strength=rng.uniform(15, 35), alpha=0.85)
-            d = Vector((rng.gauss(0, 0.5), rng.gauss(0, 0.5), 0)) * size
-            cone(rng.uniform(0.15, 0.35) * size, rng.uniform(0.6, 1.6) * size, at + d + Vector((0, 0, 0.5 * size)), m, (rng.gauss(0, 0.2), rng.gauss(0, 0.2), 0))
-        light("POINT", at + Vector((0, 0, size)), 400 * size, (1, 0.5, 0.15), 0.5)
+    elif kind == "fire":  # a column of glowing, rolling flame (an emissive volume inside a cone), plus a few loose wisps
+        for k in range(count or 3):
+            d = Vector((rng.gauss(0, 0.35), rng.gauss(0, 0.25), 0)) * size if k else Vector((0, 0, 0))
+            h = rng.uniform(2.0, 2.8) * size * (1.0 if k == 0 else 0.7)
+            bpy.ops.mesh.primitive_cone_add(radius1=0.6 * size, radius2=0.02, depth=h, location=at + d + Vector((0, 0, h * 0.5)), vertices=24)
+            add(bpy.context.object, flame_volume(rng))
+        light("POINT", at + Vector((0, 0, 0.6 * size)), 250 * size, (1, 0.42, 0.1), 0.6)
     elif kind == "magic":  # glowing orbs and a swirl
         c = color or (0.4, 0.7, 1.0)
-        m = mat("magic", c, emit=c, strength=20)
+        m = mat("magic", c, emit=c, strength=5)  # stays coloured under AgX
         for i in range(count or 60):
             t = i / (count or 60) * math.pi * 4
             r = size * (0.3 + 0.7 * i / (count or 60))
@@ -550,6 +636,18 @@ def fx(kind, at, rng, size=1.0, color=None, count=None):
         m = mat("streak", c, emit=c, strength=4, alpha=0.6)
         for i in range(count or 20):
             cube((0.02 * size, rng.uniform(1.5, 4) * size, 0.02 * size), at + Vector((rng.gauss(0, 0.8), rng.uniform(1, 3), rng.gauss(0.8, 0.5))) * size, m)
+    elif kind == "crown":  # a gold crown with red gems, `at` is the centre of its band
+        gold = mat("crown_gold", (1.0, 0.72, 0.25), 0.25, 1.0)
+        gem = mat("crown_gem", (0.8, 0.02, 0.05), 0.05, emit=(1.0, 0.05, 0.1), strength=1.5)
+        bpy.ops.mesh.primitive_cylinder_add(radius=0.32 * size, depth=0.14 * size, location=at, vertices=32)
+        band = add(bpy.context.object, gold)
+        band.scale = (1, 1, 1)
+        for i in range(7):
+            a = i / 7 * math.tau
+            p = at + Vector((math.cos(a) * 0.3 * size, math.sin(a) * 0.3 * size, 0.07 * size))
+            cone(0.07 * size, 0.28 * size, p + Vector((0, 0, 0.14 * size)), gold)
+            sphere(0.03 * size, p + Vector((0, 0, 0.3 * size)), gold, 10)
+            sphere(0.035 * size, at + Vector((math.cos(a) * 0.325 * size, math.sin(a) * 0.325 * size, 0)), gem, 10)
     elif kind == "glow":  # a soft coloured light
         light("POINT", at, 300 * size, color or (1, 0.8, 0.5), 1.0)
 
@@ -660,6 +758,7 @@ def render(card_id, recipe, samples):
     scene = reset()
     rng = random.Random(sum(ord(ch) * (i + 1) for i, ch in enumerate(card_id)))
     haze, hor, sun_dir, sun_c = sky(scene, recipe.get("time", "day"), recipe.get("sun_yaw", 0))
+    scene.view_settings.exposure = {"dust": -0.8}.get(recipe.get("time"), 0.0)  # the bright dust sky washed figures out to white
     stage(scene, recipe.get("stage", "beach"), rng)
     roots = []
     for s in recipe.get("subjects", []):

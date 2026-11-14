@@ -4,7 +4,9 @@
 # Log tools/tcg_rules_check.log (TCG_RULES_CHECK_DONE problems=n).
 # Also: every real card gets printed rules text, every match event gets a log line (core/tcg/card_text.gd, event_text.gd),
 # the full set has its locked shape, every starter is legal, and 40 AI matches of one-of decks play every card.
-# Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd, core/tcg/card_text.gd, core/tcg/event_text.gd.
+# The binder's list (core/tcg/binder_list.gd) and the deck builder's rules (core/tcg/deck_edit.gd) too.
+# Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd, core/tcg/card_text.gd, core/tcg/event_text.gd,
+# core/tcg/binder_list.gd, core/tcg/deck_edit.gd, core/tcg/collection.gd, core/tcg/pack_open.gd.
 extends Node
 
 const CardDb = preload("res://core/tcg/card_db.gd")
@@ -44,6 +46,7 @@ func _ready() -> void:
 		_check_every_card(real)
 		_check_collection(real)
 		_check_packs(real)
+		_check_binder(real)
 	_finish()
 
 
@@ -391,6 +394,67 @@ func _check_collection(real: RefCounted) -> void:
 	var back: RefCounted = Collection.new()
 	back.call("from_dict", JSON.parse_string(JSON.stringify(saved)), real)
 	_say("save and load keep the collection and drop unknown cards", int(back.call("count", "harbor_gull")) == 2 and int(back.call("count", "no_such_card")) == 0 and int(back.call("pack_count")) == 3 and String(back.get("starter")) == "tide" and int((back.get("record") as Dictionary)["house"]["wins"]) == 1)
+
+
+# The binder list and the deck builder.
+func _check_binder(real: RefCounted) -> void:
+	var BinderList: GDScript = load("res://core/tcg/binder_list.gd")
+	var DeckEdit: GDScript = load("res://core/tcg/deck_edit.gd")
+	var Collection: GDScript = load("res://core/tcg/collection.gd")
+	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var c: RefCounted = Collection.new()
+	var nums: Dictionary = BinderList.call("numbers", real)
+	_say("the binder numbers all 160 cards and leaders (no tokens)", nums.size() == 160 and not nums.has("slimelet"))
+	c.call("give_starter", "tide", starters["tide"], "standard")
+	c.call("add", "skeleton_archer")
+	var owned_list: Array = BinderList.call("entries", real, c, {"show": "owned"})
+	var missing: Array = BinderList.call("entries", real, c, {"show": "missing"})
+	_say("owned and missing split the set (10 starter cards, its leader, 1 more)", owned_list.size() == 12 and owned_list.size() + missing.size() == 160)
+	var newest: Array = BinderList.call("entries", real, c, {"sort": "newest"})
+	_say("newest first puts the last card got on top", String(newest[0]["id"]) == "skeleton_archer")
+	var leaders_only: Array = BinderList.call("entries", real, c, {"type": "leader"})
+	var cheap: Array = BinderList.call("entries", real, c, {"faction": "tide", "cost": 1})
+	_say("filters: 10 leaders; a Tide 1-cost card is Tide and costs 1", leaders_only.size() == 10 and not cheap.is_empty() and String(real.card(String(cheap[0]["id"]))["faction"]) == "tide" and int(real.card(String(cheap[0]["id"]))["cost"]) == 1)
+	var saved: Dictionary = c.call("to_dict")
+	var back: RefCounted = Collection.new()
+	back.call("from_dict", JSON.parse_string(JSON.stringify(saved)), real)
+	_say("the newest order survives save and load", back.get("got") == c.get("got"))
+	var deck := {"name": "Test", "leader": "", "cards": []}
+	_say("a leader you do not own cannot lead", String(DeckEdit.call("set_leader", real, c, deck, "warlord")) != "" and String(DeckEdit.call("set_leader", real, c, deck, "tide_brute")) == "")
+	DeckEdit.call("add", real, c, deck, "reef_crab")
+	DeckEdit.call("add", real, c, deck, "reef_crab")
+	_say("no third copy, no card you do not own", String(DeckEdit.call("add", real, c, deck, "reef_crab")) != "" and String(DeckEdit.call("add", real, c, deck, "brawn_buckshot")) != "" and (deck["cards"] as Array).size() == 2)
+	for i in 3:
+		c.call("add", "brawn_buckshot")
+		c.call("add", "field_slime")
+	_say("a third faction is refused", String(DeckEdit.call("add", real, c, deck, "brawn_buckshot")) == "" and String(DeckEdit.call("add", real, c, deck, "field_slime")) != "")
+	_say("taking a card out", bool(DeckEdit.call("remove", deck, "brawn_buckshot")) and not bool(DeckEdit.call("remove", deck, "brawn_buckshot")))
+	var full: Dictionary = (starters["tide"] as Dictionary).duplicate(true)
+	var curve: Array = DeckEdit.call("curve", real, full)
+	var total := 0
+	for n: int in curve:
+		total += n
+	_say("the starter is ready to play and its curve holds 20 cards", String(DeckEdit.call("problem", real, c, full)) == "" and total == 20)
+	_say("a full deck takes no more", String(DeckEdit.call("add", real, c, full, "skeleton_archer")) != "")
+	# opening packs (core/tcg/pack_open.gd)
+	var PackOpen: GDScript = load("res://core/tcg/pack_open.gd")
+	var cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/packs.json"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	var o: RefCounted = Collection.new()
+	o.call("add_pack", "standard", 2)
+	o.call("add_box", 2, 1, 1)
+	var pity_before: Dictionary = (o.get("pity") as Dictionary).duplicate()
+	var r1: Dictionary = PackOpen.call("roll", real, o, cfg, rng)
+	PackOpen.call("undo", o, r1)
+	_say("a pack rolled but never torn changes nothing", o.get("pity") == pity_before and int(o.call("pack_count")) == 4 and String(r1["kind"]) == "standard")
+	var got: Array = PackOpen.call("commit", o, PackOpen.call("roll", real, o, cfg, rng))
+	var all_new := true
+	for card: Dictionary in got:
+		all_new = all_new and bool(card["new"]) == (int(o.call("count", String(card["id"]), "*", bool(card["leader"]))) == got.filter(func(x: Dictionary) -> bool: return x["id"] == card["id"]).size())
+	_say("a torn pack: one pack less, its cards owned, new ones marked", got.size() >= 5 and int(o.call("pack_count")) == 3 and all_new)
+	var rest: Dictionary = PackOpen.call("open_all", real, o, cfg, rng)
+	_say("Open all opens the rest, box packs last", int(rest["packs"]) == 3 and int(o.call("pack_count")) == 0 and String(PackOpen.call("next_kind", o)) == "" and int((o.get("box") as Dictionary)["left"]) == 0)
 
 
 # Pack rolls (core/tcg/pack_roll.gd): 5 cards with the last rare or better, the odds over many packs, pity, foils,

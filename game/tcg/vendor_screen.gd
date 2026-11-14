@@ -24,6 +24,7 @@ class Tile:
 	var fan := 1  # how many packs to draw fanned out (pack tiles)
 	var art_cover := false  # picture fills a rounded window (starter decks)
 	var title := ""
+	var title_size := 18  # one size for a whole row, so names line up
 	var price := 0
 	var _hover := 0.0
 
@@ -57,7 +58,7 @@ class Tile:
 		glow.shadow_color = Color(1.0, 0.5, 0.8, 0.55 * _hover)
 		glow.shadow_size = int(18 * _hover)
 		draw_style_box(glow, Rect2(Vector2.ZERO, size))
-		var pic := Rect2(10, 8, size.x - 20, size.y - 70)
+		var pic := Rect2(10, 8, size.x - 20, size.y - 84)
 		if picture != null:
 			if art_cover:
 				var ts := picture.get_size()
@@ -80,14 +81,12 @@ class Tile:
 					draw_texture_rect(picture, Rect2(-r.size * 0.5, r.size), false)
 				draw_set_transform(Vector2.ZERO, 0, Vector2.ONE)
 		var f := CardFace.font("title")
-		var fs := 18
+		var fs := title_size
 		var tw := f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		while tw > size.x - 10 and fs > 9:  # long deck names shrink to fit the tile
-			fs -= 1
-			tw = f.get_string_size(title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs).x
-		draw_string_outline(f, Vector2((size.x - tw) * 0.5, size.y - 40), title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Color(0, 0, 0, 0.8))
-		draw_string(f, Vector2((size.x - tw) * 0.5, size.y - 40), title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
-		var pill := Rect2(size.x * 0.5 - 62, size.y - 32, 124, 28)
+		var baseline := size.y - 48.0  # the name sits clear above the price pill
+		draw_string_outline(f, Vector2((size.x - tw) * 0.5, baseline), title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, 5, Color(0, 0, 0, 0.8))
+		draw_string(f, Vector2((size.x - tw) * 0.5, baseline), title, HORIZONTAL_ALIGNMENT_LEFT, -1, fs, Color.WHITE)
+		var pill := Rect2(size.x * 0.5 - 62, size.y - 34, 124, 28)
 		var p := StyleBoxFlat.new()
 		p.bg_color = Color(0.12, 0.02, 0.06)
 		p.border_color = GOLD
@@ -203,7 +202,7 @@ func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary) -> void:
 		t.fan = int(item[2])
 		t.title = String(item[1])
 		t.price = int(prices[String(item[0])])
-		t.custom_minimum_size = Vector2(170, 220)
+		t.custom_minimum_size = Vector2(170, 228)
 		var id := String(item[0])
 		t.clicked.connect(func() -> void: buy.emit(id))
 		row1.add_child(t)
@@ -219,15 +218,20 @@ func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary) -> void:
 	row2.add_theme_constant_override("separation", 12)
 	row2.alignment = BoxContainer.ALIGNMENT_CENTER
 	v.add_child(row2)
+	var longest := 0.0
+	for sid: String in starters:
+		longest = maxf(longest, CardFace.font("title").get_string_size(String(starters[sid]["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x)
+	var deck_size := 16 if longest <= 140.0 else int(16.0 * 140.0 / longest)
 	for sid: String in starters:
 		var d: Dictionary = starters[sid]
 		var t := Tile.new()
+		t.title_size = deck_size
 		var path := "res://assets/tcg/art/%s.jpg" % d["leader"]
 		t.picture = load(path) if ResourceLoader.exists(path) else null
 		t.art_cover = true
 		t.title = String(d["name"])
 		t.price = int(prices["starter"])
-		t.custom_minimum_size = Vector2(136, 150)
+		t.custom_minimum_size = Vector2(150, 166)
 		var key := "starter:" + sid
 		t.clicked.connect(func() -> void: buy.emit(key))
 		row2.add_child(t)

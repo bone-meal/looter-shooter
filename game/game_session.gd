@@ -551,6 +551,8 @@ func _ready() -> void:
 	custom_layer.add_child(_customizer)
 	_card_screen.progress = _progress
 	_card_screen.report = _combat_report
+	_card_screen.cards = _cards
+	_card_screen.card_db = CardDb.from_files()
 	_card_screen.changed.connect(_on_card_changed)
 	_card_screen.closed.connect(_on_card_closed)
 	custom_layer.add_child(_card_screen)
@@ -570,6 +572,7 @@ func _ready() -> void:
 	_jukebox_menu.closed.connect(_close_jukebox)
 	custom_layer.add_child(_jukebox_menu)
 	_trade_screen.setup(_player.inventory, _player.items, _player.gun_db)
+	_trade_screen.set_cards(_cards, _card_screen.card_db)
 	_slot_screen.setup(_slot_data)
 	_slot_screen.spin_requested.connect(_on_slot_spin)
 	_slot_screen.closed.connect(_close_slots)
@@ -964,10 +967,12 @@ func _legal_gun(gun: Dictionary) -> bool:
 	return GunGen.validate(_player.gun_db, gun) == ""
 
 
-# Host: guns and armour only (director, round 5).
+# Host: guns and armour (director, round 5) and card game cards (a real card or leader in a real finish).
 func _legal_thing(thing: Dictionary) -> bool:
 	if thing.has("gun"):
 		return _legal_gun(thing["gun"])
+	if thing.has("card"):
+		return _legal_card(thing)
 	var id := String(thing.get("id", ""))
 	return _player.items.has_item(id) and _player.items.equip_slot(id) != ""
 
@@ -1058,8 +1063,22 @@ func _close_trade() -> void:
 
 
 # The trade went through: what we gave leaves the bag (by the slots we named), what we got goes in.
+func _legal_card(thing: Dictionary) -> bool:
+	var db: RefCounted = _card_screen.card_db
+	var id := String(thing.get("card", ""))
+	if not CardCollection.FINISHES.has(String(thing.get("finish", ""))):
+		return false
+	if bool(thing.get("leader", false)):
+		return (db.get("leaders") as Dictionary).has(id)
+	return not db.card(id).is_empty() and String(db.card(id)["rarity"]) != "token"
+
+
 func _finish_trade(gave: Array, got: Array) -> void:
 	for ref: Variant in gave:
+		if _trade_screen.offered_cards.has(int(ref)):  # a card from the collection
+			var c: Dictionary = _trade_screen.offered_cards[int(ref)]
+			_cards.remove(String(c["card"]), String(c["finish"]), 1, bool(c["leader"]))
+			continue
 		var slot := int(ref)
 		if slot < 0 or slot >= InventoryState.SIZE:
 			continue
@@ -1074,6 +1093,8 @@ func _finish_trade(gave: Array, got: Array) -> void:
 				_on_gun_dropped(given["gun"])
 		elif given.has("id") and _player.items.has_item(String(given["id"])):
 			_player.inventory.add(String(given["id"]), 1)
+		elif given.has("card") and _legal_card(given):
+			_cards.add(String(given["card"]), String(given.get("finish", "")), 1, bool(given.get("leader", false)))
 	_on_inventory_changed()
 	save_profile()
 	_player_hud.notice("Trade done: gave %d, got %d." % [gave.size(), got.size()])

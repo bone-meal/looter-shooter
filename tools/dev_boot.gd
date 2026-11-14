@@ -521,7 +521,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:
 				player.global_position = wall.global_position + wall.global_basis.z * 4.0
-		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg note" = the match in one line
+		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg note" = the match in one line
 			var tcg: Node = session.get("_tcg")
 			if words[1] == "note":
 				var m: RefCounted = tcg.get("match_state")
@@ -539,6 +539,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				tcg.call("request_close")
 			elif words[1] == "shop":  # stand at the card vending machine and open it; "!tcg shop buy <item>" buys too
 				var shop: Node = session.get("_shop")
+				if words.size() > 2 and words[2] == "close":
+					shop.call("close")
+					return
 				var machine: Node3D = (session.get("_casino") as Dictionary).get("card_vendor")
 				player.call("teleport", machine.call("front") + Vector3(0, 0.1, 0), 0.0)
 				player.call("look_at_point", machine.global_position + Vector3(0, 1.4, 0))
@@ -547,6 +550,32 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					shop.call("_on_buy", words[3])
 					var owned: RefCounted = session.get("_cards")
 					_lines.append("TCG SHOP %s: packs %d, box %s, chips %d" % [words[3], int(owned.call("pack_count")), str(owned.get("box")), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "binder":  # "!tcg binder [decks]": the player card's Binder tab (owning the Tide starter at least); "decks" = the builder on slot 1
+				var owned: RefCounted = session.get("_cards")
+				if owned.call("count", "reef_crab") <= 0:
+					var starters: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json"))["starters"]
+					owned.call("give_starter", "tide", starters["tide"], "standard")
+					owned.call("add", "harbor_gull", "rainbow")
+				session.call("_open_card")
+				var screen: Node = session.get("_card_screen")
+				var tabs: TabContainer = screen.get("_tabs")
+				tabs.current_tab = tabs.get_tab_count() - 1
+				if words.size() > 2:
+					screen.get("_binder").call("_open_slots")
+			elif words[1] == "packs":  # "!tcg packs [half | tear | turn | all]": 3 more packs and the opening from the binder; then the drag / a click / Open all done for us
+				var screen: Node = session.get("_card_screen")
+				var binder: Node = screen.get("_binder")
+				var opening: Node = binder.get("_opening") if binder != null else null
+				if words.size() == 2:
+					(session.get("_cards") as RefCounted).call("add_pack", "standard", 3)
+					session.call("_open_card")
+					var tabs: TabContainer = screen.get("_tabs")
+					tabs.current_tab = tabs.get_tab_count() - 1
+					binder = screen.get("_binder")
+					binder.call("refresh")
+					(binder.get("_open_button") as Button).pressed.emit()
+				elif opening != null:
+					opening.call("dev_step", words[2])
 			elif words[1] == "move":  # our side: the move the AI would make, sent as if clicked (or keep the opening hand)
 				tcg.call("dev_move")
 			else:

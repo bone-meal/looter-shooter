@@ -1,9 +1,12 @@
-Card game: art pass 2 and the card machine
+Card game: binder, deck builder, pack opening, cards in trades, picture trade window
 
-- All 161 card pictures re-rendered: spells show a creature taking the hit or the blessing, slimes framed, club and night scenes lit, lucky chip scene
-- Card machine in the casino: shop window with pack, bundle, box and starter deck tiles, chip prices, odds button, bounce and pop-up on a buy
-- core/tcg/pack_shop.gd buys with chips; pack and box pictures (tools/paint_pack.py)
-- Foil shine kept off the rules text
+- Binder tab on the player card: two 4 x 4 pages in a leather binder, page turn, missing cards as numbered outlines, filters and sorts, hover view
+- Deck builder: five slots, click cards in, list with mana curve, ready or what is wrong (core/tcg/deck_edit.gd, core/tcg/binder_list.gd)
+- Pack opening from the binder: drag to tear, cards rise, two tucked, turned lowest rarity first with glow and chime, NEW tags, Open all (core/tcg/pack_open.gd)
+- Trade window redone as pictures: two trays of icon tiles, ready ticks, gear and cards tabs, big buttons; cards can be traded
+- Card machine: starter deck names no longer sit on the price
+- Card art tools: slimes get their own scenes, fire as glowing volume, wasteland models coloured like in game, tints work, grander legendaries
+- Checks: tcg_rules_check 71, trade_check 27
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

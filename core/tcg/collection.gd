@@ -21,6 +21,7 @@ var pity: Dictionary = {"epic": 0, "legendary": 0}  # packs opened since the las
 var record: Dictionary = {}
 var starter := ""  # the starter deck picked at the first sit-down ("" = not yet)
 var box: Dictionary = {"left": 0, "legendaries": 0, "epics": 0}  # unopened box packs and what they still owe (core/tcg/pack_roll.gd)
+var got: Array = []  # card and leader ids in the order first owned (the binder's "newest" sort), newest last
 
 
 func _init() -> void:
@@ -40,6 +41,7 @@ func _blank() -> void:
 	record = {"wins": 0, "losses": 0, "streak": 0, "best_streak": 0, "vs": {}, "decks": {}, "house": {"wins": 0, "losses": 0, "decks_won": []}}
 	starter = ""
 	box = {"left": 0, "legendaries": 0, "epics": 0}
+	got = []
 
 
 # ---- owning ----
@@ -48,6 +50,8 @@ func add(id: String, finish := "", n := 1, leader := false) -> void:
 	var book: Dictionary = leaders if leader else cards
 	if not book.has(id):
 		book[id] = {}
+		got.erase(id)
+		got.append(id)
 	book[id][finish] = int((book[id] as Dictionary).get(finish, 0)) + n
 
 
@@ -180,7 +184,7 @@ func record_result(won: bool, opponent: String, deck_name: String, vs_ai: bool, 
 
 func to_dict() -> Dictionary:
 	return {"version": VERSION, "cards": cards, "leaders": leaders, "packs": packs, "decks": decks, "mats": mats, "mat": mat,
-		"pity": pity, "record": record, "starter": starter, "box": box}
+		"pity": pity, "record": record, "starter": starter, "box": box, "got": got}
 
 
 # Reads a saved collection; unknown ids, bad counts and broken decks are dropped (the rest is kept).
@@ -227,6 +231,15 @@ func from_dict(d: Variant, db: RefCounted) -> void:
 			if r["house"].get("decks_won") is Array:
 				record["house"]["decks_won"] = r["house"]["decks_won"]
 	starter = String(src.get("starter", ""))
+	if src.get("got") is Array:  # the saved order first, then anything owned it misses
+		var order: Array = []
+		for id: Variant in src["got"]:
+			if (cards.has(String(id)) or leaders.has(String(id))) and not order.has(String(id)):
+				order.append(String(id))
+		for id: String in got:
+			if not order.has(id):
+				order.append(id)
+		got = order
 	if src.get("box") is Dictionary:
 		for k: String in ["left", "legendaries", "epics"]:
 			box[k] = maxi(int(src["box"].get(k, 0)), 0)

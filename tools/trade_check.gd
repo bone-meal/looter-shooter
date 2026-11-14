@@ -4,7 +4,7 @@
 # Run with a window it also pictures the trade window: tools/shots/trade_window.jpg.
 # The RPC layer (game/net_trade.gd, game/net_drops.gd) is NOT exercised: that needs two machines.
 # Dependencies: core/trade_desk.gd, core/shared_drops.gd, core/gun_gen.gd, core/gun_db.gd, core/item_db.gd,
-# core/inventory_state.gd, core/data_store.gd, game/trade_screen.gd.
+# core/inventory_state.gd, core/data_store.gd, game/trade_screen.gd, core/tcg/card_db.gd, core/tcg/collection.gd (card game cards).
 extends Node
 
 const TradeDesk = preload("res://core/trade_desk.gd")
@@ -15,6 +15,8 @@ const ItemDb = preload("res://core/item_db.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const DataStore = preload("res://core/data_store.gd")
 const TradeScreen = preload("res://game/trade_screen.gd")
+const CardDb = preload("res://core/tcg/card_db.gd")
+const CardCollection = preload("res://core/tcg/collection.gd")
 
 const NAMES := {1: "Host", 2: "Bonk", 3: "Third"}
 
@@ -22,12 +24,14 @@ var _lines := PackedStringArray()
 var _problems := 0
 var _db: GunDb
 var _items: ItemDb
+var _cards: RefCounted  # core/tcg/card_db.gd
 
 
 func _ready() -> void:
 	_db = GunDb.new(DataStore.load_json("res://data/gun_loot.json"), DataStore.load_json("res://data/gun_parts.json"), DataStore.load_json("res://data/manufacturers.json"),
 		DataStore.load_json("res://data/weapons.json"), DataStore.load_json("res://data/skills.json"), DataStore.load_json("res://data/gun_uniques.json"))
 	_items = ItemDb.new(DataStore.load_json("res://data/items.json"))
+	_cards = CardDb.from_files()
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
 	var bags := {1: InventoryState.new(_items), 2: InventoryState.new(_items)}
@@ -60,6 +64,13 @@ func _ready() -> void:
 	forged["tier"] = "pony"
 	_note("an edited gun is refused", _has(desk.offer(2, {"ref": 30, "gun": forged}, NAMES), 2, "refused"))
 	_note("a thing that is neither gun nor armour is refused", _has(desk.offer(2, {"ref": 31, "id": "worm"}, NAMES), 2, "refused"))
+	out = desk.offer(2, {"ref": 1000, "card": "reef_crab", "finish": "rainbow", "leader": false, "extra": 9}, NAMES)
+	var card_seen: Array = _args(out, 1, "table")[0]["theirs"]
+	_note("a card can be offered; the other side sees only its card fields", card_seen.size() == 1 and card_seen[0] == {"card": "reef_crab", "finish": "rainbow", "leader": false})
+	_note("a made-up card, a token or a made-up finish is refused", _has(desk.offer(2, {"ref": 1001, "card": "golden_god", "finish": "", "leader": false}, NAMES), 2, "refused")
+		and _has(desk.offer(2, {"ref": 1002, "card": "slimelet", "finish": "", "leader": false}, NAMES), 2, "refused")
+		and _has(desk.offer(2, {"ref": 1003, "card": "reef_crab", "finish": "gold", "leader": false}, NAMES), 2, "refused"))
+	desk.withdraw(2, 1000, NAMES)
 	_note("extra fields do not ride along", not (_args(desk.offer(1, {"ref": helm, "id": "iron_helm", "coins": 999999}, NAMES), 2, "table")[0]["theirs"][1] as Dictionary).has("coins"))
 	desk.offer(2, {"ref": slot_b, "gun": gun_b}, NAMES)
 	_note("the same slot cannot be offered twice", desk.offer(2, {"ref": slot_b, "gun": gun_b}, NAMES).is_empty())
@@ -137,6 +148,13 @@ func _ready() -> void:
 func _legal(thing: Dictionary) -> bool:
 	if thing.has("gun"):
 		return GunGen.validate(_db, thing["gun"]) == ""
+	if thing.has("card"):  # as game/game_session.gd _legal_card
+		var id := String(thing["card"])
+		if not CardCollection.FINISHES.has(String(thing["finish"])):
+			return false
+		if bool(thing["leader"]):
+			return (_cards.get("leaders") as Dictionary).has(id)
+		return not _cards.card(id).is_empty() and String(_cards.card(id)["rarity"]) != "token"
 	return _items.has_item(String(thing.get("id", ""))) and _items.equip_slot(String(thing["id"])) != ""
 
 
@@ -169,13 +187,17 @@ func _picture(bag: InventoryState, theirs: Dictionary) -> void:
 	var screen := TradeScreen.new()
 	add_child(screen)
 	screen.setup(bag, _items, _db)
+	var owned := CardCollection.new()
+	for id: String in ["reef_crab", "harbor_gull", "riptide", "skeleton_archer", "slime_king"]:
+		owned.add(id, "rainbow" if id == "harbor_gull" else "", 2, id == "slime_king")
+	screen.set_cards(owned, _cards)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 5
 	for n in 4:
 		bag.add_gun(GunGen.generate(_db, rng, 0.2 * float(n)))
 	bag.add("tin_hat", 1)
 	var mine: Array = [{"ref": _slot_of(bag, true), "gun": bag.gun_at(_slot_of(bag, true))}]
-	screen.show_table({"with": "Bonk", "mine": mine, "theirs": [{"gun": theirs}, {"id": "iron_helm"}], "ready_mine": true, "ready_theirs": true, "confirm": true, "confirmed_mine": false})
+	screen.show_table({"with": "Bonk", "mine": mine, "theirs": [{"gun": theirs}, {"id": "iron_helm"}, {"card": "great_slime", "finish": "", "leader": false}], "ready_mine": true, "ready_theirs": true, "confirm": true, "confirmed_mine": false})
 	for _i in 4:
 		await RenderingServer.frame_post_draw
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://tools/shots"))

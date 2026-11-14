@@ -556,6 +556,35 @@
      "label": "Drop chime: pony"
     }
    ]
+  },
+  {
+   "name": "Card packs",
+   "sounds": [
+    {
+     "id": "card_tear",
+     "label": "Pack tearing open"
+    },
+    {
+     "id": "card_common",
+     "label": "Card reveal: common"
+    },
+    {
+     "id": "card_rare",
+     "label": "Card reveal: rare"
+    },
+    {
+     "id": "card_epic",
+     "label": "Card reveal: epic"
+    },
+    {
+     "id": "card_legendary",
+     "label": "Card reveal: legendary"
+    },
+    {
+     "id": "card_foil",
+     "label": "Card reveal: foil"
+    }
+   ]
   }
  ]
 }
