@@ -1,13 +1,13 @@
-Pony families and sea affixes (sea step 1e, first part)
+Pony families: the director's six, traits that play their virtues
 
-Gun version 4. Six pony families (Thunderhoof, Emberhoof, Moonmane,
-Seafoam, Glitterhoof, Stardust): each has its own skin colours and two
-pony-only traits, and every pony gun carries one of its family's traits.
-Ten sea affixes roll on guns from item level 31 (chance rises with the
-level): stat bends plus a buff, their word in the gun's name and a teal
-line on the card. The host refuses edited families, foreign pony traits
-and affixes below their level; older guns stay legal. Check
-tools/loot_1e_check 0 problems.
+Concordia Starweave (Magic), Hearthgold Trueheart (Honesty), Valor
+Skystreak (Loyalty), Bellegrace Gemshine (Generosity), Kindlebloom
+Softwing (Kindness), Merribelle Joyburst (Laughter), with his colours.
+Their 12 pony-only traits (Spellweave, Concord, Honest Work, Hearthfire,
+Stand Fast, Skystreak, Gemcut, Generous Spirit, Soft Wing, Bloom, Party
+Popper, Joyburst) live in game/pony_traits.gd; the card shows the
+family's virtue and party role. Replaces the placeholder families of
+21ee192. Check tools/loot_1e_check 0 problems.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

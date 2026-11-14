@@ -145,7 +145,8 @@ static func _plain_name(db: RefCounted, gun: Dictionary) -> String:
 	var tier_def: Dictionary = db.tier(String(gun["tier"]))
 	var tier: String = String(tier_def.get("tag", tier_def["name"]))
 	if gun.has("family"):  # a pony's family follows its tag: "*PONY* Thunderhoof ..."
-		tier += " " + String(db.family_def(String(gun["family"])).get("name", ""))
+		var fam: Dictionary = db.family_def(String(gun["family"]))
+		tier += " " + String(fam.get("short", fam.get("name", "")))
 	if gun.has("sea"):  # the sea affix's word comes next: "Mythic Brined ..."
 		tier += " " + String(db.sea_def(String((gun["sea"] as Dictionary)["id"])).get("name", ""))
 	if gun.has("unique") and db.uniques.has(String(gun["unique"])):

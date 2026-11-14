@@ -1,5 +1,6 @@
 # Purpose: the lingering areas of gun skills (sea step 1d): Fire Trail Dash's burning path, Plague Cloud, Time Bubble,
-# Inferno Ring, Thunder Totem, Storm Call (follows the caster) and the War Banner. Up to MAX areas at once; each ticks
+# Inferno Ring, Thunder Totem, Storm Call (follows the caster), the War Banner, and the pony trait Bloom's healing
+# flower (game/pony_traits.gd). Up to MAX areas at once; each ticks
 # a few times a second; pooled meshes, no allocation per frame.
 # Dependencies: game/skill_effects.gd (`fx`: near, nearest, bolt, ring, number, follow, glow, colour_of), core/skill_state.gd.
 extends Node3D
@@ -150,6 +151,26 @@ func start(db: RefCounted, entry: Dictionary, base: float, at: Vector3) -> void:
 			_edge_at(i, at, db, entry, 0.8)
 
 
+# Bloom (pony trait): a flower at `at` that heals the caster `heal` a second while within `radius`.
+func bloom(at: Vector3, radius: float, seconds: float, heal: float) -> void:
+	var i := _slot()
+	_kind[i] = "bloom"
+	_pos[i] = at
+	_until[i] = float(fx.call("now")) + seconds
+	_every[i] = 0.25
+	_next_tick[i] = 0.0
+	_radius[i] = radius
+	_amount[i] = heal
+	_disc_at(i, at)
+	(_mesh[i].material_override as StandardMaterial3D).albedo_color = Color(1.0, 0.9, 0.35, 0.18)
+	_mesh[i].visible = true
+	_post[i].visible = false
+	_edge[i].position = at + Vector3(0, 0.1, 0)
+	_edge[i].scale = Vector3(radius, 2.0, radius)
+	(_edge[i].material_override as StandardMaterial3D).albedo_color = Color(1.0, 0.85, 0.3, 0.9)
+	_edge[i].visible = true
+
+
 func _open(_db: RefCounted, _entry: Dictionary, kind: String, at: Vector3, seconds: float, every: float) -> int:
 	var i := _slot()
 	_kind[i] = kind
@@ -261,6 +282,10 @@ func _tick(i: int, t: float) -> void:
 				e.on_hit(dealt, center, Vector3.UP)
 				e.apply_slow(_extra[i], _every[i] + 0.2)
 				fx.call("number", center, dealt)
+		"bloom":
+			var who: Node3D = fx.get("follow")
+			if who != null and who.get("health") != null and Vector2(who.global_position.x - at.x, who.global_position.z - at.z).length() <= _radius[i]:
+				who.get("health").heal(_amount[i] * _every[i])
 		"bubble":
 			for e in fx.call("near", at, _radius[i]):
 				e.apply_slow(_amount[i], _every[i] + 0.15)

@@ -104,7 +104,8 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	y += 16.0
 	var lines: Array = []  # [text, colour, boxed, icon shape ("" = none)]
 	if gun.has("family"):
-		lines.append(["%s family" % String(db.family_def(String(gun["family"])).get("name", "")), TierStyle.family_colour(db, String(gun["family"])), false, ""])
+		var fam: Dictionary = db.family_def(String(gun["family"]))
+		lines.append(["%s  -  %s\n%s" % [String(fam.get("name", "")), String(fam.get("virtue", "")), String(fam.get("role", ""))], TierStyle.family_colour(db, String(gun["family"])), false, ""])
 	for tr: Dictionary in gun.get("traits", []):
 		var tdef: Dictionary = db.trait_def(String(tr["id"]))
 		if not tdef.is_empty():

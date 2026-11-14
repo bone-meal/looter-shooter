@@ -442,7 +442,7 @@ func _move_tick(input: Vector2) -> void:
 	var aiming := Input.is_action_pressed("aim")
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
-	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now())
+	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * _traits.speed_mult(_now())
 	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
@@ -535,7 +535,7 @@ func _move_and_shoot(delta: float) -> void:
 	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
-		weapon.rate_mult = self_fx.rate_mult(_now())  # Bullet Storm
+		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now())  # Bullet Storm, Joyburst
 		if weapon.try_fire(_now()):
 			_shoot()
 			_motion.fire()
@@ -631,6 +631,7 @@ func take_damage(amount: float, element: String = "physical") -> void:
 		(attacker as Object).call("apply_burn", _perk("burn_dps", 0.0), _perk("burn_seconds", 0.0))
 		var away: Vector3 = ((attacker as Node3D).global_position - global_position) * Vector3(1, 0, 1)
 		(attacker as Object).call("push", away.normalized() * _perk("push", 0.0))
+	taken *= _traits.taken_mult(_held_stats.get("traits", {})) if not _held_gun.is_empty() else 1.0  # Stand Fast
 	taken = self_fx.incoming(taken, _now(), _near_banner())  # War Banner guard, then the Overshield soaks
 	if taken <= 0.0:
 		return
@@ -1349,7 +1350,7 @@ func _shoot() -> void:
 func _gun_damage() -> float:
 	var mult := _damage_mult()
 	_last_crit = false
-	if _held_gun.is_empty() or randf() >= float(_held_stats["crit_chance"]):
+	if _held_gun.is_empty() or randf() >= float(_held_stats["crit_chance"]) or not _traits.crits_allowed(_held_stats.get("traits", {})):  # Honest Work: none
 		return weapon.damage * mult
 	_last_crit = true
 	var buffs: Dictionary = _held_stats["buffs"]
@@ -1583,6 +1584,7 @@ func use_skill(index: int) -> void:
 	if buffs.has("skill_echo") and randf() * 100.0 < float(buffs["skill_echo"]):
 		cd = 0.0  # Skill Echo: the cooldown is refunded
 	skills.start(key, now, cd)
+	_traits.on_skill_cast(_held_stats.get("traits", {}))  # Spellweave
 	var eye := _camera.global_position
 	var forward := -_camera.global_transform.basis.z
 	var aim := eye + forward * 14.0

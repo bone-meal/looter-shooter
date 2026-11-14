@@ -40,6 +40,16 @@ class Mob extends Node3D:
 	func is_burning() -> bool:
 		return burning
 
+	var enemy_id := "chaser"
+	var rallied := 1.0
+	var frozen := 0.0
+
+	func rally(_speed: float, damage: float, _s: float) -> void:
+		rallied = damage
+
+	func apply_freeze(s: float) -> void:
+		frozen = s
+
 
 class Crowd extends RefCounted:
 	var list: Array = []
@@ -60,10 +70,37 @@ class Blasts extends Node:
 		flashes += 1
 
 
+class Skills extends RefCounted:
+	var taken: Array[float] = []
+
+	func reduce_all(s: float, _now: float) -> void:
+		taken.append(s)
+
+
+class Zones extends RefCounted:
+	var blooms := 0
+
+	func bloom(_at: Vector3, _r: float, _s: float, _heal: float) -> void:
+		blooms += 1
+
+
+class Fx extends RefCounted:
+	var zones := Zones.new()
+
+
+class Mag extends RefCounted:
+	var ammo := 2
+	var mag_size := 20
+
+
 class Holder extends Node3D:
 	var explosives: Node
 	var health := HealthState.new(100.0)
 	var allies_close := 0
+	var skills := Skills.new()
+	var _last_crit := false
+	var _ready_weapons: Array = []
+	var skill_fx := Fx.new()
 
 
 var _lines := PackedStringArray()
@@ -129,7 +166,7 @@ func _ponies(db: GunDb, rng: RandomNumberGenerator) -> void:
 	var pony := GunGen.generate(db, rng, 0.0, "m16", "pony", "", 12)
 	while pony.has("unique"):
 		pony = GunGen.generate(db, rng, 0.0, "m16", "pony", "", 12)
-	_say("the pony's name carries its family", GunStats.display_name(db, pony).contains(String(db.family_def(String(pony["family"]))["name"])))
+	_say("the pony's name carries its family", GunStats.display_name(db, pony).contains(String(db.family_def(String(pony["family"]))["short"])))
 	var other_family := ""
 	for f: String in db.families:
 		if f != String(pony["family"]):
@@ -148,7 +185,7 @@ func _ponies(db: GunDb, rng: RandomNumberGenerator) -> void:
 	edited["family"] = String(pony["family"])
 	_say("a family on an orange gun is refused", GunGen.validate(db, edited) != "")
 	edited = orange.duplicate(true)
-	((edited["traits"] as Array)[0] as Dictionary)["id"] = "storm_hoof"
+	((edited["traits"] as Array)[0] as Dictionary)["id"] = "spellweave"
 	_say("a pony-only trait on an orange gun is refused", GunGen.validate(db, edited) != "")
 	var u := GunGen.unique(db, "stampede", 10)
 	_say("a unique stays legal", GunGen.validate(db, u) == "")
@@ -210,53 +247,56 @@ func _effects() -> void:
 	var fx := GunTraits.new()
 	fx.player = holder
 	var t := Time.get_ticks_msec() / 1000.0
-	# Storm Hoof: the 4th hit adds a strike
-	for n in 4:
-		fx.on_hit({"storm_hoof": 100.0}, mobs[0], mobs[0].position, 10.0)
-	_say("Storm Hoof: the 4th hit calls lightning (+10 on a 10 hit)", is_equal_approx(mobs[0].got, 10.0) and blasts.flashes == 1)
-	fx.on_hit({"cinder_trail": 30.0}, mobs[0], mobs[0].position, 10.0)
-	_say("Cinder Trail burns for 30 % of the hit a second", is_equal_approx(mobs[0].burn, 3.0))
-	fx.on_hit({"undertow": 25.0}, mobs[1], mobs[1].position, 10.0)
-	_say("Undertow drags toward the shooter and slows", mobs[1].pushed.z > 0.0 and is_equal_approx(mobs[1].slowed, 0.25))
-	fx.on_hit({"gravity_mane": 6.0}, mobs[1], mobs[1].position, 10.0)
-	_say("Gravity Mane pulls the others toward the target", mobs[0].pushed.x > 0.0 and mobs[2].pushed.x < 0.0)
-	fx.on_kill({"static_mane": 20.0}, mobs[1].position, 10.0, t, mobs[1])
-	_say("Static Mane charges enemies within 6 m", is_equal_approx(mobs[0].vuln, 1.2) and is_equal_approx(mobs[2].vuln, 1.2))
-	var before := blasts.blasts
-	mobs[2].burning = true
-	fx.on_kill({"firestorm_mane": 100.0}, mobs[2].position, 10.0, t, mobs[2])
-	mobs[0].burning = false
-	fx.on_kill({"firestorm_mane": 100.0}, mobs[0].position, 10.0, t, mobs[0])
-	_say("Firestorm Mane bursts only from a burning kill", blasts.blasts == before + 1)
-	var got := mobs[1].got
-	fx.on_kill({"comet_tail": 100.0}, mobs[0].position, 10.0, t, mobs[0])
-	_say("Comet Tail drops a star on the nearest other enemy", mobs[1].got > got)
-	var ec := {"eclipse": 50.0}
-	fx.on_kill(ec, mobs[0].position, 10.0, t, mobs[0])
-	fx.on_kill(ec, mobs[0].position, 10.0, t, mobs[0])
-	fx.on_shot(ec, t)
-	var charged := fx.damage_mult(ec, mobs[0])
-	fx.after_shot(true)
-	fx.on_shot(ec, t)
-	_say("Eclipse: two kills make the next shot x2.0, then it is spent (%.2f, %.2f)" % [charged, fx.damage_mult(ec, mobs[0])], is_equal_approx(charged, 2.0) and is_equal_approx(fx.damage_mult(ec, mobs[0]), 1.0))
-	fx.after_shot(true)
-	var far := fx.damage_mult({"moonlit": 40.0}, mobs[0])
-	mobs[0].position = Vector3(0, 0, -5)
-	_say("Moonlit: nothing at 10 m", is_equal_approx(far, 1.0) and true)
-	mobs[0].position = Vector3(0, 0, -30)
-	_say("Moonlit: +40 % at 30 m", is_equal_approx(fx.damage_mult({"moonlit": 40.0}, mobs[0]), 1.4))
-	var pr := {"prism_mane": 10.0}
-	for m in mobs:
-		fx.on_hit(pr, m, m.position, 1.0)
-	_say("Prism Mane: three different enemies hit = +30 %", is_equal_approx(fx.damage_mult(pr, mobs[0]), 1.3))
-	before = blasts.blasts
-	var tide := {"tidal_surge": 100.0}
-	for n in 8:
-		fx.on_shot(tide, t)
-		fx.on_hit(tide, mobs[0], mobs[0].position, 10.0)
-		fx.on_hit(tide, mobs[1], mobs[1].position, 10.0)  # a second pellet: still one wave
+	var sw := {"spellweave": 50.0}
+	fx.on_skill_cast(sw)
+	var hits: Array[float] = []
+	for n in 7:
+		fx.on_shot(sw, t)
+		hits.append(fx.damage_mult(sw, mobs[0]))
 		fx.after_shot(true)
-	_say("Tidal Surge: one wave on the 8th shot", blasts.blasts == before + 1)
+	_say("Spellweave: a skill cast makes 6 shots x1.5, the 7th normal %s" % str(hits), hits.slice(0, 6) == [1.5, 1.5, 1.5, 1.5, 1.5, 1.5] and hits[6] == 1.0)
+	fx.on_kill({"concord": 1.0}, mobs[0].position, 10.0, t, mobs[0])
+	holder.allies_close = 1
+	fx.on_kill({"concord": 1.0}, mobs[0].position, 10.0, t, mobs[0])
+	holder.allies_close = 0
+	_say("Concord: 1 s off alone, 2 s with a teammate (%s)" % str(holder.skills.taken), holder.skills.taken == [1.0, 2.0])
+	_say("Honest Work: no crits allowed, +30 % every shot", not fx.crits_allowed({"honest_work": 30.0}) and fx.crits_allowed({}) and is_equal_approx(fx.damage_mult({"honest_work": 30.0}, mobs[0]), 1.3))
+	holder.health.hp = 50.0
+	fx.on_kill({"hearthfire": 5.0}, mobs[0].position, 10.0, t, mobs[0])
+	_say("Hearthfire heals 5 % on a kill", is_equal_approx(holder.health.hp, 55.0))
+	holder.health.hp = 40.0
+	var low := fx.taken_mult({"stand_fast": 30.0})
+	holder.health.hp = 90.0
+	_say("Stand Fast: 30 % less below half health only", is_equal_approx(low, 0.7) and fx.taken_mult({"stand_fast": 30.0}) == 1.0)
+	var sky := {"skystreak": 20.0}
+	fx.on_kill(sky, mobs[0].position, 10.0, t, mobs[0])
+	fx.on_shot(sky, t)
+	var first := fx.damage_mult(sky, mobs[0])
+	fx.after_shot(true)
+	fx.on_shot(sky, t)
+	_say("Skystreak: +20 % speed and the next shot doubles, once", is_equal_approx(fx.speed_mult(t), 1.2) and is_equal_approx(first, 2.0) and fx.damage_mult(sky, mobs[0]) == 1.0)
+	fx.after_shot(true)
+	holder._last_crit = true
+	var before := blasts.blasts
+	var gem := fx.damage_mult({"gemcut": 50.0}, mobs[0])
+	fx.on_hit({"gemcut": 50.0}, mobs[0], mobs[0].position, 10.0)
+	holder._last_crit = false
+	_say("Gemcut: a crit deals +50 % and bursts into shards", is_equal_approx(gem, 1.5) and blasts.blasts == before + 1 and fx.damage_mult({"gemcut": 50.0}, mobs[0]) == 1.0)
+	var w1 := Mag.new()
+	var w2 := Mag.new()
+	holder._ready_weapons = [w1, null, w2]
+	fx.on_kill({"generous_spirit": 20.0}, mobs[0].position, 10.0, t, mobs[0])
+	_say("Generous Spirit: every ready gun gets 20 % of a magazine back (%d, %d)" % [w1.ammo, w2.ammo], w1.ammo == 6 and w2.ammo == 6)
+	fx.on_hit({"soft_wing": 30.0}, mobs[1], mobs[1].position, 10.0)
+	_say("Soft Wing: its blows 30 % softer and its steps slower", is_equal_approx(mobs[1].rallied, 0.7) and mobs[1].slowed > 0.0)
+	fx.on_kill({"bloom": 3.0}, mobs[0].position, 10.0, t, mobs[0])
+	_say("Bloom plants a healing flower", holder.skill_fx.zones.blooms == 1)
+	fx.on_kill({"party_popper": 1.2}, mobs[1].position, 10.0, t, mobs[1])
+	_say("Party Popper: enemies within 4 m fall into a laughing fit", is_equal_approx(mobs[0].frozen, 1.2) and is_equal_approx(mobs[2].frozen, 1.2))
+	var joy := {"joyburst": 8.0}
+	for n in 7:
+		fx.on_kill(joy, mobs[0].position, 10.0, t, mobs[0])
+	_say("Joyburst: kills in a row add fire rate up to 5 (+40 %)", is_equal_approx(fx.rate_mult(joy, t), 1.4) and fx.rate_mult(joy, t + 5.0) == 1.0)
 
 
 func _json(name: String) -> Dictionary:

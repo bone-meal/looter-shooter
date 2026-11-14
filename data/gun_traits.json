@@ -1,6 +1,6 @@
 {
  "_about": "Gun TRAITS (locked 2026-11-14, diary/DECISIONS_SEA.md: a layer above the small buffs, like Borderlands anointments): build-defining effects. A gun of a tier listed in slots_by_tier rolls that many (purple and gold one, orange and up two), each at a quality inside its tier's range, never the same twice; the value goes from min to max with the quality. Effects: game/gun_traits.gd. desc is printf-style (one %s for the value, a literal % written %%). ALL NUMBERS ARE PLACEHOLDERS FOR THE DIRECTOR. Traits with a `family` are PONY-ONLY (data/pony_families.json): a pony gun's first trait is one of its family's, the second from the common pool; other tiers never roll them.",
- "version": 2,
+ "version": 3,
  "slots_by_tier": {
   "purple": 1,
   "gold": 1,
@@ -94,100 +94,100 @@
    "max": 2.0
   },
   {
-   "id": "storm_hoof",
-   "name": "Storm Hoof",
-   "desc": "Every 4th hit calls lightning down on the target for %s%% of its damage",
-   "min": 60.0,
-   "max": 140.0,
-   "family": "thunderhoof"
+   "id": "spellweave",
+   "name": "Spellweave",
+   "desc": "Casting a gun skill weaves magic into your next 6 shots: +%s%% damage",
+   "min": 40.0,
+   "max": 90.0,
+   "family": "concordia"
   },
   {
-   "id": "static_mane",
-   "name": "Static Mane",
-   "desc": "Kills charge enemies within 6 m: they take +%s%% damage for 4 s",
+   "id": "concord",
+   "name": "Concord",
+   "desc": "Kills take %s s off your gun skill cooldowns, twice that with a teammate within 15 m",
+   "min": 0.5,
+   "max": 1.5,
+   "family": "concordia"
+  },
+  {
+   "id": "honest_work",
+   "name": "Honest Work",
+   "desc": "No critical hits, but every shot deals +%s%% damage, every time",
+   "min": 25.0,
+   "max": 45.0,
+   "family": "hearthgold"
+  },
+  {
+   "id": "hearthfire",
+   "name": "Hearthfire",
+   "desc": "Kills warm you: heal %s%% of your health",
+   "min": 4.0,
+   "max": 9.0,
+   "family": "hearthgold"
+  },
+  {
+   "id": "stand_fast",
+   "name": "Stand Fast",
+   "desc": "Below half health you take %s%% less damage",
+   "min": 20.0,
+   "max": 40.0,
+   "family": "valor"
+  },
+  {
+   "id": "skystreak",
+   "name": "Skystreak",
+   "desc": "Kills give +%s%% move speed for 3 s and make your next shot deal double",
    "min": 15.0,
    "max": 30.0,
-   "family": "thunderhoof"
+   "family": "valor"
   },
   {
-   "id": "cinder_trail",
-   "name": "Cinder Trail",
-   "desc": "Every hit sets the target alight for %s%% of its damage each second (3 s)",
-   "min": 15.0,
-   "max": 35.0,
-   "family": "emberhoof"
-  },
-  {
-   "id": "firestorm_mane",
-   "name": "Firestorm Mane",
-   "desc": "Killing a burning enemy bursts into flame for %s%% of the killing blow",
-   "min": 80.0,
-   "max": 180.0,
-   "family": "emberhoof"
-  },
-  {
-   "id": "moonlit",
-   "name": "Moonlit",
-   "desc": "+%s%% damage to enemies more than 20 m away",
-   "min": 20.0,
-   "max": 50.0,
-   "family": "moonmane"
-  },
-  {
-   "id": "eclipse",
-   "name": "Eclipse",
-   "desc": "Each kill makes your next shot deal +%s%% (up to 3 kills stored)",
+   "id": "gemcut",
+   "name": "Gemcut",
+   "desc": "Critical hits deal +%s%% more and burst into crystal shards",
    "min": 30.0,
    "max": 70.0,
-   "family": "moonmane"
+   "family": "bellegrace"
   },
   {
-   "id": "undertow",
-   "name": "Undertow",
-   "desc": "Hits drag the target toward you and slow it by %s%% for 2 s",
-   "min": 15.0,
-   "max": 35.0,
-   "family": "seafoam"
-  },
-  {
-   "id": "tidal_surge",
-   "name": "Tidal Surge",
-   "desc": "Every 8th shot sends a wave round the target for %s%% of the shot's damage",
-   "min": 100.0,
-   "max": 220.0,
-   "family": "seafoam"
-  },
-  {
-   "id": "glitter_bomb",
-   "name": "Glitter Bomb",
-   "desc": "%s%% chance a hit scatters three sparkle bursts round the target",
+   "id": "generous_spirit",
+   "name": "Generous Spirit",
+   "desc": "Kills put %s%% of a magazine back into every gun you carry ready",
    "min": 10.0,
    "max": 25.0,
-   "family": "glitterhoof"
+   "family": "bellegrace"
   },
   {
-   "id": "prism_mane",
-   "name": "Prism Mane",
-   "desc": "+%s%% damage for each different enemy hit in the last 2 s (up to 5)",
-   "min": 4.0,
+   "id": "soft_wing",
+   "name": "Soft Wing",
+   "desc": "Enemies you hit are soothed for 3 s: %s%% softer blows and slower steps",
+   "min": 15.0,
+   "max": 35.0,
+   "family": "kindlebloom"
+  },
+  {
+   "id": "bloom",
+   "name": "Bloom",
+   "desc": "Kills leave a flower for 5 s that heals you %s%% of your health a second within 3 m",
+   "min": 2.0,
+   "max": 4.0,
+   "family": "kindlebloom"
+  },
+  {
+   "id": "party_popper",
+   "name": "Party Popper",
+   "desc": "Kills pop confetti: enemies within 4 m fall into a laughing fit for %s s",
+   "min": 0.8,
+   "max": 1.6,
+   "family": "merribelle"
+  },
+  {
+   "id": "joyburst",
+   "name": "Joyburst",
+   "desc": "Each kill within 3 s of the last adds +%s%% fire rate, up to 5 kills",
+   "min": 5.0,
    "max": 10.0,
-   "family": "glitterhoof"
-  },
-  {
-   "id": "comet_tail",
-   "name": "Comet Tail",
-   "desc": "Kills drop a falling star on the nearest other enemy within 15 m for %s%% of the killing blow",
-   "min": 60.0,
-   "max": 150.0,
-   "family": "stardust"
-  },
-  {
-   "id": "gravity_mane",
-   "name": "Gravity Mane",
-   "desc": "Hits pull enemies within %s m toward the target",
-   "min": 3.0,
-   "max": 6.0,
-   "family": "stardust"
+   "family": "merribelle"
   }
  ]
 }

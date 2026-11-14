@@ -1,66 +1,84 @@
 {
- "version": 1,
- "_about": "PONY FAMILIES (locked 2026-11-14 batch 6, diary/DECISIONS_SEA.md: more variety inside pony, no tier above it). Every pony gun belongs to one family: its skin's colours (game/pony_skin.gd: hue = the middle of its colours 0..1, span = how far they swing, sat = how strong) and ONE of its two traits comes from the family's own pony-only traits (data/gun_traits.json, field family); the other trait is from the common pool. Names, colours and numbers are my placeholders for the director.",
+ "version": 2,
+ "_about": "PONY FAMILIES (director 2026-11-14, names, colours and virtues his; diary/DECISIONS_SEA.md): every pony gun belongs to one family: its skin's colours (game/pony_skin.gd: hue = the middle of its colours 0..1, span = how far they swing, sat = how strong) and ONE of its two traits comes from the family's own pony-only traits (data/gun_traits.json, field family), which play the family's virtue and its use for the party; the other trait is from the common pool. virtue / role are shown on the gun card. Trait numbers are my placeholders. short = the word the gun's name carries (\"*PONY* Bellegrace ...\"); the card shows the full name.",
  "families": {
-  "thunderhoof": {
-   "name": "Thunderhoof",
-   "hue": 0.66,
-   "span": 0.1,
-   "sat": 0.55,
+  "concordia": {
+   "name": "Concordia Starweave",
+   "virtue": "Magic",
+   "role": "Brings the party together: gun skills come round faster and hit harder",
+   "hue": 0.78,
+   "span": 0.06,
+   "sat": 0.6,
    "traits": [
-    "storm_hoof",
-    "static_mane"
-   ]
+    "spellweave",
+    "concord"
+   ],
+   "short": "Concordia"
   },
-  "emberhoof": {
-   "name": "Emberhoof",
-   "hue": 0.04,
-   "span": 0.07,
-   "sat": 0.65,
+  "hearthgold": {
+   "name": "Hearthgold Trueheart",
+   "virtue": "Honesty",
+   "role": "The steady one: honest damage every shot and warmth after every kill",
+   "hue": 0.075,
+   "span": 0.035,
+   "sat": 0.72,
    "traits": [
-    "cinder_trail",
-    "firestorm_mane"
-   ]
+    "honest_work",
+    "hearthfire"
+   ],
+   "short": "Hearthgold"
   },
-  "moonmane": {
-   "name": "Moonmane",
+  "valor": {
+   "name": "Valor Skystreak",
+   "virtue": "Loyalty",
+   "role": "Stands at the front and never backs down",
    "hue": 0.6,
    "span": 0.05,
-   "sat": 0.22,
+   "sat": 0.68,
    "traits": [
-    "moonlit",
-    "eclipse"
-   ]
+    "stand_fast",
+    "skystreak"
+   ],
+   "short": "Valor"
   },
-  "seafoam": {
-   "name": "Seafoam",
-   "hue": 0.47,
-   "span": 0.07,
-   "sat": 0.45,
+  "bellegrace": {
+   "name": "Bellegrace Gemshine",
+   "virtue": "Generosity",
+   "role": "Precise and giving: crystal crits and full magazines for every gun",
+   "hue": 0.6,
+   "span": 0.5,
+   "sat": 0.1,
    "traits": [
-    "undertow",
-    "tidal_surge"
-   ]
+    "gemcut",
+    "generous_spirit"
+   ],
+   "short": "Bellegrace"
   },
-  "glitterhoof": {
-   "name": "Glitterhoof",
-   "hue": 0.88,
-   "span": 0.18,
-   "sat": 0.45,
+  "kindlebloom": {
+   "name": "Kindlebloom Softwing",
+   "virtue": "Kindness",
+   "role": "Calms the fight and lets the party flourish: softer blows, healing flowers",
+   "hue": 0.14,
+   "span": 0.03,
+   "sat": 0.6,
    "traits": [
-    "glitter_bomb",
-    "prism_mane"
-   ]
+    "soft_wing",
+    "bloom"
+   ],
+   "short": "Kindlebloom"
   },
-  "stardust": {
-   "name": "Stardust",
-   "hue": 0.76,
-   "span": 0.12,
+  "merribelle": {
+   "name": "Merribelle Joyburst",
+   "virtue": "Laughter",
+   "role": "Keeps the party going: confetti, laughing fits and a faster trigger",
+   "hue": 0.93,
+   "span": 0.04,
    "sat": 0.5,
    "traits": [
-    "comet_tail",
-    "gravity_mane"
-   ]
+    "party_popper",
+    "joyburst"
+   ],
+   "short": "Merribelle"
   }
  }
 }
