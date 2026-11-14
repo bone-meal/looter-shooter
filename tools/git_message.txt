@@ -1,11 +1,9 @@
-Card game: art pass 3, play mats, four beach tables, 3D card table
+Card game: table HUD as pictures
 
-- 161 card pictures re-rendered: slimes with their own scenes, fire as glowing flame, wasteland models in their game colours, tints that work, grander legendaries
-- Play mats: 12 mats (start, pack pulls, machine, win milestones), mat list in the binder, PLAY MATS tab at the card machine, each half of the table shows its player's mat
-- Mat layout locked by the director: creatures on an arc, the leader's portrait spot at the back (data/tcg/mat_layout.json)
-- Three more beach tables beside the House Dealer's
-- 3D card table: cards lie on the mat spots, hand fanned at your edge, decks as stacks, camera over your side, Alt to look around
-- tcg_rules_check 75
+- Leader badges with round portraits, health drops, mana crystals, deck and hand icons; they glow when they can be targeted
+- Hero power as a round button with its cost gem; END TURN as a glowing gem with the turn fuse; YOUR TURN banner
+- Deck pick as leader picture tiles; Cinzel titles; the gun HUD hides while seated
+- 3D table: a reused card no longer shows an older picture
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

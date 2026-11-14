@@ -138,6 +138,7 @@ func _flat(px: float, py: float, angle: float, s: float) -> Transform3D:
 func _add(face: Variant, where: Transform3D, size: Vector2) -> void:
 	var node: MeshInstance3D = _pool.pop_back() if not _pool.is_empty() else _new_card()
 	node.visible = true
+	node.material_override = null
 	node.transform = where
 	node.scale = Vector3(size.x, size.y, 1.0)
 	_cards.append({"node": node, "face": face, "home": where, "size": size})
@@ -155,8 +156,10 @@ func _add(face: Variant, where: Transform3D, size: Vector2) -> void:
 		(glow.material_override as StandardMaterial3D).albedo_color = outline
 	elif face is Dictionary:
 		id = String(face["id"])
+	var want := "%s|%s|%s" % [id, finish, str(live)]
+	node.set_meta("want", want)  # a reused node may still have an older picture on its way
 	bake.call("texture", id, finish, func(tex: Texture2D) -> void:
-		if is_instance_valid(node):
+		if is_instance_valid(node) and node.get_meta("want", "") == want:
 			node.material_override = _material(tex), live)
 
 

@@ -9,6 +9,7 @@ extends Control
 const CardFace = preload("res://game/tcg/card_face.gd")
 const CardText = preload("res://core/tcg/card_text.gd")
 const ChipArt = preload("res://game/chip_art.gd")
+const TableHud = preload("res://game/tcg/table_hud.gd")
 
 signal deck_chosen(deck_id: String)
 signal mulligan_chosen(indices: Array)
@@ -36,10 +37,12 @@ var _valid: Array = []
 var _redraw: Array = []
 var _prize := 0
 var _log: PackedStringArray = []
-var _foe_bar := Button.new()
-var _my_bar := Button.new()
-var _power := Button.new()
-var _end := Button.new()
+var _foe_bar := TableHud.LeaderBadge.new()
+var _my_bar := TableHud.LeaderBadge.new()
+var _power := TableHud.PowerButton.new()
+var _end := TableHud.EndButton.new()
+var _banner := Label.new()  # "YOUR TURN" flashing up
+var _power_words := ""  # the hero power's text, shown while its button is hovered
 var _hint := Label.new()
 var _turn := Label.new()
 var _fuse := ProgressBar.new()
@@ -78,52 +81,68 @@ func _ready() -> void:
 	v.add_theme_constant_override("separation", 6)
 	v.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(v)
-	for b: Button in [_foe_bar, _my_bar]:
-		b.custom_minimum_size = Vector2(0, 40)
-		b.add_theme_font_size_override("font_size", 18)
-		b.pressed.connect(_on_leader.bind(b))
-	v.add_child(_foe_bar)
+	# the cards (2D table only: with the 3D view these rows are hidden data)
 	for row: HBoxContainer in [_foe_row, _my_row]:
 		row.alignment = BoxContainer.ALIGNMENT_CENTER
 		row.custom_minimum_size = Vector2(0, MAT_SIZE.y)
 		row.add_theme_constant_override("separation", 8)
 		row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var top_gap := Control.new()
+	top_gap.custom_minimum_size = Vector2(0, 96)
+	v.add_child(top_gap)
 	v.add_child(_foe_row)
-	var mid := HBoxContainer.new()
-	mid.add_theme_constant_override("separation", 12)
-	mid.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	v.add_child(mid)
-	_turn.add_theme_font_size_override("font_size", 20)
-	_turn.custom_minimum_size = Vector2(230, 0)
-	mid.add_child(_turn)
-	_fuse.custom_minimum_size = Vector2(160, 14)
-	_fuse.show_percentage = false
-	_fuse.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-	mid.add_child(_fuse)
-	_hint.add_theme_font_size_override("font_size", 17)
-	_hint.add_theme_color_override("font_color", C_PICK)
-	_hint.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	mid.add_child(_hint)
-	_end.text = "END TURN"
-	_end.custom_minimum_size = Vector2(150, 40)
-	_end.add_theme_font_size_override("font_size", 18)
-	_end.pressed.connect(func() -> void: _cancel(); intent.emit({"do": "end"}))
-	mid.add_child(_end)
+	var mid_gap := Control.new()
+	mid_gap.custom_minimum_size = Vector2(0, 30)
+	v.add_child(mid_gap)
 	v.add_child(_my_row)
-	var bar := HBoxContainer.new()
-	bar.add_theme_constant_override("separation", 10)
-	v.add_child(bar)
-	_my_bar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	bar.add_child(_my_bar)
-	_power.custom_minimum_size = Vector2(360, 40)
-	_power.add_theme_font_size_override("font_size", 16)
-	_power.pressed.connect(_on_power)
-	bar.add_child(_power)
 	_hand_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	_hand_row.custom_minimum_size = Vector2(0, HAND_SIZE.y)
 	_hand_row.add_theme_constant_override("separation", 6)
 	_hand_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	v.add_child(_hand_row)
+	# the HUD as pictures (game/tcg/table_hud.gd): leaders top left and bottom left, power beside yours, END TURN on the right
+	_foe_bar.position = Vector2(14, 10)
+	_my_bar.position = Vector2(14, 546)
+	for b: Control in [_foe_bar, _my_bar]:
+		b.pressed.connect(_on_leader.bind(b))
+		add_child(b)
+	_power.position = Vector2(238, 470)  # above your badge, clear of the fanned hand
+	_power.pressed.connect(_on_power)
+	_power.hovered.connect(_on_power_hover)
+	add_child(_power)
+	_end.position = Vector2(706, 296)
+	_end.pressed.connect(func() -> void: _cancel(); intent.emit({"do": "end"}))
+	add_child(_end)
+	_turn.position = Vector2(690, 262)
+	_turn.size = Vector2(182, 28)
+	_turn.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_turn.add_theme_font_override("font", CardFace.font("title"))
+	_turn.add_theme_font_size_override("font_size", 15)
+	_turn.add_theme_color_override("font_color", Color(1.0, 0.85, 0.4))
+	_turn.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.8))
+	_turn.add_theme_constant_override("outline_size", 5)
+	add_child(_turn)
+	_hint.position = Vector2(150, 474)
+	_hint.size = Vector2(560, 30)
+	_hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_hint.add_theme_font_size_override("font_size", 17)
+	_hint.add_theme_color_override("font_color", C_PICK)
+	_hint.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+	_hint.add_theme_constant_override("outline_size", 6)
+	add_child(_hint)
+	_fuse.visible = false  # the fuse burns on the END TURN button now
+	_banner.text = "YOUR TURN"
+	_banner.position = Vector2(150, 230)
+	_banner.size = Vector2(560, 90)
+	_banner.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_banner.add_theme_font_override("font", CardFace.font("title"))
+	_banner.add_theme_font_size_override("font_size", 56)
+	_banner.add_theme_color_override("font_color", Color(1.0, 0.85, 0.35))
+	_banner.add_theme_color_override("font_outline_color", Color(0.35, 0.1, 0.0))
+	_banner.add_theme_constant_override("outline_size", 14)
+	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_banner.modulate.a = 0.0
+	add_child(_banner)
 	# right column: hover view + log
 	var side := VBoxContainer.new()
 	side.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
@@ -143,6 +162,9 @@ func _ready() -> void:
 	side.add_child(_zoom_help)
 	_log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_log_label.add_theme_font_size_override("font_size", 15)
+	_log_label.add_theme_font_override("font", CardFace.font("body"))
+	_log_label.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.85))
+	_log_label.add_theme_constant_override("outline_size", 5)
 	_log_label.add_theme_color_override("font_color", Color(0.85, 0.9, 0.85))
 	_log_label.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_log_label.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
@@ -167,6 +189,8 @@ func _ready() -> void:
 	cv.add_theme_constant_override("separation", 10)
 	_center.add_child(cv)
 	_center_text.add_theme_font_size_override("font_size", 22)
+	_center_text.add_theme_font_override("font", CardFace.font("title"))
+	_center_text.add_theme_color_override("font_color", Color(1.0, 0.88, 0.55))
 	_center_text.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	cv.add_child(_center_text)
 	_center_buttons.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -199,26 +223,40 @@ func open_pick(heading: String, note: String, choices: Array) -> void:
 	for n in _pick_box.get_children():
 		n.queue_free()
 	var title := Label.new()
-	title.text = heading
-	title.add_theme_font_size_override("font_size", 24)
+	title.text = heading.to_upper()
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.add_theme_font_override("font", CardFace.font("title"))
+	title.add_theme_font_size_override("font_size", 26)
+	title.add_theme_color_override("font_color", Color(1.0, 0.82, 0.35))
 	_pick_box.add_child(title)
 	if note != "":
 		var line := Label.new()
 		line.text = note
+		line.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		_pick_box.add_child(line)
 	var info := Label.new()
-	info.text = "A win against the House Dealer pays %d chips." % _prize
-	_pick_box.add_child(ChipArt.row(info))
+	info.text = "Win: +%d" % _prize
+	info.add_theme_font_override("font", CardFace.font("number"))
+	info.add_theme_font_size_override("font_size", 20)
+	var prize := ChipArt.row(info)
+	prize.alignment = BoxContainer.ALIGNMENT_CENTER
+	_pick_box.add_child(prize)
+	var tiles := HBoxContainer.new()  # each deck as its leader's picture
+	tiles.add_theme_constant_override("separation", 12)
+	tiles.alignment = BoxContainer.ALIGNMENT_CENTER
+	_pick_box.add_child(tiles)
 	for choice: Dictionary in choices:
 		var key := String(choice["key"])
-		var b := Button.new()
-		b.text = String(choice["label"])
-		b.custom_minimum_size = Vector2(460, 48)
-		b.add_theme_font_size_override("font_size", 19)
-		b.pressed.connect(func() -> void: _pick.visible = false; deck_chosen.emit(key))
-		_pick_box.add_child(b)
+		var t := TableHud.DeckTile.new()
+		var art := "res://assets/tcg/art/%s.jpg" % String(choice.get("leader", ""))
+		t.art = load(art) if ResourceLoader.exists(art) else null
+		t.title = String(choice.get("name", choice["label"]))
+		t.sub = String(choice.get("sub", ""))
+		t.pressed.connect(func() -> void: _pick.visible = false; deck_chosen.emit(key))
+		tiles.add_child(t)
 	var out := Button.new()
 	out.text = "Leave the table"
+	out.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	out.pressed.connect(func() -> void: leave.emit())
 	_pick_box.add_child(out)
 	_pick.visible = true
@@ -241,12 +279,34 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 	var foe: Dictionary = sides[1 - me]
 	var leaders: Dictionary = m.get("db").get("leaders")
 	var my_turn: bool = m.get("phase") == "play" and int(m.get("current")) == me
-	_foe_bar.text = "%s  -  %s     Health %d/%d     Mana %d/%d     Deck %d     Hand %d%s" % [who[1 - me], leaders[String(foe["leader"])]["name"], int(foe["hp"]), int(foe["max_hp"]), int(foe["mana"]), int(foe["crystals"]), (foe["deck"] as Array).size(), (foe["hand"] as Array).size(), "     Tells %d" % (foe["traps"] as Array).size() if not (foe["traps"] as Array).is_empty() else ""]
-	_my_bar.text = "%s  -  %s     Health %d/%d     Mana %d/%d     Deck %d%s" % [who[me], leaders[String(mine["leader"])]["name"], int(mine["hp"]), int(mine["max_hp"]), int(mine["mana"]), int(mine["crystals"]), (mine["deck"] as Array).size(), "     Tells %d" % (mine["traps"] as Array).size() if not (mine["traps"] as Array).is_empty() else ""]
+	for pair: Array in [[_foe_bar, foe, who[1 - me], true], [_my_bar, mine, who[me], false]]:
+		var badge: Control = pair[0]
+		var side: Dictionary = pair[1]
+		var lid := String(side["leader"])
+		var art := "res://assets/tcg/art/%s.jpg" % lid
+		badge.set("art", load(art) if ResourceLoader.exists(art) else null)
+		badge.set("faction", CardFace.FACTION_COLORS.get(String(leaders[lid].get("faction", "neutral")), Color.GRAY))
+		badge.set("title", "%s - %s" % [pair[2], leaders[lid].get("name", lid)])
+		badge.call("set_hp", int(side["hp"]))
+		badge.set("max_hp", int(side["max_hp"]))
+		badge.set("mana", int(side["mana"]))
+		badge.set("crystals", int(side["crystals"]))
+		badge.set("deck", (side["deck"] as Array).size())
+		badge.set("hand", (side["hand"] as Array).size() if bool(pair[3]) else -1)
+		badge.set("traps", (side["traps"] as Array).size())
+		badge.queue_redraw()
 	var p: Dictionary = m.call("power_of", me)
-	_power.text = "%s (%d): %s%s" % [p.get("name", "Power"), int(m.get("rules")["power_cost"]), CardText.of(m.get("db"), {"effects": p.get("effects", [])}), "  - used" if bool(mine["power_used"]) else ""]
-	_power.disabled = not my_turn or bool(mine["power_used"]) or int(mine["mana"]) < int(m.get("rules")["power_cost"])
-	_end.disabled = not my_turn
+	var my_art := "res://assets/tcg/art/%s.jpg" % String(mine["leader"])
+	_power.art = load(my_art) if ResourceLoader.exists(my_art) else null
+	_power.cost = int(m.get("rules")["power_cost"])
+	_power.used = bool(mine["power_used"])
+	_power.usable = my_turn and not bool(mine["power_used"]) and int(mine["mana"]) >= int(m.get("rules")["power_cost"])
+	_power_words = "%s (%d mana): %s" % [p.get("name", "Power"), int(m.get("rules")["power_cost"]), CardText.of(m.get("db"), {"effects": p.get("effects", [])})]
+	_power.queue_redraw()
+	if my_turn and not _end.mine:  # the turn just came to us
+		_flash_banner()
+	_end.mine = my_turn
+	_end.queue_redraw()
 	_fill_row(_foe_row, foe["board"], MAT_SIZE, false)
 	_fill_row(_my_row, mine["board"], MAT_SIZE, false)
 	_fill_row(_hand_row, mine["hand"], HAND_SIZE, true)
@@ -258,7 +318,7 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 		_center.visible = false
 	if m.get("phase") != "play" or not my_turn:
 		_cancel_quiet()
-	_turn.text = ("Your turn" if my_turn else "%s's turn" % who[int(m.get("current"))]) if m.get("phase") == "play" else ""
+	_turn.text = ("YOUR TURN" if my_turn else "%s'S TURN" % String(who[int(m.get("current"))]).to_upper()) if m.get("phase") == "play" else ""
 	_mark_all()
 	if view3d != null and not view3d.visible:
 		view3d.call("enter")
@@ -275,11 +335,10 @@ func add_log(lines: PackedStringArray) -> void:
 
 # seconds left of the turn; the bar only shows (as a burning fuse) in the last `fuse` seconds.
 func set_timer(left: float, fuse: float, mine: bool) -> void:
-	_fuse.visible = mine and left <= fuse
-	_fuse.max_value = fuse
-	_fuse.value = left
+	_end.fuse = clampf(left / fuse, 0.0, 1.0) if mine and left <= fuse else -1.0
+	_end.queue_redraw()
 	if mine and _m != null and _m.get("phase") == "play":
-		_turn.text = "Your turn  %d s" % ceili(left)
+		_turn.text = "YOUR TURN  %d s" % ceili(left)
 
 
 func ask_concede(on: bool) -> void:
@@ -345,12 +404,28 @@ func _on_card(face: Control, right: bool) -> void:
 		_begin("attack", code, hits, "Pick what it attacks (right click = cancel).")
 
 
-func _on_leader(b: Button) -> void:
+func _on_leader(b: Control) -> void:
 	if _m == null or _mode == "":
 		return
 	var code := HERO - (1 - _me) if b == _foe_bar else HERO - _me
 	if _valid.has(code):
 		_fire(code)
+
+
+func _on_power_hover(on: bool) -> void:
+	_zoom.visible = false
+	_zoom_help.text = _power_words if on else ""
+
+
+# "YOUR TURN" rises and fades.
+func _flash_banner() -> void:
+	_banner.modulate.a = 1.0
+	_banner.scale = Vector2(0.6, 0.6)
+	_banner.pivot_offset = _banner.size * 0.5
+	var t := create_tween()
+	t.tween_property(_banner, "scale", Vector2.ONE, 0.25).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	t.tween_interval(0.7)
+	t.tween_property(_banner, "modulate:a", 0.0, 0.5)
 
 
 func _on_power() -> void:
@@ -509,8 +584,10 @@ func _mark_all() -> void:
 			elif my_turn and _mode == "" and row == _my_row and not (_m.call("attack_targets", _me, face.slot) as Array).is_empty():
 				col = C_USE
 			face.mark(col)
-	_foe_bar.modulate = C_PICK if _mode != "" and _valid.has(HERO - (1 - _me)) else Color.WHITE
-	_my_bar.modulate = C_PICK if _mode != "" and _valid.has(HERO - _me) else Color.WHITE
+	_foe_bar.target = _mode != "" and _valid.has(HERO - (1 - _me))
+	_my_bar.target = _mode != "" and _valid.has(HERO - _me)
+	_foe_bar.queue_redraw()
+	_my_bar.queue_redraw()
 	_show_3d()
 
 

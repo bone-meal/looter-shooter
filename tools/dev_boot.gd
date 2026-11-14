@@ -550,6 +550,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					shop.call("_on_buy", words[3])
 					var owned: RefCounted = session.get("_cards")
 					_lines.append("TCG SHOP %s: packs %d, box %s, chips %d" % [words[3], int(owned.call("pack_count")), str(owned.get("box")), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "sit":  # "!tcg sit": sit at the House Dealer's table (the deck pick shows)
+				var sit_table: Node3D = (session.get("_casino") as Dictionary).get("card_table")
+				player.call("teleport", sit_table.global_position + Vector3(0, 0.1, -1.6), 0.0)
+				tcg.call("open")
 			elif words[1] == "look":  # "!tcg look": stand on the beach looking at the four card tables
 				var house_table: Node3D = (session.get("_casino") as Dictionary).get("card_table")
 				player.call("teleport", house_table.global_position + Vector3(-1.8, 0.1, -3.2), 0.0)

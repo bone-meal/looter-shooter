@@ -98,6 +98,7 @@ func open() -> void:
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_player.look_at_point(_table.call("look_point"))
+	_hud.visible = false  # the gun HUD under the card table is clutter
 	_open_pick()
 
 
@@ -138,13 +139,15 @@ func _open_pick() -> void:
 	if String(collection.get("starter")) == "":  # the very first sit-down: pick a starter deck to keep
 		for deck_id: String in _starters:
 			var d: Dictionary = _starters[deck_id]
-			choices.append({"key": "starter:" + deck_id, "label": "%s  -  %s (%s)" % [d["name"], (leaders[String(d["leader"])] as Dictionary)["name"], d["style"]]})
+			choices.append({"key": "starter:" + deck_id, "label": "%s  -  %s (%s)" % [d["name"], (leaders[String(d["leader"])] as Dictionary)["name"], d["style"]],
+				"leader": d["leader"], "name": d["name"], "sub": String(d["style"]).capitalize()})
 		_screen.open_pick("You got me Lobster?  -  pick your starter deck", "It is yours to keep, with %d packs to open." % Collection.START_PACKS, choices)
 		return
 	var ready: Dictionary = collection.call("playable", _db)
 	for slot: int in ready:
 		var d: Dictionary = ready[slot]
-		choices.append({"key": "slot:%d" % slot, "label": "%s  -  %s" % [d["name"], (leaders[String(d["leader"])] as Dictionary)["name"]]})
+		choices.append({"key": "slot:%d" % slot, "label": "%s  -  %s" % [d["name"], (leaders[String(d["leader"])] as Dictionary)["name"]],
+			"leader": d["leader"], "name": d["name"], "sub": (leaders[String(d["leader"])] as Dictionary)["name"]})
 	_screen.open_pick("You got me Lobster?  -  pick your deck", "" if not choices.is_empty() else "None of your deck slots is a full, legal deck you own. Build one in the binder (P).", choices)
 
 
@@ -268,6 +271,7 @@ func _leave() -> void:
 	_seated = false
 	autopilot = false
 	_screen.close()
+	_hud.visible = true
 	_player.controls_enabled = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	left.emit()
