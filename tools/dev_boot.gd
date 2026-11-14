@@ -1104,6 +1104,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				speeds.append(str(int(player.call("speed_units"))))
 			Input.action_release("move_right")
 			_lines.append("BHOP %s%s: run %s u/s, after each hop %s" % ["tapped while falling" if late == 0 else "%d ms late" % late, ", flawless strafing" if strafe else "", speeds[0], " ".join(speeds.slice(1))])
+		"hub":  # the safe hub: "!hub note" = in it? its view in the log; "!hub at x z" = stand at hub metres (from its middle)
+			var hub: Node = session.get("net").get("hub")
+			if words.size() > 3 and words[1] == "at":
+				player.call("teleport", (hub.get("center") as Vector3) + Vector3(float(words[2]), 0.1, float(words[3])), 0.0)
+			else:
+				var style: Node = session.get("_render_style")
+				var env: Environment = style.get("env")
+				_lines.append("HUB %s: inside %s safe %s dark %s (background %d, ambient %s, sun %.2f, fog %.3f) view %s" % [" ".join(words.slice(1)), str(hub.call("inside", player.global_position)), str(player.get("safe")), str(session.get("_hub_dark")),
+					env.background_mode, str(env.ambient_light_color), (style.get("sun") as DirectionalLight3D).light_energy, env.fog_density if env.fog_enabled else 0.0, str(hub.get("view"))])
+				var hud: Control = session.get("_hub_hud")
+				_lines.append("HUB HUD visible %s in tree %s size %s drawn view %s" % [str(hud.is_visible_in_tree()), str(hud.is_inside_tree()), str(hud.size), str(not (hud.get("view") as Dictionary).is_empty())])
 		"where":  # the player's spot for the log: map metres in the fantasy world, world metres elsewhere
 			var here: Vector3 = player.global_position
 			if session.call("fantasy") != null:

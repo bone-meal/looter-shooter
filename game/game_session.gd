@@ -89,7 +89,7 @@ const QuestThings = preload("res://game/quest_things.gd")
 const SongBook = preload("res://core/song_book.gd")
 const SongFloats = preload("res://game/song_floats.gd")
 const Jukebox = preload("res://game/jukebox.gd")
-const JukeboxMenu = preload("res://game/jukebox_menu.gd")
+const MusicLibrary = preload("res://game/music_library.gd")
 const TextBook = preload("res://core/text_book.gd")
 const Boat = preload("res://game/boat.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
@@ -98,6 +98,9 @@ const GameOverScreen = preload("res://game/game_over_screen.gd")
 const BankState = preload("res://core/bank_state.gd")
 const BankBox = preload("res://game/bank_box.gd")
 const Scoreboard = preload("res://game/scoreboard.gd")
+const HubRoom = preload("res://game/hub_room.gd")
+const HubHud = preload("res://game/hub_hud.gd")
+const InkBlackout = preload("res://game/ink_blackout.gd")
 
 const HUD_REFRESH := 0.25
 const ARENA_SPAWN := Vector3(0, 0.1, 10)
@@ -160,6 +163,12 @@ var _fantasy_saved_at := 0.0
 var _hud_layer: CanvasLayer
 var _in_arena := false
 var _island_spawn := Vector3.ZERO
+var _hub_room: HubRoom  # the safe hub every Start / Load lands in (diary/DECISIONS_HUB.md); null in test scenes without a net
+var _hub_hud := HubHud.new()
+var _ink := InkBlackout.new()  # the hub's travel effect
+var _hub_dark := false  # the player stands in the hub: the sky's light is off, the hub's own candles light it
+var _hub_tick := -1  # the last countdown second ticked
+var _hub_painting := Vector3.INF
 var _reward: RewardArea
 var _customizer := CustomizeMenu.new()
 var _progress := ProgressState.new(DataStore.load_json("res://data/progression.json"), DataStore.load_json("res://data/achievements.json"))  # level, stats, traits, achievements, card (saved in the profile)
@@ -272,10 +281,10 @@ var _lamp_spots: Array[Vector3] = []  # the shoot step's lamps, world positions 
 var _songs := SongBook.new()  # the hidden songs (data/zombies/songs.json)
 var _song_floats := SongFloats.new()
 var _song_spots: Array = []  # [secret][thing] -> world position
-var _music := AudioStreamPlayer.new()  # the song playing (a found one, or the jukebox)
-var _music_secret := -1
+var music_box: Node  # game/music_box.gd (made by game/main.gd, set before add_child): the jukebox, hidden songs
+var music_menu: Control  # game/music_menu.gd (main's): the jukebox window
+var _jukebox_open := false  # we opened music_menu from a jukebox (controls come back when it closes)
 var _jukebox: Node3D  # in the club, made with its inside
-var _jukebox_menu := JukeboxMenu.new()
 var _smoke := CigaretteState.new()  # the burn of the cigarette being smoked (data/cigarette.json)
 var _run_fx := {}  # what those modifiers change (core/colosseum_rules.gd `effects`), {} outside a run
 var _fuse_wave := 0  # Short Fuse: the wave whose clock runs, the seconds it has left, and whether its late pack came
@@ -379,8 +388,7 @@ func _ready() -> void:
 			_land.keep_clear.append(foot)
 			row.append(_flat(foot) + Vector3(0, 0.12, 0))
 		_song_spots.append(row)
-	if DirAccess.dir_exists_absolute(String(song_cfg["folder"])):
-		_songs.set_files(ResourceLoader.list_directory(String(song_cfg["folder"])))
+	_songs.set_files(PackedStringArray(MusicLibrary.scan().map(func(s: Dictionary) -> String: return String(s["file"]))))  # song n = the n-th file of our Music folder
 	var box_cfg: Dictionary = DataStore.load_json("res://data/mystery_box.json")
 	_box = MysteryBox.new(box_cfg, _rng)
 	for place: Dictionary in box_cfg["spots"]:
@@ -437,8 +445,6 @@ func _ready() -> void:
 	add_child(_quest_things)
 	_song_floats.setup(_song_spots, _on_float_shot)
 	add_child(_song_floats)
-	_music.volume_db = float(song_cfg.get("volume", -6.0))
-	add_child(_music)
 	for problem: String in _quest.text_problems():  # the writers' file: say what it is missing
 		push_warning(problem)
 		_quest_text_problems.append(problem)
@@ -472,6 +478,14 @@ func _ready() -> void:
 	_island_spawn = island["spawn"]
 	_loot_tables = DataStore.load_json("res://data/loot_tables.json")["tables"]
 	_rng.randomize()
+	if net != null:
+		_hub_room = HubRoom.new()
+		_hub_room.cfg = net.hub.cfg
+		add_child(_hub_room)
+		var hung: Array = _hub_room.painting_spot()
+		_hub_painting = hung[0]
+		Island.build_painting(self, _hub_painting, PaintingArt.wheat_texture(), float(hung[1]))
+		LoadClock.mark("hub")
 	ClubIsland.build_shell(self)  # only what is seen from afar; the inside and the casino wait for the first trip (_build_club)
 	LoadClock.mark("club island shell")
 	_club_spawn = ClubIsland.SPAWN
@@ -515,6 +529,8 @@ func _ready() -> void:
 	_player = Player.new()
 	_player.settings = settings
 	_player.position = island["spawn"]
+	if _hub_room != null:  # every Start / Load lands in the hub (a joiner whose group already left goes on at once)
+		_player.position = _hub_room.spawn(_hub_place())
 	add_child(_player)
 	LoadClock.mark("player (body, guns)")
 	add_child(_photo)
@@ -569,13 +585,6 @@ func _ready() -> void:
 	_board.chosen.connect(_on_ticket_chosen)
 	_board.closed.connect(_close_board)
 	custom_layer.add_child(_board)
-	_jukebox_menu.picked.connect(func(secret: int) -> void: _play_song(secret))
-	_jukebox_menu.stopped.connect(func() -> void:
-		_music.stop()
-		_music_secret = -1
-		_close_jukebox())
-	_jukebox_menu.closed.connect(_close_jukebox)
-	custom_layer.add_child(_jukebox_menu)
 	_trade_screen.setup(_player.inventory, _player.items, _player.gun_db)
 	_trade_screen.set_cards(_cards, _card_screen.card_db)
 	_slot_screen.setup(_slot_data)
@@ -707,6 +716,13 @@ func _ready() -> void:
 		_player.shield_broke.connect(func() -> void: _player_hud.notice("Your %s broke. Take a new one at its bench." % String(_player.shield.cfg["name"])))
 		if net.is_active():
 			_build_fantasy()
+	if _hub_room != null:
+		net.hub.reset()
+		net.hub.my_pos = func() -> Vector3: return _player.global_position
+		net.hub.view_changed.connect(_on_hub_view)
+		net.hub.go.connect(_on_hub_go)
+		_hub_hud.red_last = float(net.hub.cfg["red_last"])
+		_hub_hud.names = func(peer: int) -> String: return String(net.roster.get(peer, _profile_name)) if net.can_send() else _profile_name
 	apply_settings()
 	_show_quest()
 	for problem: String in _quest_text_problems:  # the writers' quest file is missing something: say what
@@ -716,6 +732,8 @@ func _ready() -> void:
 func apply_settings() -> void:
 	_player.apply_settings()
 	_render_style.apply(settings.graphics, settings.shaders, settings.picks)
+	if _hub_dark:
+		_darken_for_hub()  # before the weather reads the look's light as its base
 	_weather.look_changed(settings.graphics, _island_side())
 	if _in_fantasy:
 		_fantasy_detail()
@@ -734,7 +752,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _flight_t >= 0.0:
 		return
@@ -782,8 +800,8 @@ func close_inventory() -> bool:
 	if _board.visible:
 		_close_board()
 		return true
-	if _jukebox_menu.visible:
-		_close_jukebox()
+	if music_menu != null and music_menu.visible:
+		music_menu.call("close")
 		return true
 	if _trade_screen.visible:  # Esc = cancel the trade
 		net.trade.cancel()
@@ -1332,7 +1350,7 @@ func _near_painting() -> bool:
 
 
 func _near_painting_fantasy() -> bool:
-	return not _in_arena and not _in_fantasy and _near(_painting_fantasy, PAINTING_RANGE)
+	return not _in_arena and not _in_fantasy and (_near(_painting_fantasy, PAINTING_RANGE) or (_hub_painting.is_finite() and _near(_hub_painting, PAINTING_RANGE)))
 
 
 func _near_fantasy_exit() -> bool:
@@ -1342,7 +1360,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or _jukebox_menu.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _flight_t >= 0.0:
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _flight_t >= 0.0:
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1356,6 +1374,8 @@ func _prompt() -> String:
 		return "[hold %s] Help %s up%s" % [key, net.roster.get(_revive_target, "your teammate"), "" if _revive_hold <= 0.0 else "  %d %%" % roundi(_revive_hold / float(_rounds.config()["downs"]["hold"]) * 100.0)]
 	if _time < _trade_ask_until:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
+	if _hub_near_button():
+		return "[%s] Press the big red button" % key
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
 	if _quest_use_here() != "":
@@ -1488,7 +1508,9 @@ func _prompt() -> String:
 func _interact() -> void:
 	if _player.downed or _revive_target != 0:
 		return  # lying down, or busy helping somebody up (the key is held for that)
-	if _seat >= 0:
+	if _hub_near_button():
+		net.hub.press_button()
+	elif _seat >= 0:
 		_leave_boat(false)
 	elif _time < _trade_ask_until:
 		_trade_ask_until = 0.0
@@ -3466,32 +3488,31 @@ func _on_float_shot(secret: int, thing: int) -> void:
 func _play_song(secret: int) -> void:
 	var song := _songs.song(secret)
 	if song.is_empty():
-		_player_hud.notice("Hidden song %d found! (No song file for it yet: put \"Artist - Title.mp3\" files into %s.)" % [secret + 1, String(_songs.cfg["folder"])])
+		_player_hud.notice("Hidden song %d found! (No song for it yet: put mp3 / ogg / wav files into your Music folder: main menu, music note.)" % (secret + 1))
 		return
-	var stream: AudioStream = load(String(_songs.cfg["folder"]).path_join(String(song["file"])))
-	if stream == null:
+	if music_box == null or not bool(music_box.call("play_file", String(song["file"]))):
 		_player_hud.notice("Hidden song %d: %s could not be read." % [secret + 1, String(song["file"])])
 		return
-	_music.stream = stream
-	_music.play()
-	_music_secret = secret
 	var artist := String(song["artist"])
 	_player_hud.callout(String(song["title"]) if artist == "" else "%s - %s" % [artist, String(song["title"])], Color(0.65, 1.0, 0.75))
 
 
+# A jukebox (the club's, the hub's trophy room): the jukebox window (game/music_menu.gd; online the host's songs).
 func _open_jukebox() -> void:
-	var list: Array = []
-	for secret: int in _songs.unlocked:
-		var song := _songs.song(secret)
-		if not song.is_empty():
-			list.append({"secret": secret, "artist": song["artist"], "title": song["title"]})
-	_jukebox_menu.open(list, _music_secret if _music.playing else -1, _songs.unlocked.size(), _songs.secret_count())
+	if music_menu == null:
+		return
+	if not music_menu.is_connected("closed", _close_jukebox):
+		music_menu.connect("closed", _close_jukebox)
+	_jukebox_open = true
+	music_menu.call("open")
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 
 
 func _close_jukebox() -> void:
-	_jukebox_menu.close()
+	if not _jukebox_open:
+		return
+	_jukebox_open = false
 	_player.controls_enabled = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
@@ -3888,6 +3909,7 @@ func _process(delta: float) -> void:
 		save_profile()
 	_power_field.deciding = _rounds.active
 	_run_machines(delta)
+	_run_hub()
 	_run_weather(delta)
 	_run_boat(delta)
 	_run_cigarette(delta)
@@ -3948,6 +3970,7 @@ func _process(delta: float) -> void:
 	_player_hud.enemies_left = _director.enemies_left() if _in_arena else ((net.rounds.round_left if watching else _rounds.left()) if on_island and island_fight else -1)
 	_player_hud.party = net.scores.others() if net != null and net.can_send() else []
 	_scoreboard.my_name = _profile_name
+	_scoreboard.code = net.session_id if net != null and net.is_active() else ""
 	_scoreboard.title = "" if _player_hud.round_number <= 0 else ("Wave %d / %d" % [_director.wave_number(), _director.wave_count()] if _in_arena else "Round %d" % _player_hud.round_number)
 	_player_hud.level = _progress.level()
 	_player_hud.xp_ratio = 1.0 if _progress.xp_for_level() == 0 else float(_progress.xp_into_level()) / float(_progress.xp_for_level())
@@ -3965,6 +3988,98 @@ func _process(delta: float) -> void:
 
 func _key(action: String) -> String:
 	return InputSetup.label(settings, action)
+
+
+# THE SAFE HUB (diary/DECISIONS_HUB.md). Who is in it, on the stage and ready is decided by game/net_hub.gd (the host
+# online); here: our F key, the dark and the candles, nothing hurts, the countdown's tick and the button's clunk, and
+# leaving through the ink when the host says go.
+func _in_hub() -> bool:
+	return _hub_room != null and not _in_arena and not _in_fantasy and net.hub.inside(_player.global_position)
+
+
+func _hub_place() -> int:
+	if not net.can_send():
+		return 0
+	var ids: Array = net.roster.keys()
+	ids.sort()
+	return maxi(ids.find(net.my_id()), 0)
+
+
+func _hub_near_button() -> bool:
+	if not _in_hub() or bool(net.hub.view.get("button", false)):
+		return false
+	var p: Array = net.hub.cfg["pedestal"]
+	var at := _hub_room.position + Vector3(float(p[0]), 0.0, float(p[1]))
+	return Vector2(_player.global_position.x - at.x, _player.global_position.z - at.z).length() <= float(net.hub.cfg["button_reach"]) - 0.2
+
+
+func _run_hub() -> void:
+	if _hub_room == null:
+		return
+	var here := _in_hub()
+	_player.safe = here
+	if here != _hub_dark:
+		_hub_dark = here
+		apply_settings()
+		_sounds.call("set_region", "hub" if here else "")
+	_hub_hud.visible = here and not _ink.playing()
+	_hub_hud.key = _key("interact")
+	_hub_hud.me = net.hub.me()
+	net.hub.hold(here and _player.controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_action_pressed("interact"))
+
+
+func _on_hub_view(v: Dictionary) -> void:
+	_hub_hud.show_view(v)
+	if not _in_hub():
+		return
+	if bool(v.get("button", false)) and not _hub_room.is_pressed():
+		_hub_room.press()
+		_sounds.call("play", "hub_button")
+	if not bool(v.get("open", true)):  # the group already went (we joined late, or missed the word): follow it
+		_on_hub_go()
+		return
+	var second := ceili(float(v.get("left", 0.0)))
+	if not bool(v.get("button", false)) and int(v.get("total", 0)) > 0 and float(v.get("left", 0.0)) <= _hub_hud.red_last and second != _hub_tick and second > 0:
+		_hub_tick = second
+		_sounds.call("play", "hub_tick")
+
+
+func _on_hub_go() -> void:
+	if _in_hub() and not _ink.playing():
+		_ink.play(func() -> void:
+			if _in_hub():
+				_player.teleport(_island_spawn, 0.0))
+
+
+# /hub (operators): back to the hub, and a new ready-up there without a countdown.
+func back_to_hub() -> String:
+	if _hub_room == null:
+		return "There is no hub here."
+	if _in_arena:
+		_leave_arena()
+	elif _in_fantasy:
+		_leave_fantasy()
+	_player.teleport(_hub_room.spawn(_hub_place()), 0.0)
+	net.hub.reopen()
+	return "Back in the hub. Everyone here: hold %s on the stage to go." % _key("interact")
+
+
+# In the hub only its own candles and the moon window light the room: no sky, no sun, a little dark fog that the
+# endless stair fades into.
+func _darken_for_hub() -> void:
+	var env := _render_style.env
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.008, 0.008, 0.012)
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.24, 0.21, 0.24)
+	env.ambient_light_energy = 1.0
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_BG
+	env.fog_enabled = true
+	env.fog_density = 0.03
+	env.fog_light_color = Color(0.02, 0.02, 0.03)
+	env.fog_sky_affect = 1.0
+	env.fog_aerial_perspective = 0.0
+	_render_style.sun.light_energy = 0.0
 
 
 func _moves() -> String:
@@ -4005,4 +4120,7 @@ func _build_hud() -> void:
 	layer.add_child(_scoreboard)
 	layer.add_child(_game_over)
 	layer.add_child(_chat)
+	_hub_hud.visible = false
+	layer.add_child(_hub_hud)
+	layer.add_child(_ink)
 	add_child(layer)

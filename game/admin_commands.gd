@@ -52,6 +52,8 @@ func run(text: String, near: Node3D) -> PackedStringArray:
 			out.append(_give(args))
 		"tp":
 			out.append(_tp(args))
+		"hub":
+			out.append(session.back_to_hub())
 		"heal":
 			var player: Player = session.local_player()
 			player.health.reset()

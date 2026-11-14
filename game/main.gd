@@ -9,6 +9,8 @@ const SettingsState = preload("res://core/settings_state.gd")
 const MainMenu = preload("res://game/main_menu.gd")
 const SaveMenu = preload("res://game/save_menu.gd")
 const PauseMenu = preload("res://game/pause_menu.gd")
+const MusicBox = preload("res://game/music_box.gd")
+const MusicMenu = preload("res://game/music_menu.gd")
 const SettingsMenu = preload("res://game/settings_menu.gd")
 const ControlsMenu = preload("res://game/controls_menu.gd")
 const SoundMenu = preload("res://game/sound_menu.gd")
@@ -26,6 +28,8 @@ var _save_for_online := false  # the save menu was opened from Multiplayer
 var _character := ""  # name of the chosen slot's character ("" = no slot: scripted developer runs)
 var _fresh := false  # that character was just created: its first session opens the customize menu
 var _pause_menu: Control
+var _music_box: Node  # game/music_box.gd: what music plays, for the whole run
+var _music_menu: Control  # game/music_menu.gd: the jukebox window (music note in the main menu, jukeboxes in the game)
 var _settings_menu: Control
 var _controls_menu: Control
 var _sound_menu: Control
@@ -56,12 +60,18 @@ func _ready() -> void:
 	add_child(_net)
 	_net.begin_play.connect(_start_online)
 	_net.left.connect(_on_net_left)
+	_music_box = MusicBox.new()
+	_music_box.name = "MusicBox"
+	_music_box.set("net_music", _net.get("music"))
+	(_net.get("music") as Node).set("box", _music_box)
+	add_child(_music_box)
 
 	_main_menu = MainMenu.new()
 	_main_menu.multiplayer_pressed.connect(_pick_save.bind(true))
 	_main_menu.start_pressed.connect(_pick_save.bind(false))
 	_main_menu.settings_pressed.connect(_open_settings.bind(_main_menu))
 	_main_menu.quit_pressed.connect(_quit)
+	_main_menu.music_pressed.connect(func() -> void: _music_menu.call("open"))
 	layer.add_child(_main_menu)
 
 	_save_menu = SaveMenu.new()
@@ -69,6 +79,8 @@ func _ready() -> void:
 	_save_menu.back_pressed.connect(func() -> void: _show_only(_main_menu))
 	layer.add_child(_save_menu)
 
+	_music_menu = MusicMenu.new()
+	_music_menu.set("box", _music_box)
 	_pause_menu = PauseMenu.new()
 	_pause_menu.resume_pressed.connect(_resume)
 	_pause_menu.settings_pressed.connect(_open_settings.bind(_pause_menu))
@@ -108,6 +120,7 @@ func _ready() -> void:
 	_lobby.back_pressed.connect(func() -> void: _show_only(_main_menu))
 	layer.add_child(_lobby)
 	_loading = LoadingScreen.new()
+	layer.add_child(_music_menu)  # the jukebox window, above the menus (the loading picture stays on top)
 	layer.add_child(_loading)  # last = on top of every menu
 	LoadClock.mark("settings, input, menus")
 
@@ -166,6 +179,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		_resume()
 	else:
 		get_tree().paused = true
+		_pause_menu.call("set_code", _net.session_id if _net.is_active() else "")
 		_show_only(_pause_menu)
 	get_viewport().set_input_as_handled()
 
@@ -181,6 +195,8 @@ func _start_game() -> void:
 	_session.loading = _loading
 	_session.settings = _settings
 	_session.net = _net
+	_session.set("music_box", _music_box)
+	_session.set("music_menu", _music_menu)
 	_session.process_mode = Node.PROCESS_MODE_PAUSABLE
 	if OS.get_cmdline_user_args().has("--autostart"):
 		_session.set("no_save", true)  # a developer run never writes a save (also before its script takes over)

@@ -1,4 +1,3 @@
-# Loading pictures that came out badly (a wall, a blurred slope): taken out of the game.
-assets/ui/loading/fernhollow.jpg
-assets/ui/loading/cinderreach.jpg
-assets/ui/loading/stormcrown.jpg
+# hub update: the old club jukebox window (replaced by game/music_menu.gd)
+game/jukebox_menu.gd
+game/jukebox_menu.gd.uid

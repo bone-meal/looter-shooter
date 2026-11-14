@@ -181,6 +181,18 @@
     {
      "id": "ambience_island_storm",
      "label": "Weather: rain and wind (storm rounds)"
+    },
+    {
+     "id": "ambience_hub",
+     "label": "Hub: candles and dripping water"
+    },
+    {
+     "id": "hub_button",
+     "label": "Hub: the big red button"
+    },
+    {
+     "id": "hub_tick",
+     "label": "Hub: countdown tick"
     }
    ]
   },

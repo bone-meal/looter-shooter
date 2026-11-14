@@ -1,7 +1,7 @@
 {
  "version": 1,
- "_about": "The ten hidden songs (core/song_book.gd, game/song_floats.gd). Each secret is three small glass fishing floats lying on the islands ([x, z] from that island's middle); shooting all three of one secret plays its song and unlocks it for the character for good (saved). Song n is the n-th file, by name, in `folder`: the director drops MP3 files named \"Artist - Title.mp3\" there (the game shows the part before \" - \" as the artist and the rest as the title). A secret whose file is missing tells so instead of playing. The club's jukebox plays every unlocked song. volume in decibels.",
- "folder": "res://assets/music",
+ "_about": "The ten hidden songs (core/song_book.gd, game/song_floats.gd). Each secret is three small glass fishing floats lying on the islands ([x, z] from that island's middle); shooting all three of one secret plays its song and unlocks it for the character for good (saved). Song n is the n-th file, by name, in the player's own Music folder (user://Music, opened from the music note in the main menu; locked hub plan: the game ships no songs): mp3 / ogg / wav named \"Artist - Title.mp3\" (the part before \" - \" is the artist). A secret whose file is missing tells so instead of playing. The jukeboxes (game/music_menu.gd) play every song of the folder (the host's online), found or not. folder and volume are no longer read (game/music_library.gd, the jukebox volume).",
+ "folder": "user://Music",
  "volume": -6,
  "secrets": [
   {

@@ -1,5 +1,5 @@
 # Purpose: the club's jukebox: a rounded cabinet with a glowing arch and a speaker grille. Draws only; the session
-# opens game/jukebox_menu.gd when a player interacts with it.
+# opens game/music_menu.gd when a player interacts with it.
 # Dependencies: none.
 extends StaticBody3D
 

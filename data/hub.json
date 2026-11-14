@@ -1,0 +1,20 @@
+{
+ "version": 1,
+ "_about": "The safe hub at game start (locked: diary/DECISIONS_HUB.md; rules core/hub_rules.gd, room game/hub_room.gd, online game/net_hub.gd). center: the hub's middle in the world (metres; far from the islands, the colosseum and Aurelind). Everything else is metres from that middle, x across the hall (50 m), z along it (30 m; the stage is at the back, -z). countdown: seconds before everyone is sent to the island (red from red_last). hold: seconds F is held on the stage to be ready. button_reach: how close to the pedestal a player must stand to press it. spawns: where players appear. stage: the checkerboard stage [x0, z0, x1, z1] and its height. painting: the Aurelind painting on the right wall. tables: the two card tables (no House Dealer). door: the trophy room's doorway in the left wall; trophy_room: its floor [x0, z0, x1, z1]; jukebox: by the trophies. Numbers are placeholders.",
+ "center": [-3000.0, 0.0, 0.0],
+ "size": [50.0, 30.0],
+ "height": 14.0,
+ "countdown": 60.0,
+ "red_last": 10.0,
+ "hold": 5.0,
+ "button_reach": 2.2,
+ "pedestal": [0.0, 0.0],
+ "spawns": [[-3.0, 11.0], [-1.0, 11.5], [1.0, 11.5], [3.0, 11.0], [-2.0, 9.5], [2.0, 9.5]],
+ "stage": [-8.0, -14.0, 8.0, -8.5],
+ "stage_height": 0.45,
+ "painting": [24.6, 0.0],
+ "tables": [[-14.0, -4.0], [-14.0, 5.0]],
+ "door": [-25.0, 6.0],
+ "trophy_room": [-39.0, -3.0, -25.0, 12.0],
+ "jukebox": [-32.0, 11.0]
+}

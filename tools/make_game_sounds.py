@@ -105,6 +105,17 @@ def main():
     save("atk_firebolt", mix(band(noise(0.35), 300, glide(2600, 700, 0.35)) * env(n(0.35), 0.02, 1.5), tone(glide(240, 120, 0.25), 0.25) * env(n(0.25), 0.005, 2) * 0.5))
     save("atk_hex", mix(tone(glide(900, 380, 0.3), 0.3) * (0.6 + 0.4 * np.sin(2 * np.pi * 17 * np.arange(n(0.3)) / RATE)) * env(n(0.3), 0.01, 1.6), tone(glide(1350, 570, 0.3), 0.3) * env(n(0.3), 0.01, 2) * 0.4, highpass(noise(0.06), 3000) * env(n(0.06), 0.001, 3) * 0.4), 0.7)
 
+    # --- the safe hub (diary/DECISIONS_HUB.md): its quiet bed (candles crackling, far water dripping, NO wind), the
+    # big red button going down with a heavy clunk, the countdown's tick in its last seconds ---
+    hub_len = 16.0
+    pops = band(noise(hub_len), 1200, 6000) * (F.rng.uniform(0, 1, n(hub_len)) > 0.9993) * 1.4
+    hiss = lowpass(noise(hub_len), 500) * 0.05
+    drips = [at(note(F.rng.uniform(900, 1500), 0.18, "sine", 0.35, 4000) * env(n(0.18), 0.002, 5), t) for t in (1.3, 4.9, 7.2, 11.6, 14.1)]
+    echo = [at(d * 0.3, 0.21) for d in drips]
+    save("amb_hub", mix(pops, hiss, *drips, *echo), 0.45, True)
+    save("hub_button", mix(click(1500, 0.03), at(crack(0.35, 70, 500, 1.6, 2.0), 0.03), at(tone(glide(90, 45, 0.5), 0.5) * env(n(0.5), 0.002, 2.0) * 0.8, 0.05), at(click(600, 0.05) * 0.5, 0.32)), 0.85)
+    save("hub_tick", mix(click(2600, 0.02), tone(1800, 0.05) * env(n(0.05), 0.001, 6) * 0.3), 0.5)
+
 
 if __name__ == "__main__":
     main()

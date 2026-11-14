@@ -18,6 +18,8 @@ const NetChat = preload("res://game/net_chat.gd")
 const NetFantasy = preload("res://game/net_fantasy.gd")
 const NetTrade = preload("res://game/net_trade.gd")
 const NetTcg = preload("res://game/net_tcg.gd")
+const NetMusic = preload("res://game/net_music.gd")
+const NetHub = preload("res://game/net_hub.gd")
 const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
 const NetRounds = preload("res://game/net_rounds.gd")
@@ -57,6 +59,8 @@ var chat: Node  # text chat and command permissions (game/net_chat.gd)
 var fantasy: Node  # the fantasy world's creatures and party quests (game/net_fantasy.gd)
 var trade: Node  # trading between players (game/net_trade.gd)
 var tcg: Node  # the card game's player tables (game/net_tcg.gd)
+var music: Node  # the jukebox online (game/net_music.gd)
+var hub: Node  # the safe hub's countdown and ready-up (game/net_hub.gd; also alone)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
 var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
@@ -96,6 +100,15 @@ func _ready() -> void:
 	tcg.name = "Tcg"
 	tcg.net = self
 	add_child(tcg)
+	music = NetMusic.new()
+	music.name = "Music"
+	music.net = self
+	add_child(music)
+	roster_changed.connect(func(_r: Dictionary) -> void: music.call("joined", 0))
+	hub = NetHub.new()
+	hub.name = "Hub"
+	hub.net = self
+	add_child(hub)
 	drops = NetDrops.new()
 	drops.name = "Drops"
 	drops.net = self
@@ -205,6 +218,7 @@ func join(id: String, player_name: String) -> void:
 		return
 	if not _make_client(player_name):
 		return
+	session_id = id.strip_edges()  # the lobby code, shown in the pause menu and on the scoreboard (a host's comes from Tube)
 	_client.session_joined.connect(_on_session_joined)
 	_client.join_session(id.strip_edges())
 

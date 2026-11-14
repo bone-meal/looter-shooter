@@ -170,6 +170,7 @@ var bonus_speed_pct := 0.0
 var bonus_hp_pct := 0.0
 var _view_kick := Vector2.ZERO  # degrees (pitch up, yaw) the camera is kicked by scoped shots; fades on its own
 var cheat_god := false  # admin commands (game/admin_commands.gd): no damage
+var safe := false  # standing in the safe hub (game/game_session.gd): nothing hurts
 var cheat_fly := false  # free flight: move where the camera looks, no gravity
 var cheat_speed := 1.0  # movement speed multiplier
 var _shove := Vector3.ZERO  # see shove()
@@ -581,7 +582,7 @@ func take_damage(amount: float, element: String = "physical") -> void:
 	var from := struck_from
 	struck_by = null
 	struck_from = Vector3.INF
-	if cheat_god or downed or amount <= 0.0:
+	if cheat_god or safe or downed or amount <= 0.0:
 		return
 	if is_instance_valid(attacker):
 		from = (attacker as Node3D).global_position

@@ -1,5 +1,5 @@
 # Purpose: the scoreboard shown while its key (Tab) is held: one row per player with points, kills, headshots, downs
-# and revives, best points first, our own row lit.
+# and revives, best points first, our own row lit; the online lobby code at the top (Ctrl+C copies it).
 # Dependencies: core/score_card.gd (our own row, read-only). game/game_session.gd sets `card`, `my_name`, `title` and
 # `others` (a function giving the other players' rows with their names).
 extends Control
@@ -15,10 +15,13 @@ var card: RefCounted
 var my_name := ""
 var others := Callable()  # func() -> Array of {"name", "points", "kills", "headshots", "downs", "revives"}
 var title := ""  # what is being played, e.g. "Round 7"
+var code := ""  # the online lobby code ("" = not online); Ctrl+C copies it while the board is open
 var rows: Array = []  # what is drawn: the rows above plus ours, each with "me"
 
 var _font: Font = ThemeDB.fallback_font
 var _wait := 0.0
+var _copied := 0.0  # seconds "Copied" still shows
+var _ctrl_c := false
 
 
 func _ready() -> void:
@@ -35,6 +38,16 @@ func _process(delta: float) -> void:
 		_wait = 0.0
 	if not visible:
 		return
+	var keys := Input.is_key_pressed(KEY_CTRL) and Input.is_key_pressed(KEY_C)
+	if keys and not _ctrl_c and code != "":
+		DisplayServer.clipboard_set(code)
+		_copied = 1.5
+		queue_redraw()
+	_ctrl_c = keys
+	if _copied > 0.0:
+		_copied -= delta
+		if _copied <= 0.0:
+			queue_redraw()
 	_wait -= delta
 	if _wait <= 0.0:
 		_wait = REFRESH
@@ -63,6 +76,9 @@ func _draw() -> void:
 	draw_rect(Rect2(o, Vector2(WIDTH, height)), Color(0, 0, 0, 0.72))
 	draw_rect(Rect2(o, Vector2(WIDTH, height)), Color(1, 1, 1, 0.25), false, 2.0)
 	draw_string(_font, o + Vector2(20, 30), title, HORIZONTAL_ALIGNMENT_LEFT, WIDTH - 40.0, 20, Color(0.78, 0.07, 0.05))
+	if code != "":
+		var line := "Lobby code %s  -  %s" % [code, "Copied" if _copied > 0.0 else "Ctrl+C to copy"]
+		draw_string(_font, o + Vector2(20, 30), line, HORIZONTAL_ALIGNMENT_RIGHT, WIDTH - 40.0, 16, Color(0.75, 0.9, 1.0))
 	var col_w := (WIDTH - NAME_W - 40.0) / COLUMNS.size()
 	draw_string(_font, o + Vector2(20, 62), "Player", HORIZONTAL_ALIGNMENT_LEFT, NAME_W, 14, Color(1, 1, 1, 0.6))
 	for c in COLUMNS.size():
