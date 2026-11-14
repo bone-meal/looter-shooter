@@ -1,10 +1,1 @@
-Safe hub steps 7-9: trophy room, hub card tables, far world hidden
-
-- Trophy room behind the hall's left doorway: six cabinets with name plates, every achievement in the same place, hardest 24 at eye level with their own shapes, top 3 on a lit podium, dusty ??? stands with hints, look-at card with how and when it was earned, jukebox (data/trophies.json, game/trophy_room.gd, tools/blender/hub_trophies.py)
-- Achievements now keep the date they were earned; the shared player card carries the earned list
-- Two player card tables in the hub (tables 0-1 of the online table book; the beach's three follow)
-- While a player stands in the hub the islands, colosseum and club are not drawn
-- Previous commit cb85ea1 = hub steps 1-6 (its title was a stale card-game message)
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.09
