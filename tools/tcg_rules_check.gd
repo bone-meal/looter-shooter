@@ -17,10 +17,16 @@ const EventText = preload("res://core/tcg/event_text.gd")
 var _lines := PackedStringArray()
 var _problems := 0
 var _db: RefCounted
+var _hp := 20  # rules.json hero_health
+var _first := 3  # rules.json first_hand
+var _second := 4  # rules.json second_hand
 
 
 func _ready() -> void:
 	var rules: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/rules.json"))
+	_hp = int(rules["hero_health"])
+	_first = int(rules["first_hand"])
+	_second = int(rules["second_hand"])
 	var keywords: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/keywords.json"))
 	_db = CardDb.new(rules, keywords, _cards(), _leaders())
 	var wrong: Array[String] = _db.problems()
@@ -120,12 +126,12 @@ func _check_start() -> void:
 	var m: RefCounted = Match.new(_db, [{"leader": "tide_test", "cards": deck}, {"leader": "waste_test", "cards": deck.duplicate()}], 3, 0)
 	var s: Array = m.get("sides")
 	var hand1: Array = s[1]["hand"]
-	_say("first player holds 3, second 4 + the Lucky Chip (%d / %d, chip %s)" % [(s[0]["hand"] as Array).size(), hand1.size(), str(hand1.has("lucky_chip"))], (s[0]["hand"] as Array).size() == 3 and hand1.size() == 5 and hand1.has("lucky_chip"))
+	_say("first player holds %d, second %d + the Lucky Chip (%d / %d, chip %s)" % [_first, _second, (s[0]["hand"] as Array).size(), hand1.size(), str(hand1.has("lucky_chip"))], (s[0]["hand"] as Array).size() == _first and hand1.size() == _second + 1 and hand1.has("lucky_chip"))
 	_say("nothing can be played before both kept their hands", m.play(0, 0) != "")
 	_say("the chip cannot be sent back in a mulligan", m.mulligan(1, [hand1.find("lucky_chip")]) != "")
 	m.mulligan(0, [0, 1])
 	m.mulligan(1, [])
-	_say("after the mulligan the first turn starts with a draw and 1 mana (hand %d, mana %d, deck %d)" % [(s[0]["hand"] as Array).size(), int(s[0]["mana"]), (s[0]["deck"] as Array).size()], m.get("phase") == "play" and (s[0]["hand"] as Array).size() == 4 and int(s[0]["mana"]) == 1 and (s[0]["deck"] as Array).size() == 16)
+	_say("after the mulligan the first turn starts with a draw and 1 mana (hand %d, mana %d, deck %d)" % [(s[0]["hand"] as Array).size(), int(s[0]["mana"]), (s[0]["deck"] as Array).size()], m.get("phase") == "play" and (s[0]["hand"] as Array).size() == _first + 1 and int(s[0]["mana"]) == 1 and (s[0]["deck"] as Array).size() == 20 - _first - 1)
 
 
 func _check_mana_and_sleep() -> void:
@@ -144,7 +150,7 @@ func _check_mana_and_sleep() -> void:
 	_say("a fresh creature cannot attack", m.attack(0, grunt, Match.HERO - 1) != "")
 	m.play(0, 0)
 	var charger := int((m.get("sides")[0]["board"] as Array)[1]["uid"])
-	_say("Charge attacks the leader at once", m.attack(0, charger, Match.HERO - 1) == "" and int(m.get("sides")[1]["hp"]) == 18)
+	_say("Charge attacks the leader at once", m.attack(0, charger, Match.HERO - 1) == "" and int(m.get("sides")[1]["hp"]) == _hp - 2)
 	m.end_turn(0)
 	_hand(m, 1, ["grunt"])
 	_mana(m, 1, 10)
@@ -156,7 +162,7 @@ func _check_mana_and_sleep() -> void:
 	m.play(0, 0)
 	var rusher := int((m.get("sides")[0]["board"] as Array)[2]["uid"])
 	_say("Rush may hit a creature but not the leader the turn it lands", m.attack(0, rusher, Match.HERO - 1) != "" and m.attack(0, rusher, enemy) == "")
-	_say("a creature from last turn attacks (grunt 2/2 -> leader 18 -> 16)", m.attack(0, grunt, Match.HERO - 1) == "" and int(m.get("sides")[1]["hp"]) == 16)
+	_say("a creature from last turn attacks (grunt 2/2 -> two more damage to the leader)", m.attack(0, grunt, Match.HERO - 1) == "" and int(m.get("sides")[1]["hp"]) == _hp - 4)
 
 
 func _check_keywords() -> void:
@@ -225,7 +231,7 @@ func _check_spells_traps_powers() -> void:
 	m.play(1, 0, ghoul)
 	_say("Last Gasp: the ghoul left a grunt behind", m.find(ghoul).is_empty() and String((m.get("sides")[0]["board"] as Array).back()["card"]) == "grunt")
 	_mana(m, 1, 5)
-	_say("the hero power works once a turn (1 damage)", m.power(1, Match.HERO) == "" and int(m.get("sides")[0]["hp"]) == 19 and m.power(1, Match.HERO) != "")
+	_say("the hero power works once a turn (1 damage)", m.power(1, Match.HERO) == "" and int(m.get("sides")[0]["hp"]) == _hp - 1 and m.power(1, Match.HERO) != "")
 	_hand(m, 1, ["snare"])
 	_mana(m, 1, 5)
 	m.play(1, 0)
@@ -233,7 +239,7 @@ func _check_spells_traps_powers() -> void:
 	m.end_turn(1)
 	var attacker := int((m.get("sides")[0]["board"] as Array)[0]["uid"])
 	m.attack(0, attacker, Match.HERO - 1)
-	_say("the trap destroyed the attacker before it hit (leader still 20)", m.find(attacker).is_empty() and int(m.get("sides")[1]["hp"]) == 20 and (m.get("sides")[1]["traps"] as Array).is_empty())
+	_say("the trap destroyed the attacker before it hit (leader still full)", m.find(attacker).is_empty() and int(m.get("sides")[1]["hp"]) == _hp and (m.get("sides")[1]["traps"] as Array).is_empty())
 	_hand(m, 0, ["dice"])
 	_mana(m, 0, 5)
 	m.play(0, 0)
@@ -380,11 +386,11 @@ func _check_collection(real: RefCounted) -> void:
 	var c: RefCounted = Collection.new()
 	_say("a new collection has no deck to play", (c.call("playable", real) as Dictionary).is_empty())
 	c.call("give_starter", "tide", starters["tide"], "standard")
-	_say("the starter gift: 20 cards, the leader, 3 packs, a playable deck in slot 1", int(c.call("count", "reef_crab")) == 2 and int(c.call("count", "tide_brute", "*", true)) == 1 and int(c.call("pack_count")) == 3 and (c.call("playable", real) as Dictionary).has(0))
+	_say("the starter gift: 20 cards, the leader, 3 packs, a playable deck in slot 1", int(c.call("count", "drowned_deckhand")) == 2 and int(c.call("count", "tide_brute", "*", true)) == 1 and int(c.call("pack_count")) == 3 and (c.call("playable", real) as Dictionary).has(0))
 	c.call("add", "harbor_gull", "pony")
 	_say("finishes are counted apart and together", int(c.call("count", "harbor_gull", "pony")) == 1 and int(c.call("count", "harbor_gull")) == 3)
 	_say("removing more than owned is refused", not bool(c.call("remove", "harbor_gull", "pony", 2)) and bool(c.call("remove", "harbor_gull", "pony", 1)) and int(c.call("count", "harbor_gull")) == 2)
-	c.call("remove", "reef_crab", "", 2)
+	c.call("remove", "drowned_deckhand", "", 2)
 	_say("a deck missing a card is not playable", not (c.call("playable", real) as Dictionary).has(0))
 	c.call("record_result", true, "Lottie", "Rising Tide", true, "tide")
 	c.call("record_result", true, "Bonk", "Rising Tide", false)
@@ -422,9 +428,9 @@ func _check_binder(real: RefCounted) -> void:
 	_say("the newest order survives save and load", back.get("got") == c.get("got"))
 	var deck := {"name": "Test", "leader": "", "cards": []}
 	_say("a leader you do not own cannot lead", String(DeckEdit.call("set_leader", real, c, deck, "warlord")) != "" and String(DeckEdit.call("set_leader", real, c, deck, "tide_brute")) == "")
-	DeckEdit.call("add", real, c, deck, "reef_crab")
-	DeckEdit.call("add", real, c, deck, "reef_crab")
-	_say("no third copy, no card you do not own", String(DeckEdit.call("add", real, c, deck, "reef_crab")) != "" and String(DeckEdit.call("add", real, c, deck, "brawn_buckshot")) != "" and (deck["cards"] as Array).size() == 2)
+	DeckEdit.call("add", real, c, deck, "drowned_deckhand")
+	DeckEdit.call("add", real, c, deck, "drowned_deckhand")
+	_say("no third copy, no card you do not own", String(DeckEdit.call("add", real, c, deck, "drowned_deckhand")) != "" and String(DeckEdit.call("add", real, c, deck, "brawn_buckshot")) != "" and (deck["cards"] as Array).size() == 2)
 	for i in 3:
 		c.call("add", "brawn_buckshot")
 		c.call("add", "field_slime")

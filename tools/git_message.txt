@@ -1,8 +1,9 @@
-Card game achievements: 30 tcg achievements, emblems and titles
+Card game balance: 25 health, second player opens with 5 cards, starters re-tuned
 
-core/tcg/tcg_stats.gd writes matches, wins, streaks, packs, god packs and foils to the record; collection readings feed ctx achievements.
-Six new emblem symbols, four painted emblems, a You got me Lobster section in the Combat Report.
-achievement_check expects 144 achievements and checks the card stat keys; boot check photographs the report.
+Director chose 25 leader health and a 5-card second hand: the first player now wins 52 percent of simulated games (was 59).
+Five starter decks re-tuned for the ring; crypt against tide is still the one edge the wrong way.
+Pack opening stops drawing the club behind its own backdrop (low-end), NEW tags no longer cut off in Open all.
+Rules check reads health and hands from data; the measure dev step also logs video and ram.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

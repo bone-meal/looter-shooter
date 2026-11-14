@@ -117,6 +117,7 @@ func open(card_db: RefCounted, collection: RefCounted, pack_cfg: Dictionary) -> 
 	owned = collection
 	cfg = pack_cfg
 	visible = true
+	get_viewport().disable_3d = true  # the opening's own backdrop covers the screen: the club behind is not drawn (low-end)
 	_fit()
 	_show_stack()
 
@@ -133,6 +134,7 @@ func close() -> void:
 	_rolled = {}
 	_clear_faces()
 	visible = false
+	get_viewport().disable_3d = false
 	closed.emit()
 
 
@@ -342,7 +344,8 @@ func _to_row(face: Control, card: Dictionary) -> void:
 			_done())
 
 
-func _new_tag(face: Control) -> void:
+# inside = drawn on the card's top edge (the Open all list scrolls and would cut a tag above the card)
+func _new_tag(face: Control, inside := false) -> void:
 	var tag := Label.new()
 	tag.text = "NEW"
 	tag.add_theme_font_override("font", CardFace.font("number"))
@@ -350,7 +353,7 @@ func _new_tag(face: Control) -> void:
 	tag.add_theme_color_override("font_color", Color(1, 0.95, 0.4))
 	tag.add_theme_color_override("font_outline_color", Color(0.4, 0.1, 0))
 	tag.add_theme_constant_override("outline_size", 6)
-	tag.position = Vector2(ROW.x - 44, -14)
+	tag.position = Vector2(face.size.x - 44, 4.0 if inside else -14.0)
 	tag.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	face.add_child(tag)
 
@@ -422,7 +425,7 @@ func _open_all() -> void:
 			many.position = Vector2(80, 128)
 			face.add_child(many)
 		if bool(c["new"]):
-			_new_tag(face)
+			_new_tag(face, true)
 	_summary.visible = true
 	_set_buttons([["Back to binder", close]])
 	_stage.queue_redraw()

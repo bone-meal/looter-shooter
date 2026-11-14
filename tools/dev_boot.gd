@@ -565,7 +565,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					session.get("_card_screen").call("close")
 					return
 				var owned: RefCounted = session.get("_cards")
-				if owned.call("count", "reef_crab") <= 0:
+				if owned.call("count", "drowned_deckhand") <= 0:
 					var starters: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json"))["starters"]
 					owned.call("give_starter", "tide", starters["tide"], "standard")
 					owned.call("add", "harbor_gull", "rainbow")
@@ -904,10 +904,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				script_ms += Performance.get_monitor(Performance.TIME_PROCESS) * 1000.0
 				physics_ms += Performance.get_monitor(Performance.TIME_PHYSICS_PROCESS) * 1000.0
 			# TIME_PROCESS is the whole main-thread frame, drawing included: what is left after the drawing is scripts, animation and node upkeep
-			_lines.append("MEASURE %s: frame %.2f ms (worst %.1f); gpu %.2f; main thread %.2f = drawing %.2f + scripts and the rest %.2f; physics %.2f; draws %d, tris %d, nodes %d, objects drawn %d" % [" ".join(words.slice(1)),
+			_lines.append("MEASURE %s: frame %.2f ms (worst %.1f); gpu %.2f; main thread %.2f = drawing %.2f + scripts and the rest %.2f; physics %.2f; draws %d, tris %d, nodes %d, objects drawn %d; video %.0f MB, ram %.0f MB" % [" ".join(words.slice(1)),
 				float(Time.get_ticks_usec() - began) / 90000.0, slowest, gpu_ms / 90.0, script_ms / 90.0, draw_cpu_ms / 90.0, maxf(script_ms - draw_cpu_ms, 0.0) / 90.0, physics_ms / 90.0,
 				int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)), int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME)),
-				int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME))])
+				int(Performance.get_monitor(Performance.OBJECT_NODE_COUNT)), int(Performance.get_monitor(Performance.RENDER_TOTAL_OBJECTS_IN_FRAME)),
+				Performance.get_monitor(Performance.RENDER_VIDEO_MEM_USED) / 1048576.0, Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0])
 		"tier":  # "!tier low": the graphics tier for the rest of the run (the settings FILE is not touched)
 			(session.get("settings") as RefCounted).set("graphics", words[1])
 			session.call("apply_settings")
