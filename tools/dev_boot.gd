@@ -452,6 +452,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					await get_tree().create_timer(0.5, true, false, true).timeout
 			var shared: Node = link.get("rounds")
 			_lines.append("NET %s: can send %s, host %s, my id %d, roster %s, ghosts %d, net enemies %d, states seen %d, last run '%s'" % [" ".join(words.slice(1)), str(link.call("can_send")), str(link.call("is_host")), int(link.call("my_id")), str(link.get("roster")), (link.call("target_nodes") as Array).size(), (shared.get("_enemies") as Dictionary).size(), int(shared.get("states_seen")), String(session.get("run_note"))])
+		"go":  # "!go club": travel there without the chat command (a joiner may not use /tp)
+			session.call("travel", words[1])
 		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give)
 			player.set("cheat_god", true)
 		"wkills":  # "!wkills 5": the rolled gun in hand gets the W kills counter at 5 (a plain gun becomes a rolled one first); "!wkills <note>": what it shows
@@ -521,7 +523,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:
 				player.global_position = wall.global_position + wall.global_basis.z * 4.0
-		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg look" = view of the tables; "!tcg note" = the match in one line
+		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg look" = view of the tables; "!tcg put <card> [foe]" = a creature onto the mat; "!tcg ptable <i> / pdeck / pmove / pnote" = the player tables online; "!tcg note" = the match in one line
 			var tcg: Node = session.get("_tcg")
 			if words[1] == "note":
 				var m: RefCounted = tcg.get("match_state")
@@ -587,6 +589,33 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					(binder.get("_open_button") as Button).pressed.emit()
 				elif opening != null:
 					opening.call("dev_step", words[2])
+			elif words[1] == "put":  # "!tcg put <card> [foe]": a creature onto our side (or the dealer's) of the running match, then a redraw
+				var m2: RefCounted = tcg.get("match_state")
+				if m2 != null:
+					m2.call("summon", 1 if words.size() > 3 and words[3] == "foe" else 0, words[2])
+					tcg.call("_after_move")
+			elif words[1] in ["ptable", "pdeck", "pmove", "pnote"]:  # player tables online: "!tcg ptable <i>" sit, "pdeck" first deck slot, "pmove" the AI's move for us, "pnote" the state
+				var pt: Node = session.get("_ptables")
+				if words[1] == "ptable":
+					var spot: Node3D = (session.get("_casino") as Dictionary).get("player_tables")[int(words[2])]
+					player.call("teleport", spot.global_position + Vector3(0, 0.1, -1.6), 0.0)
+					pt.call("open", int(words[2]))
+				elif words[1] == "pdeck":
+					pt.call("_on_deck", "slot:0")
+				elif words[1] == "pmove":
+					var mir: RefCounted = pt.get("_mirror")
+					if mir != null:
+						var side := int(pt.get("_side"))
+						if String(mir.get("phase")) == "mulligan":
+							pt.call("_send", {"do": "mulligan", "indices": []})
+						elif int(mir.get("current")) == side and String(mir.get("phase")) == "play":
+							pt.call("_send", load("res://core/tcg/ai_player.gd").call("next_move", mir, side))
+				else:
+					var mir2: RefCounted = pt.get("_mirror")
+					_lines.append("PTABLE %s: at %d watching %s side %d seats %s | %s" % [" ".join(words.slice(2)), int(pt.get("_at")), str(pt.get("_watching")), int(pt.get("_side")), str(pt.get("_seats")),
+						"no match" if mir2 == null else "phase %s turn %d current %d winner %d hp %d/%d boards %d/%d" % [mir2.get("phase"), int(mir2.get("turn")), int(mir2.get("current")), int(mir2.get("winner")), int(mir2.get("sides")[0]["hp"]), int(mir2.get("sides")[1]["hp"]), (mir2.get("sides")[0]["board"] as Array).size(), (mir2.get("sides")[1]["board"] as Array).size()]])
+					var rec: Dictionary = (session.get("_cards") as RefCounted).get("record")
+					_lines.append("PTABLE record: wins %d losses %d vs %s, chips %d" % [int(rec["wins"]), int(rec["losses"]), str(rec["vs"]), int((session.get("_wallet") as RefCounted).get("balance"))])
 			elif words[1] == "move":  # our side: the move the AI would make, sent as if clicked (or keep the opening hand)
 				tcg.call("dev_move")
 			else:

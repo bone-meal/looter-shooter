@@ -28,9 +28,11 @@ const ME := 0
 const DEALER := 1
 
 var autopilot := false  # dev runs: the AI plays our side too
+var graphics := "high"  # graphics tier id, set by the session: how many 3D figures stand on the table
 var match_state: RefCounted  # MatchState, or null between matches
 var collection: RefCounted  # core/tcg/collection.gd (the session owns it and saves it)
 var _db: RefCounted
+var _view: Node3D  # game/tcg/table_view.gd
 var _cfg: Dictionary
 var _starters: Dictionary
 var _wallet: Wallet
@@ -81,6 +83,7 @@ func setup(wallet: Wallet, casino: Dictionary, layer: CanvasLayer, player: Chara
 	view.bake = bake
 	_table.add_child(view)
 	_screen.set("view3d", view)
+	_view = view
 
 
 func is_open() -> bool:
@@ -169,6 +172,7 @@ func _start(key: String) -> void:
 	var theirs: Dictionary = _starters[others[_rng.randi_range(0, others.size() - 1)]]
 	_played_cards = (mine["cards"] as Array).duplicate()
 	match_state = MatchState.new(_db, [{"leader": mine["leader"], "cards": mine["cards"]}, {"leader": theirs["leader"], "cards": theirs["cards"]}], _rng.randi())
+	_view.set("graphics", graphics)
 	if collection != null:  # each half of the table shows its player's mat (the House Dealer's from data/tcg/table.json)
 		var mats: Dictionary = DataStore.load_json("res://data/tcg/mats.json")
 		_table.call("set_mats", MatBook.current(collection, mats), String((_cfg["house"] as Dictionary).get("mat", mats.get("default", ""))))

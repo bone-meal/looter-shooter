@@ -501,7 +501,7 @@ func _felt_3d(event: InputEvent) -> void:
 		return
 	var under: Variant = view3d.call("pick", get_viewport().get_mouse_position())
 	if motion != null:
-		if under != _hovered:
+		if not is_same(under, _hovered):  # a face (Object) or a leader spot (Dictionary)
 			if _hovered is Control:
 				_on_hover(_hovered, false)
 			_hovered = under

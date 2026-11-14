@@ -43,6 +43,24 @@ func _init(card_db: RefCounted, decks: Array, seed_value: int, first := -1) -> v
 	_give(1 - current, String(rules["lucky_card"]))
 
 
+# ---- online: the host's match as plain data, and a client's mirror of it ----
+
+# Everything that changes during a match (the seeded generator stays with the host).
+func snapshot() -> Dictionary:
+	return {"sides": sides.duplicate(true), "current": current, "turn": turn, "phase": phase, "winner": winner, "next_uid": _next_uid}
+
+
+# Makes this match a copy of a snapshot (a client's mirror: the table screen asks it what can be played and targeted).
+func restore(snap: Dictionary) -> void:
+	sides = (snap["sides"] as Array).duplicate(true)
+	current = int(snap["current"])
+	turn = int(snap["turn"])
+	phase = String(snap["phase"])
+	winner = int(snap["winner"])
+	_next_uid = int(snap["next_uid"])
+	events = []
+
+
 # ---- intents (each returns "" or why it is refused) ----
 
 # Redraw the cards at these hand positions once (empty = keep the hand). When both are ready the first turn starts.

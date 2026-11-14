@@ -1,0 +1,16 @@
+{
+ "version": 1,
+ "_about": "Small 3D figures standing on legendary creatures on the card table (locked: legendary and up, capped per table, off on Potato). figures: card id -> model (assets/models/<model>.gltf) and height in metres on the table. per_tier: the most figures on one table at each graphics tier (data/graphics.json ids). Numbers are placeholders.",
+ "per_tier": {"potato": 0, "low": 2, "medium": 3, "high": 4, "ultimate": 6},
+ "figures": {
+  "bell_keeper": {"model": "fantasy/creatures/tidewarden", "height": 0.11},
+  "undertow_leviathan": {"model": "fantasy/creatures/tidewarden", "height": 0.15},
+  "old_man_brawn": {"model": "creatures/brute", "height": 0.11},
+  "grand_orrery": {"model": "creatures/clockwork_bear", "height": 0.13},
+  "mother_of_bones": {"model": "fantasy/creatures/pallid_king", "height": 0.12},
+  "cinderwyrm": {"model": "fantasy/creatures/cinderwyrm", "height": 0.12},
+  "tempest_roc": {"model": "fantasy/creatures/tempest_roc", "height": 0.12},
+  "the_tyrant": {"model": "creatures/boss_tyrant", "height": 0.12},
+  "the_overseer": {"model": "creatures/boss_overseer", "height": 0.12}
+ }
+}

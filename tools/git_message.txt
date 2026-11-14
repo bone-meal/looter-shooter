@@ -1,9 +1,11 @@
-Card game: table HUD as pictures
+Card game online: player tables, legendary figures
 
-- Leader badges with round portraits, health drops, mana crystals, deck and hand icons; they glow when they can be targeted
-- Hero power as a round button with its cost gem; END TURN as a glowing gem with the turn fuse; YOUR TURN banner
-- Deck pick as leader picture tiles; Cinzel titles; the gun HUD hides while seated
-- 3D table: a reused card no longer shows an older picture
+- Three player card tables online: sit, the other player sits, both pick a deck, 5 s countdown, the host runs the match (core/tcg/table_book.gd, game/net_tcg.gd, game/tcg/player_table.gd)
+- Clients hold a mirror of the host's match and send only intents; everyone sees seats and matches (spectators see all)
+- Walking off or dropping out mid-match loses it; a win against a player records the result, pays 50 chips and gives the win-milestone mats
+- Small 3D figures of legendary creatures stand on their cards (per graphics tier, none on Potato); your leader card shows above your hand
+- Tested on one PC with two copies of the game: a full match, the winner got the record and 50 chips
+- Dev: !go club, !tcg ptable / pdeck / pmove / pnote / put; tools/pair_set.txt picks the pair test command set
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

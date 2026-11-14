@@ -4,7 +4,10 @@
 # A camera sits over your side; hovering a card lifts it; holding Alt looks around. It only SHOWS what the 2D table
 # screen (game/tcg/table_screen.gd) holds: that screen keeps its card faces (hidden) and all the rules of clicking,
 # and asks this view which face is under the mouse (`pick`). Pictures come from game/tcg/card_bake.gd.
-# Dependencies: game/tcg/card_bake.gd, data/tcg/mat_layout.json; the table node (game/tcg/beach_table.gd) handed in.
+# Legendary creatures get a small 3D figure standing on their card (data/tcg/figures.json; how many per table by the
+# graphics tier, none on Potato; wasteland models painted in their enemy colours like the game does).
+# Dependencies: game/tcg/card_bake.gd, data/tcg/mat_layout.json, data/tcg/figures.json, data/enemies.json; the table
+# node (game/tcg/beach_table.gd) handed in.
 extends Node3D
 
 const TOP := 0.818  # the mat's surface in table space
@@ -14,6 +17,10 @@ const HAND := Vector2(0.105, 0.147)
 const LEADER := Vector2(0.12, 0.168)
 
 var bake: Node  # game/tcg/card_bake.gd
+var graphics := "high"  # the graphics tier id (sets how many figures stand on the table)
+var _figures_cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/figures.json"))
+var _figures := {}  # creature uid -> figure node standing on its card
+var _models := {}  # model path -> [PackedScene, scale] (loaded once)
 var _layout: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mat_layout.json"))
 var _cam := Camera3D.new()
 var _before: Camera3D  # the camera to give back
@@ -61,6 +68,9 @@ func enter() -> void:
 
 func leave() -> void:
 	visible = false
+	for uid: int in _figures.keys():
+		(_figures[uid] as Node3D).queue_free()
+	_figures = {}
 	get_parent().call("show_parasol", true)
 	if _before != null and is_instance_valid(_before):
 		_before.current = true
@@ -94,11 +104,13 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 	for i in n:  # my hand: a fan standing up at my edge
 		var t := (float(i) - float(n - 1) * 0.5)
 		var spread := minf(0.11, 1.1 / maxf(n, 1))
-		var at := Vector3(-t * spread, TOP + 0.06 + absf(t) * -0.004, -0.5 + absf(t) * 0.006)
+		var at := Vector3(-t * spread, TOP + 0.035 - absf(t) * 0.004, -0.58 + absf(t) * 0.006)  # low and close: your leader shows above it
 		_add(hand[i], Transform3D(Basis.from_euler(Vector3(deg_to_rad(-38.0), deg_to_rad(180.0 + t * 4.0), 0.0)), at), HAND)
 	for i in foe_hand:  # their hand: backs at the far edge
 		var t := (float(i) - float(foe_hand - 1) * 0.5)
 		_add(null, Transform3D(Basis.from_euler(Vector3(deg_to_rad(-90.0), deg_to_rad(t * 3.0), 0.0)), Vector3(t * 0.06, TOP + 0.002 + i * 0.0005, 0.48)), HAND * 0.8)
+	var cap := int((_figures_cfg.get("per_tier", {}) as Dictionary).get(graphics, 0))
+	var standing := {}
 	for half: Array in [[mine, 1.0], [foe, -1.0]]:
 		var list: Array = half[0]
 		var s: float = half[1]  # 1 = my half (-z), -1 = theirs
@@ -106,7 +118,17 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 		var first := floori((spots.size() - list.size()) / 2.0)
 		for i in list.size():
 			var spot: Array = spots[clampi(first + i, 0, spots.size() - 1)]
-			_add(list[i], _flat(float(spot[0]), float(spot[1]), float(spot[2]), s), CARD)
+			var where := _flat(float(spot[0]), float(spot[1]), float(spot[2]), s)
+			_add(list[i], where, CARD)
+			var id := String((list[i] as Control).get("id"))
+			if standing.size() < cap and (_figures_cfg.get("figures", {}) as Dictionary).has(id):
+				var uid := int((list[i] as Control).get("slot"))
+				standing[uid] = true
+				_stand(uid, id, where.origin, s)
+	for uid: int in _figures.keys():  # figures whose creature left the table
+		if not standing.has(uid):
+			(_figures[uid] as Node3D).queue_free()
+			_figures.erase(uid)
 	for k in 2:  # leaders on their portrait spots
 		var s := 1.0 if k == 0 else -1.0
 		var l: Array = _layout["leader"]["at"]
@@ -125,6 +147,60 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 		var top: MeshInstance3D = stack.get_child(0)
 		top.position.y = h * 0.5 + 0.0005
 		bake.call("texture", "", "", func(tex: Texture2D) -> void: top.material_override = _material(tex))
+
+
+# A legendary's figure on its card, facing the other side of the table.
+func _stand(uid: int, id: String, at: Vector3, s: float) -> void:
+	if not _figures.has(uid):
+		var f: Dictionary = _figures_cfg["figures"][id]
+		var model := String(f["model"])
+		if not _models.has(model):
+			var path := "res://assets/models/%s.gltf" % model
+			if not ResourceLoader.exists(path):
+				return
+			_models[model] = load(path)
+		var node: Node3D = (_models[model] as PackedScene).instantiate()
+		_paint(node, model.get_file())
+		add_child(node)
+		var box := _bounds(node)
+		var k := float(f.get("height", 0.11)) / maxf(box.size.y, 0.01)
+		node.scale = Vector3(k, k, k)
+		node.set_meta("lift", -box.position.y * k)
+		_figures[uid] = node
+	var fig: Node3D = _figures[uid]
+	fig.position = Vector3(at.x, TOP + 0.004 + float(fig.get_meta("lift", 0.0)), at.z)
+	fig.rotation = Vector3(0, 0.0 if s > 0.0 else PI, 0)  # models face +z: mine look across at theirs
+
+
+# The model's size in its own space (all meshes together).
+func _bounds(root: Node3D) -> AABB:
+	var out := AABB()
+	var first := true
+	for found in root.find_children("*", "MeshInstance3D", true, false):
+		var mi := found as MeshInstance3D
+		var box: AABB = (root.global_transform.affine_inverse() * mi.global_transform) * mi.get_aabb() if mi.is_inside_tree() else mi.transform * mi.get_aabb()
+		out = box if first else out.merge(box)
+		first = false
+	return out
+
+
+# Wasteland models carry plain white bodies: the game paints them with the enemy's colours (game/character_models.gd).
+func _paint(root: Node3D, file: String) -> void:
+	var enemies: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json"))["enemies"]
+	for e: Dictionary in enemies.values():
+		if String(e.get("model", "")) != file or not e.has("body_color"):
+			continue
+		var b: Array = e["body_color"]
+		for found in root.find_children("*", "MeshInstance3D", true, false):
+			var mi := found as MeshInstance3D
+			for i in mi.mesh.get_surface_count():
+				var m := mi.mesh.surface_get_material(i) as BaseMaterial3D
+				if m != null and String(m.resource_name) in ["body", "hide"]:
+					var paint := m.duplicate() as BaseMaterial3D  # keeps its texture, takes the colour
+					paint.albedo_color = Color(float(b[0]), float(b[1]), float(b[2]))
+					paint.vertex_color_use_as_albedo = false
+					mi.set_surface_override_material(i, paint)
+		return
 
 
 # A spot of the mat picture (pixels; y from the centre line toward the owner) as a lying card in table space.

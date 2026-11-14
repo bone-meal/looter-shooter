@@ -72,7 +72,7 @@ class LeaderBadge extends Control:
 			draw_circle(c, 38, Color(1, 0, 0, 0.5 * hit))
 		LeaderBadgeArt.ring(self, c, faction)
 		LeaderBadgeArt.drop(self, c + Vector2(28, 26), 15.0)
-		LeaderBadgeArt.number(self, c + Vector2(28, 28), str(hp), 20, Color.WHITE if hp >= max_hp else Color(1.0, 0.75, 0.75))
+		LeaderBadgeArt.number(self, c + Vector2(28, 28), str(maxi(hp, 0)), 20, Color.WHITE if hp >= max_hp else Color(1.0, 0.75, 0.75))
 		var f: Font = CardFace.font("title")
 		draw_string_outline(f, Vector2(96, 36), title, HORIZONTAL_ALIGNMENT_LEFT, size.x - 104, 15, 4, Color.BLACK)
 		draw_string(f, Vector2(96, 36), title, HORIZONTAL_ALIGNMENT_LEFT, size.x - 104, 15, GOLD)

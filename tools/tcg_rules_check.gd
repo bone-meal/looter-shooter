@@ -6,7 +6,7 @@
 # the full set has its locked shape, every starter is legal, and 40 AI matches of one-of decks play every card.
 # The binder's list (core/tcg/binder_list.gd) and the deck builder's rules (core/tcg/deck_edit.gd) too.
 # Dependencies: core/tcg/card_db.gd, core/tcg/match_state.gd, core/tcg/card_text.gd, core/tcg/event_text.gd,
-# core/tcg/binder_list.gd, core/tcg/deck_edit.gd, core/tcg/collection.gd, core/tcg/pack_open.gd, core/tcg/mat_book.gd, core/wallet.gd.
+# core/tcg/binder_list.gd, core/tcg/deck_edit.gd, core/tcg/collection.gd, core/tcg/pack_open.gd, core/tcg/mat_book.gd, core/wallet.gd, core/tcg/table_book.gd.
 extends Node
 
 const CardDb = preload("res://core/tcg/card_db.gd")
@@ -47,6 +47,7 @@ func _ready() -> void:
 		_check_collection(real)
 		_check_packs(real)
 		_check_binder(real)
+		_check_tables(real)
 	_finish()
 
 
@@ -475,6 +476,54 @@ func _check_binder(real: RefCounted) -> void:
 	var earned: Array = MatBook.call("milestones", mo, mats)
 	_say("10 and 25 wins give their mats, not the 50", earned.size() == 2 and earned.has("card_sharp") and earned.has("table_boss") and bool(MatBook.call("choose", mo, mats, "table_boss")))
 	_say("Open all opens the rest, box packs last", int(rest["packs"]) == 3 and int(o.call("pack_count")) == 0 and String(PackOpen.call("next_kind", o)) == "" and int((o.get("box") as Dictionary)["left"]) == 0)
+
+
+# The host's book of player tables (core/tcg/table_book.gd): seats, decks, countdown, a match, timer, walking off.
+func _check_tables(real: RefCounted) -> void:
+	var TableBook: GDScript = load("res://core/tcg/table_book.gd")
+	var starters: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json")) as Dictionary)["starters"]
+	var names := {11: "Ann", 22: "Bo", 33: "Cy"}
+	var book: RefCounted = TableBook.new(real, 2)
+	book.call("set_spots", [Vector3.ZERO, Vector3(10, 0, 0)])
+	var out: Array = book.call("sit", 11, 0, names)
+	_say("a seat taken is told to everyone", _msg(out, 0, "seats") and not _msg(out, 11, "pick"))
+	out = book.call("sit", 22, 0, names)
+	_say("two seated: both pick a deck", _msg(out, 11, "pick") and _msg(out, 22, "pick"))
+	_say("a third player cannot sit there", _msg(book.call("sit", 33, 0, names), 33, "refused"))
+	var broken: Dictionary = (starters["tide"] as Dictionary).duplicate(true)
+	(broken["cards"] as Array).pop_back()
+	_say("an illegal deck is refused", _msg(book.call("deck", 11, broken, names), 11, "refused"))
+	book.call("deck", 11, starters["tide"], names)
+	out = book.call("deck", 22, starters["crypt"], names)
+	_say("both decks in: a countdown", _msg(out, 0, "countdown"))
+	out = book.call("tick", 6.0, names, {})
+	_say("the countdown ends in a match everyone sees", _msg(out, 0, "match"))
+	var m: RefCounted = (book.get("tables") as Array)[0]["match"]
+	book.call("intent", 11, {"do": "mulligan", "indices": []}, names)
+	book.call("intent", 22, {"do": "mulligan", "indices": []}, names)
+	var first := int(m.get("current"))
+	var other_peer := 22 if first == 0 else 11
+	_say("a move out of turn is refused", _msg(book.call("intent", other_peer, {"do": "end"}, names), other_peer, "refused"))
+	book.call("tick", 80.0, names, {})
+	_say("the turn timer ends the turn", int(m.get("current")) != first)
+	var snap: Dictionary = m.call("snapshot")
+	var mirror: RefCounted = load("res://core/tcg/match_state.gd").new(real, [starters["tide"], starters["crypt"]], 1)
+	mirror.call("restore", snap)
+	_say("a client's mirror matches the host's match", mirror.call("snapshot") == snap)
+	out = book.call("tick", 0.1, names, {11: Vector3(30, 0, 0), 22: Vector3.ZERO})
+	var res: Array = _args_of(out, 0, "result")
+	_say("walking off mid-match loses it and frees the table", not res.is_empty() and int(res[1]) == 1 and int(book.call("table_of", 11)) == -1 and int(book.call("table_of", 22)) == -1)
+
+
+func _msg(out: Array, peer: int, what: String) -> bool:
+	return not _args_of(out, peer, what).is_empty()
+
+
+func _args_of(out: Array, peer: int, what: String) -> Array:
+	for e: Array in out:
+		if int(e[0]) == peer and String(e[1]) == what:
+			return e[2]
+	return []
 
 
 # Pack rolls (core/tcg/pack_roll.gd): 5 cards with the last rare or better, the odds over many packs, pity, foils,

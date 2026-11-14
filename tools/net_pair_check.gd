@@ -1,7 +1,8 @@
 # Purpose: developer check of online play on ONE machine: starts two copies of the real game at once (Compatibility,
 # small windows), the first hosts and writes its session id into tools/userdata/pair_session.txt, the second joins
 # it; each runs its own chat lines and dev steps (tools/pair_host_cmd.txt, tools/pair_guest_cmd.txt) and writes
-# tools/userdata/boot_host.* and boot_guest.*. Log tools/userdata/pair_check.txt (ends PAIR_CHECK_DONE).
+# tools/userdata/boot_host.* and boot_guest.*. tools/pair_set.txt may name another set of command files ("tcg" ->
+# tools/pair_tcg_host_cmd.txt / pair_tcg_guest_cmd.txt). Log tools/userdata/pair_check.txt (ends PAIR_CHECK_DONE).
 # Dependencies: game/main.gd (--autostart, --net-host / --net-join), tools/dev_boot.gd (--boot-tag), game/renderer_switch.gd.
 extends Node
 
@@ -23,6 +24,9 @@ func _ready() -> void:
 			"--log-file", ProjectSettings.globalize_path(OUT + "boot_%s.log" % who), "--", RendererSwitch.MARK, "--autostart", "--boot-tag=" + who,
 			("--net-host=" if who == "host" else "--net-join=") + session_file])
 		var cmd_file := "res://tools/pair_%s_cmd.txt" % who
+		var chosen := "res://tools/pair_set.txt"  # names another set of command files, e.g. "tcg" -> tools/pair_tcg_host_cmd.txt
+		if FileAccess.file_exists(chosen) and FileAccess.get_file_as_string(chosen).strip_edges() != "":
+			cmd_file = "res://tools/pair_%s_%s_cmd.txt" % [FileAccess.get_file_as_string(chosen).strip_edges(), who]
 		if FileAccess.file_exists(cmd_file):
 			args.append("--cmd=" + FileAccess.get_file_as_string(cmd_file).strip_edges())
 		pids[who] = OS.create_process(OS.get_executable_path(), args)

@@ -17,6 +17,7 @@ const NetPvp = preload("res://game/net_pvp.gd")
 const NetChat = preload("res://game/net_chat.gd")
 const NetFantasy = preload("res://game/net_fantasy.gd")
 const NetTrade = preload("res://game/net_trade.gd")
+const NetTcg = preload("res://game/net_tcg.gd")
 const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
 const NetRounds = preload("res://game/net_rounds.gd")
@@ -55,6 +56,7 @@ var _pvp: Node
 var chat: Node  # text chat and command permissions (game/net_chat.gd)
 var fantasy: Node  # the fantasy world's creatures and party quests (game/net_fantasy.gd)
 var trade: Node  # trading between players (game/net_trade.gd)
+var tcg: Node  # the card game's player tables (game/net_tcg.gd)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
 var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
@@ -90,6 +92,10 @@ func _ready() -> void:
 	trade.name = "Trade"
 	trade.net = self
 	add_child(trade)
+	tcg = NetTcg.new()
+	tcg.name = "Tcg"
+	tcg.net = self
+	add_child(tcg)
 	drops = NetDrops.new()
 	drops.name = "Drops"
 	drops.net = self
