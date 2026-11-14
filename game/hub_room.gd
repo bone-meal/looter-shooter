@@ -1,13 +1,15 @@
 # Purpose: builds the safe hub at game start (locked: diary/DECISIONS_HUB.md) at data/hub.json "center": the
 # library hall, the checkerboard stage with its pillars, the sandstone pedestal and its big red button (pushed in once
 # for good), candle chandeliers, the cold moon window, the endless spiral stair turning slowly behind the arch, the
-# Aurelind painting's place, and solid floor and walls to walk in. Its own light only: warm candles and one cold moon
+# Aurelind painting's place, the trophy room next door (game/trophy_room.gd), and solid floor and walls to walk in. Its own light only: warm candles and one cold moon
 # beam, no shadows (the session darkens the sky light while the player stands inside: game/game_session.gd hub_dark).
 # Dependencies: game/fantasy_models.gd (models made by tools/blender/hub_room.py), data/hub.json (set `cfg` before
 # add_child).
 extends Node3D
 
 const FantasyModels = preload("res://game/fantasy_models.gd")
+const TrophyRoom = preload("res://game/trophy_room.gd")
+const BeachTable = preload("res://game/tcg/beach_table.gd")
 
 const CANDLE := Color(1.0, 0.7, 0.4)
 const MOON := Color(0.55, 0.68, 1.0)
@@ -20,6 +22,8 @@ const BUTTON_TOP := 1.45  # the pedestal's gold top
 const BUTTON_DOWN := 0.15
 
 var cfg: Dictionary
+var trophies: TrophyRoom  # the room behind the left doorway (game/trophy_room.gd)
+var card_tables: Array = []  # two card tables for players (the card game's own table, game/tcg/player_table.gd runs them)
 var _button: Node3D
 var _spiral: Node3D
 var _pressed := false
@@ -43,6 +47,16 @@ func _ready() -> void:
 	_moon()
 	_stair()
 	_solids()
+	for spot: Array in cfg["tables"]:
+		var table := BeachTable.new()
+		table.indoor = true
+		table.position = Vector3(float(spot[0]), 0.0, float(spot[1]))
+		table.rotation_degrees.y = 90.0  # the long side toward the hall's middle
+		add_child(table)
+		card_tables.append(table)
+	trophies = TrophyRoom.new()
+	trophies.cfg = cfg
+	add_child(trophies)
 
 
 func _model(id: String, at: Vector3) -> Node3D:
@@ -116,7 +130,7 @@ func _stair() -> void:
 	var lamp := OmniLight3D.new()  # a faint glow down the shaft so the turning stair reads through the arch
 	lamp.light_color = MOON
 	lamp.light_energy = 0.6
-	lamp.omni_range = 14.0
+	lamp.omni_range = 4.5  # stays off the hall's mesh (8 lights per object on Compatibility)
 	lamp.shadow_enabled = false
 	lamp.position = Vector3(0.0, 4.0, 0.0)
 	_spiral.add_child(lamp)

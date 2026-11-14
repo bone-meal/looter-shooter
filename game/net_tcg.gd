@@ -12,7 +12,7 @@ const CardDb = preload("res://core/tcg/card_db.gd")
 
 signal message(what: String, args: Array)
 
-const TABLES := 3
+const TABLES := 5  # the hub's two (indices 0-1, built at game start everywhere) + the beach's three (2-4, built with the club)
 
 var net: Node3D
 var book: RefCounted  # only the host's is used

@@ -351,7 +351,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				for thing in 3:
 					session.call("_on_float_shot", int(words[1]) - 1, thing)
 			else:
-				_lines.append("SONG %s: unlocked %s, files %s, playing %s (secret %d)" % [" ".join(words.slice(1)), str(book.get("unlocked")), str(book.get("files")), str((session.get("_music") as AudioStreamPlayer).playing), int(session.get("_music_secret"))])
+				_lines.append("SONG %s: unlocked %s, files %s, playing %s" % [" ".join(words.slice(1)), str(book.get("unlocked")), str(book.get("files")), str((session.get("music_box") as Node).call("playing_id"))])
 		"crosshair":  # "!crosshair menu": Settings > Crosshair over the game; "!crosshair n": click design n (1-based); "!crosshair code <code>": paste a share code; "!crosshair close"; "!crosshair <note>": what the HUD shows
 			var main := _find_with(get_tree().root, "_show_only")
 			var page: Node = main.get("_crosshair_menu")
@@ -566,6 +566,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var progress: RefCounted = session.get("_progress")
 			if words.size() > 3 and words[1] == "wear":
 				progress.call("set_card", progress.get("callsign"), words[2], words[3])
+			elif words.size() > 2 and words[1] == "grant":  # "!ach grant n": the first n achievements count as earned today (trophy room pictures)
+				var all: Dictionary = (progress.get("_ach") as Dictionary)["achievements"]
+				var n := 0
+				for id: String in all:
+					if n >= int(words[2]):
+						break
+					if not (progress.get("unlocked") as Array).has(id):
+						progress.call("_unlock", id)
+					n += 1
 			_lines.append("ACH %s: %d unlocked %s | emblem %s title %s" % [" ".join(words.slice(1)), (progress.get("unlocked") as Array).size(), str(progress.get("unlocked")), str(progress.get("emblem")), str(progress.get("title"))])
 		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
 			var box: Node3D = session.get("_jukebox")
@@ -669,11 +678,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				if m2 != null:
 					m2.call("summon", 1 if words.size() > 3 and words[3] == "foe" else 0, words[2])
 					tcg.call("_after_move")
-			elif words[1] in ["ptable", "pdeck", "pmove", "pnote"]:  # player tables online: "!tcg ptable <i>" sit, "pdeck" first deck slot, "pmove" the AI's move for us, "pnote" the state
+			elif words[1] in ["ptable", "pdeck", "pmove", "pnote"]:  # player tables online: "!tcg ptable <i>" sit (0-1 the hub's, 2-4 the beach's), "pdeck" first deck slot, "pmove" the AI's move for us, "pnote" the state
 				var pt: Node = session.get("_ptables")
 				if words[1] == "ptable":
-					var spot: Node3D = (session.get("_casino") as Dictionary).get("player_tables")[int(words[2])]
-					player.call("teleport", spot.global_position + Vector3(0, 0.1, -1.6), 0.0)
+					var spot: Node3D = (pt.get("_tables") as Array)[int(words[2])]
+					player.call("teleport", spot.global_position + spot.global_basis * Vector3(0, 0.1, -1.6), 0.0)
 					pt.call("open", int(words[2]))
 				elif words[1] == "pdeck":
 					pt.call("_on_deck", "slot:0")
@@ -1108,6 +1117,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var hub: Node = session.get("net").get("hub")
 			if words.size() > 3 and words[1] == "at":
 				player.call("teleport", (hub.get("center") as Vector3) + Vector3(float(words[2]), 0.1, float(words[3])), 0.0)
+			elif words.size() > 1 and words[1] == "heavy":  # "!hub heavy": the session's children that still draw the most triangles
+				var rows: Array = []
+				for child: Node in session.get_children():
+					var n := _tris_under(child)
+					if n > 2000:
+						rows.append([n, "%s %s at %s" % [child.name, child.get_class(), str((child as Node3D).global_position.round()) if child is Node3D else "-"]])
+				rows.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) > int(b[0]))
+				for r: Array in rows.slice(0, 14):
+					_lines.append("HEAVY %d %s" % [int(r[0]), String(r[1])])
 			else:
 				var style: Node = session.get("_render_style")
 				var env: Environment = style.get("env")
@@ -1216,3 +1234,25 @@ func _find_with(node: Node, method: String) -> Node:
 		if found != null:
 			return found
 	return null
+
+
+# Triangles a node and its visible children draw (meshes and multimeshes; dev numbers only).
+func _tris_under(node: Node) -> int:
+	if node is Node3D and not (node as Node3D).visible:
+		return 0
+	var n := 0
+	var mesh: Mesh = null
+	var copies := 1
+	if node is MeshInstance3D:
+		mesh = (node as MeshInstance3D).mesh
+	elif node is MultiMeshInstance3D and (node as MultiMeshInstance3D).multimesh != null:
+		mesh = (node as MultiMeshInstance3D).multimesh.mesh
+		copies = (node as MultiMeshInstance3D).multimesh.visible_instance_count if (node as MultiMeshInstance3D).multimesh.visible_instance_count >= 0 else (node as MultiMeshInstance3D).multimesh.instance_count
+	if mesh != null:
+		for s in mesh.get_surface_count():
+			var arrays := mesh.surface_get_arrays(s)
+			var idx: Variant = arrays[Mesh.ARRAY_INDEX]
+			n += floori(float((idx as PackedInt32Array).size() if idx != null else (arrays[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()) / 3.0) * copies
+	for child: Node in node.get_children():
+		n += _tris_under(child)
+	return n

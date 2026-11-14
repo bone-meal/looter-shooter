@@ -169,6 +169,8 @@ var _ink := InkBlackout.new()  # the hub's travel effect
 var _hub_dark := false  # the player stands in the hub: the sky's light is off, the hub's own candles light it
 var _hub_tick := -1  # the last countdown second ticked
 var _hub_painting := Vector3.INF
+var _far_hidden: Array = []  # far world parts hidden while we stand in the hub
+var _trophy_wait := 0.0  # seconds to the next look at whose trophies fill the cabinets
 var _reward: RewardArea
 var _customizer := CustomizeMenu.new()
 var _progress := ProgressState.new(DataStore.load_json("res://data/progression.json"), DataStore.load_json("res://data/achievements.json"))  # level, stats, traits, achievements, card (saved in the profile)
@@ -268,7 +270,7 @@ var _tcg := CardTable.new()  # the card game table on the club beach (built with
 var _cards := CardCollection.new()  # the card game collection (saved in extra "tcg")
 var _shop := CardShop.new()  # the card vending machine in the casino (built with the club)
 var _tcg_mats: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))  # for the card game's achievement readings
-var _ptables := PlayerTable.new()  # the three card tables where players play each other online (built with the club)
+var _ptables := PlayerTable.new()  # the card tables where players play each other online: the hub's two, then the club's three
 var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data/colosseum.json)
 var _board := ColosseumBoard.new()  # the ticket board at the painting
 var _run_ticket := 0  # the ticket of the colosseum run we are in
@@ -599,6 +601,11 @@ func _ready() -> void:
 	add_child(_shop)
 	_ptables.finished.connect(save_profile)
 	add_child(_ptables)
+	if _hub_room != null:  # the hub's two card tables are tables 0 and 1 everywhere (the club's follow when it is built)
+		_ptables.setup(_wallet, {"player_tables": _hub_room.card_tables}, _custom_layer, _player, _player_hud, _cards, net.tcg)
+		_ptables.graphics = settings.graphics
+		_ptables.stats = _stats
+		net.tcg.set_spots(_hub_room.card_tables.map(func(t: Node3D) -> Vector3: return t.global_position))
 	add_child(custom_layer)
 	_load_profile()
 	_update_pots()
@@ -1380,7 +1387,7 @@ func _prompt() -> String:
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
 	if _quest_use_here() != "":
 		return "[%s] %s" % [key, _quest.line(_quest_use_here(), "what") if _quest.step > 0 else "Look at the book in the sand"]
-	if _jukebox != null and _near(_jukebox.global_position, Jukebox.REACH):
+	if _near_a_jukebox():
 		return "[%s] The jukebox" % key
 	if _boat_here():
 		if _boat.aboard() >= _boat.seats.size():
@@ -1517,7 +1524,7 @@ func _interact() -> void:
 		net.trade.answer(true)
 	elif _quest_use_here() != "":
 		_quest_try("use", 0)
-	elif _jukebox != null and _near(_jukebox.global_position, Jukebox.REACH):
+	elif _near_a_jukebox():
 		_open_jukebox()
 	elif _boat_here():
 		_board_boat()
@@ -3498,6 +3505,13 @@ func _play_song(secret: int) -> void:
 
 
 # A jukebox (the club's, the hub's trophy room): the jukebox window (game/music_menu.gd; online the host's songs).
+# The club's jukebox or the hub trophy room's.
+func _near_a_jukebox() -> bool:
+	if _jukebox != null and _near(_jukebox.global_position, Jukebox.REACH):
+		return true
+	return _hub_room != null and _in_hub() and _near(_hub_room.trophies.jukebox.global_position, Jukebox.REACH)
+
+
 func _open_jukebox() -> void:
 	if music_menu == null:
 		return
@@ -3836,11 +3850,17 @@ func _build_club() -> void:
 	_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards)
 	_tcg.graphics = settings.graphics
 	_tcg.stats = _stats
-	_ptables.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards, net.tcg if net != null else null)
+	if _ptables.is_set_up():
+		_ptables.add_tables(_casino.get("player_tables", []))
+	else:
+		_ptables.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards, net.tcg if net != null else null)
 	_ptables.graphics = settings.graphics
 	_ptables.stats = _stats
 	if net != null:  # the host's book learns where the player tables stand (walking away from one mid-match loses it)
 		var spots: Array = []
+		if _hub_room != null:
+			for t: Node3D in _hub_room.card_tables:
+				spots.append(t.global_position)
 		for t: Node3D in _casino.get("player_tables", []):
 			spots.append(t.global_position)
 		net.tcg.set_spots(spots)
@@ -3997,6 +4017,23 @@ func _in_hub() -> bool:
 	return _hub_room != null and not _in_arena and not _in_fantasy and net.hub.inside(_player.global_position)
 
 
+# Who fills the trophy cabinets, in cabinet order: everyone in the session (our own trophies from our progress, the
+# others' from their cards).
+func _trophy_owners() -> Array:
+	var mine := {}
+	for id: String in _progress.unlocked:
+		mine[id] = String(_progress.dates.get(id, ""))
+	if not net.can_send():
+		return [{"owner": 1, "name": _profile_name, "trophies": mine}]
+	var out: Array = []
+	var ids: Array = net.roster.keys()
+	ids.sort()
+	for peer: int in ids:
+		var card: Dictionary = net.cards.get(peer, {})
+		out.append({"owner": peer, "name": String(net.roster[peer]), "trophies": mine if peer == net.my_id() else card.get("trophies", {})})
+	return out.slice(0, 6)
+
+
 func _hub_place() -> int:
 	if not net.can_send():
 		return 0
@@ -4022,7 +4059,14 @@ func _run_hub() -> void:
 		_hub_dark = here
 		apply_settings()
 		_sounds.call("set_region", "hub" if here else "")
+		_show_far_world(not here)
 	_hub_hud.visible = here and not _ink.playing()
+	_trophy_wait -= get_process_delta_time()
+	if here and _trophy_wait <= 0.0:
+		_trophy_wait = 1.0
+		_hub_room.trophies.show_owners(_trophy_owners())
+	var eye := get_viewport().get_camera_3d()
+	_hub_hud.trophy = _hub_room.trophies.look(eye.global_position, -eye.global_basis.z) if here and eye != null else {}
 	_hub_hud.key = _key("interact")
 	_hub_hud.me = net.hub.me()
 	net.hub.hold(here and _player.controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_action_pressed("interact"))
@@ -4062,6 +4106,23 @@ func back_to_hub() -> String:
 	_player.teleport(_hub_room.spawn(_hub_place()), 0.0)
 	net.hub.reopen()
 	return "Back in the hub. Everyone here: hold %s on the stage to go." % _key("interact")
+
+
+# Inside the hub nothing of the islands, the colosseum or the club can be seen (walls all round), yet they lie within
+# the camera's reach: hide them while we stand in the hub (drawing only; what runs is decided by _rest_worlds).
+func _show_far_world(show: bool) -> void:
+	if show:  # only what we hid comes back (some parts are hidden on purpose)
+		for thing: Node3D in _far_hidden:
+			if is_instance_valid(thing):
+				thing.visible = true
+		_far_hidden.clear()
+		return
+	for part: Node in _gun_side + _club_parts:
+		var thing := part as Node3D
+		if thing == null or not thing.visible or thing is DirectionalLight3D or thing.global_position.distance_to(_hub_room.position) < 400.0:
+			continue
+		thing.visible = false
+		_far_hidden.append(thing)
 
 
 # In the hub only its own candles and the moon window light the room: no sky, no sun, a little dark fog that the

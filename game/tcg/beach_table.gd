@@ -16,6 +16,7 @@ static var _mats: Dictionary = {}  # mat id -> material showing the owner's half
 var _near: MeshInstance3D  # the player's half (-z)
 var _far: MeshInstance3D  # the other seat's half (+z), turned to face its owner
 var _parasol: Array = []  # pole, canopy, hem: hidden while a match is seen from above
+var indoor := false  # set before add_child: the hub's tables (no parasol, the sign lower)
 
 
 func _ready() -> void:
@@ -37,6 +38,7 @@ func _ready() -> void:
 	_parasol.append(_cyl(0.03, 0.03, 2.4, Vector3(0, 1.2, 0), _cloth_a))  # parasol pole through the table
 	_parasol.append(_cyl(0.0, 1.5, 0.45, Vector3(0, 2.45, 0), _cloth_b))  # canopy
 	_parasol.append(_cyl(1.5, 1.5, 0.08, Vector3(0, 2.2, 0), _cloth_a))  # white hem
+	show_parasol(true)
 	var body := StaticBody3D.new()
 	var shape := CollisionShape3D.new()
 	var box := BoxShape3D.new()
@@ -52,7 +54,9 @@ func _ready() -> void:
 	sign_label.outline_size = 10
 	sign_label.modulate = Color(1.0, 0.85, 0.3)
 	sign_label.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
-	sign_label.position = Vector3(0, 2.95, 0)
+	sign_label.position = Vector3(0, 2.0 if indoor else 2.95, 0)
+	if indoor:
+		sign_label.pixel_size = 0.003
 	add_child(sign_label)
 
 
@@ -111,7 +115,7 @@ func _box(box_size: Vector3, pos: Vector3, mat: Material) -> void:
 # The parasol stands in the way of the camera over the mat (game/tcg/table_view.gd hides it while seated).
 func show_parasol(on: bool) -> void:
 	for n: Node3D in _parasol:
-		n.visible = on
+		n.visible = on and not indoor
 
 
 func _cyl(top: float, bottom: float, height: float, pos: Vector3, mat: Material) -> MeshInstance3D:

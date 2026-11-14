@@ -1,0 +1,753 @@
+{
+ "_about": "Trophy cabinets in the safe hub (diary/DECISIONS_HUB.md, built by game/trophy_room.gd). Every cabinet holds every achievement of data/achievements.json in the same place: `pedestal` = the 3 hardest of all on the lit centre podium, `middle_row` = the next 24 hardest at eye level, both with their own shapes (`unique`: model made by tools/blender/hub_room.py + tint); the rest fill the other rows in the order of `trophies` (bottom row first), each a common shape tinted by difficulty. An unearned one is a dusty empty stand with ??? and the achievement text as its hint. ALL CHOICES HERE ARE PLACEHOLDERS FOR THE DIRECTOR.",
+ "version": 1,
+ "tiers": {
+  "bronze": [
+   0.72,
+   0.45,
+   0.22
+  ],
+  "silver": [
+   0.8,
+   0.82,
+   0.86
+  ],
+  "gold": [
+   1.0,
+   0.78,
+   0.25
+  ],
+  "prismatic": [
+   0.62,
+   0.92,
+   1.0
+  ]
+ },
+ "shapes": [
+  "cup",
+  "statuette",
+  "plaque",
+  "medal",
+  "skull",
+  "crown"
+ ],
+ "pedestal": [
+  "play_100h",
+  "kills_25000",
+  "tcg_legend_of_the_beach"
+ ],
+ "middle_row": [
+  "dmg_10m",
+  "walk_500k",
+  "col_won_50",
+  "col_waves_1000",
+  "boss_100",
+  "heads_1000",
+  "knife_1000",
+  "rounds_500",
+  "best_50",
+  "level_50",
+  "f_total_300",
+  "tcg_full_binder",
+  "tcg_golden_tear",
+  "tcg_pony_express",
+  "shots_100k",
+  "bosses_all",
+  "f_kings",
+  "pu_all",
+  "jackpot_10",
+  "tcg_dealers_nightmare",
+  "slayer_1000",
+  "f_quests_30",
+  "tcg_every_crown",
+  "knife_all"
+ ],
+ "unique": {
+  "play_100h": {
+   "model": "trophy_u0",
+   "tint": [
+    0.95,
+    0.43,
+    0.43
+   ]
+  },
+  "kills_25000": {
+   "model": "trophy_u1",
+   "tint": [
+    0.43,
+    0.95,
+    0.58
+   ]
+  },
+  "tcg_legend_of_the_beach": {
+   "model": "trophy_u2",
+   "tint": [
+    0.73,
+    0.43,
+    0.95
+   ]
+  },
+  "dmg_10m": {
+   "model": "trophy_u3",
+   "tint": [
+    0.95,
+    0.88,
+    0.43
+   ]
+  },
+  "walk_500k": {
+   "model": "trophy_u4",
+   "tint": [
+    0.43,
+    0.86,
+    0.95
+   ]
+  },
+  "col_won_50": {
+   "model": "trophy_u5",
+   "tint": [
+    0.95,
+    0.43,
+    0.71
+   ]
+  },
+  "col_waves_1000": {
+   "model": "trophy_u6",
+   "tint": [
+    0.56,
+    0.95,
+    0.43
+   ]
+  },
+  "boss_100": {
+   "model": "trophy_u7",
+   "tint": [
+    0.45,
+    0.43,
+    0.95
+   ]
+  },
+  "heads_1000": {
+   "model": "trophy_u8",
+   "tint": [
+    0.95,
+    0.6,
+    0.43
+   ]
+  },
+  "knife_1000": {
+   "model": "trophy_u9",
+   "tint": [
+    0.43,
+    0.95,
+    0.75
+   ]
+  },
+  "rounds_500": {
+   "model": "trophy_u10",
+   "tint": [
+    0.91,
+    0.43,
+    0.95
+   ]
+  },
+  "best_50": {
+   "model": "trophy_u11",
+   "tint": [
+    0.84,
+    0.95,
+    0.43
+   ]
+  },
+  "level_50": {
+   "model": "trophy_u12",
+   "tint": [
+    0.43,
+    0.69,
+    0.95
+   ]
+  },
+  "f_total_300": {
+   "model": "trophy_u13",
+   "tint": [
+    0.95,
+    0.43,
+    0.54
+   ]
+  },
+  "tcg_full_binder": {
+   "model": "trophy_u14",
+   "tint": [
+    0.43,
+    0.95,
+    0.47
+   ]
+  },
+  "tcg_golden_tear": {
+   "model": "trophy_u15",
+   "tint": [
+    0.62,
+    0.43,
+    0.95
+   ]
+  },
+  "tcg_pony_express": {
+   "model": "trophy_u16",
+   "tint": [
+    0.95,
+    0.78,
+    0.43
+   ]
+  },
+  "shots_100k": {
+   "model": "trophy_u17",
+   "tint": [
+    0.43,
+    0.95,
+    0.93
+   ]
+  },
+  "bosses_all": {
+   "model": "trophy_u18",
+   "tint": [
+    0.95,
+    0.43,
+    0.82
+   ]
+  },
+  "f_kings": {
+   "model": "trophy_u19",
+   "tint": [
+    0.67,
+    0.95,
+    0.43
+   ]
+  },
+  "pu_all": {
+   "model": "trophy_u20",
+   "tint": [
+    0.43,
+    0.51,
+    0.95
+   ]
+  },
+  "jackpot_10": {
+   "model": "trophy_u21",
+   "tint": [
+    0.95,
+    0.49,
+    0.43
+   ]
+  },
+  "tcg_dealers_nightmare": {
+   "model": "trophy_u22",
+   "tint": [
+    0.43,
+    0.95,
+    0.65
+   ]
+  },
+  "slayer_1000": {
+   "model": "trophy_u23",
+   "tint": [
+    0.8,
+    0.43,
+    0.95
+   ]
+  },
+  "f_quests_30": {
+   "model": "trophy_u24",
+   "tint": [
+    0.95,
+    0.95,
+    0.43
+   ]
+  },
+  "tcg_every_crown": {
+   "model": "trophy_u25",
+   "tint": [
+    0.43,
+    0.8,
+    0.95
+   ]
+  },
+  "knife_all": {
+   "model": "trophy_u26",
+   "tint": [
+    0.95,
+    0.43,
+    0.64
+   ]
+  }
+ },
+ "trophies": {
+  "first_blood": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "slayer_100": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "elite_10": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "boss_1": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "boss_10": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "chest_5": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "jackpot_1": {
+   "tier": "bronze",
+   "shape": "crown"
+  },
+  "vendor_5": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "rare_1": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "deaths_10": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "level_10": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "level_25": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "kills_50": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "kills_500": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "kills_5000": {
+   "tier": "gold",
+   "shape": "skull"
+  },
+  "heads_100": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "elite_100": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "boss_25": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "dmg_100k": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "hurt_50k": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "shots_10k": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "revive_25": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "pistol_500": {
+   "tier": "gold",
+   "shape": "skull"
+  },
+  "sniper_500": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "ak_1000": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "m16_1000": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "m60_1000": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "shotgun_500": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "rocket_250": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "grenade_250": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "knife_100": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "staff_500": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "wkills_100": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "wkills_5000": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "upgrade_25": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "rare_10": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "rounds_50": {
+   "tier": "bronze",
+   "shape": "cup"
+  },
+  "best_10": {
+   "tier": "bronze",
+   "shape": "cup"
+  },
+  "best_20": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "best_30": {
+   "tier": "gold",
+   "shape": "cup"
+  },
+  "perks_25": {
+   "tier": "bronze",
+   "shape": "crown"
+  },
+  "perks_100": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "box_50": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "wall_50": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "debris_50": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "boards_200": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "pu_insta": {
+   "tier": "gold",
+   "shape": "crown"
+  },
+  "pu_nuke": {
+   "tier": "prismatic",
+   "shape": "crown"
+  },
+  "pu_double": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "pu_ammo": {
+   "tier": "bronze",
+   "shape": "crown"
+  },
+  "quest_1": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "song_1": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "song_10": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "chaser_1000": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "shooter_500": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "brute_250": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "feral_500": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "raider_500": {
+   "tier": "prismatic",
+   "shape": "skull"
+  },
+  "bestiary_20": {
+   "tier": "bronze",
+   "shape": "skull"
+  },
+  "bestiary_35": {
+   "tier": "silver",
+   "shape": "skull"
+  },
+  "col_won_1": {
+   "tier": "bronze",
+   "shape": "cup"
+  },
+  "col_won_10": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "col_waves_100": {
+   "tier": "bronze",
+   "shape": "cup"
+  },
+  "col_long_12": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "chest_50": {
+   "tier": "bronze",
+   "shape": "crown"
+  },
+  "chest_250": {
+   "tier": "silver",
+   "shape": "crown"
+  },
+  "vendor_50": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "f_harvest": {
+   "tier": "gold",
+   "shape": "statuette"
+  },
+  "f_root": {
+   "tier": "prismatic",
+   "shape": "statuette"
+  },
+  "f_tide": {
+   "tier": "prismatic",
+   "shape": "statuette"
+  },
+  "f_glass": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "f_rime": {
+   "tier": "prismatic",
+   "shape": "statuette"
+  },
+  "f_cinder": {
+   "tier": "bronze",
+   "shape": "statuette"
+  },
+  "f_roc": {
+   "tier": "prismatic",
+   "shape": "statuette"
+  },
+  "f_quests_5": {
+   "tier": "bronze",
+   "shape": "statuette"
+  },
+  "f_cast_1000": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "f_mixes_25": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "f_magic_50": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "f_fire_50": {
+   "tier": "bronze",
+   "shape": "statuette"
+  },
+  "f_wheat": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "f_wood": {
+   "tier": "prismatic",
+   "shape": "statuette"
+  },
+  "f_ore": {
+   "tier": "gold",
+   "shape": "statuette"
+  },
+  "f_fish": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "f_smith": {
+   "tier": "bronze",
+   "shape": "statuette"
+  },
+  "f_artisan": {
+   "tier": "silver",
+   "shape": "statuette"
+  },
+  "play_1h": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "play_10h": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "walk_42k": {
+   "tier": "bronze",
+   "shape": "medal"
+  },
+  "speed_450": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "course_10": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "course_40": {
+   "tier": "silver",
+   "shape": "cup"
+  },
+  "course_25": {
+   "tier": "bronze",
+   "shape": "cup"
+  },
+  "smoke_50": {
+   "tier": "silver",
+   "shape": "medal"
+  },
+  "tcg_shuffle_up": {
+   "tier": "bronze",
+   "shape": "plaque"
+  },
+  "tcg_table_regular": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_you_got_me": {
+   "tier": "bronze",
+   "shape": "plaque"
+  },
+  "tcg_ten_up": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_table_boss": {
+   "tier": "gold",
+   "shape": "plaque"
+  },
+  "tcg_lion_of_the_sand": {
+   "tier": "prismatic",
+   "shape": "plaque"
+  },
+  "tcg_hot_streak": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_house_breaker": {
+   "tier": "bronze",
+   "shape": "plaque"
+  },
+  "tcg_every_hand": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_untouched": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_whisker": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_full_house": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_tidecaller": {
+   "tier": "prismatic",
+   "shape": "plaque"
+  },
+  "tcg_wastelander": {
+   "tier": "prismatic",
+   "shape": "plaque"
+  },
+  "tcg_gravekeeper": {
+   "tier": "bronze",
+   "shape": "plaque"
+  },
+  "tcg_spellwright": {
+   "tier": "gold",
+   "shape": "plaque"
+  },
+  "tcg_high_roller": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_rip_it": {
+   "tier": "bronze",
+   "shape": "plaque"
+  },
+  "tcg_pack_rat": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_unboxed": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_shiny": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_ten_crowns": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_deckbuilder": {
+   "tier": "silver",
+   "shape": "plaque"
+  },
+  "tcg_mat_collector": {
+   "tier": "silver",
+   "shape": "plaque"
+  }
+ }
+}

@@ -1,4 +1,4 @@
-# Purpose: the three player card tables on the beach, online (locked build step 13): F at one sits you down (offline it
+# Purpose: the player card tables (the hub's two, then the beach's three), online (locked build step 13): F at one sits you down (offline it
 # says a second player is needed), a waiting panel until someone sits across, then each picks one of their own full,
 # legal decks, a 5 s countdown, and the match the HOST runs (game/net_tcg.gd + core/tcg/table_book.gd): this machine
 # holds a mirror of it for the screen's questions and sends only intents. F at a table where two already play =
@@ -44,6 +44,17 @@ var _mats_shown := false  # both players' mats laid for this match
 var _who: Array = ["", ""]
 var _known := {}
 var _deck_name := ""
+
+
+# Tables built later (the club's, after the hub's two): they take the next indices, the same on every machine.
+func add_tables(more: Array) -> void:
+	for t: Node3D in more:
+		_tables.append(t)
+		_views.append(null)
+
+
+func is_set_up() -> bool:
+	return not _cfg.is_empty()
 
 
 func setup(wallet: RefCounted, casino: Dictionary, layer: CanvasLayer, player: CharacterBody3D, hud: Control, owned: RefCounted, net: Node) -> void:

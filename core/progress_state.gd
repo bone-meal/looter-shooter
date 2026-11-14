@@ -8,6 +8,7 @@ var traits: Array = []  # trait id per slot ("" = empty)
 var counters := {}  # counter id -> int
 var stat_values := {}  # "stat" achievement key -> the highest reading seen (core/achievement_reader.gd)
 var unlocked: Array = []  # achievement ids
+var dates := {}  # achievement id -> "YYYY-MM-DD" it was earned (the hub's trophy room; none for ones earned before dates were kept)
 var callsign := ""
 var emblem := ""
 var title := ""
@@ -173,8 +174,7 @@ func _check(counter: String) -> void:
 	for id: String in all:
 		var a: Dictionary = all[id]
 		if String(a.get("counter", "")) == counter and not unlocked.has(id) and value_of(counter) >= int(a["goal"]):
-			unlocked.append(id)
-			_fresh.append(id)
+			_unlock(id)
 
 
 # Every key the "stat" achievements read (the session reads these from the combat record).
@@ -195,8 +195,13 @@ func read_stats(values: Dictionary) -> void:
 	for id: String in all:
 		var a: Dictionary = all[id]
 		if a.has("stat") and not unlocked.has(id) and progress_of(a) >= int(a["goal"]):
-			unlocked.append(id)
-			_fresh.append(id)
+			_unlock(id)
+
+
+func _unlock(id: String) -> void:
+	unlocked.append(id)
+	_fresh.append(id)
+	dates[id] = Time.get_date_string_from_system()
 
 
 # Whether achievement `a` is earned by these counters, stat readings and level (loading and the host check).
@@ -293,7 +298,7 @@ func stat_text(id: String) -> String:
 
 func to_dict() -> Dictionary:
 	return {"v": 1, "xp": xp, "spent": spent.duplicate(), "traits": traits.duplicate(), "counters": counters.duplicate(), "stats": stat_values.duplicate(),
-		"unlocked": unlocked.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}}
+		"unlocked": unlocked.duplicate(), "dates": dates.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}}
 
 
 # Loads a saved dictionary, dropping or clamping anything invalid (a damaged or edited file never breaks the game).
@@ -326,6 +331,12 @@ func from_dict(d: Variant) -> void:
 			var a: Variant = _ach["achievements"].get(String(id))
 			if a is Dictionary and _earned(a, counters, stat_values, _level) and not unlocked.has(String(id)):
 				unlocked.append(String(id))
+	dates = {}
+	if src.get("dates") is Dictionary:
+		for id: Variant in src["dates"]:
+			var day := String(src["dates"][id])
+			if unlocked.has(String(id)) and day.length() == 10 and day.substr(4, 1) == "-" and day.substr(7, 1) == "-" and day.replace("-", "").is_valid_int():
+				dates[String(id)] = day
 	var open := trait_slots_open()
 	for i in traits.size():
 		traits[i] = ""

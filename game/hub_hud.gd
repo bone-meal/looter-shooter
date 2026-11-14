@@ -12,6 +12,11 @@ var red_last := 10.0
 var me := 1
 var names := Callable()  # func(peer) -> String
 var key := "F"  # the interact key's label
+var trophy := {}:  # the trophy looked at (game/trophy_room.gd look): title, line, owner, date, tint
+	set(value):
+		if value != trophy:
+			trophy = value
+			queue_redraw()
 var _font: Font = ThemeDB.fallback_font
 
 
@@ -53,6 +58,7 @@ func _draw() -> void:
 		_tick(Vector2(x + 8.0, y - 6.0), ready)
 		var name := String(names.call(peer)) if names.is_valid() else "Player"
 		draw_string(_font, Vector2(x + 26.0, y), name, HORIZONTAL_ALIGNMENT_LEFT, 200.0, 18, Color.WHITE if ready else Color(0.75, 0.75, 0.75))
+	_trophy_card()
 	# my ring and prompt, only on the stage
 	var mine := _mine()
 	if not bool(mine.get("stage", false)):
@@ -70,3 +76,17 @@ func _tick(at: Vector2, on: bool) -> void:
 	draw_rect(Rect2(at - Vector2(7, 7), Vector2(14, 14)), Color(1, 1, 1, 0.6), false, 2.0)
 	if on:
 		draw_polyline(PackedVector2Array([at + Vector2(-5, 0), at + Vector2(-1, 5), at + Vector2(6, -6)]), Color(0.4, 1.0, 0.45), 3.0)
+
+
+# The trophy looked at: its name (??? when not earned), how it is earned (or the hint), whose it is and when.
+func _trophy_card() -> void:
+	if trophy.is_empty():
+		return
+	var lines := [String(trophy.get("line", "")), "%s's cabinet" % String(trophy.get("owner", "")) + ("  -  " + String(trophy["date"]) if trophy.has("date") else "")]
+	var w := 460.0
+	var at := Vector2(size.x * 0.5 - w * 0.5, size.y * 0.5 + 120.0)
+	draw_rect(Rect2(at, Vector2(w, 86.0)), Color(0, 0, 0, 0.6))
+	draw_rect(Rect2(at, Vector2(6.0, 86.0)), trophy.get("tint", GOLD))
+	draw_string(_font, at + Vector2(18.0, 28.0), String(trophy.get("title", "")), HORIZONTAL_ALIGNMENT_LEFT, w - 30.0, 22, trophy.get("tint", GOLD))
+	draw_string(_font, at + Vector2(18.0, 54.0), String(lines[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 30.0, 16, Color.WHITE)
+	draw_string(_font, at + Vector2(18.0, 76.0), String(lines[1]), HORIZONTAL_ALIGNMENT_LEFT, w - 30.0, 14, Color(0.75, 0.75, 0.75))

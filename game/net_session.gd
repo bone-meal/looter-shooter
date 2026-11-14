@@ -627,7 +627,10 @@ func _check_progress(progress: Variant) -> String:
 func _make_card(progress: Variant) -> Dictionary:
 	var rules := ProgressState.new(DataStore.load_json("res://data/progression.json"), DataStore.load_json("res://data/achievements.json"))
 	rules.from_dict(progress)
-	return {"callsign": rules.callsign, "title": rules.title_name(rules.title), "level": rules.level(), "emblem_def": rules.emblem_def(rules.emblem)}
+	var trophies := {}  # earned achievement id -> date ("" = before dates were kept): the hub's trophy cabinets
+	for id: String in rules.unlocked:
+		trophies[id] = String(rules.dates.get(id, ""))
+	return {"callsign": rules.callsign, "title": rules.title_name(rules.title), "level": rules.level(), "emblem_def": rules.emblem_def(rules.emblem), "trophies": trophies}
 
 
 # Our progress or card changed (level up, achievement, new emblem): tell everyone.
