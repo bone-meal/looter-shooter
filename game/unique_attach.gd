@@ -87,6 +87,9 @@ static func _attach(model: Node3D, def: Dictionary) -> Node3D:
 	model.add_child(piece)
 	if bool(def.get("lantern", false)):
 		_light_lantern(piece)
+	if bool(def.get("vane", false)):  # Weathervane: the rooster turns into the wind on every machine
+		var turner := (load("res://game/vane_turner.gd") as GDScript).new() as Node3D
+		piece.add_child(turner)
 	return piece
 
 
@@ -115,6 +118,12 @@ static func apply_id(model: Node3D, unique_id: String) -> Node3D:
 	var piece := _attach(model, def)
 	if piece != null and String(def.get("keeps", "")) == "record":
 		show_record(piece, 0)
+	if piece != null and bool(def.get("kite", false)):  # Kite Flyer: his kite flies over him here too (a string to grab)
+		var kite := (load("res://game/kite.gd") as GDScript).new() as Node3D
+		kite.set("owned", false)
+		piece.add_child(kite)
+	if piece != null and bool(def.get("gulls", false)):  # Chip Thief: his gulls circle him here too
+		(load("res://game/signatures/chip_thief.gd") as GDScript).call("make_flock", piece, def.get("cfg", {}))
 	return piece
 
 

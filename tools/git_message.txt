@@ -1,8 +1,9 @@
-Brain Freeze and Avalanche Control: region 4 chase guns, online
+Region 5 chase guns: Weathervane, Kite Flyer, Chip Thief, online
 
-Brain Freeze (machine gun): a slushie cup taped to the M60, every shot a sip. The 30th gives brain freeze: frosted gun and screen edges, every hit freezes 3 s until a reload refills the cup. Others see the cup level and the frost.
-Avalanche Control (rocket launcher): a ski pole on the tube. A rocket that hits the ground starts a rolling snowball that grows and buries enemies in its path (freeze + push). Others see it roll (net_chase snowball).
-explosives.fire takes an optional on_land callback. Chase check 72 ok. Pair sets freeze and avalanche.
+Weathervane (sniper): a weathervane with a gilt rooster on the scope turns into the wind on every machine; damage follows the wind; in a storm a hit calls a lightning bolt onto the target (net_chase bolt).
+Kite Flyer (machine gun): a reel on the gun and a kite flying behind the holder; a lightning flash makes it dive onto the nearest enemy (net_chase kite_dive); a teammate can grab the string from the air and be towed (player tow_point).
+Chip Thief (shotgun): a chip bag and four circling gulls; kills send a gull pecking at the next enemy, inspect sends them all (net_chase gull).
+island_weather: wind, wind_yaw, storming, lightning_flash (wind per stage in data). Brain Freeze frost stronger. Chase check 91 ok, pair set storm.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -626,6 +626,118 @@
         "push": 8.0
       }
     },
+    "weathervane": {
+      "name": "Weathervane",
+      "body": "sniper_basic",
+      "maker": "vantor",
+      "parts": {
+        "barrel": "long",
+        "mag": "box",
+        "sight": "long_scope",
+        "muzzle": "silencer",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "shock_chance",
+        "headshot_damage",
+        "far_reach"
+      ],
+      "skills": [
+        "chain_lightning",
+        "storm_call"
+      ],
+      "traits": [
+        "tempest",
+        "executioner"
+      ],
+      "sea": "galeblessed",
+      "flavor": "",
+      "red": "Forecast: you, with a chance of me.",
+      "signature": "weathervane",
+      "attach": "weathervane",
+      "pool": "region_5_boss",
+      "vane": true,
+      "cfg": {
+        "min_mult": 0.8,
+        "max_mult": 1.6,
+        "bolt_every": 6.0,
+        "bolt_damage": 4.0
+      }
+    },
+    "kite_flyer": {
+      "name": "Kite Flyer",
+      "body": "m60",
+      "maker": "zephyr",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "drum",
+        "sight": "holo",
+        "muzzle": "brake",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "shock_chance",
+        "crowd_pleaser",
+        "adrenaline"
+      ],
+      "skills": [
+        "storm_call",
+        "thunder_totem"
+      ],
+      "traits": [
+        "tempest",
+        "momentum"
+      ],
+      "sea": "stormwrack",
+      "flavor": "",
+      "red": "Ben Franklin had the right idea and the wrong hobbies.",
+      "signature": "kite_flyer",
+      "attach": "kite_reel",
+      "pool": "region_5_boss",
+      "kite": true,
+      "cfg": {
+        "dive_damage": 6.0,
+        "dive_radius": 3.0,
+        "reach": 35.0
+      }
+    },
+    "chip_thief": {
+      "name": "Chip Thief",
+      "body": "shotgun_double",
+      "maker": "moss",
+      "parts": {
+        "barrel": "short",
+        "muzzle": "choke",
+        "grip": "folding"
+      },
+      "buffs": [
+        "point_blank",
+        "crowd_pleaser",
+        "second_breath"
+      ],
+      "skills": [
+        "swarm_drones",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "pack_hunter",
+        "chain_reaction"
+      ],
+      "sea": "mariners",
+      "flavor": "",
+      "red": "It was never about the chips. It was always about the chips.",
+      "signature": "chip_thief",
+      "attach": "chip_bag",
+      "pool": "region_5_boss",
+      "gulls": true,
+      "cfg": {
+        "gulls": 4,
+        "pecks": 4,
+        "peck_damage": 0.5,
+        "reach": 20.0,
+        "bag_seconds": 12.0
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

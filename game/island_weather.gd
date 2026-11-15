@@ -9,6 +9,8 @@ extends Node3D
 
 const WeatherRules = preload("res://core/weather_rules.gd")
 
+signal lightning_flash  # a lightning flash starts (Kite Flyer catches it)
+
 const APPLY_EVERY := 0.1  # seconds between writes of fog and sun while one weather turns into the next
 const TINT_EVERY := 0.5  # the sky photo's tint re-lights the whole scene, so it moves in fewer steps
 const BLENDED: Array[String] = ["weight", "density", "fog_color", "sky_tint", "sky_cover", "sun", "sun_color", "rain"]
@@ -253,6 +255,7 @@ func _lightning(delta: float) -> void:
 		_flash_in = randf_range(float(cfg["flash_every"][0]), float(cfg["flash_every"][1]))
 		_flash_phase = int(cfg["flashes"]) * 2
 		_flash_clock = 0.0
+		lightning_flash.emit()
 		_thunder_in = randf_range(float(cfg["thunder_after"][0]), float(cfg["thunder_after"][1]))
 
 
@@ -263,6 +266,29 @@ func set_clear(left: float) -> void:
 		return
 	_clear = left
 	_env.fog_density = _base_density + _weather_density * _clear
+
+
+# The wind now, 0..1 (Weathervane, Kite Flyer): the stage's "wind" in data/island_weather.json (wind_off_islands
+# elsewhere) plus slow gusts. The sea world's weather (sea step 4) is to answer the same three calls.
+func wind() -> float:
+	var t := Time.get_ticks_msec() / 1000.0
+	var base := float(rules.cfg.get("wind_off_islands", 0.25))
+	if _on:
+		for stage: Dictionary in rules.cfg.get("stages", []):
+			if String(stage.get("id", "")) == String(_to.get("stage", "")):
+				base = float(stage.get("wind", base))
+	return clampf(base + 0.12 * sin(t * 0.9) * sin(t * 0.37 + 1.0), 0.0, 1.0)
+
+
+# Where the wind blows toward (world yaw, radians; drifts slowly).
+func wind_yaw() -> float:
+	var t := Time.get_ticks_msec() / 1000.0
+	return t * 0.02 + 0.6 * sin(t * 0.11)
+
+
+# In a storm: rain at least half and the islands' lightning running.
+func storming() -> bool:
+	return _on and float(_shown.get("rain", 0.0)) >= 0.5
 
 
 func describe() -> String:

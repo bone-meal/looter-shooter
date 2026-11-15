@@ -15,7 +15,11 @@
 # that slides into the nearest other enemy and pops there. BRAIN FREEZE: each shot drinks the cup down, the 30th gives
 # brain freeze (frosted gun and screen edges, every hit freezes) until a reload refills it; another player's copy shows
 # the level and the frost. AVALANCHE CONTROL: a rocket that hits the ground starts a snowball that rolls on, grows and
-# buries the enemies in its path (freeze + push, once each); one that hits a wall does not.
+# buries the enemies in its path (freeze + push, once each); one that hits a wall does not. WEATHERVANE: damage
+# follows the wind, its rooster turns into the wind, in a storm a hit calls a bolt (once per wait). KITE FLYER: the kite
+# flies above, a lightning flash makes it dive onto the nearest enemy (blast), a teammate's copy tows a player who
+# touches its string in the air. CHIP THIEF: gulls circle, a kill sends one pecking at the next enemy, the inspect key
+# sends every idle gull (then waits); other players' copies get the kite and the flock.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -181,6 +185,34 @@ class FreezeMob extends Mob:
 		pushed = v
 
 
+class WindStub extends Node:
+	var blow := 0.0
+	var toward := 1.0
+	var storm := false
+
+	func wind() -> float:
+		return blow
+
+	func wind_yaw() -> float:
+		return toward
+
+	func storming() -> bool:
+		return storm
+
+
+class GunHolder extends Node3D:
+	var weapon := Gun.new()
+	var explosives: Node3D
+	var damage_numbers := Numbers.new()
+
+
+class TowMe extends Node3D:
+	var tow_point := Vector3.INF
+
+	func is_on_floor() -> bool:
+		return false
+
+
 class Kicker extends Node3D:
 	func aim_flat() -> Vector3:
 		return Vector3(1, 0, 0)
@@ -203,6 +235,9 @@ func _ready() -> void:
 	await _penguin(db)
 	await _brain_freeze(db)
 	await _avalanche(db)
+	await _weathervane(db)
+	await _kite(db)
+	await _chips(db)
 	_finish()
 
 
@@ -730,6 +765,148 @@ func _avalanche(db: GunDb) -> void:
 	_say("a rocket into a wall starts no snowball", int(sig.get("started")) == 1)
 	await get_tree().create_timer(4.0).timeout
 	_say("the snowball breaks up when its time is out", get_tree().get_nodes_in_group("snowballs").is_empty())
+
+
+func _weathervane(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "weathervane", 45)
+	_say("Weathervane builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var weather := WindStub.new()
+	weather.add_to_group("island_weather")
+	add_child(weather)
+	var holder := GunHolder.new()
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var rooster := piece.find_child("Rooster", true, false) as Node3D if piece != null else null
+	_say("its weathervane sits on the scope with a rooster", rooster != null)
+	await get_tree().create_timer(1.5).timeout
+	_say("the rooster turns into the wind (%.2f)" % rooster.rotation.y, absf(rooster.rotation.y) > 0.5)
+	var sig: Node3D = Signatures.make("weathervane")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["weathervane"])
+	weather.blow = 0.0
+	var calm := float(sig.call("damage_mult"))
+	weather.blow = 1.0
+	_say("damage follows the wind: %.2f calm, %.2f gale" % [calm, float(sig.call("damage_mult"))], is_equal_approx(calm, 0.8) and is_equal_approx(float(sig.call("damage_mult")), 1.6))
+	var mob := Mob.new()
+	add_child(mob)
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	_say("no storm: no lightning", is_zero_approx(mob.got) and int(sig.get("bolts")) == 0)
+	weather.storm = true
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	_say("in a storm a hit calls a bolt down on it (%.0f), the next waits" % mob.got, is_equal_approx(mob.got, 120.0) and int(sig.get("bolts")) == 1)
+	weather.queue_free()
+
+
+func _kite(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "kite_flyer", 45)
+	_say("Kite Flyer builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.position = Vector3(9500, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its reel is bolted on with a string marker", piece != null and piece.find_child("Line", true, false) != null)
+	var sig: Node3D = Signatures.make("kite_flyer")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["kite_flyer"])
+	sig.call("start", piece)
+	await get_tree().create_timer(1.0).timeout
+	var kite: Node3D = sig.call("kite")
+	_say("the kite flies high above the holder (%.1f m up)" % (kite.global_position.y - holder.global_position.y), kite != null and kite.global_position.y - holder.global_position.y > 4.0)
+	var mob := Mob.new()
+	mob.position = Vector3(9510, 0, 5)
+	add_child(mob)
+	source.list = [mob]
+	sig.call("catch_lightning")
+	await get_tree().create_timer(0.8).timeout
+	var at: Vector3 = booms.blasts[0][0] if not booms.blasts.is_empty() else Vector3.INF
+	_say("a lightning flash: it dives onto the enemy and the bolt goes off there (%s)" % str(booms.blasts), booms.blasts.size() == 1 and at.distance_to(mob.position) < 1.6 and is_equal_approx(float(booms.blasts[0][2]), 180.0))
+	var other := Node3D.new()
+	other.position = Vector3(9600, 0, 0)
+	add_child(other)
+	var copy_piece := UniqueAttach.apply_id(other, "kite_flyer")
+	await get_tree().create_timer(1.0).timeout
+	var copy_kite: Node3D = null
+	for n: Node in copy_piece.get_children():
+		if n.is_in_group("kites"):
+			copy_kite = n
+	var me := TowMe.new()
+	add_child(me)
+	if copy_kite != null:
+		copy_kite.set("local_player", me)
+		var a: Vector3 = (copy_piece.find_child("Line", true, false) as Node3D).global_position
+		me.global_position = a.lerp(copy_kite.global_position, 0.5) - Vector3(0, 1.0, 0)
+	await get_tree().create_timer(0.2).timeout
+	_say("another player's copy flies a kite; touching its string in the air tows you (%s)" % str(me.tow_point), copy_kite != null and bool(copy_kite.call("towing")) and me.tow_point.is_finite())
+	other.queue_free()
+	await get_tree().process_frame
+	await get_tree().process_frame
+	_say("his gun gone: you let go", not me.tow_point.is_finite())
+	sig.call("stop")
+
+
+func _chips(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "chip_thief", 45)
+	_say("Chip Thief builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.position = Vector3(9800, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its chip bag is taped on, the gull model loads", piece != null and ResourceLoader.exists("res://assets/models/weapons/uniques/gull.gltf"))
+	var sig: Node3D = Signatures.make("chip_thief")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["chip_thief"])
+	sig.call("start", piece)
+	await get_tree().process_frame
+	var flock: Node3D = sig.call("flock")
+	_say("four gulls circle the holder", flock != null and int(flock.call("idle_count")) == 4)
+	var dead := Mob.new()
+	dead.position = Vector3(9805, 0, 0)
+	add_child(dead)
+	dead.health.dead = true
+	var next := Mob.new()
+	next.position = Vector3(9808, 0, 4)
+	add_child(next)
+	var third := Mob.new()
+	third.position = Vector3(9795, 0, -3)
+	add_child(third)
+	source.list = [dead, next, third]
+	sig.call("on_target_hit", dead, dead.position, 50.0, true)
+	_say("a kill sends a gull at the next enemy", int(sig.get("sent")) == 1 and int(flock.call("idle_count")) == 3)
+	await get_tree().create_timer(2.6).timeout
+	_say("it pecks 4 times (%.0f)" % next.got, is_equal_approx(next.got, 60.0))
+	sig.call("on_inspect")
+	var after_bag := int(sig.get("sent"))
+	sig.call("on_inspect")
+	_say("the inspect key opens the bag: the idle gulls dive at the enemies (%d), then it waits" % after_bag, after_bag == 3 and int(sig.get("sent")) == 3)
+	var copy := Node3D.new()
+	add_child(copy)
+	var copy_piece := UniqueAttach.apply_id(copy, "chip_thief")
+	var copy_flock := false
+	for n: Node in copy_piece.get_children():
+		copy_flock = copy_flock or n.is_in_group("gull_flocks")
+	_say("another player's copy has its own circling flock", copy_flock)
+	sig.call("stop")
 
 
 func _json(name: String) -> Dictionary:

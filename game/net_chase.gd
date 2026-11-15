@@ -1,4 +1,4 @@
-# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction) (director 2026-11-15: "effects should be seen by online
+# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction; WEATHERVANE "bolt"; KITE FLYER "kite_dive"; CHIP THIEF "gull") (director 2026-11-15: "effects should be seen by online
 # players too"). The holder's machine plays an effect and tells the host; the host passes it to everyone else, who
 # show it. CROAK: where the holder's frog is (leaping, riding an enemy's head) or that it is back on the gun.
 # KEEPER'S LANTERN: a thrown lantern ("bomb": from, velocity) flies and burns on every machine (damage only from the
@@ -11,9 +11,10 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball", "bolt", "kite_dive", "gull"]
 const PenguinRescue = preload("res://game/signatures/penguin_rescue.gd")
 const AvalancheControl = preload("res://game/signatures/avalanche_control.gd")
+const LightningBolt = preload("res://game/lightning_bolt.gd")
 const HotPotato = preload("res://game/signatures/hot_potato.gd")
 const VolcanoSauce = preload("res://game/signatures/volcano_sauce.gd")
 const Grillmaster = preload("res://game/signatures/grillmaster.gd")
@@ -107,6 +108,22 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vect
 			var me_n: Node3D = net.local_player()
 			if me_n != null:
 				PenguinRescue.release(me_n.get_parent(), me_n.get("explosives"), at, null, b, false, 0.0, {})
+		"bolt":  # another player's Weathervane lightning (at = sky, b = the target's feet): shown here
+			var me_b: Node3D = net.local_player()
+			if me_b != null:
+				LightningBolt.strike(me_b.get_parent(), at, b)
+		"kite_dive":  # another player's kite caught lightning (at = sky) and dives to b (b = at: no dive)
+			var kite := _of_peer("kites", from)
+			if kite != null:
+				LightningBolt.strike(kite.get_parent(), at, kite.global_position)
+				if b.distance_to(at) > 0.5:
+					var world_k := kite.get_parent()
+					var kite_from := kite.global_position
+					kite.call("dive", b, func() -> void: LightningBolt.strike(world_k, kite_from, b))
+		"gull":  # another player's gull steals a chip: tossed from at, it pecks at b (no damage from ours)
+			var flock := _of_peer("gull_flocks", from)
+			if flock != null:
+				flock.call("send_gull", at, null, b)
 		"snowball":  # another player's Avalanche Control snowball: it rolls the same way here (no damage from ours)
 			var me_s: Node3D = net.local_player()
 			if me_s != null:
@@ -187,3 +204,11 @@ func _sauce_cfg() -> Dictionary:
 func cfg_of(unique_id: String) -> Dictionary:
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
 	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get(unique_id, {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}
+
+
+# Another player's kite / gull flock shown here (group members know their player via peer()).
+func _of_peer(group: String, peer: int) -> Node3D:
+	for n: Node in get_tree().get_nodes_in_group(group):
+		if int(n.call("peer")) == peer:
+			return n as Node3D
+	return null

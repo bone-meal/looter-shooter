@@ -207,6 +207,7 @@ var hurt_total := 0.0  # damage taken, likewise
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
+var tow_point := Vector3.INF  # Kite Flyer: while finite, the body glides there (towed on a teammate's kite string)
 var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
 var downed := false  # lying on the ground waiting for a revive: no moving, no shooting, nothing hurts any more
 var down_check := Callable()  # the session's: func() -> bool: true = going down here means waiting for a revive, not dying
@@ -459,6 +460,9 @@ func _move_tick(input: Vector2) -> void:
 		sprint_top = top * _sprint_multiplier
 	if cheat_fly:  # the whole movement follows the view, up and down included
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * sprint_top * 2.0
+	elif tow_point.is_finite():  # Kite Flyer: towed on a teammate's kite string (game/kite.gd sets and clears it)
+		velocity = ((tow_point - global_position) * 3.0).limit_length(14.0)
+		_fall_speed = 0.0
 	else:
 		var wish := (Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, input.y)).normalized()
 		var sprinting := Input.is_action_pressed("sprint") and input.y < 0.0 and not aiming and _crouch < 0.5 and not run_fx.has("no_sprint")

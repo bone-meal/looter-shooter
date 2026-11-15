@@ -200,12 +200,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				if n.get_script() != null and String(n.get_script().resource_path).ends_with("penguin_slider.gd"):
 					penguins += 1
 			var snowballs := get_tree().get_nodes_in_group("snowballs").size()
+			var kites := PackedStringArray()
+			for k: Node in get_tree().get_nodes_in_group("kites"):
+				kites.append("kite of %d%s%s" % [int(k.call("peer")), " diving" if bool(k.call("diving")) else "", " shown" if (k as Node3D).is_visible_in_tree() else " hidden"])
+			for fl: Node in get_tree().get_nodes_in_group("gull_flocks"):
+				kites.append("gulls of %d idle %d" % [int(fl.call("peer")), int(fl.call("idle_count"))])
 			var lanterns := 0
 			for n: Node in get_tree().get_nodes_in_group("lanterns"):
 				var sw := (n as Node3D).find_child("Swing", true, false) as Node3D
 				if n.has_meta("lantern_held") and sw != null and sw.visible and (n as Node3D).is_visible_in_tree():
 					lanterns += 1
-			_lines.append("CHASE %s @%.1f: %s | clouds %s | bombs %d, lit lanterns %d, penguins %d, snowballs %d | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", bombs, lanterns, penguins, snowballs, int(link_c.get("sent")), int(link_c.get("heard"))])
+			_lines.append("CHASE %s @%.1f: %s | clouds %s | bombs %d, lit lanterns %d, penguins %d, snowballs %d | %s | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", bombs, lanterns, penguins, snowballs, ", ".join(kites) if not kites.is_empty() else "no kites / gulls", int(link_c.get("sent")), int(link_c.get("heard"))])
 		"gasfire":  # "!gasfire": a fire for one second at the first copy of somebody else's gas cloud (the copy tells its owner)
 			var gas_f: Node = get_tree().get_first_node_in_group("swamp_gas")
 			var spot := Vector3.INF
@@ -224,6 +229,30 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("GASFIRE lit at %s" % str(spot.snapped(Vector3.ONE * 0.1)))
 				await get_tree().create_timer(1.0, true, false, true).timeout
 				fire.queue_free()
+		"kitecatch":  # "!kitecatch": the Kite Flyer in hand catches a lightning flash now (storms are rare in a test)
+			var sig_c: Node = player.get("_sig_node")
+			if sig_c != null and sig_c.has_method("catch_lightning"):
+				sig_c.call("catch_lightning")
+				_lines.append("KITECATCH caught %d" % int(sig_c.get("caught")))
+			else:
+				_lines.append("KITECATCH no kite gun in hand")
+		"vanestorm":  # "!vanestorm": the Weathervane in hand acts as if it storms
+			var sig_v: Node = player.get("_sig_node")
+			if sig_v != null and "force_storm" in sig_v:
+				sig_v.set("force_storm", true)
+			_lines.append("VANESTORM %s" % str(sig_v != null and "force_storm" in sig_v))
+		"signear":  # "!signear": the chase gun in hand's on_target_hit on the nearest living enemy (a hit, not a kill)
+			var src_n: Variant = player.get("explosives").get("source")
+			var near_n: Node3D = null
+			for e: Node3D in src_n.call("enemy_list"):
+				if is_instance_valid(e) and not e.health.is_dead() and (near_n == null or e.global_position.distance_to(player.global_position) < near_n.global_position.distance_to(player.global_position)):
+					near_n = e
+			var sig_n: Node = player.get("_sig_node")
+			if near_n != null and sig_n != null and sig_n.has_method("on_target_hit"):
+				sig_n.call("on_target_hit", near_n, near_n.global_position + Vector3(0, 1, 0), 10.0, false)
+				_lines.append("SIGNEAR %s bolts %s" % [near_n.name, str(sig_n.get("bolts"))])
+			else:
+				_lines.append("SIGNEAR nothing")
 		"sigkill":  # "!sigkill": kill the nearest enemy and tell the chase gun in hand it was its kill (Penguin Rescue: a penguin)
 			var src_k: Variant = player.get("explosives").get("source")
 			var near_k: Node3D = null

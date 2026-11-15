@@ -109,13 +109,13 @@ func _make_frost() -> void:
 	_frost = CanvasLayer.new()
 	_frost.layer = 4
 	var grad := Gradient.new()
-	grad.offsets = PackedFloat32Array([0.0, 0.62, 0.85, 1.0])
-	grad.colors = PackedColorArray([Color(0.85, 0.95, 1.0, 0.0), Color(0.85, 0.95, 1.0, 0.0), Color(0.82, 0.93, 1.0, 0.35), Color(0.92, 0.97, 1.0, 0.8)])
+	grad.offsets = PackedFloat32Array([0.0, 0.6, 0.85, 1.0])
+	grad.colors = PackedColorArray([Color(0.85, 0.95, 1.0, 0.0), Color(0.85, 0.95, 1.0, 0.0), Color(0.82, 0.93, 1.0, 0.45), Color(0.92, 0.97, 1.0, 0.85)])
 	var tex := GradientTexture2D.new()
 	tex.gradient = grad
 	tex.fill = GradientTexture2D.FILL_RADIAL
 	tex.fill_from = Vector2(0.5, 0.5)
-	tex.fill_to = Vector2(1.2, 0.5)
+	tex.fill_to = Vector2(1.05, 0.5)
 	tex.width = 256
 	tex.height = 256
 	_frost_rect = TextureRect.new()

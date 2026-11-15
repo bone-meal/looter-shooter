@@ -16,6 +16,9 @@ const SCRIPTS := {
 	"penguin_rescue": preload("res://game/signatures/penguin_rescue.gd"),
 	"brain_freeze": preload("res://game/signatures/brain_freeze.gd"),
 	"avalanche_control": preload("res://game/signatures/avalanche_control.gd"),
+	"weathervane": preload("res://game/signatures/weathervane.gd"),
+	"kite_flyer": preload("res://game/signatures/kite_flyer.gd"),
+	"chip_thief": preload("res://game/signatures/chip_thief.gd"),
 }
 
 

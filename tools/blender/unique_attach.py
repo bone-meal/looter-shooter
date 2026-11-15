@@ -31,6 +31,13 @@
 # game scales it down as the cup is drunk).
 # AVALANCHE CONTROL: a ski pole strapped along the LEFT of the rocket tube (rubber grip and wrist loop at the back, a
 # basket and steel tip at the front). snowball = the rolling snowball its rockets start (radius 1 about the origin).
+# WEATHERVANE: a little iron weathervane on top of the sniper's scope (spindle, N / E / S / W arms) with a gilt
+# rooster and arrow that turn together as node "Rooster" (pivot on the spindle; the game turns it into the wind).
+# KITE FLYER: a string reel bolted to the LEFT of the M60's receiver, an empty "Line" where the string leaves it;
+# kite = the diamond kite with spars and a bowed tail (about the origin, nose up, facing +x).
+# CHIP THIEF: a crinkled bag of chips taped to the LEFT of the double shotgun's receiver, its crimped top open a
+# little with chips showing; gull = a seagull (about the origin, facing +f) with its wings as nodes "WingL" / "WingR"
+# (pivots at the shoulders: the game flaps them).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -65,6 +72,10 @@ SPECS = {  # name: (kind, colour, seed)
     "cupwhite": ("polymer", (0.95, 0.95, 0.97), 82), "cupband": ("polymer", (0.15, 0.45, 0.9), 83),
     "slush": ("matte", (0.3, 0.72, 1.0), 84), "strawred": ("polymer", (0.9, 0.15, 0.2), 85), "snow": ("matte", (0.93, 0.96, 1.0), 86),
     "alu": ("metal", (0.6, 0.66, 0.74), 87),
+    "vaneiron": ("paint", (0.12, 0.12, 0.13), 88), "gilt": ("paint", (0.85, 0.66, 0.22), 89), "comb": ("polymer", (0.85, 0.1, 0.08), 90),
+    "kitered": ("fabric", (0.88, 0.16, 0.14), 91), "kiteyellow": ("fabric", (0.98, 0.82, 0.2), 92), "spar": ("wood", (0.7, 0.55, 0.35), 93),
+    "bagfoil": ("polymer", (0.98, 0.78, 0.12), 94), "bagred": ("polymer", (0.85, 0.12, 0.1), 95), "chip": ("matte", (0.95, 0.78, 0.38), 96),
+    "gullwhite": ("matte", (0.95, 0.95, 0.94), 97), "gullgrey": ("matte", (0.62, 0.65, 0.7), 98),
     "penguinback": ("polymer", (0.07, 0.08, 0.1), 79), "penguinbelly": ("polymer", (0.94, 0.94, 0.92), 80), "beak": ("polymer", (1.0, 0.55, 0.12), 81),
 }
 
@@ -465,7 +476,96 @@ def snowball(m, M):
         m.ball(M["snow"], r, (x, y, f), u=10, v=6)  # lumps of packed snow
 
 
-MODELS = {"brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+VANE = (0.0, 0.135, 0.2)  # the spindle's foot on top of the sniper's scope (radius 0.03 at y 0.105)
+
+
+def weathervane(m, M):
+    x, y, f = VANE
+    m.box(M["vaneiron"], (0.02, 0.006, 0.026), (x, y + 0.001, f), bevel=0.001)  # saddle clamp on the scope
+    m.rod(M["vaneiron"], 0.0022, (x, y, f), (x, y + 0.11, f), segs=8)  # spindle
+    ay = y + 0.055
+    for (dx, df) in ((1, 0), (-1, 0), (0, 1), (0, -1)):  # the four arms with little ball ends
+        m.rod(M["vaneiron"], 0.0014, (x, ay, f), (x + dx * 0.03, ay, f + df * 0.03), segs=6)
+        m.ball(M["gilt"], 0.003, (x + dx * 0.032, ay, f + df * 0.032), u=8, v=6)
+    m.ball(M["gilt"], 0.004, (x, y + 0.112, f), u=8, v=6)
+    m.node("Rooster", (x, y + 0.11, f))
+    ry = y + 0.13  # the rooster stands on the arrow, facing +f (the arrow head)
+    m.rod(M["vaneiron"], 0.0015, (x, y + 0.112, f - 0.04), (x, y + 0.112, f + 0.04), segs=6, node="Rooster")  # arrow shaft
+    m.prof(M["gilt"], 0.002, [(f + 0.04, y + 0.104), (f + 0.052, y + 0.112), (f + 0.04, y + 0.12)], x=x, bevel=0.0, node="Rooster")  # head
+    m.prof(M["gilt"], 0.002, [(f - 0.048, y + 0.1), (f - 0.032, y + 0.106), (f - 0.032, y + 0.118), (f - 0.048, y + 0.124)], x=x, bevel=0.0, node="Rooster")  # tail fin
+    m.rod(M["vaneiron"], 0.0013, (x, y + 0.112, f), (x, ry - 0.008, f), segs=6, node="Rooster")
+    m.ball(M["gilt"], (0.006, 0.01, 0.014), (x, ry, f), node="Rooster", u=12, v=8)  # body
+    m.ball(M["gilt"], (0.005, 0.006, 0.006), (x, ry + 0.012, f + 0.011), node="Rooster", u=10, v=6)  # head
+    m.prof(M["comb"], 0.003, [(f + 0.008, ry + 0.016), (f + 0.011, ry + 0.022), (f + 0.014, ry + 0.017), (f + 0.017, ry + 0.021), (f + 0.017, ry + 0.015)], x=x, bevel=0.0, node="Rooster")
+    m.prof(M["comb"], 0.003, [(f + 0.012, ry + 0.007), (f + 0.016, ry + 0.003), (f + 0.014, ry + 0.009)], x=x, bevel=0.0, node="Rooster")  # wattle
+    m.rod(M["butter"], 0.002, (x, ry + 0.012, f + 0.016), (x, ry + 0.011, f + 0.022), r2=0.0004, segs=6, node="Rooster")  # beak
+    m.prof(M["gilt"], 0.0025, [(f - 0.01, ry + 0.002), (f - 0.026, ry + 0.022), (f - 0.03, ry + 0.012), (f - 0.022, ry - 0.004)], x=x, bevel=0.0, node="Rooster")  # tail feathers
+    for side in (-1.0, 1.0):
+        m.rod(M["vaneiron"], 0.001, (x + side * 0.002, ry - 0.008, f), (x + side * 0.003, ry - 0.016, f + 0.002), segs=4, node="Rooster")  # legs
+
+
+REEL = (-0.052, 0.0, -0.13)  # the reel's middle (x, y, f) beside the M60's receiver (half width 0.03)
+
+
+def kite_reel(m, M):
+    x, y, f = REEL
+    m.box(M["vaneiron"], (0.012, 0.03, 0.03), (-0.036, y, f), bevel=0.002)  # bracket against the receiver
+    for x0 in (x - 0.014, x + 0.01):  # two flanges round the wound string
+        m.cylx(M["kitered"], 0.034, x0, x0 + 0.004, f, y, segs=20, bevel=0.001)
+    m.cylx(M["cable"], 0.024, x - 0.01, x + 0.01, f, y, segs=20, bevel=0.0)  # the string wound on
+    m.cylx(M["vaneiron"], 0.006, x - 0.022, x + 0.016, f, y, segs=10, bevel=0.0)  # axle
+    m.box(M["vaneiron"], (0.004, 0.034, 0.008), (x - 0.022, y - 0.014, f), bevel=0.001)  # crank arm
+    m.cylx(M["spar"], 0.005, x - 0.036, x - 0.022, f, y - 0.03, segs=8, bevel=0.001)  # crank handle
+    m.empty("Line", x, y + 0.024, f)
+
+
+def kite(m, M):
+    m.prof(M["kitered"], 0.006, [(0.0, 0.5), (0.0, -0.5), (-0.35, 0.12)], bevel=0.0)  # two halves of the sail (in the f-y plane)
+    m.prof(M["kiteyellow"], 0.006, [(0.0, 0.5), (0.35, 0.12), (0.0, -0.5)], bevel=0.0)
+    m.rod(M["spar"], 0.008, (0.0, 0.5, 0.0), (0.0, -0.5, 0.0), segs=6)
+    m.rod(M["spar"], 0.008, (0.0, 0.12, -0.35), (0.0, 0.12, 0.35), segs=6)
+    for k in range(5):  # the tail with bows
+        y0 = -0.5 - k * 0.16
+        m.rod(M["cable"], 0.003, (0.0, y0, 0.0), (0.0, y0 - 0.16, 0.0), segs=4)
+        bow = M["kitered"] if k % 2 == 0 else M["kiteyellow"]
+        m.prof(bow, 0.005, [(-0.05, y0 - 0.1), (0.0, y0 - 0.08), (-0.05, y0 - 0.06)], bevel=0.0)
+        m.prof(bow, 0.005, [(0.05, y0 - 0.1), (0.05, y0 - 0.06), (0.0, y0 - 0.08)], bevel=0.0)
+
+
+BAG = (-0.048, -0.004, 0.0)  # the bag's middle beside the shotgun's receiver (half width 0.03)
+
+
+def chip_bag(m, M):
+    x, y, f = BAG
+    m.ball(M["bagfoil"], (0.016, 0.042, 0.045), (x, y, f), u=14, v=10)  # puffed bag
+    m.box(M["bagfoil"], (0.012, 0.012, 0.09), (x, y + 0.042, f), bevel=0.002)  # crimped top seam
+    for k in range(9):
+        m.box(M["bagfoil"], (0.013, 0.003, 0.004), (x, y + 0.049, f - 0.04 + k * 0.01), bevel=0.0)  # crimp teeth
+    m.box(M["bagfoil"], (0.012, 0.01, 0.09), (x, y - 0.042, f), bevel=0.002)  # bottom seam
+    m.ball(M["bagred"], (0.0162, 0.016, 0.03), (x - 0.0005, y - 0.004, f), u=14, v=8)  # the red band
+    for df, dy, tilt in ((-0.015, 0.058, 20.0), (0.01, 0.06, -15.0), (0.022, 0.055, 35.0)):  # chips peeking out
+        m.box(M["chip"], (0.004, 0.024, 0.02), (x + 0.002, y + dy, f + df), tilt=tilt, bevel=0.002)
+    for df in (-0.028, 0.028):  # two strips of tape round bag and receiver
+        m.box(M["tape"], (0.0012, 0.09, 0.012), (x - 0.0165, y, f + df), bevel=0.0004)
+        m.box(M["tape"], (0.07, 0.0012, 0.012), (-0.015, y + 0.046, f + df), bevel=0.0004)
+        m.box(M["tape"], (0.07, 0.0012, 0.012), (-0.015, y - 0.046, f + df), bevel=0.0004)
+
+
+def gull(m, M):
+    m.ball(M["gullwhite"], (0.06, 0.06, 0.16), (0.0, 0.0, 0.0), u=14, v=10)  # body
+    m.ball(M["gullwhite"], (0.045, 0.045, 0.05), (0.0, 0.04, 0.15), u=12, v=8)  # head
+    m.rod(M["butter"], 0.012, (0.0, 0.035, 0.19), (0.0, 0.03, 0.25), r2=0.003, segs=8)  # beak
+    m.ball(M["bagred"], 0.004, (0.0, 0.026, 0.228), u=6, v=4)  # the red spot on the beak
+    for side in (-1.0, 1.0):
+        m.ball(M["rubber"], 0.006, (side * 0.03, 0.055, 0.17), u=6, v=4)  # eyes
+    m.prof(M["gullgrey"], 0.012, [(-0.12, 0.0), (-0.24, 0.03), (-0.24, -0.03)], bevel=0.0)  # tail
+    for side, name in ((-1.0, "WingL"), (1.0, "WingR")):
+        m.node(name, (side * 0.05, 0.02, 0.02))
+        m.box(M["gullgrey"], (0.26, 0.01, 0.12), (side * 0.18, 0.02, 0.02), node=name, bevel=0.003)
+        m.box(M["rubber"], (0.08, 0.011, 0.08), (side * 0.32, 0.02, 0.0), node=name, bevel=0.003)  # black wing tips
+
+
+MODELS = {"weathervane": weathervane, "kite_reel": kite_reel, "kite": kite, "chip_bag": chip_bag, "gull": gull, "brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":
