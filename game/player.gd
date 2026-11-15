@@ -14,6 +14,8 @@ signal shield_broke  # the buildable shield took its last hit
 const WeaponState = preload("res://core/weapon_state.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
+const UniqueAttach = preload("res://game/unique_attach.gd")
+const Signatures = preload("res://game/signatures/index.gd")
 const SkillState = preload("res://core/skill_state.gd")
 const SkillSelf = preload("res://core/skill_self.gd")
 const BodyBuilder = preload("res://game/body_builder.gd")
@@ -91,6 +93,8 @@ var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
 var sounds: Node  # the game's sound player (data/sounds.json), set by game/game_session.gd
 var skill_fx: Node3D  # world effects of gun skills (game/skill_effects.gd), set by game/game_session.gd
 var skills := SkillState.new()  # cooldowns of the Q/E gun skills
+var _sig_id := ""  # the red-text behaviour of the chase gun in hand ("" = none): game/signatures/
+var _sig_node: Node3D
 var self_fx := SkillSelf.new()  # what the Q/E skills do to us (storm, rush, phase, clip, shield, banner)
 var _slam_entry := {}  # Shockwave Slam in the air: it lands with the next touch of the ground (or after SLAM_WAIT)
 var _slam_base := 0.0
@@ -553,6 +557,7 @@ func _move_and_shoot(delta: float) -> void:
 # Runs every rendered frame: places the camera, body model and weapon, and plays the animations.
 func _process(delta: float) -> void:
 	_move_and_shoot(minf(delta, MAX_STEP))
+	_follow_signature()
 	var origin := global_position
 	if not carried and _tick_from.distance_squared_to(origin) < 4.0:  # between two ticks (farther apart = a teleport)
 		origin = _tick_from.lerp(origin, clampf(_tick_left / move.tick, 0.0, 1.0))
@@ -912,6 +917,7 @@ func _dress_body(index: int) -> void:
 	_ads_positions[index] = _base_ads[index] if eye <= 0.0 else Vector3(_base_ads[index].x, -eye * _models[index].scale.y, _base_ads[index].z)
 	var family := String(_held_gun.get("family", ""))
 	PonySkin.apply(_models[index], String(gun_db.tier(String(_held_gun["tier"])).get("skin", "")) == "pony", family, gun_db.family_def(family))
+	UniqueAttach.apply(_models[index], _held_gun, gun_db)  # a chase gun's gimmick (after the skin: it keeps its own look)
 	var view: Dictionary = _base_views[index].duplicate()
 	view["optic"] = String((_held_gun.get("parts", {}) as Dictionary).get("sight", {}).get("kind", "")) if eye > 0.0 else ""
 	view["ads_fov"] = float(view.get("ads_fov", 60.0)) * float(_held_stats["ads_fov"])
@@ -923,6 +929,7 @@ func _dress_body(index: int) -> void:
 # A plain weapon: its body's model goes back to stock if a rolled gun dressed it before.
 func _undress_body(index: int) -> void:
 	WKillsDisplay.show(_models[index], {})  # a plain gun has no counter
+	UniqueAttach.clear(_models[index])
 	if not _gun_hash.has(index):
 		return
 	_gun_hash.erase(index)
@@ -1715,8 +1722,29 @@ func refresh_wkills() -> void:
 		WKillsDisplay.show(_models[_slot], _held_gun)
 
 
+# The chase gun in hand's red-text behaviour starts when it comes into hand and stops when it leaves (game/signatures/).
+func _follow_signature() -> void:
+	var id := ""
+	if _holding and not _held_gun.is_empty() and _held_gun.has("unique"):
+		id = String((gun_db.uniques.get(String(_held_gun["unique"]), {}) as Dictionary).get("signature", ""))
+	if id == _sig_id:
+		return
+	if _sig_node != null:
+		_sig_node.call("stop")
+		_sig_node.queue_free()
+		_sig_node = null
+	_sig_id = id
+	if id != "":
+		_sig_node = Signatures.make(id)
+		if _sig_node != null:
+			add_child(_sig_node)
+			_sig_node.call("start", UniqueAttach.on(_models[_slot]))
+
+
 # The inspect key: the thing in hand is looked over (first person only; others do not see it).
 func start_inspect() -> void:
+	if _sig_node != null:
+		_sig_node.call("on_inspect")  # a chase gun's own use of the key (the Mixtape: next song)
 	var id := _inspect_target()
 	if id != "" and inspect_moves.has(id) and not third_person and not downed:
 		_inspect_id = id
@@ -1742,7 +1770,8 @@ func inspecting() -> String:
 
 func _inspect_target() -> String:
 	if _holding:
-		return "gun:" + inventory.holster_body(_hand)
+		var own := "unique:" + String(_held_gun.get("unique", ""))  # a chase gun's own move
+		return own if _held_gun.has("unique") and inspect_moves.has(own) else "gun:" + inventory.holster_body(_hand)
 	if _knife_out:
 		return "knife:" + knife
 	if knife_stowed and not _shield_out:

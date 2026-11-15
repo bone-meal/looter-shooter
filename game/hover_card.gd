@@ -43,8 +43,12 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 			var pd: Dictionary = gun_parts[part_slot]
 			lines.append(["%s (%s)" % [gun_db.parts[part_slot][String(pd["kind"])]["name"], gun_db.makers[String(pd["maker"])]["name"]], Color(0.75, 0.85, 1.0)])
 	if stats.has("unique"):  # hand-made pony gun: its saying, then what every unique gets
-		for wrapped in _wrap("\"%s\"" % String((stats["unique"] as Dictionary).get("flavor", "")), 50):
-			lines.append([wrapped, Color(1.0, 0.45, 0.6)])
+		var u: Dictionary = stats["unique"]
+		for wrapped in _wrap(String(u.get("red", "")), 50):  # a chase gun's red text
+			lines.append([wrapped, Color(1.0, 0.22, 0.18)])
+		if String(u.get("flavor", "")) != "":
+			for wrapped in _wrap("\"%s\"" % String(u["flavor"]), 50):
+				lines.append([wrapped, Color(1.0, 0.45, 0.6)])
 		lines.append(["Unique: every stat rolled at the top, plus a bonus to each", Color(1.0, 0.7, 0.85)])
 	for combo: Dictionary in stats.get("combos", []):  # what the parts do together
 		for wrapped in _wrap(String(combo["desc"]), 50):

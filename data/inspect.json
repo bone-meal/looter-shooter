@@ -1,5 +1,5 @@
 {
- "_about": "Inspect moves (key V by default): what the gun, knife or staff in hand does while the player looks it over. One entry per gun BODY (gun:<weapons.json id>), per KNIFE TYPE (knife:<knives.json id>) and the fantasy STAFF. `keys` = [seconds, x, y, z, pitch, yaw, roll]: metres moved in view space (x right, y up, z back toward the eye) and degrees turned on top of the thing's own hold, passed through smoothly (Catmull-Rom). The first key is the hold itself (all zero); the last key must turn whole circles only (multiples of 360) so it ends looking like the hold. Shooting, aiming, reloading or switching stops it at once. First person only.",
+ "_about": "Inspect moves (key V by default): what the gun, knife or staff in hand does while the player looks it over. One entry per gun BODY (gun:<weapons.json id>), per KNIFE TYPE (knife:<knives.json id>) and the fantasy STAFF. `keys` = [seconds, x, y, z, pitch, yaw, roll]: metres moved in view space (x right, y up, z back toward the eye) and degrees turned on top of the thing's own hold, passed through smoothly (Catmull-Rom). The first key is the hold itself (all zero); the last key must turn whole circles only (multiples of 360) so it ends looking like the hold. Shooting, aiming, reloading or switching stops it at once. First person only. A named chase gun may have its own move (unique:<gun_uniques.json id>), used instead of its body's: the Mixtape turns its left side, with the MP3 player, toward the eye.",
  "moves": {
   "gun:pistol_basic": {
    "keys": [
@@ -1273,6 +1273,46 @@
      0,
      0,
      720,
+     0
+    ]
+   ]
+  },
+  "unique:mixtape": {
+   "keys": [
+    [
+     0,
+     0,
+     0,
+     0,
+     0,
+     0,
+     0
+    ],
+    [
+     0.5,
+     -0.14,
+     0.08,
+     0.13,
+     4,
+     78,
+     8
+    ],
+    [
+     3.2,
+     -0.14,
+     0.08,
+     0.13,
+     4,
+     82,
+     10
+    ],
+    [
+     3.9,
+     0,
+     0,
+     0,
+     0,
+     0,
      0
     ]
    ]

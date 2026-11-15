@@ -86,6 +86,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var release := InputEventAction.new()
 			release.action = words[1]
 			Input.parse_input_event(release)
+		"sig":  # "!sig <note>": the chase gun in hand's red-text behaviour and (the Mixtape) what it plays
+			var node: Node = player.get("_sig_node")
+			_lines.append("SIG %s: %s | %s" % [" ".join(words.slice(1)), String(player.get("_sig_id")), String(node.call("playing_text")) if node != null and node.has_method("playing_text") else "-"])
 		"skills":  # "!skills <q skill> [e skill]": the gun in hand gets these Q / E skills at best quality (a dev-only edit of a rolled gun)
 			var hand := int(player.get("_hand"))
 			var inv: RefCounted = player.get("inventory")

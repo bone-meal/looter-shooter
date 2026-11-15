@@ -1,13 +1,14 @@
-Pony families: the director's six, traits that play their virtues
+Chase guns: red text, signature behaviours, gimmick models; the Mixtape
 
-Concordia Starweave (Magic), Hearthgold Trueheart (Honesty), Valor
-Skystreak (Loyalty), Bellegrace Gemshine (Generosity), Kindlebloom
-Softwing (Kindness), Merribelle Joyburst (Laughter), with his colours.
-Their 12 pony-only traits (Spellweave, Concord, Honest Work, Hearthfire,
-Stand Fast, Skystreak, Gemcut, Generous Spirit, Soft Wing, Bloom, Party
-Popper, Joyburst) live in game/pony_traits.gd; the card shows the
-family's virtue and party role. Replaces the placeholder families of
-21ee192. Check tools/loot_1e_check 0 problems.
+First chase gun from the approved list (diary/DESIGN_UNIQUES.md): the
+Mixtape, an M16 with a modelled MP3 player duct-taped to the receiver
+(screen, click wheel, tape, earbuds). While it is in hand it plays your
+own Music folder shuffled, as 3D sound from you; its screen scrolls the
+song name; the inspect key skips to the next song and turns the gun to
+show the screen. Red text on the card (the director's words). Framework
+for the rest: red / signature / attach / pool fields in
+data/gun_uniques.json, game/signatures/, game/unique_attach.gd,
+tools/blender/unique_attach.py. Others hearing it online comes next.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

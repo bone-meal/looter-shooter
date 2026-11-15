@@ -18,6 +18,7 @@ const BUFF_COLOUR := Color(1.0, 0.8, 0.4)
 const COMBO_COLOUR := Color(0.6, 1.0, 0.7)
 const SKILL_COLOUR := Color(0.5, 0.95, 1.0)
 const SEA_COLOUR := Color(0.35, 0.9, 0.85)
+const RED_TEXT := Color(1.0, 0.22, 0.18)
 
 
 # Draws the card for `what` inside r and returns its buttons [[Rect2, action id]].
@@ -103,6 +104,8 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		canvas.draw_string(font, Vector2(x, y), "%+.0f" % (dps - dps_was), HORIZONTAL_ALIGNMENT_RIGHT, w, 15, UiSkin.GOOD if dps >= dps_was else UiSkin.BAD)
 	y += 16.0
 	var lines: Array = []  # [text, colour, boxed, icon shape ("" = none)]
+	if stats.has("unique") and String((stats["unique"] as Dictionary).get("red", "")) != "":  # a chase gun's red text comes first
+		lines.append([String(stats["unique"]["red"]), RED_TEXT, false, ""])
 	if gun.has("family"):
 		var fam: Dictionary = db.family_def(String(gun["family"]))
 		lines.append(["%s  -  %s\n%s" % [String(fam.get("name", "")), String(fam.get("virtue", "")), String(fam.get("role", ""))], TierStyle.family_colour(db, String(gun["family"])), false, ""])
@@ -132,7 +135,9 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	if not part_names.is_empty():
 		lines.append(["Parts: " + ", ".join(part_names), UiSkin.TEXT_DIM, false, ""])
 	if stats.has("unique"):
-		lines.append(["\"%s\"" % String((stats["unique"] as Dictionary).get("flavor", "")), Color(1.0, 0.55, 0.7), false, ""])
+		var u: Dictionary = stats["unique"]
+		if String(u.get("flavor", "")) != "":
+			lines.append(["\"%s\"" % String(u["flavor"]), Color(1.0, 0.55, 0.7), false, ""])
 	for line: Array in lines:
 		var indent := 40.0 if String(line[3]) != "" else (6.0 if bool(line[2]) else 0.0)  # a skill's icon sits left of its text
 		var text_h := maxf(font.get_multiline_string_size(String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 10.0 - indent, 14).y, 34.0 if indent > 30.0 else 0.0)

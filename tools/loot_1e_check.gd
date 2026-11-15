@@ -191,6 +191,9 @@ func _ponies(db: GunDb, rng: RandomNumberGenerator) -> void:
 	_say("a unique stays legal", GunGen.validate(db, u) == "")
 	u["v"] = 3
 	_say("a unique saved as version 3 stays legal", GunGen.validate(db, u) == "")
+	var mix := GunGen.unique(db, "mixtape", 5)
+	var mdef: Dictionary = db.uniques["mixtape"]
+	_say("the Mixtape is legal, has its red text, behaviour, pool and gimmick model", GunGen.validate(db, mix) == "" and String(mdef["red"]).begins_with("the soundcloud era") and String(mdef["signature"]) == "mixtape" and String(mdef["pool"]) == "region_1_boss" and ResourceLoader.exists("res://assets/models/weapons/uniques/%s.gltf" % mdef["attach"]))
 
 
 func _sea(db: GunDb, rng: RandomNumberGenerator) -> void:
