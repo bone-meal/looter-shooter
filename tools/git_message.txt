@@ -1,12 +1,10 @@
-Sea step 2b: rendered item icons, tier plates, level badges, knife icons
+Sea step 3a: 15 skills with ten milestones each
 
-- tools/blender/icons.py renders every armour piece per tier, every gun body and every knife type
-- 18 new sea armour pieces in data/items.json
-- game/item_icons.gd: picture lookup, tier plate, level badge, knife:<type>
-- tools/knife_icons.tscn writes the knife models for Blender
-- scrolling and shrink-to-fit names (game/tier_style.gd), HUD drops the tier tag
-- game/fx_kit.gd particles keep their sizes; effects retuned
-- mixtape stop() fix, dev !bagclear, tools/icon_shot
+- data/fantasy/skilling.json v2: six new skills, unlocks at levels 5..50 (content or perks), old content moved onto the milestones
+- core/skill_perks.gd sums perks; gathering, recipes, fires, food, potions and magic use them
+- skills page: 15 cards and the milestone list; level-up notice names what opened
+- Stormoak tree, Stormlily, Storm Tonic, rough and flawless gems; new icons
+- tools/skill_unlock_check
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

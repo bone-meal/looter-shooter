@@ -100,6 +100,20 @@
   "sk_lance": 93,
   "sk_banner": 94,
   "sk_harpoon": 95,
-  "sk_overshield": 96
+  "sk_overshield": 96,
+  "sail": 97,
+  "paw": 98,
+  "saw": 99,
+  "needle": 100,
+  "trowel": 101,
+  "plank": 102,
+  "feather": 103,
+  "bone": 104,
+  "gem": 105,
+  "snare": 106,
+  "relic": 107,
+  "brush": 108,
+  "crate": 109,
+  "course": 110
  }
 }

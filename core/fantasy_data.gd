@@ -91,6 +91,11 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 	for id: String in skilling["skills"]:
 		skilling["skills"][id]["name"] = _line(text, "skill", id, "name", missing)
 		skilling["skills"][id]["about"] = _line(text, "skill", id, "about", missing)
+	for skill: String in skilling.get("unlocks", {}):  # "5: Oak trees | Chop oak trees in Greenwald."
+		for step: Dictionary in skilling["unlocks"][skill]:
+			var line := _line(text, "unlock", skill, str(int(step["level"])), missing)
+			step["name"] = line.get_slice("|", 0).strip_edges()
+			step["about"] = line.get_slice("|", 1).strip_edges() if line.contains("|") else ""
 	for id: String in skilling["nodes"]:
 		var named := _line(text, "gather", "names", id, missing)
 		skilling["nodes"][id]["name"] = named if named != "" else id

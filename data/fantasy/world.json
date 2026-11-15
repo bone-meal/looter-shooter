@@ -793,7 +793,9 @@
     "frostpine_tree": 0.3,
     "skysteel_rock": 0.35,
     "frostbloom": 0.2,
-    "cinderroot": 0.2
+    "cinderroot": 0.2,
+    "stormoak_tree": 0.5,
+    "stormlily": 0.3
    },
    "enemies": [
     "storm_harpy",

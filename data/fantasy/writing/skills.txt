@@ -1,4 +1,4 @@
-# SKILLS: the nine skills and the things worked on to raise them
+# SKILLS: the fifteen skills and the things worked on to raise them
 # ----------------------------------------------------------------------------------------------
 # FILE FOR WRITERS. The game reads this file as it is: save it and start the game to see your words.
 #   * Lines starting with # are notes for you. The game ignores them. They say WHO speaks or WHAT is named.
@@ -50,6 +50,36 @@ about: Smelt bars and forge tools and staff fittings at a forge.
 name: Farming
 about: Reap wheat and pick herbs; they grow back.
 
+[skill sailing]
+# WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
+name: Sailing
+about: Handle a ship on the open sea: read the wind, trim the sails, dock cleanly. Trained at sea.
+
+[skill hunting]
+# WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
+name: Hunting
+about: Follow tracks, set snares and bring down wild animals for hides, meat, feathers and bone.
+
+[skill agility]
+# WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
+name: Agility
+about: Run the obstacle courses of every region. Opens shortcuts and makes you quicker on your feet.
+
+[skill carpentry]
+# WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
+name: Carpentry
+about: Saw logs into planks and build rods, hafts, crates and barrels. Mend broken bridges and ladders.
+
+[skill crafting]
+# WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
+name: Crafting
+about: Turn hides, cloth, gems and bars into gloves, boots, belts, jewellery, bags and snares.
+
+[skill archaeology]
+# WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
+name: Archaeology
+about: Dig at old ruins, brush finds out of the earth and restore them. Complete collections for rewards.
+
 [skill alchemy]
 # WHAT: a skill's name (HUD and menus) and a line about it for the skills page.
 name: Alchemy
@@ -79,6 +109,8 @@ meadowmint: Meadowmint
 glowcap: Glowcap
 sunpetal: Sunpetal
 frostbloom: Frostbloom
+stormoak_tree: Stormoak tree
+stormlily: Stormlily
 cinderroot: Cinderroot
 shallows_spot: Shore shallows
 deepsea_spot: Cold current
@@ -99,3 +131,132 @@ name: Workbench
 # WHAT: the name of this kind of work place, shown on the tab of its window.
 name: Cauldron
 
+[unlock magic]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Deep Well | 10% more mana.
+10: Wider Weave | One more element fits in a cast.
+15: Flow | Mana returns 15% faster.
+20: Wider Weave II | One more element fits in a cast.
+25: Focus | Spells hit 5% harder.
+30: Wider Weave III | One more element fits in a cast.
+35: Deep Well II | 10% more mana.
+40: Wider Weave IV | One more element fits in a cast.
+45: Archmage's Flow | Mana returns 15% faster and spells hit 5% harder.
+50: Wider Weave V | One more element fits in a cast.
+
+[unlock woodcutting]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Oak trees | Chop oak trees in Greenwald.
+10: Clean Swing | Chop 10% faster.
+15: Palm trees | Chop palms on the coast and in the desert.
+20: Split Grain | 10% chance of a second log.
+25: Frostpine trees | Chop frostpines in Frostmere.
+30: Light Touch | 25% chance a tree is not felled.
+35: Emberwood trees | Chop emberwood in Cinderreach.
+40: Old Rhythm | Chop 15% faster.
+45: Stormoak trees | Chop stormoaks on the heights of Stormcrown.
+50: Forester | 15% more second logs, 15% fewer trees felled.
+
+[unlock firemaking]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Oak fires | Burn oak logs.
+10: Long Burn | Your fires burn 25% longer.
+15: Palm fires | Burn palm logs.
+20: Warm Hands | Mana returns 25% faster at your fires.
+25: Frostpine fires | Burn frostpine logs.
+30: Kindler | 25% chance a log lights without being used up.
+35: Emberwood fires | Burn emberwood logs.
+40: Long Burn II | Your fires burn 25% longer.
+45: Stormoak fires | Burn stormoak logs.
+50: Hearth Heart | Your fires reach half again as far and warm 25% more.
+
+[unlock fishing]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: River fishing | Catch trout in rivers.
+10: Patient Line | Fish 10% faster.
+15: Sea fishing | Catch silverfin in the sea.
+20: Oasis fishing | Catch sandskippers at desert pools.
+25: Full Net | 10% chance of a second fish.
+30: Ice fishing | Catch icefin through the ice.
+35: Deep sea fishing | Catch stormfin far out.
+40: Lava fishing | Catch lava eels in the volcano's pools.
+45: Old Salt | Fish 15% faster, 10% more second fish.
+50: Bottomless | Half the time a spot keeps biting.
+
+[unlock cooking]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Grilled trout | Cook trout.
+10: Good Seasoning | Food heals 10% more.
+15: Seared silverfin | Cook silverfin.
+20: Spiced sandskipper | Cook sandskipper.
+25: Two Pans | 10% chance of a second portion.
+30: Icefin stew | Cook icefin stew.
+35: Seared stormfin | Cook stormfin.
+40: Charred eel | Cook lava eel.
+45: Hearty | Food heals 20% more.
+50: Chef | 15% chance to keep the ingredients, 10% more second portions.
+
+[unlock mining]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Steady Pick | Mine 10% faster.
+10: Iron | Mine iron ore.
+15: Gem Eye | 4% chance of a rough gem.
+20: Sunstone | Mine sunstone.
+25: Rich Seam | 10% chance of a second ore.
+30: Frost crystal | Mine frost crystal.
+35: Obsidian | Mine obsidian.
+40: Jeweller's Eye | 3% chance of a flawless gem.
+45: Skysteel | Mine skysteel ore.
+50: Deep Vein | 30% chance a rock holds on, 15% more second ore.
+
+[unlock smithing]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Hot Iron | 10% chance of a second bar.
+10: Iron work | Smelt iron; forge iron axes and pickaxes.
+15: Thrifty | 10% chance to keep the materials.
+20: Steel work | Forge steel tools and the Sunstone staff.
+25: Hot Iron II | 10% more second bars.
+30: Thrifty II | 10% more chance to keep the materials.
+35: Obsidian staff | Forge the Obsidian staff.
+40: Hot Iron III | 10% more second bars.
+45: Skysteel work | Smelt skysteel; forge skysteel tools and the Stormcall staff.
+50: Prism staff | Forge the Prism staff.
+
+[unlock farming]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Meadowmint | Pick meadowmint.
+10: Glowcap | Pick glowcaps; weave the Woodland and Tidecloth robes.
+15: Green Thumb | Plants grow back 25% sooner.
+20: Sunpetal | Pick sunpetals; weave the Sunweave robe.
+25: Plenty | 10% chance of a second crop.
+30: Frostbloom | Pick frostbloom; weave the Rimefur robe.
+35: Cinderroot | Dig cinderroot; weave the Cinder robe.
+40: Gentle Hands | 25% chance a plant is not used up.
+45: Stormlily | Pick stormlilies; weave the Stormsilk robe.
+50: Harvest Moon | 15% more second crops, plants grow back 25% sooner.
+
+[unlock alchemy]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Health draught | Brew health draughts.
+10: Steady Stir | 10% chance to keep the herbs.
+15: Potent | Potions are 25% stronger and last 25% longer.
+20: Sun elixir | Brew sun elixirs.
+25: Double Batch | 15% chance of a second potion.
+30: Frost ward | Brew frost wards.
+35: Cinder draught | Brew cinder draughts.
+40: Potent II | Potions are 25% stronger and last 25% longer.
+45: Storm tonic | Brew storm tonics.
+50: Philosopher | 20% chance to keep the herbs, 10% more second potions.
+
+[unlock sailing]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Trim the sails | Set your sails for the wind: faster close to the wind.
+10: Sea Legs | Your ships sail 5% faster.
+15: The brig | Build and sail a brig.
+20: Quick Patch | Hull repairs cost 15% less.
+25: Swift sail | The wind is always behind you.
+30: Fair Wind | Your ships sail 5% faster.
+35: The galleon | Build and sail a galleon.
+40: Gun Crew | Cannons you man reload 15% faster.
+45: Storm sailing | Hold course through storms.
+50: Old Captain | 5% faster ships, repairs 15% cheaper.

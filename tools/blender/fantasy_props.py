@@ -215,6 +215,7 @@ def build_all():
     model("tree_pine", lambda m: tree(m, (0.35, 0.26, 0.2), [(0.2, 0.4, 0.34), (0.8, 0.9, 0.96), (0.24, 0.46, 0.38), (0.86, 0.93, 1.0)], 8.0, 2.4, "pine"))
     model("tree_ember", lambda m: tree(m, (0.14, 0.1, 0.1), [(0.9, 0.35, 0.1), (1.0, 0.55, 0.15), (0.7, 0.2, 0.08)], 6.0, 2.8))
     model("tree_dead", lambda m: tree(m, (0.7, 0.7, 0.7), [(0.8, 0.8, 0.8)], 5.5, 2.4, "dead"))
+    model("tree_stormoak", lambda m: tree(m, (0.24, 0.24, 0.28), [(0.2, 0.28, 0.4), (0.27, 0.36, 0.48), (0.16, 0.22, 0.32)], 9.5, 4.6))  # sea step 3: Stormcrown heights
     # --- ore, herbs, crops, water ---
     model("rock_copper", lambda m: rock(m, (0.5, 0.46, 0.42), (0.85, 0.45, 0.25)))
     model("rock_iron", lambda m: rock(m, (0.42, 0.42, 0.44), (0.62, 0.3, 0.2)))
@@ -233,6 +234,7 @@ def build_all():
             m.rod(c(leaf), 0.012, (0, 0.05, 0), (math.cos(a) * 0.08, 0.42, math.sin(a) * 0.08), segs=4)
             m.ball(c(flower), 0.06, (math.cos(a) * 0.08, 0.45, math.sin(a) * 0.08), u=6, v=4)
     model("herb_green", lambda m: herb(m, (0.3, 0.65, 0.3), (0.75, 0.95, 0.8)))
+    model("herb_storm", lambda m: (herb(m, (0.32, 0.42, 0.5), (0.6, 0.78, 1.0)), m.ball(glow, (0.05, 0.05, 0.05), (0, 0.42, 0), u=6, v=4)))  # stormlily, a faint light at its heart
     model("herb_yellow", lambda m: herb(m, (0.5, 0.6, 0.25), (1.0, 0.85, 0.2)))
     model("herb_blue", lambda m: herb(m, (0.6, 0.75, 0.8), (0.5, 0.75, 1.0)))
     model("herb_red", lambda m: herb(m, (0.3, 0.2, 0.18), (1.0, 0.35, 0.15)))

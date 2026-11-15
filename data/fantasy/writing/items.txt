@@ -64,6 +64,7 @@ mana_tonic: Mana Tonic
 health_draught: Health Draught
 sun_elixir: Sun Elixir
 frost_ward: Frost Ward
+storm_tonic: Storm Tonic
 cinder_draught: Cinder Draught
 
 [items material]
@@ -73,6 +74,10 @@ oak_log: Oak Log
 palm_log: Driftpalm Log
 frostpine_log: Frostpine Log
 emberwood_log: Emberwood Log
+stormoak_log: Stormoak Log
+stormlily: Stormlily
+rough_gem: Rough Gem
+flawless_gem: Flawless Gem
 copper_ore: Copper Ore
 iron_ore: Iron Ore
 sunstone: Sunstone

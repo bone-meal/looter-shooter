@@ -2,8 +2,10 @@
 # mine, fish, reap, pick: needs the skill level and the right tool, takes seconds, gives an item and experience, and
 # keeps going until the node is used up), crafting at stations (recipes: cook at a fire, smith at a forge, build at a
 # workbench, brew at a cauldron), and talking to people (quests are offered and reported there).
-# Dependencies: game/fantasy_world.gd (bag, skills, quests, gather nodes, places), data/fantasy/skilling.json.
+# Dependencies: game/fantasy_world.gd (bag, skills, perks, quests, gather nodes, places), core/skill_perks.gd, data/fantasy/skilling.json.
 extends Node
+
+const SkillPerks = preload("res://core/skill_perks.gd")
 
 signal talk_opened(person: Dictionary)
 signal station_opened(kind: String)
@@ -92,7 +94,7 @@ func interact() -> void:
 	_node = node
 	_done = 0.0
 	var spare := int(world.bag.tool_tier(String(def.get("tool", "")))) - int(def.get("tool_tier", 1)) if def.has("tool") else 0
-	_needed = float(def["seconds"]) / (1.0 + float(_cfg["tool_speed"]) * float(maxi(spare, 0)))
+	_needed = float(def["seconds"]) / (1.0 + float(_cfg["tool_speed"]) * float(maxi(spare, 0))) * maxf(1.0 - world.perk(String(def["skill"]), "speed"), 0.2)
 
 
 # 0..1 while something is being gathered, -1 when idle (the HUD draws a bar), and what is being worked.
@@ -117,12 +119,17 @@ func _process(delta: float) -> void:
 		return
 	_done = 0.0
 	var def: Dictionary = world.skilling["nodes"][String(_node["id"])]
-	world.sound("gather_" + String(def["skill"]), world.world_of(at))
-	world.give(String(def["gives"]), 1)
-	world.worked.emit(String(def["skill"]), String(def["gives"]), 1, false)
-	world.gain_xp(String(def["skill"]), int(def["xp"]))
-	if randf() < float(_cfg["deplete_chance"]):
-		world.gather.spend(_node, float(def["respawn"]))
+	var skill := String(def["skill"])
+	world.sound("gather_" + skill, world.world_of(at))
+	var count := 2 if randf() < world.perk(skill, "double") else 1
+	world.give(String(def["gives"]), count)
+	world.worked.emit(skill, String(def["gives"]), count, false)
+	for find: Dictionary in SkillPerks.bonus_finds(world.skilling.get("unlocks", {}), skill, int(world.skills.level(skill))):
+		if randf() < float(find["chance"]):
+			world.give(String(find["item"]), 1)
+	world.gain_xp(skill, int(def["xp"]))
+	if randf() < float(_cfg["deplete_chance"]) * (1.0 - world.perk(skill, "keep")):
+		world.gather.spend(_node, float(def["respawn"]) * maxf(1.0 - world.perk(skill, "regrow"), 0.2))
 		_node = {}
 
 
@@ -160,10 +167,14 @@ func make(recipe: Dictionary) -> String:
 	var why := cannot_make(recipe)
 	if why != "":
 		return why
-	world.bag.take_all(recipe["in"])
+	var skill := String(recipe["skill"])
+	if randf() >= world.perk(skill, "save"):  # thrifty perks: sometimes the materials are kept
+		world.bag.take_all(recipe["in"])
 	world.sound("craft_" + String(recipe["station"]))
+	var extra := 1 if bool(recipe.get("batch", false)) and randf() < world.perk(skill, "double") else 0
 	for item: String in recipe["out"]:
-		world.give(item, int(recipe["out"][item]))
-		world.worked.emit(String(recipe["skill"]), item, int(recipe["out"][item]), true)
+		var count := int(recipe["out"][item]) * (1 + extra)
+		world.give(item, count)
+		world.worked.emit(skill, item, count, true)
 	world.gain_xp(String(recipe["skill"]), int(recipe["xp"]))
 	return ""

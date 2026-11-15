@@ -741,6 +741,90 @@ SKILL_ICONS = [("sk_nova", sk_nova), ("sk_chain", sk_chain), ("sk_well", sk_well
 SHAPES += SKILL_ICONS  # appended: the cells of the older icons stay where they were
 
 
+# ---------------- sea step 3: the six new skills and their materials ----------------
+def sail(c):
+    c.line([(40, 6), (40, 90)], 5, WOOD)
+    c.poly([(44, 10), (86, 70), (44, 70)], LIGHT)
+    c.poly([(36, 18), (36, 70), (12, 70)], MID)
+    c.poly([(10, 78), (90, 78), (76, 94), (24, 94)], WOOD_D)
+
+def paw(c):
+    c.oval(28, 46, 72, 88, LIGHT)
+    for x, y in ((16, 30), (34, 14), (58, 14), (76, 30)):
+        c.oval(x, y, x + 16, y + 20, MID)
+
+def saw(c):
+    c.poly([(10, 40), (82, 28), (90, 52), (16, 62)], STEEL)
+    for k in range(9):
+        x = 16 + k * 8
+        c.poly([(x, 61 - k * 1.2), (x + 4, 70 - k * 1.2), (x + 8, 60 - k * 1.3)], STEEL)
+    c.poly([(70, 20), (96, 14), (98, 50), (84, 54)], WOOD)
+    c.oval(80, 26, 92, 40, (0, 0, 0, 0))
+
+def needle(c):
+    c.line([(18, 88), (80, 14)], 4, STEEL)
+    c.ring(74, 8, 90, 24, 3, STEEL)
+    c.line([(84, 18), (70, 46), (40, 50), (24, 70), (34, 90)], 2.5, LIGHT)
+
+def trowel(c):
+    c.poly([(46, 6), (74, 40), (56, 58), (22, 30)], STEEL)
+    c.line([(56, 50), (70, 64)], 5, STEEL)
+    c.poly([(66, 62), (76, 54), (96, 86), (86, 94)], WOOD)
+
+def plank(c):
+    for k in range(3):
+        y = 22 + k * 22
+        c.poly([(8, y), (92, y - 8), (92, y + 10), (8, y + 18)], WOOD if k % 2 else (150, 104, 62, 255))
+        c.line([(20, y + 6), (80, y)], 1.4, WOOD_D)
+
+def feather(c):
+    c.poly([(84, 8), (60, 30), (30, 66), (18, 82), (40, 74), (70, 46), (92, 14)], LIGHT)
+    c.line([(90, 10), (14, 92)], 2.4, MID)
+
+def bone(c):
+    c.line([(26, 74), (74, 26)], 12, LIGHT)
+    for x, y in ((14, 70), (28, 84), (70, 14), (84, 28)):
+        c.oval(x - 10, y - 10, x + 10, y + 10, LIGHT)
+
+def gem(c):
+    c.poly([(30, 14), (70, 14), (90, 38), (50, 90), (10, 38)], LIGHT)
+    c.poly([(30, 14), (70, 14), (60, 38), (40, 38)], MID)
+    c.poly([(10, 38), (40, 38), (50, 90)], SHADE)
+    c.line([(36, 22), (44, 22)], 3, WHITE)
+
+def snare(c):
+    c.line([(50, 10), (50, 40)], 4, WOOD)
+    c.ring(22, 40, 78, 92, 4, (200, 190, 160, 255))
+    c.line([(50, 40), (50, 50)], 3, (200, 190, 160, 255))
+
+def relic(c):
+    c.poly([(38, 8), (62, 8), (60, 20), (78, 40), (74, 76), (60, 92), (40, 92), (26, 76), (22, 40), (40, 20)], LIGHT)
+    c.poly([(24, 50), (76, 50), (75, 60), (25, 60)], MID)
+    c.line([(40, 30), (34, 44)], 2, (0, 0, 0, 90))
+
+def brush(c):
+    c.line([(20, 86), (62, 38)], 7, WOOD)
+    c.poly([(58, 34), (70, 22), (94, 8), (78, 34), (66, 44)], (226, 210, 170, 255))
+    c.poly([(56, 36), (66, 46), (60, 50), (52, 42)], STEEL)
+
+def crate(c):
+    c.poly([(12, 18), (88, 18), (88, 88), (12, 88)], WOOD)
+    c.line([(12, 18), (88, 88)], 5, WOOD_D)
+    for y in (18, 52, 88):
+        c.line([(12, y), (88, y)], 4, WOOD_D)
+
+def course(c):
+    c.line([(10, 80), (90, 80)], 5, WOOD)
+    c.line([(20, 80), (20, 50)], 4, WOOD)
+    c.line([(80, 80), (80, 50)], 4, WOOD)
+    c.line([(14, 50), (86, 50)], 5, LIGHT)
+    c.arc(30, 6, 70, 46, 200, 340, 4, MID)
+
+
+SHAPES += [("sail", sail), ("paw", paw), ("saw", saw), ("needle", needle), ("trowel", trowel), ("plank", plank), ("feather", feather), ("bone", bone),
+    ("gem", gem), ("snare", snare), ("relic", relic), ("brush", brush), ("crate", crate), ("course", course)]
+
+
 def main():
     rows = (len(SHAPES) + COLUMNS - 1) // COLUMNS
     tint_sheet = Image.new("RGBA", (COLUMNS * CELL, rows * CELL), (0, 0, 0, 0))

@@ -80,6 +80,9 @@ def blob(m, mat, radii, at, seed=0, rough=0.2, node="Body", cuts=2):
     m._add(bm, mat, node, 0)
 
 
+ONLY = set(filter(None, os.environ.get("ONLY", "").split(",")))
+
+
 class Maker:
     """Builds and exports models and remembers their footprints."""
 
@@ -88,6 +91,8 @@ class Maker:
         self.plain = []  # [(name, build, uv)]: buildings that get a second, plain model for the low graphics tiers
 
     def model(self, name, build, solid=True, uv=0.5, plain=False):
+        if ONLY and name not in ONLY:  # ONLY=a,b python3 tools/blender/fantasy_props.py builds just those models
+            return
         if plain:
             self.plain.append((name, build, uv))
         m = kit.Model(name, uv_scale=uv, colored=True)

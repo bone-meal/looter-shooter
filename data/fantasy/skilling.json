@@ -1,6 +1,6 @@
 {
- "version": 1,
- "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station.",
+ "version": 2,
+ "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>].",
  "max_level": 50,
  "xp_base": 30,
  "xp_power": 2.2,
@@ -76,6 +76,54 @@
     0.75
    ],
    "icon": "potion"
+  },
+  "sailing": {
+   "color": [
+    0.4,
+    0.78,
+    0.92
+   ],
+   "icon": "sail"
+  },
+  "hunting": {
+   "color": [
+    0.72,
+    0.52,
+    0.3
+   ],
+   "icon": "paw"
+  },
+  "agility": {
+   "color": [
+    0.55,
+    0.85,
+    0.45
+   ],
+   "icon": "boots"
+  },
+  "carpentry": {
+   "color": [
+    0.75,
+    0.58,
+    0.36
+   ],
+   "icon": "saw"
+  },
+  "crafting": {
+   "color": [
+    0.85,
+    0.6,
+    0.75
+   ],
+   "icon": "needle"
+  },
+  "archaeology": {
+   "color": [
+    0.82,
+    0.72,
+    0.5
+   ],
+   "icon": "trowel"
   }
  },
  "nodes": {
@@ -92,7 +140,7 @@
   },
   "oak_tree": {
    "skill": "woodcutting",
-   "level": 8,
+   "level": 5,
    "xp": 40,
    "tool": "axe",
    "tool_tier": 1,
@@ -125,7 +173,7 @@
   },
   "emberwood_tree": {
    "skill": "woodcutting",
-   "level": 34,
+   "level": 35,
    "xp": 190,
    "tool": "axe",
    "tool_tier": 4,
@@ -169,7 +217,7 @@
   },
   "frostcrystal_rock": {
    "skill": "mining",
-   "level": 27,
+   "level": 30,
    "xp": 140,
    "tool": "pickaxe",
    "tool_tier": 3,
@@ -180,7 +228,7 @@
   },
   "obsidian_rock": {
    "skill": "mining",
-   "level": 34,
+   "level": 35,
    "xp": 200,
    "tool": "pickaxe",
    "tool_tier": 3,
@@ -191,7 +239,7 @@
   },
   "skysteel_rock": {
    "skill": "mining",
-   "level": 41,
+   "level": 45,
    "xp": 280,
    "tool": "pickaxe",
    "tool_tier": 4,
@@ -214,7 +262,7 @@
   },
   "river_spot": {
    "skill": "fishing",
-   "level": 7,
+   "level": 5,
    "xp": 36,
    "tool": "rod",
    "tool_tier": 1,
@@ -226,7 +274,7 @@
   },
   "sea_spot": {
    "skill": "fishing",
-   "level": 13,
+   "level": 15,
    "xp": 65,
    "tool": "rod",
    "tool_tier": 2,
@@ -250,7 +298,7 @@
   },
   "ice_spot": {
    "skill": "fishing",
-   "level": 27,
+   "level": 30,
    "xp": 150,
    "tool": "rod",
    "tool_tier": 3,
@@ -262,7 +310,7 @@
   },
   "lava_spot": {
    "skill": "fishing",
-   "level": 35,
+   "level": 40,
    "xp": 215,
    "tool": "rod",
    "tool_tier": 4,
@@ -285,7 +333,7 @@
   },
   "meadowmint": {
    "skill": "farming",
-   "level": 4,
+   "level": 5,
    "xp": 22,
    "tool": "",
    "tool_tier": 0,
@@ -307,7 +355,7 @@
   },
   "sunpetal": {
    "skill": "farming",
-   "level": 19,
+   "level": 20,
    "xp": 85,
    "tool": "",
    "tool_tier": 0,
@@ -318,7 +366,7 @@
   },
   "frostbloom": {
    "skill": "farming",
-   "level": 27,
+   "level": 30,
    "xp": 130,
    "tool": "",
    "tool_tier": 0,
@@ -352,7 +400,7 @@
   },
   "deepsea_spot": {
    "skill": "fishing",
-   "level": 30,
+   "level": 35,
    "xp": 180,
    "tool": "rod",
    "tool_tier": 3,
@@ -361,6 +409,28 @@
    "respawn": 8,
    "model": "ripples",
    "water": "salt"
+  },
+  "stormoak_tree": {
+   "skill": "woodcutting",
+   "level": 45,
+   "xp": 300,
+   "tool": "axe",
+   "tool_tier": 4,
+   "gives": "stormoak_log",
+   "seconds": 4.2,
+   "respawn": 90,
+   "model": "tree_stormoak"
+  },
+  "stormlily": {
+   "skill": "farming",
+   "level": 45,
+   "xp": 240,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "stormlily",
+   "seconds": 2.2,
+   "respawn": 120,
+   "model": "herb_storm"
   }
  },
  "fire": {
@@ -370,14 +440,16 @@
    "oak_log": 48,
    "palm_log": 80,
    "frostpine_log": 135,
-   "emberwood_log": 210
+   "emberwood_log": 210,
+   "stormoak_log": 300
   },
   "level": {
    "ash_log": 1,
-   "oak_log": 8,
+   "oak_log": 5,
    "palm_log": 15,
    "frostpine_log": 25,
-   "emberwood_log": 34
+   "emberwood_log": 35,
+   "stormoak_log": 45
   },
   "mana_regen_mult": 3.0,
   "radius": 5.0
@@ -394,12 +466,13 @@
    },
    "out": {
     "fried_minnow": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "bake_bread",
    "skill": "cooking",
-   "level": 3,
+   "level": 1,
    "xp": 30,
    "station": "fire",
    "in": {
@@ -407,12 +480,13 @@
    },
    "out": {
     "bread": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_trout",
    "skill": "cooking",
-   "level": 7,
+   "level": 5,
    "xp": 44,
    "station": "fire",
    "in": {
@@ -420,12 +494,13 @@
    },
    "out": {
     "grilled_trout": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_silverfin",
    "skill": "cooking",
-   "level": 13,
+   "level": 15,
    "xp": 76,
    "station": "fire",
    "in": {
@@ -433,7 +508,8 @@
    },
    "out": {
     "seared_silverfin": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_sandskipper",
@@ -446,12 +522,13 @@
    },
    "out": {
     "spiced_sandskipper": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_icefin",
    "skill": "cooking",
-   "level": 27,
+   "level": 30,
    "xp": 170,
    "station": "fire",
    "in": {
@@ -459,12 +536,13 @@
    },
    "out": {
     "icefin_stew": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_lava_eel",
    "skill": "cooking",
-   "level": 35,
+   "level": 40,
    "xp": 240,
    "station": "fire",
    "in": {
@@ -472,7 +550,8 @@
    },
    "out": {
     "charred_eel": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "smelt_copper",
@@ -485,7 +564,8 @@
    },
    "out": {
     "copper_bar": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "smelt_iron",
@@ -498,12 +578,13 @@
    },
    "out": {
     "iron_bar": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "smelt_skysteel",
    "skill": "smithing",
-   "level": 41,
+   "level": 45,
    "xp": 320,
    "station": "forge",
    "in": {
@@ -512,12 +593,13 @@
    },
    "out": {
     "skysteel_bar": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "forge_iron_axe",
    "skill": "smithing",
-   "level": 12,
+   "level": 10,
    "xp": 120,
    "station": "forge",
    "in": {
@@ -531,7 +613,7 @@
   {
    "id": "forge_iron_pickaxe",
    "skill": "smithing",
-   "level": 12,
+   "level": 10,
    "xp": 120,
    "station": "forge",
    "in": {
@@ -545,7 +627,7 @@
   {
    "id": "forge_steel_axe",
    "skill": "smithing",
-   "level": 24,
+   "level": 20,
    "xp": 260,
    "station": "forge",
    "in": {
@@ -560,7 +642,7 @@
   {
    "id": "forge_steel_pickaxe",
    "skill": "smithing",
-   "level": 24,
+   "level": 20,
    "xp": 260,
    "station": "forge",
    "in": {
@@ -575,7 +657,7 @@
   {
    "id": "forge_skysteel_axe",
    "skill": "smithing",
-   "level": 42,
+   "level": 45,
    "xp": 520,
    "station": "forge",
    "in": {
@@ -589,7 +671,7 @@
   {
    "id": "forge_skysteel_pickaxe",
    "skill": "smithing",
-   "level": 42,
+   "level": 45,
    "xp": 520,
    "station": "forge",
    "in": {
@@ -705,7 +787,7 @@
   {
    "id": "staff_obsidian",
    "skill": "smithing",
-   "level": 34,
+   "level": 35,
    "xp": 980,
    "station": "forge",
    "in": {
@@ -720,7 +802,7 @@
   {
    "id": "staff_stormcall",
    "skill": "smithing",
-   "level": 42,
+   "level": 45,
    "xp": 1400,
    "station": "forge",
    "in": {
@@ -735,7 +817,7 @@
   {
    "id": "staff_prism",
    "skill": "smithing",
-   "level": 46,
+   "level": 50,
    "xp": 2200,
    "station": "forge",
    "in": {
@@ -751,7 +833,7 @@
   {
    "id": "robe_woodland",
    "skill": "farming",
-   "level": 8,
+   "level": 10,
    "xp": 140,
    "station": "workbench",
    "in": {
@@ -765,7 +847,7 @@
   {
    "id": "robe_tidecloth",
    "skill": "farming",
-   "level": 15,
+   "level": 10,
    "xp": 280,
    "station": "workbench",
    "in": {
@@ -779,7 +861,7 @@
   {
    "id": "robe_sunweave",
    "skill": "farming",
-   "level": 21,
+   "level": 20,
    "xp": 440,
    "station": "workbench",
    "in": {
@@ -793,7 +875,7 @@
   {
    "id": "robe_rimefur",
    "skill": "farming",
-   "level": 28,
+   "level": 30,
    "xp": 640,
    "station": "workbench",
    "in": {
@@ -807,7 +889,7 @@
   {
    "id": "robe_cinder",
    "skill": "farming",
-   "level": 36,
+   "level": 35,
    "xp": 900,
    "station": "workbench",
    "in": {
@@ -821,7 +903,7 @@
   {
    "id": "robe_stormsilk",
    "skill": "farming",
-   "level": 43,
+   "level": 45,
    "xp": 1300,
    "station": "workbench",
    "in": {
@@ -844,12 +926,13 @@
    },
    "out": {
     "mana_tonic": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "brew_health_draught",
    "skill": "alchemy",
-   "level": 6,
+   "level": 5,
    "xp": 48,
    "station": "cauldron",
    "in": {
@@ -858,12 +941,13 @@
    },
    "out": {
     "health_draught": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "brew_sun_elixir",
    "skill": "alchemy",
-   "level": 19,
+   "level": 20,
    "xp": 120,
    "station": "cauldron",
    "in": {
@@ -872,12 +956,13 @@
    },
    "out": {
     "sun_elixir": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "brew_frost_ward",
    "skill": "alchemy",
-   "level": 27,
+   "level": 30,
    "xp": 180,
    "station": "cauldron",
    "in": {
@@ -886,7 +971,8 @@
    },
    "out": {
     "frost_ward": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "brew_cinder_draught",
@@ -900,7 +986,8 @@
    },
    "out": {
     "cinder_draught": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_sprat",
@@ -913,12 +1000,13 @@
    },
    "out": {
     "grilled_sprat": 1
-   }
+   },
+   "batch": true
   },
   {
    "id": "cook_stormfin",
    "skill": "cooking",
-   "level": 30,
+   "level": 35,
    "xp": 190,
    "station": "fire",
    "in": {
@@ -926,7 +1014,23 @@
    },
    "out": {
     "seared_stormfin": 1
-   }
+   },
+   "batch": true
+  },
+  {
+   "id": "brew_storm_tonic",
+   "skill": "alchemy",
+   "level": 45,
+   "xp": 380,
+   "station": "cauldron",
+   "in": {
+    "stormlily": 2,
+    "stormfin": 1
+   },
+   "out": {
+    "storm_tonic": 1
+   },
+   "batch": true
   }
  ],
  "gather": {
@@ -948,5 +1052,755 @@
   "cauldron": {
    "icon": "pot"
   }
+ },
+ "unlocks": {
+  "magic": [
+   {
+    "level": 5,
+    "kind": "perk",
+    "perk": {
+     "mana": 0.1
+    }
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "slot"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "regen": 0.15
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "slot"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "power": 0.05
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "slot"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "perk",
+    "perk": {
+     "mana": 0.1
+    }
+   },
+   {
+    "level": 40,
+    "kind": "content",
+    "ids": [
+     "slot"
+    ]
+   },
+   {
+    "level": 45,
+    "kind": "perk",
+    "perk": {
+     "regen": 0.15,
+     "power": 0.05
+    }
+   },
+   {
+    "level": 50,
+    "kind": "content",
+    "ids": [
+     "slot"
+    ]
+   }
+  ],
+  "woodcutting": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "oak_tree"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.1
+    }
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "palm_tree"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 25,
+    "kind": "content",
+    "ids": [
+     "frostpine_tree"
+    ]
+   },
+   {
+    "level": 30,
+    "kind": "perk",
+    "perk": {
+     "keep": 0.25
+    }
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "emberwood_tree"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.15
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "stormoak_tree"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "double": 0.15,
+     "keep": 0.15
+    }
+   }
+  ],
+  "firemaking": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "oak_log"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "fire_time": 0.25
+    }
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "palm_log"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "perk",
+    "perk": {
+     "fire_regen": 0.25
+    }
+   },
+   {
+    "level": 25,
+    "kind": "content",
+    "ids": [
+     "frostpine_log"
+    ]
+   },
+   {
+    "level": 30,
+    "kind": "perk",
+    "perk": {
+     "save": 0.25
+    }
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "emberwood_log"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "fire_time": 0.25
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "stormoak_log"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "fire_radius": 0.5,
+     "fire_regen": 0.25
+    }
+   }
+  ],
+  "fishing": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "river_spot"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.1
+    }
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "sea_spot"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "oasis_spot"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "ice_spot"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "deepsea_spot"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "content",
+    "ids": [
+     "lava_spot"
+    ]
+   },
+   {
+    "level": 45,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.15,
+     "double": 0.1
+    }
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "keep": 0.5
+    }
+   }
+  ],
+  "cooking": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "cook_trout"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "heal": 0.1
+    }
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "cook_silverfin"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "cook_sandskipper"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "cook_icefin"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "cook_stormfin"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "content",
+    "ids": [
+     "cook_lava_eel"
+    ]
+   },
+   {
+    "level": 45,
+    "kind": "perk",
+    "perk": {
+     "heal": 0.2
+    }
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "save": 0.15,
+     "double": 0.1
+    }
+   }
+  ],
+  "mining": [
+   {
+    "level": 5,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.1
+    }
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "iron_rock"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "bonus": {
+      "item": "rough_gem",
+      "chance": 0.04
+     }
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "sunstone_rock"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "frostcrystal_rock"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "obsidian_rock"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "bonus": {
+      "item": "flawless_gem",
+      "chance": 0.03
+     }
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "skysteel_rock"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "keep": 0.3,
+     "double": 0.15
+    }
+   }
+  ],
+  "smithing": [
+   {
+    "level": 5,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "smelt_iron",
+     "forge_iron_axe",
+     "forge_iron_pickaxe"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "save": 0.1
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "staff_sunstone",
+     "forge_steel_axe",
+     "forge_steel_pickaxe"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 30,
+    "kind": "perk",
+    "perk": {
+     "save": 0.1
+    }
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "staff_obsidian"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "smelt_skysteel",
+     "forge_skysteel_axe",
+     "forge_skysteel_pickaxe",
+     "staff_stormcall"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "content",
+    "ids": [
+     "staff_prism"
+    ]
+   }
+  ],
+  "farming": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "meadowmint"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "glowcap",
+     "robe_woodland",
+     "robe_tidecloth"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "regrow": 0.25
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "sunpetal",
+     "robe_sunweave"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "frostbloom",
+     "robe_rimefur"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "cinderroot",
+     "robe_cinder"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "keep": 0.25
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "stormlily",
+     "robe_stormsilk"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "double": 0.15,
+     "regrow": 0.25
+    }
+   }
+  ],
+  "alchemy": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "brew_health_draught"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "save": 0.1
+    }
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "potency": 0.25
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "brew_sun_elixir"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "double": 0.15
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "brew_frost_ward"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "brew_cinder_draught"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "potency": 0.25
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "brew_storm_tonic"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "save": 0.2,
+     "double": 0.1
+    }
+   }
+  ],
+  "sailing": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "later:sail_trim"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "ship_speed": 0.05
+    }
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "later:brig"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "perk",
+    "perk": {
+     "repair": 0.15
+    }
+   },
+   {
+    "level": 25,
+    "kind": "content",
+    "ids": [
+     "later:swift_sail"
+    ]
+   },
+   {
+    "level": 30,
+    "kind": "perk",
+    "perk": {
+     "ship_speed": 0.05
+    }
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "later:galleon"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "cannon_reload": 0.15
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "later:storm_sailing"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "ship_speed": 0.05,
+     "repair": 0.15
+    }
+   }
+  ]
  }
 }

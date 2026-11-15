@@ -10,6 +10,7 @@
 # first time the player steps into the painting.
 extends Node3D
 
+const SkillPerks = preload("res://core/skill_perks.gd")
 const FantasyData = preload("res://core/fantasy_data.gd")
 const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
 const FantasyLayout = preload("res://core/fantasy_layout.gd")
@@ -484,8 +485,9 @@ func _process(delta: float) -> void:
 	scatter.follow(land.key_at(local))
 	_blend_mood(1.0 - exp(-1.5 * delta))
 	var now := Time.get_ticks_msec() / 1000.0
-	var near_fire := places.fire_near(local, float(skilling["fire"]["radius"]))
-	mana = minf(mana + mana_regen() * (float(skilling["fire"]["mana_regen_mult"]) if near_fire else 1.0) * delta, max_mana())
+	var near_fire := places.fire_near(local, float(skilling["fire"]["radius"]) * (1.0 + perk("firemaking", "fire_radius")))
+	var fire_mult := float(skilling["fire"]["mana_regen_mult"]) * (1.0 + perk("firemaking", "fire_regen"))
+	mana = minf(mana + mana_regen() * (fire_mult if near_fire else 1.0) * delta, max_mana())
 	if now < _regen_until:
 		_player.health.heal(_regen_rate * delta)
 	_timer += delta
@@ -541,11 +543,11 @@ func magic_level() -> int:
 
 
 func max_mana() -> float:
-	return float(_caster["mana_base"]) + float(_caster["mana_per_level"]) * float(magic_level() - 1) + float(bag.staff().get("mana", 0.0))
+	return (float(_caster["mana_base"]) + float(_caster["mana_per_level"]) * float(magic_level() - 1) + float(bag.staff().get("mana", 0.0))) * (1.0 + perk("magic", "mana"))
 
 
 func mana_regen() -> float:
-	return float(_caster["regen"]) + float(_caster["regen_per_level"]) * float(magic_level() - 1) + float(bag.robe().get("regen", 0.0))
+	return (float(_caster["regen"]) + float(_caster["regen_per_level"]) * float(magic_level() - 1) + float(bag.robe().get("regen", 0.0))) * (1.0 + perk("magic", "regen"))
 
 
 # How many elements one cast can hold: the staff's own, plus one for each pigment the story has returned.
@@ -555,7 +557,7 @@ func slots() -> int:
 
 # Spell damage after staff, Magic level and potions.
 func spell_power(amount: float) -> float:
-	return SpellBook.scaled(amount, float(bag.staff().get("power", 1.0)), magic_level(), float(_caster["damage_per_level"])) * float(_buff.get("power", 1.0))
+	return SpellBook.scaled(amount, float(bag.staff().get("power", 1.0)), magic_level(), float(_caster["damage_per_level"])) * float(_buff.get("power", 1.0)) * (1.0 + perk("magic", "power"))
 
 
 # Pushes health, armour and the gun lock onto the player (call after anything that changes them).
@@ -582,6 +584,11 @@ func heal_over_time(per_second: float, seconds: float) -> void:
 
 # --- experience, items, quests ---
 
+# The sum of one perk of `skill` at its current level (core/skill_perks.gd; 0 when none).
+func perk(skill: String, key: String) -> float:
+	return SkillPerks.total(skilling.get("unlocks", {}), skill, skills.level(skill), key)
+
+
 func gain_xp(skill: String, amount: int) -> void:
 	if amount <= 0:
 		return
@@ -590,7 +597,10 @@ func gain_xp(skill: String, amount: int) -> void:
 	var tint: Array = skilling["skills"][skill]["color"]
 	toast.emit("+%d %s" % [amount, skills.skill_name(skill)], Color(tint[0], tint[1], tint[2]))
 	if skills.level(skill) > before:
-		notice.emit("%s level %d" % [skills.skill_name(skill), skills.level(skill)])
+		var opened := PackedStringArray()
+		for step: Dictionary in SkillPerks.reached(skilling.get("unlocks", {}), skill, before, skills.level(skill)):
+			opened.append(String(step.get("name", "")))
+		notice.emit("%s level %d%s" % [skills.skill_name(skill), skills.level(skill), "" if opened.is_empty() else ": " + ", ".join(opened)])
 		sound("level_up")
 		apply_stats()
 	_after_change()
@@ -617,11 +627,12 @@ func use_item(item: String) -> String:
 			if not bag.remove(item, 1):
 				return "You have none."
 			sound("drink")
-			_player.health.heal(float(def.get("heal", 0.0)))
-			mana = minf(mana + float(def.get("mana", 0.0)), max_mana())
+			var boost := 1.0 + (perk("cooking", "heal") if String(def["kind"]) == "food" else perk("alchemy", "potency"))
+			_player.health.heal(float(def.get("heal", 0.0)) * boost)
+			mana = minf(mana + float(def.get("mana", 0.0)) * boost, max_mana())
 			if def.has("buff"):
 				_buff = (def["buff"] as Dictionary).duplicate()
-				_buff["until"] = Time.get_ticks_msec() / 1000.0 + float(_buff["seconds"])
+				_buff["until"] = Time.get_ticks_msec() / 1000.0 + float(_buff["seconds"]) * boost
 				apply_stats()
 			_after_change()
 			return ""
@@ -640,9 +651,11 @@ func light_fire(item: String, local: Vector3) -> String:
 	var fire: Dictionary = skilling["fire"]
 	if skills.level("firemaking") < int(fire["level"][item]):
 		return "Needs Firemaking %d." % int(fire["level"][item])
-	if not bag.remove(item, 1):
+	if bag.count(item) <= 0:
 		return "You have none."
-	places.light_fire(local, float(fire["seconds"]))
+	if randf() >= perk("firemaking", "save"):  # Kindler: sometimes the log is not used up
+		bag.remove(item, 1)
+	places.light_fire(local, float(fire["seconds"]) * (1.0 + perk("firemaking", "fire_time")))
 	sound("fire_light", world_of(local))
 	gain_xp("firemaking", int(fire["xp_per_log"][item]))
 	report({"type": "fire"})
