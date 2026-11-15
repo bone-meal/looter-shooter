@@ -193,15 +193,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					bombs += 1
 				if n.get_script() != null and String(n.get_script().resource_path).ends_with("fire_geyser.gd"):
 					bombs += 100  # (a geyser counts as 100 in "bombs")
+			var penguins := 0
 			for n: Node in get_tree().get_root().find_children("*", "Node3D", true, false):
 				if n.get_script() != null and String(n.get_script().resource_path).ends_with("potato_bomb.gd"):
 					bombs += 10000  # (a flying Hot Potato counts as 10000)
+				if n.get_script() != null and String(n.get_script().resource_path).ends_with("penguin_slider.gd"):
+					penguins += 1
 			var lanterns := 0
 			for n: Node in get_tree().get_nodes_in_group("lanterns"):
 				var sw := (n as Node3D).find_child("Swing", true, false) as Node3D
 				if n.has_meta("lantern_held") and sw != null and sw.visible and (n as Node3D).is_visible_in_tree():
 					lanterns += 1
-			_lines.append("CHASE %s @%.1f: %s | clouds %s | bombs %d, lit lanterns %d | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", bombs, lanterns, int(link_c.get("sent")), int(link_c.get("heard"))])
+			_lines.append("CHASE %s @%.1f: %s | clouds %s | bombs %d, lit lanterns %d, penguins %d | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", bombs, lanterns, penguins, int(link_c.get("sent")), int(link_c.get("heard"))])
 		"gasfire":  # "!gasfire": a fire for one second at the first copy of somebody else's gas cloud (the copy tells its owner)
 			var gas_f: Node = get_tree().get_first_node_in_group("swamp_gas")
 			var spot := Vector3.INF
@@ -220,6 +223,19 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("GASFIRE lit at %s" % str(spot.snapped(Vector3.ONE * 0.1)))
 				await get_tree().create_timer(1.0, true, false, true).timeout
 				fire.queue_free()
+		"sigkill":  # "!sigkill": kill the nearest enemy and tell the chase gun in hand it was its kill (Penguin Rescue: a penguin)
+			var src_k: Variant = player.get("explosives").get("source")
+			var near_k: Node3D = null
+			for e: Node3D in src_k.call("enemy_list"):
+				if is_instance_valid(e) and not e.health.is_dead() and (near_k == null or e.global_position.distance_to(player.global_position) < near_k.global_position.distance_to(player.global_position)):
+					near_k = e
+			var sig_k: Node = player.get("_sig_node")
+			if near_k == null or sig_k == null or not sig_k.has_method("on_target_hit"):
+				_lines.append("SIGKILL nothing")
+			else:
+				near_k.call("on_hit", 1000000.0, near_k.global_position + Vector3(0, 1, 0), Vector3.UP)
+				sig_k.call("on_target_hit", near_k, near_k.global_position, 1000000.0, true)
+				_lines.append("SIGKILL %s at %s" % [near_k.name, str(near_k.global_position.snapped(Vector3.ONE * 0.1))])
 		"sauce":  # "!sauce": the chase gun in hand's on_target_hit 5 times on the nearest enemy (Volcano Sauce: an eruption)
 			var src: Variant = player.get("explosives").get("source")
 			var best: Node3D = null

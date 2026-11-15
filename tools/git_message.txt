@@ -1,6 +1,6 @@
-Hot Potato chase gun (online)
+Penguin Rescue chase gun (online)
 
-Hot Potato (region 3 boss pool, grenade launcher): a foil-wrapped baked potato strapped on top. The whole gun glows hotter with every shot; at full heat (8 shots) the reload key throws the gun as a big bomb that blasts where it lands, and it is back in your hands 5 s later, cooled (it cannot fire while away). Others see the glow grow, the gun gone and the bomb fly (damage only from the thrower). tools/chase_check 54 of 54 on his PC; two-copy test passed. Cooling is off by default (the design never asked for it; data cool_per_second).
+Penguin Rescue (region 4 boss pool, pistol): a little penguin rides on the slide. Every kill frees a penguin where the enemy fell; it flops onto its belly, slides along the ground into the nearest other enemy and pops in a small blast (with nobody left it slides on and pops anyway). Others see it slide and pop (no damage from copies). tools/chase_check 57 of 57 on his PC; two-copy run: the guest received the penguin.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -24,6 +24,8 @@
 # with two strips of silver duct tape.
 # HOT POTATO: a foil-wrapped baked potato strapped on top of the grenade launcher's tube, foil peeled back at the
 # front to show the split skin and a pat of butter.
+# PENGUIN RESCUE: a small penguin perched on the back of the pistol's slide, facing forward; penguin = the same bird
+# about the origin (the freed ones that belly-slide into enemies).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -55,6 +57,7 @@ SPECS = {  # name: (kind, colour, seed)
     "onion": ("matte", (0.86, 0.8, 0.62), 71), "char": ("matte", (0.08, 0.06, 0.05), 72), "skewer": ("wood", (0.72, 0.58, 0.38), 73),
     "hotsauce": ("polymer", (0.72, 0.08, 0.05), 74), "saucelabel": ("matte", (0.95, 0.85, 0.45), 75),
     "potatoskin": ("matte", (0.55, 0.38, 0.2), 76), "potatoflesh": ("matte", (0.95, 0.88, 0.62), 77), "butter": ("polymer", (1.0, 0.86, 0.3), 78),
+    "penguinback": ("polymer", (0.07, 0.08, 0.1), 79), "penguinbelly": ("polymer", (0.94, 0.94, 0.92), 80), "beak": ("polymer", (1.0, 0.55, 0.12), 81),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -384,7 +387,31 @@ def hot_potato(m, M):
         m.box(M["strap"], (0.07, 0.003, 0.008), (0.0, py + 0.031, f), bevel=0.0005)
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def penguin_at(m, M, at, s=1.0):
+    """A small penguin standing at `at` (x, y, f: between its feet), facing +f. About 6 cm tall at s = 1."""
+    m.shift = at
+    m.ball(M["penguinback"], (0.017 * s, 0.026 * s, 0.016 * s), (0.0, 0.026 * s, -0.002 * s), u=16, v=10)  # body
+    m.ball(M["penguinbelly"], (0.013 * s, 0.021 * s, 0.009 * s), (0.0, 0.024 * s, 0.008 * s), u=14, v=10)  # white front
+    m.ball(M["penguinback"], (0.011 * s, 0.011 * s, 0.011 * s), (0.0, 0.054 * s, 0.002 * s), u=14, v=10)  # head
+    m.ball(M["penguinbelly"], (0.007 * s, 0.006 * s, 0.005 * s), (0.0, 0.052 * s, 0.009 * s), u=10, v=6)  # face patch
+    m.rod(M["beak"], 0.0028 * s, (0.0, 0.052 * s, 0.011 * s), (0.0, 0.05 * s, 0.019 * s), r2=0.0004 * s, segs=8)
+    for side in (-1.0, 1.0):
+        m.ball(M["rubber"], 0.0018 * s, (side * 0.0045 * s, 0.057 * s, 0.0105 * s), u=6, v=4)  # eyes
+        m.ball(M["penguinback"], (0.003 * s, 0.016 * s, 0.007 * s), (side * 0.017 * s, 0.028 * s, -0.001 * s), u=8, v=6)  # flippers
+        m.ball(M["beak"], (0.004 * s, 0.0016 * s, 0.006 * s), (side * 0.006 * s, 0.0016 * s, 0.006 * s), u=8, v=4)  # feet
+    m.shift = None
+
+
+def penguin_slide(m, M):
+    """On the back of the pistol's slide (its top at y 0.052, rear sight near f 0.014)."""
+    penguin_at(m, M, (0.0, 0.052, 0.045))
+
+
+def penguin(m, M):
+    penguin_at(m, M, (0.0, 0.0, 0.0), s=1.0)
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

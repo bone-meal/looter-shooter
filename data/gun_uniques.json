@@ -517,6 +517,42 @@
         "back_seconds": 5.0
       }
     },
+    "penguin_rescue": {
+      "name": "Penguin Rescue",
+      "body": "pistol_basic",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "long",
+        "mag": "extended",
+        "sight": "red_dot",
+        "muzzle": "silencer"
+      },
+      "buffs": [
+        "slow_on_hit",
+        "reload_on_kill",
+        "crowd_pleaser"
+      ],
+      "skills": [
+        "frost_pulse",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "chain_reaction",
+        "pack_hunter"
+      ],
+      "sea": "tidebound",
+      "flavor": "",
+      "red": "No penguins were harmed. Several were launched.",
+      "signature": "penguin_rescue",
+      "attach": "penguin_slide",
+      "pool": "region_4_boss",
+      "cfg": {
+        "pop_damage": 3.0,
+        "pop_radius": 2.5,
+        "slide_speed": 9.0,
+        "reach": 25.0
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

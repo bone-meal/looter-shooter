@@ -13,6 +13,7 @@ const SCRIPTS := {
 	"grillmaster": preload("res://game/signatures/grillmaster.gd"),
 	"volcano_sauce": preload("res://game/signatures/volcano_sauce.gd"),
 	"hot_potato": preload("res://game/signatures/hot_potato.gd"),
+	"penguin_rescue": preload("res://game/signatures/penguin_rescue.gd"),
 }
 
 

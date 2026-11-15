@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;/tp island;!wait 3;!immortal;/spawn chaser 2;!wait 1.5;!readyunique penguin_rescue 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1;!snap penguin_held;!sigkill;!wait 0.25;!snap penguin_slide;!chase h0;!wait 0.5;!chase h1;!wait 3;!chase h4;!wait 10

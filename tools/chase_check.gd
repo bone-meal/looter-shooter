@@ -11,7 +11,8 @@
 # later; walking over it heals (offline here). VOLCANO SAUCE: hits add heat to a target, the 5th within the cool-off
 # erupts a geyser (blast, burning, fire for Swamp Gas), heat cools off after a pause. HOT POTATO: shots heat the gun
 # (it glows), the reload key throws it only at full heat (a big blast where it lands), it is gone and cannot fire
-# until it comes back; another player's copy shows the glow and the gun gone.
+# until it comes back; another player's copy shows the glow and the gun gone. PENGUIN RESCUE: a kill frees a penguin
+# that slides into the nearest other enemy and pops there.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -173,6 +174,7 @@ func _ready() -> void:
 	await _grill(db)
 	await _sauce(db)
 	await _potato(db)
+	await _penguin(db)
 	_finish()
 
 
@@ -557,6 +559,49 @@ func _potato(db: GunDb) -> void:
 	UniqueAttach.show_extra(copy_piece, "hot_potato", "out")
 	_say("another player's copy: glows at h9, hidden at out", copy_glow != null and not copy.visible)
 	sig.call("stop")
+
+
+func _penguin(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "penguin_rescue", 35)
+	_say("Penguin Rescue builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var model := Node3D.new()
+	add_child(model)
+	_say("its penguin rides on the slide, the freed penguin model loads", UniqueAttach.apply(model, gun, db) != null and ResourceLoader.exists("res://assets/models/weapons/uniques/penguin.gltf"))
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := LanternHolder.new()
+	holder.position = Vector3(8000, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(100, 1, 100)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(8000, -0.5, 0)
+	add_child(floor_body)
+	var dead := BurnMob.new()
+	dead.position = Vector3(8008, 0, 0)
+	add_child(dead)
+	dead.health.dead = true
+	var next := BurnMob.new()
+	next.position = Vector3(8008, 0, 8)
+	add_child(next)
+	source.list = [dead, next]
+	var sig: Node3D = Signatures.make("penguin_rescue")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["penguin_rescue"])
+	sig.call("on_target_hit", dead, dead.position, 50.0, true)
+	for _i in 60:
+		await get_tree().create_timer(0.05).timeout
+		if not booms.blasts.is_empty():
+			break
+	var at: Vector3 = booms.blasts[0][0] if not booms.blasts.is_empty() else Vector3.INF
+	_say("the kill frees a penguin that slides into the next enemy and pops there (%s)" % str(booms.blasts), booms.blasts.size() == 1 and at.distance_to(next.position) < 1.6 and is_equal_approx(float(booms.blasts[0][2]), 90.0))
 
 
 func _json(name: String) -> Dictionary:
