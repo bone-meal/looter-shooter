@@ -19,6 +19,7 @@ const NetFantasy = preload("res://game/net_fantasy.gd")
 const NetTrade = preload("res://game/net_trade.gd")
 const NetTcg = preload("res://game/net_tcg.gd")
 const NetMusic = preload("res://game/net_music.gd")
+const NetMixtape = preload("res://game/net_mixtape.gd")
 const NetHub = preload("res://game/net_hub.gd")
 const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
@@ -60,6 +61,7 @@ var fantasy: Node  # the fantasy world's creatures and party quests (game/net_fa
 var trade: Node  # trading between players (game/net_trade.gd)
 var tcg: Node  # the card game's player tables (game/net_tcg.gd)
 var music: Node  # the jukebox online (game/net_music.gd)
+var mixtape: Node  # the Mixtape chase gun's songs online (game/net_mixtape.gd)
 var hub: Node  # the safe hub's countdown and ready-up (game/net_hub.gd; also alone)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
@@ -105,6 +107,11 @@ func _ready() -> void:
 	music.net = self
 	add_child(music)
 	roster_changed.connect(func(_r: Dictionary) -> void: music.call("joined", 0))
+	mixtape = NetMixtape.new()
+	mixtape.name = "Mixtape"
+	mixtape.net = self
+	add_child(mixtape)
+	roster_changed.connect(func(_r: Dictionary) -> void: mixtape.call("joined", 0))
 	hub = NetHub.new()
 	hub.name = "Hub"
 	hub.net = self

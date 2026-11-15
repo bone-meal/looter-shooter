@@ -1,8 +1,7 @@
 # Purpose: the MIXTAPE's red-text behaviour (director's design, diary/DESIGN_UNIQUES.md): while the gun is in hand
 # the MP3 player taped to it plays the holder's own Music folder (game/music_library.gd; the game ships no songs),
 # shuffled, as 3D sound from the holder (loud near, soft far); its screen scrolls the song's name; the inspect key
-# skips to the next song. Other players hearing it: game/net_mixtape.gd (not built yet: this plays on the holder's
-# machine only).
+# skips to the next song. Other players hear it from us through game/net_mixtape.gd (told each song here).
 # Dependencies: game/music_library.gd, core/music_queue.gd (song dictionaries), the gun model's gimmick with its
 # "Screen" marker (game/unique_attach.gd).
 extends Node3D
@@ -87,6 +86,7 @@ func _screen_line(screen: Node3D, size: int, pixel: float, y: float) -> Label3D:
 # The gun left the hand: the music stops.
 func stop() -> void:
 	_speaker.stop()
+	_tell_net("", 0)
 	for line: Label3D in [_label, _top]:
 		if line != null and is_instance_valid(line):
 			line.queue_free()
@@ -116,11 +116,25 @@ func next_song() -> void:
 			(stream as AudioStreamMP3).loop = false
 		_speaker.stream = stream
 		_speaker.play()
+		_tell_net(String(song["file"]), int(song.get("bytes", 0)))
 		var artist := String(song.get("artist", ""))
 		_text = ("%s - %s" % [artist, song["title"]] if artist != "" else String(song["title"])).to_upper()
 		break
 	_scroll = 0
+	if _text == EMPTY_TEXT:
+		_tell_net("", 0)
 	_show()
+
+
+# Tells the others what plays now (game/net_mixtape.gd; "" = nothing).
+func _tell_net(file: String, size: int) -> void:
+	var link: Node = get_tree().get_first_node_in_group("net_mixtape") if is_inside_tree() else null
+	if link == null:
+		return
+	if file == "":
+		link.call("stopped")
+	else:
+		link.call("playing", file, size, 0.0)
 
 
 func playing_text() -> String:

@@ -13,6 +13,8 @@ const WeaponModels = preload("res://game/weapon_models.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const ShieldModel = preload("res://game/shield_model.gd")
 const DataStore = preload("res://core/data_store.gd")
+const UniqueAttach = preload("res://game/unique_attach.gd")
+const Mixtape = preload("res://game/signatures/mixtape.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
 
 const HAND := Vector3(0.26, 1.3, -0.5)  # where the weapon sits in the body model
@@ -32,6 +34,8 @@ var _badge: Sprite3D
 var _held_id := ""
 var _down := false  # see set_down()
 var _held_model: Node3D
+var _held_shown := ""  # the whole held string last shown ("m16@mixtape"); _held_id is its gun body alone
+var _speaker: AudioStreamPlayer3D  # a Mixtape's song heard from this player (game/net_mixtape.gd), made when first needed
 var _slung: MeshInstance3D  # the shield on this player's back, while he carries one and holds something else
 var _smoking := false
 var _emote := ""
@@ -175,8 +179,9 @@ func _apply_smoking() -> void:
 		_cigarette.visible = _smoking
 
 
-# Shows what this player holds: a gun's body id, "knife:<type>", "shield" (held up), or nothing; "|shield" behind it
-# = a shield hangs on his back (game/player.gd `held_id`). Empty or unknown = hands empty.
+# Shows what this player holds: a gun's body id ("m16@mixtape" = a chase gun with its gimmick), "knife:<type>",
+# "shield" (held up), or nothing; "|shield" behind it = a shield hangs on his back (game/player.gd `held_id`). Empty
+# or unknown = hands empty.
 func set_held(shown: String) -> void:
 	var on_back := shown.ends_with("|shield")
 	if on_back != (_slung != null and _slung.visible):
@@ -185,9 +190,10 @@ func set_held(shown: String) -> void:
 		_slung.visible = on_back
 		_place_slung()
 	var id := shown.trim_suffix("|shield")
-	if id == _held_id:
+	if id == _held_shown:
 		return
-	_held_id = id
+	_held_shown = id
+	_held_id = id.get_slice("@", 0)
 	if _held_model != null:
 		_held_model.queue_free()
 		_held_model = null
@@ -196,8 +202,30 @@ func set_held(shown: String) -> void:
 	if id == "shield":
 		_held_model = ShieldModel.build()
 	else:
-		_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(id)
+		_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(_held_id)
+		if id.contains("@") and _held_model != null:
+			UniqueAttach.apply_id(_held_model, id.get_slice("@", 1))
 	_place_held()
+
+
+# A Mixtape's song from this player (`stream` from `pos` seconds), as 3D sound: as loud and as far as the holder's own.
+func play_song(stream: AudioStream, pos: float) -> void:
+	if _speaker == null:
+		_speaker = AudioStreamPlayer3D.new()
+		_speaker.unit_size = Mixtape.LOUD_UNTIL
+		_speaker.max_distance = Mixtape.HEARD_TO
+		_speaker.attenuation_model = AudioStreamPlayer3D.ATTENUATION_INVERSE_DISTANCE
+		_speaker.volume_db = Mixtape.VOLUME_DB
+		_speaker.position = Vector3(0, 1.2, 0)
+		add_child(_speaker)
+	_speaker.stream = stream
+	if stream != null:
+		_speaker.play(clampf(pos, 0.0, maxf(stream.get_length() - 0.5, 0.0)))
+
+
+func stop_song() -> void:
+	if _speaker != null:
+		_speaker.stop()
 
 
 # The slung shield hangs on a rigged body's back; a code-built body has no place for it and shows none.

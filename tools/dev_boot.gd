@@ -5,6 +5,8 @@
 # Dependencies: the running game (finds the player by its set_third_person method).
 extends Node
 
+const GunGen = preload("res://core/gun_gen.gd")
+
 const OUT := "res://tools/userdata/"
 
 var _lines := PackedStringArray()
@@ -86,9 +88,30 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var release := InputEventAction.new()
 			release.action = words[1]
 			Input.parse_input_event(release)
+		"mixnet":  # "!mixnet <note>": the Mixtape online: songs held, what plays where, and each other player's body (gimmick shown, song heard)
+			var link: Node = session.get("net").get("mixtape")
+			var bodies := PackedStringArray()
+			for body: Node in session.get("net").call("target_nodes"):
+				var held: Node3D = body.get("_held_model")
+				var speaker: AudioStreamPlayer3D = body.get("_speaker")
+				bodies.append("%s held=%s mp3=%s playing=%s at=%.1f" % [body.name, String(body.get("_held_id")), str(held != null and held.find_child("Screen", true, false) != null),
+					str(speaker != null and speaker.playing), speaker.get_playback_position() if speaker != null and speaker.playing else -1.0])
+			_lines.append("MIXNET %s @%.1f: cache %d, playing %s, sending %d, uploading %s | %s" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), (link.get("cache") as Dictionary).size(), str((link.get("_playing") as Dictionary).keys()),
+				(link.get("_sending") as Dictionary).size(), str(not (link.get("_uploading") as Dictionary).is_empty()), " ; ".join(bodies)])
+		"readyunique":  # "!readyunique <id> [slot 1-4]": that unique goes straight into a ready slot (what was there is lost; dev runs never save)
+			var slot := (int(words[2]) - 1) if words.size() > 2 else 1
+			var made: Dictionary = GunGen.unique(player.get("gun_db"), words[1], 5)
+			if made.is_empty():
+				_lines.append("READYUNIQUE: unknown %s" % words[1])
+			else:
+				player.get("inventory").call("set_holster_gun", slot, made)
+				player.call("refresh_held")
+				_lines.append("READYUNIQUE %s in slot %d" % [words[1], slot + 1])
 		"sig":  # "!sig <note>": the chase gun in hand's red-text behaviour and (the Mixtape) what it plays
 			var node: Node = player.get("_sig_node")
-			_lines.append("SIG %s: %s | %s" % [" ".join(words.slice(1)), String(player.get("_sig_id")), String(node.call("playing_text")) if node != null and node.has_method("playing_text") else "-"])
+			_lines.append("SIG %s @%.1f: %s | %s" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), String(player.get("_sig_id")), String(node.call("playing_text")) if node != null and node.has_method("playing_text") else "-"])
+			var inv_now: RefCounted = player.get("inventory")
+			_lines.append("    hand %d, ready %s, held %s" % [int(player.get("_hand")), str([inv_now.call("holster_body", 0), inv_now.call("holster_body", 1)]), String(player.call("held_id"))])
 		"skills":  # "!skills <q skill> [e skill]": the gun in hand gets these Q / E skills at best quality (a dev-only edit of a rolled gun)
 			var hand := int(player.get("_hand"))
 			var inv: RefCounted = player.get("inventory")

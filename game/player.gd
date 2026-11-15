@@ -731,7 +731,10 @@ func held_id() -> String:
 	var slung := "|shield" if shield.owned and not guns_locked else ""  # on the back, for others to see
 	if _knife_out:
 		return "knife:" + knife + slung
-	return (inventory.holster_body(_hand) if _holding else "") + slung
+	var unique := ""  # a chase gun with a gimmick model: "m16@mixtape" (others see the gimmick: game/remote_player.gd)
+	if _holding and _held_gun.has("unique") and (gun_db.uniques.get(String(_held_gun["unique"]), {}) as Dictionary).has("attach"):
+		unique = "@" + String(_held_gun["unique"])
+	return (inventory.holster_body(_hand) + unique if _holding else "") + slung
 
 
 # The rolled gun in hand ({} for a plain weapon, the knife or nothing).
