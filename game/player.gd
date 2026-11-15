@@ -89,6 +89,10 @@ var items: ItemDb
 var status: StatusState  # burning / poisoned / chilled timers
 var armor := {}  # totals from core/armor_math.gd, refreshed by refresh_equipment()
 var carried := false  # true while the crow carries the player (movement is driven from outside)
+var swimming := false  # in the sea's water (game/sea_swim.gd decides): the move keys swim, jump / crouch rise and sink
+var water_level := 0.0  # scene height of the water's surface above the body while swimming
+var swim := {"speed": 3.0, "sprint": 1.5, "float": 1.35, "max_depth": 30.0}  # data/sea/salvage.json "swim", set at sea
+var swim_fast_ok := true  # stamina left to swim fast
 var at_helm := false  # steering a ship at sea (game/sea_ships.gd): the move keys work the ship, the body stays at the wheel
 var controls_enabled := true  # false while the inventory screen is open
 var damage_numbers: DamageNumbers  # optional; game/damage_numbers.gd
@@ -466,6 +470,9 @@ func _move_tick(input: Vector2) -> void:
 		sprint_top = top * _sprint_multiplier
 	if cheat_fly:  # the whole movement follows the view, up and down included
 		velocity = (_head.global_transform.basis * Vector3(input.x, 0, input.y)).normalized() * sprint_top * 2.0
+	elif swimming:
+		velocity = _swim_step(input)
+		_fall_speed = 0.0
 	elif tow_point.is_finite():  # Kite Flyer: towed on a teammate's kite string (game/kite.gd sets and clears it)
 		velocity = ((tow_point - global_position) * 3.0).limit_length(14.0)
 		_fall_speed = 0.0
@@ -533,7 +540,7 @@ func _move_and_shoot(delta: float) -> void:
 		_jump_until = 0.0
 	elif controls_enabled and not at_helm and Input.is_action_just_pressed("jump"):
 		_jump_until = _now() + move.tick + float(_move_cfg["jump_buffer"])
-	_set_crouch(downed or (controls_enabled and Input.is_action_pressed("crouch")), delta)
+	_set_crouch(downed or (controls_enabled and not swimming and Input.is_action_pressed("crouch")), delta)
 	if not emote.is_empty() and (input != Vector2.ZERO or Input.is_action_just_pressed("jump") or Input.is_action_pressed("shoot")):
 		stop_emote()
 	# The body moves in fixed ticks (data/movement.json tick_hz) whatever the frame rate, so a hop is timed the same on
@@ -543,7 +550,7 @@ func _move_and_shoot(delta: float) -> void:
 		_tick_left -= move.tick
 		_tick_from = global_position
 		_move_tick(input)
-	if position.y < FALL_LIMIT:
+	if position.y < FALL_LIMIT and not swimming:
 		position = _spawn_position
 		velocity = Vector3.ZERO
 		_tick_from = position
@@ -715,6 +722,37 @@ func refresh_equipment() -> void:
 	_apply_health_cap()  # armour rolls and sets may change max health
 	_cigarette.visible = armor["abilities"].has("auto_reload")
 	move.no_fatigue = armor["abilities"].has("auto_bhop")
+
+
+# One tick of swimming (sea step 5b): along the view under water, flat at the surface; jump rises, crouch sinks;
+# with neither the body floats up to the surface and bobs there; never below the deepest dive.
+func _swim_step(input: Vector2) -> Vector3:
+	var head_under := global_position.y + HEAD_HEIGHT < water_level
+	var facing := Basis(Vector3.UP, _yaw) * Basis(Vector3.RIGHT, _head.rotation.x) if head_under else Basis(Vector3.UP, _yaw)
+	var wish := facing * Vector3(input.x, 0.0, input.y)
+	var rise := 0.0
+	if controls_enabled and not downed:
+		rise = (1.0 if Input.is_action_pressed("jump") else 0.0) - (1.0 if Input.is_action_pressed("crouch") else 0.0)
+	wish += Vector3.UP * rise
+	if wish.length() > 1.0:
+		wish = wish.normalized()
+	var fast := controls_enabled and swim_fast_ok and Input.is_action_pressed("sprint")
+	var target := wish * float(swim["speed"]) * (float(swim["sprint"]) if fast else 1.0)
+	var float_y := water_level - float(swim["float"])
+	if rise == 0.0 and global_position.y > float_y - 1.2:
+		target.y = clampf((float_y - global_position.y) * 2.5, -2.0, 2.0)  # floats up and bobs at the surface
+	elif rise > 0.0:
+		target.y = minf(target.y, (float_y + 0.15 - global_position.y) * 3.0)  # swimming up stops at the surface
+	if water_level - global_position.y > float(swim["max_depth"]):
+		target.y = maxf(target.y, 1.5)  # too deep: pushed back up
+	return velocity.lerp(target, 1.0 - exp(-5.0 * move.tick))
+
+
+# Water in the lungs (sea step 5b): straight off the health, no armour or shield.
+func drown(amount: float) -> void:
+	if cheat_god or downed or amount <= 0.0:
+		return
+	_hurt(amount)
 
 
 # Moves the player to a new spawn point (island -> arena) and makes it the respawn point.

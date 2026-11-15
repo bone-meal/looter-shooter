@@ -1,0 +1,28 @@
+{
+ "_about": "Swimming, diving and salvage (sea step 5b). Director: an empty stamina bar = DROWNING DAMAGE until a ladder, a rope or the shore; salvage = BOTH fixed hand-placed spots per region (bubbles show them; each find fills that region's logbook set, a full set pays a reward) AND random small finds on any dive deep enough; the rope = F at the rail. swim: speed m/s, sprint multiplier, float = how far the body's feet hang under the surface when floating, wade = feet this deep under the surface = swimming, max_depth = deepest dive, stamina drain per second (tread = still, move, under = head under water, sprint multiplier), storm_drain = extra drain per metre of swell above 1, regen per second out of the water, drown = share of max health lost per second at empty stamina, stamina_per_agility = more stamina per Agility level, ladder_reach / climb_seconds = the rope ladders, rope_reach / rope_grab / haul_seconds / rope_seconds = the thrown rope. dive: min_depth = how deep the head must be for random finds, random_every seconds down there for one roll at random_chance, xp: Agility xp per 10 s under water, per random find, per spot find. sets: per region, finds (ids; names and lines in data/sea/writing/salvage.txt), reward chips + Agility xp. spots: sea coordinates, depth of the sea bed there, model. trinkets: the random finds (weights). ALL NUMBERS, NAMES AND PLACES ARE MY PLACEHOLDERS.",
+ "swim": {"speed": 3.0, "sprint": 1.5, "float": 1.35, "wade": 1.0, "max_depth": 30.0,
+  "stamina": 100.0, "tread": 0.8, "move": 2.0, "under": 3.2, "sprint_drain": 2.0, "storm_drain": 0.6, "regen": 30.0, "drown": 0.08, "stamina_per_agility": 1.0,
+  "ladder_reach": 1.8, "climb_seconds": 1.3, "rope_reach": 25.0, "rope_grab": 1.8, "haul_seconds": 2.2, "rope_seconds": 15.0},
+ "dive": {"min_depth": 6.0, "random_every": 8.0, "random_chance": 0.4, "xp_per_10s": 5, "xp_random": 20, "xp_spot": 60, "spot_reach": 3.0, "show_within": 350.0},
+ "sets": {
+  "region_1": {"finds": ["brass_spyglass", "captains_log", "ships_bell", "silver_compass", "pearl_box"], "reward": {"chips": 750, "xp": 300}}
+ },
+ "spots": [
+  {"find": "brass_spyglass", "at": [-180, 2640], "depth": 7.0, "model": "salvage_chest"},
+  {"find": "captains_log", "at": [60, 2360], "depth": 9.0, "model": "salvage_chest"},
+  {"find": "ships_bell", "at": [-40, 2720], "depth": 12.0, "model": "wreck_small"},
+  {"find": "silver_compass", "at": [300, 1950], "depth": 10.0, "model": "salvage_chest"},
+  {"find": "pearl_box", "at": [-420, 2440], "depth": 14.0, "model": "wreck_small"}
+ ],
+ "trinkets": {"finds": [
+   {"id": "sea_glass", "icon": "crystal", "weight": 30},
+   {"id": "old_coin", "icon": "coin", "weight": 25},
+   {"id": "cowrie_shell", "icon": "shell", "weight": 25},
+   {"id": "barnacled_bottle", "icon": "potion", "weight": 15},
+   {"id": "bent_spoon", "icon": "pin", "weight": 12},
+   {"id": "lost_ring", "icon": "ring", "weight": 6},
+   {"id": "whale_tooth", "icon": "bone", "weight": 5},
+   {"id": "message_bottle", "icon": "scroll", "weight": 2}
+  ], "reward": {"chips": 1500, "xp": 500}},
+ "icons": {"brass_spyglass": "glasses", "captains_log": "book", "ships_bell": "relic", "silver_compass": "clock", "pearl_box": "gem"}
+}

@@ -1,11 +1,10 @@
-Sea step 5a: ship core (ship-local decks, helm, Valheim wind, anchor, sloop)
+Sea step 5b: swimming, stamina and drowning, rope ladders, thrown rope, diving and the salvage logbook
 
-- data/sea/ships.json + core/sea/ship_rules.gd: sail stages and oars, wind share by heading, turning, lean, deck outline, helmsman Sailing level gate
-- game/sea_ship.gd: solid hull, bulwarks and mast from the data, rides the waves, sail / yard / pennant / wheel / anchor / oars animated
-- game/sea_ships.gd: world fleet stepped before the player, player.carry keeps his place on the moving deck, helm and anchor, aground probe, Sailing xp and perks
-- game/ship_helm_panel.gd: helm UI (compass with wind, sail stages, point of sail, speed, rudder)
-- tools/blender/sea_ships.py: the sloop model; tools/ship_check (22 checks); dev !ship
-- the fantasy world is hidden while asleep (it drew about 160k triangles at sea)
+- player swims (along the view under water, floats at the surface); the wading floor is gone
+- game/sea_swim.gd: in the water or not, stamina (Agility gives more), drowning damage when empty, rope ladders on both ship sides, the rope thrown with F at the rail hauls a swimmer aboard, under-water view
+- core/sea/salvage_book.gd + game/sea_salvage.gd: five hand-placed finds in region 1 on sea-bed patches with bubble columns, random trinkets on deep dives, set rewards paid once, Agility xp; saved with the character
+- game/salvage_log_window.gd (key J at sea), game/swim_hud.gd; data/sea/salvage.json + data/sea/writing/salvage.txt (packed in exports)
+- models: salvage chest, small wreck, sea-bed patch, rope float, ladders on the sloop; checks tools/salvage_check; dev !swim
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

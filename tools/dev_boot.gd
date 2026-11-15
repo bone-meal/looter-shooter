@@ -66,7 +66,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !sea time|weather|go|status (sea world), !ship status|board|helm|letgo|anchor up|down|stage n|rudder r|off|wind deg|head deg (sea ships), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !sea time|weather|go|status (sea world), !ship status|board|helm|letgo|anchor up|down|stage n|rudder r|off|wind deg|head deg (sea ships), !swim status|drop x z|spot n|take|ladder|climb|rope|stamina n|log (swimming, salvage), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -487,6 +487,39 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
+		"swim":  # sea swimming (step 5b): !swim status | drop <x> <z> | spot <n> | take | ladder | rope | stamina <n> | log
+			var sea_w: Node = session.call("sea")
+			if sea_w == null:
+				_lines.append("swim: no sea (use /tp sea first)")
+			else:
+				var swim_n: Node = sea_w.get("swim")
+				var salv: Node = sea_w.get("salvage")
+				var first_ship: Node = (sea_w.get("ships").get("ships") as Array)[0]
+				match words[1] if words.size() > 1 else "status":
+					"drop":
+						player.call("teleport", sea_w.call("world_of", Vector3(float(words[2]), -1.0, float(words[3]))), 0.0)
+					"spot":
+						salv.call("dev_to_spot", int(words[2]) if words.size() > 2 else 0)
+					"take":
+						_lines.append("take: %s" % str(salv.call("interact")))
+					"ladder":
+						var foot: Vector3 = first_ship.global_transform * Vector3(float(first_ship.get("spec")["outline"][2][1]) + 1.2, -0.8, float(first_ship.get("spec")["ladder_z"]))
+						player.call("teleport", foot, 0.0)
+						_lines.append("ladder near: %s" % str(not (swim_n.call("ladder_near") as Dictionary).is_empty()))
+					"climb":
+						var spot: Dictionary = swim_n.call("ladder_near")
+						if not spot.is_empty():
+							swim_n.call("climb_ladder", spot)
+						_lines.append("climb: %s" % str(not spot.is_empty()))
+					"rope":
+						var hw := float(first_ship.get("spec")["outline"][3][1])
+						swim_n.call("throw_rope", first_ship, Vector3(hw, float(first_ship.get("spec")["deck"]) + 0.75, 0.0), player.global_position + Vector3(0.8, 0.0, 0.0))
+					"stamina":
+						swim_n.set("stamina", float(words[2]))
+					"log":
+						sea_w.call("toggle_logbook")
+					_:
+						_lines.append("swim: swimming %s aboard %s climbing %s health %.0f y %.2f | %s" % [str(player.get("swimming")), str(sea_w.get("ships").call("ship_aboard") != null), str(swim_n.call("climbing")), float(player.get("health").get("hp")), player.global_position.y, String(salv.call("status"))])
 		"nearclimb":  # fantasy world: stand at the foot of the nearest cliff shortcut (searches the cells round the player)
 			var land: Node = session.call("fantasy")
 			var here: Vector3 = land.call("player_local")

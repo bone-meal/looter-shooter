@@ -1,0 +1,25 @@
+# The salvage logbook's words (sea step 5b). Edit freely: one line per find, "id: Name | line under it".
+# [set <id>] = a region's set: its title and the line shown when it is full. All of it is my placeholder text.
+
+[set region_1]
+title: Sunlit Shallows
+done: Every wreck in the shallows has given up what it had. The water is clear enough to see the bottom; now you know what was down there.
+
+[set trinkets]
+title: Odds and Ends
+done: A pocketful of things the sea did not want. Somebody, somewhere, misses every one of them.
+
+[finds]
+brass_spyglass: Brass Spyglass | The lens is cracked, but it still makes the horizon look closer than it is.
+captains_log: Captain's Log | Most pages are pulp. The last legible line: "Wind fair. Crew restless. Saw it again."
+ships_bell: Ship's Bell | The clapper is gone. Someone took it on purpose.
+silver_compass: Silver Compass | It points north. It also points, now and then, somewhere else.
+pearl_box: Pearl Box | Lined with velvet that is now mostly seaweed. One pearl left, rattling.
+sea_glass: Sea Glass | Green, worn smooth, once a bottle of something strong.
+old_coin: Old Coin | Nobody's face you recognise.
+cowrie_shell: Cowrie Shell | Small, glossy, and once worth more than it looks.
+barnacled_bottle: Barnacled Bottle | Sealed. Whatever is in it has been aging a very long time.
+bent_spoon: Bent Spoon | Bent on purpose, or by something with a grip.
+lost_ring: Lost Ring | An inscription inside, rubbed away to two letters.
+whale_tooth: Whale Tooth | Carved with a ship. The ship is winning.
+message_bottle: Message in a Bottle | The note inside says "Do not open." You already have.

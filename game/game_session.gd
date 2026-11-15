@@ -163,6 +163,7 @@ var _painting := Vector3.ZERO
 var _painting_fantasy := Vector3.ZERO
 var _in_fantasy := false
 var _sea: Node3D  # game/sea_world.gd, built on the first trip (sea step 4)
+var _salvage_saved: Variant = null  # the salvage logbook from the save, until the sea is built (sea step 5b)
 var _in_sea := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
 var _fantasy_saved: Variant  # the fantasy part of the profile, until that world is built
@@ -791,6 +792,8 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("photo_mode") and not _inventory_screen.visible and not _photo.active:
 		_photo.enter(net == null or not net.can_send())  # alone the game stands still meanwhile
 		get_viewport().set_input_as_handled()
+	elif event.is_action_pressed("logbook") and _in_sea and not _inventory_screen.visible:
+		_sea.toggle_logbook()
 	elif event.is_action_pressed("inventory"):
 		_toggle_inventory()
 	elif event.is_action_pressed("interact") and not _inventory_screen.visible:
@@ -1324,6 +1327,7 @@ func _load_profile() -> void:
 			_player.set_knife(String(extra["knife"]))
 			_knife_rolled = true
 		_fantasy_saved = extra.get("fantasy")
+		_salvage_saved = extra.get("salvage")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
 	if not _knife_rolled:  # a new character (or one from before the knives): its knife type is rolled once and kept
@@ -1369,6 +1373,7 @@ func save_profile() -> void:
 			extra["fantasy"] = _fantasy.to_dict()
 		elif _fantasy_saved != null:
 			extra["fantasy"] = _fantasy_saved  # never entered this session: keep what was saved
+		extra["salvage"] = _sea.salvage.book.to_dict() if _sea != null else _salvage_saved
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
 
 
@@ -3812,6 +3817,8 @@ func _enter_sea() -> void:
 		add_child(_sea)
 		_sea.setup(_player, _render_style)
 		_sea.notice.connect(_player_hud.notice)
+		_sea.salvage.load_book(_salvage_saved)
+		_sea.set("others", func() -> Array: return net.other_positions() if net != null and net.can_send() else [])
 	_build_fantasy()  # the skills are shared (Sailing at the helm): the fantasy world keeps them
 	_sea.set("skills", _fantasy)
 	_in_sea = true

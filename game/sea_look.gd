@@ -10,6 +10,7 @@ const SeaClock = preload("res://core/sea/sea_clock.gd")
 const NIGHT_SKY := Color(0.03, 0.05, 0.12)
 const NIGHT_HORIZON := Color(0.08, 0.11, 0.2)
 const GOLD := Color(1.0, 0.62, 0.32)
+const UNDER_FAR := 50.0  # metres of sight under water
 
 var clock: SeaClock
 
@@ -22,6 +23,8 @@ var _sky_c := Color.SKY_BLUE  # eased towards what the moment asks for
 var _fog_c := Color.WHITE
 var _fog_far := 2600.0
 var _first := true
+var under_water := false  # the player's head is under (game/sea_swim.gd)
+var _was_under := false
 
 
 func setup(world: Dictionary, env: Environment, sun: DirectionalLight3D) -> void:
@@ -59,7 +62,12 @@ func apply(seconds: float, region: Dictionary, weather: Dictionary, delta: float
 	var fog := Color(region["fog"][0], region["fog"][1], region["fog"][2]).lerp(grey, (1.0 - light) * 0.7)
 	fog = NIGHT_HORIZON.lerp(fog, maxf(day, 0.08)).lerp(GOLD.darkened(0.2), gold * 0.35 * light)
 	var far := lerpf(float(_fog_cfg["far"]), float(_fog_cfg["heavy_far"]), clampf(float(weather.get("fog", 0.0)), 0.0, 1.0))
-	var k := 1.0 if _first else 1.0 - exp(-1.5 * delta)
+	_env.fog_sky_affect = 1.0 if under_water else 0.35  # under water the sky above is lost in the water's colour
+	if under_water:  # the head is under: the sea's own colour closes in a few tens of metres away
+		far = UNDER_FAR
+		fog = Color(region["sea"][0], region["sea"][1], region["sea"][2]).darkened(0.35) * lerpf(0.25, 1.0, day)
+	var k := 1.0 if _first or under_water != _was_under else 1.0 - exp(-1.5 * delta)
+	_was_under = under_water
 	_first = false
 	_sky_c = _sky_c.lerp(top, k)
 	_fog_c = _fog_c.lerp(fog, k)
@@ -76,3 +84,7 @@ func apply(seconds: float, region: Dictionary, weather: Dictionary, delta: float
 	_sun.rotation_degrees = Vector3(-height, sun.y, 0.0)
 	_sun.light_color = Color(0.55, 0.62, 0.85).lerp(Color.WHITE.lerp(GOLD, gold), day)
 	_sun.light_energy = lerpf(0.12, 1.15, day) * lerpf(0.45, 1.0, light)
+
+
+func fog_density() -> float:
+	return _env.fog_density

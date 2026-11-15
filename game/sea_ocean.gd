@@ -11,7 +11,7 @@ const SeaWaves = preload("res://core/sea/sea_waves.gd")
 
 const CODE := """
 shader_type spatial;
-render_mode cull_back;
+render_mode cull_disabled;  // seen from below too (swimming under, sea step 5b)
 
 uniform vec3 shallow_color : source_color = vec3(0.3, 0.8, 0.75);
 uniform vec3 deep_color : source_color = vec3(0.04, 0.3, 0.45);

@@ -234,6 +234,22 @@ def oars(m, sp):
             m.box(K("wood", HULL_WOOD), (0.06, 0.5, 0.18), (x + side * 3.75, -0.12, f - 0.66), node=name)
 
 
+def ladders(m, sp):
+    """A rope ladder over each side at ladder_z, from the rail down into the water."""
+    d, bul = sp["deck"], sp["bulwark"]
+    f = -sp["ladder_z"]
+    rope, rung = K("leather", ROPE), K("wood", HULL_WOOD)
+    for side in (1, -1):
+        x = side * (half(sp, sp["ladder_z"]) + 0.1)
+        top, low = d + bul + 0.05, -0.8
+        for df in (-0.24, 0.24):
+            m.rod(rope, 0.022, (x, top + 0.1, f + df), (x + side * 0.05, low, f + df), segs=5)
+        y = top - 0.25
+        while y > low + 0.1:
+            m.rod(rung, 0.025, (x + side * 0.03, y, f - 0.26), (x + side * 0.03, y, f + 0.26), segs=6)
+            y -= 0.32
+
+
 def build_ship(ship_id, sp):
     m = kit.Model("ship_" + ship_id, uv_scale=0.5, colored=True)
     hull(m, sp)
@@ -243,6 +259,7 @@ def build_ship(ship_id, sp):
     helm(m, sp)
     anchor(m, sp)
     oars(m, sp)
+    ladders(m, sp)
     print("ship_" + ship_id, m.export(OUT))
 
 
