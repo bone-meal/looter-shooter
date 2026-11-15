@@ -2,6 +2,7 @@
 # and blinks. While it rides along on the gun its holder can jump a second time in the air. Every 5th kill it leaps
 # onto the nearest living enemy's head and croaks: that enemy is marked (+30 % damage taken) while the frog rides it;
 # when the enemy dies (or after a while) the frog hops back onto the gun. Numbers in data/gun_uniques.json croak "cfg".
+# Others see the frog leap and ride through game/net_chase.gd.
 # Dependencies: assets/models/weapons/uniques/croak_frog.gltf (the leaping frog), the gun's gimmick with its "Lids"
 # node (game/unique_attach.gd), the holder's explosives.source enemy_list() and damage_numbers.
 extends Node3D
@@ -22,6 +23,7 @@ var _from := Vector3.ZERO
 var _next_blink := 2.0
 var _blink_left := 0.0
 var _mark_left := 0.0
+var _tell_left := 0.0  # seconds to the next "where my frog is" for the other players (game/net_chase.gd)
 
 
 func bind(player: Node3D, _gun: Dictionary, def: Dictionary) -> void:
@@ -42,6 +44,8 @@ func stop() -> void:
 	if _frog != null:
 		_frog.queue_free()
 		_frog = null
+	if _state != ON_GUN:
+		_tell("frog_off", Vector3.ZERO)
 	_state = ON_GUN
 
 
@@ -72,6 +76,11 @@ func marked() -> Node3D:
 
 func _process(delta: float) -> void:
 	_blink(delta)
+	if _state != ON_GUN and _frog != null:
+		_tell_left -= delta
+		if _tell_left <= 0.0:
+			_tell_left = 0.2
+			_tell("frog", _frog.global_position)
 	match _state:
 		LEAPING:
 			_t += delta
@@ -110,6 +119,7 @@ func _process(delta: float) -> void:
 					_gimmick.visible = true
 				_state = ON_GUN
 				_kills = 0
+				_tell("frog_off", Vector3.ZERO)
 
 
 func _leap(near: Vector3) -> void:
@@ -194,3 +204,10 @@ func _say(at: Vector3, words: String) -> void:
 	var numbers: Variant = _player.get("damage_numbers")
 	if numbers is Node:
 		(numbers as Node).call("say", at, words, Color(0.45, 0.95, 0.35))
+
+
+
+func _tell(kind: String, at: Vector3) -> void:
+	var link: Node = get_tree().get_first_node_in_group("net_chase") if is_inside_tree() else null
+	if link != null:
+		link.call("send", kind, -1, at)

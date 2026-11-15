@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;/tp island;!chase wait_frog;!chase g_frog;!wait 1;!chase g_frog1;!wait 1;!chase g_frog2;!chase wait_cloud;!chase g_clouds;!wait 1;!gasfire;!wait 1.5;!chase g_after_fire;!wait 3;!chase g_end

@@ -158,6 +158,51 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("BALLSHOOT copy [%d] hit %s" % [cs, str(pool_s.call("shot_through", at_s - Vector3(3, 0, 0), Vector3(1, 0, 0), 10.0))])
 			else:
 				_lines.append("BALLSHOOT no copy to shoot")
+		"chase":  # "!chase <note>": other players' chase-gun effects shown here (Croak's frog copies, Swamp Gas cloud copies) and our own clouds
+			if words.size() > 1 and (words[1] == "wait_cloud" or words[1] == "wait_frog"):  # up to 60 s for a copy to show
+				for _w in 600:
+					var gas_w: Node = get_tree().get_first_node_in_group("swamp_gas")
+					var seen := false
+					if words[1] == "wait_cloud" and gas_w != null:
+						for k in (gas_w.get("_life") as PackedFloat32Array).size():
+							seen = seen or ((gas_w.get("_life") as PackedFloat32Array)[k] > 0.0 and (gas_w.get("_owner") as PackedInt32Array)[k] != 0)
+					if words[1] == "wait_frog":
+						for f: Variant in (session.get("net").get("chase").get("_frogs") as Dictionary).values():
+							seen = seen or (is_instance_valid(f) and (f as Node3D).visible)
+					if seen:
+						break
+					await get_tree().create_timer(0.1, true, false, true).timeout
+			var link_c: Node = session.get("net").get("chase")
+			var frogs := PackedStringArray()
+			var frog_map: Dictionary = link_c.get("_frogs")
+			for peer: int in frog_map:
+				var f: Node3D = frog_map[peer]
+				frogs.append("frog of %d %s at %s" % [peer, "shown" if is_instance_valid(f) and f.visible else "hidden", str(f.global_position.snapped(Vector3.ONE * 0.1)) if is_instance_valid(f) else "-"])
+			var clouds := PackedStringArray()
+			var gas: Node = get_tree().get_first_node_in_group("swamp_gas")
+			if gas != null:
+				for k in (gas.get("_life") as PackedFloat32Array).size():
+					if (gas.get("_life") as PackedFloat32Array)[k] > 0.0:
+						clouds.append("[%d] owner=%d" % [k, (gas.get("_owner") as PackedInt32Array)[k]])
+			_lines.append("CHASE %s @%.1f: %s | clouds %s | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", int(link_c.get("sent")), int(link_c.get("heard"))])
+		"gasfire":  # "!gasfire": a fire for one second at the first copy of somebody else's gas cloud (the copy tells its owner)
+			var gas_f: Node = get_tree().get_first_node_in_group("swamp_gas")
+			var spot := Vector3.INF
+			if gas_f != null:
+				for k in (gas_f.get("_life") as PackedFloat32Array).size():
+					if (gas_f.get("_life") as PackedFloat32Array)[k] > 0.0 and (gas_f.get("_owner") as PackedInt32Array)[k] != 0:
+						spot = ((gas_f.get("_puffs") as Array)[k * 2] as Node3D).position
+						break
+			if spot == Vector3.INF:
+				_lines.append("GASFIRE no copy")
+			else:
+				var fire := _DevFire.new()
+				fire.at = spot
+				add_child(fire)
+				fire.add_to_group("fire_sources")
+				_lines.append("GASFIRE lit at %s" % str(spot.snapped(Vector3.ONE * 0.1)))
+				await get_tree().create_timer(1.0, true, false, true).timeout
+				fire.queue_free()
 		"ghosttag":  # "!ghosttag <note>": what each other player holds and what his Fish Story tag reads on this copy
 			var tags := PackedStringArray()
 			for body: Node in session.get("net").call("target_nodes"):
@@ -1369,3 +1414,11 @@ func _copy_ball(pool: Node) -> int:
 		if (pool.get("_life") as PackedFloat32Array)[k] > 0.0 and (pool.get("_owner") as PackedInt32Array)[k] != 0:
 			return k
 	return -1
+
+
+# A dev fire for "!gasfire": answers fire_near like a fire pit (group "fire_sources").
+class _DevFire extends Node:
+	var at := Vector3.ZERO
+
+	func fire_near(point: Vector3, reach: float) -> bool:
+		return point.distance_to(at) <= 0.5 + reach

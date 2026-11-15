@@ -1,1 +1,1 @@
-!uncap;!wait 3;/tp island;!wait 2;!immortal;!readyunique swamp_gas 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1.5;!snap swamp_held;!look 0 -5;!fire;!wait 0.8;!fire;!wait 0.5;!snap swamp_clouds;!key inspect;!wait 1.2;!snap swamp_inspect
+!uncap;!wait 3;/tp island;!wait 2;!immortal;!readyunique swamp_gas 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1.5;!snap ui_small;!inv;!wait 0.8;!snap inv_small

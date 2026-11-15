@@ -1,6 +1,7 @@
-Swamp Gas chase gun
+UI scales with the window + chase gun effects online
 
-Swamp Gas (region 2 boss pool, double shotgun): a jar of murky swamp water strapped to the fore-end, bubbles jiggling in it. Every shot burps a green gas cloud where the shot went; any fire sets a cloud off (a burning enemy inside it, a running Fire Pit, a burning path or inferno skill, any blast's flash), and each blast lights the clouds near it: a chain that also sets enemies burning. Fire sources answer fire_near (group fire_sources). tools/chase_check 29 of 29 on his PC. Dev !fire retries for up to a second.
+project.godot: base size 1920x1080, stretch canvas_items / expand, so the HUD and menus scale with any window size (at 1920x1080 nothing changes; 3D renders at the window's own resolution).
+game/net_chase.gd: other players see Croak's frog leap onto and ride an enemy's head, and Swamp Gas clouds; a copy of a cloud near fire on another machine (a teammate's inferno, his fire) sets off the owner's cloud. Tested with two copies.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

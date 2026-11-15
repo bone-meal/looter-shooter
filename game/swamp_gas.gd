@@ -2,8 +2,9 @@
 # cloud of green swamp gas hanging where it went. Any fire sets a cloud off (a burning enemy inside it, a burning path
 # or inferno, a running fire pit, any blast's flash: nodes in group "fire_sources" answer fire_near); a cloud going
 # off is itself a blast, so the flash sets off every cloud near it: a chain. Pool of a few clouds, oldest replaced.
-# Numbers from the gun's data "cfg" (data/gun_uniques.json swamp_gas).
-# Dependencies: game/explosives.gd (blast, its enemy source, sounds), groups "fire_sources".
+# Numbers from the gun's data "cfg" (data/gun_uniques.json swamp_gas). ONLINE (game/net_chase.gd): our clouds are
+# told to the others, who show copies; a copy near fire on their machine tells us, and our cloud goes off.
+# Dependencies: game/explosives.gd (blast, its enemy source, sounds), groups "fire_sources", "net_chase" (optional).
 extends Node3D
 
 const POOL_SIZE := 8
@@ -15,6 +16,9 @@ var _puffs: Array[MeshInstance3D] = []  # two soft balls per cloud
 var _life := PackedFloat32Array()
 var _damage := PackedFloat32Array()
 var _fuse := PackedFloat32Array()  # > 0: caught fire, goes off when it reaches 0 (the chain's small delay)
+var _owner := PackedInt32Array()  # 0 = our own cloud; else the peer whose cloud this is a copy of
+var _their_slot := PackedInt32Array()
+var _asked := PackedByteArray()  # a copy already told its owner it caught fire
 var _cfg: Dictionary = {}
 var _check := 0.0
 var _clock := 0.0
@@ -44,22 +48,40 @@ func _ready() -> void:
 	_life.resize(POOL_SIZE)
 	_damage.resize(POOL_SIZE)
 	_fuse.resize(POOL_SIZE)
+	_owner.resize(POOL_SIZE)
+	_their_slot.resize(POOL_SIZE)
+	_asked.resize(POOL_SIZE)
+	if _cfg.is_empty():  # a copy may come before any cloud of ours: the gun's own numbers
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
+		if data is Dictionary:
+			_cfg = (((data as Dictionary).get("uniques", {}) as Dictionary).get("swamp_gas", {}) as Dictionary).get("cfg", {})
 
 
 # A new cloud at `at` (cfg: radius, seconds, damage share of the gun's damage).
 func puff(at: Vector3, cfg: Dictionary, gun_damage: float) -> void:
 	_cfg = cfg
+	var i := _slot_for_new()
+	_owner[i] = 0
+	_show(i, at)
+	_damage[i] = gun_damage * float(cfg.get("pop_damage", 2.5))
+	_tell("gas", i, _puffs[i * 2].position)
+
+
+func _slot_for_new() -> int:
 	var i := 0
 	for k in POOL_SIZE:
 		if _life[k] <= 0.0:
-			i = k
-			break
+			return k
 		if _life[k] < _life[i]:
 			i = k
-	var r := float(cfg.get("cloud_radius", 1.8))
-	_life[i] = float(cfg.get("cloud_seconds", 9.0))
-	_damage[i] = gun_damage * float(cfg.get("pop_damage", 2.5))
+	return i
+
+
+func _show(i: int, at: Vector3) -> void:
+	var r := float(_cfg.get("cloud_radius", 1.8))
+	_life[i] = float(_cfg.get("cloud_seconds", 9.0))
 	_fuse[i] = 0.0
+	_asked[i] = 0
 	for n in 2:
 		var p := _puffs[i * 2 + n]
 		p.position = at + Vector3(randf_range(-0.3, 0.3), randf_range(-0.1, 0.3), randf_range(-0.3, 0.3)) * r
@@ -102,7 +124,13 @@ func _process(delta: float) -> void:
 			_hide(i)
 			continue
 		if look and _fire_near(at, r):
-			_fuse[i] = float(_cfg.get("chain_delay", 0.12))
+			if _owner[i] == 0:
+				_fuse[i] = float(_cfg.get("chain_delay", 0.12))
+			elif _asked[i] == 0:  # somebody else's cloud near fire here: its owner sets it off
+				_asked[i] = 1
+				var link := _link()
+				if link != null:
+					link.call("send", "gas_lit", _their_slot[i], at, _owner[i])
 
 
 func _fire_near(at: Vector3, r: float) -> bool:
@@ -120,6 +148,7 @@ func _go_off(i: int) -> void:
 	var at := _puffs[i * 2].position
 	var r := float(_cfg.get("cloud_radius", 1.8)) * float(_cfg.get("blast_scale", 1.6))
 	_hide(i)
+	_tell("gas_pop", i, at)
 	if explosives == null:
 		return
 	explosives.blast(at, r, _damage[i])  # its flash reaches the next cloud: the chain goes on
@@ -136,3 +165,52 @@ func _hide(i: int) -> void:
 	_fuse[i] = 0.0
 	_puffs[i * 2].visible = false
 	_puffs[i * 2 + 1].visible = false
+
+
+# ---- online (game/net_chase.gd) ----
+
+# Another player's cloud: a copy hangs here (it never blasts by itself).
+func remote_puff(owner: int, slot: int, at: Vector3) -> void:
+	var i := _copy_of(owner, slot)
+	if i < 0:
+		i = _slot_for_new()
+	_owner[i] = owner
+	_their_slot[i] = slot
+	_show(i, at)
+	_life[i] += 1.0  # the owner says when it is gone
+
+
+# The owner's cloud went off (his blast did the damage): ours shows the blast.
+func remote_pop(owner: int, slot: int, at: Vector3) -> void:
+	var i := _copy_of(owner, slot)
+	if i >= 0:
+		_hide(i)
+	if explosives != null:
+		explosives.show_flash(at, float(_cfg.get("cloud_radius", 1.8)) * float(_cfg.get("blast_scale", 1.6)))
+		if explosives.sounds != null:
+			explosives.sounds.call("play", "explosion", at)
+
+
+# A teammate saw fire at our cloud on his machine: it goes off.
+func friend_lit(slot: int) -> void:
+	if slot >= 0 and slot < POOL_SIZE and _life[slot] > 0.0 and _owner[slot] == 0 and _fuse[slot] <= 0.0:
+		_fuse[slot] = float(_cfg.get("chain_delay", 0.12))
+
+
+func _copy_of(owner: int, slot: int) -> int:
+	for i in POOL_SIZE:
+		if _life[i] > 0.0 and _owner[i] == owner and _their_slot[i] == slot:
+			return i
+	return -1
+
+
+func _tell(kind: String, i: int, at: Vector3) -> void:
+	if _owner[i] != 0:
+		return
+	var link := _link()
+	if link != null:
+		link.call("send", kind, i, at)
+
+
+func _link() -> Node:
+	return get_tree().get_first_node_in_group("net_chase") if is_inside_tree() else null
