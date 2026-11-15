@@ -323,6 +323,7 @@ var _club_parts: Array[Node] = []  # the club's inside and the casino, built on 
 var _custom_layer: CanvasLayer  # the overlays' layer (the table games add theirs when the club is built)
 var _fantasy_left_at := -1000.0  # _time when the player last left Aurelind: it sleeps a little later, once its sounds have faded
 var _rest_in := 0.0  # seconds until _rest_worlds looks again
+const SEA_SIDE_X := -10000.0  # scene x below this is the sea (its anchor lies at x -20000, data/sea/world.json)
 var _crow_cfg: Dictionary
 var _club_spawn := Vector3.ZERO
 var _crow_a_pos := Vector3.ZERO
@@ -3812,15 +3813,7 @@ func drop_power(kind: String, near: Node3D) -> String:
 func _enter_sea() -> void:
 	if loading != null:
 		loading.call("begin", 3)
-	if _sea == null:
-		_sea = SeaWorld.new()
-		add_child(_sea)
-		_sea.setup(_player, _render_style)
-		_sea.notice.connect(_player_hud.notice)
-		_sea.salvage.load_book(_salvage_saved)
-		_sea.set("others", func() -> Array: return net.other_positions() if net != null and net.can_send() else [])
-	_build_fantasy()  # the skills are shared (Sailing at the helm): the fantasy world keeps them
-	_sea.set("skills", _fantasy)
+	_build_sea()
 	_in_sea = true
 	_rest_worlds()
 	_player.teleport(_sea.spawn_world(), 0.0)
@@ -3828,6 +3821,23 @@ func _enter_sea() -> void:
 	if loading != null:
 		loading.call("finish")
 	_player_hud.play_fade()
+
+
+# Builds the sea once (the first trip, or on the host when another player sails there: the host runs the fleet).
+func _build_sea() -> void:
+	if _sea == null:
+		_sea = SeaWorld.new()
+		add_child(_sea)
+		_sea.setup(_player, _render_style)
+		_sea.notice.connect(_player_hud.notice)
+		_sea.salvage.load_book(_salvage_saved)
+		_sea.set("others", func() -> Array: return net.other_positions() if net != null and net.can_send() else [])
+		_sea.visible = false
+		if net != null:
+			net.space = _sea  # positions out at sea travel as shared ones (floating origin)
+			_sea.origin_shifted.connect(net.shift_ghosts)
+	_build_fantasy()  # the skills are shared (Sailing at the helm): the fantasy world keeps them
+	_sea.set("skills", _fantasy)
 
 
 func _leave_sea() -> void:
@@ -3930,8 +3940,16 @@ func _rest_worlds() -> void:
 	if _fantasy != null:
 		_fantasy.process_mode = Node.PROCESS_MODE_INHERIT if aurelind else Node.PROCESS_MODE_DISABLED
 		_fantasy.visible = aurelind  # asleep = not drawn either (built for its skills at sea, it drew ~160k triangles there)
+	var sea_others := false  # the host runs the sea's fleet while any other player is out there
+	if net != null and net.is_active() and net.is_host():
+		for spot: Vector3 in net.other_positions():
+			if spot.x < SEA_SIDE_X:
+				sea_others = true
+	if sea_others and _sea == null:
+		_build_sea()
 	if _sea != null:
-		_sea.process_mode = Node.PROCESS_MODE_INHERIT if _in_sea else Node.PROCESS_MODE_DISABLED
+		_sea.set("someone_else_here", sea_others)
+		_sea.process_mode = Node.PROCESS_MODE_INHERIT if _in_sea or sea_others else Node.PROCESS_MODE_DISABLED
 	var at_club := _player.global_position.distance_to(ClubIsland.CENTER) < CLUB_NEAR
 	if at_club and _casino.is_empty():
 		_build_club()

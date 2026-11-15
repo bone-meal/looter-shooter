@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 6;!sea time 0.45;!ship anchor up;!ship head 100;!ship wait_helmsman;!ship ghosts;!wait 10;!ship status;!ship ghosts;!third;!wait 1;!snap sea_host_a;!third;!ship wait_free;!ship anchor down;!ship board;!wait 1;!ship rail;!swim throw;!wait 1;!snap sea_host_rope;!wait 6;!ship ghosts;!snap sea_host_b;!wait 6

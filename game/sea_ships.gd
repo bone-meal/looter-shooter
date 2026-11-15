@@ -4,7 +4,8 @@
 # keeps it too). Taking the helm (the HELMSMAN'S Sailing level must reach the ship's; his Sailing perks apply),
 # W / S through the sail stages, A / D on the rudder, F or jump to let go; the anchor at the bow capstan. Running
 # aground stops a ship. Sailing xp for the helmsman per 100 m under sail. The helm panel (game/ship_helm_panel.gd).
-# All of it runs on this machine; the host runs the fleet and sends it in sea step 12.
+# Online the host alone steps the fleet and sends it (game/net_sea.gd); other machines glide after it, and their helm,
+# rudder, sails and anchor are requests the host checks.
 # Dependencies: core/sea/ship_rules.gd, game/sea_ship.gd, game/ship_helm_panel.gd, data/sea/ships.json; the sea world
 # (weather, clock, ocean swell, waves, skills), the player (carry, pin, at_helm).
 extends Node3D
@@ -12,6 +13,7 @@ extends Node3D
 const ShipRules = preload("res://core/sea/ship_rules.gd")
 const SeaShip = preload("res://game/sea_ship.gd")
 const HelmPanel = preload("res://game/ship_helm_panel.gd")
+const SkillPerks = preload("res://core/skill_perks.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -30,6 +32,11 @@ var _xp_metres := 0.0
 var _aground_told := false
 var _layer := CanvasLayer.new()
 var last_ground := ""  # dev: what the last aground probe hit
+var wanted_rudder := 0.0  # the helm's keys: the rudder and sail stage this player asks for (sent to the host online)
+var wanted_stage := 1
+var _helmsmen := {}  # SeaShip -> {"id": peer, "level": claimed Sailing level} (the host's word online)
+var _asked: SeaShip = null  # client: the helm we asked the host for
+var _slow := 0.0
 var dev_rudder := NAN  # dev: a rudder held without keys (tests run without focus)
 
 
@@ -59,34 +66,49 @@ func spawn(ship_id: String, x: float, z: float, yaw_deg: float) -> SeaShip:
 # --- every frame ---
 
 func _process(delta: float) -> void:
-	if not bool(_sea.get("inside")) or delta <= 0.0:
+	if not bool(_sea.call("running")) or delta <= 0.0:
 		return
-	var weather: Dictionary = _sea.get("weather")
-	var wind := float(weather.get("wind", 0.3))
-	var wind_dir := float(weather.get("wind_dir", 0.0))
+	var net := _net()
+	var client := net != null and bool(net.call("is_client"))
 	var t: float = _sea.call("seconds")
 	var ocean: Node3D = _sea.get("ocean")
 	var swell := float(ocean.get("swell")) if bool(ocean.call("is_moving")) else CALM_BOB
 	var waves: RefCounted = ocean.get("waves")
 	var here := _player.global_position
+	var inside := bool(_sea.get("inside"))
+	_slow -= delta
+	if _slow <= 0.0:
+		_slow = 0.5
+		for ship: SeaShip in ships:  # each ship sails in the wind where she is
+			ship.set_meta("weather", _sea.call("weather_at", Vector3(float(ship.state["x"]), 0.0, float(ship.state["z"]))))
+		if net != null and not client:
+			_check_helmsmen()
 	for ship: SeaShip in ships:
+		var weather: Dictionary = ship.get_meta("weather", {})
+		var wind := float(weather.get("wind", 0.3))
+		var wind_dir := float(weather.get("wind_dir", 0.0))
 		var before: Transform3D = ship.global_transform
 		var yaw_before := float(ship.state["yaw"])
-		var riding := ship == helm_ship or rules.aboard(String(ship.state["ship"]), before.affine_inverse() * here)
+		var riding := inside and (ship == helm_ship or rules.aboard(String(ship.state["ship"]), before.affine_inverse() * here))
 		if ship == helm_ship:
-			_steer(ship, delta)
+			_steer(ship, delta, client)
 		var was := Vector2(float(ship.state["x"]), float(ship.state["z"]))
-		var moved := rules.step(ship.state, wind, wind_dir, _speed_pct(ship), delta)
-		if moved > 0.0 and _aground(ship):
-			ship.state["x"] = was.x
-			ship.state["z"] = was.y
-			ship.state["speed"] = 0.0
-			moved = 0.0
-			if ship == helm_ship and not _aground_told:
-				_aground_told = true
-				_sea.emit_signal("notice", "Run aground: back her off with the oars (S)")
-		elif moved > 0.0:
-			_aground_told = false
+		var moved := 0.0
+		if client:
+			_follow_host(ship, delta)
+			moved = was.distance_to(Vector2(float(ship.state["x"]), float(ship.state["z"])))
+		else:
+			moved = rules.step(ship.state, wind, wind_dir, _speed_pct(ship), delta)
+			if moved > 0.0 and _aground(ship):
+				ship.state["x"] = was.x
+				ship.state["z"] = was.y
+				ship.state["speed"] = 0.0
+				moved = 0.0
+				if ship == helm_ship and not _aground_told:
+					_aground_told = true
+					_sea.emit_signal("notice", "Run aground: back her off with the oars (S)")
+			elif moved > 0.0:
+				_aground_told = false
 		ship.pose(waves, t, swell, wind, wind_dir, delta)
 		if riding:
 			_player.call("carry", ship.global_transform * before.affine_inverse(), wrapf(float(ship.state["yaw"]) - yaw_before, -PI, PI))
@@ -95,22 +117,106 @@ func _process(delta: float) -> void:
 			if float(rules.stage(ship.state)["sail"]) > 0.0:
 				_sailing_xp(ship, moved)
 	if helm_ship != null:
-		panel.show_ship(helm_ship.state, helm_ship.spec, rules, wind, wind_dir)
+		var w: Dictionary = helm_ship.get_meta("weather", {})
+		panel.show_ship(helm_ship.state, helm_ship.spec, rules, float(w.get("wind", 0.3)), float(w.get("wind_dir", 0.0)))
 
 
-func _steer(ship: SeaShip, delta: float) -> void:
+func _steer(ship: SeaShip, delta: float, client: bool) -> void:
 	var held := Input.get_axis("move_left", "move_right") if bool(_player.get("controls_enabled")) else 0.0
 	if not is_nan(dev_rudder):
 		held = dev_rudder
-	ship.state["rudder"] = move_toward(float(ship.state["rudder"]), held, delta * (1.6 if held != 0.0 else 2.4))
-	if not bool(_player.get("controls_enabled")):
+	wanted_rudder = move_toward(wanted_rudder, held, delta * (1.6 if held != 0.0 else 2.4))
+	if bool(_player.get("controls_enabled")):
+		if Input.is_action_just_pressed("move_forward"):
+			wanted_stage = mini(wanted_stage + 1, rules.stage_count() - 1)
+		elif Input.is_action_just_pressed("move_back"):
+			wanted_stage = maxi(wanted_stage - 1, 0)
+		elif Input.is_action_just_pressed("jump"):
+			let_go()
+			return
+	if not client:  # online the host takes these from game/net_sea.gd; here they are ours to set
+		ship.state["rudder"] = wanted_rudder
+		ship.state["stage"] = wanted_stage
+
+
+# --- online (game/net_sea.gd) ---
+
+func _net() -> Node:
+	var net := get_tree().get_first_node_in_group("net_sea")
+	return net if net != null and bool(net.call("active")) else null
+
+
+# Client: the host's states (one array per ship: x, z, yaw, speed, stage, rudder, anchored, helmsman).
+func host_states(states: Array) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	for i in mini(states.size(), ships.size()):
+		var got: Array = states[i]
+		if got.size() < 8:
+			continue
+		var ship: SeaShip = ships[i]
+		ship.set_meta("host", {"x": float(got[0]), "z": float(got[1]), "yaw": float(got[2]), "at": now})
+		ship.state["speed"] = float(got[3])
+		ship.state["stage"] = clampi(int(got[4]), 0, rules.stage_count() - 1)
+		ship.state["rudder"] = clampf(float(got[5]), -1.0, 1.0)
+		ship.state["anchored"] = bool(got[6])
+		_helmsmen[ship] = {"id": int(got[7]), "level": 0}
+		var mine := int(got[7]) == int(_net().call("my_id"))
+		if mine and helm_ship == null and _asked == ship:
+			_asked = null
+			_enter_helm(ship)
+		elif not mine and helm_ship == ship:
+			_leave_helm_here()
+
+
+# Client: glide towards where the host says the ship is (moving on at her speed since that word was sent).
+func _follow_host(ship: SeaShip, delta: float) -> void:
+	if not ship.has_meta("host"):
 		return
-	if Input.is_action_just_pressed("move_forward"):
-		rules.step_stage(ship.state, true)
-	elif Input.is_action_just_pressed("move_back"):
-		rules.step_stage(ship.state, false)
-	elif Input.is_action_just_pressed("jump"):
-		let_go()
+	var h: Dictionary = ship.get_meta("host")
+	var age := minf(Time.get_ticks_msec() / 1000.0 - float(h["at"]), 0.5)
+	var speed := float(ship.state["speed"])
+	var tx := float(h["x"]) - sin(float(h["yaw"])) * speed * age
+	var tz := float(h["z"]) - cos(float(h["yaw"])) * speed * age
+	var yaw := float(ship.state["yaw"])
+	var x := float(ship.state["x"]) - sin(yaw) * speed * delta
+	var z := float(ship.state["z"]) - cos(yaw) * speed * delta
+	var k := 1.0 - exp(-3.0 * delta)
+	if Vector2(tx - x, tz - z).length() > 30.0:
+		k = 1.0  # too far apart: jump
+	ship.state["x"] = lerpf(x, tx, k)
+	ship.state["z"] = lerpf(z, tz, k)
+	ship.state["yaw"] = lerp_angle(yaw, float(h["yaw"]), k)
+
+
+# Host: who steers which ship (0 = nobody).
+func helmsman_of(ship: SeaShip) -> int:
+	return int((_helmsmen.get(ship, {}) as Dictionary).get("id", 0))
+
+
+# Host: gives the helm to a player who claimed `level` in Sailing (refused when taken or not enough).
+func give_helm(ship: SeaShip, id: int, level: int) -> bool:
+	if helmsman_of(ship) != 0 or not rules.can_steer(String(ship.state["ship"]), level):
+		return false
+	_helmsmen[ship] = {"id": id, "level": level}
+	return true
+
+
+func free_helm(ship: SeaShip) -> void:
+	_helmsmen.erase(ship)
+	ship.state["rudder"] = 0.0
+
+
+# Host: a helmsman who left the game or the wheel lets go of it.
+func _check_helmsmen() -> void:
+	var net := _net()
+	var at: Dictionary = net.get("net").call("positions")
+	for ship: SeaShip in _helmsmen.keys():
+		var id := helmsman_of(ship)
+		if id == int(net.call("my_id")):
+			continue
+		var spot: Vector3 = ship.deck_spot([float(ship.spec["helm"][0]), float(ship.spec["helm"][1]) + 1.0])
+		if not at.has(id) or Vector2((at[id] as Vector3).x - spot.x, (at[id] as Vector3).z - spot.z).length() > 6.0:
+			free_helm(ship)
 
 
 # Does the water ahead (behind when going astern) have ground higher than the keel?
@@ -140,9 +246,14 @@ func sailing_level() -> int:
 
 func _speed_pct(ship: SeaShip) -> float:
 	var skills: Variant = _sea.get("skills")
-	if ship != helm_ship or skills == null:
+	if skills == null:
 		return 0.0
-	return float((skills as Node).call("perk", "sailing", "ship_speed"))
+	if ship == helm_ship:
+		return float((skills as Node).call("perk", "sailing", "ship_speed"))
+	var level := int((_helmsmen.get(ship, {}) as Dictionary).get("level", 0))  # another player steers: his claimed level's perks
+	if level <= 0:
+		return 0.0
+	return SkillPerks.total((skills as Node).get("skilling").get("unlocks", {}), "sailing", level, "ship_speed")
 
 
 func _sailing_xp(ship: SeaShip, moved: float) -> void:
@@ -197,7 +308,10 @@ func interact() -> bool:
 		return false
 	if _near_spot(ship, ship.spec["helm"], HELM_REACH):
 		if rules.can_steer(String(ship.state["ship"]), sailing_level()):
-			take_helm(ship)
+			if helmsman_of(ship) != 0 and helmsman_of(ship) != _my_id():
+				_sea.emit_signal("notice", "Somebody else has the helm")
+			else:
+				take_helm(ship)
 		return true
 	if _near_spot(ship, ship.spec["anchor"], ANCHOR_REACH):
 		toggle_anchor(ship)
@@ -206,7 +320,25 @@ func interact() -> bool:
 
 
 func take_helm(ship: SeaShip) -> void:
+	var net := _net()
+	if net != null and bool(net.call("is_client")):
+		_asked = ship  # the host decides; the fleet's next word gives us the wheel
+		net.call("request_helm", ships.find(ship), sailing_level())
+		return
+	if not give_helm(ship, _my_id(), sailing_level()):
+		return
+	_enter_helm(ship)
+
+
+func _my_id() -> int:
+	var net := _net()
+	return int(net.call("my_id")) if net != null else 1
+
+
+func _enter_helm(ship: SeaShip) -> void:
 	helm_ship = ship
+	wanted_rudder = float(ship.state["rudder"])
+	wanted_stage = int(ship.state["stage"])
 	_player.set("at_helm", true)
 	_player.call("look_at_point", ship.deck_spot([0.0, float(ship.spec["outline"].back()[0])], 1.6))  # face the bow
 	_xp_metres = 0.0
@@ -215,13 +347,27 @@ func take_helm(ship: SeaShip) -> void:
 
 func let_go() -> void:
 	if helm_ship != null:
-		helm_ship.state["rudder"] = 0.0
+		var net := _net()
+		if net != null and bool(net.call("is_client")):
+			net.call("leave_helm", ships.find(helm_ship))
+		else:
+			free_helm(helm_ship)
+	_leave_helm_here()
+
+
+func _leave_helm_here() -> void:
 	helm_ship = null
+	_asked = null
 	_player.set("at_helm", false)
 	panel.visible = false
 
 
 func toggle_anchor(ship: SeaShip) -> void:
+	var net := _net()
+	if net != null and bool(net.call("is_client")):
+		net.call("request_anchor", ships.find(ship))
+		_sea.emit_signal("notice", "Anchor weighed" if bool(ship.state["anchored"]) else "Anchor let go")
+		return
 	ship.state["anchored"] = not bool(ship.state["anchored"])
 	_sea.emit_signal("notice", "Anchor weighed" if not bool(ship.state["anchored"]) else "Anchor let go")
 

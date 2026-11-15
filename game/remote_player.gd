@@ -46,6 +46,9 @@ var _last_pos := Vector3.ZERO
 var _speed := 0.0
 var _phase := 0.0
 var _cigarette: Node3D
+var deck_ship: Node3D = null  # the ship this player stands on (game/net_session.gd ghost_deck): his walk is measured on its deck
+var _swimming := false
+var _last_local := Vector3.ZERO
 
 
 # Shows the player card: "Callsign  LV n" over the title, with the emblem above.
@@ -97,6 +100,16 @@ func set_down(on: bool) -> void:
 		_model.position.y = 0.25 if on else 0.0
 
 
+# Shows this player swimming (sea step 5b): the body lies forward in the water.
+func set_swimming(on: bool) -> void:
+	if on == _swimming or _down:
+		return
+	_swimming = on
+	if _model != null:
+		_model.rotation.x = -PI * 0.4 if on else 0.0
+		_model.position.y = 0.9 if on else 0.0
+
+
 # True while this player cannot be fought: lying down, or out of the round (then the ghost is hidden).
 func is_down() -> bool:
 	return _down or not visible
@@ -105,6 +118,10 @@ func is_down() -> bool:
 func _process(delta: float) -> void:
 	var moved := Vector2(global_position.x - _last_pos.x, global_position.z - _last_pos.z).length()
 	_last_pos = global_position
+	if deck_ship != null and is_instance_valid(deck_ship):  # on a sailing ship only his own steps count
+		var local := deck_ship.global_transform.affine_inverse() * global_position
+		moved = Vector2(local.x - _last_local.x, local.z - _last_local.z).length()
+		_last_local = local
 	if delta > 0.0:
 		_speed = lerpf(_speed, minf(moved / delta, 20.0), minf(delta * 8.0, 1.0))
 	if _model == null:

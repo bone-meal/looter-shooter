@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 8;!ship helm;!ship status;!ship stage 4;!wait 12;!ship status;!ship ghosts;!snap sea_guest_a;!ship stage 1;!wait 4;!ship letgo;!wait 2;!swim off 8;!swim status;!ship ghosts;!swim wait_aboard;!swim status;!snap sea_guest_b;!ship ghosts;!wait 6

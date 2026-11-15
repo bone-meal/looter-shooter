@@ -469,9 +469,19 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				match words[1] if words.size() > 1 else "status":
 					"board":
 						player.call("teleport", first.call("deck_spot", [0.0, 1.5], 0.3), 0.0)
-					"helm":
-						player.call("teleport", first.call("deck_spot", [0.0, 1.5], 0.3), 0.0)
+					"helm":  # stand at the wheel and take it (online: wait for the host's yes, up to 10 s)
+						player.call("teleport", first.call("deck_spot", [float(first.get("spec")["helm"][0]), float(first.get("spec")["helm"][1]) + 1.0], 0.3), 0.0)
+						await get_tree().create_timer(1.5, true, false, true).timeout
 						fleet.call("take_helm", first)
+						var asked := Time.get_ticks_msec()
+						while fleet.get("helm_ship") == null and Time.get_ticks_msec() - asked < 10000:
+							await get_tree().create_timer(0.25, true, false, true).timeout
+						_lines.append("helm: %s" % str(fleet.get("helm_ship") != null))
+					"wait_helmsman", "wait_free":  # waits (up to 60 s) until somebody steers the first ship / nobody does
+						var began := Time.get_ticks_msec()
+						while (int(fleet.call("helmsman_of", first)) != 0) != (words[1] == "wait_helmsman") and Time.get_ticks_msec() - began < 60000:
+							await get_tree().create_timer(0.25, true, false, true).timeout
+						_lines.append("%s: helmsman %d after %.1f s" % [words[1], int(fleet.call("helmsman_of", first)), (Time.get_ticks_msec() - began) / 1000.0])
 					"letgo":
 						fleet.call("let_go")
 					"anchor":
@@ -479,6 +489,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							fleet.call("toggle_anchor", first)
 					"stage":
 						first.get("state")["stage"] = int(arg)
+						fleet.set("wanted_stage", int(arg))
+					"rail":  # stand at the starboard rail, midships
+						player.call("teleport", first.call("deck_spot", [float(first.get("spec")["outline"][3][1]) - 0.6, 0.0], 0.3), 0.0)
+					"ghosts":  # online: where the other players stand on this machine (deck, swimming) and the fleet's packets
+						_lines.append(String(session.get("net").call("ghost_note")) + " | net_sea sent %d heard %d" % [int(session.get("net").get("sea").get("sent")), int(session.get("net").get("sea").get("heard"))])
 					"rudder":
 						fleet.set("dev_rudder", NAN if arg == "off" else float(arg))
 					"wind":
@@ -511,6 +526,22 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						if not spot.is_empty():
 							swim_n.call("climb_ladder", spot)
 						_lines.append("climb: %s" % str(not spot.is_empty()))
+					"off":  # into the water this many metres off the first ship's starboard side, midships
+						var away: Vector3 = first_ship.global_transform * Vector3(float(first_ship.get("spec")["outline"][3][1]) + float(words[2]), -0.8, 0.0)
+						player.call("teleport", away, 0.0)
+					"throw":  # the interact key at the rail: a rope to the nearest swimming player (tries for up to 25 s)
+						var tried := Time.get_ticks_msec()
+						var thrown := false
+						while not thrown and Time.get_ticks_msec() - tried < 25000:
+							thrown = bool(swim_n.call("interact"))
+							if not thrown:
+								await get_tree().create_timer(0.5, true, false, true).timeout
+						_lines.append("throw: %s after %.1f s" % [str(thrown), (Time.get_ticks_msec() - tried) / 1000.0])
+					"wait_aboard":  # waits (up to 30 s) until we stand on a ship again (hauled up by a rope)
+						var began := Time.get_ticks_msec()
+						while sea_w.get("ships").call("ship_aboard") == null and Time.get_ticks_msec() - began < 30000:
+							await get_tree().create_timer(0.25, true, false, true).timeout
+						_lines.append("wait_aboard: %s after %.1f s" % [str(sea_w.get("ships").call("ship_aboard") != null), (Time.get_ticks_msec() - began) / 1000.0])
 					"rope":
 						var hw := float(first_ship.get("spec")["outline"][3][1])
 						swim_n.call("throw_rope", first_ship, Vector3(hw, float(first_ship.get("spec")["deck"]) + 0.75, 0.0), player.global_position + Vector3(0.8, 0.0, 0.0))

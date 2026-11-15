@@ -33,6 +33,7 @@ var ships := SeaShips.new()  # the world fleet (sea step 5a)
 var swim := SeaSwim.new()  # swimming, stamina, ladders, the rope (sea step 5b)
 var salvage := SeaSalvage.new()  # diving finds and the logbook (sea step 5b)
 var others := Callable()  # the session: other players' scene positions (the rope looks for swimmers)
+var someone_else_here := false  # the host: another player is at sea, so the fleet runs here (set by the session)
 var skills: Node = null  # the shared skills (game/fantasy_world.gd: Sailing level, perks, xp), set by the session
 var inside := false
 var weather := {}  # the weather where the player is (core/sea/sea_weather.gd at())
@@ -51,6 +52,7 @@ var _forced := ""  # dev / admin: a weather kind held everywhere ("" = the sea's
 
 func setup(player: CharacterBody3D, style: Node) -> void:
 	_player = player
+	add_to_group("sea_world")
 	world = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/world.json"))
 	_island_cfg = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/islands.json"))
 	map = SeaMap.new(world)
@@ -99,6 +101,30 @@ func set_day_part(part: float) -> void:
 func force_weather(kind: String) -> void:
 	_forced = kind if (world["weather"]["kinds"] as Dictionary).has(kind) else ""
 	_slow = 0.0
+
+
+# The weather over a sea position (core/sea/sea_weather.gd, or the kind a dev / admin holds everywhere).
+func weather_at(here: Vector3) -> Dictionary:
+	var id := map.region_id_at(here.x, here.z)
+	var reg: Dictionary = map.region_at(here.x, here.z)
+	var out: Dictionary = weather_rules.at(id if id != "" else region_id, reg, seconds())
+	if _forced != "":
+		var held: Dictionary = world["weather"]["kinds"][_forced]
+		out.merge({"kind": _forced, "fog": held["fog"], "rain": held["rain"], "light": held["light"], "swell": float(reg["swell"]) * float(held["swell"]),
+			"wind": clampf(float(reg["wind"]) + float(held["wind"]), 0.05, 1.0)}, true)
+	return out
+
+
+# Online: the host's sea clock (game/net_sea.gd) - this machine's clock follows it.
+func sync_clock(host_seconds: float) -> void:
+	var off := host_seconds - seconds()
+	if absf(off) > 0.5:
+		_clock_extra += off
+
+
+# Does the sea run on this machine: the player is in it, or (the host) another player is.
+func running() -> bool:
+	return inside or someone_else_here
 
 
 # --- going in and out ---
@@ -164,12 +190,7 @@ func _tick(delta: float, now: bool) -> void:
 		if id != region_id and id != "" and region_id != "":
 			notice.emit(String(map.regions[id]["name"]))
 		region_id = id if id != "" else region_id
-		weather = weather_rules.at(region_id, map.region_at(here.x, here.z), t)
-		if _forced != "":
-			var held: Dictionary = world["weather"]["kinds"][_forced]
-			var reg: Dictionary = map.region_at(here.x, here.z)
-			weather.merge({"kind": _forced, "fog": held["fog"], "rain": held["rain"], "light": held["light"], "swell": float(reg["swell"]) * float(held["swell"]),
-				"wind": clampf(float(reg["wind"]) + float(held["wind"]), 0.05, 1.0)}, true)
+		weather = weather_at(here)
 		islands.follow(here)
 		rain.show_rain(float(weather.get("rain", 0.0)), float(weather.get("wind", 0.0)), float(weather.get("wind_dir", 0.0)))
 	var region: Dictionary = map.region_at(here.x, here.z)
@@ -223,3 +244,12 @@ func toggle_logbook() -> void:
 # The sea's root (things placed in sea coordinates hang here and shift with the floating origin).
 func sea_root() -> Node3D:
 	return _root
+
+
+# For game/net_session.gd: where the sea's anchor lies along x, and how far the scene has shifted.
+func anchor_x() -> float:
+	return _anchor.x
+
+
+func shift() -> Vector3:
+	return _shift

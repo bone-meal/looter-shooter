@@ -27,6 +27,7 @@ const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
 const NetRounds = preload("res://game/net_rounds.gd")
 const NetDowns = preload("res://game/net_downs.gd")
+const NetSea = preload("res://game/net_sea.gd")
 
 signal hosted(id: String)
 signal joined
@@ -71,6 +72,8 @@ var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
 var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
 var downs: Node  # who is down or out on the islands, revives, the party's game over (game/net_downs.gd)
+var sea: Node  # the sea's fleet, helms, decks, swimmers and ropes (game/net_sea.gd)
+var space: Node = null  # the sea world (game/sea_world.gd) once built: its floating origin turns positions to and from shared ones
 
 
 func _ready() -> void:
@@ -144,6 +147,10 @@ func _ready() -> void:
 	downs.name = "Downs"
 	downs.net = self
 	add_child(downs)
+	sea = NetSea.new()
+	sea.name = "Sea"
+	sea.net = self
+	add_child(sea)
 
 
 func is_active() -> bool:
@@ -727,7 +734,12 @@ func _process(delta: float) -> void:
 		var g: Dictionary = _ghosts[id]
 		var node: Node3D = g["node"]
 		var k := 1.0 - exp(-12.0 * delta)
-		node.global_position = node.global_position.lerp(g["pos"], k)
+		var deck: Variant = g.get("deck")
+		if deck is Node3D and is_instance_valid(deck):  # on a ship: glides in the ship's own space and rides the hull
+			g["shown"] = (g.get("shown", g["local"]) as Vector3).lerp(g["local"], k)
+			node.global_position = (deck as Node3D).global_transform * (g["shown"] as Vector3)
+		else:
+			node.global_position = node.global_position.lerp(g["pos"], k)
 		node.rotation.y = lerp_angle(node.rotation.y, g["yaw"], k)
 	if not can_send() or not started or _player == null or not is_instance_valid(_player):
 		return
@@ -736,9 +748,9 @@ func _process(delta: float) -> void:
 		return
 	_send_timer = 0.0
 	if is_host():
-		_state_broadcast.rpc(1, _player.global_position, _player.look_yaw(), _player.held_id(), _player.smoking(), _player.emote_id())
+		_state_broadcast.rpc(1, to_shared(_player.global_position), _player.look_yaw(), _player.held_id(), _player.smoking(), _player.emote_id())
 	elif roster.has(multiplayer.get_unique_id()):
-		_state_to_host.rpc_id(1, _player.global_position, _player.look_yaw(), _player.held_id(), _player.smoking(), _player.emote_id())
+		_state_to_host.rpc_id(1, to_shared(_player.global_position), _player.look_yaw(), _player.held_id(), _player.smoking(), _player.emote_id())
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
@@ -760,6 +772,7 @@ func _state_broadcast(id: int, pos: Vector3, yaw: float, held: String, smoking: 
 func _apply_state(id: int, pos: Vector3, yaw: float, held: String, smoking: bool, emote: String) -> void:
 	if _world == null or id == multiplayer.get_unique_id() or not roster.has(id):
 		return
+	pos = from_shared(pos)
 	if not _ghosts.has(id):
 		_make_ghost(id, pos)
 	_ghosts[id]["pos"] = pos
@@ -767,6 +780,60 @@ func _apply_state(id: int, pos: Vector3, yaw: float, held: String, smoking: bool
 	_ghosts[id]["node"].set_held(held)
 	_ghosts[id]["node"].set_smoking(smoking)
 	_ghosts[id]["node"].set_emote(emote)
+
+
+# --- the sea's floating origin (game/sea_world.gd): positions out at sea travel as SHARED positions (as if no machine
+# had shifted), every machine turns them into its own scene positions ---
+
+func _at_sea(pos: Vector3) -> bool:
+	return space != null and is_instance_valid(space) and absf(pos.x - float(space.call("anchor_x"))) < 9000.0
+
+
+func to_shared(pos: Vector3) -> Vector3:
+	return pos + (space.call("shift") as Vector3) if _at_sea(pos) else pos
+
+
+func from_shared(pos: Vector3) -> Vector3:
+	return pos - (space.call("shift") as Vector3) if _at_sea(pos) else pos
+
+
+# The sea shifted under everything here: ghosts out at sea move with it.
+func shift_ghosts(delta: Vector3) -> void:
+	for id in _ghosts:
+		var g: Dictionary = _ghosts[id]
+		if _at_sea(g["pos"]):
+			g["pos"] = (g["pos"] as Vector3) - delta
+			if is_instance_valid(g["node"]):
+				(g["node"] as Node3D).global_position -= delta
+
+
+# Dev: each other player as this machine shows him (scene position, on which deck, swimming).
+func ghost_note() -> String:
+	var out := PackedStringArray()
+	for id in _ghosts:
+		var g: Dictionary = _ghosts[id]
+		var node: Node3D = g["node"]
+		out.append("%d at %s deck %s local %s swim %s" % [id, str((node.global_position if is_instance_valid(node) else g["pos"]).snapped(Vector3.ONE * 0.1)),
+			str(g.get("deck") != null), str((g.get("local", Vector3.ZERO) as Vector3).snapped(Vector3.ONE * 0.1)), str(node.get("_swimming") if is_instance_valid(node) else "?")])
+	return "ghosts: " + ("none" if out.is_empty() else "; ".join(out))
+
+
+# game/net_sea.gd: a player stands on a ship (ship-space point) or not (ship null); he swims or not.
+func ghost_deck(id: int, ship: Node3D, local: Vector3, swimming: bool) -> void:
+	if not _ghosts.has(id):
+		return
+	var g: Dictionary = _ghosts[id]
+	if ship == null:
+		g.erase("deck")
+		g.erase("shown")
+	else:
+		if g.get("deck") != ship:
+			g["shown"] = local
+		g["deck"] = ship
+		g["local"] = local
+	if is_instance_valid(g["node"]):
+		g["node"].call("set_swimming", swimming)
+		g["node"].set("deck_ship", ship)
 
 
 func _make_ghost(id: int, pos: Vector3) -> void:

@@ -158,10 +158,29 @@ func climb_ladder(spot: Dictionary) -> void:
 
 # Throws a rope from `ship`'s rail (ship-space point) to land at a scene position (on the water there).
 func throw_rope(ship: Node3D, rail: Vector3, lands_at: Vector3) -> void:
+	var key := ""
+	var net := get_tree().get_first_node_in_group("net_sea")
+	if net != null and bool(net.call("active")):  # everyone sees it; the swimmer who reaches it hauls himself up
+		var session_net: Node = net.get("net")
+		key = String(net.call("send_rope", (_ships.get("ships") as Array).find(ship), rail, session_net.call("to_shared", lands_at)))
+	show_rope(key, ship, rail, lands_at)
+
+
+# A rope out from a ship's rail (ours, or another player's sent by game/net_sea.gd under `key`).
+func show_rope(key: String, ship: Node3D, rail: Vector3, lands_at: Vector3) -> void:
 	var rope := SeaRope.new()
 	(_sea.call("sea_root") as Node3D).add_child(rope)  # under the sea's root: shifts with the floating origin
 	rope.setup(ship, rail, lands_at, float(cfg["rope_seconds"]))
+	rope.set_meta("key", key)
 	ropes.append(rope)
+
+
+# Another machine's swimmer took the rope `key`: it is pulled in here too.
+func drop_rope(key: String) -> void:
+	for rope: SeaRope in ropes.duplicate():
+		if String(rope.get_meta("key", "")) == key:
+			ropes.erase(rope)
+			rope.queue_free()
 
 
 func _haul(rope: SeaRope) -> void:
@@ -171,6 +190,10 @@ func _haul(rope: SeaRope) -> void:
 	var start: Vector3 = ship.global_transform.affine_inverse() * _player.global_position
 	var over := Vector3(rope.rail_local.x + side * 0.3, float(spec["deck"]) + float(spec["bulwark"]) + 0.35, rope.rail_local.z)
 	var on_deck := Vector3(rope.rail_local.x - side * 0.8, float(spec["deck"]) + 0.05, rope.rail_local.z)
+	var key := String(rope.get_meta("key", ""))
+	var net := get_tree().get_first_node_in_group("net_sea")
+	if key != "" and net != null and bool(net.call("active")):
+		net.call("rope_used", key)
 	ropes.erase(rope)
 	rope.queue_free()
 	_start_climb(ship, [start, over, on_deck], float(cfg["haul_seconds"]))

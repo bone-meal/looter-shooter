@@ -1,10 +1,10 @@
-Sea step 5b: swimming, stamina and drowning, rope ladders, thrown rope, diving and the salvage logbook
+Sea online: host-run fleet, helm and anchor as checked requests, players ride decks and swim on every screen, ropes shared
 
-- player swims (along the view under water, floats at the surface); the wading floor is gone
-- game/sea_swim.gd: in the water or not, stamina (Agility gives more), drowning damage when empty, rope ladders on both ship sides, the rope thrown with F at the rail hauls a swimmer aboard, under-water view
-- core/sea/salvage_book.gd + game/sea_salvage.gd: five hand-placed finds in region 1 on sea-bed patches with bubble columns, random trinkets on deep dives, set rewards paid once, Agility xp; saved with the character
-- game/salvage_log_window.gd (key J at sea), game/swim_hud.gd; data/sea/salvage.json + data/sea/writing/salvage.txt (packed in exports)
-- models: salvage chest, small wreck, sea-bed patch, rope float, ladders on the sloop; checks tools/salvage_check; dev !swim
+- game/net_sea.gd: the host steps the fleet and sends ship states, the sea clock and held weather at 10 Hz; helm (free, at the wheel, claimed Sailing level), rudder and sails, anchor are intents the host checks; deck spots and swimming sent per player; thrown ropes shown everywhere and pulled in when used
+- floating origin online: positions at sea travel as shared positions (net_session to_shared / from_shared, shift_ghosts)
+- ghosts ride the hull in ship space and lie forward while swimming (remote_player set_swimming)
+- the host builds and runs the sea while another player is there; each ship sails in the wind where she is
+- two-copy test tools/pair_sea_*: guest took the helm and sailed, both saw each other on the deck, host roped the swimming guest aboard
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
