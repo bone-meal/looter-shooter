@@ -87,9 +87,9 @@ func _screen_line(screen: Node3D, size: int, pixel: float, y: float) -> Label3D:
 func stop() -> void:
 	_speaker.stop()
 	_tell_net("", 0)
-	for line: Label3D in [_label, _top]:
-		if line != null and is_instance_valid(line):
-			line.queue_free()
+	for line: Variant in [_label, _top]:  # (untyped: a label already freed with the gun broke a typed loop)
+		if is_instance_valid(line):
+			(line as Node).queue_free()
 	if _label != null and is_instance_valid(_label):
 		for child in _label.get_parent().get_children():
 			if child.has_meta("mixtape_screen"):

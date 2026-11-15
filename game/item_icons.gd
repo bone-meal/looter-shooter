@@ -1,10 +1,20 @@
-# Purpose: draws the icon of an item of the gun side of the game into any CanvasItem: guns, the knife and the worm as simple
-# drawn shapes, armour as the icon of the slot it is worn in (ring, trousers, helmet ...) in the item's own colour.
-# Used by the HUD and the inventory screen.
-# Dependencies: game/icon_art.gd (the icon sheet), data/items.json (slot and color of armour).
+# Purpose: draws the icon of an item of the gun side of the game into any CanvasItem. Guns and armour use the rendered
+# pictures of tools/blender/icons.py (assets/ui/icons/guns/<body>.png; assets/ui/icons/items/<id>_<tier>.png: an
+# armour piece looks finer at every tier, a plain unrolled piece wears the Common look); anything without a picture
+# falls back to the old drawn shapes (the knife, the worm) or the slot icon of the sheet. `plate` draws the tier's
+# backdrop behind an icon (more ornament the rarer it is) and the item level's badge (its metal by sea region).
+# Used by the HUD, the inventory, the bank and the trade window.
+# Dependencies: game/icon_art.gd (the icon sheet), game/tier_style.gd (tier colours), data/items.json (slot and color of armour).
 extends RefCounted
 
 const IconArt = preload("res://game/icon_art.gd")
+const TierStyle = preload("res://game/tier_style.gd")
+const GUN_PICTURES := "res://assets/ui/icons/guns/"
+const ITEM_PICTURES := "res://assets/ui/icons/items/"
+const KNIFE_PICTURES := "res://assets/ui/icons/knives/"
+const TIER_ORDER := ["grey", "green", "blue", "purple", "gold", "orange", "rainbow", "pony"]
+# badge metal by sea region band of the item level (1-10, 11-20 ... 61-70): bronze, iron, steel, silver, gold, platinum, obsidian
+const BAND_METAL := [Color(0.72, 0.45, 0.24), Color(0.5, 0.52, 0.55), Color(0.7, 0.76, 0.84), Color(0.86, 0.88, 0.92), Color(1.0, 0.8, 0.3), Color(0.85, 0.95, 1.0), Color(0.55, 0.12, 0.22)]
 
 const WORM := Color(0.95, 0.55, 0.68)
 # equipment slot -> shape of the icon sheet
@@ -13,11 +23,22 @@ const SLOT_SHAPES := {"hat": "hat", "head": "helm", "earrings": "earrings", "nec
 	"waist": "belt", "boots": "boots", "foot_armor": "sabatons"}
 
 static var _items := {}
+static var _pictures := {}  # path -> Texture2D or null (looked for once)
+static var _glow: GradientTexture2D
 const WORM_LIGHT := Color(1.0, 0.75, 0.82)
 
 
-# Draws the icon for `id` centered inside `rect`. Guns use `tint`; the worm keeps its pink.
-static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color) -> void:
+# Draws the icon for `id` centered inside `rect`. A rendered picture when there is one (`tier` picks an armour piece's
+# look; guns' pictures are the same for every tier), else the drawn shape in `tint` (the worm keeps its pink).
+static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color, tier: String = "") -> void:
+	var picture := _picture(id, tier)
+	if picture != null:
+		var size := picture.get_size()
+		var fit := minf(rect.size.x / size.x, rect.size.y / size.y)
+		canvas.draw_texture_rect(picture, Rect2(rect.get_center() - size * fit * 0.5, size * fit), false, Color(1, 1, 1, tint.a))
+		return
+	if id.begins_with("knife:"):  # a knife type with no picture yet: the drawn knife
+		id = "knife"
 	var s := minf(rect.size.x / 96.0, rect.size.y / 40.0)
 	var o := rect.position + (rect.size - Vector2(90, 36) * s) * 0.5
 	match id:
@@ -118,6 +139,102 @@ static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color) -> vo
 			var shape := slot_shape(String(def.get("slot", "")))
 			var c: Array = def.get("color", [0.8, 0.8, 0.82])
 			IconArt.draw(canvas, shape, rect, Color(c[0], c[1], c[2]))
+
+
+# The rendered picture of an item (null = none: draw the old way).
+static func _picture(id: String, tier: String) -> Texture2D:
+	var base := id.get_slice("+", 0)
+	var paths: Array[String] = [GUN_PICTURES + base + ".png"]
+	if base.begins_with("knife:"):  # a knife type ("knife:bowie"): its rendered picture
+		paths = [KNIFE_PICTURES + base.trim_prefix("knife:") + ".png"]
+	if base != "knife" and base != "worm":
+		paths.append(ITEM_PICTURES + "%s_%s.png" % [base, tier if TIER_ORDER.has(tier) else "grey"])
+		paths.append(ITEM_PICTURES + base + ".png")
+	for path: String in paths:
+		if not _pictures.has(path):
+			_pictures[path] = load(path) if ResourceLoader.exists(path) else null
+		if _pictures[path] != null:
+			return _pictures[path]
+	return null
+
+
+# The tier's backdrop behind an icon inside `rect`: a glow in the tier's colour, then ornament that grows with rarity
+# (Uncommon an inner line, Rare corner brackets, Epic a gem, Legendary filigree, Mythic an ember edge, Prismatic a
+# shimmer of every colour, Pony twinkling stars). `lvl` > 0 adds the item level's badge (needs `font`).
+static func plate(canvas: CanvasItem, rect: Rect2, db: RefCounted, tier: String, t: float, lvl: int = 0, font: Font = null) -> void:
+	var rank := TIER_ORDER.find(tier)
+	if rank < 0:
+		return
+	var tint := TierStyle.color(db, tier, t)
+	if _glow == null:
+		var grad := Gradient.new()
+		grad.colors = PackedColorArray([Color(1, 1, 1, 0.8), Color(1, 1, 1, 0.0)])
+		_glow = GradientTexture2D.new()
+		_glow.gradient = grad
+		_glow.fill = GradientTexture2D.FILL_RADIAL
+		_glow.fill_from = Vector2(0.5, 0.5)
+		_glow.fill_to = Vector2(0.5, 0.0)
+		_glow.width = 64
+		_glow.height = 64
+	var inner := rect.grow(-3.0)
+	var low := Color(tint, 0.10 + 0.035 * rank)
+	canvas.draw_polygon(PackedVector2Array([inner.position, Vector2(inner.end.x, inner.position.y), inner.end, Vector2(inner.position.x, inner.end.y)]),
+		PackedColorArray([Color(tint, 0.0), Color(tint, 0.0), low, low]))
+	canvas.draw_texture_rect(_glow, inner.grow(-inner.size.x * 0.08), false, Color(tint, 0.12 + 0.04 * rank))
+	var s := minf(inner.size.x, inner.size.y)
+	var edge := Color(tint, 0.75)
+	if rank >= 1:
+		canvas.draw_rect(inner, Color(tint, 0.35), false, 1.0)
+	if rank >= 2:  # corner brackets
+		var arm := s * 0.18
+		for c: Vector2 in [inner.position, Vector2(inner.end.x, inner.position.y), inner.end, Vector2(inner.position.x, inner.end.y)]:
+			var dx := arm if c.x < inner.get_center().x else -arm
+			var dy := arm if c.y < inner.get_center().y else -arm
+			canvas.draw_polyline(PackedVector2Array([c + Vector2(dx, 0), c, c + Vector2(0, dy)]), edge, 2.0)
+	if rank >= 3:  # a gem at the top
+		var g := Vector2(inner.get_center().x, inner.position.y + 1.0)
+		var r := maxf(s * 0.05, 3.0)
+		canvas.draw_colored_polygon(PackedVector2Array([g + Vector2(0, -r), g + Vector2(r, 0), g + Vector2(0, r), g + Vector2(-r, 0)]), tint.lightened(0.3))
+		canvas.draw_polyline(PackedVector2Array([g + Vector2(0, -r), g + Vector2(r, 0), g + Vector2(0, r), g + Vector2(-r, 0), g + Vector2(0, -r)]), Color(0, 0, 0, 0.5), 1.0)
+	if rank >= 4:  # filigree curls in the corners
+		var curl := s * 0.12
+		for c: Vector2 in [inner.position, Vector2(inner.end.x, inner.position.y), inner.end, Vector2(inner.position.x, inner.end.y)]:
+			var toward := (inner.get_center() - c).normalized()
+			canvas.draw_arc(c + toward * curl * 1.1, curl * 0.55, 0.0, TAU * 0.75, 12, Color(tint, 0.6), 1.5)
+	if rank == 5:  # a warm ember edge along the bottom
+		canvas.draw_line(Vector2(inner.position.x + 4, inner.end.y - 2), Vector2(inner.end.x - 4, inner.end.y - 2), Color(1.0, 0.5, 0.1, 0.7 + 0.2 * sin(t * 5.0)), 2.0)
+	if rank == 6:  # every colour sweeping round the edge
+		for i in 12:
+			var u := float(i) / 12.0
+			var a := inner.position + Vector2(inner.size.x * u, 0)
+			canvas.draw_line(a, a + Vector2(inner.size.x / 12.0, 0), Color.from_hsv(fmod(u + t * 0.3, 1.0), 0.8, 1.0, 0.8), 2.0)
+			var b := Vector2(inner.end.x - inner.size.x * u, inner.end.y)
+			canvas.draw_line(b, b - Vector2(inner.size.x / 12.0, 0), Color.from_hsv(fmod(u + 0.5 + t * 0.3, 1.0), 0.8, 1.0, 0.8), 2.0)
+	if rank == 7:  # twinkling stars
+		for i in 4:
+			var spot := inner.position + inner.size * Vector2(fmod(0.17 + 0.61 * i, 1.0), fmod(0.23 + 0.37 * i, 0.9) + 0.05)
+			var twinkle := maxf(sin(t * 3.0 + i * 1.7), 0.0)
+			var r := maxf(s * 0.06, 3.0) * (0.4 + 0.6 * twinkle)
+			var c := Color(1, 1, 1, 0.3 + 0.6 * twinkle)
+			canvas.draw_line(spot - Vector2(r, 0), spot + Vector2(r, 0), c, 1.5)
+			canvas.draw_line(spot - Vector2(0, r), spot + Vector2(0, r), c, 1.5)
+	if lvl > 0 and font != null:
+		badge(canvas, font, Vector2(inner.position.x + 2.0, inner.end.y - 2.0), lvl, clampf(s * 0.16, 9.0, 14.0))
+
+
+# The item level's badge with its bottom-left corner at `at`: a small plate in the metal of the level's sea region band
+# (bronze 1-10 ... obsidian 61-70), one notch per band.
+static func badge(canvas: CanvasItem, font: Font, at: Vector2, lvl: int, points: float) -> void:
+	var band := clampi(ceili(float(lvl) / 10.0), 1, 7)
+	var metal: Color = BAND_METAL[band - 1]
+	var text := str(lvl)
+	var w := font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(points)).x + 8.0
+	var box := Rect2(at - Vector2(0, points + 4.0), Vector2(w, points + 4.0))
+	canvas.draw_rect(box, Color(0.04, 0.04, 0.06, 0.85))
+	canvas.draw_rect(box, metal, false, 1.5)
+	for i in band:  # notches along the top
+		canvas.draw_line(box.position + Vector2(3.0 + i * 3.0, 0), box.position + Vector2(3.0 + i * 3.0, -2.5), metal, 1.5)
+	canvas.draw_string(font, box.position + Vector2(4.0, points + 1.0), text, HORIZONTAL_ALIGNMENT_LEFT, -1, int(points), metal.lightened(0.35))
 
 
 # The icon that stands for an equipment slot ("ring_2" and "ring" are both a ring).

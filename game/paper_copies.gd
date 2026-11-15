@@ -102,7 +102,7 @@ func _tracer(from: Vector3, to: Vector3) -> void:
 		_tracer_mesh = BoxMesh.new()
 		_tracer_mesh.size = Vector3(0.03, 0.03, 1.0)
 		_tracer_mat = FxKit.glow(Color(1.0, 0.85, 0.5))
-	FxKit.burst(self, from, Color(1.0, 0.8, 0.4), 6, 0.2, 0.25, 2.0, 0.0)  # its muzzle flash
+	FxKit.burst(self, from, Color(1.0, 0.8, 0.4), 8, 0.2, 0.4, 2.0, 0.0)  # its muzzle flash
 	var line := MeshInstance3D.new()
 	line.mesh = _tracer_mesh
 	line.material_override = _tracer_mat

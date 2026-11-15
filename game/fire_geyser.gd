@@ -31,7 +31,7 @@ func erupt(at: Vector3) -> void:
 		tongue.rotation.y = TAU * float(i) / float(RINGS)
 		add_child(tongue)
 		_flames.append(tongue)
-	var embers := FxKit.particles(Color(1.0, 0.6, 0.2), 16, 1.1, 0.12, 7.0, 15.0, -3.0, false)
+	var embers := FxKit.particles(Color(1.0, 0.6, 0.2), 20, 1.1, 0.22, 7.0, 15.0, -3.0, false)
 	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	embers.emission_sphere_radius = 0.4
 	add_child(embers)

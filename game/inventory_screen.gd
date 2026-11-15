@@ -47,6 +47,7 @@ var gun_db: GunDb  # set before add_child (rolled guns: colours, names, stats)
 var in_hand := 0  # which holster is in the player's hand (-1 = the knife), set by the session: that card is lit
 var knife := "combat"  # the knife type carried, set by the session
 var knife_name := ""
+var knife_id := ""  # the knife type (data/knives.json): its picture
 var knife_key := ""  # the labels of the keys that take a gun or the knife in hand, set by the session
 var gun_keys: Array[String] = []
 var bank: RefCounted  # core/bank_state.gd while the window is open AT the bank (its slots show on the left), else null
@@ -68,6 +69,9 @@ var _shown_look := {}
 # it shows changes; the docked card (game/inventory_card.gd) when its item changes, the mouse is over it or its colour
 # moves; and a thin top layer (hover and chosen outlines, the stack on the mouse) when the mouse moves.
 var _card_layer := Control.new()
+var _names := Control.new()  # the ready guns' names: redrawn alone at 15 Hz while one is too long and scrolls
+var _ready_names: Array = []  # [position, width, tier id, name]
+var _since_names := 0.0
 var _top := Control.new()
 var _drawn_mouse := Vector2(-1, -1)
 var _since_check := 0.0
@@ -86,10 +90,11 @@ func _ready() -> void:
 	_portrait.custom_minimum_size = Vector2.ZERO  # it fits between the gear columns
 	_portrait.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(_portrait)
-	for layer: Control in [_card_layer, _top]:
+	for layer: Control in [_names, _card_layer, _top]:
 		layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		add_child(layer)
 		layer.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	_names.draw.connect(_draw_names)
 	_card_layer.draw.connect(_draw_card_layer)
 	_top.draw.connect(_draw_top)
 
@@ -136,6 +141,13 @@ func _process(delta: float) -> void:
 		card = true
 	if card or (_card_moves and _since_card >= CARD_ANIMATED):
 		_card_layer.queue_redraw()
+	_since_names += delta
+	if _since_names >= CARD_ANIMATED:
+		_since_names = 0.0
+		for entry: Array in _ready_names:
+			if TierStyle.animated(gun_db, String(entry[2])) or TierStyle.overflows(_font, gun_db, String(entry[2]), String(entry[3]), 15, float(entry[1])):
+				_names.queue_redraw()
+				break
 
 
 func _redraw_all() -> void:
@@ -604,6 +616,12 @@ func _draw() -> void:
 	_draw_footer()
 
 
+func _draw_names() -> void:
+	for entry: Array in _ready_names:
+		var tier := String(entry[2])
+		TierStyle.draw_name(_names, _font, entry[0], gun_db, tier, String(entry[3]), 15, TierStyle.color(gun_db, tier, _now()), float(entry[1]), _now())
+
+
 func _draw_card_layer() -> void:
 	_since_card = 0.0
 	_card_moves = false
@@ -673,12 +691,16 @@ func _draw_character() -> void:
 			IconArt.draw(self, ItemIcons.slot_shape(slot), r.grow(-e * 0.22), Color.WHITE, 0.22)  # what goes here
 			draw_string(_font, Vector2(r.position.x, r.end.y - 4.0), SLOT_LABELS[slot], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 9, Color(1, 1, 1, 0.38))
 		else:
-			ItemIcons.draw(self, String(stack["id"]), r.grow(-e * 0.12), Color.WHITE)
+			if not arm.is_empty():
+				ItemIcons.plate(self, r, gun_db, String(arm["tier"]), _now(), int(arm["lvl"]), _font)
+			ItemIcons.draw(self, String(stack["id"]), r.grow(-e * 0.1), Color.WHITE, String(arm.get("tier", "")))
 	var p := _portrait_rect()
 	draw_rect(p, Color(0, 0, 0, 0.25), false, 1.0)
 
 
 func _draw_ready() -> void:
+	_ready_names.clear()
+	_names.queue_redraw()
 	var mid := _columns()[1]
 	UiSkin.header(self, _font, mid.position + Vector2(PAD, PAD - 6.0), mid.size.x - 2.0 * PAD, "READY", "the guns you carry (one put in by hand starts empty)")
 	var fits: bool = inventory.is_weapon(inventory.cursor)
@@ -694,13 +716,15 @@ func _draw_ready() -> void:
 			draw_string(_font, Vector2(r.position.x, r.get_center().y + 6.0), "empty", HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 15, UiSkin.TEXT_DIM)
 			continue
 		var icon := Rect2(r.position + Vector2(10, 30), Vector2(r.size.x * 0.4, r.size.y - 38.0))
+		if not gun.is_empty():
+			ItemIcons.plate(self, icon, gun_db, String(gun["tier"]), _now())
 		ItemIcons.draw(self, body, icon, tint)
 		var tx := r.position.x + r.size.x * 0.46
 		var tw := r.size.x * 0.52
 		if gun.is_empty():
 			draw_string(_font, Vector2(tx, r.position.y + 30), items.item_name(String(inventory.holsters[i].get("id", ""))), HORIZONTAL_ALIGNMENT_LEFT, tw, 15, UiSkin.TEXT)
 		else:
-			TierStyle.draw_name(self, _font, Vector2(tx, r.position.y + 28), gun_db, String(gun["tier"]), GunStats.display_name(gun_db, gun), 15, tint, tw)
+			_ready_names.append([Vector2(tx, r.position.y + 28), tw, String(gun["tier"]), GunStats.display_name(gun_db, gun)])  # drawn by the names layer: long ones scroll
 			var stats := GunStats.final_stats(gun_db, gun)
 			draw_string(_font, Vector2(tx, r.position.y + 50), "%s   Lv %d" % [String(gun_db.tier(String(gun["tier"]))["name"]), int(stats["lvl"])], HORIZONTAL_ALIGNMENT_LEFT, tw, 13, UiSkin.TEXT_DIM)
 			draw_string(_font, Vector2(tx, r.position.y + 72), "DPS %.0f" % (float(stats["damage"]) * float(stats["fire_rate"])), HORIZONTAL_ALIGNMENT_LEFT, tw, 15, UiSkin.ACCENT)
@@ -709,7 +733,7 @@ func _draw_ready() -> void:
 	var k := _holster_rect(inventory.holster_count)
 	UiSkin.slot(self, k, Color(0.7, 0.72, 0.8), true, "chosen" if in_hand < 0 else "")
 	UiSkin.key_cap(self, _font, k.position + Vector2(8, 8), knife_key)
-	ItemIcons.draw(self, "knife", Rect2(k.position + Vector2(10, 30), Vector2(k.size.x * 0.4, k.size.y - 38.0)), Color.WHITE)
+	ItemIcons.draw(self, "knife:" + knife_id, Rect2(k.position + Vector2(10, 30), Vector2(k.size.x * 0.4, k.size.y - 38.0)), Color.WHITE)
 	draw_string(_font, Vector2(k.position.x + k.size.x * 0.46, k.position.y + 30), knife_name, HORIZONTAL_ALIGNMENT_LEFT, k.size.x * 0.52, 15, UiSkin.TEXT)
 	draw_string(_font, Vector2(k.position.x + k.size.x * 0.46, k.position.y + 52), "Knife: always with you", HORIZONTAL_ALIGNMENT_LEFT, k.size.x * 0.52, 13, UiSkin.TEXT_DIM)
 
@@ -733,12 +757,12 @@ func _draw_backpack() -> void:
 		var tint := _tint(gun) if not gun.is_empty() else (_tint(arm) if not arm.is_empty() else Color(0.6, 0.65, 0.78))
 		UiSkin.slot(self, r, tint, true, "")
 		if gun.is_empty():
-			ItemIcons.draw(self, inventory.item_id(i), r.grow(-s * 0.14), Color.WHITE)
-			if not arm.is_empty():  # a rolled armour piece: its item level in the corner, like a gun
-				draw_string(_font, r.position + Vector2(5, 14), str(int(arm["lvl"])), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
+			if not arm.is_empty():  # a rolled armour piece: the tier's plate and its level badge, like a gun
+				ItemIcons.plate(self, r, gun_db, String(arm["tier"]), _now(), int(arm["lvl"]), _font)
+			ItemIcons.draw(self, inventory.item_id(i), r.grow(-s * 0.1), Color.WHITE, String(arm.get("tier", "")))
 		else:
-			ItemIcons.draw(self, String(gun["body"]), r.grow(-s * 0.12), tint)
-			draw_string(_font, r.position + Vector2(5, 14), str(int(gun.get("lvl", 1))), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
+			ItemIcons.plate(self, r, gun_db, String(gun["tier"]), _now(), int(gun.get("lvl", 1)), _font)
+			ItemIcons.draw(self, String(gun["body"]), r.grow(-s * 0.08), tint)
 		_draw_count(self, r, inventory.item_count(i))
 
 
@@ -756,7 +780,10 @@ func _draw_bank() -> void:
 		UiSkin.slot(self, r, tint, not stack.is_empty(), "")
 		if stack.is_empty():
 			continue
-		ItemIcons.draw(self, String(gun["body"]) if not gun.is_empty() else String(stack["id"]), r.grow(-r.size.x * 0.12), tint if not gun.is_empty() else Color.WHITE)
+		var roll: Dictionary = gun if not gun.is_empty() else arm
+		if not roll.is_empty():
+			ItemIcons.plate(self, r, gun_db, String(roll["tier"]), _now(), int(roll.get("lvl", 1)), _font)
+		ItemIcons.draw(self, String(gun["body"]) if not gun.is_empty() else String(stack["id"]), r.grow(-r.size.x * 0.1), tint if not gun.is_empty() else Color.WHITE, String(arm.get("tier", "")))
 		_draw_count(self, r, int(stack["count"]))
 	if bank_price != "":
 		UiSkin.pill(self, _font, _bank_button(), bank_price, false, false, 14)
@@ -771,7 +798,7 @@ func _draw_card(r: Rect2) -> void:
 		var cgun: Dictionary = inventory.cursor.get("gun", {})
 		what = {"gun": cgun, "against": in_hand_gun} if not cgun.is_empty() else {"id": String(inventory.cursor["id"]), "count": int(inventory.cursor["count"]), "arm": inventory.cursor.get("arm", {})}
 	elif shown == KNIFE_SLOT:
-		what = {"note": [knife_name, "Your knife. Always with you: it cannot be dropped, traded or lost."]}
+		what = {"note": [knife_name, "Your knife. Always with you: it cannot be dropped, traded or lost.", knife_id]}
 	elif _id_at(shown) != "":
 		var gun := _gun_at(shown)
 		if not gun.is_empty():
@@ -787,10 +814,10 @@ func _draw_card(r: Rect2) -> void:
 	for b: Array in _buttons:
 		if (b[0] as Rect2).has_point(_mouse):
 			hovered_action = String(b[1])
-	if what.has("gun") and not (what["gun"] as Dictionary).is_empty():
-		_card_moves = TierStyle.animated(gun_db, String(what["gun"]["tier"]))
+	if what.has("gun") and not (what["gun"] as Dictionary).is_empty():  # rainbow / pony colours, or a name that scrolls
+		_card_moves = TierStyle.animated(gun_db, String(what["gun"]["tier"])) or TierStyle.overflows(_font, gun_db, String(what["gun"]["tier"]), GunStats.display_name(gun_db, what["gun"]), 24, r.size.x - 2.0 * InventoryCard.PAD)
 	if not (what.get("arm", {}) as Dictionary).is_empty():  # a rolled armour piece: its set's steps light up by what is worn
-		_card_moves = TierStyle.animated(gun_db, String(what["arm"]["tier"]))
+		_card_moves = TierStyle.animated(gun_db, String(what["arm"]["tier"])) or TierStyle.overflows(_font, gun_db, String(what["arm"]["tier"]), ArmourStats.display_name(items, {"id": what["id"], "count": 1, "arm": what["arm"]}, String(gun_db.tier(String(what["arm"]["tier"]))["name"])), 22, r.size.x - 2.0 * InventoryCard.PAD)
 		what["worn_sets"] = ArmourStats.set_counts(inventory.equipment)
 	_buttons = InventoryCard.draw(_card_layer, _font, r, what, gun_db, items, _actions(), hovered_action, _now())
 
@@ -828,7 +855,7 @@ func _draw_cursor() -> void:
 	var r := Rect2(_mouse - Vector2(s, s) * 0.45, Vector2(s, s) * 0.9)
 	var cgun: Dictionary = inventory.cursor.get("gun", {})
 	if cgun.is_empty():
-		ItemIcons.draw(_top, String(inventory.cursor["id"]), r, Color.WHITE)
+		ItemIcons.draw(_top, String(inventory.cursor["id"]), r, Color.WHITE, String((inventory.cursor.get("arm", {}) as Dictionary).get("tier", "")))
 	else:
 		ItemIcons.draw(_top, String(cgun["body"]), r, _tint(cgun))
 	_draw_count(_top, r, int(inventory.cursor["count"]))

@@ -934,6 +934,7 @@ func _toggle_inventory() -> void:
 	else:
 		_inventory_screen.in_hand = _player.hand_index()
 		_inventory_screen.knife_name = KnifeModels.db().name_of(_player.knife)
+		_inventory_screen.knife_id = _player.knife
 		_inventory_screen.knife_key = InputSetup.label(settings, "knife")
 		_inventory_screen.gun_keys.clear()
 		for n in InventoryState.HOLSTERS:

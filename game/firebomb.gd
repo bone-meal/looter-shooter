@@ -84,7 +84,7 @@ func _smash(at: Vector3) -> void:
 		flame.rotation.y = angle
 		add_child(flame)
 		_flames.append(flame)
-	var embers := FxKit.particles(Color(1.0, 0.55, 0.15), 14, 1.4, 0.1, 2.5, 20.0, 0.5, false)
+	var embers := FxKit.particles(Color(1.0, 0.55, 0.15), 18, 1.4, 0.2, 2.5, 20.0, 0.5, false)
 	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
 	embers.emission_box_extents = Vector3(radius * 0.6, 0.1, radius * 0.6)
 	add_child(embers)

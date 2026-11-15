@@ -431,6 +431,304 @@
     0.68
    ]
   },
+  "captains_tricorn": {
+   "name": "Captain's Tricorn",
+   "kind": "armor",
+   "slot": "hat",
+   "stack_max": 1,
+   "defense": 3,
+   "block": 0.0,
+   "resist": {},
+   "flavor": "Three corners, all of them pointing at you.",
+   "color": [
+    0.18,
+    0.14,
+    0.12
+   ]
+  },
+  "diving_helm": {
+   "name": "Diving Helm",
+   "kind": "armor",
+   "slot": "head",
+   "stack_max": 1,
+   "defense": 8,
+   "block": 0.0,
+   "resist": {
+    "toxic": 0.08
+   },
+   "flavor": "Brass, glass and the faint smell of the last owner.",
+   "color": [
+    0.72,
+    0.55,
+    0.25
+   ]
+  },
+  "pearl_studs": {
+   "name": "Pearl Studs",
+   "kind": "armor",
+   "slot": "earrings",
+   "stack_max": 1,
+   "defense": 0,
+   "block": 0.02,
+   "resist": {
+    "ice": 0.05
+   },
+   "flavor": "Grown slowly by an oyster with better patience than you.",
+   "color": [
+    0.95,
+    0.94,
+    0.9
+   ]
+  },
+  "compass_pendant": {
+   "name": "Compass Pendant",
+   "kind": "armor",
+   "slot": "necklace",
+   "stack_max": 1,
+   "defense": 0,
+   "block": 0.0,
+   "resist": {
+    "fire": 0.08,
+    "ice": 0.08
+   },
+   "flavor": "Points north, mostly. Points at loot, sometimes.",
+   "color": [
+    0.7,
+    0.55,
+    0.3
+   ]
+  },
+  "storm_goggles": {
+   "name": "Storm Goggles",
+   "kind": "armor",
+   "slot": "glasses",
+   "stack_max": 1,
+   "defense": 1,
+   "block": 0.03,
+   "resist": {},
+   "flavor": "Keeps the spray out and the attitude in.",
+   "color": [
+    0.4,
+    0.3,
+    0.2
+   ]
+  },
+  "bosuns_whistle": {
+   "name": "Bosun's Whistle",
+   "kind": "armor",
+   "slot": "mouth",
+   "stack_max": 1,
+   "defense": 0,
+   "block": 0.01,
+   "resist": {},
+   "flavor": "One blast for all hands. Two for lunch.",
+   "color": [
+    0.75,
+    0.77,
+    0.8
+   ]
+  },
+  "sailor_stripes": {
+   "name": "Sailor Stripes",
+   "kind": "armor",
+   "slot": "shirt",
+   "stack_max": 1,
+   "defense": 2,
+   "block": 0.0,
+   "resist": {
+    "ice": 0.05
+   },
+   "flavor": "Stripes so the sea can find you when you fall in.",
+   "color": [
+    0.92,
+    0.93,
+    0.97
+   ]
+  },
+  "coral_cuirass": {
+   "name": "Coral Cuirass",
+   "kind": "armor",
+   "slot": "chestplate",
+   "stack_max": 1,
+   "defense": 14,
+   "block": 0.02,
+   "resist": {
+    "toxic": 0.05
+   },
+   "flavor": "Grew on a wreck for forty years. Now it grows on you.",
+   "color": [
+    0.95,
+    0.5,
+    0.45
+   ]
+  },
+  "sharkskin_gloves": {
+   "name": "Sharkskin Gloves",
+   "kind": "armor",
+   "slot": "gauntlets",
+   "stack_max": 1,
+   "defense": 3,
+   "block": 0.06,
+   "resist": {},
+   "flavor": "Rough one way, smooth the other. Like the shark.",
+   "color": [
+    0.45,
+    0.5,
+    0.55
+   ]
+  },
+  "anchor_signet": {
+   "name": "Anchor Signet",
+   "kind": "armor",
+   "slot": "ring",
+   "stack_max": 1,
+   "defense": 0,
+   "block": 0.02,
+   "resist": {
+    "ice": 0.1
+   },
+   "flavor": "Holds you steady. Do not wear it swimming.",
+   "color": [
+    0.6,
+    0.62,
+    0.68
+   ]
+  },
+  "kraken_band": {
+   "name": "Kraken Band",
+   "kind": "armor",
+   "slot": "ring",
+   "stack_max": 1,
+   "defense": 0,
+   "block": 0.0,
+   "resist": {
+    "toxic": 0.1,
+    "fire": 0.05
+   },
+   "flavor": "Eight little arms hold the stone. It holds back.",
+   "color": [
+    0.35,
+    0.75,
+    0.65
+   ]
+  },
+  "rope_bracelet": {
+   "name": "Rope Bracelet",
+   "kind": "armor",
+   "slot": "bracelet",
+   "stack_max": 1,
+   "defense": 0,
+   "block": 0.03,
+   "resist": {
+    "fire": 0.04
+   },
+   "flavor": "A sailor's knot that nobody has managed to untie.",
+   "color": [
+    0.8,
+    0.68,
+    0.45
+   ]
+  },
+  "oilskin_trousers": {
+   "name": "Oilskin Trousers",
+   "kind": "armor",
+   "slot": "pants",
+   "stack_max": 1,
+   "defense": 3,
+   "block": 0.0,
+   "resist": {
+    "ice": 0.06
+   },
+   "flavor": "Waterproof, windproof, and fashion-proof.",
+   "color": [
+    0.85,
+    0.68,
+    0.15
+   ]
+  },
+  "barnacle_greaves": {
+   "name": "Barnacle Greaves",
+   "kind": "armor",
+   "slot": "leg_armor",
+   "stack_max": 1,
+   "defense": 7,
+   "block": 0.02,
+   "resist": {},
+   "flavor": "The barnacles came free. They refuse to leave.",
+   "color": [
+    0.45,
+    0.5,
+    0.45
+   ]
+  },
+  "storm_cloak": {
+   "name": "Storm Cloak",
+   "kind": "armor",
+   "slot": "cape",
+   "stack_max": 1,
+   "defense": 2,
+   "block": 0.02,
+   "resist": {
+    "ice": 0.08
+   },
+   "flavor": "Flaps dramatically in any weather, including none.",
+   "color": [
+    0.2,
+    0.28,
+    0.42
+   ]
+  },
+  "cutlass_sash": {
+   "name": "Cutlass Sash",
+   "kind": "armor",
+   "slot": "waist",
+   "stack_max": 1,
+   "defense": 1,
+   "block": 0.03,
+   "resist": {
+    "fire": 0.04
+   },
+   "flavor": "A red sash with a place for a sword you do not own.",
+   "color": [
+    0.75,
+    0.12,
+    0.12
+   ]
+  },
+  "sea_boots": {
+   "name": "Sea Boots",
+   "kind": "armor",
+   "slot": "boots",
+   "stack_max": 1,
+   "defense": 3,
+   "block": 0.0,
+   "resist": {
+    "ice": 0.05
+   },
+   "flavor": "Folded at the top for the look; full of water for the authenticity.",
+   "color": [
+    0.15,
+    0.15,
+    0.17
+   ]
+  },
+  "brass_sabatons": {
+   "name": "Brass Sabatons",
+   "kind": "armor",
+   "slot": "foot_armor",
+   "stack_max": 1,
+   "defense": 6,
+   "block": 0.0,
+   "resist": {
+    "fire": 0.05
+   },
+   "flavor": "Loud on a deck. Louder on a skull.",
+   "color": [
+    0.72,
+    0.55,
+    0.25
+   ]
+  },
   "gun": {
    "name": "Rolled Gun",
    "kind": "gun",

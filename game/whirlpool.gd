@@ -38,7 +38,7 @@ func _ready() -> void:
 			FxKit.paint(foam, FxKit.glow(Color(0.8, 0.93, 1.0, 0.75), false))
 		add_child(funnel)
 		_rings.append(funnel)
-	var spray := FxKit.particles(Color(0.85, 0.95, 1.0, 0.8), 10, 0.9, 0.06, 1.6, 30.0, -3.0, false)
+	var spray := FxKit.particles(Color(0.85, 0.95, 1.0, 0.8), 16, 0.9, 0.3, 1.6, 30.0, -3.0, false)
 	spray.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
 	spray.emission_ring_axis = Vector3.UP
 	spray.emission_ring_radius = 0.95

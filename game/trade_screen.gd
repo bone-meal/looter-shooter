@@ -454,7 +454,7 @@ func _draw_tile(tile: Tile) -> void:
 		ItemIcons.draw(tile, String(gun["body"]), Rect2(6, 26, r.size.x - 12, 40), c)
 		tile.draw_rect(Rect2(10, r.size.y - 14, r.size.x - 20, 5), c)  # the tier band
 	elif tile.thing.has("id"):
-		ItemIcons.draw(tile, String(tile.thing["id"]), Rect2(8, 16, r.size.x - 16, r.size.y - 32), Color.WHITE)
+		ItemIcons.draw(tile, String(tile.thing["id"]), Rect2(8, 16, r.size.x - 16, r.size.y - 32), Color.WHITE, String((tile.thing.get("arm", {}) as Dictionary).get("tier", "")))
 	if tile.count > 1:
 		var t := "x%d" % tile.count
 		tile.draw_string_outline(_font, Vector2(r.size.x - 30, r.size.y - 6), t, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, 4, Color.BLACK)

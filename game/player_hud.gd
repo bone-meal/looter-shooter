@@ -366,7 +366,7 @@ func _draw_weapons(view: Vector2) -> void:
 			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), BACK)
 			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), WHITE, false, 2.0)
 			draw_string(_font, Vector2(x + 8, top + 18), InputSetup.label(player.settings, "knife"), HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
-			ItemIcons.draw(self, "knife", Rect2(x + 24, top + 4, 100, 34), WHITE)
+			ItemIcons.draw(self, "knife:" + player.knife, Rect2(x + 24, top + 4, 100, 34), WHITE)
 			draw_string(_font, Vector2(x + 8, top + 54), KnifeModels.db().name_of(player.knife), HORIZONTAL_ALIGNMENT_RIGHT, SLOT_W - 16.0, 15, WHITE)
 		elif player.hand_index() == Player.SHIELD:  # the shield held up: its name and the hits it still takes
 			draw_rect(Rect2(x, top, SLOT_W, SLOT_H), BACK)
@@ -383,7 +383,9 @@ func _draw_weapons(view: Vector2) -> void:
 	if not gun.is_empty():
 		tint = TierStyle.color(player.gun_db, String(gun["tier"]), now)
 		draw_rect(Rect2(x, top, SLOT_W, SLOT_H), tint, false, 3.0)
-		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), GunStats.display_name(player.gun_db, gun), 14, tint, SLOT_W)
+		var tag := String(player.gun_db.tier(String(gun["tier"])).get("tag", ""))  # director: no "*PONY*" on the HUD, so names fit (its colour says pony)
+		var shown := GunStats.display_name(player.gun_db, gun).replace(tag + " ", "") if tag != "" else GunStats.display_name(player.gun_db, gun)
+		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), shown, 14, tint, SLOT_W)
 	ItemIcons.draw(self, w.weapon_id, Rect2(x + 24, top + 8, 100, 34), tint)
 	var low: bool = w.ammo <= maxi(1, w.mag_size / 4)
 	var spare: int = w.spare()
@@ -447,7 +449,7 @@ func _draw_holsters(view: Vector2) -> void:
 		draw_rect(r, WHITE if selected else DIM, false, 2.0 if selected else 1.0)
 		draw_string(_font, r.position + Vector2(4, 13), InputSetup.label(player.settings, "knife" if holster == Player.KNIFE else "weapon_%d" % (holster + 1)), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, WHITE if selected else DIM)
 		if holster == Player.KNIFE:
-			ItemIcons.draw(self, "knife", r.grow(-8), WHITE if selected else Color(1, 1, 1, 0.6))
+			ItemIcons.draw(self, "knife:" + player.knife, r.grow(-8), WHITE if selected else Color(1, 1, 1, 0.6))
 			continue
 		var body: String = inventory.holster_body(holster)
 		if body == "":

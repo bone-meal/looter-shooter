@@ -105,6 +105,7 @@ static func particles(color: Color, amount: int, life: float, size: float, up: f
 		mat.texture_repeat = false
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mat.billboard_mode = BaseMaterial3D.BILLBOARD_PARTICLES
+		mat.billboard_keep_scale = true  # the particle sizes asked for (without it every sprite was 1 m wide)
 		mat.vertex_color_use_as_albedo = true
 		mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD if additive else BaseMaterial3D.BLEND_MODE_MIX
 		mat.depth_draw_mode = BaseMaterial3D.DEPTH_DRAW_DISABLED

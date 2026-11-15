@@ -40,7 +40,7 @@ func _ready() -> void:
 		add_child(puff_node)
 		_puffs.append(puff_node)
 		if i % 2 == 0:  # swamp bubbles rising out of the cloud
-			var bubbles := FxKit.particles(Color(0.55, 0.7, 0.25, 0.8), 6, 1.6, 0.18, 1.2, 25.0, 0.2, false)
+			var bubbles := FxKit.particles(Color(0.55, 0.7, 0.25, 0.8), 8, 1.6, 0.25, 1.2, 25.0, 0.2, false)
 			bubbles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 			bubbles.emission_sphere_radius = 0.7
 			bubbles.emitting = false

@@ -41,7 +41,7 @@ static func draw(canvas: CanvasItem, font: Font, r: Rect2, what: Dictionary, gun
 		var note: Array = what["note"]
 		_band(canvas, font, r, Color(0.7, 0.75, 0.85), "KNIFE", "")
 		canvas.draw_string(font, r.position + Vector2(PAD, 110), String(note[0]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 2.0 * PAD, 26, UiSkin.TEXT)
-		ItemIcons.draw(canvas, "knife", Rect2(r.position + Vector2(PAD, 130), Vector2(r.size.x - 2.0 * PAD, 150)), Color.WHITE)
+		ItemIcons.draw(canvas, "knife:" + (String(note[2]) if note.size() > 2 else ""), Rect2(r.position + Vector2(PAD, 130), Vector2(r.size.x - 2.0 * PAD, 150)), Color.WHITE)
 		canvas.draw_multiline_string(font, r.position + Vector2(PAD, 320), String(note[1]), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 2.0 * PAD, 15, -1, UiSkin.TEXT_DIM)
 	var buttons: Array = []
 	if not actions.is_empty():
@@ -74,9 +74,10 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	var x := r.position.x + PAD
 	var w := r.size.x - 2.0 * PAD
 	var y := r.position.y + 84.0
-	TierStyle.draw_name(canvas, font, Vector2(x, y), db, tier_id, GunStats.display_name(db, gun), 24, tint, w)
+	TierStyle.draw_name(canvas, font, Vector2(x, y), db, tier_id, GunStats.display_name(db, gun), 24, tint, w, t)  # a long name scrolls
 	y += 12.0
-	ItemIcons.draw(canvas, String(gun["body"]), Rect2(x + w * 0.12, y, w * 0.76, 120.0), tint)
+	ItemIcons.plate(canvas, Rect2(x, y, w, 118.0), db, tier_id, t)
+	ItemIcons.draw(canvas, String(gun["body"]), Rect2(x + w * 0.06, y, w * 0.88, 120.0), tint)
 	y += 132.0
 	var maker: Dictionary = db.makers[String(gun["maker"])]
 	canvas.draw_circle(Vector2(x + 6, y - 5), 5.0, Color.html(String(maker["color"])))
@@ -182,8 +183,9 @@ static func _armour(canvas: CanvasItem, font: Font, r: Rect2, foot: float, what:
 	_band(canvas, font, r, tint, "%s %s" % [String(gun_db.tier(tier)["name"]).to_upper(), String(items.equip_slot(id)).capitalize().to_upper()], "Lv %d" % int(arm["lvl"]))
 	var x := r.position.x + PAD
 	var w := r.size.x - 2.0 * PAD
-	canvas.draw_string(font, Vector2(x, r.position.y + 90.0), ArmourStats.display_name(items, stack, String(gun_db.tier(tier)["name"])), HORIZONTAL_ALIGNMENT_LEFT, w, 22, tint)
-	ItemIcons.draw(canvas, id, Rect2(x + w * 0.3, r.position.y + 106.0, w * 0.4, 110.0), Color.WHITE)
+	TierStyle.draw_name(canvas, font, Vector2(x, r.position.y + 90.0), gun_db, tier, ArmourStats.display_name(items, stack, String(gun_db.tier(tier)["name"])), 22, tint, w, t)
+	ItemIcons.plate(canvas, Rect2(x + w * 0.27, r.position.y + 100.0, w * 0.46, 122.0), gun_db, tier, t)
+	ItemIcons.draw(canvas, id, Rect2(x + w * 0.3, r.position.y + 104.0, w * 0.4, 114.0), Color.WHITE, tier)
 	var y := r.position.y + 240.0
 	for line: String in ArmourStats.lines(items, stack):
 		canvas.draw_string(font, Vector2(x, y), line, HORIZONTAL_ALIGNMENT_LEFT, w, 16, UiSkin.GOOD)

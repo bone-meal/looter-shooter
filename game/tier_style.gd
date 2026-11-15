@@ -46,17 +46,73 @@ static func tag_font(db: RefCounted, tier_id: String) -> Font:
 	return _tag_fonts[path]
 
 
-# Writes a gun's name: the tier's tag in its own face (if it has one), the rest in `font`. `width` >= 0 right-aligns
-# the whole name inside that width, as draw_string does.
-static func draw_name(canvas: CanvasItem, font: Font, at: Vector2, db: RefCounted, tier_id: String, text: String, points: int, tint: Color, width: float = -1.0) -> void:
+# Writes a gun's name: the tier's tag in its own face (if it has one; it may follow a prefix such as "W kills "), the
+# rest in `font`. `width` >= 0 right-aligns the whole name inside that width, as draw_string does, and shrinks the
+# letters until the whole name fits (a long pony name kept its tag out of sight on the HUD).
+# `scroll_t` >= 0 (seconds): a name too long for `width` scrolls slowly from end to end instead of shrinking (the inventory).
+static func draw_name(canvas: CanvasItem, font: Font, at: Vector2, db: RefCounted, tier_id: String, text: String, points: int, tint: Color, width: float = -1.0, scroll_t: float = -1.0) -> void:
 	var tag := String(db.tier(tier_id).get("tag", ""))
 	var fancy := tag_font(db, tier_id)
-	if fancy == null or tag == "" or not text.begins_with(tag):
+	var cut := text.find(tag) if tag != "" else -1
+	if scroll_t >= 0.0 and width >= 0.0 and overflows(font, db, tier_id, text, points, width):
+		_scroll(canvas, font, fancy if cut >= 0 else null, at, text, cut, tag, points, tint, width, scroll_t)
+		return
+	if fancy == null or cut < 0:
+		if width >= 0.0:
+			while points > 9 and font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, points).x > width:
+				points -= 1
 		canvas.draw_string(font, at, text, HORIZONTAL_ALIGNMENT_RIGHT if width >= 0.0 else HORIZONTAL_ALIGNMENT_LEFT, width, points, tint)
 		return
-	var rest := text.substr(tag.length())
+	var before := text.substr(0, cut)
+	var rest := text.substr(cut + tag.length())
+	var wide := func(size: int) -> float:
+		return font.get_string_size(before, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x + fancy.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, size + 4).x + font.get_string_size(rest, HORIZONTAL_ALIGNMENT_LEFT, -1, size).x
+	if width >= 0.0:
+		while points > 9 and float(wide.call(points)) > width:
+			points -= 1
+	var start := at.x + (maxf(width - float(wide.call(points)), 0.0) if width >= 0.0 else 0.0)
+	var before_wide := font.get_string_size(before, HORIZONTAL_ALIGNMENT_LEFT, -1, points).x
 	var tag_wide := fancy.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, points + 4).x
-	var start := at.x + (maxf(width - tag_wide - font.get_string_size(rest, HORIZONTAL_ALIGNMENT_LEFT, -1, points).x, 0.0) if width >= 0.0 else 0.0)
-	canvas.draw_string(fancy, Vector2(start + 1.0, at.y + 1.0), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, points + 4, Color(0, 0, 0, 0.6))
-	canvas.draw_string(fancy, Vector2(start, at.y), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, points + 4, tint)
-	canvas.draw_string(font, Vector2(start + tag_wide, at.y), rest, HORIZONTAL_ALIGNMENT_LEFT, -1, points, tint)
+	if before != "":
+		canvas.draw_string(font, Vector2(start, at.y), before, HORIZONTAL_ALIGNMENT_LEFT, -1, points, tint)
+	canvas.draw_string(fancy, Vector2(start + before_wide + 1.0, at.y + 1.0), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, points + 4, Color(0, 0, 0, 0.6))
+	canvas.draw_string(fancy, Vector2(start + before_wide, at.y), tag, HORIZONTAL_ALIGNMENT_LEFT, -1, points + 4, tint)
+	canvas.draw_string(font, Vector2(start + before_wide + tag_wide, at.y), rest, HORIZONTAL_ALIGNMENT_LEFT, -1, points, tint)
+
+
+# True when the whole name (tag in its face) is wider than `width` at `points`.
+static func overflows(font: Font, db: RefCounted, tier_id: String, text: String, points: int, width: float) -> bool:
+	var tag := String(db.tier(tier_id).get("tag", ""))
+	var fancy := tag_font(db, tier_id)
+	var cut := text.find(tag) if tag != "" else -1
+	if fancy == null or cut < 0:
+		return font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, points).x > width
+	var rest := text.substr(0, cut) + text.substr(cut + tag.length())
+	return font.get_string_size(rest, HORIZONTAL_ALIGNMENT_LEFT, -1, points).x + fancy.get_string_size(tag, HORIZONTAL_ALIGNMENT_LEFT, -1, points + 4).x > width
+
+
+# A marquee: rests at the start, slides left to show the end, rests, starts again. Letters are drawn one by one and only
+# those wholly inside [at.x, at.x + width] (a canvas cannot clip a single string).
+static func _scroll(canvas: CanvasItem, font: Font, fancy: Font, at: Vector2, text: String, cut: int, tag: String, points: int, tint: Color, width: float, t: float) -> void:
+	var glyphs: Array = []  # [char, font, size, advance]
+	var total := 0.0
+	for i in text.length():
+		var in_tag := fancy != null and i >= cut and i < cut + tag.length()
+		var face: Font = fancy if in_tag else font
+		var size := points + 4 if in_tag else points
+		var advance := face.get_char_size(text.unicode_at(i), size).x
+		glyphs.append([text.unicode_at(i), face, size, advance, in_tag])
+		total += advance
+	var travel := total - width
+	var rest := 1.2
+	var slide := travel / 40.0  # 40 pixels a second
+	var cycle := fmod(t, rest * 2.0 + slide)
+	var offset := clampf((cycle - rest) / maxf(slide, 0.01), 0.0, 1.0) * travel
+	var x := at.x - offset
+	for g: Array in glyphs:
+		var advance := float(g[3])
+		if x >= at.x - 0.5 and x + advance <= at.x + width + 0.5:
+			if bool(g[4]):
+				canvas.draw_char(g[1], Vector2(x + 1.0, at.y + 1.0), String.chr(int(g[0])), int(g[2]), Color(0, 0, 0, 0.6))
+			canvas.draw_char(g[1], Vector2(x, at.y), String.chr(int(g[0])), int(g[2]), tint)
+		x += advance

@@ -89,7 +89,7 @@ func _shell_burst() -> void:
 	var world := get_parent()
 	if world == null:
 		return
-	FxKit.burst(world, global_position + Vector3(0, 0.1, 0), Color(1.0, 0.82, 0.3), 18, 0.8, 0.14, 3.5)
+	FxKit.burst(world, global_position + Vector3(0, 0.1, 0), Color(1.0, 0.82, 0.3), 24, 0.8, 0.18, 3.5)
 	for half in 2:
 		var shell: Node3D = FxKit.shape("egg_shell")
 		if shell == null:

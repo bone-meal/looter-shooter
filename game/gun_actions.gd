@@ -82,8 +82,4 @@ static func _flame(model: Node3D, nozzle: Node3D, on: bool) -> void:
 		pilot.name = "PilotFlame"
 		var at := model.get_node_or_null("Pilot") as Node3D
 		(at if at != null else nozzle).add_child(pilot)
-		for p: CPUParticles3D in [stream, pilot]:  # FxKit's shared particle material ignores particle sizes (1 m sprites): ours keep them
-			var mat := (p.material_override as StandardMaterial3D).duplicate() as StandardMaterial3D
-			mat.billboard_keep_scale = true
-			p.material_override = mat
 	stream.emitting = on

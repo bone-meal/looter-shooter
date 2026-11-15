@@ -108,6 +108,14 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.get("inventory").call("set_holster_gun", slot, made)
 				player.call("refresh_held")
 				_lines.append("READYUNIQUE %s in slot %d" % [words[1], slot + 1])
+		"bagclear":  # "!bagclear [n]": empties up to n backpack slots that hold guns (room for a test; dev runs never save)
+			var cleared := 0
+			for i in InventoryState.SIZE:
+				if cleared < (int(words[1]) if words.size() > 1 else 36) and not (player.get("inventory").call("gun_at", i) as Dictionary).is_empty():
+					player.get("inventory").call("take_slot", i)
+					cleared += 1
+			player.call("refresh_held")
+			_lines.append("BAGCLEAR %d" % cleared)
 		"readygun":  # "!readygun <body> [tier] [slot 1-4]": a rolled gun of that body straight into a ready slot
 			var gun_slot := (int(words[3]) - 1) if words.size() > 3 else 1
 			var rolled: Dictionary = GunGen.generate(player.get("gun_db"), RandomNumberGenerator.new(), 0.0, words[1], words[2] if words.size() > 2 else "purple", "", 10)

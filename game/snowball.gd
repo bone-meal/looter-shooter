@@ -36,7 +36,7 @@ func _ready() -> void:
 		add_child(_body)
 	_query.collision_mask = 1
 	_size_body()
-	var trail := FxKit.particles(Color(0.95, 0.97, 1.0, 0.9), 12, 0.8, 0.35, 1.5, 60.0, -2.0, false, false)  # snow kicked up as it rolls
+	var trail := FxKit.particles(Color(0.95, 0.97, 1.0, 0.9), 16, 0.8, 0.9, 1.5, 60.0, -2.0, false, false)  # snow kicked up as it rolls
 	trail.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
 	trail.emission_sphere_radius = 0.4
 	add_child(trail)
@@ -103,7 +103,7 @@ func _bury(r: float) -> void:
 
 func _break() -> void:  # it bursts into powder: swells a little, then shrinks away
 	set_physics_process(false)
-	FxKit.burst(get_parent(), global_position + Vector3(0, radius() * 0.9, 0), Color(0.95, 0.97, 1.0, 0.9), 20, 0.9, 0.5, 3.0)
+	FxKit.burst(get_parent(), global_position + Vector3(0, radius() * 0.9, 0), Color(0.95, 0.97, 1.0, 0.9), 26, 0.9, 1.0, 3.0)
 	remove_from_group(GROUP)
 	if _body == null:
 		queue_free()

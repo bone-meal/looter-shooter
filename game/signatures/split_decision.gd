@@ -95,7 +95,7 @@ static func show_coin(coin: Node3D, is_fire: bool) -> void:
 static func shards(world: Node, at: Vector3) -> void:
 	if world == null:
 		return
-	FxKit.burst(world, at, Color(0.8, 0.93, 1.0), 14, 0.6, 0.18, 4.0)  # frost and sparks
+	FxKit.burst(world, at, Color(0.8, 0.93, 1.0), 18, 0.6, 0.24, 4.0)  # frost and sparks
 	for k in 10:  # modelled ice and ember splinters (game/fx_kit.gd shard)
 		var bit: Node3D = FxKit.shape("shard")
 		if bit == null:

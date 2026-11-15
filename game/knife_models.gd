@@ -88,6 +88,7 @@ static func _material(id: String) -> StandardMaterial3D:
 		material.albedo_color = Color(c[0], c[1], c[2])
 		material.metallic = float(def["metal"])
 		material.roughness = float(def["rough"])
+		material.resource_name = id  # named, so the icon renderer (tools/knife_icons.gd -> tools/blender/icons.py) knows steel from wood
 		_materials[id] = material
 	return _materials[id]
 
