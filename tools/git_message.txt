@@ -1,10 +1,8 @@
-Sea step 3d: Agility courses and cliff shortcuts
+Sea step 3e: Archaeology
 
-- six Agility courses (one per region, a new place kind) with five obstacles each: hurdles, beam, wall, rope swing, stepping posts
-- crossing carries the body along its path, may slip by level, laps in order pay a bonus
-- cliff shortcuts found on the map: knotted ropes by Agility level, ladders Carpentry must mend first (saved)
-- Agility run-speed perks in Aurelind; course sign on the map; terrain rules version 4
-- dev !nearclimb; skill_unlock_check counts shortcuts per region
+- a dig in every region (new model) that turns up encrusted relics by weight
+- restoration table in every town: restore the 24 relics, hand in each region's three for its collection (trophy, gems and a lore line)
+- Archaeology milestones; fantasy_check checks digs' finds; dev !neartrack dig_
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

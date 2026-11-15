@@ -98,6 +98,62 @@ goat_wool: Goat Wool
 bone: Bone
 pale_hide: Pale Hide
 pale_antler: Pale Antler
+encrusted_harvest_sickle: Encrusted Harvest Sickle
+harvest_sickle: Harvest Sickle
+encrusted_corn_mother: Encrusted Corn Mother Figure
+corn_mother: Corn Mother Figure
+encrusted_millstone_coin: Encrusted Millstone Coin
+millstone_coin: Millstone Coin
+trophy_amberfield: First Harvest Collection
+encrusted_antler_comb: Encrusted Antler Comb
+antler_comb: Antler Comb
+encrusted_moss_crown: Encrusted Moss Crown
+moss_crown: Moss Crown
+encrusted_hunters_whistle: Encrusted Hunter's Whistle
+hunters_whistle: Hunter's Whistle
+trophy_greenwald: Green Court Collection
+encrusted_brass_spyglass: Encrusted Brass Spyglass
+brass_spyglass: Brass Spyglass
+encrusted_sailors_locket: Encrusted Sailor's Locket
+sailors_locket: Sailor's Locket
+encrusted_coral_beads: Encrusted Coral Bead Chain
+coral_beads: Coral Bead Chain
+trophy_brinemouth: Drowned Sailors Collection
+encrusted_sun_disc: Encrusted Sun Disc
+sun_disc: Sun Disc
+encrusted_glass_arrowhead: Encrusted Glass Arrowhead
+glass_arrowhead: Glass Arrowhead
+encrusted_banner_clasp: Encrusted Banner Clasp
+banner_clasp: Banner Clasp
+trophy_sunscar: Old Desert Wars Collection
+encrusted_bone_flute: Encrusted Ice-Bone Flute
+bone_flute: Ice-Bone Flute
+encrusted_rune_pin: Encrusted Rune Mitten Pin
+rune_pin: Rune Mitten Pin
+encrusted_frozen_lantern: Encrusted Frozen Lantern
+frozen_lantern: Frozen Lantern
+trophy_frostmere: Long Winter Collection
+encrusted_obsidian_mirror: Encrusted Obsidian Mirror
+obsidian_mirror: Obsidian Mirror
+encrusted_smiths_seal: Encrusted Smith's Seal
+smiths_seal: Smith's Seal
+encrusted_ember_reliquary: Encrusted Ember Reliquary
+ember_reliquary: Ember Reliquary
+trophy_cinderreach: Forge Kings Collection
+encrusted_storm_bell: Encrusted Storm Bell
+storm_bell: Storm Bell
+encrusted_feather_crown: Encrusted Feather Crown
+feather_crown: Feather Crown
+encrusted_sky_chart: Encrusted Sky Chart
+sky_chart: Sky Chart
+trophy_stormcrown: Cloud Watchers Collection
+encrusted_pale_mask: Encrusted Pale Mask
+pale_mask: Pale Mask
+encrusted_colourless_brush: Encrusted Colourless Brush
+colourless_brush: Colourless Brush
+encrusted_unfinished_canvas: Encrusted Unfinished Canvas
+unfinished_canvas: Unfinished Canvas
+trophy_hollow_crown: The Unpainted Collection
 ash_plank: Ash Plank
 oak_plank: Oak Plank
 palm_plank: Palm Plank

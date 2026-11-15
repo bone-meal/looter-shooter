@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches.",
+ "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches. Sea step 3e: relics (Archaeology) and the collections' trophies (for the home port's trophy hall later).",
  "start": {
   "equip": {
    "staff": "ash_staff",
@@ -1342,6 +1342,510 @@
     0.3,
     0.34,
     0.42
+   ]
+  },
+  "encrusted_harvest_sickle": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "harvest_sickle": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.85,
+    0.7,
+    0.35
+   ]
+  },
+  "encrusted_corn_mother": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "corn_mother": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.85,
+    0.7,
+    0.35
+   ]
+  },
+  "encrusted_millstone_coin": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "millstone_coin": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.85,
+    0.7,
+    0.35
+   ]
+  },
+  "trophy_amberfield": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.85,
+    0.7,
+    0.35
+   ]
+  },
+  "encrusted_antler_comb": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "antler_comb": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.7,
+    0.4
+   ]
+  },
+  "encrusted_moss_crown": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "moss_crown": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.7,
+    0.4
+   ]
+  },
+  "encrusted_hunters_whistle": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "hunters_whistle": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.7,
+    0.4
+   ]
+  },
+  "trophy_greenwald": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.45,
+    0.7,
+    0.4
+   ]
+  },
+  "encrusted_brass_spyglass": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "brass_spyglass": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.9,
+    0.55,
+    0.45
+   ]
+  },
+  "encrusted_sailors_locket": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "sailors_locket": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.9,
+    0.55,
+    0.45
+   ]
+  },
+  "encrusted_coral_beads": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "coral_beads": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.9,
+    0.55,
+    0.45
+   ]
+  },
+  "trophy_brinemouth": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.9,
+    0.55,
+    0.45
+   ]
+  },
+  "encrusted_sun_disc": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "sun_disc": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.95,
+    0.75,
+    0.35
+   ]
+  },
+  "encrusted_glass_arrowhead": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "glass_arrowhead": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.95,
+    0.75,
+    0.35
+   ]
+  },
+  "encrusted_banner_clasp": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "banner_clasp": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.95,
+    0.75,
+    0.35
+   ]
+  },
+  "trophy_sunscar": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.95,
+    0.75,
+    0.35
+   ]
+  },
+  "encrusted_bone_flute": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "bone_flute": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.7,
+    0.88,
+    1.0
+   ]
+  },
+  "encrusted_rune_pin": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "rune_pin": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.7,
+    0.88,
+    1.0
+   ]
+  },
+  "encrusted_frozen_lantern": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "frozen_lantern": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.7,
+    0.88,
+    1.0
+   ]
+  },
+  "trophy_frostmere": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.7,
+    0.88,
+    1.0
+   ]
+  },
+  "encrusted_obsidian_mirror": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "obsidian_mirror": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.95,
+    0.4,
+    0.2
+   ]
+  },
+  "encrusted_smiths_seal": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "smiths_seal": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.95,
+    0.4,
+    0.2
+   ]
+  },
+  "encrusted_ember_reliquary": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "ember_reliquary": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.95,
+    0.4,
+    0.2
+   ]
+  },
+  "trophy_cinderreach": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.95,
+    0.4,
+    0.2
+   ]
+  },
+  "encrusted_storm_bell": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "storm_bell": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.55,
+    0.62,
+    0.9
+   ]
+  },
+  "encrusted_feather_crown": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "feather_crown": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.55,
+    0.62,
+    0.9
+   ]
+  },
+  "encrusted_sky_chart": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "sky_chart": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.55,
+    0.62,
+    0.9
+   ]
+  },
+  "trophy_stormcrown": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.55,
+    0.62,
+    0.9
+   ]
+  },
+  "encrusted_pale_mask": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "pale_mask": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.92,
+    0.92,
+    0.95
+   ]
+  },
+  "encrusted_colourless_brush": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "colourless_brush": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.92,
+    0.92,
+    0.95
+   ]
+  },
+  "encrusted_unfinished_canvas": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.45,
+    0.38,
+    0.3
+   ]
+  },
+  "unfinished_canvas": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.92,
+    0.92,
+    0.95
+   ]
+  },
+  "trophy_hollow_crown": {
+   "kind": "material",
+   "icon": "star",
+   "color": [
+    0.92,
+    0.92,
+    0.95
    ]
   }
  }

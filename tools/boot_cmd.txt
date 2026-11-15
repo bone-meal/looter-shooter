@@ -1,1 +1,1 @@
-!wait 3;/tp fantasy;!wait 8;!immortal;/skill carpentry 50;/gear oak_plank 8;/gear iron_bar 2;!nearclimb;!wait 2;!where a;!key interact;!wait 2;!state;!key interact;!wait 4;!where c;!snap climbed
+!wait 3;/tp fantasy;!wait 8;!immortal;/skill archaeology 50;!neartrack dig_;!wait 1.5;!snap dig;!key interact;!wait 6;/gear encrusted_harvest_sickle 1;/gear encrusted_corn_mother 1;/gear encrusted_millstone_coin 1;!make restore_harvest_sickle;!make restore_corn_mother;!make restore_millstone_coin;!make collect_amberfield;!panel Skills archaeology;!wait 1;!snap skills_arch;!state

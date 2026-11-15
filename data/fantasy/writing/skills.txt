@@ -111,6 +111,14 @@ sunpetal: Sunpetal
 frostbloom: Frostbloom
 stormoak_tree: Stormoak tree
 stormlily: Stormlily
+dig_amberfield: Old dig
+dig_greenwald: Old dig
+dig_brinemouth: Old dig
+dig_sunscar: Old dig
+dig_frostmere: Old dig
+dig_cinderreach: Old dig
+dig_stormcrown: Old dig
+dig_hollow_crown: Old dig
 deer_tracks: Deer tracks
 boar_tracks: Boar tracks
 antelope_tracks: Antelope tracks
@@ -144,6 +152,10 @@ name: Crafting Table
 [station site]
 # WHAT: the name of this kind of work place, shown on the tab of its window.
 name: Repairs
+
+[station restore_table]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Restoration Table
 
 [station cauldron]
 # WHAT: the name of this kind of work place, shown on the tab of its window.
@@ -347,4 +359,49 @@ name: The Pale Stag
 40: Sure Foot | Slip half as often.
 45: Cliff run and ropes | Run the Cliff Run at Skyrest; climb the Agility 45 ropes.
 50: Freerunner | Run 5% faster and slip half as often again.
+
+[unlock archaeology]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Steady Trowel | Dig 15% faster.
+10: The Green Court | Dig in Greenwald; restore its relics and complete its collection.
+15: Keen Eye | 10% chance of a second find.
+20: The Drowned Sailors | Dig along Brinemouth's shore.
+25: The Old Desert Wars | Dig in the sands of Sunscar.
+30: The Long Winter | Dig through Frostmere's ice.
+35: The Forge Kings | Dig among Cinderreach's ash.
+40: The Cloud Watchers | Dig on the heights of Stormcrown.
+45: The Unpainted | Dig in the Hollow Crown.
+50: Master Archaeologist | 15% more second finds, dig 15% faster.
+
+[lore collection_amberfield]
+# WHAT: told when the First Harvest collection is completed.
+text: Before the wheat was painted gold, someone cut the first field by hand and left their sickle in the furrow.
+
+[lore collection_greenwald]
+# WHAT: told when the Green Court collection is completed.
+text: The forest once kept a court of its own: antlers for combs, moss for crowns, and a whistle to call the hunt home.
+
+[lore collection_brinemouth]
+# WHAT: told when the Drowned Sailors collection is completed.
+text: These came up from sailors who never reached the harbour. The locket still opens; the picture inside has washed away.
+
+[lore collection_sunscar]
+# WHAT: told when the Old Desert Wars collection is completed.
+text: The desert tribes have fought longer than anyone remembers. The sun disc says they once marched under one banner.
+
+[lore collection_frostmere]
+# WHAT: told when the Long Winter collection is completed.
+text: Someone played the flute through the longest winter so the village would not hear the wind.
+
+[lore collection_cinderreach]
+# WHAT: told when the Forge Kings collection is completed.
+text: The forge kings sealed their work with fire. The reliquary is warm to this day.
+
+[lore collection_stormcrown]
+# WHAT: told when the Cloud Watchers collection is completed.
+text: They watched the clouds from the peaks and charted the storms like coastlines.
+
+[lore collection_hollow_crown]
+# WHAT: told when the The Unpainted collection is completed.
+text: A brush with no colour, a canvas never finished, a mask with no face. Whoever painted Aurelind left before they were done.
 

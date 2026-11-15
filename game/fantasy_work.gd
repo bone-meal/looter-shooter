@@ -11,7 +11,7 @@ signal talk_opened(person: Dictionary)
 signal station_opened(kind: String)
 
 const WATERS := {"fresh": "freshwater", "salt": "saltwater", "lava": "lava"}
-const VERBS := {"woodcutting": "Chop", "mining": "Mine", "fishing": "Fish at", "farming": "Reap", "alchemy": "Pick", "hunting": "Follow"}
+const VERBS := {"woodcutting": "Chop", "mining": "Mine", "fishing": "Fish at", "farming": "Reap", "alchemy": "Pick", "hunting": "Follow", "archaeology": "Dig at"}
 const STATION_NAMES := {"fire": "Cook at the fire", "forge": "Work the forge", "workbench": "Use the workbench", "cauldron": "Brew at the cauldron",
 	"sawhorse": "Saw at the sawhorse", "crafting_table": "Craft at the table"}
 const TALK_REACH := 3.0
@@ -147,17 +147,34 @@ func _process(delta: float) -> void:
 	world.sound("gather_" + skill, world.world_of(at))
 	if def.has("animal"):  # tracks: read them, and the trail leads on to the animal
 		world.follow_tracks(String(def["animal"]), at)
+	elif def.has("finds"):  # a dig: one of its relics, picked by weight (Archaeology)
+		var find := _pick_find(def["finds"])
+		var many := 2 if randf() < world.perk(skill, "double") else 1
+		world.give(find, many)
+		world.worked.emit(skill, find, many, false)
 	else:
 		var count := 2 if randf() < world.perk(skill, "double") else 1
 		world.give(String(def["gives"]), count)
 		world.worked.emit(skill, String(def["gives"]), count, false)
-	for find: Dictionary in [] if def.has("animal") else SkillPerks.bonus_finds(world.skilling.get("unlocks", {}), skill, int(world.skills.level(skill))):
+	for find: Dictionary in [] if def.has("animal") or def.has("finds") else SkillPerks.bonus_finds(world.skilling.get("unlocks", {}), skill, int(world.skills.level(skill))):
 		if randf() < float(find["chance"]):
 			world.give(String(find["item"]), 1)
 	world.gain_xp(skill, int(def["xp"]))
 	if bool(def.get("once", false)) or randf() < float(_cfg["deplete_chance"]) * (1.0 - world.perk(skill, "keep")):
 		world.gather.spend(_node, float(def["respawn"]) * maxf(1.0 - world.perk(skill, "regrow"), 0.2))
 		_node = {}
+
+
+func _pick_find(finds: Dictionary) -> String:
+	var total := 0.0
+	for item: String in finds:
+		total += float(finds[item])
+	var roll := randf() * total
+	for item: String in finds:
+		roll -= float(finds[item])
+		if roll <= 0.0:
+			return item
+	return String(finds.keys()[0])
 
 
 # --- crafting ---
@@ -207,4 +224,8 @@ func make(recipe: Dictionary) -> String:
 		world.give(item, count)
 		world.worked.emit(skill, item, count, true)
 	world.gain_xp(String(recipe["skill"]), int(recipe["xp"]))
+	if recipe.has("lore"):  # a collection completed: its story (data/fantasy/writing/skills.txt [lore <id>])
+		var line := String(world.data["text"].get("lore", {}).get(String(recipe["lore"]), {}).get("text", ""))
+		if line != "":
+			world.notice.emit(line)
 	return ""

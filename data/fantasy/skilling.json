@@ -1,6 +1,6 @@
 {
  "version": 2,
- "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>]. Hunting: nodes with `animal` are tracks (following them takes `seconds`, then that animal is met 25-35 m on along the trail; once = used up by one go); gather.snare: a set snare catches the region's best small game you may hunt after `seconds` (less with snare_speed perks), max snares out at once, keep_snare = chance the snare comes back. Content steps may also open animals (data/fantasy/enemies.json with skill hunting). Sea step 3c: stations sawhorse (Carpentry: planks, crates, barrels) and crafting_table (Crafting: leather, cut gems, snares, and pieces for the gun side's gear: gear.json kind gunside); station site = repairs done where the broken thing stands (ladders, sea step 3d). Perk finer = chance a crafted gun-side piece comes one tier up.",
+ "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>]. Hunting: nodes with `animal` are tracks (following them takes `seconds`, then that animal is met 25-35 m on along the trail; once = used up by one go); gather.snare: a set snare catches the region's best small game you may hunt after `seconds` (less with snare_speed perks), max snares out at once, keep_snare = chance the snare comes back. Content steps may also open animals (data/fantasy/enemies.json with skill hunting). Sea step 3c: stations sawhorse (Carpentry: planks, crates, barrels) and crafting_table (Crafting: leather, cut gems, snares, and pieces for the gun side's gear: gear.json kind gunside); station site = repairs done where the broken thing stands (ladders, sea step 3d). Perk finer = chance a crafted gun-side piece comes one tier up. Sea step 3e, Archaeology: nodes with `finds` are digs (each find is picked by weight: an encrusted relic); station restore_table: restore a relic, and hand in a region's three relics for its collection (recipe `lore` = a line of data/fantasy/writing/skills.txt [lore <id>] told on completing it).",
  "max_level": 50,
  "xp_base": 30,
  "xp_power": 2.2,
@@ -509,6 +509,134 @@
    "respawn": 120,
    "model": "tracks_hoof",
    "once": true
+  },
+  "dig_amberfield": {
+   "skill": "archaeology",
+   "level": 1,
+   "xp": 26,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_harvest_sickle": 3,
+    "encrusted_corn_mother": 2,
+    "encrusted_millstone_coin": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_greenwald": {
+   "skill": "archaeology",
+   "level": 10,
+   "xp": 80,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_antler_comb": 3,
+    "encrusted_moss_crown": 2,
+    "encrusted_hunters_whistle": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_brinemouth": {
+   "skill": "archaeology",
+   "level": 20,
+   "xp": 140,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_brass_spyglass": 3,
+    "encrusted_sailors_locket": 2,
+    "encrusted_coral_beads": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_sunscar": {
+   "skill": "archaeology",
+   "level": 25,
+   "xp": 170,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_sun_disc": 3,
+    "encrusted_glass_arrowhead": 2,
+    "encrusted_banner_clasp": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_frostmere": {
+   "skill": "archaeology",
+   "level": 30,
+   "xp": 200,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_bone_flute": 3,
+    "encrusted_rune_pin": 2,
+    "encrusted_frozen_lantern": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_cinderreach": {
+   "skill": "archaeology",
+   "level": 35,
+   "xp": 230,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_obsidian_mirror": 3,
+    "encrusted_smiths_seal": 2,
+    "encrusted_ember_reliquary": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_stormcrown": {
+   "skill": "archaeology",
+   "level": 40,
+   "xp": 260,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_storm_bell": 3,
+    "encrusted_feather_crown": 2,
+    "encrusted_sky_chart": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
+  },
+  "dig_hollow_crown": {
+   "skill": "archaeology",
+   "level": 45,
+   "xp": 290,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "finds": {
+    "encrusted_pale_mask": 3,
+    "encrusted_colourless_brush": 2,
+    "encrusted_unfinished_canvas": 1
+   },
+   "seconds": 4.0,
+   "respawn": 180,
+   "model": "dig_site"
   }
  },
  "fire": {
@@ -1599,6 +1727,454 @@
    "out": {
     "craft_cloak": 1
    }
+  },
+  {
+   "id": "restore_harvest_sickle",
+   "skill": "archaeology",
+   "level": 1,
+   "xp": 38,
+   "station": "restore_table",
+   "in": {
+    "encrusted_harvest_sickle": 1
+   },
+   "out": {
+    "harvest_sickle": 1
+   }
+  },
+  {
+   "id": "restore_corn_mother",
+   "skill": "archaeology",
+   "level": 1,
+   "xp": 76,
+   "station": "restore_table",
+   "in": {
+    "encrusted_corn_mother": 1
+   },
+   "out": {
+    "corn_mother": 1
+   }
+  },
+  {
+   "id": "restore_millstone_coin",
+   "skill": "archaeology",
+   "level": 1,
+   "xp": 114,
+   "station": "restore_table",
+   "in": {
+    "encrusted_millstone_coin": 1
+   },
+   "out": {
+    "millstone_coin": 1
+   }
+  },
+  {
+   "id": "collect_amberfield",
+   "skill": "archaeology",
+   "level": 1,
+   "xp": 440,
+   "station": "restore_table",
+   "in": {
+    "harvest_sickle": 1,
+    "corn_mother": 1,
+    "millstone_coin": 1
+   },
+   "out": {
+    "trophy_amberfield": 1,
+    "rough_gem": 2
+   },
+   "lore": "collection_amberfield"
+  },
+  {
+   "id": "restore_antler_comb",
+   "skill": "archaeology",
+   "level": 10,
+   "xp": 110,
+   "station": "restore_table",
+   "in": {
+    "encrusted_antler_comb": 1
+   },
+   "out": {
+    "antler_comb": 1
+   }
+  },
+  {
+   "id": "restore_moss_crown",
+   "skill": "archaeology",
+   "level": 10,
+   "xp": 220,
+   "station": "restore_table",
+   "in": {
+    "encrusted_moss_crown": 1
+   },
+   "out": {
+    "moss_crown": 1
+   }
+  },
+  {
+   "id": "restore_hunters_whistle",
+   "skill": "archaeology",
+   "level": 10,
+   "xp": 330,
+   "station": "restore_table",
+   "in": {
+    "encrusted_hunters_whistle": 1
+   },
+   "out": {
+    "hunters_whistle": 1
+   }
+  },
+  {
+   "id": "collect_greenwald",
+   "skill": "archaeology",
+   "level": 10,
+   "xp": 800,
+   "station": "restore_table",
+   "in": {
+    "antler_comb": 1,
+    "moss_crown": 1,
+    "hunters_whistle": 1
+   },
+   "out": {
+    "trophy_greenwald": 1,
+    "rough_gem": 2
+   },
+   "lore": "collection_greenwald"
+  },
+  {
+   "id": "restore_brass_spyglass",
+   "skill": "archaeology",
+   "level": 20,
+   "xp": 190,
+   "station": "restore_table",
+   "in": {
+    "encrusted_brass_spyglass": 1
+   },
+   "out": {
+    "brass_spyglass": 1
+   }
+  },
+  {
+   "id": "restore_sailors_locket",
+   "skill": "archaeology",
+   "level": 20,
+   "xp": 380,
+   "station": "restore_table",
+   "in": {
+    "encrusted_sailors_locket": 1
+   },
+   "out": {
+    "sailors_locket": 1
+   }
+  },
+  {
+   "id": "restore_coral_beads",
+   "skill": "archaeology",
+   "level": 20,
+   "xp": 570,
+   "station": "restore_table",
+   "in": {
+    "encrusted_coral_beads": 1
+   },
+   "out": {
+    "coral_beads": 1
+   }
+  },
+  {
+   "id": "collect_brinemouth",
+   "skill": "archaeology",
+   "level": 20,
+   "xp": 1200,
+   "station": "restore_table",
+   "in": {
+    "brass_spyglass": 1,
+    "sailors_locket": 1,
+    "coral_beads": 1
+   },
+   "out": {
+    "trophy_brinemouth": 1,
+    "rough_gem": 2
+   },
+   "lore": "collection_brinemouth"
+  },
+  {
+   "id": "restore_sun_disc",
+   "skill": "archaeology",
+   "level": 25,
+   "xp": 230,
+   "station": "restore_table",
+   "in": {
+    "encrusted_sun_disc": 1
+   },
+   "out": {
+    "sun_disc": 1
+   }
+  },
+  {
+   "id": "restore_glass_arrowhead",
+   "skill": "archaeology",
+   "level": 25,
+   "xp": 460,
+   "station": "restore_table",
+   "in": {
+    "encrusted_glass_arrowhead": 1
+   },
+   "out": {
+    "glass_arrowhead": 1
+   }
+  },
+  {
+   "id": "restore_banner_clasp",
+   "skill": "archaeology",
+   "level": 25,
+   "xp": 690,
+   "station": "restore_table",
+   "in": {
+    "encrusted_banner_clasp": 1
+   },
+   "out": {
+    "banner_clasp": 1
+   }
+  },
+  {
+   "id": "collect_sunscar",
+   "skill": "archaeology",
+   "level": 25,
+   "xp": 1400,
+   "station": "restore_table",
+   "in": {
+    "sun_disc": 1,
+    "glass_arrowhead": 1,
+    "banner_clasp": 1
+   },
+   "out": {
+    "trophy_sunscar": 1,
+    "rough_gem": 2
+   },
+   "lore": "collection_sunscar"
+  },
+  {
+   "id": "restore_bone_flute",
+   "skill": "archaeology",
+   "level": 30,
+   "xp": 270,
+   "station": "restore_table",
+   "in": {
+    "encrusted_bone_flute": 1
+   },
+   "out": {
+    "bone_flute": 1
+   }
+  },
+  {
+   "id": "restore_rune_pin",
+   "skill": "archaeology",
+   "level": 30,
+   "xp": 540,
+   "station": "restore_table",
+   "in": {
+    "encrusted_rune_pin": 1
+   },
+   "out": {
+    "rune_pin": 1
+   }
+  },
+  {
+   "id": "restore_frozen_lantern",
+   "skill": "archaeology",
+   "level": 30,
+   "xp": 810,
+   "station": "restore_table",
+   "in": {
+    "encrusted_frozen_lantern": 1
+   },
+   "out": {
+    "frozen_lantern": 1
+   }
+  },
+  {
+   "id": "collect_frostmere",
+   "skill": "archaeology",
+   "level": 30,
+   "xp": 1600,
+   "station": "restore_table",
+   "in": {
+    "bone_flute": 1,
+    "rune_pin": 1,
+    "frozen_lantern": 1
+   },
+   "out": {
+    "trophy_frostmere": 1,
+    "flawless_gem": 2
+   },
+   "lore": "collection_frostmere"
+  },
+  {
+   "id": "restore_obsidian_mirror",
+   "skill": "archaeology",
+   "level": 35,
+   "xp": 310,
+   "station": "restore_table",
+   "in": {
+    "encrusted_obsidian_mirror": 1
+   },
+   "out": {
+    "obsidian_mirror": 1
+   }
+  },
+  {
+   "id": "restore_smiths_seal",
+   "skill": "archaeology",
+   "level": 35,
+   "xp": 620,
+   "station": "restore_table",
+   "in": {
+    "encrusted_smiths_seal": 1
+   },
+   "out": {
+    "smiths_seal": 1
+   }
+  },
+  {
+   "id": "restore_ember_reliquary",
+   "skill": "archaeology",
+   "level": 35,
+   "xp": 930,
+   "station": "restore_table",
+   "in": {
+    "encrusted_ember_reliquary": 1
+   },
+   "out": {
+    "ember_reliquary": 1
+   }
+  },
+  {
+   "id": "collect_cinderreach",
+   "skill": "archaeology",
+   "level": 35,
+   "xp": 1800,
+   "station": "restore_table",
+   "in": {
+    "obsidian_mirror": 1,
+    "smiths_seal": 1,
+    "ember_reliquary": 1
+   },
+   "out": {
+    "trophy_cinderreach": 1,
+    "flawless_gem": 2
+   },
+   "lore": "collection_cinderreach"
+  },
+  {
+   "id": "restore_storm_bell",
+   "skill": "archaeology",
+   "level": 40,
+   "xp": 350,
+   "station": "restore_table",
+   "in": {
+    "encrusted_storm_bell": 1
+   },
+   "out": {
+    "storm_bell": 1
+   }
+  },
+  {
+   "id": "restore_feather_crown",
+   "skill": "archaeology",
+   "level": 40,
+   "xp": 700,
+   "station": "restore_table",
+   "in": {
+    "encrusted_feather_crown": 1
+   },
+   "out": {
+    "feather_crown": 1
+   }
+  },
+  {
+   "id": "restore_sky_chart",
+   "skill": "archaeology",
+   "level": 40,
+   "xp": 1050,
+   "station": "restore_table",
+   "in": {
+    "encrusted_sky_chart": 1
+   },
+   "out": {
+    "sky_chart": 1
+   }
+  },
+  {
+   "id": "collect_stormcrown",
+   "skill": "archaeology",
+   "level": 40,
+   "xp": 2000,
+   "station": "restore_table",
+   "in": {
+    "storm_bell": 1,
+    "feather_crown": 1,
+    "sky_chart": 1
+   },
+   "out": {
+    "trophy_stormcrown": 1,
+    "flawless_gem": 2
+   },
+   "lore": "collection_stormcrown"
+  },
+  {
+   "id": "restore_pale_mask",
+   "skill": "archaeology",
+   "level": 45,
+   "xp": 390,
+   "station": "restore_table",
+   "in": {
+    "encrusted_pale_mask": 1
+   },
+   "out": {
+    "pale_mask": 1
+   }
+  },
+  {
+   "id": "restore_colourless_brush",
+   "skill": "archaeology",
+   "level": 45,
+   "xp": 780,
+   "station": "restore_table",
+   "in": {
+    "encrusted_colourless_brush": 1
+   },
+   "out": {
+    "colourless_brush": 1
+   }
+  },
+  {
+   "id": "restore_unfinished_canvas",
+   "skill": "archaeology",
+   "level": 45,
+   "xp": 1170,
+   "station": "restore_table",
+   "in": {
+    "encrusted_unfinished_canvas": 1
+   },
+   "out": {
+    "unfinished_canvas": 1
+   }
+  },
+  {
+   "id": "collect_hollow_crown",
+   "skill": "archaeology",
+   "level": 45,
+   "xp": 2200,
+   "station": "restore_table",
+   "in": {
+    "pale_mask": 1,
+    "colourless_brush": 1,
+    "unfinished_canvas": 1
+   },
+   "out": {
+    "trophy_hollow_crown": 1,
+    "flawless_gem": 2
+   },
+   "lore": "collection_hollow_crown"
   }
  ],
  "gather": {
@@ -1635,6 +2211,9 @@
   },
   "site": {
    "icon": "hammer"
+  },
+  "restore_table": {
+   "icon": "brush"
   }
  },
  "unlocks": {
@@ -2703,6 +3282,107 @@
     "perk": {
      "run_speed": 5,
      "sure_foot": 0.5
+    }
+   }
+  ],
+  "archaeology": [
+   {
+    "level": 5,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.15
+    }
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "dig_greenwald",
+     "restore_antler_comb",
+     "restore_moss_crown",
+     "restore_hunters_whistle",
+     "collect_greenwald"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "double": 0.1
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "dig_brinemouth",
+     "restore_brass_spyglass",
+     "restore_sailors_locket",
+     "restore_coral_beads",
+     "collect_brinemouth"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "content",
+    "ids": [
+     "dig_sunscar",
+     "restore_sun_disc",
+     "restore_glass_arrowhead",
+     "restore_banner_clasp",
+     "collect_sunscar"
+    ]
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "dig_frostmere",
+     "restore_bone_flute",
+     "restore_rune_pin",
+     "restore_frozen_lantern",
+     "collect_frostmere"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "dig_cinderreach",
+     "restore_obsidian_mirror",
+     "restore_smiths_seal",
+     "restore_ember_reliquary",
+     "collect_cinderreach"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "content",
+    "ids": [
+     "dig_stormcrown",
+     "restore_storm_bell",
+     "restore_feather_crown",
+     "restore_sky_chart",
+     "collect_stormcrown"
+    ]
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "dig_hollow_crown",
+     "restore_pale_mask",
+     "restore_colourless_brush",
+     "restore_unfinished_canvas",
+     "collect_hollow_crown"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "double": 0.15,
+     "speed": 0.15
     }
    }
   ]

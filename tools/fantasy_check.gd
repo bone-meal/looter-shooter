@@ -42,7 +42,9 @@ func _ready() -> void:
 	# --- references between files ---
 	for id: String in skilling["nodes"]:
 		var node: Dictionary = skilling["nodes"][id]
-		_need(items.has(String(node["gives"])) or enemies.has(String(node.get("animal", ""))), "node %s gives unknown item %s" % [id, node["gives"]])
+		_need(items.has(String(node["gives"])) or enemies.has(String(node.get("animal", ""))) or node.has("finds"), "node %s gives unknown item %s" % [id, node["gives"]])
+		for find: String in node.get("finds", {}):  # a dig's relics (Archaeology)
+			_need(items.has(find), "node %s finds unknown item %s" % [id, find])
 		_need((skilling["skills"] as Dictionary).has(String(node["skill"])), "node %s uses unknown skill" % id)
 	for recipe: Dictionary in skilling["recipes"]:
 		for id: String in (recipe["in"] as Dictionary).keys() + (recipe["out"] as Dictionary).keys():

@@ -66,7 +66,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !neartrack (stand at the nearest animal tracks), !nearclimb (stand at the foot of the nearest cliff shortcut), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -439,7 +439,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var best := {}
 			for key: Vector2i in land.get("gather").get("_nodes"):
 				for node: Dictionary in land.get("gather").get("_nodes")[key]:
-					if String(node["id"]).ends_with("_tracks") and (best.is_empty() or here.distance_to(node["at"]) < here.distance_to(best["at"])):
+					var wanted := String(node["id"]).begins_with(words[1]) if words.size() > 1 else String(node["id"]).ends_with("_tracks")  # "!neartrack dig_" = the nearest dig
+					if wanted and (best.is_empty() or here.distance_to(node["at"]) < here.distance_to(best["at"])):
 						best = node
 			if not best.is_empty():
 				player.call("teleport", land.call("ground_world", best["at"].x + 1.0, best["at"].z + 1.0), 0.0)

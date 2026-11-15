@@ -73,7 +73,7 @@ def build_all():
     init()
     maker = Maker()
     glow = fantasy_kit.GLOW
-    SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples", "snare", "tracks_", "ag_", "ladder", "climb_rope", "course_flag")  # things you can walk through or step over
+    SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples", "snare", "tracks_", "ag_", "ladder", "climb_rope", "course_flag", "dig_site")  # things you can walk through or step over
 
     def model(name, build, uv=0.5, plain=False):  # plain: a building, which also gets its plain model for the low graphics tiers
         maker.model(name, build, solid=not name.startswith(SOFT), uv=uv, plain=plain)
@@ -408,6 +408,42 @@ def build_all():
         m.rod(c((0.3, 0.3, 0.32)), 0.03, (0, 6.0, -0.9), (0, 5.6, -1.1), segs=4)
         m.lathe(c((0.3, 0.3, 0.32)), [(0.06, 6.0), (0.07, 6.04), (0.06, 6.08)], (0, 0, -0.9), segs=8)
     model("climb_rope", climb_rope)
+
+    # sea step 3e, Archaeology: a dig (stakes and string round a dug square, a spoil heap, a bucket and a sieve) and the
+    # restoration table (brushes, little picks, a magnifier, pots being pieced together)
+    def dig_site(m):
+        soil, string = (0.36, 0.27, 0.17), (0.9, 0.85, 0.7)
+        m.ball(c((0.24, 0.18, 0.11)), (0.75, 0.05, 0.75), (0, 0.0, 0), u=10, v=3)  # the dark dug square
+        corners = [(-0.85, -0.85), (0.85, -0.85), (0.85, 0.85), (-0.85, 0.85)]
+        for x, z in corners:
+            m.rod(K("wood", (0.6, 0.48, 0.3)), 0.025, (x, -0.1, z), (x, 0.35, z), segs=4)
+        for k in range(4):
+            a, b = corners[k], corners[(k + 1) % 4]
+            m.rod(c(string), 0.005, (a[0], 0.3, a[1]), (b[0], 0.3, b[1]), segs=3)
+        m.rod(c(string), 0.004, (0, 0.3, -0.85), (0, 0.3, 0.85), segs=3)  # the grid line across
+        m.ball(c(soil), (0.55, 0.3, 0.45), (1.5, 0.0, 0.3), u=10, v=5)  # spoil heap
+        m.lathe(K("wood", (0.5, 0.38, 0.24)), [(0.12, 0.0), (0.15, 0.25), (0.14, 0.26)], (1.2, 0, -0.7), segs=10)  # bucket
+        m.lathe(c((0.5, 0.42, 0.3)), [(0.25, 0.0), (0.26, 0.06), (0.25, 0.07)], (-1.3, 0.05, 0.6), segs=12)  # sieve rim
+        m.ball(c((0.82, 0.75, 0.6)), (0.07, 0.03, 0.05), (0.2, 0.04, 0.15), u=6, v=4)  # something pale showing in the earth
+        m.rod(c((0.7, 0.7, 0.72)), 0.02, (0.5, 0.08, -0.3), (0.62, 0.06, -0.15), segs=4)  # trowel blade
+        m.rod(K("wood", (0.45, 0.3, 0.18)), 0.018, (0.62, 0.06, -0.15), (0.72, 0.05, -0.02), segs=4)
+    model("dig_site", dig_site)
+
+    def restore_table(m):
+        m.box(S(amber, "timber"), (1.8, 0.1, 0.9), (0, 0.88, 0), bevel=0.02)
+        for sx in (-1, 1):
+            for sf in (-1, 1):
+                m.box(S(amber, "timber"), (0.12, 0.88, 0.12), (sx * 0.78, 0.44, sf * 0.34), bevel=0.02)
+        m.box(c((0.85, 0.82, 0.74)), (0.9, 0.01, 0.6), (-0.2, 0.935, 0.0), bevel=0.005)  # a cloth on the top
+        for k in range(3):  # pots being pieced together
+            m.lathe(c((0.7 - 0.08 * k, 0.45, 0.3)), [(0.04, 0.0), (0.12, 0.08), (0.09, 0.2), (0.06, 0.24)], (-0.5 + k * 0.32, 0.94, -0.1 + 0.08 * k), segs=10)
+        for k in range(4):  # brushes and picks laid in a row
+            m.rod(K("wood", (0.5, 0.36, 0.22)), 0.01, (0.35, 0.95, -0.25 + k * 0.08), (0.65, 0.95, -0.25 + k * 0.08), segs=4)
+        m.rod(c((0.3, 0.3, 0.32)), 0.015, (0.7, 0.93, 0.25), (0.6, 1.2, 0.15), segs=4)  # the magnifier on its arm
+        m.lathe(c((0.75, 0.9, 1.0)), [(0.0, 0.0), (0.08, 0.0), (0.08, 0.01), (0.0, 0.01)], (0.55, 1.22, 0.12), segs=12)
+        m.ball(glow, 0.05, (-0.75, 1.22, 0.3), u=6, v=4)  # a lamp
+        m.rod(c((0.25, 0.25, 0.28)), 0.015, (-0.75, 0.93, 0.3), (-0.75, 1.18, 0.3), segs=4)
+    model("restore_table", restore_table)
     maker.plain_pass()
     maker.save()
 

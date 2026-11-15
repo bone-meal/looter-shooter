@@ -103,7 +103,8 @@
     "ash_tree": 0.7,
     "copper_rock": 0.25,
     "wheat": 2.2,
-    "meadowmint": 0.5
+    "meadowmint": 0.5,
+    "dig_amberfield": 0.14
    },
    "enemies": [
     "strawling",
@@ -228,7 +229,8 @@
     "glowcap": 0.6,
     "meadowmint": 0.4,
     "deer_tracks": 0.25,
-    "boar_tracks": 0.15
+    "boar_tracks": 0.15,
+    "dig_greenwald": 0.14
    },
    "enemies": [
     "forest_wolf",
@@ -352,7 +354,8 @@
     "palm_tree": 0.8,
     "iron_rock": 0.25,
     "glowcap": 0.2,
-    "boar_tracks": 0.15
+    "boar_tracks": 0.15,
+    "dig_brinemouth": 0.14
    },
    "enemies": [
     "reef_crab",
@@ -476,7 +479,8 @@
     "palm_tree": 0.15,
     "sunstone_rock": 0.35,
     "sunpetal": 0.5,
-    "antelope_tracks": 0.25
+    "antelope_tracks": 0.25,
+    "dig_sunscar": 0.14
    },
    "enemies": [
     "dune_scorpion",
@@ -594,7 +598,8 @@
     "frostpine_tree": 0.9,
     "frostcrystal_rock": 0.35,
     "frostbloom": 0.5,
-    "elk_tracks": 0.25
+    "elk_tracks": 0.25,
+    "dig_frostmere": 0.14
    },
    "enemies": [
     "frost_wolf",
@@ -720,7 +725,8 @@
    "nodes": {
     "emberwood_tree": 0.7,
     "obsidian_rock": 0.4,
-    "cinderroot": 0.5
+    "cinderroot": 0.5,
+    "dig_cinderreach": 0.14
    },
    "enemies": [
     "magma_imp",
@@ -842,7 +848,8 @@
     "cinderroot": 0.2,
     "stormoak_tree": 0.5,
     "stormlily": 0.3,
-    "goat_tracks": 0.25
+    "goat_tracks": 0.25,
+    "dig_stormcrown": 0.14
    },
    "enemies": [
     "storm_harpy",
@@ -955,7 +962,8 @@
     "tree_dead": 1.4
    },
    "nodes": {
-    "stag_tracks": 0.15
+    "stag_tracks": 0.15,
+    "dig_hollow_crown": 0.3
    },
    "enemies": [
     "pale_knight",

@@ -83,6 +83,15 @@
     "no_salt": true
    },
    {
+    "station": "restore_table",
+    "model": "restore_table",
+    "at": [
+     0.06,
+     -0.22
+    ],
+    "no_salt": true
+   },
+   {
     "station": "fire",
     "model": "campfire",
     "at": [
@@ -282,6 +291,15 @@
     "at": [
      0.24,
      0.02
+    ],
+    "no_salt": true
+   },
+   {
+    "station": "restore_table",
+    "model": "restore_table",
+    "at": [
+     0.06,
+     -0.22
     ],
     "no_salt": true
    },
@@ -486,6 +504,15 @@
     "at": [
      0.24,
      0.02
+    ],
+    "no_salt": true
+   },
+   {
+    "station": "restore_table",
+    "model": "restore_table",
+    "at": [
+     0.06,
+     -0.22
     ],
     "no_salt": true
    },
