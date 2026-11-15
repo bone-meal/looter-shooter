@@ -391,6 +391,7 @@ func is_burning() -> bool:
 func apply_burn(dps: float, seconds: float) -> void:
 	if puppet:
 		puppet_effect.emit("burn", dps, seconds)
+		_burn_until = Time.get_ticks_msec() / 1000.0 + seconds  # (known here so is_burning answers; the host does the burning)
 		return
 	_burn_dps = dps
 	_burn_until = Time.get_ticks_msec() / 1000.0 + seconds

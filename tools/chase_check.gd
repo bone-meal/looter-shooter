@@ -7,7 +7,8 @@
 # near one sets it off and its blast sets off the next (a chain); a burning enemy in a cloud sets it off too. Log
 # tools/chase_check.log. KEEPER'S LANTERN: its light makes near enemies glow and thins the fog near the camera, the
 # inspect key throws it as a firebomb (blast, burning oil that counts as fire), it is lit again after its wait.
-# GRILLMASTER: a burning enemy killed by it drops food (a plain kill does not); walking over it heals (offline here).
+# GRILLMASTER: a burning enemy killed by it drops food (a plain kill does not), so does one it hit that burns to death
+# later; walking over it heals (offline here).
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -95,6 +96,8 @@ class FlashBooms extends Booms:  # blasts that also burn for a moment, like game
 
 
 class BurnMob extends Mob:
+	signal died(enemy: Node)
+
 	var burning := false
 	var burned := 0.0
 
@@ -440,6 +443,17 @@ func _grill(db: GunDb) -> void:
 	for _i in 10:
 		await get_tree().process_frame
 	_say("walking over it eats it: health %.0f -> %.0f (a quarter of max)" % [40.0, eater.health.hp], int(food.call("active_count")) == 0 and is_equal_approx(eater.health.hp, 65.0))
+	var later := BurnMob.new()
+	later.position = Vector3(5020, 0, 0)
+	later.burning = true
+	add_child(later)
+	sig.call("on_target_hit", later, later.position, 20.0, false)
+	await get_tree().process_frame
+	var before := int(food.call("active_count"))
+	later.health.dead = true
+	later.died.emit(later)  # it burns to death after the shot
+	await get_tree().process_frame
+	_say("an enemy it hit that burns to death later drops food too (%d -> %d)" % [before, int(food.call("active_count"))], before == 0 and int(food.call("active_count")) == 1)
 
 
 func _json(name: String) -> Dictionary:

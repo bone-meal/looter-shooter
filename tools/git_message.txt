@@ -1,6 +1,6 @@
-Grillmaster chase gun (online)
+Grillmaster: burn deaths drop food too
 
-Grillmaster (region 3 boss pool, double shotgun): a little grill grate with a sausage on it bolted to the barrels and tongs clipped under. A burning enemy killed by its shot drops a grilled kebab; any player who walks over it eats it for a quarter of their health. Online the food shows for everyone and the host decides who ate it (first come, first fed). tools/chase_check 40 of 40 on his PC; two-copy test: the guest ate the host's kebab, gone on both.
+Director: burn to death should drop also. An enemy hit by Grillmaster that dies burning within 10 s (its burn or anything else) now drops a grilled kebab, once per enemy. Puppets on a joiner now remember the burn they asked for, so is_burning answers there too. tools/chase_check 41 of 41 on his PC.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -440,7 +440,8 @@
       "pool": "region_3_boss",
       "cfg": {
         "heal_share": 0.25,
-        "food_seconds": 20.0
+        "food_seconds": 20.0,
+        "credit_seconds": 10.0
       }
     },
     "beach_day": {
