@@ -1,6 +1,7 @@
-Beach Ball Bombardier chase gun (local play)
+Beach balls online + quiet test copies
 
-Region 1 boss pool grenade launcher with a striped beach ball jammed on its muzzle. It fires floaty beach balls: they bounce off enemies' heads (each bounce hits), off ground and walls, and pop in a blast when bounces or time run out. Any gun's shot pops a ball; walking into one kicks it where you look, and every kick makes its pop 25 percent bigger. game/beach_balls.gd, game/signatures/beach_ball.gd, models beach_ball and beach_ball_muzzle. tools/chase_check 19 of 19 on his PC. Other players do not see or kick the balls yet (next).
+Beach Ball Bombardier online (game/net_beachballs.gd): the thrower owns his balls; launches, course changes and pops go through the host to everyone, who fly copies; kicking or shooting a copy is sent to the owner, who applies it (a kick is a volley). Tested with two copies: guest saw the ball, kicked it (volley counted on the host) and shot the second one (popped on the host).
+Quiet test copies (director: tests grabbed his mouse): game/quiet_test.gd via --quiet-test, always passed by the boot and pair checks with small windows: no focus, no mouse capture; player _mouse_held lets them shoot. Dev !fire, !balls, !ballkick, !ballshoot.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

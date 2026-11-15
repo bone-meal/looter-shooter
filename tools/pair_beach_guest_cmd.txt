@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;/tp island;!balls wait;!balls g_seen1;!ballkick;!wait 0.5;!balls g_kicked;!wait 2;!balls g_after_kick;!wait 6;!balls g_gone1;!balls wait;!balls g_seen2;!ballshoot;!wait 0.5;!balls g_shot;!wait 3;!balls g_after_shot

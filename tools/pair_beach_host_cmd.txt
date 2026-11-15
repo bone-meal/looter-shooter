@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;/tp island;!wait 3;!immortal;!readyunique beach_ball_bombardier 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1;!look 0 72;!wait 0.3;!fire;!balls h_fired1;!wait 2;!balls h2;!wait 2;!balls h4;!wait 2;!balls h6;!wait 6;!balls h12;!fire;!balls h_fired2;!wait 2;!balls h14;!wait 2;!balls h16;!wait 4;!balls h20;!wait 15

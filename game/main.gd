@@ -3,6 +3,7 @@
 # game/game_session.gd, core/settings_state.gd, game/renderer_switch.gd.
 extends Node3D
 
+const QuietTest = preload("res://game/quiet_test.gd")
 const InputSetup = preload("res://game/input_setup.gd")
 const SettingsIO = preload("res://game/settings_io.gd")
 const SettingsState = preload("res://core/settings_state.gd")
@@ -42,6 +43,8 @@ var _lobby: Control
 
 
 func _ready() -> void:
+	if QuietTest.active():  # a developer test copy: never takes the focus or the mouse (game/quiet_test.gd)
+		add_child(QuietTest.new())
 	process_mode = Node.PROCESS_MODE_ALWAYS  # menus keep working while the game is paused
 	LoadClock.mark("engine start, main scene, menu scripts")
 	SettingsIO.load_into(_settings)

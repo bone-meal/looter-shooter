@@ -15,6 +15,7 @@ const WeaponState = preload("res://core/weapon_state.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
+const QuietTest = preload("res://game/quiet_test.gd")
 const Signatures = preload("res://game/signatures/index.gd")
 const SkillState = preload("res://core/skill_state.gd")
 const SkillSelf = preload("res://core/skill_self.gd")
@@ -536,7 +537,7 @@ func _move_and_shoot(delta: float) -> void:
 		_use_knife()
 	elif _shield_out:
 		_use_shield()
-	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and _mouse_held():
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
 		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now())  # Bullet Storm, Joyburst
@@ -1077,7 +1078,7 @@ func _animate_weapon(delta: float) -> void:
 		elif _shield_out:
 			_animate_shield()
 		return
-	var wants_ads := not third_person and Input.is_action_pressed("aim") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	var wants_ads := not third_person and Input.is_action_pressed("aim") and _mouse_held()
 	_motion.update(delta, wants_ads, weapon.reload_fraction(_now()))
 	var view := _views[_slot]
 	var aim := _motion.ads_eased()
@@ -1131,7 +1132,7 @@ func _weapon_data() -> Dictionary:
 func _use_shield() -> void:
 	var now := _now()
 	var bash: Dictionary = shield.cfg["bash"]
-	if controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_action_pressed("shoot") and _melee.try_start("bash", bash, now):
+	if controls_enabled and _mouse_held() and Input.is_action_pressed("shoot") and _melee.try_start("bash", bash, now):
 		_melee_kind = "bash"
 		_gun_sound(String(bash.get("sound", "")))
 	if _melee_kind == "bash" and _melee.lands(now):
@@ -1211,7 +1212,7 @@ func _sling_shield() -> void:
 # moment after the click, on the nearest enemy within reach of the crosshair.
 func _use_knife() -> void:
 	var now := _now()
-	if controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED:
+	if controls_enabled and _mouse_held():
 		var kind := "slash" if Input.is_action_pressed("shoot") else ("stab" if Input.is_action_pressed("aim") else "")
 		if kind != "" and _melee.try_start(kind, KnifeModels.db().attack(kind), now):
 			_melee_kind = kind
@@ -1675,6 +1676,11 @@ func _blink(flat: Vector3, distance: float) -> void:
 
 
 # Where we face, flat (gun skills place things beside us: game/skill_summons.gd).
+# The mouse belongs to the game (captured), or this is a quiet developer test copy that plays as if it did.
+func _mouse_held() -> bool:
+	return Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or QuietTest.active()
+
+
 func aim_flat() -> Vector3:
 	return Basis(Vector3.UP, _yaw) * Vector3(0, 0, -1)
 
@@ -1775,7 +1781,7 @@ func start_inspect() -> void:
 func inspect_pose() -> Array:
 	if _inspect_id == "":
 		return [Vector3.ZERO, Vector3.ZERO]
-	var busy := Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and (Input.is_action_pressed("shoot") or Input.is_action_pressed("aim"))
+	var busy := _mouse_held() and (Input.is_action_pressed("shoot") or Input.is_action_pressed("aim"))
 	var t := _now() - _inspect_at
 	if busy or third_person or downed or channelling or weapon.is_reloading() or _melee_kind != "" or _inspect_target() != _inspect_id or t >= inspect_moves.length(_inspect_id):
 		_inspect_id = ""

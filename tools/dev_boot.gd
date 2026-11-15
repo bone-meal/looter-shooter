@@ -107,6 +107,51 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.get("inventory").call("set_holster_gun", slot, made)
 				player.call("refresh_held")
 				_lines.append("READYUNIQUE %s in slot %d" % [words[1], slot + 1])
+		"fire":  # "!fire": one shot of the gun in hand through its own shot code (a held shoot key is ignored by a window without focus)
+			var w: Variant = player.get("weapon")
+			if w != null and int(w.get("ammo")) <= 0:  # an empty magazine reloads first (as holding shoot would)
+				player.call("_reload")
+				for _r in 80:
+					await get_tree().create_timer(0.1, true, false, true).timeout
+					if not bool(w.call("is_reloading")):
+						break
+			if w != null and bool(w.call("try_fire", Time.get_ticks_msec() / 1000.0)):
+				player.call("_shoot")
+				_lines.append("FIRE shot (%d left)" % int(w.get("ammo")))
+			else:
+				_lines.append("FIRE could not shoot: hand %d held %s ammo %s reloading %s paused %s" % [int(player.get("_hand")), String(player.call("held_id")), str(w.get("ammo")) if w != null else "-", str(w.call("is_reloading")) if w != null else "-", str(get_tree().paused)])
+		"balls":  # "!balls <note>": beach balls on this machine (own / copies) and the net counts; "!balls wait" waits up to 40 s for a copy of somebody else's
+			var pool: Node = get_tree().get_first_node_in_group("beach_balls")
+			if words.size() > 1 and words[1] == "wait":
+				for _w in 400:
+					pool = get_tree().get_first_node_in_group("beach_balls")
+					if pool != null and _copy_ball(pool) >= 0:
+						break
+					await get_tree().create_timer(0.1, true, false, true).timeout
+			var live := PackedStringArray()
+			if pool != null:
+				for k in (pool.get("_life") as PackedFloat32Array).size():
+					if (pool.get("_life") as PackedFloat32Array)[k] > 0.0:
+						live.append("[%d] owner=%d their=%d volleys=%d at %s" % [k, (pool.get("_owner") as PackedInt32Array)[k], (pool.get("_their_slot") as PackedInt32Array)[k], (pool.get("_volleys") as PackedInt32Array)[k], str(((pool.get("_balls") as Array)[k] as Node3D).position.snapped(Vector3.ONE * 0.1))])
+			var link: Node = session.get("net").get("beach_balls")
+			_lines.append("BALLS %s @%.1f: %s | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(live) if not live.is_empty() else "none", int(link.get("sent")), int(link.get("heard"))])
+		"ballkick":  # "!ballkick": step into the first copy of somebody else's ball (the real kick path)
+			var pool_k: Node = get_tree().get_first_node_in_group("beach_balls")
+			var ck := _copy_ball(pool_k) if pool_k != null else -1
+			if ck >= 0:
+				var at: Vector3 = ((pool_k.get("_balls") as Array)[ck] as Node3D).position
+				player.call("teleport", at + Vector3(-0.6, -1.0, 0.0), 0.0)
+				_lines.append("BALLKICK stepped into copy [%d] at %s" % [ck, str(at.snapped(Vector3.ONE * 0.1))])
+			else:
+				_lines.append("BALLKICK no copy to kick")
+		"ballshoot":  # "!ballshoot": a shot straight through the first copy of somebody else's ball
+			var pool_s: Node = get_tree().get_first_node_in_group("beach_balls")
+			var cs := _copy_ball(pool_s) if pool_s != null else -1
+			if cs >= 0:
+				var at_s: Vector3 = ((pool_s.get("_balls") as Array)[cs] as Node3D).position
+				_lines.append("BALLSHOOT copy [%d] hit %s" % [cs, str(pool_s.call("shot_through", at_s - Vector3(3, 0, 0), Vector3(1, 0, 0), 10.0))])
+			else:
+				_lines.append("BALLSHOOT no copy to shoot")
 		"ghosttag":  # "!ghosttag <note>": what each other player holds and what his Fish Story tag reads on this copy
 			var tags := PackedStringArray()
 			for body: Node in session.get("net").call("target_nodes"):
@@ -1310,3 +1355,11 @@ func _tris_under(node: Node) -> int:
 	for child: Node in node.get_children():
 		n += _tris_under(child)
 	return n
+
+
+# The first live ball on this machine that is a copy of somebody else's (game/beach_balls.gd), or -1.
+func _copy_ball(pool: Node) -> int:
+	for k in (pool.get("_life") as PackedFloat32Array).size():
+		if (pool.get("_life") as PackedFloat32Array)[k] > 0.0 and (pool.get("_owner") as PackedInt32Array)[k] != 0:
+			return k
+	return -1

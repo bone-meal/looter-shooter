@@ -4,6 +4,7 @@
 # tools/userdata/boot_host.* and boot_guest.*. tools/pair_set.txt may name another set of command files ("tcg" ->
 # tools/pair_tcg_host_cmd.txt / pair_tcg_guest_cmd.txt). Log tools/userdata/pair_check.txt (ends PAIR_CHECK_DONE).
 # Dependencies: game/main.gd (--autostart, --net-host / --net-join), tools/dev_boot.gd (--boot-tag), game/renderer_switch.gd.
+# Both copies are QUIET test copies (game/quiet_test.gd): small windows that never take the focus or the mouse.
 extends Node
 
 const RendererSwitch = preload("res://game/renderer_switch.gd")
@@ -20,8 +21,8 @@ func _ready() -> void:
 	var pids := {}
 	for who: String in ["host", "guest"]:
 		var args := PackedStringArray(["--path", ProjectSettings.globalize_path("res://"), "--rendering-method", "gl_compatibility", "--rendering-driver", "opengl3",
-			"--resolution", "960x540", "--position", "40,40" if who == "host" else "1020,40",
-			"--log-file", ProjectSettings.globalize_path(OUT + "boot_%s.log" % who), "--", RendererSwitch.MARK, "--autostart", "--boot-tag=" + who,
+			"--resolution", "640x360", "--position", "0,0" if who == "host" else "650,0",
+			"--log-file", ProjectSettings.globalize_path(OUT + "boot_%s.log" % who), "--", RendererSwitch.MARK, "--autostart", "--quiet-test", "--boot-tag=" + who,
 			("--net-host=" if who == "host" else "--net-join=") + session_file])
 		var cmd_file := "res://tools/pair_%s_cmd.txt" % who
 		var chosen := "res://tools/pair_set.txt"  # names another set of command files, e.g. "tcg" -> tools/pair_tcg_host_cmd.txt
