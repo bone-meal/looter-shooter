@@ -108,6 +108,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.get("inventory").call("set_holster_gun", slot, made)
 				player.call("refresh_held")
 				_lines.append("READYUNIQUE %s in slot %d" % [words[1], slot + 1])
+		"readygun":  # "!readygun <body> [tier] [slot 1-4]": a rolled gun of that body straight into a ready slot
+			var gun_slot := (int(words[3]) - 1) if words.size() > 3 else 1
+			var rolled: Dictionary = GunGen.generate(player.get("gun_db"), RandomNumberGenerator.new(), 0.0, words[1], words[2] if words.size() > 2 else "purple", "", 10)
+			player.get("inventory").call("set_holster_gun", gun_slot, rolled)
+			player.call("refresh_held")
+			_lines.append("READYGUN %s in slot %d" % [words[1], gun_slot + 1])
 		"fire":  # "!fire": one shot of the gun in hand through its own shot code (a held shoot key is ignored by a window without focus)
 			var w: Variant = player.get("weapon")
 			if w != null and int(w.get("ammo")) <= 0:  # an empty magazine reloads first (as holding shoot would)

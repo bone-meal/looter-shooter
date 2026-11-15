@@ -71,6 +71,54 @@
    "stack_max": 1,
    "flavor": "Lobs your problems at somebody else. Gift-wrapping not included."
   },
+  "smg": {
+   "name": "SMG",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "Sprays first, asks questions never. Wins every argument within fifteen metres."
+  },
+  "revolver": {
+   "name": "Revolver",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "Six chances to be right. Fan the hammer and be right faster."
+  },
+  "lever_rifle": {
+   "name": "Lever-Action Rifle",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "One round at a time, like a gentleman. Reaches further than your manners."
+  },
+  "harpoon_gun": {
+   "name": "Harpoon Gun",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "Meant for whales. Works on anything that should have kept its distance."
+  },
+  "flare_gun": {
+   "name": "Flare Gun",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "For signalling. The signal is: you are on fire now."
+  },
+  "flamethrower": {
+   "name": "Flamethrower",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "Cooks at short range. Let it breathe or it will sulk."
+  },
+  "crossbow": {
+   "name": "Crossbow",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "Quiet as a whisper. Pick the bolt back up; the budget is tight."
+  },
+  "blunderbuss": {
+   "name": "Blunderbuss",
+   "kind": "weapon",
+   "stack_max": 1,
+   "flavor": "Loaded with nails, glass and a bad attitude. Everything in front of it leaves."
+  },
   "tin_hat": {
    "name": "Tin Hat",
    "kind": "armor",

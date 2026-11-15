@@ -15,6 +15,11 @@ const BLACK := Color(0.09, 0.09, 0.1)
 const WARHEAD := Color(0.85, 0.4, 0.12)
 
 const MODELS := "res://assets/models/weapons/"
+# Hold position and size of the bodies that only exist as models (tools/blender/weapons_sea.py): [position, scale].
+const HOLDS := {"smg": [Vector3(0.2, -0.2, -0.4), 0.55], "revolver": [Vector3(0.22, -0.2, -0.45), 1.0],
+	"lever_rifle": [Vector3(0.2, -0.19, -0.4), 0.5], "harpoon_gun": [Vector3(0.22, -0.21, -0.4), 0.52],
+	"flare_gun": [Vector3(0.22, -0.2, -0.45), 1.0], "flamethrower": [Vector3(0.22, -0.2, -0.4), 0.5],
+	"crossbow": [Vector3(0.2, -0.2, -0.4), 0.55], "blunderbuss": [Vector3(0.2, -0.2, -0.4), 0.55]}
 
 static var _materials := {}
 
@@ -27,6 +32,8 @@ static func build(weapon_id: String) -> Node3D:
 	var model := (load(path) as PackedScene).instantiate() as Node3D
 	model.position = coded.position  # same hold position and size as the code-built gun it replaces
 	model.scale = coded.scale
+	if model.has_node("StringLoose"):  # the crossbow is shown loaded until something says otherwise (game/gun_actions.gd)
+		(model.get_node("StringLoose") as Node3D).visible = false
 	coded.free()
 	return model
 
@@ -49,6 +56,14 @@ static func _coded(weapon_id: String) -> Node3D:
 			return _rocket_launcher()
 		"grenade_launcher":
 			return _grenade_launcher()
+	if HOLDS.has(weapon_id):  # the sea step 2 bodies: modelled only; without the file a plain block stands in
+		var hold: Array = HOLDS[weapon_id]
+		var root := Node3D.new()
+		root.position = hold[0]
+		root.scale = Vector3.ONE * float(hold[1])
+		_box(root, Vector3(0.05, 0.08, 0.5), Vector3(0, 0, -0.2), DARK)
+		_sight(root, 0.06)
+		return root
 	return Node3D.new()
 
 

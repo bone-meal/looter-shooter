@@ -7,6 +7,7 @@ const Island = preload("res://game/island.gd")
 const InputSetup = preload("res://game/input_setup.gd")
 const RewardArea = preload("res://game/reward_area.gd")
 const Explosives = preload("res://game/explosives.gd")
+const ShotBolts = preload("res://game/shot_bolts.gd")
 const SkillEffects = preload("res://game/skill_effects.gd")
 const DamageNumbers = preload("res://game/damage_numbers.gd")
 const InventoryScreen = preload("res://game/inventory_screen.gd")
@@ -304,6 +305,7 @@ var _ring_tick := 0.0
 var _torch: SpotLight3D  # Blackout: the light on our head
 var _numbers := DamageNumbers.new()
 var _explosives := Explosives.new()
+var _bolts := ShotBolts.new()  # harpoons, flares and crossbow bolts (game/shot_bolts.gd)
 var _sounds: Node3D = preload("res://game/fantasy_sounds.gd").new()  # guns, explosions and enemy attacks (data/sounds.json)
 var _skill_fx := SkillEffects.new()
 var _inventory_screen := InventoryScreen.new()
@@ -523,6 +525,7 @@ func _ready() -> void:
 	add_child(_ride_crow)
 	add_child(_numbers)
 	add_child(_explosives)
+	add_child(_bolts)
 	_sounds.set("folder", "res://assets/audio/game/")
 	add_child(_sounds)
 	_sounds.call("setup", DataStore.load_json("res://data/sounds.json"))
@@ -549,6 +552,8 @@ func _ready() -> void:
 	_player.blocked.connect(_player_hud.notice.bind("Blocked!"))
 	_player.damage_numbers = _numbers
 	_player.explosives = _explosives
+	_player.bolts = _bolts
+	_bolts.ignore = _player.get_rid()
 	_player.sounds = _sounds
 	_player.skill_fx = _skill_fx
 	_skill_fx.explosives = _explosives
@@ -649,6 +654,7 @@ func _ready() -> void:
 	_score.earned.connect(func(amount: int) -> void: _run_earned += amount)
 	_explosives.cripple = _rounds.config()["cripple"]
 	_explosives.source = _director
+	_bolts.source = _director
 	_skill_fx.source = _director
 	_commands.session = self
 	add_child(_commands)

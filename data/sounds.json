@@ -100,6 +100,18 @@
    ],
    "range": 70
   },
+  "shot_smg": {"volume": -7, "pitch": [0.94, 1.06], "range": 60},
+  "shot_revolver": {"volume": -4, "pitch": [0.94, 1.06], "range": 70},
+  "shot_lever": {"volume": -4, "pitch": [0.94, 1.06], "range": 70},
+  "shot_harpoon": {"volume": -6, "pitch": [0.94, 1.06], "range": 40},
+  "shot_flare": {"volume": -6, "pitch": [0.94, 1.06], "range": 50},
+  "shot_flame": {"volume": -9, "pitch": [0.94, 1.06], "range": 30},
+  "shot_crossbow": {"volume": -12, "pitch": [0.94, 1.06], "range": 15},
+  "shot_blunderbuss": {"volume": -2, "pitch": [0.94, 1.06], "range": 75},
+  "reload_cylinder": {"volume": -10, "pitch": [0.97, 1.03], "range": 20},
+  "reload_shell": {"volume": -10, "pitch": [0.97, 1.03], "range": 20},
+  "reload_tank": {"volume": -10, "pitch": [0.97, 1.03], "range": 20},
+  "reload_string": {"volume": -10, "pitch": [0.97, 1.03], "range": 20},
   "reload_mag": {
    "volume": -10,
    "pitch": [

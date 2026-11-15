@@ -36,7 +36,7 @@ func _ready() -> void:
 	for body: String in weapons:
 		sized = sized and int(weapons[body].get("ammo_pool", 0)) >= int(weapons[body]["mag_size"])
 		sizes.append("%s %d" % [body, int(weapons[body].get("ammo_pool", 0))])
-	_say("every gun body has a pool of at least one magazine: %s" % ", ".join(sizes), sized and weapons.size() == 8)
+	_say("every gun body has a pool of at least one magazine: %s" % ", ".join(sizes), sized and weapons.size() == 16)
 	var pools := AmmoPools.new(weapons)
 	_say("a new character's pools are full", pools.left("pistol_basic") == pools.size_of("pistol_basic") and pools.is_full("m60"))
 	_say("taking 30 from the AK's pool leaves the M16's alone (separate pools)", pools.take("ak47", 30) == 30 and pools.left("ak47") == pools.size_of("ak47") - 30 and pools.is_full("m16"))

@@ -80,6 +80,68 @@
     "sight",
     "grip"
    ]
+  },
+  "smg": {
+   "name": "SMG",
+   "slots": [
+    "barrel",
+    "mag",
+    "sight",
+    "muzzle",
+    "grip"
+   ],
+   "part_scale": 0.75
+  },
+  "revolver": {
+   "name": "Revolver",
+   "slots": [
+    "barrel",
+    "sight",
+    "muzzle"
+   ],
+   "part_scale": 0.6
+  },
+  "lever_rifle": {
+   "name": "Lever-Action Rifle",
+   "slots": [
+    "barrel",
+    "sight",
+    "muzzle"
+   ]
+  },
+  "harpoon_gun": {
+   "name": "Harpoon Gun",
+   "slots": [
+    "sight",
+    "grip"
+   ]
+  },
+  "flare_gun": {
+   "name": "Flare Gun",
+   "slots": [
+    "sight"
+   ],
+   "part_scale": 0.6
+  },
+  "flamethrower": {
+   "name": "Flamethrower",
+   "slots": [
+    "grip"
+   ]
+  },
+  "crossbow": {
+   "name": "Crossbow",
+   "slots": [
+    "sight",
+    "grip"
+   ]
+  },
+  "blunderbuss": {
+   "name": "Blunderbuss",
+   "slots": [
+    "barrel",
+    "grip"
+   ]
   }
  },
  "parts": {

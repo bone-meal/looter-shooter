@@ -50,6 +50,54 @@
      "label": "Reload: launcher"
     },
     {
+     "id": "shot_smg",
+     "label": "SMG shot"
+    },
+    {
+     "id": "shot_revolver",
+     "label": "Revolver shot"
+    },
+    {
+     "id": "shot_lever",
+     "label": "Lever-action shot"
+    },
+    {
+     "id": "shot_harpoon",
+     "label": "Harpoon launch"
+    },
+    {
+     "id": "shot_flare",
+     "label": "Flare launch"
+    },
+    {
+     "id": "shot_flame",
+     "label": "Flamethrower"
+    },
+    {
+     "id": "shot_crossbow",
+     "label": "Crossbow twang"
+    },
+    {
+     "id": "shot_blunderbuss",
+     "label": "Blunderbuss blast"
+    },
+    {
+     "id": "reload_cylinder",
+     "label": "Reload: revolver cylinder"
+    },
+    {
+     "id": "reload_shell",
+     "label": "Reload: one round"
+    },
+    {
+     "id": "reload_tank",
+     "label": "Reload: fuel tank"
+    },
+    {
+     "id": "reload_string",
+     "label": "Reload: crossbow string"
+    },
+    {
      "id": "dry_fire",
      "label": "Empty gun click"
     },

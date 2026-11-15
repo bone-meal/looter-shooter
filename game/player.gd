@@ -22,6 +22,7 @@ const SkillSelf = preload("res://core/skill_self.gd")
 const BodyBuilder = preload("res://game/body_builder.gd")
 const RiggedBody = preload("res://game/rigged_body.gd")
 const GunPartsView = preload("res://game/gun_parts_view.gd")
+const GunActions = preload("res://game/gun_actions.gd")
 const AppearanceData = preload("res://game/appearance_data.gd")
 const ViewmodelMotion = preload("res://core/viewmodel_motion.gd")
 const InspectMoves = preload("res://core/inspect_moves.gd")
@@ -91,6 +92,7 @@ var carried := false  # true while the crow carries the player (movement is driv
 var controls_enabled := true  # false while the inventory screen is open
 var damage_numbers: DamageNumbers  # optional; game/damage_numbers.gd
 var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
+var bolts: Node3D  # game/shot_bolts.gd: harpoons, flares and crossbow bolts, set by game/game_session.gd
 var sounds: Node  # the game's sound player (data/sounds.json), set by game/game_session.gd
 var skill_fx: Node3D  # world effects of gun skills (game/skill_effects.gd), set by game/game_session.gd
 var skills := SkillState.new()  # cooldowns of the Q/E gun skills
@@ -554,7 +556,7 @@ func _move_and_shoot(delta: float) -> void:
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
 		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now())  # Bullet Storm, Joyburst
-		if weapon.try_fire(_now()):
+		if weapon.try_fire(_now(), Input.is_action_just_pressed("shoot")):  # a fresh press may fan the revolver
 			_shoot()
 			if _sig_node != null and _sig_node.has_method("on_fired"):
 				_sig_node.call("on_fired")  # Hot Potato: hotter with every shot
@@ -1118,6 +1120,7 @@ func _animate_weapon(delta: float) -> void:
 	var slide := _slides[_slot]
 	if slide != null:
 		slide.position.z = 0.05 * kick
+	GunActions.pose(model, weapon, _now())  # hammers, levers, cylinders, strings, the flame (sea step 2 bodies)
 	_camera.fov = lerpf(settings.fov, float(view.get("ads_fov", settings.fov)), aim)
 	model.visible = not (sight_kind() != "" and aim > 0.85)  # a scope or optic is looked THROUGH: the overlay takes over
 
@@ -1325,6 +1328,9 @@ func _shoot() -> void:
 	var right := _camera.global_transform.basis.x
 	var up := _camera.global_transform.basis.y
 	var spread := weapon.spread * lerpf(_perk("hip_spread_mult", 1.0), float(_views[_slot].get("ads_spread_mult", 1.0)), _motion.ads_eased())
+	var data := _weapon_data()
+	if weapon.fanned_shot:  # the revolver fanned faster than its held rate: wilder
+		spread *= float((data.get("fan", {}) as Dictionary).get("spread_mult", 1.0))
 	var calm := _perk("calm_mult", 1.0) if _now() - _calm_since >= _perk("calm_seconds", INF) else 1.0  # Cold Blood: the first shot after a quiet while
 	if calm > 1.0:
 		spread *= _perk("calm_spread", 1.0)  # ... goes exactly where you aim
@@ -1340,6 +1346,9 @@ func _shoot() -> void:
 		var aim := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
 		if _sig_node != null and _sig_node.has_method("fire_projectile"):  # Beach Ball Bombardier: beach balls, not grenades
 			_sig_node.call("fire_projectile", _head.global_position + aim * 0.6, aim, weapon.projectile)
+		elif bolts != null and ["harpoon", "flare", "bolt"].has(String(weapon.projectile["kind"])):  # they hit with the gun's own damage
+			bolts.call("fire", _head.global_position + aim * 0.6, aim, weapon.projectile, self)
+			shots_fired += 1
 		else:
 			explosives.fire(_head.global_position + aim * 0.6, aim, weapon.projectile)
 		return
@@ -1350,25 +1359,25 @@ func _shoot() -> void:
 	_crowd = _enemies_near(CROWD_RANGE) if buffs.has("crowd_pleaser") else 0
 	var totals := {}  # collider -> damage dealt this shot (one number per target, even for shotgun pellets)
 	var spots := {}
+	var reach := float(data.get("range", SHOT_RANGE))  # the flamethrower's cone ends at its range
+	var falloff: Dictionary = data.get("falloff", {})
 	for pellet in weapon.pellets:
 		var dir := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
-		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * SHOT_RANGE)
+		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * reach)
 		query.exclude = [get_rid()]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
 		if not hit.is_empty() and hit.collider.has_method("on_hit"):
-			var dealt := _gun_damage() * calm
-			var head: bool = hit.collider.has_method("head_hit") and hit.collider.head_hit(hit.position, head_share)
-			if head:
-				dealt *= head_mult * _perk("head_mult", 1.0)
-			dealt *= _situational(hit.collider, hit.position, head) * _traits.damage_mult(gun_traits, hit.collider)
-			var hp_before := _hp_of(hit.collider)
-			if score != null:
-				score.blow = "headshot" if head else ""  # a kill by this pellet is paid as what it was (the session hears of the kill)
-			hit.collider.on_hit(dealt, hit.position, hit.normal)
+			var near := 1.0
+			if not falloff.is_empty():  # SMG / blunderbuss: weaker far away
+				near = lerpf(1.0, float(falloff["min"]), clampf(inverse_lerp(float(falloff["from"]), float(falloff["to"]), origin.distance_to(hit.position)), 0.0, 1.0))
+			var dealt := _land_hit(hit.collider, hit.position, hit.normal, calm * near, 1.0)
+			if not totals.has(hit.collider):  # once per enemy per shot: the blunderbuss's shove, the flamethrower's fire
+				if data.has("knockback") and hit.collider.has_method("push"):
+					hit.collider.push(dir * Vector3(1, 0, 1) * float(data["knockback"]))
+				if data.has("burn") and hit.collider.has_method("apply_burn"):
+					hit.collider.apply_burn(float(data["burn"]["dps"]), float(data["burn"]["seconds"]))
 			totals[hit.collider] = float(totals.get(hit.collider, 0.0)) + dealt
 			spots[hit.collider] = hit.position
-			if not _held_gun.is_empty():
-				_gun_hit_effects(hit.collider, hit.position, dealt, hp_before)
 	if score != null:
 		score.blow = ""
 		for collider in totals:
@@ -1422,6 +1431,44 @@ func credit_kill(target: Node, at: Vector3, dealt: float) -> bool:
 			_sig_node.call("on_kill_credit", target, at, dealt)
 		elif _sig_node.has_method("on_target_hit"):
 			_sig_node.call("on_target_hit", target, at, dealt, true)
+	return true
+
+
+# One pellet (or projectile) landing on an enemy: damage with headshot, situational buffs and traits, the hit
+# itself, the gun's on-hit effects. `extra_head` multiplies a headshot (the crossbow's bolt). Returns the damage.
+func _land_hit(collider: Object, at: Vector3, normal: Vector3, mult: float, extra_head: float) -> float:
+	var gun_traits: Dictionary = _held_stats.get("traits", {})
+	var dealt := _gun_damage() * mult
+	var head: bool = collider.has_method("head_hit") and collider.head_hit(at, head_share)
+	if head:
+		dealt *= head_mult * _perk("head_mult", 1.0) * extra_head
+	dealt *= _situational(collider, at, head) * _traits.damage_mult(gun_traits, collider)
+	var hp_before := _hp_of(collider)
+	if score != null:
+		score.blow = "headshot" if head else ""  # a kill by this pellet is paid as what it was (the session hears of the kill)
+	collider.on_hit(dealt, at, normal)
+	if not _held_gun.is_empty():
+		_gun_hit_effects(collider, at, dealt, hp_before)
+	return dealt
+
+
+# game/shot_bolts.gd: a harpoon, flare or bolt of ours hit an enemy (scored like one pellet).
+func projectile_hit(collider: Object, at: Vector3, normal: Vector3, stats: Dictionary) -> void:
+	if not is_instance_valid(collider):
+		return
+	_land_hit(collider, at, normal, 1.0, float(stats.get("head_bonus", 1.0)))
+	if score != null:
+		score.blow = ""
+		if collider.has_method("head_hit") and not collider.health.is_dead() and not collider.has_meta("host_pays"):
+			score.hit()
+	shots_hit += 1
+
+
+# game/shot_bolts.gd: we walked over one of our crossbow bolts. True = it went back into the pool (not when full).
+func bolt_picked() -> bool:
+	if pools == null or pools.is_full("crossbow"):
+		return false
+	pools.give("crossbow", 1)
 	return true
 
 

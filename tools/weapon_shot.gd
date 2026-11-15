@@ -1,7 +1,7 @@
 # Purpose: developer check for the weapon models. Hangs the eight guns side-on in two rows on the island in the
 # realistic look and saves pictures (tools/shots/weapon_<view>.jpg, _fwd on Forward+) plus draw calls and frame time
 # (tools/weapon_shot.log / weapon_shot_fwd.log). Runs on Compatibility, then again on Forward+ (not with --compat-only).
-# The Forward+ pass, or the user argument --parts, fits every gun with a full set of parts (game/gun_parts_view.gd).
+# User argument --sea: the eight sea step 2 bodies instead. The Forward+ pass, or the user argument --parts, fits every gun with a full set of parts (game/gun_parts_view.gd).
 # Dependencies: game/weapon_models.gd, game/render_style.gd, game/island.gd, game/renderer_switch.gd.
 extends Node3D
 
@@ -16,6 +16,7 @@ const GunStats = preload("res://core/gun_stats.gd")
 const SCENE := "res://tools/weapon_shot.tscn"
 const C := Vector3(500, 0, 0)  # island centre
 const ROWS := [["pistol_basic", "ak47", "m16", "m60"], ["shotgun_double", "sniper_basic", "rocket_launcher", "grenade_launcher"]]
+const SEA_ROWS := [["smg", "revolver", "lever_rifle", "harpoon_gun"], ["flare_gun", "flamethrower", "crossbow", "blunderbuss"]]  # --sea
 # [name, eye, look-at] relative to the island centre
 const VIEWS := [
 	["all", Vector3(0, 1.4, 2.3), Vector3(0, 1.35, 0)],
@@ -45,22 +46,23 @@ func _ready() -> void:
 	Island.build(self)
 	var db := GunDb.new(_json("gun_loot"), _json("gun_parts"), _json("manufacturers"), _json("weapons"))
 	var lines := PackedStringArray(["renderer=%s adapter=%s" % ["forward_plus" if forward else "compatibility", RenderingServer.get_video_adapter_name()]])
-	for row in ROWS.size():
+	var rows: Array = SEA_ROWS if OS.get_cmdline_user_args().has("--sea") else ROWS
+	for row in rows.size():
 		for column in 4:
-			var gun := WeaponModels.build(String(ROWS[row][column]))
+			var gun := WeaponModels.build(String(rows[row][column]))
 			if OS.get_cmdline_user_args().has("--parts") or forward:  # a full set of parts, different per gun
 				var number := row * 4 + column
 				var parts := {}
-				for slot: String in db.bodies[String(ROWS[row][column])]["slots"]:
+				for slot: String in db.bodies[String(rows[row][column])]["slots"]:
 					var kinds: Array = (db.parts[slot] as Dictionary).keys()
 					parts[slot] = {"kind": String(kinds[(number + slot.length()) % kinds.size()]), "maker": String(db.makers.keys()[(number + slot.length()) % db.makers.size()])}
-				var rolled := {"body": String(ROWS[row][column]), "maker": "kestrel", "tier": "grey", "parts": parts, "rolls": {}, "buffs": []}
+				var rolled := {"body": String(rows[row][column]), "maker": "kestrel", "tier": "grey", "parts": parts, "rolls": {}, "buffs": []}
 				GunPartsView.apply(gun, rolled, db)
 				lines.append(GunStats.display_name(db, rolled))
 			gun.position = C + Vector3(-1.5 + column, 1.6 - 0.5 * row, 0.0)
 			gun.rotation.y = PI / 2  # side-on, barrel to the left
 			add_child(gun)
-			lines.append("%s children: %s" % [ROWS[row][column], ", ".join(gun.get_children().map(func(n: Node) -> String: return String(n.name)))])
+			lines.append("%s children: %s" % [rows[row][column], ", ".join(gun.get_children().map(func(n: Node) -> String: return String(n.name)))])
 	var cam := Camera3D.new()
 	cam.fov = 50.0
 	add_child(cam)

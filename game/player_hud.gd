@@ -398,6 +398,10 @@ func _draw_weapons(view: Vector2) -> void:
 		var frac: float = w.reload_fraction(now)
 		draw_rect(Rect2(x + 4, top + 3, SLOT_W - 8, 5), Color(1, 1, 1, 0.15))
 		draw_rect(Rect2(x + 4, top + 3, (SLOT_W - 8) * frac, 5), WARN)
+	elif w.heat > 0.0:  # the flamethrower's heat; red and blinking while it is too hot to fire
+		draw_rect(Rect2(x + 4, top + 3, SLOT_W - 8, 5), Color(1, 1, 1, 0.15))
+		var hot := BAD if w.overheated and int(now * 6.0) % 2 == 0 else Color(1.0, 0.55, 0.15)
+		draw_rect(Rect2(x + 4, top + 3, (SLOT_W - 8) * w.heat, 5), hot)
 	_draw_skills(x, top, tint)
 
 

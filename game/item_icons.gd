@@ -62,6 +62,46 @@ static func draw(canvas: CanvasItem, id: String, rect: Rect2, tint: Color) -> vo
 			canvas.draw_circle(o + Vector2(38, 15) * s, 11.0 * s, tint)  # drum
 			canvas.draw_rect(Rect2(o + Vector2(0, 12) * s, Vector2(26, 8) * s), tint)  # stock
 			canvas.draw_rect(Rect2(o + Vector2(30, 24) * s, Vector2(8, 10) * s), tint)  # grip
+		"smg":
+			canvas.draw_rect(Rect2(o + Vector2(24, 9) * s, Vector2(34, 10) * s), tint)  # receiver
+			canvas.draw_rect(Rect2(o + Vector2(58, 12) * s, Vector2(18, 4) * s), tint)  # barrel
+			canvas.draw_rect(Rect2(o + Vector2(8, 11) * s, Vector2(16, 4) * s), tint)  # folded stock
+			canvas.draw_rect(Rect2(o + Vector2(40, 19) * s, Vector2(7, 15) * s), tint)  # magazine
+			canvas.draw_rect(Rect2(o + Vector2(28, 19) * s, Vector2(7, 10) * s), tint)  # grip
+		"revolver":
+			canvas.draw_rect(Rect2(o + Vector2(36, 9) * s, Vector2(44, 6) * s), tint)  # barrel
+			canvas.draw_rect(Rect2(o + Vector2(26, 7) * s, Vector2(14, 12) * s), tint)  # cylinder
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(18, 9) * s, o + Vector2(28, 9) * s, o + Vector2(24, 32) * s, o + Vector2(12, 30) * s]), tint)  # grip
+		"lever_rifle":
+			canvas.draw_rect(Rect2(o + Vector2(26, 11) * s, Vector2(26, 7) * s), tint)  # receiver
+			canvas.draw_rect(Rect2(o + Vector2(52, 12) * s, Vector2(38, 3) * s), tint)  # barrel
+			canvas.draw_rect(Rect2(o + Vector2(52, 16) * s, Vector2(30, 2) * s), tint)  # tube
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(0, 12) * s, o + Vector2(26, 11) * s, o + Vector2(26, 18) * s, o + Vector2(2, 24) * s]), tint)  # stock
+			canvas.draw_arc(o + Vector2(33, 22) * s, 5.0 * s, 0.0, PI, 10, tint, maxf(2.0 * s, 1.0))  # lever loop
+		"harpoon_gun":
+			canvas.draw_rect(Rect2(o + Vector2(20, 12) * s, Vector2(40, 7) * s), tint)  # body
+			canvas.draw_rect(Rect2(o + Vector2(30, 14) * s, Vector2(56, 2) * s), tint)  # spear
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(84, 10) * s, o + Vector2(92, 15) * s, o + Vector2(84, 20) * s]), tint)  # head
+			canvas.draw_rect(Rect2(o + Vector2(26, 19) * s, Vector2(7, 12) * s), tint)  # grip
+			canvas.draw_circle(o + Vector2(14, 16) * s, 6.0 * s, tint)  # reel
+		"flare_gun":
+			canvas.draw_rect(Rect2(o + Vector2(28, 8) * s, Vector2(36, 12) * s), tint)  # fat barrel
+			canvas.draw_rect(Rect2(o + Vector2(20, 9) * s, Vector2(10, 9) * s), tint)  # breech
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(20, 18) * s, o + Vector2(30, 18) * s, o + Vector2(28, 33) * s, o + Vector2(17, 32) * s]), tint)  # grip
+		"flamethrower":
+			canvas.draw_rect(Rect2(o + Vector2(22, 10) * s, Vector2(56, 6) * s), tint)  # wand
+			canvas.draw_rect(Rect2(o + Vector2(78, 8) * s, Vector2(8, 10) * s), tint)  # nozzle
+			canvas.draw_circle(o + Vector2(14, 20) * s, 10.0 * s, tint)  # tank
+			canvas.draw_rect(Rect2(o + Vector2(40, 16) * s, Vector2(7, 12) * s), tint)  # grip
+		"crossbow":
+			canvas.draw_rect(Rect2(o + Vector2(6, 14) * s, Vector2(64, 5) * s), tint)  # stock
+			canvas.draw_polyline(PackedVector2Array([o + Vector2(70, 2) * s, o + Vector2(62, 16) * s, o + Vector2(70, 30) * s]), tint, maxf(3.0 * s, 1.0), true)  # limbs
+			canvas.draw_line(o + Vector2(70, 2) * s, o + Vector2(70, 30) * s, Color(tint, tint.a * 0.6), maxf(1.0 * s, 1.0))  # string
+			canvas.draw_rect(Rect2(o + Vector2(30, 12) * s, Vector2(58, 2) * s), tint)  # bolt
+			canvas.draw_rect(Rect2(o + Vector2(28, 19) * s, Vector2(7, 11) * s), tint)  # grip
+		"blunderbuss":
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(34, 10) * s, o + Vector2(80, 8) * s, o + Vector2(90, 3) * s, o + Vector2(90, 22) * s, o + Vector2(80, 17) * s, o + Vector2(34, 16) * s]), tint)  # flared barrel
+			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(0, 14) * s, o + Vector2(34, 10) * s, o + Vector2(34, 18) * s, o + Vector2(4, 26) * s]), tint)  # stock
 		"knife":
 			canvas.draw_colored_polygon(PackedVector2Array([o + Vector2(38, 11) * s, o + Vector2(74, 11) * s, o + Vector2(88, 19) * s, o + Vector2(72, 23) * s, o + Vector2(38, 23) * s]), tint)  # blade
 			canvas.draw_rect(Rect2(o + Vector2(33, 6) * s, Vector2(5, 22) * s), tint)  # guard

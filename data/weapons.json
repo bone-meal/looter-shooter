@@ -236,7 +236,266 @@
    },
    "sound": "shot_grenade",
    "reload_sound": "reload_tube"
+  },
+  "smg": {
+   "ammo_pool": 300,
+   "move_speed": 245,
+   "damage": 7,
+   "fire_rate": 14.0,
+   "mag_size": 30,
+   "reload_time": 1.6,
+   "spread": 0.025,
+   "falloff": {
+    "from": 15.0,
+    "to": 35.0,
+    "min": 0.5
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.07,
+     -0.38
+    ],
+    "ads_fov": 62,
+    "ads_speed": 10.0,
+    "recoil_back": 0.04,
+    "recoil_pitch": 4.0,
+    "ads_spread_mult": 0.75,
+    "scope": false,
+    "ads_drop": 0.02
+   },
+   "sound": "shot_smg",
+   "reload_sound": "reload_mag"
+  },
+  "revolver": {
+   "ammo_pool": 48,
+   "move_speed": 235,
+   "damage": 38,
+   "fire_rate": 2.2,
+   "mag_size": 6,
+   "reload_time": 2.2,
+   "spread": 0.012,
+   "fan": {
+    "tap_rate": 7.0,
+    "spread_mult": 2.2
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.07,
+     -0.4
+    ],
+    "ads_fov": 60,
+    "ads_speed": 9.0,
+    "recoil_back": 0.08,
+    "recoil_pitch": 11.0,
+    "ads_spread_mult": 0.35,
+    "scope": false,
+    "ads_drop": 0.024
+   },
+   "sound": "shot_revolver",
+   "reload_sound": "reload_cylinder"
+  },
+  "lever_rifle": {
+   "ammo_pool": 60,
+   "move_speed": 215,
+   "aim_speed": 140,
+   "damage": 55,
+   "fire_rate": 1.4,
+   "mag_size": 8,
+   "reload_time": 0.5,
+   "reload_each": true,
+   "spread": 0.01,
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.06,
+     -0.32
+    ],
+    "ads_fov": 35,
+    "ads_speed": 7.0,
+    "recoil_back": 0.09,
+    "recoil_pitch": 9.0,
+    "ads_spread_mult": 0.08,
+    "scope": false,
+    "ads_drop": 0.02
+   },
+   "sound": "shot_lever",
+   "reload_sound": "reload_shell"
+  },
+  "harpoon_gun": {
+   "ammo_pool": 16,
+   "move_speed": 210,
+   "damage": 90,
+   "fire_rate": 0.8,
+   "mag_size": 1,
+   "reload_time": 1.8,
+   "spread": 0.005,
+   "projectile": {
+    "kind": "harpoon",
+    "speed": 45.0,
+    "gravity": 3.0,
+    "splash_radius": 0.0,
+    "splash_damage": 0,
+    "pin_seconds": 2.5,
+    "pull_speed": 14.0,
+    "pull_max_health": 300.0
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.08,
+     -0.4
+    ],
+    "ads_fov": 60,
+    "ads_speed": 7.0,
+    "recoil_back": 0.12,
+    "recoil_pitch": 8.0,
+    "ads_spread_mult": 0.5,
+    "scope": false,
+    "ads_drop": 0.02
+   },
+   "sound": "shot_harpoon",
+   "reload_sound": "reload_tube"
+  },
+  "flare_gun": {
+   "ammo_pool": 20,
+   "move_speed": 240,
+   "damage": 25,
+   "fire_rate": 1.0,
+   "mag_size": 1,
+   "reload_time": 1.3,
+   "spread": 0.01,
+   "projectile": {
+    "kind": "flare",
+    "speed": 28.0,
+    "gravity": 9.0,
+    "splash_radius": 0.0,
+    "splash_damage": 0,
+    "ignite_radius": 1.8,
+    "burn_dps": 15.0,
+    "burn_seconds": 5.0,
+    "light_seconds": 15.0,
+    "light_range": 12.0
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.07,
+     -0.42
+    ],
+    "ads_fov": 65,
+    "ads_speed": 9.0,
+    "recoil_back": 0.07,
+    "recoil_pitch": 10.0,
+    "ads_spread_mult": 0.6,
+    "scope": false,
+    "ads_drop": 0.026
+   },
+   "sound": "shot_flare",
+   "reload_sound": "reload_shell"
+  },
+  "flamethrower": {
+   "ammo_pool": 400,
+   "move_speed": 205,
+   "damage": 4,
+   "pellets": 3,
+   "range": 9.0,
+   "fire_rate": 15.0,
+   "mag_size": 100,
+   "reload_time": 2.8,
+   "spread": 0.09,
+   "burn": {
+    "dps": 10.0,
+    "seconds": 3.0
+   },
+   "overheat": {
+    "per_shot": 0.012,
+    "cool_per_second": 0.3
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.09,
+     -0.4
+    ],
+    "ads_fov": 68,
+    "ads_speed": 6.0,
+    "recoil_back": 0.01,
+    "recoil_pitch": 0.6,
+    "ads_spread_mult": 1.0,
+    "scope": false,
+    "ads_drop": 0.02
+   },
+   "sound": "shot_flame",
+   "reload_sound": "reload_tank"
+  },
+  "crossbow": {
+   "ammo_pool": 24,
+   "move_speed": 230,
+   "damage": 70,
+   "fire_rate": 0.9,
+   "mag_size": 1,
+   "reload_time": 1.5,
+   "spread": 0.004,
+   "projectile": {
+    "kind": "bolt",
+    "speed": 60.0,
+    "gravity": 5.0,
+    "splash_radius": 0.0,
+    "splash_damage": 0,
+    "head_bonus": 1.5,
+    "lie_seconds": 30.0
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.075,
+     -0.35
+    ],
+    "ads_fov": 45,
+    "ads_speed": 7.0,
+    "recoil_back": 0.05,
+    "recoil_pitch": 4.0,
+    "ads_spread_mult": 0.1,
+    "scope": false,
+    "ads_drop": 0.02
+   },
+   "sound": "shot_crossbow",
+   "reload_sound": "reload_string"
+  },
+  "blunderbuss": {
+   "ammo_pool": 40,
+   "move_speed": 215,
+   "damage": 8,
+   "pellets": 18,
+   "fire_rate": 1.0,
+   "mag_size": 1,
+   "reload_time": 3.2,
+   "spread": 0.13,
+   "knockback": 7.0,
+   "falloff": {
+    "from": 6.0,
+    "to": 18.0,
+    "min": 0.3
+   },
+   "view": {
+    "ads_position": [
+     0.0,
+     -0.07,
+     -0.4
+    ],
+    "ads_fov": 68,
+    "ads_speed": 7.0,
+    "recoil_back": 0.16,
+    "recoil_pitch": 15.0,
+    "ads_spread_mult": 0.85,
+    "scope": false,
+    "ads_drop": 0.016
+   },
+   "sound": "shot_blunderbuss",
+   "reload_sound": "reload_shells"
   }
  },
- "_about": "ammo_pool = spare rounds a full pool of this gun body holds (every gun of the body shares it; a reload takes from it). move_speed / aim_speed = top speed carrying it / aiming with it, Source units a second (the knife runs at data/movement.json base_speed)."
+ "_about": "ammo_pool = spare rounds a full pool of this gun body holds (every gun of the body shares it; a reload takes from it). move_speed / aim_speed = top speed carrying it / aiming with it, Source units a second (the knife runs at data/movement.json base_speed). Optional (sea step 2 bodies): range (m, hitscan reach; default the game's shot range), falloff {from, to, min} (damage x1 up to `from` m, down to x`min` at `to` m), knockback (m/s push on every enemy a shot hits, not bosses), burn {dps, seconds} (every hit sets it burning), fan {tap_rate, spread_mult} (a fresh trigger press may fire at tap_rate, wider), reload_each (one round per reload_time, a shot interrupts), overheat {per_shot, cool_per_second}. projectile kinds harpoon / flare / bolt hit with the gun's own damage (game/shot_bolts.gd): harpoon pin_seconds, pull_speed, pull_max_health; flare ignite_radius, burn_dps, burn_seconds, light_seconds, light_range; bolt head_bonus, lie_seconds (it can be picked up again)."
 }
