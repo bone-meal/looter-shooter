@@ -1,9 +1,12 @@
 # Purpose: FLUSH's whirlpool (diary/DESIGN_UNIQUES.md, region 7 chase gun): opened where a grenade lands, it swirls
 # for `seconds`: every 0.2 s each living, non-boss enemy inside `radius` is pushed round and in; one below flush_share
 # of its health is FLUSHED (killed, "FLUSHED"). The shooter's own whirlpool does that; another player's copy
-# (game/net_chase.gd "whirl") only shows. Drawn as a dark disc and two turning rings that shrink away at the end.
-# Dependencies: game/explosives.gd (enemy source, damage numbers).
+# (game/net_chase.gd "whirl") only shows. Drawn as the modelled vortex (dark water, foam spirals) turning, with spray
+# off its rim; it shrinks away at the end.
+# Dependencies: game/explosives.gd (enemy source, damage numbers), game/fx_kit.gd.
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const GROUP := "whirlpools"
 const MAX_OPEN := 4
@@ -17,7 +20,7 @@ var swirl := 6.0
 
 var _age := 0.0
 var _tick := 0.0
-var _rings: Array[MeshInstance3D] = []
+var _rings: Array[Node3D] = []
 var flushed := 0
 
 
@@ -27,36 +30,21 @@ static func can_open(tree: SceneTree) -> bool:
 
 func _ready() -> void:
 	add_to_group(GROUP)
-	var disc := MeshInstance3D.new()
-	var flat := CylinderMesh.new()
-	flat.top_radius = 1.0
-	flat.bottom_radius = 1.0
-	flat.height = 0.02
-	flat.radial_segments = 24
-	disc.mesh = flat
-	var dark := StandardMaterial3D.new()
-	dark.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	dark.albedo_color = Color(0.05, 0.18, 0.3, 0.75)
-	dark.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	disc.material_override = dark
-	disc.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	add_child(disc)
-	_rings.append(disc)
-	for k in 2:
-		var ring := MeshInstance3D.new()
-		var torus := TorusMesh.new()
-		torus.inner_radius = 0.85 - k * 0.35
-		torus.outer_radius = 1.0 - k * 0.35
-		torus.rings = 24
-		torus.ring_segments = 6
-		ring.mesh = torus
-		var foam := StandardMaterial3D.new()
-		foam.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		foam.albedo_color = Color(0.7, 0.9, 1.0)
-		ring.material_override = foam
-		ring.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		add_child(ring)
-		_rings.append(ring)
+	var funnel: Node3D = FxKit.shape("vortex")  # the modelled whirlpool (game/fx_kit.gd): dark water, foam spirals
+	if funnel != null:
+		FxKit.paint(funnel, FxKit.glow(Color(0.05, 0.22, 0.34, 0.8), false))
+		var foam := funnel.find_child("Foam", true, false)
+		if foam != null:
+			FxKit.paint(foam, FxKit.glow(Color(0.8, 0.93, 1.0, 0.75), false))
+		add_child(funnel)
+		_rings.append(funnel)
+	var spray := FxKit.particles(Color(0.85, 0.95, 1.0, 0.8), 10, 0.9, 0.06, 1.6, 30.0, -3.0, false)
+	spray.emission_shape = CPUParticles3D.EMISSION_SHAPE_RING
+	spray.emission_ring_axis = Vector3.UP
+	spray.emission_ring_radius = 0.95
+	spray.emission_ring_inner_radius = 0.8
+	spray.emission_ring_height = 0.0
+	add_child(spray)
 	scale = Vector3(radius, 1.0, radius)
 
 
@@ -65,8 +53,8 @@ func _process(delta: float) -> void:
 	var fade := clampf((seconds - _age) / 0.5, 0.0, 1.0)
 	scale = Vector3(radius * fade, 1.0, radius * fade)
 	for k in _rings.size():
-		_rings[k].rotation.y += delta * (2.0 + k * 1.5)
-		_rings[k].position.y = 0.03 + k * 0.02
+		_rings[k].rotation.y -= delta * (2.5 + k * 1.5)
+		_rings[k].position.y = 0.36
 	if _age >= seconds:
 		queue_free()
 		return

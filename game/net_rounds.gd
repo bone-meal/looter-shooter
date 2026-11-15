@@ -14,7 +14,7 @@ extends Node
 
 const BLOWS := ["", "headshot", "melee"]
 const PAYS := ["hit", "kill", "headshot", "melee"]
-const EFFECTS := ["slow", "burn", "freeze", "weaken", "push"]
+const EFFECTS := ["slow", "burn", "freeze", "weaken", "push", "taunt"]
 const SWITCH := 99  # ask_power: build the switch and throw it
 const ORIGIN := Vector3(500, 0, 0)  # game/island.gd CENTER: the land's positions are counted from here
 
@@ -65,6 +65,8 @@ var round_left := 0
 var fighting := false
 
 var _enemies := {}  # net id -> enemy (real on the host, puppet elsewhere)
+var taunts := 0  # host: taunts applied for other players (dev steps read it)
+var _fallen := {}  # client: id -> puppet that just died (its kill credit may follow)
 var _next_id := 1
 var _state_timer := 0.0
 var _ask_timer := 0.0
@@ -268,6 +270,9 @@ func _fire(id: int, origin: Vector3, aim: Vector3) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _died(id: int) -> void:
 	if is_instance_valid(_enemies.get(id)):
+		if _fallen.size() > 32:
+			_fallen.clear()
+		_fallen[id] = _enemies[id]  # kept a moment for its kill credit (_credit comes right after)
 		var before := String(card.get("blow")) if card != null else ""
 		if card != null:
 			card.set("blow", "other")  # whoever dealt the blow is paid by the host: this death pays nobody here
@@ -607,6 +612,18 @@ func _paid(what: String) -> void:
 	card.set("blow", before)
 
 
+# Client: the host says our hit on enemy `id` killed it: the local player's on-kill effects (game/player.gd credit_kill).
+@rpc("authority", "call_remote", "reliable")
+func _credit(id: int, at: Vector3, damage: float) -> void:
+	if not at.is_finite() or not is_finite(damage):
+		return
+	var target: Variant = _enemies.get(id, _fallen.get(id))
+	_fallen.erase(id)
+	var me: Node3D = net.local_player()
+	if me != null and me.has_method("credit_kill") and is_instance_valid(target):
+		me.call("credit_kill", target, at, damage)
+
+
 @rpc("any_peer", "call_remote", "reliable")
 func _ask_all() -> void:
 	if not net.is_host() or rounds == null:
@@ -650,6 +667,7 @@ func _hit(id: int, damage: float, blow: String) -> void:
 		card.set("blow", before)
 	if enemy.health.is_dead():
 		_paid.rpc_id(peer, "kill" if blow == "" else blow)
+		_credit.rpc_id(peer, id, (enemy as Node3D).global_position, damage)  # whose kill it was: his on-kill effects
 	else:
 		_paid.rpc_id(peer, "hit")
 
@@ -674,6 +692,11 @@ func _effect(id: int, kind: String, amount: float, seconds: float) -> void:
 		"push":
 			if not is_boss:
 				enemy.call("push", Vector3(amount, 0.0, seconds).limit_length(20.0))  # push sends its x and z here
+		"taunt":  # Key Ring's jingle, Golden Goose's honk: it comes for the player who asked
+			var body: Node3D = net.player_node(multiplayer.get_remote_sender_id())
+			if not is_boss and body != null:
+				enemy.call("taunt", body, clampf(seconds, 0.0, 8.0))
+				taunts += 1
 
 
 # The colosseum run as the host has it: a client in the run shows this wave, count, enemies left and the clear.

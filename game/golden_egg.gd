@@ -2,9 +2,11 @@
 # grenade, it flies in an arc, bounces to a stop and sits; after hatch_seconds it HATCHES: a blast (the launcher's
 # splash) and a few chips for the shooter. The shooter's own egg does both; another player's copy (game/net_chase.gd
 # "egg") only flashes.
-# Dependencies: game/explosives.gd (blast, show_flash), the golden_egg model; the session (group "game_session")
+# Dependencies: game/explosives.gd (blast, show_flash), the golden_egg model, game/fx_kit.gd (shell halves, gold dust); the session (group "game_session")
 # for the chips.
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const MODEL := "res://assets/models/weapons/uniques/golden_egg.gltf"
 const GROUP := "golden_eggs"
@@ -68,6 +70,7 @@ func _physics_process(delta: float) -> void:
 
 
 func _hatch() -> void:
+	_shell_burst()
 	if explosives != null:
 		if owned:
 			explosives.call("blast", global_position, radius, damage)
@@ -79,3 +82,25 @@ func _hatch() -> void:
 		else:
 			explosives.call("show_flash", global_position, radius)
 	queue_free()
+
+
+# The shell splits in two halves that tumble away, with a puff of gold dust (game/fx_kit.gd egg_shell, burst).
+func _shell_burst() -> void:
+	var world := get_parent()
+	if world == null:
+		return
+	FxKit.burst(world, global_position + Vector3(0, 0.1, 0), Color(1.0, 0.82, 0.3), 18, 0.8, 0.14, 3.5)
+	for half in 2:
+		var shell: Node3D = FxKit.shape("egg_shell")
+		if shell == null:
+			return
+		world.add_child(shell)
+		shell.global_position = global_position
+		shell.scale = Vector3.ONE * SIZE
+		shell.rotation.x = 0.0 if half == 0 else PI
+		var away := Vector3(randf_range(-1, 1), 1.6, randf_range(-1, 1)).normalized() * 0.9
+		var tween := shell.create_tween()
+		tween.tween_property(shell, "global_position", global_position + away, 0.4).set_ease(Tween.EASE_OUT)
+		tween.parallel().tween_property(shell, "rotation", shell.rotation + Vector3(randf_range(4, 9), randf_range(-3, 3), 0), 0.4)
+		tween.tween_property(shell, "scale", Vector3.ONE * 0.01, 0.6)
+		tween.tween_callback(shell.queue_free)

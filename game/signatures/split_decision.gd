@@ -7,6 +7,8 @@
 # Dependencies: the holder's weapon, damage numbers; the split_barrels gimmick ("Coin").
 extends Node3D
 
+const FxKit = preload("res://game/fx_kit.gd")
+
 var _player: Node3D
 var _cfg: Dictionary = {}
 var _coin: Node3D
@@ -93,19 +95,19 @@ static func show_coin(coin: Node3D, is_fire: bool) -> void:
 static func shards(world: Node, at: Vector3) -> void:
 	if world == null:
 		return
-	var mesh := BoxMesh.new()
-	mesh.size = Vector3(0.08, 0.08, 0.16)
-	for k in 10:
-		var bit := MeshInstance3D.new()
-		bit.mesh = mesh
-		var mat := StandardMaterial3D.new()
-		mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		mat.albedo_color = Color(0.7, 0.9, 1.0) if k % 2 == 0 else Color(1.0, 0.5, 0.15)
-		bit.material_override = mat
+	FxKit.burst(world, at, Color(0.8, 0.93, 1.0), 14, 0.6, 0.18, 4.0)  # frost and sparks
+	for k in 10:  # modelled ice and ember splinters (game/fx_kit.gd shard)
+		var bit: Node3D = FxKit.shape("shard")
+		if bit == null:
+			return
+		FxKit.paint(bit, FxKit.glow(Color(0.65, 0.88, 1.0) if k % 2 == 0 else Color(1.0, 0.5, 0.15)))
 		world.add_child(bit)
 		bit.global_position = at
+		bit.rotation = Vector3(randf() * TAU, randf() * TAU, 0.0)
+		bit.scale = Vector3.ONE * randf_range(2.5, 4.0)
 		var away := Vector3(randf_range(-1, 1), randf_range(0.2, 1.2), randf_range(-1, 1)).normalized() * randf_range(1.0, 2.2)
 		var tween := bit.create_tween()
 		tween.tween_property(bit, "global_position", at + away, 0.35).set_ease(Tween.EASE_OUT)
-		tween.parallel().tween_property(bit, "scale", Vector3.ONE * 0.05, 0.35)
+		tween.parallel().tween_property(bit, "scale", Vector3.ONE * 0.05, 0.45)
+		tween.parallel().tween_property(bit, "rotation", bit.rotation + Vector3(randf_range(3, 8), randf_range(3, 8), 0), 0.45)
 		tween.tween_callback(bit.queue_free)

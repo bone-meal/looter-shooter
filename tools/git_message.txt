@@ -1,9 +1,9 @@
-Raid, Vault and world chase guns: the last 9, online (29 of 29)
+Chase guns: joiner kill credit, taunts online, storm charge, modelled effects
 
-Raids: Carbon Copy (every shot prints a paper copy that fires once and falls over), Time Card (inspect clocks in, pay grows unhit, a hit docks it), Loan Shark (the magazine borrows rounds for health, the shark grows, kills repay), Wanted Poster (a marked enemy pays chips and refreshes skills).
-Vault: Key Ring (keys per kill open locked things, the jingle draws enemies), Treasure Map (an X every 60 s, inspect digs up a gun), Golden Goose (honks enemies over, eggs hatch into a blast and chips), Split Decision (coin picks fire or ice, both shatter).
-World: Message in a Bottle (kills reveal an original shanty, verses buff the party; data/uniques/writing/shanty.txt, packed by export_presets).
-All effects shown to other players through net_chase. game_session joins group game_session. Chase check 162 ok, pair sets raid and vault.
+Joiners: the host now tells the shooter which enemy his hit killed (net_rounds _credit); player credit_kill runs the on-kill buffs, traits and the chase gun's kill (two-copy test: 4 penguins from a joiner's kills, keys earned).
+Key Ring jingle and Golden Goose honk taunt host-run enemies (enemy.taunt, puppet effect taunt; retargeting no longer overrides it; test: 4 taunts on the host from the joiner).
+Weathervane stores a bolt and Kite Flyer catches one every 8 kills outside storms too.
+Effect models: game/fx_kit.gd + assets/models/fx (flame tongues, gas cloud, vortex, shards, egg shell, painted X, dirt heap) for Swamp Gas, Volcano Sauce, Keeper's Lantern, Flush, Lighthouse, lightning, Split Decision, Golden Goose, Treasure Map, Carbon Copy, Avalanche Control; Brain Freeze frost shader. tools/fx_shot pictures them. Chase check 164 ok.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

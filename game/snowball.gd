@@ -3,8 +3,10 @@
 # buries every enemy it rolls over once (freeze + push along its way, a little damage). It breaks up against a wall or
 # when its time is out. The shooter's own snowball does all that; another player's copy (game/net_chase.gd
 # "snowball") rolls the same way and only shows. At most MAX_ROLLING at once (the host budget).
-# Dependencies: game/explosives.gd (enemy source, damage numbers), the snowball model.
+# Dependencies: game/explosives.gd (enemy source, damage numbers), the snowball model, game/fx_kit.gd (snow).
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const MODEL := "res://assets/models/weapons/uniques/snowball.gltf"
 const MAX_ROLLING := 6
@@ -34,6 +36,10 @@ func _ready() -> void:
 		add_child(_body)
 	_query.collision_mask = 1
 	_size_body()
+	var trail := FxKit.particles(Color(0.95, 0.97, 1.0, 0.9), 12, 0.8, 0.35, 1.5, 60.0, -2.0, false, false)  # snow kicked up as it rolls
+	trail.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	trail.emission_sphere_radius = 0.4
+	add_child(trail)
 
 
 func radius() -> float:
@@ -97,6 +103,7 @@ func _bury(r: float) -> void:
 
 func _break() -> void:  # it bursts into powder: swells a little, then shrinks away
 	set_physics_process(false)
+	FxKit.burst(get_parent(), global_position + Vector3(0, radius() * 0.9, 0), Color(0.95, 0.97, 1.0, 0.9), 20, 0.9, 0.5, 3.0)
 	remove_from_group(GROUP)
 	if _body == null:
 		queue_free()

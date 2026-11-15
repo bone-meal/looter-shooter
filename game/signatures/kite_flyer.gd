@@ -16,6 +16,7 @@ var _cfg: Dictionary = {}
 var _kite: Node3D
 var _weather: Node
 var caught := 0
+var _kills := 0
 
 
 func bind(player: Node3D, _gun: Dictionary, def: Dictionary) -> void:
@@ -44,6 +45,16 @@ func stop() -> void:
 
 func on_inspect() -> void:
 	pass
+
+
+# Outside storms too (director 2026-11-15): every kills_per_charge kills the kite catches a bolt of its own.
+func on_target_hit(_target: Node, _at: Vector3, _amount: float, killed: bool) -> void:
+	if not killed:
+		return
+	_kills += 1
+	if _kills >= int(_cfg.get("kills_per_charge", 8)):
+		_kills = 0
+		catch_lightning()
 
 
 func kite() -> Node3D:

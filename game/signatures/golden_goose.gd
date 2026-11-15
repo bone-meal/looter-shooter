@@ -50,8 +50,11 @@ func honk() -> void:
 	var source: Variant = _player.get("explosives").get("source") if _player.get("explosives") != null else null
 	if source != null:
 		for enemy: Node3D in source.call("enemy_list"):
-			if is_instance_valid(enemy) and not enemy.health.is_dead() and enemy.global_position.distance_to(_player.global_position) <= float(_cfg.get("honk_reach", 20.0)) and enemy.has_method("set_target"):
-				enemy.call("set_target", _player)
+			if is_instance_valid(enemy) and not enemy.health.is_dead() and enemy.global_position.distance_to(_player.global_position) <= float(_cfg.get("honk_reach", 20.0)) and (enemy.has_method("taunt") or enemy.has_method("set_target")):
+				if enemy.has_method("taunt"):
+					enemy.call("taunt", _player, float(_cfg.get("taunt_seconds", 4.0)))  # (a host-run enemy: the host makes it come)
+				else:
+					enemy.call("set_target", _player)
 	var link: Node = get_tree().get_first_node_in_group("net_chase") if is_inside_tree() else null
 	if link != null:
 		link.call("send", "honk", -1, _player.global_position, 0, _player.global_position)

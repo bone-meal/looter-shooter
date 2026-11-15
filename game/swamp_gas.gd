@@ -7,12 +7,14 @@
 # Dependencies: game/explosives.gd (blast, its enemy source, sounds), groups "fire_sources", "net_chase" (optional).
 extends Node3D
 
+const FxKit = preload("res://game/fx_kit.gd")
+
 const POOL_SIZE := 8
 const CHECK_EVERY := 0.1  # seconds between looks for fire
 
 var explosives: Node3D
 
-var _puffs: Array[MeshInstance3D] = []  # two soft balls per cloud
+var _puffs: Array[Node3D] = []  # two modelled puffs per cloud (game/fx_kit.gd gas_cloud), the first with rising bubbles
 var _life := PackedFloat32Array()
 var _damage := PackedFloat32Array()
 var _fuse := PackedFloat32Array()  # > 0: caught fire, goes off when it reaches 0 (the chain's small delay)
@@ -27,24 +29,22 @@ var _material: StandardMaterial3D
 
 func _ready() -> void:
 	add_to_group("swamp_gas")
-	_material = StandardMaterial3D.new()
-	_material.albedo_color = Color(0.45, 0.62, 0.2, 0.32)
-	_material.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
-	_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	_material.cull_mode = BaseMaterial3D.CULL_BACK  # seen from outside only (no green wash with the eye inside)
-	var ball := SphereMesh.new()
-	ball.radius = 1.0
-	ball.height = 2.0
-	ball.radial_segments = 12
-	ball.rings = 6
+	_material = FxKit.glow(Color(0.6, 0.76, 0.28, 0.5), false)  # seen from outside only (no green wash with the eye inside)
 	for i in POOL_SIZE * 2:
-		var ball_node := MeshInstance3D.new()
-		ball_node.mesh = ball
-		ball_node.material_override = _material
-		ball_node.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		ball_node.visible = false
-		add_child(ball_node)
-		_puffs.append(ball_node)
+		var puff_node: Node3D = FxKit.shape("gas_cloud")
+		if puff_node == null:
+			puff_node = Node3D.new()
+		FxKit.paint(puff_node, _material)
+		puff_node.rotation.y = float(i) * 1.7
+		puff_node.visible = false
+		add_child(puff_node)
+		_puffs.append(puff_node)
+		if i % 2 == 0:  # swamp bubbles rising out of the cloud
+			var bubbles := FxKit.particles(Color(0.55, 0.7, 0.25, 0.8), 6, 1.6, 0.18, 1.2, 25.0, 0.2, false)
+			bubbles.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+			bubbles.emission_sphere_radius = 0.7
+			bubbles.emitting = false
+			puff_node.add_child(bubbles)
 	_life.resize(POOL_SIZE)
 	_damage.resize(POOL_SIZE)
 	_fuse.resize(POOL_SIZE)
@@ -87,6 +87,7 @@ func _show(i: int, at: Vector3) -> void:
 		p.position = at + Vector3(randf_range(-0.3, 0.3), randf_range(-0.1, 0.3), randf_range(-0.3, 0.3)) * r
 		p.scale = Vector3.ONE * r * (0.75 if n == 0 else 0.6)
 		p.visible = true
+		_bubble(p, true)
 
 
 func active_count() -> int:
@@ -165,6 +166,13 @@ func _hide(i: int) -> void:
 	_fuse[i] = 0.0
 	_puffs[i * 2].visible = false
 	_puffs[i * 2 + 1].visible = false
+	_bubble(_puffs[i * 2], false)
+
+
+func _bubble(puff_node: Node3D, on: bool) -> void:
+	for child in puff_node.get_children():
+		if child is CPUParticles3D:
+			(child as CPUParticles3D).emitting = on
 
 
 # ---- online (game/net_chase.gd) ----

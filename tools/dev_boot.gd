@@ -209,6 +209,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				kites.append("treasure Xs %d" % get_tree().get_nodes_in_group("treasure_xs").size())
 			if not get_tree().get_nodes_in_group("golden_eggs").is_empty():
 				kites.append("golden eggs %d" % get_tree().get_nodes_in_group("golden_eggs").size())
+			kites.append("credited %d" % int(player.get("kills_credited")))
+			var rounds_net: Variant = session.get("net").get("rounds") if session.get("net") != null else null
+			if rounds_net != null and "taunts" in rounds_net:
+				kites.append("taunts %d" % int(rounds_net.get("taunts")))
 			var paper: Node = get_tree().get_first_node_in_group("paper_copies")
 			if paper != null:
 				kites.append("paper copies %d" % int(paper.call("count")))
@@ -252,6 +256,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("KITECATCH caught %d" % int(sig_c.get("caught")))
 			else:
 				_lines.append("KITECATCH no kite gun in hand")
+		"aimnear":  # "!aimnear": look at the nearest living enemy's chest (then !fire hits it)
+			var src_a: Variant = player.get("explosives").get("source")
+			var near_a: Node3D = null
+			for e: Node3D in src_a.call("enemy_list"):
+				if is_instance_valid(e) and not e.health.is_dead() and (near_a == null or e.global_position.distance_to(player.global_position) < near_a.global_position.distance_to(player.global_position)):
+					near_a = e
+			if near_a != null:
+				player.call("look_at_point", near_a.global_position + Vector3(0, 1.1, 0))
+			_lines.append("AIMNEAR %s" % (str(near_a.global_position.snapped(Vector3.ONE * 0.1)) if near_a != null else "nothing"))
 		"tofriend":  # "!tofriend": stand 3 m from the first other player (two-copy tests)
 			var spots: Dictionary = session.get("net").call("positions")
 			var my: int = int(session.get("net").call("my_id"))

@@ -52,6 +52,8 @@ var _push := Vector3.ZERO  # skills: knockback / pull velocity, fades on its own
 var _stats: Dictionary
 var _brain: EnemyBrain
 var _target: Node3D
+var _taunt_by: Node3D  # taunted: chases this one until _taunt_until (taunt)
+var _taunt_until := 0.0
 var _pool: Node3D
 var _blood: Node3D
 var _speed: float
@@ -123,7 +125,19 @@ func _body_color(default: Color) -> Color:
 
 # Online host: which player the boss chases and shoots at.
 func set_target(target: Node3D) -> void:
+	if is_instance_valid(_taunt_by) and Time.get_ticks_msec() / 1000.0 < _taunt_until:
+		return  # taunted: it keeps after whoever taunted it
 	_target = target
+
+
+# Key Ring's jingle, Golden Goose's honk: it comes for `by` for `seconds` (a puppet asks the host: game/net_rounds.gd).
+func taunt(by: Node3D, seconds: float) -> void:
+	if puppet:
+		puppet_effect.emit("taunt", 0.0, seconds)
+		return
+	_taunt_by = by
+	_taunt_until = Time.get_ticks_msec() / 1000.0 + seconds
+	_target = by
 
 
 # What it chases now (a gun skill's decoy hands it back afterwards: game/skill_summons.gd).

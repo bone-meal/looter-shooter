@@ -64,8 +64,11 @@ func jingle() -> void:
 		return
 	var reach := float(_cfg.get("jingle_reach", 10.0)) + float(keys) * float(_cfg.get("reach_per_key", 2.0))
 	for enemy: Node3D in source.call("enemy_list"):
-		if is_instance_valid(enemy) and not enemy.health.is_dead() and enemy.global_position.distance_to(_player.global_position) <= reach and enemy.has_method("set_target"):
-			enemy.call("set_target", _player)
+		if is_instance_valid(enemy) and not enemy.health.is_dead() and enemy.global_position.distance_to(_player.global_position) <= reach and (enemy.has_method("taunt") or enemy.has_method("set_target")):
+			if enemy.has_method("taunt"):
+				enemy.call("taunt", _player, float(_cfg.get("taunt_seconds", 4.0)))  # (a host-run enemy: the host makes it come)
+			else:
+				enemy.call("set_target", _player)
 			drawn += 1
 
 

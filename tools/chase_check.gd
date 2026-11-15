@@ -962,6 +962,14 @@ func _weathervane(db: GunDb) -> void:
 	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
 	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
 	_say("in a storm a hit calls a bolt down on it (%.0f), the next waits" % mob.got, is_equal_approx(mob.got, 120.0) and int(sig.get("bolts")) == 1)
+	weather.storm = false
+	for _n in 8:
+		sig.call("on_target_hit", Mob.new(), Vector3.ZERO, 10.0, true)
+	var calm_mob := Mob.new()
+	add_child(calm_mob)
+	sig.call("on_target_hit", calm_mob, Vector3.ZERO, 10.0, false)
+	sig.call("on_target_hit", calm_mob, Vector3.ZERO, 10.0, false)
+	_say("no storm, but 8 kills store a bolt: the next hit calls it, once (%.0f)" % calm_mob.got, is_equal_approx(calm_mob.got, 120.0) and int(sig.get("bolts")) == 2 and not bool(sig.call("charged")))
 	weather.queue_free()
 
 
@@ -997,6 +1005,10 @@ func _kite(db: GunDb) -> void:
 	await get_tree().create_timer(0.8).timeout
 	var at: Vector3 = booms.blasts[0][0] if not booms.blasts.is_empty() else Vector3.INF
 	_say("a lightning flash: it dives onto the enemy and the bolt goes off there (%s)" % str(booms.blasts), booms.blasts.size() == 1 and at.distance_to(mob.position) < 1.6 and is_equal_approx(float(booms.blasts[0][2]), 180.0))
+	await get_tree().create_timer(2.2).timeout
+	for _n in 8:
+		sig.call("on_target_hit", Node.new(), Vector3.ZERO, 10.0, true)
+	_say("without a storm, every 8 kills it catches a bolt too (%d caught)" % int(sig.get("caught")), int(sig.get("caught")) == 2)
 	var other := Node3D.new()
 	other.position = Vector3(9600, 0, 0)
 	add_child(other)

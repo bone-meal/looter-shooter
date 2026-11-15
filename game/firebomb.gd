@@ -1,9 +1,11 @@
 # Purpose: KEEPER'S LANTERN thrown as a firebomb (diary/DESIGN_UNIQUES.md): the lantern flies in an arc, smashes in
 # a blast and leaves a patch of burning oil that sets enemies on fire for a few seconds and counts as fire for Swamp
 # Gas (fire_near). The thrower's own bomb deals the damage; another player's (a copy, game/net_chase.gd) only shows.
-# Dependencies: game/explosives.gd (blast, show_flash, its enemy source, sounds),
+# Dependencies: game/fx_kit.gd (flames, embers), game/explosives.gd (blast, show_flash, its enemy source, sounds),
 # assets/models/weapons/uniques/keepers_lantern_free.gltf.
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const MODEL := "res://assets/models/weapons/uniques/keepers_lantern_free.gltf"
 const GRAVITY := 12.0
@@ -18,7 +20,7 @@ var _body: Node3D
 var _vel := Vector3.ZERO
 var _burning := -1.0  # seconds of fire left once it smashed (< 0 = still flying)
 var _tick := 0.0
-var _flames: Array[MeshInstance3D] = []
+var _flames: Array[Node3D] = []  # modelled flame tongues (game/fx_kit.gd)
 var _light: OmniLight3D
 var _query := PhysicsRayQueryParameters3D.new()
 var _ignore: Array[RID] = []
@@ -73,23 +75,19 @@ func _smash(at: Vector3) -> void:
 			explosives.show_flash(at, radius)
 		if explosives.sounds != null:
 			explosives.sounds.call("play", "explosion", at)
-	var cone := CylinderMesh.new()
-	cone.top_radius = 0.0
-	cone.bottom_radius = 0.22
-	cone.height = 0.9
-	cone.radial_segments = 6
-	var fire := StandardMaterial3D.new()
-	fire.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fire.albedo_color = Color(1.0, 0.55, 0.15)
-	for n in FLAMES:
-		var flame := MeshInstance3D.new()
-		flame.mesh = cone
-		flame.material_override = fire
-		flame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	for n in FLAMES:  # modelled flame tongues over the burning oil, and embers
+		var flame := FxKit.flame()
+		if flame == null:
+			break
 		var angle := TAU * float(n) / float(FLAMES)
-		flame.position = Vector3(cos(angle), 0.4, sin(angle)) * Vector3(radius * 0.55, 1.0, radius * 0.55) * (0.5 if n % 2 == 0 else 1.0)
+		flame.position = Vector3(cos(angle), 0.0, sin(angle)) * radius * 0.55 * (0.45 if n % 2 == 0 else 1.0)
+		flame.rotation.y = angle
 		add_child(flame)
 		_flames.append(flame)
+	var embers := FxKit.particles(Color(1.0, 0.55, 0.15), 14, 1.4, 0.1, 2.5, 20.0, 0.5, false)
+	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_BOX
+	embers.emission_box_extents = Vector3(radius * 0.6, 0.1, radius * 0.6)
+	add_child(embers)
 
 
 func _process(delta: float) -> void:
@@ -98,7 +96,9 @@ func _process(delta: float) -> void:
 	_burning -= delta
 	var k := 0
 	for flame in _flames:  # the oil flickers and dies down at the end
-		flame.scale = Vector3.ONE * clampf(_burning, 0.0, 1.0) * (0.8 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.011 + float(k))))
+		var lick := 0.8 + 0.35 * absf(sin(Time.get_ticks_msec() * 0.011 + float(k)))
+		flame.scale = Vector3(1.6, 1.1 * lick, 1.6) * clampf(_burning, 0.0, 1.0)
+		flame.rotation.y += delta * (1.5 + float(k % 3))
 		k += 1
 	if _light != null:
 		_light.light_energy = 1.6 * clampf(_burning, 0.0, 1.0)

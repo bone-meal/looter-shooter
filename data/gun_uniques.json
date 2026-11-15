@@ -661,7 +661,8 @@
         "min_mult": 0.8,
         "max_mult": 1.6,
         "bolt_every": 6.0,
-        "bolt_damage": 4.0
+        "bolt_damage": 4.0,
+        "kills_per_charge": 8
       }
     },
     "kite_flyer": {
@@ -698,7 +699,8 @@
       "cfg": {
         "dive_damage": 6.0,
         "dive_radius": 3.0,
-        "reach": 35.0
+        "reach": 35.0,
+        "kills_per_charge": 8
       }
     },
     "chip_thief": {
@@ -1106,7 +1108,8 @@
         "open_cost": 5,
         "jingle_every": 3.0,
         "jingle_reach": 10.0,
-        "reach_per_key": 2.0
+        "reach_per_key": 2.0,
+        "taunt_seconds": 4.0
       }
     },
     "treasure_map": {
@@ -1181,7 +1184,8 @@
         "honk_reach": 20.0,
         "egg_speed_share": 0.7,
         "hatch_seconds": 3.0,
-        "chips": 5
+        "chips": 5,
+        "taunt_seconds": 4.0
       }
     },
     "split_decision": {

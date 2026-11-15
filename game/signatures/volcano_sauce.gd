@@ -30,6 +30,11 @@ func on_inspect() -> void:
 	pass
 
 
+# A joiner's kill credited later by the host: its heat was already counted by the shot itself.
+func on_kill_credit(_target: Node, _at: Vector3, _amount: float) -> void:
+	pass
+
+
 func on_target_hit(target: Node, at: Vector3, _amount: float, _killed: bool) -> void:
 	if not (target is Node3D) or not target.has_method("on_hit"):
 		return

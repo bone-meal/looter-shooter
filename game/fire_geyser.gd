@@ -1,8 +1,11 @@
 # Purpose: VOLCANO SAUCE's eruption (diary/DESIGN_UNIQUES.md, region 3 chase gun): a geyser of fire bursting up from
 # the ground under an enemy that took too much sauce. The shooter's own geyser blasts and sets enemies near it
 # burning; a copy (another player's, game/net_chase.gd) only shows. While it burns it is fire for Swamp Gas.
-# Dependencies: game/explosives.gd (blast, show_flash, its enemy source, sounds).
+# Drawn with modelled flame tongues and embers (game/fx_kit.gd).
+# Dependencies: game/explosives.gd (blast, show_flash, its enemy source, sounds), game/fx_kit.gd.
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const SECONDS := 1.4
 const RINGS := 6
@@ -14,32 +17,24 @@ var radius := 2.5
 var burn_share := 0.2
 
 var _t := 0.0
-var _flames: Array[MeshInstance3D] = []
+var _flames: Array[Node3D] = []  # modelled flame tongues (game/fx_kit.gd)
 var _light: OmniLight3D
 
 
 func erupt(at: Vector3) -> void:
 	add_to_group("fire_sources")
 	position = at
-	var cone := CylinderMesh.new()
-	cone.top_radius = 0.05
-	cone.bottom_radius = 0.45
-	cone.height = 1.0
-	cone.radial_segments = 8
-	var fire := StandardMaterial3D.new()
-	fire.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	fire.albedo_color = Color(1.0, 0.45, 0.1)
-	var core := StandardMaterial3D.new()
-	core.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	core.albedo_color = Color(1.0, 0.85, 0.4)
 	for i in RINGS:
-		var flame := MeshInstance3D.new()
-		flame.mesh = cone
-		flame.material_override = core if i % 2 == 0 else fire
-		flame.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		flame.scale = Vector3(1.0 - 0.12 * float(i), 1.0, 1.0 - 0.12 * float(i))
-		add_child(flame)
-		_flames.append(flame)
+		var tongue := FxKit.flame()
+		if tongue == null:
+			break
+		tongue.rotation.y = TAU * float(i) / float(RINGS)
+		add_child(tongue)
+		_flames.append(tongue)
+	var embers := FxKit.particles(Color(1.0, 0.6, 0.2), 16, 1.1, 0.12, 7.0, 15.0, -3.0, false)
+	embers.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	embers.emission_sphere_radius = 0.4
+	add_child(embers)
 	_light = OmniLight3D.new()
 	_light.light_color = Color(1.0, 0.55, 0.2)
 	_light.omni_range = 7.0
@@ -67,11 +62,13 @@ func _process(delta: float) -> void:
 		queue_free()
 		return
 	var height := sin(minf(k * 2.0, 1.0) * PI * 0.5) * 4.5 * (1.0 - maxf(0.0, k - 0.6) * 2.5)  # shoots up, hangs, falls away
-	for i in _flames.size():
+	for i in _flames.size():  # the tongues stack up the column, licking and turning
 		var f := _flames[i]
-		f.position.y = height * (float(i) + 0.5) / float(RINGS)
-		f.rotation.y = _t * (6.0 + float(i))
-		f.scale.y = maxf(0.05, height / float(RINGS) * 1.6)
+		var part := (float(i) + 0.5) / float(RINGS)
+		f.position = Vector3(0.0, height * part * 0.55, 0.0)
+		f.rotation.y = TAU * float(i) / float(RINGS) + _t * (3.0 + float(i) * 0.7)
+		var wide := (1.25 - part * 0.6) * (0.85 + 0.25 * sin(_t * 18.0 + float(i) * 2.1))
+		f.scale = Vector3(wide * 3.5, maxf(0.05, height * (0.55 + 0.25 * part)), wide * 3.5)
 	_light.light_energy = 2.0 * (1.0 - k)
 
 

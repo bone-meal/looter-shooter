@@ -2,8 +2,10 @@
 # pops up beside him, fires once at what he aims at (owned: first enemy on the line takes `damage`; a copy only draws
 # the shot), falls over flat and lies on the floor a while: raid floors fill with paper. One pool node in the world,
 # at most MAX_SHEETS lying about (the oldest goes first).
-# Dependencies: the paper_copy model; the enemy hit through physics (colliders with on_hit).
+# Dependencies: the paper_copy model; game/fx_kit.gd (tracer glow, muzzle flash); the enemy hit through physics.
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const MODEL := "res://assets/models/weapons/uniques/paper_copy.gltf"
 const GROUP := "paper_copies"
@@ -98,10 +100,9 @@ func _fire(sheet: Node3D, s: Dictionary) -> void:
 func _tracer(from: Vector3, to: Vector3) -> void:
 	if _tracer_mesh == null:
 		_tracer_mesh = BoxMesh.new()
-		_tracer_mesh.size = Vector3(0.02, 0.02, 1.0)
-		_tracer_mat = StandardMaterial3D.new()
-		_tracer_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-		_tracer_mat.albedo_color = Color(1.0, 0.95, 0.7)
+		_tracer_mesh.size = Vector3(0.03, 0.03, 1.0)
+		_tracer_mat = FxKit.glow(Color(1.0, 0.85, 0.5))
+	FxKit.burst(self, from, Color(1.0, 0.8, 0.4), 6, 0.2, 0.25, 2.0, 0.0)  # its muzzle flash
 	var line := MeshInstance3D.new()
 	line.mesh = _tracer_mesh
 	line.material_override = _tracer_mat

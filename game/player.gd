@@ -207,6 +207,8 @@ var hurt_total := 0.0  # damage taken, likewise
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
+var _shot_at := {}  # host-run enemy (instance id) -> engine time our gun shot hit it (credit_kill)
+var kills_credited := 0  # online kills the host credited to our gun
 var tow_point := Vector3.INF  # Kite Flyer: while finite, the body glides there (towed on a teammate's kite string)
 var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
 var downed := false  # lying on the ground waiting for a revive: no moving, no shooting, nothing hurts any more
@@ -1386,6 +1388,40 @@ func _shoot() -> void:
 			if _sig_node != null and _sig_node.has_method("on_target_hit"):  # Grillmaster: a burning kill drops food
 				_sig_node.call("on_target_hit", collider, spots[collider], float(totals[collider]), collider.get("health") != null and collider.health.is_dead())
 			damage_numbers.spawn(spots[collider], shown)
+	for collider in totals:  # a host-run enemy's death is the host's to tell: remember our shot for its kill credit
+		if collider is Node and (collider as Node).has_meta("host_pays") and not (collider.get("health") != null and collider.health.is_dead()):
+			if _shot_at.size() > 64:
+				_shot_at.clear()
+			_shot_at[(collider as Node).get_instance_id()] = _now()
+
+
+# Online, as a joiner: the host says our hit killed `target` (game/net_rounds.gd _credit). If it was this gun's shot
+# (within 2 s), the kill effects happen now as they would have at once on the host: on-kill buffs and traits, and
+# the chase gun's kill (on_hit_total + on_kill_credit, or on_target_hit with killed = true).
+func credit_kill(target: Node, at: Vector3, dealt: float) -> bool:
+	if target == null or not is_instance_valid(target) or not _shot_at.has(target.get_instance_id()) or _now() - float(_shot_at[target.get_instance_id()]) > 2.0:
+		return false
+	_shot_at.erase(target.get_instance_id())
+	kills_credited += 1
+	var buffs: Dictionary = _held_stats.get("buffs", {})
+	if buffs.has("reload_on_kill"):
+		weapon.ammo = mini(weapon.ammo + roundi(float(weapon.mag_size) * float(buffs["reload_on_kill"]) / 100.0), weapon.mag_size)
+	if buffs.has("adrenaline"):
+		_rush_until = _now() + 4.0
+		_rush_pct = float(buffs["adrenaline"])
+	if buffs.has("second_breath"):
+		health.heal(float(buffs["second_breath"]))
+	var gun_traits: Dictionary = _held_stats.get("traits", {})
+	if not gun_traits.is_empty():
+		_traits.on_kill(gun_traits, at, dealt, _now(), target)
+	if _sig_node != null:
+		if _sig_node.has_method("on_hit_total"):
+			_sig_node.call("on_hit_total", at, dealt, true)
+		if _sig_node.has_method("on_kill_credit"):
+			_sig_node.call("on_kill_credit", target, at, dealt)
+		elif _sig_node.has_method("on_target_hit"):
+			_sig_node.call("on_target_hit", target, at, dealt, true)
+	return true
 
 
 # Damage of one pellet: the weapon's damage, doubled (plus the crit_damage buff) on a critical hit of a rolled gun, times the damage multiplier (berserker, glass cannon, rally).

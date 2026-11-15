@@ -2,8 +2,11 @@
 # round whoever holds the gun. The holder's own beam sets the enemies it passes burning; another player's copy on THIS
 # machine heals this machine's player when it passes over him (so every teammate is healed by his own copy; the holder
 # is not healed by his own). A child of the gimmick with top_level, so it goes when the gun goes.
-# Dependencies: the enemy source (`explosives`), the local player (health) for copies.
+# Drawn as a widening light shaft fading out at its end and a glow at the lamp (game/fx_kit.gd).
+# Dependencies: the enemy source (`explosives`), the local player (health) for copies, game/fx_kit.gd.
 extends Node3D
+
+const FxKit = preload("res://game/fx_kit.gd")
 
 const GROUP := "lighthouse_beams"
 const HEIGHT := 1.3
@@ -29,24 +32,50 @@ func _ready() -> void:
 	top_level = true
 	add_to_group(GROUP)
 	_anchor = get_parent() as Node3D
-	_beam = MeshInstance3D.new()
-	var box := BoxMesh.new()
-	box.size = Vector3(0.12, 0.5, 1.0)
-	_beam.mesh = box
-	var mat := StandardMaterial3D.new()
-	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
-	mat.albedo_color = Color(0.55, 0.48, 0.2)
-	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
-	_beam.material_override = mat
+	_beam = MeshInstance3D.new()  # a widening shaft of light, bright at the lamp and fading out at its far end
+	var shaft := CylinderMesh.new()
+	shaft.top_radius = reach * 0.15  # (the far end, after the turn below)
+	shaft.bottom_radius = 0.07
+	shaft.height = reach
+	shaft.radial_segments = 12
+	shaft.rings = 1
+	shaft.cap_top = false
+	shaft.cap_bottom = false
+	_beam.mesh = shaft
+	_beam.material_override = FxKit.glow(Color(1.0, 0.86, 0.45, 0.5), true, _shaft_fade())
 	_beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-	_beam.scale = Vector3(1.0, 1.0, reach)
+	_beam.rotation.x = -PI * 0.5  # its axis along -z: the far end ahead
 	_beam.position = Vector3(0, 0, -reach * 0.5)
 	add_child(_beam)
+	var flare := MeshInstance3D.new()  # the lamp's glow where the beam starts
+	var quad := QuadMesh.new()
+	quad.size = Vector2(0.9, 0.9)
+	flare.mesh = quad
+	var flare_mat := FxKit.glow(Color(1.0, 0.85, 0.5, 0.9), true, FxKit.soft_dot()).duplicate() as StandardMaterial3D
+	flare_mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	flare.material_override = flare_mat
+	add_child(flare)
 	if local_player == null:
 		var link: Node = get_tree().get_first_node_in_group("net_chase")
 		if link != null and link.get("net") != null:
 			local_player = link.get("net").call("local_player")
+
+
+static var _fade: GradientTexture2D
+
+
+static func _shaft_fade() -> GradientTexture2D:
+	if _fade == null:
+		var grad := Gradient.new()
+		grad.offsets = PackedFloat32Array([0.0, 0.35, 0.85, 1.0])  # v = 0 at the far end of the turned shaft, 1 at the lamp
+		grad.colors = PackedColorArray([Color(1, 1, 1, 0), Color(1, 1, 1, 0.12), Color(1, 1, 1, 0.6), Color(1, 1, 1, 0.9)])
+		_fade = GradientTexture2D.new()
+		_fade.gradient = grad
+		_fade.fill_from = Vector2(0.5, 0.0)
+		_fade.fill_to = Vector2(0.5, 1.0)
+		_fade.width = 4
+		_fade.height = 64
+	return _fade
 
 
 func angle() -> float:
