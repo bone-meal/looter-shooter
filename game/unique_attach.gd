@@ -40,6 +40,19 @@ static func show_extra(piece: Node3D, unique_id: String, extra: String) -> void:
 		(load("res://game/signatures/clam_shell.gd") as GDScript).call("show_pearl", piece.find_child("Pearl", true, false), float(extra.substr(1).to_int() + 1) / 5.0 if extra.begins_with("p") else 0.0)
 	if bool(def.get("noodle", false)) and piece.get_parent() is Node3D:  # Spaghetti: "c" = a charged shot ready (the gun glows)
 		(load("res://game/signatures/spaghetti.gd") as GDScript).call("glow", piece.get_parent(), extra == "c")
+	if bool(def.get("shark", false)):  # Loan Shark: "s0".."s9" = how big the debt (and the shark) is
+		var full := int((def.get("cfg", {}) as Dictionary).get("full_size_at", 60))
+		(load("res://game/signatures/loan_shark.gd") as GDScript).call("show_shark", piece.find_child("Shark", true, false), floori(float(extra.substr(1).to_int()) / 9.0 * float(full)), full)
+	if bool(def.get("clock", false)):  # Time Card: "o" = clocked out, "t0".."t3" = the pay rate
+		var words: Label3D = (load("res://game/signatures/time_card.gd") as GDScript).call("face_label", piece)
+		if words != null:
+			var pay: Array = (def.get("cfg", {}) as Dictionary).get("pay", [])
+			var r := extra.substr(1).to_int()
+			words.text = "OUT" if extra == "o" or not extra.begins_with("t") else "IN\nx%s" % str(float((pay[mini(r, pay.size() - 1)] as Dictionary).get("mult", 1.0)) if not pay.is_empty() else 1.0)
+	if bool(def.get("keys", false)):  # Key Ring: "k0".."k9" = how many keys
+		(load("res://game/signatures/key_ring.gd") as GDScript).call("show_keys", piece, extra.substr(1).to_int())
+	if bool(def.get("coin", false)):  # Split Decision: "f" / "i" = the coin's face for the next shot
+		(load("res://game/signatures/split_decision.gd") as GDScript).call("show_coin", piece.find_child("Coin", true, false), extra == "f")
 	if bool(def.get("slushie", false)):  # Brain Freeze: "c0".."c9" = how full the cup is, "bf" = brain freeze
 		(load("res://game/signatures/brain_freeze.gd") as GDScript).call("show_cup", piece, 0.0 if extra == "bf" else float(extra.substr(1).to_int()) / 9.0, extra == "bf")
 

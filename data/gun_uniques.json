@@ -919,6 +919,346 @@
         "heal_share": 0.04
       }
     },
+    "carbon_copy": {
+      "name": "Carbon Copy",
+      "body": "shotgun_double",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "heavy",
+        "muzzle": "choke",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "crowd_pleaser",
+        "free_shot",
+        "overkill_splash"
+      ],
+      "skills": [
+        "mirror_clone",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "twin_shot",
+        "chain_reaction"
+      ],
+      "flavor": "",
+      "red": "Please collate.",
+      "signature": "carbon_copy",
+      "attach": "photocopier",
+      "pool": "raid_1",
+      "cfg": {
+        "copy_damage": 3.0,
+        "spacing": 1.1
+      }
+    },
+    "time_card": {
+      "name": "Time Card",
+      "body": "m60",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "drum",
+        "sight": "red_dot",
+        "muzzle": "compensator",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "pristine",
+        "steady",
+        "desperado"
+      ],
+      "skills": [
+        "bullet_storm",
+        "full_clip"
+      ],
+      "traits": [
+        "momentum",
+        "last_stand"
+      ],
+      "flavor": "",
+      "red": "Time and a half. Then double. Then something worse.",
+      "signature": "time_card",
+      "attach": "punch_clock",
+      "pool": "raid_1",
+      "clock": true,
+      "cfg": {
+        "pay": [
+          {
+            "after": 0.0,
+            "mult": 1.0
+          },
+          {
+            "after": 10.0,
+            "mult": 1.5
+          },
+          {
+            "after": 20.0,
+            "mult": 2.0
+          },
+          {
+            "after": 35.0,
+            "mult": 3.0
+          }
+        ]
+      }
+    },
+    "loan_shark": {
+      "name": "Loan Shark",
+      "body": "pistol_basic",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "long",
+        "mag": "fast",
+        "sight": "red_dot",
+        "muzzle": "compensator"
+      },
+      "buffs": [
+        "lifesteal",
+        "reload_on_kill",
+        "desperado"
+      ],
+      "skills": [
+        "blood_rush",
+        "overshield"
+      ],
+      "traits": [
+        "blood_tide",
+        "last_stand"
+      ],
+      "flavor": "",
+      "red": "Interest compounds. So does the shark.",
+      "signature": "loan_shark",
+      "attach": "fishbowl",
+      "pool": "raid_2",
+      "shark": true,
+      "cfg": {
+        "cost_share": 0.01,
+        "interest_every": 25,
+        "repay_per_kill": 5,
+        "full_size_at": 60
+      }
+    },
+    "wanted_poster": {
+      "name": "Wanted Poster",
+      "body": "sniper_basic",
+      "maker": "vantor",
+      "parts": {
+        "barrel": "long",
+        "mag": "box",
+        "sight": "long_scope",
+        "muzzle": "silencer",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "headshot_damage",
+        "slayer_mark",
+        "big_game"
+      ],
+      "skills": [
+        "harpoon_yank",
+        "orbital_strike"
+      ],
+      "traits": [
+        "executioner",
+        "skill_surge"
+      ],
+      "flavor": "",
+      "red": "Wanted: dead, or slightly less alive.",
+      "signature": "wanted_poster",
+      "attach": "wanted_poster",
+      "pool": "raid_2",
+      "cfg": {
+        "reach": 60.0,
+        "chips": 50,
+        "new_after": 3.0
+      }
+    },
+    "key_ring": {
+      "name": "Key Ring",
+      "body": "pistol_basic",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "short",
+        "mag": "extended",
+        "sight": "red_dot"
+      },
+      "buffs": [
+        "reload_on_kill",
+        "crowd_pleaser",
+        "adrenaline"
+      ],
+      "skills": [
+        "vacuum_pulse",
+        "phase_step"
+      ],
+      "traits": [
+        "pack_hunter",
+        "quick_change"
+      ],
+      "sea": "brined",
+      "flavor": "",
+      "red": "There's always one more door.",
+      "signature": "key_ring",
+      "attach": "key_ring",
+      "pool": "vault",
+      "keys": true,
+      "cfg": {
+        "open_cost": 5,
+        "jingle_every": 3.0,
+        "jingle_reach": 10.0,
+        "reach_per_key": 2.0
+      }
+    },
+    "treasure_map": {
+      "name": "Treasure Map",
+      "body": "m16",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "extended",
+        "sight": "acog",
+        "muzzle": "brake",
+        "grip": "angled"
+      },
+      "buffs": [
+        "far_reach",
+        "steady",
+        "pristine"
+      ],
+      "skills": [
+        "orbital_strike",
+        "sentry_turret"
+      ],
+      "traits": [
+        "momentum",
+        "skill_surge"
+      ],
+      "sea": "mariners",
+      "flavor": "",
+      "red": "X never marks the spot you'd expect.",
+      "signature": "treasure_map",
+      "attach": "treasure_map",
+      "pool": "vault",
+      "cfg": {
+        "map_every": 60.0,
+        "near": 15.0,
+        "far": 40.0,
+        "max_marks": 3,
+        "dig_reach": 2.5,
+        "luck": 3.0,
+        "min_tier": "blue"
+      }
+    },
+    "golden_goose": {
+      "name": "Golden Goose",
+      "body": "grenade_launcher",
+      "maker": "brawn",
+      "parts": {
+        "sight": "holo",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "explosive_chance",
+        "big_game",
+        "overkill_splash"
+      ],
+      "skills": [
+        "decoy_hologram",
+        "rocket_barrage"
+      ],
+      "traits": [
+        "overcharge",
+        "chain_reaction"
+      ],
+      "sea": "coralforged",
+      "flavor": "",
+      "red": "Don't count them. Just duck.",
+      "signature": "golden_goose",
+      "attach": "golden_goose",
+      "pool": "vault",
+      "cfg": {
+        "honk_every": 6.0,
+        "honk_reach": 20.0,
+        "egg_speed_share": 0.7,
+        "hatch_seconds": 3.0,
+        "chips": 5
+      }
+    },
+    "split_decision": {
+      "name": "Split Decision",
+      "body": "m16",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "ported",
+        "mag": "fast",
+        "sight": "holo",
+        "muzzle": "compensator",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "burn_chance",
+        "slow_on_hit",
+        "kindling"
+      ],
+      "skills": [
+        "ice_lance",
+        "inferno_ring"
+      ],
+      "traits": [
+        "twin_shot",
+        "tempest"
+      ],
+      "sea": "saltglass",
+      "flavor": "",
+      "red": "Hot take: it's both.",
+      "signature": "split_decision",
+      "attach": "split_barrels",
+      "pool": "vault",
+      "coin": true,
+      "cfg": {
+        "burn_share": 0.4,
+        "burn_seconds": 3.0,
+        "slow": 0.5,
+        "slow_seconds": 2.0,
+        "both_within": 4.0,
+        "shatter": 10.0
+      }
+    },
+    "message_bottle": {
+      "name": "Message in a Bottle",
+      "body": "pistol_basic",
+      "maker": "moss",
+      "parts": {
+        "barrel": "long",
+        "mag": "extended",
+        "sight": "peep",
+        "muzzle": "silencer"
+      },
+      "buffs": [
+        "second_breath",
+        "crowd_pleaser",
+        "lifesteal"
+      ],
+      "skills": [
+        "rally_cry",
+        "war_banner"
+      ],
+      "traits": [
+        "pack_hunter",
+        "blood_tide"
+      ],
+      "sea": "brined",
+      "flavor": "",
+      "red": "Found it on the beach. The rest of the song is still out there.",
+      "signature": "message_bottle",
+      "attach": "message_bottle",
+      "pool": "sea_world",
+      "cfg": {
+        "verse_lines": 4,
+        "buff_seconds": 10.0,
+        "buff_pct": 20.0
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

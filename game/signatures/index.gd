@@ -24,6 +24,15 @@ const SCRIPTS := {
 	"flush": preload("res://game/signatures/flush.gd"),
 	"spaghetti": preload("res://game/signatures/spaghetti.gd"),
 	"lighthouse": preload("res://game/signatures/lighthouse.gd"),
+	"carbon_copy": preload("res://game/signatures/carbon_copy.gd"),
+	"time_card": preload("res://game/signatures/time_card.gd"),
+	"loan_shark": preload("res://game/signatures/loan_shark.gd"),
+	"wanted_poster": preload("res://game/signatures/wanted_poster.gd"),
+	"key_ring": preload("res://game/signatures/key_ring.gd"),
+	"treasure_map": preload("res://game/signatures/treasure_map.gd"),
+	"golden_goose": preload("res://game/signatures/golden_goose.gd"),
+	"split_decision": preload("res://game/signatures/split_decision.gd"),
+	"message_bottle": preload("res://game/signatures/message_bottle.gd"),
 }
 
 

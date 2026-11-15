@@ -333,6 +333,7 @@ var _chat_closed_at := -1.0  # engine time the chat input last closed (the same 
 
 
 func _ready() -> void:
+	add_to_group("game_session")  # chase guns that pay chips (Wanted Poster, Golden Goose) find the wallet here
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	LoadClock.mark("session created")
 	_build_environment()

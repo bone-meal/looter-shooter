@@ -1,11 +1,9 @@
-Regions 6 and 7 chase guns: Clam Shell, Angler Light, Flush, Spaghetti, Lighthouse in a Bottle, online
+Raid, Vault and world chase guns: the last 9, online (29 of 29)
 
-Clam Shell (shotgun): a clam round the barrels opens to fire, the reload key snaps it shut and bites, a held trigger grows a pearl that pierces a line (net_chase clam, pearl).
-Angler Light (pistol): a glowing lure; enemies near drift toward it.
-Flush (grenade launcher): grenades open whirlpools that swirl enemies and flush the weak ones (net_chase whirl).
-Spaghetti (sniper): a stretched barrel; a held scope charges a double-damage shot that stretches and pulls enemies near its line (net_chase noodle).
-Lighthouse in a Bottle (rocket launcher): a sweeping beam burns enemies; teammates' copies heal them.
-Gimmicks with a Glass node are see-through. Chase check 114 ok, pair set deep.
+Raids: Carbon Copy (every shot prints a paper copy that fires once and falls over), Time Card (inspect clocks in, pay grows unhit, a hit docks it), Loan Shark (the magazine borrows rounds for health, the shark grows, kills repay), Wanted Poster (a marked enemy pays chips and refreshes skills).
+Vault: Key Ring (keys per kill open locked things, the jingle draws enemies), Treasure Map (an X every 60 s, inspect digs up a gun), Golden Goose (honks enemies over, eggs hatch into a blast and chips), Split Decision (coin picks fire or ice, both shatter).
+World: Message in a Bottle (kills reveal an original shanty, verses buff the party; data/uniques/writing/shanty.txt, packed by export_presets).
+All effects shown to other players through net_chase. game_session joins group game_session. Chase check 162 ok, pair sets raid and vault.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

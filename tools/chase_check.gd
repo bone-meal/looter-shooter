@@ -24,6 +24,12 @@
 # lights, enemies in reach drift toward it. FLUSH: a grenade opens a whirlpool that swirls enemies and flushes the weak.
 # SPAGHETTI: a held scope charges the next shot (x2), which stretches and pulls the enemies near its line.
 # LIGHTHOUSE IN A BOTTLE: the beam sweeps, burns enemies it passes; another player's copy heals the local player.
+# CARBON COPY: every shot prints a paper copy that fires once and falls over. TIME CARD: inspect clocks in, pay grows
+# with time unhit, a hit docks it. LOAN SHARK: an empty magazine borrows a round for health, the shark grows, kills pay
+# back. WANTED POSTER: an enemy is marked, killing it pays chips and refreshes skills. KEY RING: kills add keys, enough
+# keys open something locked, the jingle draws enemies. TREASURE MAP: an X appears on the ground, inspect on it digs up
+# a gun. GOLDEN GOOSE: it honks enemies over, its eggs hatch into a blast and chips. SPLIT DECISION: fire then ice on one
+# enemy shatters it, the coin shows the next shot. MESSAGE IN A BOTTLE: kills reveal shanty lines, a verse buffs.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -262,6 +268,102 @@ class ScopeHolder extends GunHolder:
 		return 1.0
 
 
+class DamHolder extends GunHolder:
+	signal damaged
+
+
+class AmmoGun extends RefCounted:
+	var damage := 30.0
+	var ammo := 5
+
+
+class SharkHolder extends Node3D:
+	var weapon := AmmoGun.new()
+	var health := Hp.new()
+
+
+class WalletStub extends RefCounted:
+	var balance := 0
+
+	func add(n: int) -> void:
+		balance += n
+
+
+class SessionStub extends Node:
+	var purse := WalletStub.new()
+
+	func wallet() -> WalletStub:
+		return purse
+
+
+class SkillsStub extends RefCounted:
+	var refreshed := 0
+
+	func reduce_all(_s: float, _now: float) -> void:
+		refreshed += 1
+
+
+class PosterHolder extends GunHolder:
+	var skills := SkillsStub.new()
+
+
+class Locked extends Node3D:
+	var open := false
+
+	func _ready() -> void:
+		add_to_group("locked")
+
+	func on_hit(_d: float, _p: Vector3 = Vector3.ZERO, _n: Vector3 = Vector3.UP) -> void:
+		pass
+
+	func unlock() -> void:
+		open = true
+
+
+class LureMob extends Mob:
+	var chasing: Node3D
+
+	func set_target(t: Node3D) -> void:
+		chasing = t
+
+
+class FieldStub extends Node:
+	var spawned := 0
+
+	func spawn(_gun: Dictionary, _at: Vector3, _shared: int = 0) -> void:
+		spawned += 1
+
+
+class MapSession extends SessionStub:
+	var _field := FieldStub.new()
+
+
+class MapHolder extends GunHolder:
+	var gun_db: RefCounted
+
+
+class SplitMob extends Mob:
+	var burning := 0.0
+	var slowed := 0.0
+
+	func apply_burn(dps: float, _s: float) -> void:
+		burning = dps
+
+	func apply_slow(amount: float, _s: float) -> void:
+		slowed = amount
+
+
+class ClipFx extends RefCounted:
+	var clips := 0
+
+	func start_clip(_now: float, _s: float, _pct: float) -> void:
+		clips += 1
+
+
+class BottleHolder extends GunHolder:
+	var self_fx := ClipFx.new()
+
+
 class Kicker extends Node3D:
 	func aim_flat() -> Vector3:
 		return Vector3(1, 0, 0)
@@ -292,6 +394,15 @@ func _ready() -> void:
 	await _flush(db)
 	await _spaghetti(db)
 	await _lighthouse(db)
+	await _carbon(db)
+	await _time_card(db)
+	_loan_shark(db)
+	await _wanted(db)
+	_key_ring(db)
+	await _treasure(db)
+	await _goose(db)
+	_split(db)
+	_bottle(db)
 	_finish()
 
 
@@ -1191,6 +1302,310 @@ func _lighthouse(db: GunDb) -> void:
 	await get_tree().create_timer(3.5).timeout
 	_say("another player's beam heals the local player when it passes (%.0f)" % me.health.hp, copy_beam != null and me.health.hp > 40.0)
 	sig.call("stop")
+
+
+func _carbon(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "carbon_copy", 60)
+	_say("Carbon Copy builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := GunHolder.new()
+	holder.position = Vector3(11200, 0, 0)
+	add_child(holder)
+	var camera := Camera3D.new()
+	camera.position = Vector3(0, 1.3, 0)
+	holder.add_child(camera)
+	camera.current = true
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its photocopier rides on the stock, the copy model loads", piece != null and piece.find_child("Sheet", true, false) != null and ResourceLoader.exists("res://assets/models/weapons/uniques/paper_copy.gltf"))
+	var target := BodyMob.new()
+	target.position = Vector3(11200.75, 0, -15)
+	add_child(target)
+	var sig: Node3D = Signatures.make("carbon_copy")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["carbon_copy"])
+	sig.call("start", piece)
+	await get_tree().physics_frame
+	sig.call("on_fired")
+	var copies: Node3D = get_tree().get_first_node_in_group("paper_copies")
+	_say("a shot prints a paper copy beside the shooter", copies != null and int(copies.call("count")) == 1)
+	await get_tree().create_timer(1.0).timeout
+	var sheet: Node3D = copies.get_child(0) as Node3D if copies.get_child_count() > 0 else null
+	_say("it fires once at the aim (%.0f) and falls over flat" % target.got, is_equal_approx(target.got, 90.0) and sheet != null and sheet.rotation.x < -1.2)
+	camera.queue_free()
+
+
+func _time_card(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "time_card", 60)
+	_say("Time Card builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := DamHolder.new()
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its punch clock is on the stock with a face", piece != null and piece.find_child("Face", true, false) != null)
+	var def: Dictionary = (db.uniques["time_card"] as Dictionary).duplicate(true)
+	(def["cfg"] as Dictionary)["pay"] = [{"after": 0.0, "mult": 1.0}, {"after": 0.2, "mult": 1.5}, {"after": 0.4, "mult": 2.0}]
+	var sig: Node3D = Signatures.make("time_card")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, def)
+	sig.call("start", piece)
+	_say("clocked out at first: no extra pay, others see \"o\"", is_equal_approx(float(sig.call("damage_mult")), 1.0) and String(sig.call("held_suffix")) == "o")
+	sig.call("on_inspect")
+	await get_tree().create_timer(0.55).timeout
+	_say("clocked in and unhit: double pay (x%.1f, %s)" % [float(sig.call("damage_mult")), String(sig.call("held_suffix"))], is_equal_approx(float(sig.call("damage_mult")), 2.0) and String(sig.call("held_suffix")) == "t2")
+	holder.damaged.emit()
+	var words := piece.find_child("Words", true, false) as Label3D
+	_say("a hit docks the pay (x%.1f, \"%s\")" % [float(sig.call("damage_mult")), words.text if words != null else "-"], is_equal_approx(float(sig.call("damage_mult")), 1.0) and int(sig.get("docks")) == 1 and words != null and words.text == "DOCKED")
+	var copy := Node3D.new()
+	add_child(copy)
+	var copy_piece := UniqueAttach.apply_id(copy, "time_card")
+	UniqueAttach.show_extra(copy_piece, "time_card", "t2")
+	var copy_words := copy_piece.find_child("Words", true, false) as Label3D
+	_say("another player's clock shows his rate (%s)" % (copy_words.text.replace("\n", " ") if copy_words != null else "-"), copy_words != null and copy_words.text.contains("x2"))
+	sig.call("stop")
+
+
+func _loan_shark(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "loan_shark", 60)
+	_say("Loan Shark builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := SharkHolder.new()
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var shark := piece.find_child("Shark", true, false) as Node3D if piece != null else null
+	_say("its fishbowl hangs under the barrel with a shark", shark != null)
+	var sig: Node3D = Signatures.make("loan_shark")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["loan_shark"])
+	sig.call("start", piece)
+	holder.weapon.ammo = 3
+	sig.call("on_fired")
+	_say("rounds left in the magazine: nothing borrowed", int(sig.get("debt")) == 0 and holder.weapon.ammo == 3)
+	holder.health.hp = 100.0
+	holder.weapon.ammo = 0
+	sig.call("on_fired")
+	_say("an empty magazine borrows a round for health (%d left, hp %.2f)" % [holder.weapon.ammo, holder.health.hp], holder.weapon.ammo == 1 and int(sig.get("debt")) == 1 and absf(holder.health.hp - 98.96) < 0.01)
+	for _n in 59:
+		holder.weapon.ammo = 0
+		sig.call("on_fired")
+	_say("the shark grows with the debt (x%.2f, %s)" % [shark.scale.x, String(sig.call("held_suffix"))], shark.scale.x > 2.3 and String(sig.call("held_suffix")) == "s9")
+	_say("it never takes the last point of health (%.1f)" % holder.health.hp, holder.health.hp >= 1.0)
+	sig.call("on_target_hit", Node.new(), Vector3.ZERO, 10.0, true)
+	_say("a kill pays back 5 rounds (debt %d)" % int(sig.get("debt")), int(sig.get("debt")) == 55)
+
+
+func _wanted(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "wanted_poster", 60)
+	_say("Wanted Poster builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var session := SessionStub.new()
+	session.add_to_group("game_session")
+	add_child(session)
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := PosterHolder.new()
+	holder.position = Vector3(11400, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its poster is pinned to the stock", piece != null and piece.find_child("Poster", true, false) != null)
+	var a := HpMob.new()
+	a.position = Vector3(11410, 0, 0)
+	add_child(a)
+	var b := HpMob.new()
+	b.position = Vector3(11420, 0, 0)
+	add_child(b)
+	source.list = [a, b]
+	var sig: Node3D = Signatures.make("wanted_poster")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["wanted_poster"])
+	sig.call("start", piece)
+	sig.call("pick")
+	var face: Node3D = sig.call("wanted")
+	_say("an enemy is wanted and marked over its head", face != null and face.has_node("wanted_mark"))
+	var other := a if face == b else b
+	sig.call("on_target_hit", other, other.position, 100.0, true)
+	_say("killing someone else pays nothing", session.purse.balance == 0)
+	sig.call("on_target_hit", face, face.position, 100.0, true)
+	await get_tree().process_frame
+	_say("killing the wanted one pays %d chips, refreshes the skills, takes the mark down" % session.purse.balance, session.purse.balance == 50 and holder.skills.refreshed == 1 and not face.has_node("wanted_mark"))
+	session.queue_free()
+	sig.call("stop")
+
+
+func _key_ring(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "key_ring", 65)
+	_say("Key Ring builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its key ring hangs from the grip, nine keys on it", piece != null and piece.find_child("Key9", true, false) != null)
+	var sig: Node3D = Signatures.make("key_ring")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["key_ring"])
+	sig.call("start", piece)
+	_say("no keys at first: none shown", not (piece.find_child("Key1", true, false) as Node3D).visible)
+	for _n in 6:
+		sig.call("on_target_hit", Node.new(), Vector3.ZERO, 10.0, true)
+	_say("six kills: six keys (%s), the sixth shown, the seventh not" % String(sig.call("held_suffix")), int(sig.get("keys")) == 6 and (piece.find_child("Key6", true, false) as Node3D).visible and not (piece.find_child("Key7", true, false) as Node3D).visible)
+	var door := Locked.new()
+	add_child(door)
+	sig.call("on_target_hit", door, Vector3.ZERO, 10.0, false)
+	_say("shooting something locked opens it for 5 keys (%d left)" % int(sig.get("keys")), door.open and int(sig.get("keys")) == 1)
+	var mob := LureMob.new()
+	mob.position = Vector3(8, 0, 0)
+	add_child(mob)
+	source.list = [mob]
+	sig.call("jingle")
+	_say("the jingle draws an enemy in earshot to the holder", mob.chasing == holder)
+
+
+func _treasure(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "treasure_map", 65)
+	_say("Treasure Map builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var session := MapSession.new()
+	session.add_to_group("game_session")
+	add_child(session)
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(200, 1, 200)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(12000, -0.5, 0)
+	add_child(floor_body)
+	var holder := MapHolder.new()
+	holder.gun_db = db
+	holder.position = Vector3(12000, 0, 0)
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	_say("its rolled map is tied to the barrel", UniqueAttach.apply(model, gun, db) != null)
+	var sig: Node3D = Signatures.make("treasure_map")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["treasure_map"])
+	await get_tree().physics_frame
+	var x: Node3D = sig.call("mark_new")
+	var far_off := x.global_position.distance_to(holder.global_position) if x != null else 0.0
+	_say("an X appears on the ground %.0f m away" % far_off, x != null and far_off >= 14.0 and far_off <= 41.0 and absf(x.global_position.y) < 0.1)
+	_say("away from it the stock digs nothing", not bool(sig.call("dig")))
+	holder.global_position = x.global_position + Vector3(1, 0, 0)
+	_say("on it the inspect key digs up a gun, the X is gone", bool(sig.call("dig")) and session._field.spawned == 1)
+	await get_tree().process_frame
+	_say("(no X left)", get_tree().get_nodes_in_group("treasure_xs").is_empty())
+	session.queue_free()
+
+
+func _goose(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "golden_goose", 65)
+	_say("Golden Goose builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var session := SessionStub.new()
+	session.add_to_group("game_session")
+	add_child(session)
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(100, 1, 100)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(12500, -0.5, 0)
+	add_child(floor_body)
+	var holder := GunHolder.new()
+	holder.position = Vector3(12500, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var head := piece.find_child("Head", true, false) as Node3D if piece != null else null
+	_say("its golden goose sits on the tube, the egg model loads", head != null and ResourceLoader.exists("res://assets/models/weapons/uniques/golden_egg.gltf"))
+	var sig: Node3D = Signatures.make("golden_goose")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["golden_goose"])
+	sig.call("start", piece)
+	var mob := LureMob.new()
+	mob.position = Vector3(12512, 0, 0)
+	add_child(mob)
+	source.list = [mob]
+	await get_tree().process_frame
+	sig.call("honk")
+	var lowest := 0.0
+	for _f in 6:
+		await get_tree().process_frame
+		lowest = minf(lowest, head.rotation.x)
+	_say("it honks: its head bobs (%.2f), an enemy near comes for it (%s)" % [lowest, str(mob.chasing == holder)], lowest < -0.05 and mob.chasing == holder)
+	sig.call("fire_projectile", Vector3(12500, 1.5, 0), Vector3(0, 0.2, 1).normalized(), {"speed": 12.0, "splash_damage": 150.0, "splash_radius": 4.0})
+	await get_tree().create_timer(1.0).timeout
+	_say("an egg flies and sits there, not hatched yet", get_tree().get_nodes_in_group("golden_eggs").size() == 1 and booms.blasts.is_empty())
+	await get_tree().create_timer(2.5).timeout
+	_say("it hatches: a blast (%s) and chips (%d)" % [str(booms.blasts), session.purse.balance], booms.blasts.size() == 1 and is_equal_approx(float(booms.blasts[0][2]), 150.0) and session.purse.balance == 5)
+	session.queue_free()
+
+
+func _split(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "split_decision", 65)
+	_say("Split Decision builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := GunHolder.new()
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its two barrels and the coin are on", piece != null and piece.find_child("Coin", true, false) != null)
+	var sig: Node3D = Signatures.make("split_decision")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["split_decision"])
+	sig.call("start", piece)
+	var mob := SplitMob.new()
+	add_child(mob)
+	sig.set("fire", true)
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	_say("a fire shot burns (%.0f a second), no shatter yet; others see \"f\"" % mob.burning, mob.burning > 0.0 and int(sig.get("shatters")) == 0 and String(sig.call("held_suffix")) == "f")
+	sig.set("fire", false)
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	_say("then an ice shot slows it and it shatters (%.0f)" % mob.got, mob.slowed > 0.0 and int(sig.get("shatters")) == 1 and is_equal_approx(mob.got, 300.0))
+	var copy := Node3D.new()
+	add_child(copy)
+	var copy_piece := UniqueAttach.apply_id(copy, "split_decision")
+	UniqueAttach.show_extra(copy_piece, "split_decision", "f")
+	_say("another player's coin shows his next shot", is_equal_approx((copy_piece.find_child("Coin", true, false) as Node3D).rotation.x, PI))
+
+
+func _bottle(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "message_bottle", 65)
+	_say("Message in a Bottle builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := BottleHolder.new()
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	_say("its bottle is taped to the frame, the shanty has 12 lines", UniqueAttach.apply(model, gun, db) != null and (load("res://game/signatures/message_bottle.gd") as GDScript).call("song_lines").size() == 12)
+	var sig: Node3D = Signatures.make("message_bottle")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["message_bottle"])
+	for _n in 3:
+		sig.call("on_target_hit", Node.new(), Vector3.ZERO, 10.0, true)
+	_say("three kills: three lines told, no verse yet (%s)" % ", ".join(holder.damage_numbers.said.slice(-3)), int(sig.get("next_line")) == 3 and int(sig.get("verses")) == 0)
+	sig.call("on_target_hit", Node.new(), Vector3.ZERO, 10.0, true)
+	_say("the fourth finishes the verse: the buff", int(sig.get("verses")) == 1 and holder.self_fx.clips == 1)
 
 
 func _json(name: String) -> Dictionary:

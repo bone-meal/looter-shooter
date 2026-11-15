@@ -1,4 +1,4 @@
-# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction; WEATHERVANE "bolt"; KITE FLYER "kite_dive"; CHIP THIEF "gull"; CLAM SHELL "clam" / "pearl"; FLUSH "whirl"; SPAGHETTI "noodle") (director 2026-11-15: "effects should be seen by online
+# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction; WEATHERVANE "bolt"; KITE FLYER "kite_dive"; CHIP THIEF "gull"; CLAM SHELL "clam" / "pearl"; FLUSH "whirl"; SPAGHETTI "noodle"; CARBON COPY "copy"; WANTED POSTER "wanted" / "wanted_off"; TREASURE MAP "treasure" / "treasure_gone"; GOLDEN GOOSE "egg" / "honk"; SPLIT DECISION "shatter"; MESSAGE IN A BOTTLE "verse") (director 2026-11-15: "effects should be seen by online
 # players too"). The holder's machine plays an effect and tells the host; the host passes it to everyone else, who
 # show it. CROAK: where the holder's frog is (leaping, riding an enemy's head) or that it is back on the gun.
 # KEEPER'S LANTERN: a thrown lantern ("bomb": from, velocity) flies and burns on every machine (damage only from the
@@ -11,13 +11,19 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball", "bolt", "kite_dive", "gull", "clam", "pearl", "whirl", "noodle"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball", "bolt", "kite_dive", "gull", "clam", "pearl", "whirl", "noodle", "copy", "wanted", "wanted_off", "treasure", "treasure_gone", "egg", "honk", "shatter", "verse"]
 const PenguinRescue = preload("res://game/signatures/penguin_rescue.gd")
 const AvalancheControl = preload("res://game/signatures/avalanche_control.gd")
 const LightningBolt = preload("res://game/lightning_bolt.gd")
 const ClamShell = preload("res://game/signatures/clam_shell.gd")
 const Flush = preload("res://game/signatures/flush.gd")
 const Spaghetti = preload("res://game/signatures/spaghetti.gd")
+const PaperCopies = preload("res://game/paper_copies.gd")
+const WantedPoster = preload("res://game/signatures/wanted_poster.gd")
+const TreasureMap = preload("res://game/signatures/treasure_map.gd")
+const GoldenGoose = preload("res://game/signatures/golden_goose.gd")
+const SplitDecision = preload("res://game/signatures/split_decision.gd")
+const MessageBottle = preload("res://game/signatures/message_bottle.gd")
 const HotPotato = preload("res://game/signatures/hot_potato.gd")
 const VolcanoSauce = preload("res://game/signatures/volcano_sauce.gd")
 const Grillmaster = preload("res://game/signatures/grillmaster.gd")
@@ -143,6 +149,42 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vect
 			var me_n2: Node3D = net.local_player()
 			if me_n2 != null:
 				Spaghetti.stretch_line(get_tree(), me_n2.get("explosives"), at, b.normalized(), cfg_of("spaghetti"), false)
+		"copy":  # another player's Carbon Copy prints a copy at `at` that fires at b (no damage from ours)
+			var me_p2: Node3D = net.local_player()
+			if me_p2 != null:
+				var copies := PaperCopies.pool(me_p2.get_parent())
+				var flat := Vector3(b.x - at.x, 0.0, b.z - at.z).normalized()
+				if copies != null:
+					copies.call("print_copy", at, atan2(-flat.x, -flat.z), b, false, 0.0)
+		"wanted", "wanted_off":  # another player's Wanted Poster: the enemy nearest `at` is marked / no longer
+			var nearest := _enemy_near(at)
+			if nearest != null:
+				if kind == "wanted":
+					WantedPoster.mark(nearest)
+				else:
+					WantedPoster.unmark(nearest)
+		"treasure":  # another player's Treasure Map put an X at `at` (slot = its number)
+			var me_t: Node3D = net.local_player()
+			if me_t != null:
+				TreasureMap.place(me_t.get_parent(), at, from, slot)
+		"treasure_gone":  # ... and it was dug up or replaced
+			for x: Node in get_tree().get_nodes_in_group("treasure_xs"):
+				if int(x.get("owner_id")) == from and int(x.get("slot")) == slot:
+					x.queue_free()
+		"egg":  # another player's golden egg flies from at with velocity b and hatches here too (no damage, no chips)
+			var me_e: Node3D = net.local_player()
+			if me_e != null:
+				GoldenGoose.lay(me_e.get_parent(), me_e.get("explosives"), at, b, false, 0.0, 4.0, 0, float(cfg_of("golden_goose").get("hatch_seconds", 3.0)), [], null)
+		"honk":  # another player's goose honks (his copy's head bobs)
+			var body_h: Node3D = net.player_node(from)
+			if body_h != null and body_h.get("_held_piece") != null:
+				GoldenGoose.bob((body_h.get("_held_piece") as Node3D).find_child("Head", true, false) as Node3D)
+		"shatter":  # another player's Split Decision shattered an enemy at `at`
+			var me_s2: Node3D = net.local_player()
+			if me_s2 != null:
+				SplitDecision.shards(me_s2.get_parent(), at)
+		"verse":  # another player finished a verse of the shanty: our player gets its buff too
+			MessageBottle.buff(net.local_player(), cfg_of("message_bottle"))
 		"snowball":  # another player's Avalanche Control snowball: it rolls the same way here (no damage from ours)
 			var me_s: Node3D = net.local_player()
 			if me_s != null:
@@ -231,3 +273,19 @@ func _of_peer(group: String, peer: int) -> Node3D:
 		if int(n.call("peer")) == peer:
 			return n as Node3D
 	return null
+
+
+# The living enemy on this machine nearest a spot (within 4 m), or null.
+func _enemy_near(at: Vector3) -> Node3D:
+	var me: Node3D = net.local_player()
+	var explosives: Variant = me.get("explosives") if me != null else null
+	var source: Variant = explosives.get("source") if explosives != null else null
+	if source == null:
+		return null
+	var best: Node3D = null
+	var best_d := 4.0
+	for enemy: Node3D in source.call("enemy_list"):
+		if is_instance_valid(enemy) and enemy.global_position.distance_to(at) < best_d:
+			best = enemy
+			best_d = enemy.global_position.distance_to(at)
+	return best

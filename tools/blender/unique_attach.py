@@ -48,6 +48,24 @@
 # clamps and a second muzzle at its end.
 # LIGHTHOUSE IN A BOTTLE: a corked glass bottle strapped along the LEFT of the rocket tube with a tiny striped
 # lighthouse on a rock inside; the glass is node "Glass" (the game makes it see-through), the lamp node "Lamp".
+# CARBON COPY: a little office photocopier strapped on top of the double shotgun's stock wrist (lid, paper tray, a sheet
+# as node "Sheet" the game slides out, a green scan light "Scan"); paper_copy = the printed copy of you: a flat paper
+# cut-out of a person (about 1.75 m, facing +f, standing on the origin).
+# TIME CARD: a punch clock on the LEFT of the M60's stock with a time card stuck in its slot; an empty "Face" marks the
+# clock face (the game writes the time and pay there).
+# LOAN SHARK: a round fishbowl clamped under the pistol's barrel, its glass node "Glass" (see-through in the game),
+# a little shark inside as node "Shark" (the game grows it with the debt).
+# WANTED POSTER: a parchment poster pinned to the LEFT of the sniper's stock; an empty "Poster" marks its middle (the
+# game writes the wanted enemy and the reward there).
+# KEY RING: a steel key ring hanging from the bottom of the pistol's grip with nine keys as nodes "Key1".."Key9" (the game
+# shows as many as the gun has earned).
+# TREASURE MAP: a rolled parchment map tied with twine along the LEFT of the M16's handguard, a red wax seal dangling.
+# GOLDEN GOOSE: a small golden goose sitting on top of the grenade launcher's tube, its head and neck as node "Head"
+# (pivot at the neck's foot: the game bobs it to honk); golden_egg = the egg it lays (radius ~1 about the origin).
+# SPLIT DECISION: two short barrel shrouds under the M16's handguard, red with fins (fire) beside blue with frost spikes
+# (ice), and a coin on a post on top of the handguard as node "Coin" (red face up / blue face down; the game spins it).
+# MESSAGE IN A BOTTLE: a corked bottle with a rolled note inside lying along the LEFT of the pistol's frame; its glass
+# is node "Glass".
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -87,7 +105,12 @@ SPECS = {  # name: (kind, colour, seed)
     "bagfoil": ("polymer", (0.98, 0.78, 0.12), 94), "bagred": ("polymer", (0.85, 0.12, 0.1), 95), "chip": ("matte", (0.95, 0.78, 0.38), 96),
     "gullwhite": ("matte", (0.95, 0.95, 0.94), 97), "shell": ("matte", (0.92, 0.78, 0.66), 99),
     "shellrib": ("matte", (0.78, 0.55, 0.45), 100), "nacre": ("polymer", (0.95, 0.92, 0.96), 101), "lure": ("matte", (0.75, 0.95, 0.85), 102),
-    "copper": ("paint", (0.78, 0.45, 0.25), 103), "lightred": ("polymer", (0.85, 0.15, 0.12), 104), "rock": ("matte", (0.45, 0.42, 0.4), 105), "gullgrey": ("matte", (0.62, 0.65, 0.7), 98),
+    "copper": ("paint", (0.78, 0.45, 0.25), 103), "beige": ("polymer", (0.86, 0.82, 0.72), 106),
+    "paper": ("matte", (0.97, 0.97, 0.95), 107), "ink": ("matte", (0.55, 0.56, 0.6), 108), "scan": ("matte", (0.3, 1.0, 0.4), 109),
+    "clockface": ("matte", (0.95, 0.94, 0.88), 110), "parchment": ("matte", (0.86, 0.76, 0.55), 111), "sharkgrey": ("polymer", (0.48, 0.53, 0.6), 112),
+    "water": ("polymer", (0.3, 0.6, 0.85), 113), "keysteel": ("paint", (0.66, 0.66, 0.62), 114),
+    "keybrass": ("paint", (0.82, 0.66, 0.3), 115), "goose": ("paint", (0.95, 0.75, 0.2), 116), "frost": ("polymer", (0.35, 0.65, 1.0), 117),
+    "seal": ("polymer", (0.7, 0.08, 0.08), 118), "lightred": ("polymer", (0.85, 0.15, 0.12), 104), "rock": ("matte", (0.45, 0.42, 0.4), 105), "gullgrey": ("matte", (0.62, 0.65, 0.7), 98),
     "penguinback": ("polymer", (0.07, 0.08, 0.1), 79), "penguinbelly": ("polymer", (0.94, 0.94, 0.92), 80), "beak": ("polymer", (1.0, 0.55, 0.12), 81),
 }
 
@@ -644,7 +667,165 @@ def bottle_lighthouse(m, M):
         m.box(M["strap"], (0.03, 0.01, 0.01), (x + 0.02, y + 0.034, ff), bevel=0.0008)
 
 
-MODELS = {"clam_shell": clam_shell, "angler_lure": angler_lure, "float_ball": float_ball, "long_barrel": long_barrel, "bottle_lighthouse": bottle_lighthouse, "weathervane": weathervane, "kite_reel": kite_reel, "kite": kite, "chip_bag": chip_bag, "gull": gull, "brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def photocopier(m, M):
+    x, y, f = -0.045, 0.012, -0.19  # middle of the copier on the stock wrist's left
+    m.box(M["beige"], (0.04, 0.05, 0.13), (x, y, f), bevel=0.004)  # body
+    m.box(M["ink"], (0.042, 0.008, 0.132), (x, y + 0.028, f), bevel=0.002)  # lid
+    m.box(M["ink"], (0.03, 0.004, 0.05), (x, y - 0.012, f + 0.075), bevel=0.001)  # paper tray out the front
+    m.node("Sheet", (x, y - 0.008, f + 0.06))
+    m.box(M["paper"], (0.026, 0.002, 0.045), (x, y - 0.008, f + 0.075), node="Sheet", bevel=0.0)
+    m.node("Scan", (x - 0.021, y + 0.01, f))
+    m.box(M["scan"], (0.002, 0.006, 0.1), (x - 0.021, y + 0.01, f), node="Scan", bevel=0.0)  # the green light down its side
+    for b in range(3):  # little buttons
+        m.box(M["ink"], (0.006, 0.004, 0.008), (x - 0.008 + b * 0.008, y + 0.033, f - 0.05), bevel=0.001)
+    for ff in (f - 0.04, f + 0.04):  # two straps round copier and stock
+        m.box(M["strap"], (0.075, 0.004, 0.01), (-0.03, y + 0.034, ff), bevel=0.0008)
+        m.box(M["strap"], (0.075, 0.004, 0.01), (-0.03, -0.045, ff), bevel=0.0008)
+
+
+def paper_copy(m, M):
+    body = [(0.0, 0.75), (0.05, 0.0), (0.18, 0.0), (0.15, 0.85), (0.16, 1.0), (0.3, 0.95), (0.34, 1.0), (0.24, 1.42), (0.1, 1.47), (0.06, 1.5),
+            (-0.06, 1.5), (-0.1, 1.47), (-0.24, 1.42), (-0.34, 1.0), (-0.3, 0.95), (-0.16, 1.0), (-0.15, 0.85), (-0.18, 0.0), (-0.05, 0.0)]
+    head = [(0.11 * math.cos(2 * math.pi * k / 10), 1.63 + 0.12 * math.sin(2 * math.pi * k / 10)) for k in range(10)]
+    m.prof(M["paper"], 0.004, body, x=0.0, bevel=0.0, across="f")
+    m.prof(M["paper"], 0.004, head, x=0.0, bevel=0.0, across="f")
+    ink = [(px * 0.86, 0.06 + py * 0.92) for px, py in body]
+    m.prof(M["ink"], 0.001, ink, x=0.0025, bevel=0.0, across="f")  # the grey print on its face
+    m.prof(M["ink"], 0.001, [(px * 0.85, 1.63 + (py - 1.63) * 0.85) for px, py in head], x=0.0025, bevel=0.0, across="f")
+
+
+def punch_clock(m, M):
+    x, y, f = -0.05, -0.01, -0.38
+    m.box(M["beige"], (0.03, 0.08, 0.07), (x, y, f), bevel=0.004)  # the clock box
+    m.cylx(M["clockface"], 0.026, x - 0.017, x - 0.015, f, y + 0.012, segs=24, bevel=0.0)  # face
+    m.cylx(M["vaneiron"], 0.028, x - 0.0155, x - 0.0145, f, y + 0.012, segs=24, bevel=0.0)  # rim
+    m.empty("Face", x - 0.018, y + 0.012, f)
+    m.box(M["ink"], (0.026, 0.006, 0.04), (x, y + 0.043, f), bevel=0.001)  # card slot
+    m.box(M["parchment"], (0.002, 0.04, 0.03), (x, y + 0.06, f), bevel=0.0)  # the time card stuck in it
+    for k in range(4):
+        m.box(M["ink"], (0.0022, 0.002, 0.024), (x, y + 0.05 + k * 0.007, f), bevel=0.0)  # its printed rows
+    for ff in (f - 0.025, f + 0.025):
+        m.box(M["strap"], (0.08, 0.004, 0.008), (-0.03, y + 0.042, ff), bevel=0.0008)
+        m.box(M["strap"], (0.08, 0.004, 0.008), (-0.03, y - 0.042, ff), bevel=0.0008)
+
+
+BOWL = (0.0, -0.1, 0.235)  # the fishbowl's middle under the pistol's barrel (frame bottom y -0.048)
+
+
+def fishbowl(m, M):
+    x, y, f = BOWL
+    m.box(M["vaneiron"], (0.014, 0.03, 0.012), (x, -0.058, f), bevel=0.002)  # clamp on the frame's front
+    m.node("Glass", (x, y, f))
+    m.lathe(M["jarglass"], [(0.012, -0.036), (0.03, -0.028), (0.038, -0.008), (0.036, 0.016), (0.024, 0.032), (0.022, 0.036)], (x, y, f), node="Glass", segs=20)
+    m.lathe(M["water"], [(0.01, -0.035), (0.028, -0.029)], (x, y, f), segs=16)  # water: only the bottom and the line show
+    m.lathe(M["water"], [(0.0345, 0.011), (0.0348, 0.013)], (x, y, f), segs=20)
+    m.node("Shark", (x, y, f))
+    m.ball(M["sharkgrey"], (0.006, 0.006, 0.016), (x, y, f), node="Shark", u=12, v=8)
+    m.prof(M["sharkgrey"], 0.002, [(f - 0.004, y + 0.004), (f + 0.004, y + 0.004), (f - 0.004, y + 0.013)], x=x, bevel=0.0, node="Shark")  # fin
+    m.prof(M["sharkgrey"], 0.002, [(f - 0.014, y), (f - 0.022, y + 0.008), (f - 0.02, y), (f - 0.022, y - 0.006)], x=x, bevel=0.0, node="Shark")  # tail
+    m.ball(M["paper"], (0.0045, 0.002, 0.008), (x, y - 0.004, f + 0.004), node="Shark", u=8, v=4)  # pale belly
+
+
+def wanted_poster(m, M):
+    x, y, f = -0.026, -0.02, -0.35
+    m.box(M["parchment"], (0.002, 0.1, 0.13), (x, y, f), bevel=0.0)
+    m.box(M["ink"], (0.0022, 0.012, 0.11), (x, y + 0.037, f), bevel=0.0)  # the header band
+    m.box(M["ink"], (0.0022, 0.004, 0.08), (x, y - 0.035, f), bevel=0.0)  # the reward line
+    for dy, df in ((0.045, 0.058), (0.045, -0.058), (-0.045, 0.058), (-0.045, -0.058)):
+        m.ball(M["lightred"], 0.0035, (x - 0.002, y + dy, f + df), u=8, v=6)  # pins
+    m.empty("Poster", x - 0.0015, y, f)
+
+
+def key_ring(m, M):
+    cx, cy, cf = 0.0, -0.19, -0.02  # the ring's middle, hanging under the grip's base (y -0.166)
+    m.box(M["keysteel"], (0.006, 0.012, 0.006), (cx, -0.17, cf), bevel=0.001)  # lanyard loop
+    for k in range(16):  # the ring (a loop of short rods in the y-f plane)
+        a0 = 2 * math.pi * k / 16
+        a1 = 2 * math.pi * (k + 1) / 16
+        m.rod(M["keysteel"], 0.0015, (cx, cy + 0.012 * math.cos(a0), cf + 0.012 * math.sin(a0)), (cx, cy + 0.012 * math.cos(a1), cf + 0.012 * math.sin(a1)), segs=5)
+    for k in range(9):  # nine keys fanned round the bottom of the ring
+        a = math.radians(-70 + k * 17.5)
+        top = (cx + (k % 3 - 1) * 0.002, cy - 0.012 * math.cos(a), cf + 0.012 * math.sin(a))
+        down = (math.sin(a) * 0.5, -math.cos(a))
+        name = "Key%d" % (k + 1)
+        m.node(name, top)
+        mat = M["keybrass"] if k % 2 == 0 else M["keysteel"]
+        bow = (top[0], top[1] + down[1] * 0.008, top[2] + down[0] * 0.008)
+        m.ball(mat, (0.002, 0.007, 0.007), bow, node=name, u=10, v=6)  # the bow
+        tip = (top[0], top[1] + down[1] * 0.04, top[2] + down[0] * 0.04)
+        m.rod(mat, 0.0016, bow, tip, segs=5, node=name)  # the blade
+        for t in (0.6, 0.8):
+            tooth = (top[0], top[1] + down[1] * 0.04 * t, top[2] + down[0] * 0.04 * t)
+            m.box(mat, (0.0015, 0.004, 0.004), (tooth[0], tooth[1], tooth[2] + 0.003), bevel=0.0, node=name)
+
+
+def treasure_map(m, M):
+    x, y, f0, f1 = -0.054, 0.0, 0.29, 0.46
+    m.cyl(M["parchment"], 0.016, f0, f1, y, x=x, segs=16, bevel=0.002)
+    m.cyl(M["parchment"], 0.0175, f1 - 0.004, f1, y, x=x, segs=16, bevel=0.0)  # the rolled edge
+    for f in (f0 + 0.035, f1 - 0.035):  # twine round map and handguard
+        m.cyl(M["strap"], 0.0175, f - 0.003, f + 0.003, y, x=x, segs=16, bevel=0.0)
+        m.box(M["strap"], (0.045, 0.003, 0.006), (-0.032, y + 0.035, f), bevel=0.0)
+        m.box(M["strap"], (0.045, 0.003, 0.006), (-0.032, y - 0.03, f), bevel=0.0)
+    m.rod(M["strap"], 0.0012, (x, y - 0.016, f1 - 0.035), (x, y - 0.04, f1 - 0.03), segs=4)
+    m.ball(M["seal"], (0.003, 0.009, 0.009), (x, y - 0.047, f1 - 0.03), u=12, v=6)  # wax seal
+
+
+def goose_at(m, M, at, s=1.0, node_head="Head"):
+    x, y, f = at
+    m.ball(M["goose"], (0.022 * s, 0.018 * s, 0.035 * s), (x, y + 0.016 * s, f), u=14, v=10)  # body
+    for side in (-1.0, 1.0):
+        m.ball(M["goose"], (0.006 * s, 0.012 * s, 0.026 * s), (x + side * 0.019 * s, y + 0.02 * s, f - 0.004 * s), u=10, v=6)  # folded wings
+    m.prof(M["goose"], 0.004 * s, [(f - 0.03 * s, y + 0.02 * s), (f - 0.05 * s, y + 0.032 * s), (f - 0.034 * s, y + 0.012 * s)], x=x, bevel=0.0)  # tail
+    m.node(node_head, (x, y + 0.026 * s, f + 0.026 * s))
+    m.rod(M["goose"], 0.006 * s, (x, y + 0.026 * s, f + 0.026 * s), (x, y + 0.05 * s, f + 0.034 * s), segs=8, node=node_head)  # neck
+    m.ball(M["goose"], (0.008 * s, 0.008 * s, 0.011 * s), (x, y + 0.056 * s, f + 0.038 * s), node=node_head, u=10, v=8)  # head
+    m.rod(M["butter"], 0.003 * s, (x, y + 0.055 * s, f + 0.047 * s), (x, y + 0.053 * s, f + 0.058 * s), r2=0.0012 * s, segs=6, node=node_head)  # beak
+    for side in (-1.0, 1.0):
+        m.ball(M["rubber"], 0.0015 * s, (x + side * 0.0055 * s, y + 0.059 * s, f + 0.043 * s), u=6, v=4, node=node_head)
+
+
+def golden_goose(m, M):
+    goose_at(m, M, (0.0, 0.034, 0.3), s=1.2)
+    m.box(M["strap"], (0.07, 0.003, 0.008), (0.0, 0.034, 0.3), bevel=0.0005)  # a little saddle strap
+    m.cyl(M["strap"], 0.037, 0.296, 0.304, 0.0, segs=20, bevel=0.0005)
+
+
+def golden_egg(m, M):
+    m.lathe(M["goose"], [(0.001, -1.0), (0.45, -0.9), (0.7, -0.5), (0.75, 0.0), (0.65, 0.5), (0.4, 0.85), (0.001, 1.0)], (0.0, 0.0, 0.0), segs=16)
+
+
+def split_barrels(m, M):
+    y = -0.034
+    m.cyl(M["lightred"], 0.012, 0.24, 0.5, y, x=-0.016, segs=14, bevel=0.002)
+    m.cyl(M["frost"], 0.012, 0.24, 0.5, y, x=0.016, segs=14, bevel=0.002)
+    for k in range(4):  # fire fins on the red, frost spikes on the blue
+        f = 0.28 + k * 0.06
+        m.prof(M["flame"], 0.003, [(f, y - 0.008), (f + 0.03, y - 0.008), (f + 0.004, y - 0.026)], x=-0.03, bevel=0.0)
+        m.rod(M["cable"], 0.003, (0.026, y - 0.004, f), (0.036, y - 0.016, f + 0.006), r2=0.0005, segs=5)
+    m.cyl(M["vaneiron"], 0.0145, 0.235, 0.25, y, x=-0.016, segs=14, bevel=0.0)
+    m.cyl(M["vaneiron"], 0.0145, 0.235, 0.25, y, x=0.016, segs=14, bevel=0.0)
+    m.box(M["vaneiron"], (0.06, 0.01, 0.02), (0.0, y + 0.012, 0.3), bevel=0.002)  # bracket to the handguard
+    m.rod(M["vaneiron"], 0.002, (0.0, 0.054, 0.15), (0.0, 0.07, 0.15), segs=6)  # the coin's post
+    m.node("Coin", (0.0, 0.084, 0.15))
+    m.lathe(M["lightred"], [(0.001, 0.0), (0.014, 0.0), (0.014, 0.0015)], (0.0, 0.084, 0.15), node="Coin", segs=20, axis="f")
+    m.lathe(M["frost"], [(0.014, -0.0015), (0.001, -0.0015)], (0.0, 0.084, 0.15), node="Coin", segs=20, axis="f")
+    m.lathe(M["gilt"], [(0.0145, -0.0016), (0.0145, 0.0016)], (0.0, 0.084, 0.15), node="Coin", segs=20, axis="f")  # gold rim
+
+
+def message_bottle(m, M):
+    x, y, f = -0.034, -0.022, 0.05
+    m.node("Glass", (x, y, f + 0.1))
+    m.lathe(M["jarglass"], [(0.01, 0.0), (0.013, 0.004), (0.013, 0.12), (0.008, 0.14), (0.005, 0.15), (0.005, 0.17)], (x, y, f), node="Glass", segs=16, axis="f")
+    m.lathe(M["cork"], [(0.0048, 0.165), (0.0052, 0.18), (0.0045, 0.184)], (x, y, f), segs=10, axis="f")
+    m.cyl(M["parchment"], 0.006, f + 0.02, f + 0.1, y - 0.004, x=x, segs=10, bevel=0.001)  # the rolled note inside
+    m.cyl(M["strap"], 0.0062, f + 0.055, f + 0.06, y - 0.004, x=x, segs=10, bevel=0.0)  # its ribbon
+    for ff in (f + 0.03, f + 0.1):  # tape round bottle and frame
+        m.box(M["tape"], (0.05, 0.0012, 0.012), (-0.012, y + 0.014, ff), bevel=0.0004)
+        m.box(M["tape"], (0.05, 0.0012, 0.012), (-0.012, y - 0.014, ff), bevel=0.0004)
+
+
+MODELS = {"key_ring": key_ring, "treasure_map": treasure_map, "golden_goose": golden_goose, "golden_egg": golden_egg, "split_barrels": split_barrels, "message_bottle": message_bottle, "photocopier": photocopier, "paper_copy": paper_copy, "punch_clock": punch_clock, "fishbowl": fishbowl, "wanted_poster": wanted_poster, "clam_shell": clam_shell, "angler_lure": angler_lure, "float_ball": float_ball, "long_barrel": long_barrel, "bottle_lighthouse": bottle_lighthouse, "weathervane": weathervane, "kite_reel": kite_reel, "kite": kite, "chip_bag": chip_bag, "gull": gull, "brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

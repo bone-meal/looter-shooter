@@ -205,6 +205,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				kites.append("kite of %d%s%s" % [int(k.call("peer")), " diving" if bool(k.call("diving")) else "", " shown" if (k as Node3D).is_visible_in_tree() else " hidden"])
 			for bm: Node in get_tree().get_nodes_in_group("lighthouse_beams"):
 				kites.append("beam %s healed %d burned %d" % ["mine" if bool(bm.get("owned")) else "copy", int(bm.get("healed")), int(bm.get("burned"))])
+			if not get_tree().get_nodes_in_group("treasure_xs").is_empty():
+				kites.append("treasure Xs %d" % get_tree().get_nodes_in_group("treasure_xs").size())
+			if not get_tree().get_nodes_in_group("golden_eggs").is_empty():
+				kites.append("golden eggs %d" % get_tree().get_nodes_in_group("golden_eggs").size())
+			var paper: Node = get_tree().get_first_node_in_group("paper_copies")
+			if paper != null:
+				kites.append("paper copies %d" % int(paper.call("count")))
+			var marks := 0
+			for n2: Node in get_tree().get_root().find_children("wanted_mark", "Label3D", true, false):
+				marks += 1 if n2.is_inside_tree() else 0
+			if marks > 0:
+				kites.append("wanted marks %d" % marks)
 			if not get_tree().get_nodes_in_group("whirlpools").is_empty():
 				kites.append("whirlpools %d" % get_tree().get_nodes_in_group("whirlpools").size())
 			for fl: Node in get_tree().get_nodes_in_group("gull_flocks"):
@@ -240,6 +252,25 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("KITECATCH caught %d" % int(sig_c.get("caught")))
 			else:
 				_lines.append("KITECATCH no kite gun in hand")
+		"tofriend":  # "!tofriend": stand 3 m from the first other player (two-copy tests)
+			var spots: Dictionary = session.get("net").call("positions")
+			var my: int = int(session.get("net").call("my_id"))
+			for peer: int in spots:
+				if peer != my:
+					player.global_position = (spots[peer] as Vector3) + Vector3(3, 0.5, 0)
+					_lines.append("TOFRIEND %d at %s" % [peer, str(player.global_position.snapped(Vector3.ONE * 0.1))])
+					break
+		"treasure":  # "!treasure": the Treasure Map in hand marks an X now and the player stands on it
+			var sig_t: Node = player.get("_sig_node")
+			var x_t: Node3D = sig_t.call("mark_new") if sig_t != null and sig_t.has_method("mark_new") else null
+			if x_t != null:
+				player.global_position = x_t.global_position + Vector3(0.5, 0.3, 0)
+			_lines.append("TREASURE %s" % (str(x_t.global_position.snapped(Vector3.ONE * 0.1)) if x_t != null else "none"))
+		"coin":  # "!coin f|i": the Split Decision's next shot is fire / ice
+			var sig_c2: Node = player.get("_sig_node")
+			if sig_c2 != null and "fire" in sig_c2:
+				sig_c2.set("fire", words.size() > 1 and words[1] == "f")
+			_lines.append("COIN %s" % (words[1] if words.size() > 1 else "?"))
 		"pearl":  # "!pearl": the Clam Shell in hand fires a full pearl now (a held trigger cannot be held in a test window)
 			var sig_p: Node = player.get("_sig_node")
 			if sig_p != null and sig_p.has_method("release_pearl"):

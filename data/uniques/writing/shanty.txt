@@ -1,0 +1,15 @@
+# MESSAGE IN A BOTTLE's sea shanty (diary/DESIGN_UNIQUES.md, rare world chase gun). Every kill with the gun reveals
+# the next line; every 4 lines are a verse, sent to the party chat with a short buff for everyone. Edit freely: one
+# line per line, lines starting with # are ignored, blank lines are skipped. Placeholder words, written for this game.
+Oh, the tide went out and it took my boots,
+And the gulls came down for the rest,
+So I sailed away on a barrel of salt
+With a crab for a hat on my chest.
+Now the captain's lost and the compass spins,
+And the cook only boils the sea,
+But we sing all night and we row all day
+For the bottle that's floating to me.
+If you find this note on a windy beach,
+Pass it on to the next one along,
+For the sea keeps half of whatever it gets
+And the other half's left in this song.
