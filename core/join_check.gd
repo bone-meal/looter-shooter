@@ -3,6 +3,7 @@
 extends RefCounted
 
 const InventoryState = preload("res://core/inventory_state.gd")
+const ArmourGen = preload("res://core/armour_gen.gd")
 
 const MAX_NAME := 20
 
@@ -33,6 +34,10 @@ static func check(profile: Variant, db: RefCounted) -> String:
 			return "bad inventory"
 		if entry.is_empty():
 			continue
+		if entry.size() == 3 and entry[0] is String and entry[2] is Dictionary:  # a rolled gun (the host checks guns where they are used) or armour piece
+			if entry[0] != "gun" and ArmourGen.validate(db, entry[0], entry[2]) != "":
+				return "impossible armour piece"
+			continue
 		if entry.size() != 2 or not (entry[0] is String) or not (entry[1] is int):
 			return "bad inventory"
 		if not db.has_item(entry[0]):
@@ -46,6 +51,10 @@ static func check(profile: Variant, db: RefCounted) -> String:
 		if not (slot is String) or not InventoryState.EQUIP_SLOTS.has(slot):
 			return "bad equipment slot"
 		var id: Variant = worn[slot]
-		if not (id is String) or not db.has_item(id) or db.equip_slot(id) != slot:
+		if id is Array and id.size() == 3 and id[0] is String:  # a rolled piece
+			if ArmourGen.validate(db, id[0], id[2]) != "":
+				return "impossible armour piece"
+			id = id[0]
+		if not (id is String) or not db.has_item(id) or not (db.equip_slot(id) == slot or (db.equip_slot(id) == "ring" and String(slot).begins_with("ring_"))):
 			return "item in wrong slot"
 	return ""

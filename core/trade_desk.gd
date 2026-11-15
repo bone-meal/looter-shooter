@@ -4,7 +4,7 @@
 # answering, cancelling, leaving and standing too far apart are handled here too.
 # Every call returns the messages to deliver: [[peer id, message name, arguments array], ...]. The caller
 # (game/net_trade.gd) sends them; the test (tools/trade_check.gd) plays two players against it.
-# A thing: {"ref": int, "gun": {...}}, {"ref": int, "id": "<armour item id>"} or one card of the card game
+# A thing: {"ref": int, "gun": {...}}, {"ref": int, "id": "<armour item id>"} (+ "arm" for a rolled piece) or one card of the card game
 # {"ref": int, "card": id, "finish": "" / "rainbow" / "pony", "leader": bool}. `ref` is the owner's own mark
 # (its inventory slot; cards: game/trade_screen.gd CARD_REF up); the desk only hands it back. The desk checks that a thing is LEGAL (`legal`), never that the
 # player owns it: saves are local, so that cannot be known (director's decision, round 5).
@@ -162,6 +162,8 @@ func _clean(thing: Dictionary) -> Dictionary:
 		return {}
 	if thing.get("gun") is Dictionary:
 		return {"ref": int(thing["ref"]), "gun": (thing["gun"] as Dictionary).duplicate(true)}
+	if thing.get("id") is String and thing.get("arm") is Dictionary:  # a rolled armour piece (the host checks it: game_session _legal_thing)
+		return {"ref": int(thing["ref"]), "id": String(thing["id"]), "arm": (thing["arm"] as Dictionary).duplicate(true)}
 	if thing.get("id") is String:
 		return {"ref": int(thing["ref"]), "id": String(thing["id"])}
 	if thing.get("card") is String and thing.get("finish", "") is String and thing.get("leader", false) is bool:

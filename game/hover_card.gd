@@ -1,12 +1,13 @@
 # Purpose: the hover cards of the bag, shared by every screen that shows what a thing is (inventory, trade window):
 # a rolled gun with its stats (compared with another gun), parts, buffs and skills, and a plain item with its lines.
 # Drawn onto the canvas item that asks, inside its _draw.
-# Dependencies: core/gun_stats.gd, core/skill_state.gd, game/tier_style.gd; a gun db (core/gun_db.gd) and item db (core/item_db.gd) are handed in.
+# Dependencies: core/gun_stats.gd, core/skill_state.gd, game/tier_style.gd, core/armour_stats.gd (rolled armour); a gun db (core/gun_db.gd) and item db (core/item_db.gd) are handed in.
 extends RefCounted
 
 const GunStats = preload("res://core/gun_stats.gd")
 const SkillState = preload("res://core/skill_state.gd")
 const TierStyle = preload("res://game/tier_style.gd")
+const ArmourStats = preload("res://core/armour_stats.gd")
 
 const ITEM_WIDTH := 240.0
 
@@ -95,21 +96,32 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 
 
 # Card of a plain item (armour, food ...) at `place`.
-static func draw_item(canvas: CanvasItem, font: Font, items: RefCounted, id: String, place: Vector2, view: Vector2) -> void:
+static func draw_item(canvas: CanvasItem, font: Font, items: RefCounted, id: String, place: Vector2, view: Vector2, arm: Dictionary = {}, gun_db: RefCounted = null) -> void:
 	var pos := place
 	var flavor: String = items.flavor(id)
-	var stat_lines: Array[String] = items.stat_lines(id)
+	var stack := {"id": id, "count": 1, "arm": arm} if not arm.is_empty() and gun_db != null else {"id": id, "count": 1}
+	var stat_lines: Array[String] = ArmourStats.lines(items, stack)
+	var title: String = items.item_name(id)
+	var title_color := Color(1, 1, 1)
+	var under := String(items.kind(id)).capitalize()
+	if stack.has("arm"):  # a rolled piece: tier word + set in the name, item level under it, the set's steps after the rolls
+		var tier := String(arm["tier"])
+		title = ArmourStats.display_name(items, stack, String(gun_db.tier(tier)["name"]))
+		title_color = TierStyle.color(gun_db, tier, Time.get_ticks_msec() / 1000.0)
+		under = "Armour  -  item level %d" % int(arm["lvl"])
+		for line: Array in ArmourStats.set_lines(items, String(arm.get("set", "")), 0):
+			stat_lines.append(String(line[0]))
 	var lines := ceili(flavor.length() / 30.0)
 	var height := 62.0 + stat_lines.size() * 16.0 + lines * 18.0
 	pos.x = minf(pos.x, view.x - ITEM_WIDTH - 8.0)
 	pos.y = minf(pos.y, view.y - height - 8.0)
 	canvas.draw_rect(Rect2(pos, Vector2(ITEM_WIDTH, height)), Color(0.08, 0.04, 0.12, 0.96))
 	canvas.draw_rect(Rect2(pos, Vector2(ITEM_WIDTH, height)), Color(0.7, 0.5, 0.9, 0.8), false, 1.5)
-	canvas.draw_string(font, pos + Vector2(10, 22), items.item_name(id), HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color(1, 1, 1))
-	canvas.draw_string(font, pos + Vector2(10, 40), String(items.kind(id)).capitalize(), HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.7, 0.7, 0.8))
+	canvas.draw_string(font, pos + Vector2(10, 22), title, HORIZONTAL_ALIGNMENT_LEFT, ITEM_WIDTH - 20.0, 18, title_color)
+	canvas.draw_string(font, pos + Vector2(10, 40), under, HORIZONTAL_ALIGNMENT_LEFT, -1, 12, Color(0.7, 0.7, 0.8))
 	var y := 60.0
 	for line in stat_lines:
-		canvas.draw_string(font, pos + Vector2(10, y), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 13, Color(0.6, 1.0, 0.7))
+		canvas.draw_string(font, pos + Vector2(10, y), line, HORIZONTAL_ALIGNMENT_LEFT, ITEM_WIDTH - 20.0, 13, Color(0.6, 1.0, 0.7))
 		y += 16.0
 	canvas.draw_multiline_string(font, pos + Vector2(10, y + 4.0), flavor, HORIZONTAL_ALIGNMENT_LEFT, ITEM_WIDTH - 20.0, 13, -1, Color(0.85, 0.8, 0.95))
 

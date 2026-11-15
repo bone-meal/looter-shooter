@@ -1,7 +1,7 @@
 # Purpose: the inventory's docked item card (locked 2026-11-14 layout, diary/DECISIONS_SEA.md): the right-hand panel
 # showing the chosen gun (rarity band, name, level, big icon, maker, stats compared with the gun in hand, parts,
 # combos, buffs, traits, Q / E skills) or item (icon, kind, stats, flavor), with its action buttons at the foot.
-# Dependencies: game/ui_skin.gd, game/item_icons.gd, game/tier_style.gd, core/gun_stats.gd, core/skill_state.gd.
+# Dependencies: game/ui_skin.gd, game/item_icons.gd, game/tier_style.gd, core/gun_stats.gd, core/skill_state.gd, core/armour_stats.gd (rolled armour).
 extends RefCounted
 
 const UiSkin = preload("res://game/ui_skin.gd")
@@ -10,6 +10,7 @@ const ItemIcons = preload("res://game/item_icons.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const SkillState = preload("res://core/skill_state.gd")
+const ArmourStats = preload("res://core/armour_stats.gd")
 
 const PAD := 22.0
 const BUTTON_H := 40.0
@@ -32,6 +33,8 @@ static func draw(canvas: CanvasItem, font: Font, r: Rect2, what: Dictionary, gun
 	var foot := r.end.y - PAD - (BUTTON_H if not actions.is_empty() else 0.0)
 	if what.has("gun"):
 		_gun(canvas, font, r, foot, what["gun"], what.get("against", {}), gun_db, t)
+	elif what.has("id") and not (what.get("arm", {}) as Dictionary).is_empty():
+		_armour(canvas, font, r, foot, what, gun_db, items, t)
 	elif what.has("id"):
 		_item(canvas, font, r, foot, String(what["id"]), int(what.get("count", 1)), items)
 	elif what.has("note"):
@@ -166,6 +169,36 @@ static func _num(value: float, whole: bool) -> Variant:
 static func _fill(def: Dictionary, q: float) -> String:
 	var value := lerpf(float(def["min"]), float(def["max"]), q)
 	return String(def["desc"]) % (("%.1f" % value) if value < 10.0 else ("%.0f" % value))
+
+
+# A rolled armour piece: tier band with its item level, name, icon, the stat and roll lines, then its set's steps
+# (lit when that many pieces are worn: what["worn_sets"]).
+static func _armour(canvas: CanvasItem, font: Font, r: Rect2, foot: float, what: Dictionary, gun_db: RefCounted, items: RefCounted, t: float) -> void:
+	var id := String(what["id"])
+	var arm: Dictionary = what["arm"]
+	var stack := {"id": id, "count": 1, "arm": arm}
+	var tier := String(arm["tier"])
+	var tint := TierStyle.color(gun_db, tier, t)
+	_band(canvas, font, r, tint, "%s %s" % [String(gun_db.tier(tier)["name"]).to_upper(), String(items.equip_slot(id)).capitalize().to_upper()], "Lv %d" % int(arm["lvl"]))
+	var x := r.position.x + PAD
+	var w := r.size.x - 2.0 * PAD
+	canvas.draw_string(font, Vector2(x, r.position.y + 90.0), ArmourStats.display_name(items, stack, String(gun_db.tier(tier)["name"])), HORIZONTAL_ALIGNMENT_LEFT, w, 22, tint)
+	ItemIcons.draw(canvas, id, Rect2(x + w * 0.3, r.position.y + 106.0, w * 0.4, 110.0), Color.WHITE)
+	var y := r.position.y + 240.0
+	for line: String in ArmourStats.lines(items, stack):
+		canvas.draw_string(font, Vector2(x, y), line, HORIZONTAL_ALIGNMENT_LEFT, w, 16, UiSkin.GOOD)
+		y += 22.0
+	var set_id := String(arm.get("set", ""))
+	if set_id != "":
+		y += 6.0
+		var set_tint := Color(String(items.armour["sets"][set_id]["color"]))
+		var worn := int((what.get("worn_sets", {}) as Dictionary).get(set_id, 0))
+		for line: Array in ArmourStats.set_lines(items, set_id, worn):
+			canvas.draw_string(font, Vector2(x, y), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w, 15, set_tint if bool(line[1]) else UiSkin.TEXT_DIM)
+			y += 20.0
+	y += 8.0
+	if y < foot - 30.0:
+		canvas.draw_multiline_string(font, Vector2(x, y + 10.0), items.flavor(id), HORIZONTAL_ALIGNMENT_LEFT, w, 15, maxi(1, floori((foot - y - 20.0) / 20.0)), Color(0.85, 0.82, 0.95))
 
 
 static func _item(canvas: CanvasItem, font: Font, r: Rect2, foot: float, id: String, count: int, items: RefCounted) -> void:

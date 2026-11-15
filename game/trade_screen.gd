@@ -256,7 +256,7 @@ func _draw_card() -> void:
 		var held: Dictionary = _inventory.holster_gun(in_hand) if in_hand >= 0 else {}
 		HoverCard.draw_gun(_card, ThemeDB.fallback_font, _gun_db, gun, held, place, view, "Rolled gun" if held.is_empty() else "compared with the gun in hand")
 	else:
-		HoverCard.draw_item(_card, ThemeDB.fallback_font, _items, String(_hover["id"]), place, view)
+		HoverCard.draw_item(_card, ThemeDB.fallback_font, _items, String(_hover["id"]), place, view, _hover.get("arm", {}), _gun_db)
 
 
 # view: what the desk says this player sees (core/trade_desk.gd `_views`).
@@ -411,7 +411,8 @@ func _thing_in(slot: int) -> Dictionary:
 		return {"ref": slot, "gun": gun}
 	var id := _inventory.item_id(slot)
 	if id != "" and String(_items.call("equip_slot", id)) != "":
-		return {"ref": slot, "id": id}
+		var arm: Dictionary = _inventory.arm_at(slot)
+		return {"ref": slot, "id": id, "arm": arm} if not arm.is_empty() else {"ref": slot, "id": id}
 	return {}
 
 
@@ -428,6 +429,8 @@ func _colour_of(thing: Dictionary) -> Color:
 		return RARITY_COLORS.get("legendary" if bool(thing["leader"]) else String(_card_db.card(String(thing["card"])).get("rarity", "common")), Color.WHITE)
 	if thing.has("gun"):
 		return TierStyle.color(_gun_db, String((thing["gun"] as Dictionary)["tier"]), Time.get_ticks_msec() / 1000.0)
+	if thing.has("arm"):  # a rolled armour piece: its tier's colour
+		return TierStyle.color(_gun_db, String((thing["arm"] as Dictionary)["tier"]), Time.get_ticks_msec() / 1000.0)
 	return Color(0.9, 0.9, 0.9)
 
 

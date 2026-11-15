@@ -2,13 +2,15 @@
 # god mode, flight, levels, spawn and remove enemies, plus the fantasy world's skills, spells, gear and quests.
 # `run` returns the lines to show the person who typed the command. Who may run what is decided by the caller
 # (game/game_session.gd): "self" commands run on the typist's machine, "world" commands on the host.
-# Dependencies: core/chat_command.gd, core/gun_gen.gd, core/gun_stats.gd, core/data_store.gd, game/player.gd, game/game_session.gd
+# Dependencies: core/chat_command.gd, core/gun_gen.gd, core/gun_stats.gd, core/armour_gen.gd, core/armour_stats.gd, core/data_store.gd, game/player.gd, game/game_session.gd
 # (`session`: local_player, director, progress, wallet, travel, fantasy, refresh_after_command).
 extends Node
 
 const ChatCommand = preload("res://core/chat_command.gd")
 const GunGen = preload("res://core/gun_gen.gd")
 const GunStats = preload("res://core/gun_stats.gd")
+const ArmourGen = preload("res://core/armour_gen.gd")
+const ArmourStats = preload("res://core/armour_stats.gd")
 const LootPool = preload("res://core/loot_pool.gd")
 const DataStore = preload("res://core/data_store.gd")
 const Player = preload("res://game/player.gd")
@@ -160,6 +162,24 @@ func _give(args: Array) -> String:
 					names.append(GunStats.display_name(player.gun_db, gun))
 			session.refresh_after_command()
 			return "%s dropped: %s." % [String(player.gun_db.pools[pool_id].get("name", pool_id)), ", ".join(names) if not names.is_empty() else "nothing"]
+		"armour", "armor":  # a rolled piece: /give armour [tier] [item level] [item id] [set id | none]
+			var tier := String(args[1]) if args.size() > 1 else "purple"
+			if not (player.items.armour["tiers"] as Dictionary).has(tier):
+				return "Tiers: %s." % ", ".join((player.items.armour["tiers"] as Dictionary).keys())
+			var level := clampi(int(args[2]), 1, int(player.items.armour["max_level"])) if args.size() > 2 and String(args[2]).is_valid_int() else 1
+			var base := String(args[3]) if args.size() > 3 else ""
+			if base != "" and not player.items.rollable(base):
+				return "Not an armour piece that rolls: %s." % base
+			var set_id := String(args[4]) if args.size() > 4 else "auto"
+			if set_id == "none":
+				set_id = ""
+			elif set_id != "auto" and not (player.items.armour["sets"] as Dictionary).has(set_id):
+				return "Sets: %s, none." % ", ".join((player.items.armour["sets"] as Dictionary).keys())
+			var piece := ArmourGen.generate(player.items, _rng, tier, level, base, set_id)
+			if not player.inventory.add_armour(piece):
+				return "No room in the backpack."
+			session.refresh_after_command()
+			return "Gave %s (item level %d)." % [ArmourStats.display_name(player.items, piece, String(player.gun_db.tier(tier)["name"])), level]
 		"item":
 			var item := String(args[1]) if args.size() > 1 else ""
 			if not player.items.has_item(item):

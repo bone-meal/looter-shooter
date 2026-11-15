@@ -8,14 +8,15 @@ extends RefCounted
 const SIZE := 36
 const HOLSTERS := 4  # the most guns that can ever be carried ready
 const FRESH := -1  # `loaded` of a gun that just arrived: its owner fills it from the pool the first time it is held
-const VERSION := 4
+const VERSION := 5  # 5 = rolled armour pieces (stacks with "arm", worn ones saved as [id, 1, arm])
 const GunGen = preload("res://core/gun_gen.gd")
+const ArmourGen = preload("res://core/armour_gen.gd")
 # Order matters: the equipment panel draws these in 3 columns of 6.
 const EQUIP_SLOTS := ["hat", "head", "earrings", "necklace", "glasses", "mouth",
 	"shirt", "chestplate", "gauntlets", "ring_1", "ring_2", "bracelet",
 	"pants", "leg_armor", "cape", "waist", "boots", "foot_armor"]
 
-var equipment := {}  # slot name -> {"id", "count"} or {}
+var equipment := {}  # slot name -> {"id", "count"} (+ "arm" for a rolled piece) or {}
 var cursor := {}  # stack held by the mouse: {} or {"id": String, "count": int}
 var holster_count := 2  # how many holsters are open
 var holsters: Array[Dictionary] = []  # {} or a stack as in a slot: a plain weapon item or a rolled gun
@@ -179,6 +180,27 @@ func add_gun(gun: Dictionary) -> bool:
 	return false
 
 
+# A rolled armour piece (core/armour_gen.gd stack) into the first empty backpack slot. False = no room.
+func add_armour(stack: Dictionary) -> bool:
+	var slot := _empty_slot()
+	if slot < 0:
+		return false
+	_slots[slot] = {"id": String(stack["id"]), "count": 1, "arm": (stack["arm"] as Dictionary).duplicate(true)}
+	return true
+
+
+# The rolled armour of a backpack slot ({} when it holds none).
+func arm_at(slot: int) -> Dictionary:
+	return _slots[slot].get("arm", {})
+
+
+# Takes the stack out of a backpack slot (for giving a rolled piece away in a trade).
+func take_slot(slot: int) -> Dictionary:
+	var stack := _slots[slot]
+	_slots[slot] = {}
+	return stack
+
+
 func item_id(slot: int) -> String:
 	return String(_slots[slot].get("id", ""))
 
@@ -218,7 +240,7 @@ func click_slot(slot: int) -> void:
 	elif here.is_empty():
 		_slots[slot] = cursor
 		cursor = {}
-	elif here["id"] == cursor["id"] and not here.has("gun"):
+	elif here["id"] == cursor["id"] and not here.has("gun") and not here.has("arm") and not cursor.has("arm"):
 		var room: int = _db.stack_max(here["id"]) - int(here["count"])
 		var moved := mini(room, int(cursor["count"]))
 		here["count"] = int(here["count"]) + moved
@@ -236,7 +258,7 @@ func right_click_slot(slot: int) -> void:
 	if cursor.is_empty():
 		if here.is_empty():
 			return
-		if here.has("gun"):
+		if here.has("gun") or here.has("arm"):
 			cursor = here
 			_slots[slot] = {}
 			return
@@ -245,13 +267,13 @@ func right_click_slot(slot: int) -> void:
 		here["count"] = int(here["count"]) - take
 		if int(here["count"]) <= 0:
 			_slots[slot] = {}
-	elif here.is_empty() and cursor.has("gun"):
+	elif here.is_empty() and (cursor.has("gun") or cursor.has("arm")):
 		_slots[slot] = cursor
 		cursor = {}
 	elif here.is_empty():
 		_slots[slot] = {"id": cursor["id"], "count": 1}
 		_take_from_cursor()
-	elif here["id"] == cursor["id"] and not here.has("gun") and int(here["count"]) < _db.stack_max(here["id"]):
+	elif here["id"] == cursor["id"] and not here.has("gun") and not here.has("arm") and not cursor.has("arm") and int(here["count"]) < _db.stack_max(here["id"]):
 		here["count"] = int(here["count"]) + 1
 		_take_from_cursor()
 	else:
@@ -304,7 +326,7 @@ func click_equipment(slot: String) -> void:
 			equipment[slot] = {"id": cursor["id"], "count": 1}
 			cursor["count"] = int(cursor["count"]) - 1
 			return
-		equipment[slot] = {"id": cursor["id"], "count": 1}
+		equipment[slot] = cursor if cursor.has("arm") else {"id": cursor["id"], "count": 1}
 		cursor = old
 
 
@@ -336,6 +358,9 @@ func put_all(bundle: Variant) -> Dictionary:
 			if stack.has("gun"):
 				if not add_gun(stack["gun"]):
 					rest.append(_saved_stack(stack))
+			elif stack.has("arm"):
+				if not add_armour(stack):
+					rest.append(_saved_stack(stack))
 			else:
 				var left := add(String(stack["id"]), int(stack["count"]))
 				if left > 0:
@@ -362,6 +387,10 @@ func return_cursor() -> void:
 			holsters[free_holster()] = cursor
 			cursor = {}
 		return
+	if cursor.has("arm"):
+		if add_armour(cursor):
+			cursor = {}
+		return
 	var left := add(String(cursor["id"]), int(cursor["count"]))
 	cursor = {} if left == 0 else {"id": cursor["id"], "count": left}
 
@@ -371,14 +400,12 @@ func to_dict() -> Dictionary:
 	for s in _slots:
 		if s.is_empty():
 			out.append([])
-		elif s.has("gun"):
-			out.append([s["id"], s["count"], s["gun"]])
 		else:
-			out.append([s["id"], s["count"]])
+			out.append(_saved_stack(s))
 	var worn := {}
 	for slot in EQUIP_SLOTS:
 		if not equipment[slot].is_empty():
-			worn[slot] = equipment[slot]["id"]
+			worn[slot] = _saved_stack(equipment[slot]) if equipment[slot].has("arm") else equipment[slot]["id"]
 	var ready: Array = []
 	for i in HOLSTERS:
 		ready.append(_saved_stack(holsters[i]))
@@ -398,7 +425,9 @@ func stack_from_saved(entry: Variant) -> Dictionary:
 func _saved_stack(s: Dictionary) -> Array:
 	if s.is_empty():
 		return []
-	return [s["id"], s["count"], s["gun"]] if s.has("gun") else [s["id"], s["count"]]
+	if s.has("gun"):
+		return [s["id"], s["count"], s["gun"]]
+	return [s["id"], s["count"], s["arm"]] if s.has("arm") else [s["id"], s["count"]]
 
 
 func from_dict(data: Dictionary) -> void:
@@ -434,6 +463,8 @@ func _loaded_stack(entry: Variant) -> Dictionary:
 	if entry is Array and entry.size() == 3 and String(entry[0]) == "gun" and entry[2] is Dictionary:
 		if _gun_db != null and GunGen.validate(_gun_db, entry[2]) == "":
 			return {"id": "gun", "count": 1, "gun": entry[2]}
+	elif entry is Array and entry.size() == 3 and entry[0] is String and ArmourGen.validate(_db, String(entry[0]), entry[2]) == "":
+		return {"id": String(entry[0]), "count": 1, "arm": (entry[2] as Dictionary).duplicate(true)}
 	elif entry is Array and entry.size() == 2 and String(entry[0]) != "gun" and _db.has_item(String(entry[0])):
 		return {"id": String(entry[0]), "count": clampi(int(entry[1]), 1, _db.stack_max(String(entry[0])))}
 	return {}
@@ -442,7 +473,13 @@ func _loaded_stack(entry: Variant) -> Dictionary:
 func load_equipment(worn: Dictionary) -> void:
 	for slot in EQUIP_SLOTS:
 		equipment[slot] = {}
-		var id := String(worn.get(slot, ""))
+		var entry: Variant = worn.get(slot, "")
+		if entry is Array:  # a rolled piece
+			var stack := _loaded_stack(entry)
+			if stack.has("arm") and _db.equip_slot(String(stack["id"])) != "":
+				equipment[slot] = stack
+			continue
+		var id := String(entry)
 		if id != "" and _db.has_item(id) and _db.equip_slot(id) != "":
 			equipment[slot] = {"id": id, "count": 1}
 

@@ -13,6 +13,9 @@ const InventoryScreen = preload("res://game/inventory_screen.gd")
 const LootRoll = preload("res://core/loot_roll.gd")
 const GunGen = preload("res://core/gun_gen.gd")
 const ItemLevel = preload("res://core/item_level.gd")
+const ArmourGen = preload("res://core/armour_gen.gd")
+const ArmourStats = preload("res://core/armour_stats.gd")
+const TierStyle = preload("res://game/tier_style.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const DropRules = preload("res://core/drop_rules.gd")
 const LootField = preload("res://game/loot_field.gd")
@@ -1014,6 +1017,8 @@ func _legal_thing(thing: Dictionary) -> bool:
 	if thing.has("card"):
 		return _legal_card(thing)
 	var id := String(thing.get("id", ""))
+	if thing.has("arm"):
+		return ArmourGen.validate(_player.items, id, thing["arm"]) == ""
 	return _player.items.has_item(id) and _player.items.equip_slot(id) != ""
 
 
@@ -1122,7 +1127,9 @@ func _finish_trade(gave: Array, got: Array) -> void:
 		var slot := int(ref)
 		if slot < 0 or slot >= InventoryState.SIZE:
 			continue
-		if _player.inventory.take_gun(slot).is_empty() and _player.inventory.item_id(slot) != "":
+		if not _player.inventory.arm_at(slot).is_empty():  # this very rolled piece, not just any of its kind
+			_player.inventory.take_slot(slot)
+		elif _player.inventory.take_gun(slot).is_empty() and _player.inventory.item_id(slot) != "":
 			_player.inventory.remove(_player.inventory.item_id(slot), 1)
 	for thing: Variant in got:
 		if not thing is Dictionary:
@@ -1131,6 +1138,10 @@ func _finish_trade(gave: Array, got: Array) -> void:
 		if given.has("gun") and _legal_gun(given["gun"]):
 			if not _player.inventory.add_gun(given["gun"]):
 				_on_gun_dropped(given["gun"])
+		elif given.has("arm") and ArmourGen.validate(_player.items, String(given.get("id", "")), given["arm"]) == "":
+			var piece := {"id": String(given["id"]), "count": 1, "arm": given["arm"]}
+			if not _player.inventory.add_armour(piece):
+				_drop_armour(piece, _player.global_position + _player.global_basis.z * -1.0)
 		elif given.has("id") and _player.items.has_item(String(given["id"])):
 			_player.inventory.add(String(given["id"]), 1)
 		elif given.has("card") and _legal_card(given):
@@ -1141,8 +1152,8 @@ func _finish_trade(gave: Array, got: Array) -> void:
 
 
 func _on_inventory_changed() -> void:
+	_player.refresh_equipment()  # first: armour's reload roll is part of the gun's numbers
 	_player.refresh_held()
-	_player.refresh_equipment()
 	if _player.inventory.holster_count != _holsters_due():  # armour with a holster was put on or taken off
 		_perks_changed(false)
 	_inventory_screen.in_hand = _player.hand_index()
@@ -1799,6 +1810,15 @@ func _pick_up(drop: Dictionary) -> void:
 		else:
 			net.drops.take(int(drop["shared"]))
 		return
+	if drop.has("item") and not (drop.get("arm", {}) as Dictionary).is_empty():  # a rolled armour piece
+		var piece := {"id": String(drop["item"]), "count": 1, "arm": drop["arm"]}
+		if not _player.inventory.add_armour(piece):
+			_player_hud.notice("Inventory full: make room first.")
+			return
+		_field.take(drop)
+		save_profile()
+		_player_hud.notice("Picked up %s" % ArmourStats.display_name(_player.items, piece, String(_player.gun_db.tier(String(drop["arm"]["tier"]))["name"])))
+		return
 	if drop.has("item"):  # a piece of armour, or worms from an island boss
 		var id := String(drop["item"])
 		var count := int(drop.get("count", 1))
@@ -1905,11 +1925,13 @@ func _colosseum_drops(where: Vector3, enemy_id: String, elite: bool, wave: int) 
 	for tier: String in _colosseum.kill_tiers(_rng, wave, kind, loot):
 		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", tier, "", ItemLevel.for_wave(wave)))
 	var things: Array[String] = []
-	if _colosseum.armour_drops(_rng, kind, loot):
+	if _colosseum.armour_drops(_rng, kind, loot):  # a rolled piece (sea step 1f): the wave's tier band and item level
 		var pieces := _player.items.armour_drops()
 		var piece := pieces[_rng.randi_range(0, pieces.size() - 1)]
 		var rare := "%s+%s" % [piece, String(_colosseum.cfg["loot"]["armour"]["slot_trait"])]
-		things.append(rare if (_colosseum.armour_has_slot(_rng) and _player.items.has_item(rare)) else piece)
+		var base := rare if (_colosseum.armour_has_slot(_rng) and _player.items.has_item(rare)) else piece
+		var tier := GunGen.pick_tier(_player.gun_db, _rng, 0.0, _colosseum.band_tier(wave))
+		_drop_armour(ArmourGen.generate(_player.items, _rng, tier, ItemLevel.for_wave(wave), base), where + Vector3(0.7, 0.0, 0.0))
 	var treasure := _colosseum.treasure(_rng, wave, kind, loot)
 	if treasure != "":
 		things.append(treasure)
@@ -1918,6 +1940,13 @@ func _colosseum_drops(where: Vector3, enemy_id: String, elite: bool, wave: int) 
 		var tint: Array = _player.items.stats(things[i]).get("color", [0.8, 0.8, 0.82])
 		_field.spawn_item(things[i], _player.items.item_name(things[i]), Color(tint[0], tint[1], tint[2]), where + Vector3(0.0, 0.0, 0.7 * float(i + 1)))
 	return guns
+
+
+# Lays a rolled armour piece on the ground: its name in its tier's colour.
+func _drop_armour(stack: Dictionary, where: Vector3) -> void:
+	var arm: Dictionary = stack["arm"]
+	var tier := String(arm["tier"])
+	_field.spawn_item(String(stack["id"]), ArmourStats.display_name(_player.items, stack, String(_player.gun_db.tier(tier)["name"])), TierStyle.color(_player.gun_db, tier, 0.0), where, 1, arm)
 
 
 # Gun luck multiplier from Fortune points and the Lucky Find trait.

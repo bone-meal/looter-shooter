@@ -1,6 +1,6 @@
-Editor warnings cleared: shadowed names, unused variables; quest writing in exports
+Sea step 1f: rolled armour with item level, tiers, bonus rolls and region sets
 
-Renamed locals and parameters that shadowed Node / Node3D / Control members (owner, ready, basis, show, size, name, hidden, tr) and built-ins (round, sign, log), removed an unused damage local in enemy.gd, prefixed unused parameters, and added data/zombies/writing/*.txt to the three export include filters. chase_check 164/164, trade_check, hub_check and the beach-ball two-copy test pass.
+Armour pieces now roll like guns: tier (the gun tiers), item level (defense grows per level), 0-4 bonus rolls from 10 (health, speed, reload, skill cooldowns, damage, defense, block, three resists) and one of 7 region sets with 2- and 4-piece bonuses (data/items.json armour_loot, all numbers placeholders). core/armour_gen.gd rolls and validates, core/armour_stats.gd values, core/armor_math.gd totals bonuses and sets, the player applies them. Inventory VERSION 5 keeps rolls through bag, gear, saves, bank, trades; colosseum drops roll pieces; inventory and hover cards show tier, level, rolls and set steps. The join check no longer refuses joiners carrying rolled guns or wearing rings. /give armour; tools/armour_check (0 problems on the director's PC).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

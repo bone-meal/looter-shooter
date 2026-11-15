@@ -1,13 +1,16 @@
 # Purpose: read-only lookup of item definitions (name, flavor text, kind, stack size). Pure data, no nodes.
 # An armour item may exist in variants (data/items.json `variants`): `<id>+<suffix>` is the same piece with an ability.
+# Rolled armour (tier, level, rolls, set) is described by data/items.json `armour_loot` (`armour`; core/armour_gen.gd).
 # Dependencies: none. Data comes from data/items.json (checked by tools/validate_data.gd).
 extends RefCounted
 
+var armour: Dictionary  # data/items.json "armour_loot": tiers, rolls and sets of rolled armour
 var _items: Dictionary
 
 
 func _init(data: Dictionary) -> void:
 	_items = (data.get("items", {}) as Dictionary).duplicate()
+	armour = data.get("armour_loot", {})
 	for variant: Dictionary in data.get("variants", []):  # e.g. every plain chestplate also exists "with a Holster"
 		for id: String in (data.get("items", {}) as Dictionary):
 			var plain: Dictionary = _items[id]
@@ -17,6 +20,7 @@ func _init(data: Dictionary) -> void:
 			made["name"] = String(variant["name"]) % String(plain["name"])
 			made["ability"] = String(variant["ability"])
 			made["no_drop"] = true  # it only comes as the rare version of its plain item
+			made["variant"] = true
 			_items["%s+%s" % [id, String(variant["suffix"])]] = made
 
 
@@ -27,6 +31,14 @@ func armour_drops() -> Array[String]:
 		if String(_items[id].get("kind", "")) == "armor" and not bool(_items[id].get("no_drop", false)):
 			ids.append(id)
 	return ids
+
+
+# May this item be a rolled piece (core/armour_gen.gd)? Single armour pieces that drop, and their rare variants.
+func rollable(id: String) -> bool:
+	if not _items.has(id):
+		return false
+	var it: Dictionary = _items[id]
+	return String(it.get("kind", "")) == "armor" and int(it.get("stack_max", 1)) == 1 and (not bool(it.get("no_drop", false)) or bool(it.get("variant", false)))
 
 
 func has_item(id: String) -> bool:

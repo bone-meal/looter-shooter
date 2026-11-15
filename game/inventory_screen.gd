@@ -19,6 +19,7 @@ const GunStats = preload("res://core/gun_stats.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const UiSkin = preload("res://game/ui_skin.gd")
 const InventoryCard = preload("res://game/inventory_card.gd")
+const ArmourStats = preload("res://core/armour_stats.gd")
 const PortraitView = preload("res://game/portrait_view.gd")
 
 signal changed
@@ -347,6 +348,8 @@ func _in_tab(i: int) -> bool:
 
 func _sort_key(i: int) -> float:
 	var gun: Dictionary = inventory.gun_at(i)
+	if gun.is_empty() and not inventory.arm_at(i).is_empty():  # a rolled armour piece sorts by its tier and level too
+		gun = inventory.arm_at(i)
 	match sort_by:
 		"tier":
 			return float(gun_db.tier_index(String(gun["tier"]))) if not gun.is_empty() else -1.0
@@ -393,6 +396,15 @@ func _gun_at(slot: int) -> Dictionary:
 	if slot >= HOLSTER_BASE and slot < KNIFE_SLOT:
 		return inventory.holster_gun(slot - HOLSTER_BASE)
 	return inventory.gun_at(slot) if slot >= 0 and slot < inventory.SIZE else {}
+
+
+# The rolled armour of any slot the window shows ({} for none): backpack, gear, bank.
+func _arm_at(slot: int) -> Dictionary:
+	if slot >= BANK_BASE and slot < BANK_BUTTON:
+		return (bank.call("stack", slot - BANK_BASE) as Dictionary).get("arm", {})
+	if slot >= EQUIP_BASE and slot < HOLSTER_BASE:
+		return (inventory.equipment[inventory.EQUIP_SLOTS[slot - EQUIP_BASE]] as Dictionary).get("arm", {})
+	return inventory.arm_at(slot) if slot >= 0 and slot < inventory.SIZE else {}
 
 
 func _id_at(slot: int) -> String:
@@ -655,7 +667,8 @@ func _draw_character() -> void:
 		var r := _equip_rect(k)
 		var stack: Dictionary = inventory.equipment[slot]
 		var state := "fits" if inventory.can_equip_cursor(slot) else ""
-		UiSkin.slot(self, r, Color(0.6, 0.75, 1.0), not stack.is_empty(), state)
+		var arm: Dictionary = stack.get("arm", {})
+		UiSkin.slot(self, r, _tint(arm) if not arm.is_empty() else Color(0.6, 0.75, 1.0), not stack.is_empty(), state)
 		if stack.is_empty():
 			IconArt.draw(self, ItemIcons.slot_shape(slot), r.grow(-e * 0.22), Color.WHITE, 0.22)  # what goes here
 			draw_string(_font, Vector2(r.position.x, r.end.y - 4.0), SLOT_LABELS[slot], HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 9, Color(1, 1, 1, 0.38))
@@ -716,10 +729,13 @@ func _draw_backpack() -> void:
 			UiSkin.slot(self, r, Color.WHITE, false, "")
 			continue
 		var gun: Dictionary = inventory.gun_at(i)
-		var tint := _tint(gun) if not gun.is_empty() else Color(0.6, 0.65, 0.78)
+		var arm: Dictionary = inventory.arm_at(i)
+		var tint := _tint(gun) if not gun.is_empty() else (_tint(arm) if not arm.is_empty() else Color(0.6, 0.65, 0.78))
 		UiSkin.slot(self, r, tint, true, "")
 		if gun.is_empty():
 			ItemIcons.draw(self, inventory.item_id(i), r.grow(-s * 0.14), Color.WHITE)
+			if not arm.is_empty():  # a rolled armour piece: its item level in the corner, like a gun
+				draw_string(_font, r.position + Vector2(5, 14), str(int(arm["lvl"])), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
 		else:
 			ItemIcons.draw(self, String(gun["body"]), r.grow(-s * 0.12), tint)
 			draw_string(_font, r.position + Vector2(5, 14), str(int(gun.get("lvl", 1))), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(1, 1, 1, 0.75))
@@ -735,7 +751,8 @@ func _draw_bank() -> void:
 		var r := _bank_rect(i)
 		var stack: Dictionary = bank.call("stack", i)
 		var gun: Dictionary = stack.get("gun", {})
-		var tint := _tint(gun) if not gun.is_empty() else Color(0.6, 0.65, 0.78)
+		var arm: Dictionary = stack.get("arm", {})
+		var tint := _tint(gun) if not gun.is_empty() else (_tint(arm) if not arm.is_empty() else Color(0.6, 0.65, 0.78))
 		UiSkin.slot(self, r, tint, not stack.is_empty(), "")
 		if stack.is_empty():
 			continue
@@ -752,7 +769,7 @@ func _draw_card(r: Rect2) -> void:
 	var in_hand_gun: Dictionary = {} if in_hand < 0 else inventory.holster_gun(in_hand)
 	if holding:
 		var cgun: Dictionary = inventory.cursor.get("gun", {})
-		what = {"gun": cgun, "against": in_hand_gun} if not cgun.is_empty() else {"id": String(inventory.cursor["id"]), "count": int(inventory.cursor["count"])}
+		what = {"gun": cgun, "against": in_hand_gun} if not cgun.is_empty() else {"id": String(inventory.cursor["id"]), "count": int(inventory.cursor["count"]), "arm": inventory.cursor.get("arm", {})}
 	elif shown == KNIFE_SLOT:
 		what = {"note": [knife_name, "Your knife. Always with you: it cannot be dropped, traded or lost."]}
 	elif _id_at(shown) != "":
@@ -765,13 +782,16 @@ func _draw_card(r: Rect2) -> void:
 				what = {"gun": gun, "against": against}
 		else:
 			var count := inventory.item_count(shown) if shown < inventory.SIZE else 1
-			what = {"id": _id_at(shown), "count": count}
+			what = {"id": _id_at(shown), "count": count, "arm": _arm_at(shown)}
 	var hovered_action := ""
 	for b: Array in _buttons:
 		if (b[0] as Rect2).has_point(_mouse):
 			hovered_action = String(b[1])
 	if what.has("gun") and not (what["gun"] as Dictionary).is_empty():
 		_card_moves = TierStyle.animated(gun_db, String(what["gun"]["tier"]))
+	if not (what.get("arm", {}) as Dictionary).is_empty():  # a rolled armour piece: its set's steps light up by what is worn
+		_card_moves = TierStyle.animated(gun_db, String(what["arm"]["tier"]))
+		what["worn_sets"] = ArmourStats.set_counts(inventory.equipment)
 	_buttons = InventoryCard.draw(_card_layer, _font, r, what, gun_db, items, _actions(), hovered_action, _now())
 
 

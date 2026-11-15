@@ -452,7 +452,7 @@ func _move_tick(input: Vector2) -> void:
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
 	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * _traits.speed_mult(_now())
-	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * cheat_speed * _pace * rush
+	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * (1.0 + _armour_bonus("speed_pct") / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
 	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
@@ -708,6 +708,7 @@ func finish_off() -> void:
 # Re-reads worn items (call after the inventory screen changes anything).
 func refresh_equipment() -> void:
 	armor = ArmorMath.totals(inventory, items)
+	_apply_health_cap()  # armour rolls and sets may change max health
 	_cigarette.visible = armor["abilities"].has("auto_reload")
 	move.no_fatigue = armor["abilities"].has("auto_bhop")
 
@@ -910,7 +911,7 @@ func refresh_held() -> void:
 		stats = _held_stats
 		_traits.player = self
 		_traits.on_swapped(_held_stats.get("traits", {}), int(_held_stats.get("mag_size", 0)))
-	var key := (body.hash() if _held_gun.is_empty() else _held_gun.hash()) + (int(perks.get("stamp")) if perks != null else 0) + run_fx.hash()  # a perk bought or lost: the gun's numbers are worked out again
+	var key := (body.hash() if _held_gun.is_empty() else _held_gun.hash()) + (int(perks.get("stamp")) if perks != null else 0) + run_fx.hash() + hash(_armour_bonus("reload_pct"))  # a perk bought or lost (or armour's reload roll): the gun's numbers are worked out again
 	if _ready_weapons[_hand] == null or _ready_keys[_hand] != key or inventory.loaded[_hand] == InventoryState.FRESH:
 		var made := WeaponState.new(body, _with_perks(stats))
 		made.pool = pools
@@ -1451,7 +1452,7 @@ func _damage_mult() -> float:
 	mult *= self_fx.damage_mult(now, _near_banner())  # Full Clip, War Banner, Phase Step
 	if _sig_node != null and _sig_node.has_method("damage_mult"):
 		mult *= float(_sig_node.call("damage_mult"))  # a chase gun's own boost (Fish Story's boast)
-	return mult * (1.0 + bonus_damage_pct / 100.0)
+	return mult * (1.0 + bonus_damage_pct / 100.0) * (1.0 + _armour_bonus("damage_pct") / 100.0)
 
 
 # Applies the progression bonuses (percent). A higher max health also heals by the difference.
@@ -1465,6 +1466,11 @@ func set_progress_bonuses(damage_pct: float, speed_pct: float, hp_pct: float) ->
 		health.hp += health.max_hp - before
 
 
+# A bonus of the worn armour's rolls and sets (core/armor_math.gd totals "bonus"; percent), 0 without it.
+func _armour_bonus(key: String) -> float:
+	return float((armor.get("bonus", {}) as Dictionary).get(key, 0.0))
+
+
 # A number of the perks carried (core/perk_state.gd `num`), `fallback` without that perk.
 func _perk(key: String, fallback: float) -> float:
 	return float(perks.call("num", key, fallback)) if perks != null else fallback
@@ -1472,11 +1478,11 @@ func _perk(key: String, fallback: float) -> float:
 
 # A gun's numbers with the perks that change them (fire rate, reload, magazine).
 func _with_perks(stats: Dictionary) -> Dictionary:
-	if (perks == null or (perks.get("owned") as Array).is_empty()) and run_fx.is_empty():
+	if (perks == null or (perks.get("owned") as Array).is_empty()) and run_fx.is_empty() and _armour_bonus("reload_pct") == 0.0:
 		return stats
 	var out := stats.duplicate()
 	out["fire_rate"] = float(stats["fire_rate"]) * _perk("fire_rate_mult", 1.0)
-	out["reload_time"] = float(stats["reload_time"]) * _perk("reload_time_mult", 1.0) * float(run_fx.get("reload_time", 1.0))
+	out["reload_time"] = float(stats["reload_time"]) * _perk("reload_time_mult", 1.0) * float(run_fx.get("reload_time", 1.0)) / (1.0 + _armour_bonus("reload_pct") / 100.0)
 	out["mag_size"] = roundi(float(stats["mag_size"]) * _perk("mag_mult", 1.0))
 	return out
 
@@ -1503,7 +1509,7 @@ func perks_changed(heal: bool) -> void:
 # Glass Cannon lowers max health while the gun is held (current health is never raised by swapping).
 func _apply_health_cap() -> void:
 	var buffs: Dictionary = _held_stats.get("buffs", {})
-	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0) * float(run_fx.get("player_health", 1.0))
+	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (1.0 + _armour_bonus("health_pct") / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0) * float(run_fx.get("player_health", 1.0))
 	health.hp = minf(health.hp, health.max_hp)
 
 
@@ -1659,7 +1665,7 @@ func use_skill(index: int) -> void:
 	var now := _now()
 	if not skills.is_ready(key, now):
 		return
-	var cd := SkillState.cooldown(gun_db, entry, String(_held_gun["tier"]))
+	var cd := SkillState.cooldown(gun_db, entry, String(_held_gun["tier"])) / (1.0 + _armour_bonus("cooldown_pct") / 100.0)
 	var buffs: Dictionary = _held_stats.get("buffs", {})
 	if buffs.has("skill_echo") and randf() * 100.0 < float(buffs["skill_echo"]):
 		cd = 0.0  # Skill Echo: the cooldown is refunded

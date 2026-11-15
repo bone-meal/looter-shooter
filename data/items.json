@@ -389,5 +389,259 @@
    "stack_max": 1,
    "flavor": "Built from parts. No two are alike."
   }
+ },
+ "armour_loot": {
+  "_about": "Rolled armour (core/armour_gen.gd, core/armour_stats.gd; sea step 1f). A rolled piece is a plain armour item (its id) + `arm` {v, tier, lvl, rolls {roll id: quality 0..1}, set}. Tiers use the gun tier ids (colours and names from data/gun_loot.json). defense = the item's defense x defense_growth^(lvl-1) x the tier's defense; block and resists stay the item's. rolls: stat = the bonus key (percent, except block / fire / ice / toxic which are shares 0..1 like the item's own); value = min..max by quality. sets: one per sea region (a piece's set comes from its item level: region = ceil(lvl / 10)); bonus by pieces worn (2 and 4); set_chance per tier. Every number and name is a placeholder for the director.",
+  "version": 1,
+  "max_level": 70,
+  "defense_growth": 1.045,
+  "tiers": {
+   "grey": {
+    "rolls": 0,
+    "defense": 1.0,
+    "quality": [
+     0.0,
+     0.4
+    ],
+    "set_chance": 0.0
+   },
+   "green": {
+    "rolls": 1,
+    "defense": 1.08,
+    "quality": [
+     0.1,
+     0.55
+    ],
+    "set_chance": 0.0
+   },
+   "blue": {
+    "rolls": 1,
+    "defense": 1.16,
+    "quality": [
+     0.25,
+     0.7
+    ],
+    "set_chance": 0.05
+   },
+   "purple": {
+    "rolls": 2,
+    "defense": 1.25,
+    "quality": [
+     0.4,
+     0.8
+    ],
+    "set_chance": 0.12
+   },
+   "gold": {
+    "rolls": 2,
+    "defense": 1.32,
+    "quality": [
+     0.55,
+     0.9
+    ],
+    "set_chance": 0.18
+   },
+   "orange": {
+    "rolls": 3,
+    "defense": 1.4,
+    "quality": [
+     0.7,
+     1.0
+    ],
+    "set_chance": 0.25
+   },
+   "rainbow": {
+    "rolls": 3,
+    "defense": 1.5,
+    "quality": [
+     0.85,
+     1.0
+    ],
+    "set_chance": 0.3
+   },
+   "pony": {
+    "rolls": 4,
+    "defense": 1.6,
+    "quality": [
+     0.95,
+     1.0
+    ],
+    "set_chance": 0.35
+   }
+  },
+  "rolls": {
+   "vitality": {
+    "name": "Vitality",
+    "stat": "health_pct",
+    "min": 4,
+    "max": 15,
+    "desc": "+%s%% max health"
+   },
+   "swiftness": {
+    "name": "Swiftness",
+    "stat": "speed_pct",
+    "min": 2,
+    "max": 8,
+    "desc": "+%s%% move speed"
+   },
+   "nimble": {
+    "name": "Nimble Fingers",
+    "stat": "reload_pct",
+    "min": 4,
+    "max": 15,
+    "desc": "+%s%% reload speed"
+   },
+   "focus": {
+    "name": "Focus",
+    "stat": "cooldown_pct",
+    "min": 4,
+    "max": 15,
+    "desc": "+%s%% skill cooldown speed"
+   },
+   "might": {
+    "name": "Might",
+    "stat": "damage_pct",
+    "min": 3,
+    "max": 12,
+    "desc": "+%s%% gun damage"
+   },
+   "bulwark": {
+    "name": "Bulwark",
+    "stat": "defense_pct",
+    "min": 5,
+    "max": 20,
+    "desc": "+%s%% defense (all worn)"
+   },
+   "deflect": {
+    "name": "Deflect",
+    "stat": "block",
+    "min": 0.01,
+    "max": 0.04,
+    "desc": "+%s%% block chance"
+   },
+   "fireproof": {
+    "name": "Fireproof",
+    "stat": "fire",
+    "min": 0.03,
+    "max": 0.1,
+    "desc": "+%s%% fire resist"
+   },
+   "frostproof": {
+    "name": "Frostproof",
+    "stat": "ice",
+    "min": 0.03,
+    "max": 0.1,
+    "desc": "+%s%% ice resist"
+   },
+   "antidote": {
+    "name": "Antidote",
+    "stat": "toxic",
+    "min": 0.03,
+    "max": 0.1,
+    "desc": "+%s%% toxic resist"
+   }
+  },
+  "set_pieces": [
+   2,
+   4
+  ],
+  "sets": {
+   "tidecaller": {
+    "name": "Tidecaller",
+    "region": 1,
+    "color": "#4fd1c5",
+    "bonus": {
+     "2": {
+      "speed_pct": 8
+     },
+     "4": {
+      "reload_pct": 15,
+      "health_pct": 10
+     }
+    }
+   },
+   "bogwalker": {
+    "name": "Bogwalker",
+    "region": 2,
+    "color": "#7fa650",
+    "bonus": {
+     "2": {
+      "toxic": 0.15
+     },
+     "4": {
+      "damage_pct": 12
+     }
+    }
+   },
+   "emberforged": {
+    "name": "Emberforged",
+    "region": 3,
+    "color": "#ff6a2a",
+    "bonus": {
+     "2": {
+      "fire": 0.15
+     },
+     "4": {
+      "damage_pct": 15
+     }
+    }
+   },
+   "rimewarden": {
+    "name": "Rimewarden",
+    "region": 4,
+    "color": "#9fd8ff",
+    "bonus": {
+     "2": {
+      "ice": 0.15
+     },
+     "4": {
+      "defense_pct": 20,
+      "block": 0.04
+     }
+    }
+   },
+   "stormcrag": {
+    "name": "Stormcrag",
+    "region": 5,
+    "color": "#b9a6ff",
+    "bonus": {
+     "2": {
+      "cooldown_pct": 15
+     },
+     "4": {
+      "speed_pct": 10,
+      "damage_pct": 10
+     }
+    }
+   },
+   "coralcrown": {
+    "name": "Coralcrown",
+    "region": 6,
+    "color": "#ff8fb1",
+    "bonus": {
+     "2": {
+      "health_pct": 12
+     },
+     "4": {
+      "cooldown_pct": 20,
+      "reload_pct": 10
+     }
+    }
+   },
+   "maelstrom": {
+    "name": "Maelstrom",
+    "region": 7,
+    "color": "#3b5bdb",
+    "bonus": {
+     "2": {
+      "damage_pct": 10
+     },
+     "4": {
+      "damage_pct": 20,
+      "health_pct": 10
+     }
+    }
+   }
+  }
  }
 }

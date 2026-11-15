@@ -94,8 +94,9 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 
 
 # Drops an item (a piece of armour) at `pos`: a small box turning under a beam of its colour, with its name.
-# Its entry has "item" = the id (and an empty "gun"); the session picks it up by that.
-func spawn_item(id: String, title: String, color: Color, pos: Vector3, amount := 1) -> void:
+# Its entry has "item" = the id (and an empty "gun"); the session picks it up by that. `arm` = a rolled piece's
+# roll (core/armour_gen.gd), kept in the entry as "arm".
+func spawn_item(id: String, title: String, color: Color, pos: Vector3, amount := 1, arm: Dictionary = {}) -> void:
 	while _drops.size() >= int(cfg["max_world_drops"]):
 		_remove(0)
 	var node := Node3D.new()
@@ -140,7 +141,7 @@ func spawn_item(id: String, title: String, color: Color, pos: Vector3, amount :=
 	label.position.y = 2.0
 	label.visibility_range_end = 30.0
 	node.add_child(label)
-	_drops.append({"node": node, "gun": {}, "item": id, "count": amount, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": float(cfg["despawn_seconds_gold_up"]), "animated": false, "tier": "", "shared": 0})
+	_drops.append({"node": node, "gun": {}, "item": id, "count": amount, "arm": arm, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": float(cfg["despawn_seconds_gold_up"]), "animated": false, "tier": "", "shared": 0})
 
 
 # The closest drop within pickup range of `pos`, or {} (the dictionary is the live entry: pass it to take()).

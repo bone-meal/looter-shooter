@@ -6,6 +6,7 @@
 extends Node
 
 const GunGen = preload("res://core/gun_gen.gd")
+const InventoryState = preload("res://core/inventory_state.gd")
 
 const OUT := "res://tools/userdata/"
 
@@ -455,11 +456,33 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			window.call("open_station", words[1])
 			if words.size() > 2:
 				window.call("pick", words[2])
+		"armour":  # "!armour [note]": worn armour totals (core/armor_math.gd) and max health into the log
+			var worn: Dictionary = player.get("armor")
+			_lines.append("ARMOUR %s: defense %.1f block %.2f resist %s bonus %s sets %s max health %d" % [" ".join(words.slice(1)), float(worn.get("defense", 0)), float(worn.get("block", 0)), str(worn.get("resist", {})), str(worn.get("bonus", {})), str(worn.get("sets", {})), roundi(float(player.get("health").max_hp))])
 		"inv":  # the inventory window: "!inv" opens or shuts it, "!inv hover 5" puts the mouse on slot 5 (0-35), "!inv drop" presses the drop key, "!inv shift on|off" holds Shift, "!inv log" lists rolled guns and what lies on the ground, "!inv tab guns tier" picks a tab and sort
 			var window: Control = session.get("_inventory_screen")
 			match words[1] if words.size() > 1 else "":
 				"bank":  # "!inv bank": the window as the bank opens it (the bank's slots on the left)
 					session.call("_open_bank")
+				"hoverarm":  # "!inv hoverarm [n]": the mouse on the n-th backpack slot holding a rolled armour piece (0 = first)
+					var seen := 0
+					for i in InventoryState.SIZE:
+						if not (player.get("inventory").call("arm_at", i) as Dictionary).is_empty():
+							if seen == (int(words[2]) if words.size() > 2 else 0):
+								window.set("_mouse", (window.call("_slot_rect", i) as Rect2).get_center())
+								break
+							seen += 1
+				"hovergear":  # "!inv hovergear head": the mouse on a gear slot
+					window.set("_mouse", (window.call("_equip_rect", InventoryState.EQUIP_SLOTS.find(words[2])) as Rect2).get_center())
+				"weararm":  # "!inv weararm": Wear on the first backpack slot holding a rolled armour piece
+					for i in InventoryState.SIZE:
+						if not (player.get("inventory").call("arm_at", i) as Dictionary).is_empty():
+							window.set("_focus", i)
+							window.call("_act", "wear")
+							break
+				"wear":  # "!inv wear 3": the card's Wear button on backpack slot 3 (a piece of armour)
+					window.set("_focus", int(words[2]))
+					window.call("_act", "wear")
 				"tab":  # "!inv tab guns|gear|items|all [sort]": the header's tab and sort (slot, tier, level, type)
 					window.set("tab", words[2])
 					if words.size() > 3:
