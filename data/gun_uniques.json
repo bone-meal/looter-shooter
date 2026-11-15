@@ -444,6 +444,42 @@
         "credit_seconds": 10.0
       }
     },
+    "volcano_sauce": {
+      "name": "Volcano Sauce",
+      "body": "pistol_basic",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "ported",
+        "mag": "fast",
+        "sight": "red_dot",
+        "muzzle": "compensator"
+      },
+      "buffs": [
+        "kindling",
+        "burn_chance",
+        "hip_shooter"
+      ],
+      "skills": [
+        "meteor_shower",
+        "fire_trail_dash"
+      ],
+      "traits": [
+        "chain_reaction",
+        "momentum"
+      ],
+      "flavor": "",
+      "red": "Scoville is a unit of regret.",
+      "signature": "volcano_sauce",
+      "attach": "sauce_bottle",
+      "pool": "region_3_boss",
+      "cfg": {
+        "erupt_at": 5,
+        "cool_seconds": 4.0,
+        "erupt_damage": 6.0,
+        "erupt_radius": 2.5,
+        "burn_share": 0.2
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

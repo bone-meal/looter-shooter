@@ -1,6 +1,6 @@
-Grillmaster: burn deaths drop food too
+Volcano Sauce chase gun (online)
 
-Director: burn to death should drop also. An enemy hit by Grillmaster that dies burning within 10 s (its burn or anything else) now drops a grilled kebab, once per enemy. Puppets on a joiner now remember the burn they asked for, so is_burning answers there too. tools/chase_check 41 of 41 on his PC.
+Volcano Sauce (region 3 boss pool, pistol): a bottle of red hot sauce taped to the grip with silver duct tape. Every hit adds heat to its target (MILD, MEDIUM, HOT, EXTRA HOT over it; it cools after 4 s without a hit); the 5th erupts a geyser of fire at its feet that blasts, sets nearby enemies burning and counts as fire for Swamp Gas. Others see the eruption (no damage from copies). tools/chase_check 46 of 46 on his PC; two-copy run: the guest received the eruption.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

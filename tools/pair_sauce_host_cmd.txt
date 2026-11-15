@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;/tp island;!wait 3;!immortal;/spawn chaser 1;!wait 1;!readyunique volcano_sauce 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1;!snap sauce_held;!sauce;!wait 0.3;!snap sauce_geyser;!chase h0;!wait 1;!chase h1;!wait 8;!chase h9;!wait 8

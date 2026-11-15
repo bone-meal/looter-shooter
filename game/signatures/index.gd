@@ -11,6 +11,7 @@ const SCRIPTS := {
 	"swamp_gas": preload("res://game/signatures/swamp_gas.gd"),
 	"keepers_lantern": preload("res://game/signatures/keepers_lantern.gd"),
 	"grillmaster": preload("res://game/signatures/grillmaster.gd"),
+	"volcano_sauce": preload("res://game/signatures/volcano_sauce.gd"),
 }
 
 

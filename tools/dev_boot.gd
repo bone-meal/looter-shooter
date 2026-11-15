@@ -188,6 +188,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			for n: Node in get_tree().get_nodes_in_group("fire_sources"):
 				if n.get_script() != null and String(n.get_script().resource_path).ends_with("firebomb.gd"):
 					bombs += 1
+				if n.get_script() != null and String(n.get_script().resource_path).ends_with("fire_geyser.gd"):
+					bombs += 100  # (a geyser counts as 100 in "bombs")
 			var lanterns := 0
 			for n: Node in get_tree().get_nodes_in_group("lanterns"):
 				var sw := (n as Node3D).find_child("Swing", true, false) as Node3D
@@ -212,6 +214,19 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("GASFIRE lit at %s" % str(spot.snapped(Vector3.ONE * 0.1)))
 				await get_tree().create_timer(1.0, true, false, true).timeout
 				fire.queue_free()
+		"sauce":  # "!sauce": the chase gun in hand's on_target_hit 5 times on the nearest enemy (Volcano Sauce: an eruption)
+			var src: Variant = player.get("explosives").get("source")
+			var best: Node3D = null
+			for e: Node3D in src.call("enemy_list"):
+				if is_instance_valid(e) and (best == null or e.global_position.distance_to(player.global_position) < best.global_position.distance_to(player.global_position)):
+					best = e
+			var sig_s: Node = player.get("_sig_node")
+			if best == null or sig_s == null or not sig_s.has_method("on_target_hit"):
+				_lines.append("SAUCE nothing to sauce")
+			else:
+				for _n in 5:
+					sig_s.call("on_target_hit", best, best.global_position + Vector3(0, 1, 0), 10.0, false)
+				_lines.append("SAUCE five hits on %s at %s" % [best.name, str(best.global_position.snapped(Vector3.ONE * 0.1))])
 		"grilldrop":  # "!grilldrop": our Grillmaster food dropped 3 m in front of us (as a burning kill would)
 			var food_d: Node = (load("res://game/signatures/grillmaster.gd") as GDScript).call("pool", player)
 			food_d.call("drop", player.global_position + Vector3(0, 0, -3), 0.25, 20.0)

@@ -8,7 +8,8 @@
 # tools/chase_check.log. KEEPER'S LANTERN: its light makes near enemies glow and thins the fog near the camera, the
 # inspect key throws it as a firebomb (blast, burning oil that counts as fire), it is lit again after its wait.
 # GRILLMASTER: a burning enemy killed by it drops food (a plain kill does not), so does one it hit that burns to death
-# later; walking over it heals (offline here).
+# later; walking over it heals (offline here). VOLCANO SAUCE: hits add heat to a target, the 5th within the cool-off
+# erupts a geyser (blast, burning, fire for Swamp Gas), heat cools off after a pause.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -168,6 +169,7 @@ func _ready() -> void:
 	await _swamp_gas(db)
 	await _lantern(db)
 	await _grill(db)
+	await _sauce(db)
 	_finish()
 
 
@@ -454,6 +456,44 @@ func _grill(db: GunDb) -> void:
 	later.died.emit(later)  # it burns to death after the shot
 	await get_tree().process_frame
 	_say("an enemy it hit that burns to death later drops food too (%d -> %d)" % [before, int(food.call("active_count"))], before == 0 and int(food.call("active_count")) == 1)
+
+
+func _sauce(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "volcano_sauce", 30)
+	_say("Volcano Sauce builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var model := Node3D.new()
+	add_child(model)
+	_say("its sauce bottle is taped to the grip", UniqueAttach.apply(model, gun, db) != null)
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := LanternHolder.new()  # (has explosives, weapon damage 30)
+	holder.position = Vector3(6000, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var mob := BurnMob.new()
+	mob.position = Vector3(6005, 0, 0)
+	add_child(mob)
+	source.list = [mob]
+	var sig: Node3D = Signatures.make("volcano_sauce")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["volcano_sauce"])
+	for n in 4:
+		sig.call("on_target_hit", mob, mob.position, 20.0, false)
+	_say("four hits: heat 4, no eruption", int(mob.get_meta("sauce_heat")) == 4 and booms.blasts.is_empty())
+	sig.call("on_target_hit", mob, mob.position, 20.0, false)
+	await get_tree().process_frame
+	var geyser: Node = null
+	for n: Node in get_tree().get_nodes_in_group("fire_sources"):
+		if n.get_script() != null and String(n.get_script().resource_path).ends_with("fire_geyser.gd"):
+			geyser = n
+	_say("the 5th erupts: blast %s, the enemy burns, the geyser is fire" % str(booms.blasts), booms.blasts.size() == 1 and is_equal_approx(float(booms.blasts[0][2]), 180.0) and mob.burned > 0.0 and geyser != null and bool(geyser.call("fire_near", mob.position, 0.5)) and int(mob.get_meta("sauce_heat")) == 0)
+	sig.call("on_target_hit", mob, mob.position, 20.0, false)
+	mob.set_meta("sauce_at", Time.get_ticks_msec() / 1000.0 - 10.0)  # a long pause
+	sig.call("on_target_hit", mob, mob.position, 20.0, false)
+	_say("after a pause the heat has cooled (back to 1)", int(mob.get_meta("sauce_heat")) == 1)
 
 
 func _json(name: String) -> Dictionary:

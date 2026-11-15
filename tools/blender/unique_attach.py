@@ -20,6 +20,8 @@
 # keepers_lantern_free = the same lantern about the origin (thrown as a firebomb).
 # GRILLMASTER: a little grill grate bolted flat against the LEFT of the double shotgun's barrels, a sausage on it, and
 # a pair of tongs clipped under it. grilled_kebab = the food a burning kill drops (about the origin).
+# VOLCANO SAUCE: a small bottle of red hot sauce (white cap, label) taped upright against the LEFT of the pistol grip
+# with two strips of silver duct tape.
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -49,6 +51,7 @@ SPECS = {  # name: (kind, colour, seed)
     "charsteel": ("metal", (0.16, 0.15, 0.14), 67), "sausage": ("matte", (0.55, 0.26, 0.14), 68),
     "meat": ("matte", (0.45, 0.22, 0.12), 69), "pepper": ("polymer", (0.25, 0.55, 0.18), 70),
     "onion": ("matte", (0.86, 0.8, 0.62), 71), "char": ("matte", (0.08, 0.06, 0.05), 72), "skewer": ("wood", (0.72, 0.58, 0.38), 73),
+    "hotsauce": ("polymer", (0.72, 0.08, 0.05), 74), "saucelabel": ("matte", (0.95, 0.85, 0.45), 75),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -352,7 +355,20 @@ def grilled_kebab(m, M):
         f += 0.034
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def sauce_bottle(m, M):
+    bx, by, bf = -0.036, -0.142, -0.006  # the bottle's foot, beside the grip (wood panels: half width 0.022)
+    m.lathe(M["hotsauce"], [(0.0105, 0.0), (0.012, 0.004), (0.012, 0.046), (0.0085, 0.053), (0.0042, 0.059), (0.0042, 0.066)], (bx, by, bf), segs=18)
+    m.lathe(M["saucelabel"], [(0.01245, 0.014), (0.01245, 0.038)], (bx, by, bf), segs=18)
+    m.lathe(M["hotsauce"], [(0.0127, 0.022), (0.0127, 0.03)], (bx, by, bf), segs=18)  # a red band across the label
+    m.lathe(M["cable"], [(0.0048, 0.066), (0.0048, 0.075), (0.003, 0.077)], (bx, by, bf), segs=14)  # cap
+    for y, tilt in ((-0.125, 5.0), (-0.092, -7.0)):  # two strips of tape round bottle and grip
+        m.box(M["tape"], (0.0012, 0.014, 0.03), (bx - 0.0125, y, bf), tilt=tilt, bevel=0.0004)
+        for side in (-1.0, 1.0):
+            m.box(M["tape"], (0.06, 0.014, 0.0012), (-0.006, y, bf + side * 0.0128), tilt=tilt, bevel=0.0004)
+        m.box(M["tape"], (0.0012, 0.014, 0.024), (0.0235, y, bf), tilt=tilt, bevel=0.0004)
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

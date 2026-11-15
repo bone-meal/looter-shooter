@@ -11,7 +11,8 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser"]
+const VolcanoSauce = preload("res://game/signatures/volcano_sauce.gd")
 const Grillmaster = preload("res://game/signatures/grillmaster.gd")
 const KeepersLantern = preload("res://game/signatures/keepers_lantern.gd")
 const FAR := 100000.0
@@ -99,6 +100,10 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vect
 			var me: Node3D = net.local_player()
 			if me != null and me.get_parent() != null:
 				KeepersLantern.throw_bomb(me.get_parent(), me.get("explosives"), at, b, false, 0.0, _lantern_cfg(), [])
+		"geyser":  # another player's Volcano Sauce eruption: shown here (no damage from ours)
+			var me_g: Node3D = net.local_player()
+			if me_g != null:
+				VolcanoSauce.erupt(me_g.get_parent(), me_g.get("explosives"), at, false, 0.0, _sauce_cfg())
 		"food":  # another player's barbecue: it lies here too
 			var food := Grillmaster.pool(net.local_player())
 			if food != null:
@@ -156,3 +161,8 @@ func _lantern_cfg() -> Dictionary:
 func _grill_cfg() -> Dictionary:
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
 	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get("grillmaster", {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}
+
+
+func _sauce_cfg() -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
+	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get("volcano_sauce", {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}
