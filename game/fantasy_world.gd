@@ -23,6 +23,7 @@ const FantasyScatter = preload("res://game/fantasy_scatter.gd")
 const GatherNodes = preload("res://game/gather_nodes.gd")
 const FantasyPlaces = preload("res://game/fantasy_places.gd")
 const FantasyWork = preload("res://game/fantasy_work.gd")
+const Snares = preload("res://game/snares.gd")
 const StaffCaster = preload("res://game/staff_caster.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
 const CombatTools = preload("res://game/combat_tools.gd")
@@ -71,6 +72,7 @@ var scatter := FantasyScatter.new()
 var gather := GatherNodes.new()
 var places := FantasyPlaces.new()
 var work := FantasyWork.new()
+var snares := Snares.new()  # Hunting: snares set from the bag and the trails that tracks lay
 var caster := StaffCaster.new()
 var effects := SpellEffects.new()
 var combat := CombatTools.new()  # dodge, ward, staff strike
@@ -150,6 +152,8 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	mana = max_mana()
 	add_child(work)
 	work.setup(self)
+	add_child(snares)
+	snares.setup(self)
 	add_child(rooms)
 	rooms.setup(self, player)
 	rooms.faded.connect(func() -> void: fade.emit())
@@ -318,6 +322,28 @@ func _on_slain(enemy_id: String, where: Vector3) -> void:
 		party.call("send_slain", enemy_id)
 
 
+# Hunting: tracks followed at `at` lay a trail of prints onward, away from the player, to where the animal is met
+# (25-35 m on). Online a party member's animal is put there by the host.
+func follow_tracks(animal: String, at: Vector3) -> void:
+	var from := player_local()
+	var way := Vector2(at.x - from.x, at.z - from.z)
+	way = way.normalized() if way.length() > 0.3 else Vector2.from_angle(randf() * TAU)
+	way = way.rotated(randf_range(-0.5, 0.5))
+	var reach := randf_range(25.0, 35.0)
+	var end := Vector3(at.x + way.x * reach, 0.0, at.z + way.y * reach)
+	snares.show_trail(at, end, animal in ["boar"])
+	if party != null and party.call("is_client"):
+		party.call("send_event", {"type": "track", "animal": animal, "x": end.x, "z": end.z})
+	else:
+		meet_animal(animal, end.x, end.z)
+
+
+func meet_animal(animal: String, x: float, z: float) -> void:
+	if String(spawner.stats_of(animal).get("skill", "")) != "hunting":
+		return
+	spawner.spawn_local(animal, x, z, _player)
+
+
 # Command /spawn inside this world: a creature that counts for experience, drops and quests.
 func spawn_creature(id: String, near: Node3D) -> bool:
 	return spawner.spawn_at(id, near)
@@ -436,6 +462,7 @@ func enter(world_pos: Vector3) -> void:
 
 func leave() -> void:
 	inside = false
+	snares.clear()
 	if party == null:
 		spawner.stop()  # online the host keeps running them for whoever is still in there
 	effects.clear()
@@ -636,6 +663,10 @@ func use_item(item: String) -> String:
 				apply_stats()
 			_after_change()
 			return ""
+		"trap":
+			var why := snares.place(player_local())
+			_after_change()
+			return why
 		"staff", "robe", "tool":
 			bag.equip(item)
 			apply_stats()
@@ -683,6 +714,9 @@ func report(event: Dictionary) -> void:
 
 # Host: a party member's machine reported an event or says its own bag passes a step.
 func host_event(event: Dictionary) -> void:
+	if String(event["type"]) == "track":  # a party member followed tracks: their animal is met where the trail ends
+		meet_animal(String(event.get("animal", "")), float(event.get("x", 0.0)), float(event.get("z", 0.0)))
+		return
 	_apply(quests.note(event))
 
 

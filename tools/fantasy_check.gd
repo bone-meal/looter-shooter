@@ -42,7 +42,7 @@ func _ready() -> void:
 	# --- references between files ---
 	for id: String in skilling["nodes"]:
 		var node: Dictionary = skilling["nodes"][id]
-		_need(items.has(String(node["gives"])), "node %s gives unknown item %s" % [id, node["gives"]])
+		_need(items.has(String(node["gives"])) or enemies.has(String(node.get("animal", ""))), "node %s gives unknown item %s" % [id, node["gives"]])
 		_need((skilling["skills"] as Dictionary).has(String(node["skill"])), "node %s uses unknown skill" % id)
 	for recipe: Dictionary in skilling["recipes"]:
 		for id: String in (recipe["in"] as Dictionary).keys() + (recipe["out"] as Dictionary).keys():
@@ -313,7 +313,7 @@ func _check_walkable(terrain: FantasyTerrain, world: Dictionary) -> void:
 # Squad rules: a mixed pack round one target is planned the way data/fantasy/squad.json says.
 func _check_squad(squad: Dictionary, enemies: Dictionary) -> void:
 	for id: String in enemies:
-		if not bool(enemies[id].get("boss", false)):
+		if not bool(enemies[id].get("boss", false)) and not enemies[id].has("temper"):  # wild animals have no squad
 			_need(String(enemies[id].get("role", "")) in ["front", "flank", "swarm", "ranged", "air"], "enemy %s has no squad role" % id)
 	var target := SquadRules.Target.new()
 	var pack: Array = []
@@ -381,7 +381,7 @@ func _check_round_two(all: Dictionary) -> void:
 		for move: Dictionary in moves:
 			_need(String(move["kind"]) in kinds, "%s: unknown move kind %s" % [id, move["kind"]])
 			_need(String(move["kind"]) != "summon" or enemies.has(String(move.get("enemy", ""))), "%s summons an unknown creature" % id)
-		if not bool(enemies[id].get("boss", false)):
+		if not bool(enemies[id].get("boss", false)) and not enemies[id].has("temper"):  # wild animals have no special attack
 			_need(moves.size() == 1 or enemies[id].has("splits") or enemies.has(id) and _split_from(enemies, id), "creature %s has no attack of its own" % id)
 		_need(not enemies[id].has("splits") or enemies.has(String(enemies[id]["splits"]["into"])), "%s splits into an unknown creature" % id)
 		_need(String(enemies[id].get("walks", "")) in ["land", "swim", "fly"], "enemy %s has no way of moving" % id)

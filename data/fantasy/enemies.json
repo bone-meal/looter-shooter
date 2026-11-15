@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt. weak / strong: the element (letter of data/fantasy/spells.json) a creature breaks under and the one it shrugs off (numbers: data/fantasy/combat.json weakness). role: how the creature fights in a squad (front, flank, swarm, ranged, air: data/fantasy/squad.json). attack_windup: seconds a melee creature rears back before its blow lands; it stands still meanwhile, and the blow misses if the target has got out of reach (0 or missing = it hits at once). moves: a creature's own special attacks (game/boss_moves.gd explains the kinds; `every` seconds apart, used when the target is between min_range and range metres away, `damage` multiplies the creature's own damage, `element` fire / ice / toxic sets the player burning, slowed or poisoned). Every ordinary creature has ONE; bosses have several. splits: {into, count} = when it dies it bursts into that many of another creature. attack_sound: the sound of its ordinary attack (data/sounds.json).",
+ "_about": "Fantasy world enemies (same keys as data/enemies.json, used by game/enemy.gd; model = file in assets/models/creatures/). level, xp (Magic experience) and drops {item: chance} are read by game/fantasy_world.gd. Bosses are far stronger than the region around them: the quests lead you to the level they need. Placeholders for the director. walks: land (goes around houses, trees and water) | swim | fly. debris: colour of the bits that fly off when it is hit (straw, splinters, ice ...), never blood. tribe: desert warriors of one banner fight the other banner. moves: a boss's own attacks (game/boss_moves.gd): kind slam | charge | summon | zones | volley | pull | rain | beam | blink, every = seconds between uses, windup = warning time, damage = times the boss's normal damage. Names (creatures, boss attacks) are in data/fantasy/writing/<region>.txt. weak / strong: the element (letter of data/fantasy/spells.json) a creature breaks under and the one it shrugs off (numbers: data/fantasy/combat.json weakness). role: how the creature fights in a squad (front, flank, swarm, ranged, air: data/fantasy/squad.json). attack_windup: seconds a melee creature rears back before its blow lands; it stands still meanwhile, and the blow misses if the target has got out of reach (0 or missing = it hits at once). moves: a creature's own special attacks (game/boss_moves.gd explains the kinds; `every` seconds apart, used when the target is between min_range and range metres away, `damage` multiplies the creature's own damage, `element` fire / ice / toxic sets the player burning, slowed or poisoned). Every ordinary creature has ONE; bosses have several. splits: {into, count} = when it dies it bursts into that many of another creature. attack_sound: the sound of its ordinary attack (data/sounds.json). SEA STEP 3, wild animals (Hunting): skill = the skill a kill trains (hunting: its xp, its drops need that Hunting level); temper skittish = wanders and runs from anyone within notice_m metres or who hurts it, defensive = wanders and fights back when hurt or when someone comes within notice_m; spawn.animals_* = how many of the region's `animals` (data/fantasy/world.json) roam near the players, apart from the creatures. Tracks (data/fantasy/skilling.json nodes with `animal`) call one up.",
  "spawn": {
   "max_alive": 14,
   "per_second": 0.35,
@@ -11,7 +11,11 @@
   "safe_radius": 40,
   "boss_trigger_m": 45,
   "boss_leash_m": 80,
-  "boss_respawn_s": 600
+  "boss_respawn_s": 600,
+  "animals_max": 5,
+  "animals_per_second": 0.25,
+  "animal_min_dist": 30,
+  "animal_max_dist": 60
  },
  "enemies": {
   "strawling": {
@@ -1795,6 +1799,356 @@
    "role": "swarm",
    "attack_windup": 0.3,
    "attack_sound": "atk_squelch"
+  },
+  "hare": {
+   "model": "hare",
+   "level": 1,
+   "max_hp": 14,
+   "speed": 6.5,
+   "attack_type": "melee",
+   "damage": 0,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.4,
+    0.45,
+    0.6
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 14,
+   "drops": {
+    "raw_rabbit": 1.0,
+    "small_pelt": 0.8
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "E",
+   "strong": "W",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "skittish",
+   "notice_m": 9
+  },
+  "pheasant": {
+   "model": "pheasant",
+   "level": 5,
+   "max_hp": 20,
+   "speed": 5.0,
+   "attack_type": "melee",
+   "damage": 0,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.4,
+    0.6,
+    0.7
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 26,
+   "drops": {
+    "raw_fowl": 1.0,
+    "feather": 1.0
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "A",
+   "strong": "E",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "skittish",
+   "notice_m": 11
+  },
+  "deer": {
+   "model": "deer",
+   "level": 15,
+   "max_hp": 90,
+   "speed": 7.2,
+   "attack_type": "melee",
+   "damage": 0,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.6,
+    1.7,
+    1.3
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 70,
+   "drops": {
+    "raw_venison": 1.0,
+    "hide": 0.9,
+    "bone": 0.6
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "F",
+   "strong": "W",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "skittish",
+   "notice_m": 18
+  },
+  "boar": {
+   "model": "boar",
+   "level": 20,
+   "max_hp": 170,
+   "speed": 5.6,
+   "attack_type": "melee",
+   "damage": 22,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.7,
+    0.9,
+    1.2
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 95,
+   "drops": {
+    "raw_boar": 1.0,
+    "boar_hide": 0.9,
+    "bone": 0.7
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "F",
+   "strong": "E",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "defensive",
+   "notice_m": 4.5
+  },
+  "dune_antelope": {
+   "model": "dune_antelope",
+   "level": 30,
+   "max_hp": 190,
+   "speed": 8.0,
+   "attack_type": "melee",
+   "damage": 0,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.6,
+    1.6,
+    1.3
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 150,
+   "drops": {
+    "raw_venison": 1.0,
+    "desert_hide": 0.9,
+    "bone": 0.6
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "W",
+   "strong": "F",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "skittish",
+   "notice_m": 20
+  },
+  "ice_elk": {
+   "model": "ice_elk",
+   "level": 35,
+   "max_hp": 420,
+   "speed": 6.2,
+   "attack_type": "melee",
+   "damage": 46,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.9,
+    2.3,
+    1.8
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 210,
+   "drops": {
+    "raw_venison": 1.0,
+    "thick_hide": 0.9,
+    "bone": 0.8
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "F",
+   "strong": "W",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "defensive",
+   "notice_m": 5.0
+  },
+  "mountain_goat": {
+   "model": "mountain_goat",
+   "level": 45,
+   "max_hp": 520,
+   "speed": 6.8,
+   "attack_type": "melee",
+   "damage": 60,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.6,
+    1.3,
+    1.1
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 300,
+   "drops": {
+    "raw_goat": 1.0,
+    "goat_wool": 1.0,
+    "bone": 0.7
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "A",
+   "strong": "E",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "defensive",
+   "notice_m": 4.0
+  },
+  "pale_stag": {
+   "model": "pale_stag",
+   "level": 50,
+   "max_hp": 900,
+   "speed": 8.5,
+   "attack_type": "melee",
+   "damage": 0,
+   "attack_range": 1.6,
+   "attack_interval": 1.4,
+   "size": [
+    0.7,
+    2.1,
+    1.5
+   ],
+   "color": [
+    0.08,
+    0.06,
+    0.05
+   ],
+   "body_color": [
+    1,
+    1,
+    1
+   ],
+   "xp": 520,
+   "drops": {
+    "raw_venison": 1.0,
+    "pale_hide": 1.0,
+    "pale_antler": 0.5
+   },
+   "walks": "land",
+   "debris": [
+    0.55,
+    0.45,
+    0.35
+   ],
+   "weak": "G",
+   "strong": "A",
+   "attack_windup": 0.4,
+   "attack_sound": "atk_swipe",
+   "skill": "hunting",
+   "temper": "skittish",
+   "notice_m": 24
   }
  },
  "tribes": {

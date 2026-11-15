@@ -1,6 +1,6 @@
 {
  "version": 2,
- "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. ROUND 5: every distance between places is three times what it was (size 6000; places keep their own size; a lake, the spawn and the way out keep their offset to the place they belong to); there is NO fast travel (director). Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills), then the region's LANDFORMS (core/fantasy_terrain.gd `_landforms`; all fade out at places, along paths and round lakes): ridge {amp, rough, sharp} = mountain ridges; mesa {height, rough, level (higher = less table land), edge (smaller = steeper cliff)} = table land, with a small rough stone pillars; gorge {depth, rough, width} = winding cuts; dunes {amp, length} = waves of sand; terrace {step, soft} = the slope in steps; cone {place, open_to, crater, rim, radius, height} = a volcano round that place with its way in facing the other. After changing any of it raise RULES_VERSION in core/fantasy_terrain.gd (saved charts). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. clutter: {model: how many per chunk} = solid boulders, rock spires, logs, stumps and bushes scattered through the open country (models tools/blender/fantasy_clutter.py; at most 12 a chunk). nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads).",
+ "_about": "The fantasy painting world Aurelind: ONE seamless map (rules: core/fantasy_terrain.gd, drawn by game/fantasy_world.gd). Positions are metres from the world centre, x east, z south. ROUND 5: every distance between places is three times what it was (size 6000; places keep their own size; a lake, the spawn and the way out keep their offset to the place they belong to); there is NO fast travel (director). Regions blend into each other; nothing blocks the way, only the level of what lives there. height: base = ground level, amp = hill height, rough = hill size (bigger = wider hills), then the region's LANDFORMS (core/fantasy_terrain.gd `_landforms`; all fade out at places, along paths and round lakes): ridge {amp, rough, sharp} = mountain ridges; mesa {height, rough, level (higher = less table land), edge (smaller = steeper cliff)} = table land, with a small rough stone pillars; gorge {depth, rough, width} = winding cuts; dunes {amp, length} = waves of sand; terrace {step, soft} = the slope in steps; cone {place, open_to, crater, rim, radius, height} = a volcano round that place with its way in facing the other. After changing any of it raise RULES_VERSION in core/fantasy_terrain.gd (saved charts). ground: [low colour, high colour, cliff colour]. mood: fog colour and density, sky top and horizon, ambient and sun colour. trees: {model: how many per chunk}. clutter: {model: how many per chunk} = solid boulders, rock spires, logs, stumps and bushes scattered through the open country (models tools/blender/fantasy_clutter.py; at most 12 a chunk). nodes: {node id: how many per chunk}. Placeholders for the director. tuft: grass or wheat blades scattered over the ground (base colour, tip colour, how many per chunk, height). scheme: which colour set of cottages and halls a region's towns use. npcs.look: body, outfit and hair (ids from data/appearance.json and data/outfits.json). surface: the ground texture of a region (data/surfaces.json g_*). fish: which fishing node a region's fresh water and its sea shore give. places.yard: the trodden ground of a place. lakes: ponds and lakes cut into the land (water: fresh | lava). roads: pairs of places joined by a path. ALL NAMES AND SPOKEN LINES are in data/fantasy/writing/*.txt (core/fantasy_data.gd puts them back in when the game loads). Sea step 3: a region's animals = the wild animals that roam it (weights) and small_game = what a snare can catch there.",
  "size": 6000,
  "seed": 7411,
  "chunk": 50,
@@ -136,7 +136,15 @@
     "bush_green": 1.2,
     "stump": 0.6,
     "fallen_log": 0.6
-   }
+   },
+   "animals": {
+    "hare": 2,
+    "pheasant": 1
+   },
+   "small_game": [
+    "hare",
+    "pheasant"
+   ]
   },
   {
    "id": "greenwald",
@@ -218,7 +226,9 @@
     "ash_tree": 0.4,
     "iron_rock": 0.2,
     "glowcap": 0.6,
-    "meadowmint": 0.4
+    "meadowmint": 0.4,
+    "deer_tracks": 0.25,
+    "boar_tracks": 0.15
    },
    "enemies": [
     "forest_wolf",
@@ -251,7 +261,17 @@
     "bush_green": 3.4,
     "fallen_log": 1.8,
     "stump": 1.4
-   }
+   },
+   "animals": {
+    "hare": 1,
+    "pheasant": 1,
+    "deer": 1.2,
+    "boar": 0.6
+   },
+   "small_game": [
+    "hare",
+    "pheasant"
+   ]
   },
   {
    "id": "brinemouth",
@@ -331,7 +351,8 @@
    "nodes": {
     "palm_tree": 0.8,
     "iron_rock": 0.25,
-    "glowcap": 0.2
+    "glowcap": 0.2,
+    "boar_tracks": 0.15
    },
    "enemies": [
     "reef_crab",
@@ -363,7 +384,14 @@
     "bush_dry": 1.6,
     "fallen_log": 1.0,
     "bush_green": 0.8
-   }
+   },
+   "animals": {
+    "hare": 1,
+    "boar": 0.8
+   },
+   "small_game": [
+    "hare"
+   ]
   },
   {
    "id": "sunscar",
@@ -447,7 +475,8 @@
    "nodes": {
     "palm_tree": 0.15,
     "sunstone_rock": 0.35,
-    "sunpetal": 0.5
+    "sunpetal": 0.5,
+    "antelope_tracks": 0.25
    },
    "enemies": [
     "dune_scorpion",
@@ -478,7 +507,14 @@
     "boulder_sand": 2.6,
     "spire_sand": 1.0,
     "bush_dry": 2.4
-   }
+   },
+   "animals": {
+    "hare": 0.6,
+    "dune_antelope": 1
+   },
+   "small_game": [
+    "hare"
+   ]
   },
   {
    "id": "frostmere",
@@ -557,7 +593,8 @@
    "nodes": {
     "frostpine_tree": 0.9,
     "frostcrystal_rock": 0.35,
-    "frostbloom": 0.5
+    "frostbloom": 0.5,
+    "elk_tracks": 0.25
    },
    "enemies": [
     "frost_wolf",
@@ -589,7 +626,14 @@
     "ice_shards": 1.8,
     "fallen_log": 0.8,
     "stump": 0.6
-   }
+   },
+   "animals": {
+    "hare": 0.6,
+    "ice_elk": 1
+   },
+   "small_game": [
+    "hare"
+   ]
   },
   {
    "id": "cinderreach",
@@ -707,7 +751,9 @@
     "boulder_basalt": 2.8,
     "spire_basalt": 1.6,
     "bush_ash": 1.6
-   }
+   },
+   "animals": {},
+   "small_game": []
   },
   {
    "id": "stormcrown",
@@ -795,7 +841,8 @@
     "frostbloom": 0.2,
     "cinderroot": 0.2,
     "stormoak_tree": 0.5,
-    "stormlily": 0.3
+    "stormlily": 0.3,
+    "goat_tracks": 0.25
    },
    "enemies": [
     "storm_harpy",
@@ -826,7 +873,13 @@
     "boulder_grey": 2.6,
     "spire_grey": 1.8,
     "bush_dry": 1.0
-   }
+   },
+   "animals": {
+    "mountain_goat": 1
+   },
+   "small_game": [
+    "hare"
+   ]
   },
   {
    "id": "hollow_crown",
@@ -901,7 +954,9 @@
    "trees": {
     "tree_dead": 1.4
    },
-   "nodes": {},
+   "nodes": {
+    "stag_tracks": 0.15
+   },
    "enemies": [
     "pale_knight",
     "hollow_shade"
@@ -931,7 +986,11 @@
     "boulder_pale": 2.6,
     "bush_ash": 2.0,
     "spire_grey": 0.8
-   }
+   },
+   "animals": {
+    "pale_stag": 0.3
+   },
+   "small_game": []
   }
  ],
  "places": [

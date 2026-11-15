@@ -1,1 +1,1 @@
-!wait 3;/tp fantasy;!wait 8;/skill woodcutting 33;/skill mining 47;!panel Skills woodcutting;!wait 1;!snap skills3a;/tp stormcrown;!wait 6;!snap stormcrown
+!wait 3;/tp fantasy;!wait 8;/tp greenwald;!wait 6;!immortal;/skill hunting 50;/gear snare 3;!use snare;!wait 20;!animals start;!animals go;!wait 0.3;!snap animal;!wait 2;!animals ran;!animals kill;!wait 1;!neartrack;!wait 1;!snap tracks;!key interact;!wait 5;!animals tracks;!wait 12;!state

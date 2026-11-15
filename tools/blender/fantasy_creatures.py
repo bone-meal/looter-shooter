@@ -236,6 +236,35 @@ def bird(m, s):
         m.loft(c(shade(feather, 0.7)), [(k * 0.08, 0.8, -0.4, 0.06, 0.02), (k * 0.2, 0.7, -0.95, 0.09, 0.015)], segs=6, steps=2)
 
 
+def gamebird(m, s):
+    """A plump ground bird (pheasant): round body, wings folded at the sides, short legs, a long barred tail, a
+    green neck ring and a red face."""
+    body, neck_col, face = s["body"], s.get("neck_col", (0.12, 0.4, 0.3)), s.get("face", (0.8, 0.15, 0.1))
+    m.loft(c(body), [(0, 0.3, -0.22, 0.08, 0.08), (0, 0.36, -0.1, 0.16, 0.15), (0, 0.38, 0.05, 0.17, 0.17), (0, 0.42, 0.16, 0.12, 0.13)], segs=12)
+    m.ball(c(shade(body, 1.2)), (0.13, 0.14, 0.12), (0, 0.34, 0.12), u=10, v=7)  # breast
+    for side, name in ((-1, "FlapL"), (1, "FlapR")):  # folded wings lying along the body
+        m.node(name, (side * 0.14, 0.42, 0.08))
+        m.loft(c(shade(body, 0.8)), [(side * 0.15, 0.42, 0.1, 0.02, 0.09), (side * 0.17, 0.38, -0.05, 0.025, 0.11), (side * 0.12, 0.33, -0.22, 0.015, 0.05)], node=name, segs=6, steps=2)
+    for side, name in ((-1, "SwingA"), (1, "SwingB")):
+        x = side * 0.06
+        m.node(name, (x, 0.26, 0.02))
+        tube(m, s.get("limb", (0.6, 0.55, 0.45)), [(x, 0.26, 0.02), (x, 0.12, 0.0), (x, 0.01, 0.03)], [0.022, 0.016, 0.018], node=name, segs=6)
+        for k in (-1, 0, 1):
+            horn(m, s.get("limb", (0.6, 0.55, 0.45)), (x, 0.01, 0.03), (x + k * 0.04, 0.005, 0.1), 0.012, node=name)
+    tube(m, neck_col, [(0, 0.42, 0.16), (0, 0.52, 0.22), (0, 0.58, 0.24)], [0.07, 0.055, 0.05], segs=9)
+    m.ball(c((0.95, 0.95, 0.92)), (0.062, 0.02, 0.062), (0, 0.47, 0.19), u=10, v=4)  # the white collar
+    m.ball(c(neck_col), (0.06, 0.06, 0.07), (0, 0.6, 0.26), u=9, v=7)
+    for side in (-1, 1):
+        m.ball(c(face), (0.02, 0.035, 0.035), (side * 0.04, 0.6, 0.28), u=6, v=5)
+    m.loft(c(s.get("beak", (0.86, 0.8, 0.6))), [(0, 0.6, 0.31, 0.022, 0.02), (0, 0.585, 0.36, 0.006, 0.006)], segs=6)
+    eyes(m, (0, 0.62, 0.29), 0.075, 0.012)
+    for k in (-1, 0, 1):  # the long tail
+        m.loft(c(shade(body, 0.9 + 0.1 * (k == 0))), [(k * 0.02, 0.32, -0.2, 0.035, 0.012), (k * 0.05, 0.36, -0.5, 0.03, 0.008), (k * 0.07, 0.34, -0.75 - 0.1 * (k == 0), 0.008, 0.004)], segs=5, steps=3)
+    for k in range(5):  # dark bars across the tail
+        f = -0.28 - k * 0.1
+        m.ball(c(shade(body, 0.4)), (0.04, 0.006, 0.012), (0, 0.33 + 0.012 * k * 0.3, f), u=6, v=3)
+
+
 def treefolk(m, s):
     """A walking tree: trunk body on root legs, branch arms, a crown of leaves."""
     bark, leaf = s["body"], s.get("leaf", (0.25, 0.5, 0.2))
@@ -361,6 +390,43 @@ def quad_dress(m, s, b):
     if "embers" in X:
         for k in range(6):
             m.ball(GLOW, W * 0.16, ((k % 2 - 0.5) * W * 1.4, H + W * 0.6, L * 0.4 - k * L * 0.16), u=6, v=4)
+    # sea step 3: the wild animals of Hunting
+    horn_col = s.get("horn", (0.62, 0.52, 0.38))
+    head = (0, b["ny"] + W * 0.42, b["nf"] - 0.04)
+    if "antlers" in X:  # a beam sweeping up and back on each side, tines rising from it
+        size = s.get("antler", 1.0)
+        for side in (-1, 1):
+            base = (side * W * 0.32, head[1], head[2])
+            mid = (side * W * (0.32 + 1.5 * size), head[1] + 0.32 * size, head[2] - 0.12 * size)
+            tip = (side * W * (0.32 + 2.4 * size), head[1] + 0.62 * size, head[2] - 0.32 * size)
+            horn(m, horn_col, base, mid, W * 0.2)
+            horn(m, horn_col, mid, tip, W * 0.15)
+            for k, t in enumerate((0.35, 0.7, 1.0)):
+                at = tuple(base[i] + (tip[i] - base[i]) * t for i in range(3))
+                up = (at[0] + side * W * 0.2, at[1] + 0.22 * size * (1.1 - 0.2 * k), at[2] + 0.1 * size)
+                horn(m, horn_col, at, up, W * 0.1)
+                if "glow_tips" in X:
+                    m.ball(GLOW, W * 0.05, up, u=5, v=4)
+    if "long_horns" in X:  # straight ridged horns swept back (antelope)
+        for side in (-1, 1):
+            horn(m, horn_col, (side * W * 0.3, head[1], head[2]), (side * W * 0.7, head[1] + 0.5, head[2] - 0.32), W * 0.13)
+    if "curled_horns" in X:  # heavy horns curling back and down (mountain goat)
+        for side in (-1, 1):
+            pts = [(side * W * 0.3, head[1], head[2]), (side * W * 0.7, head[1] + 0.16, head[2] - 0.16), (side * W * 1.0, head[1] + 0.02, head[2] - 0.3), (side * W * 0.95, head[1] - 0.16, head[2] - 0.16)]
+            tube(m, horn_col, pts, [W * 0.2, W * 0.17, W * 0.13, W * 0.07], segs=8)
+    if "tusks" in X:
+        for side in (-1, 1):
+            root = (side * W * 0.22, b["ny"] - 0.06, b["nf"] + s.get("snout", 0.28) * 0.75)
+            horn(m, (0.95, 0.92, 0.82), root, (side * W * 0.42, b["ny"] + 0.08, b["nf"] + s.get("snout", 0.28) * 0.85), W * 0.07)
+    if "bristles" in X:  # a ridge of stiff hair along the back
+        for k in range(8):
+            f = L * 0.45 - k * L * 0.12
+            horn(m, shade(s["body"], 0.6), (0, H + W * 0.95, f), (0, H + W * 1.45, f - 0.08), W * 0.12)
+    if "long_ears" in X:  # hare ears, tall and leaning back
+        for side in (-1, 1):
+            m.loft(c(shade(s["body"], 0.9)), [(side * W * 0.25, head[1] - W * 0.1, head[2], W * 0.18, W * 0.08), (side * W * 0.45, head[1] + W * 1.6, head[2] - W * 0.6, W * 0.24, W * 0.07), (side * W * 0.55, head[1] + W * 2.6, head[2] - W * 1.1, W * 0.08, W * 0.04)], segs=6, steps=2)
+    if "beard" in X:
+        tube(m, shade(s["body"], 0.95), [(0, b["ny"] - 0.06, b["nf"] + 0.12), (0, b["ny"] - 0.2, b["nf"] + 0.14)], [W * 0.14, W * 0.04], segs=6)
 
 
 SPEC = {
@@ -399,6 +465,15 @@ SPEC = {
     # the two desert tribes (people, not monsters: wrapped heads, tunics, shields)
     "red_warrior": dict(plan="biped", bulk=1.05, head="helm", body=(0.6, 0.22, 0.17), limb=(0.52, 0.38, 0.27), skin=(0.66, 0.26, 0.2), trim=(0.6, 0.45, 0.28), extras=["sword", "shield", "plume", "cloak"], cloak=(0.46, 0.16, 0.13), kinds={"body": "cloth", "skin": "cloth", "trim": "wood"}),
     "blue_warrior": dict(plan="biped", bulk=1.05, head="helm", body=(0.2, 0.32, 0.55), limb=(0.52, 0.38, 0.27), skin=(0.24, 0.36, 0.58), trim=(0.6, 0.45, 0.28), extras=["club", "shield", "plume", "cloak"], cloak=(0.15, 0.22, 0.42), kinds={"body": "cloth", "skin": "cloth", "trim": "wood"}),
+    # sea step 3: wild animals for Hunting (skittish ones flee, defensive ones fight back when pressed)
+    "hare": dict(plan="quad", len=0.55, h=0.26, w=0.13, neck=0.1, snout=0.12, tail=0.08, body=(0.58, 0.47, 0.34), limb=(0.5, 0.4, 0.3), extras=["long_ears"], kinds={"body": "fur", "limb": "fur"}),
+    "pheasant": dict(plan="gamebird", body=(0.62, 0.36, 0.17), kinds={"body": "feather"}),
+    "deer": dict(plan="quad", len=1.25, h=0.92, w=0.22, neck=0.5, snout=0.26, tail=0.14, body=(0.56, 0.38, 0.22), limb=(0.46, 0.31, 0.18), extras=["antlers"], antler=0.9, kinds={"body": "fur", "limb": "fur"}),
+    "boar": dict(plan="quad", len=1.15, h=0.55, w=0.27, neck=0.12, snout=0.34, tail=0.2, body=(0.3, 0.24, 0.2), limb=(0.22, 0.18, 0.15), extras=["tusks", "bristles"], kinds={"body": "fur", "limb": "fur"}),
+    "dune_antelope": dict(plan="quad", len=1.15, h=0.86, w=0.2, neck=0.45, snout=0.25, tail=0.14, body=(0.84, 0.66, 0.42), limb=(0.92, 0.86, 0.74), extras=["long_horns"], horn=(0.25, 0.2, 0.16), kinds={"body": "fur", "limb": "fur"}),
+    "ice_elk": dict(plan="quad", len=1.7, h=1.12, w=0.3, neck=0.5, snout=0.34, tail=0.14, body=(0.58, 0.55, 0.52), limb=(0.36, 0.33, 0.3), extras=["antlers", "mane"], antler=1.35, horn=(0.9, 0.93, 0.95), kinds={"body": "fur", "limb": "fur"}),
+    "mountain_goat": dict(plan="quad", len=1.0, h=0.72, w=0.22, neck=0.3, snout=0.22, tail=0.1, body=(0.9, 0.88, 0.84), limb=(0.8, 0.78, 0.74), extras=["curled_horns", "beard"], horn=(0.35, 0.32, 0.3), kinds={"body": "fur", "limb": "fur"}),
+    "pale_stag": dict(plan="quad", len=1.4, h=1.0, w=0.24, neck=0.55, snout=0.28, tail=0.14, body=(0.93, 0.93, 0.96), limb=(0.86, 0.86, 0.9), extras=["antlers", "glow_tips"], antler=1.2, horn=(0.97, 0.95, 0.88), kinds={"body": "fur", "limb": "fur"}),
     "pallid_king": dict(plan="biped", bulk=1.2, head="skull", body=(0.9, 0.9, 0.9), limb=(0.78, 0.78, 0.8), skin=(0.96, 0.96, 0.94), trim=(0.85, 0.75, 0.4), extras=["crown", "cloak", "sword", "plates"], cloak=(0.82, 0.82, 0.86), crown=(0.9, 0.8, 0.4), kinds={"body": "cloth", "limb": "cloth", "skin": "bone"}),
 }
 
@@ -426,13 +501,18 @@ def build(m, s):
         bird(m, s)
     elif plan == "tree":
         treefolk(m, s)
+    elif plan == "gamebird":
+        gamebird(m, s)
 
 
 def build_all():
     global GLOW
     fk.init()
     GLOW = fk.GLOW
+    only = set(filter(None, os.environ.get("ONLY", "").split(",")))  # ONLY=hare,deer builds just those
     for name, s in SPEC.items():
+        if only and name not in only:
+            continue
         KIND.clear()
         for role, kind in {**ROLE, **s.get("kinds", {})}.items():
             if isinstance(s.get(role), tuple):

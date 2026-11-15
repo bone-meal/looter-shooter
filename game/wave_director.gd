@@ -258,7 +258,7 @@ func spawn_custom(id: String, stats: Dictionary, pos: Vector3, affix: Dictionary
 		enemy.elite = String(affix["name"])
 	enemy.configure(id, stats, _player, _pool, _blood)
 	enemy.sounds = sounds
-	if not id.begins_with("boss"):
+	if not id.begins_with("boss") and not stats.has("temper"):  # wild animals never come elemental
 		var element := _roll_element(id)
 		if element != "":
 			enemy.element = element

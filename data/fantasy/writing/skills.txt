@@ -111,6 +111,12 @@ sunpetal: Sunpetal
 frostbloom: Frostbloom
 stormoak_tree: Stormoak tree
 stormlily: Stormlily
+deer_tracks: Deer tracks
+boar_tracks: Boar tracks
+antelope_tracks: Antelope tracks
+elk_tracks: Elk tracks
+goat_tracks: Goat tracks
+stag_tracks: Pale tracks
 cinderroot: Cinderroot
 shallows_spot: Shore shallows
 deepsea_spot: Cold current
@@ -185,14 +191,14 @@ name: Cauldron
 
 [unlock cooking]
 # WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
-5: Grilled trout | Cook trout.
+5: Trout and fowl | Grill trout and roast pheasant.
 10: Good Seasoning | Food heals 10% more.
-15: Seared silverfin | Cook silverfin.
-20: Spiced sandskipper | Cook sandskipper.
+15: Silverfin and venison | Sear silverfin and cook venison steaks.
+20: Sandskipper and boar | Spice sandskipper and roast boar.
 25: Two Pans | 10% chance of a second portion.
 30: Icefin stew | Cook icefin stew.
 35: Seared stormfin | Cook stormfin.
-40: Charred eel | Cook lava eel.
+40: Eel and goat | Char lava eel and stew goat.
 45: Hearty | Food heals 20% more.
 50: Chef | 15% chance to keep the ingredients, 10% more second portions.
 
@@ -260,3 +266,33 @@ name: Cauldron
 40: Gun Crew | Cannons you man reload 15% faster.
 45: Storm sailing | Hold course through storms.
 50: Old Captain | 5% faster ships, repairs 15% cheaper.
+
+[unlock hunting]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Pheasants | Pheasants can be snared and hunted.
+10: Quick Snares | Snares catch 30% sooner.
+15: Deer | Follow deer tracks in Greenwald; deer run fast and far.
+20: Boar | Follow boar tracks; boar turn and charge when pressed.
+25: Trail Sense | Read tracks in half the time.
+30: Dune antelope | Follow antelope tracks across Sunscar.
+35: Ice elk | Follow elk tracks in Frostmere; a cornered elk fights.
+40: Clean Kill | 20% chance of a second share of meat, hides and bone.
+45: Mountain goats | Follow goat tracks on the heights of Stormcrown.
+50: The Pale Stag | Follow the pale tracks in the Hollow Crown.
+
+[creature hare]
+name: Hare
+[creature pheasant]
+name: Pheasant
+[creature deer]
+name: Deer
+[creature boar]
+name: Wild Boar
+[creature dune_antelope]
+name: Dune Antelope
+[creature ice_elk]
+name: Ice Elk
+[creature mountain_goat]
+name: Mountain Goat
+[creature pale_stag]
+name: The Pale Stag

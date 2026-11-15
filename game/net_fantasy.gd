@@ -7,7 +7,7 @@
 extends Node
 
 const WORLD_X := 15000.0  # bodies beyond this x are in the fantasy world (it lies at x = 20000)
-const EVENT_TYPES := ["talk", "reach", "cast", "fire"]  # kills are never taken from a client
+const EVENT_TYPES := ["talk", "reach", "cast", "fire", "track"]  # kills are never taken from a client; track = tracks followed (Hunting)
 const EFFECTS := ["slow", "burn", "freeze", "weaken", "push"]
 
 var net: Node3D
@@ -280,9 +280,12 @@ func _event(event: Dictionary) -> void:
 	if not (String(event.get("type", "")) in EVENT_TYPES):
 		return
 	var clean := {"type": String(event["type"])}
-	for key: String in ["npc", "place", "sequence", "substance", "secret"]:
+	for key: String in ["npc", "place", "sequence", "substance", "secret", "animal"]:
 		if event.has(key):
 			clean[key] = String(event[key]).left(40)
+	for key: String in ["x", "z"]:  # where a followed trail ends (map metres)
+		if event.has(key) and (event[key] is float or event[key] is int) and is_finite(float(event[key])):
+			clean[key] = clampf(float(event[key]), -4000.0, 4000.0)
 	world.host_event(clean)
 
 

@@ -67,7 +67,7 @@ func _process(delta: float) -> void:
 		if not is_instance_valid(enemy):
 			continue
 		var body := enemy as Node3D
-		if not body.has_meta("fantasy") or body.has_meta("fantasy_boss") or bool(body.get("puppet")):
+		if not body.has_meta("fantasy") or body.has_meta("fantasy_boss") or body.has_meta("animal") or bool(body.get("puppet")):
 			continue
 		var prey: Variant = body.get("_target")
 		if not is_instance_valid(prey) or not players.has(prey):

@@ -1,6 +1,6 @@
 {
  "version": 2,
- "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>].",
+ "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>]. Hunting: nodes with `animal` are tracks (following them takes `seconds`, then that animal is met 25-35 m on along the trail; once = used up by one go); gather.snare: a set snare catches the region's best small game you may hunt after `seconds` (less with snare_speed perks), max snares out at once, keep_snare = chance the snare comes back. Content steps may also open animals (data/fantasy/enemies.json with skill hunting).",
  "max_level": 50,
  "xp_base": 30,
  "xp_power": 2.2,
@@ -431,6 +431,84 @@
    "seconds": 2.2,
    "respawn": 120,
    "model": "herb_storm"
+  },
+  "deer_tracks": {
+   "skill": "hunting",
+   "level": 15,
+   "xp": 30,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "animal": "deer",
+   "seconds": 3.0,
+   "respawn": 120,
+   "model": "tracks_hoof",
+   "once": true
+  },
+  "boar_tracks": {
+   "skill": "hunting",
+   "level": 20,
+   "xp": 40,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "animal": "boar",
+   "seconds": 3.0,
+   "respawn": 120,
+   "model": "tracks_hoof",
+   "once": true
+  },
+  "antelope_tracks": {
+   "skill": "hunting",
+   "level": 30,
+   "xp": 60,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "animal": "dune_antelope",
+   "seconds": 3.0,
+   "respawn": 120,
+   "model": "tracks_hoof",
+   "once": true
+  },
+  "elk_tracks": {
+   "skill": "hunting",
+   "level": 35,
+   "xp": 80,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "animal": "ice_elk",
+   "seconds": 3.0,
+   "respawn": 120,
+   "model": "tracks_hoof",
+   "once": true
+  },
+  "goat_tracks": {
+   "skill": "hunting",
+   "level": 45,
+   "xp": 110,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "animal": "mountain_goat",
+   "seconds": 3.0,
+   "respawn": 120,
+   "model": "tracks_hoof",
+   "once": true
+  },
+  "stag_tracks": {
+   "skill": "hunting",
+   "level": 50,
+   "xp": 160,
+   "tool": "",
+   "tool_tier": 0,
+   "gives": "",
+   "animal": "pale_stag",
+   "seconds": 3.0,
+   "respawn": 120,
+   "model": "tracks_hoof",
+   "once": true
   }
  },
  "fire": {
@@ -1031,13 +1109,105 @@
     "storm_tonic": 1
    },
    "batch": true
+  },
+  {
+   "id": "make_snare",
+   "skill": "hunting",
+   "level": 1,
+   "xp": 12,
+   "station": "workbench",
+   "in": {
+    "ash_log": 1,
+    "wheat": 2
+   },
+   "out": {
+    "snare": 2
+   }
+  },
+  {
+   "id": "roast_rabbit",
+   "skill": "cooking",
+   "level": 1,
+   "xp": 18,
+   "station": "fire",
+   "in": {
+    "raw_rabbit": 1
+   },
+   "out": {
+    "roast_rabbit": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "roast_fowl",
+   "skill": "cooking",
+   "level": 5,
+   "xp": 32,
+   "station": "fire",
+   "in": {
+    "raw_fowl": 1
+   },
+   "out": {
+    "roast_fowl": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "cook_venison",
+   "skill": "cooking",
+   "level": 15,
+   "xp": 70,
+   "station": "fire",
+   "in": {
+    "raw_venison": 1
+   },
+   "out": {
+    "venison_steak": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "cook_boar",
+   "skill": "cooking",
+   "level": 20,
+   "xp": 95,
+   "station": "fire",
+   "in": {
+    "raw_boar": 1
+   },
+   "out": {
+    "boar_roast": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "cook_goat",
+   "skill": "cooking",
+   "level": 40,
+   "xp": 230,
+   "station": "fire",
+   "in": {
+    "raw_goat": 1,
+    "meadowmint": 1
+   },
+   "out": {
+    "goat_stew": 1
+   },
+   "batch": true
   }
  ],
  "gather": {
   "reach": 3.2,
   "deplete_chance": 0.35,
   "tool_speed": 0.25,
-  "reach_water": 7.5
+  "reach_water": 7.5,
+  "snare": {
+   "seconds": 45,
+   "max": 3,
+   "keep_snare": 0.8,
+   "reach": 2.2,
+   "catch_xp_mult": 1.0
+  }
  },
  "stations": {
   "fire": {
@@ -1351,7 +1521,8 @@
     "level": 5,
     "kind": "content",
     "ids": [
-     "cook_trout"
+     "cook_trout",
+     "roast_fowl"
     ]
    },
    {
@@ -1365,14 +1536,16 @@
     "level": 15,
     "kind": "content",
     "ids": [
-     "cook_silverfin"
+     "cook_silverfin",
+     "cook_venison"
     ]
    },
    {
     "level": 20,
     "kind": "content",
     "ids": [
-     "cook_sandskipper"
+     "cook_sandskipper",
+     "cook_boar"
     ]
    },
    {
@@ -1400,7 +1573,8 @@
     "level": 40,
     "kind": "content",
     "ids": [
-     "cook_lava_eel"
+     "cook_lava_eel",
+     "cook_goat"
     ]
    },
    {
@@ -1800,6 +1974,84 @@
      "ship_speed": 0.05,
      "repair": 0.15
     }
+   }
+  ],
+  "hunting": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "pheasant"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "perk",
+    "perk": {
+     "snare_speed": 0.3
+    }
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "deer",
+     "deer_tracks"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "boar",
+     "boar_tracks"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "speed": 0.5
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "dune_antelope",
+     "antelope_tracks"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "ice_elk",
+     "elk_tracks"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "double": 0.2
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "mountain_goat",
+     "goat_tracks"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "content",
+    "ids": [
+     "pale_stag",
+     "stag_tracks"
+    ]
    }
   ]
  }

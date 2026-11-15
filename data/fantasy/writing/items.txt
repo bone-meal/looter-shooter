@@ -51,6 +51,11 @@ ember_rod: Ember Rod
 bread: Bread
 fried_minnow: Fried Minnow
 grilled_trout: Grilled Trout
+roast_rabbit: Roast Rabbit
+roast_fowl: Roast Pheasant
+venison_steak: Venison Steak
+boar_roast: Boar Roast
+goat_stew: Goat Stew
 seared_silverfin: Seared Silverfin
 spiced_sandskipper: Spiced Sandskipper
 icefin_stew: Icefin Stew
@@ -77,6 +82,21 @@ emberwood_log: Emberwood Log
 stormoak_log: Stormoak Log
 stormlily: Stormlily
 rough_gem: Rough Gem
+raw_rabbit: Raw Rabbit
+raw_fowl: Raw Pheasant
+raw_venison: Raw Venison
+raw_boar: Raw Boar
+raw_goat: Raw Goat
+small_pelt: Small Pelt
+feather: Feather
+hide: Deer Hide
+boar_hide: Boar Hide
+desert_hide: Antelope Hide
+thick_hide: Elk Hide
+goat_wool: Goat Wool
+bone: Bone
+pale_hide: Pale Hide
+pale_antler: Pale Antler
 flawless_gem: Flawless Gem
 copper_ore: Copper Ore
 iron_ore: Iron Ore
@@ -116,3 +136,7 @@ ochre_pigment: Ochre Pigment
 white_pigment: White Pigment
 crimson_pigment: Crimson Pigment
 storm_pigment: Storm Pigment
+
+[items trap]
+# WHAT: a trap set from the bag where you stand. Read a line as  id: Name .
+snare: Snare

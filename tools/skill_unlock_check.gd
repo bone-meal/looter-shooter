@@ -25,6 +25,9 @@ func _ready() -> void:
 		known[String(recipe["id"])] = int(recipe["level"])
 	for log_id: String in skilling["fire"]["level"]:
 		known[log_id] = int(skilling["fire"]["level"][log_id])
+	for animal: String in all["enemies"]["enemies"]:  # wild animals (Hunting) a step may open
+		if all["enemies"]["enemies"][animal].has("skill"):
+			known[animal] = int(all["enemies"]["enemies"][animal]["level"])
 	for problem in SkillPerks.problems(unlocks, skilling["skills"], known):
 		_check(false, problem)
 	for text_problem: String in all["problems"]:

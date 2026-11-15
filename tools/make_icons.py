@@ -825,6 +825,22 @@ SHAPES += [("sail", sail), ("paw", paw), ("saw", saw), ("needle", needle), ("tro
     ("gem", gem), ("snare", snare), ("relic", relic), ("brush", brush), ("crate", crate), ("course", course)]
 
 
+def meat(c):
+    c.poly([(20, 30), (52, 14), (84, 30), (88, 62), (62, 86), (26, 80), (12, 54)], LIGHT)
+    c.poly([(30, 40), (56, 28), (74, 40), (70, 62), (46, 70), (30, 62)], MID)
+    c.line([(36, 50), (64, 44)], 3, (255, 255, 255, 150))
+
+def roast(c):
+    c.oval(10, 10, 66, 66, LIGHT)
+    c.oval(20, 18, 50, 44, (255, 255, 255, 60))
+    c.line([(56, 56), (84, 84)], 9, CREAM)
+    for x, y in ((82, 90), (92, 80)):
+        c.oval(x - 7, y - 7, x + 7, y + 7, CREAM)
+
+
+SHAPES += [("meat", meat), ("roast", roast)]
+
+
 def main():
     rows = (len(SHAPES) + COLUMNS - 1) // COLUMNS
     tint_sheet = Image.new("RGBA", (COLUMNS * CELL, rows * CELL), (0, 0, 0, 0))

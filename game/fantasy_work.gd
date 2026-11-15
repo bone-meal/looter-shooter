@@ -11,7 +11,7 @@ signal talk_opened(person: Dictionary)
 signal station_opened(kind: String)
 
 const WATERS := {"fresh": "freshwater", "salt": "saltwater", "lava": "lava"}
-const VERBS := {"woodcutting": "Chop", "mining": "Mine", "fishing": "Fish at", "farming": "Reap", "alchemy": "Pick"}
+const VERBS := {"woodcutting": "Chop", "mining": "Mine", "fishing": "Fish at", "farming": "Reap", "alchemy": "Pick", "hunting": "Follow"}
 const STATION_NAMES := {"fire": "Cook at the fire", "forge": "Work the forge", "workbench": "Use the workbench", "cauldron": "Brew at the cauldron"}
 const TALK_REACH := 3.0
 
@@ -46,6 +46,9 @@ func prompt(key: String) -> String:
 	var station: Dictionary = world.places.station_near(local, TALK_REACH)
 	if not station.is_empty():
 		return "[%s] %s" % [key, STATION_NAMES[String(station["kind"])]]
+	var snare: Dictionary = world.snares.near(local)
+	if not snare.is_empty():
+		return world.snares.prompt(snare, key)
 	if not _node.is_empty():
 		return ""
 	var node := _near_node(local)
@@ -85,6 +88,10 @@ func interact() -> void:
 	if not station.is_empty():
 		station_opened.emit(String(station["kind"]))
 		return
+	var snare: Dictionary = world.snares.near(local)
+	if not snare.is_empty():
+		world.snares.collect(snare)
+		return
 	var node := _near_node(local)
 	if node.is_empty():
 		return
@@ -121,14 +128,17 @@ func _process(delta: float) -> void:
 	var def: Dictionary = world.skilling["nodes"][String(_node["id"])]
 	var skill := String(def["skill"])
 	world.sound("gather_" + skill, world.world_of(at))
-	var count := 2 if randf() < world.perk(skill, "double") else 1
-	world.give(String(def["gives"]), count)
-	world.worked.emit(skill, String(def["gives"]), count, false)
-	for find: Dictionary in SkillPerks.bonus_finds(world.skilling.get("unlocks", {}), skill, int(world.skills.level(skill))):
+	if def.has("animal"):  # tracks: read them, and the trail leads on to the animal
+		world.follow_tracks(String(def["animal"]), at)
+	else:
+		var count := 2 if randf() < world.perk(skill, "double") else 1
+		world.give(String(def["gives"]), count)
+		world.worked.emit(skill, String(def["gives"]), count, false)
+	for find: Dictionary in [] if def.has("animal") else SkillPerks.bonus_finds(world.skilling.get("unlocks", {}), skill, int(world.skills.level(skill))):
 		if randf() < float(find["chance"]):
 			world.give(String(find["item"]), 1)
 	world.gain_xp(skill, int(def["xp"]))
-	if randf() < float(_cfg["deplete_chance"]) * (1.0 - world.perk(skill, "keep")):
+	if bool(def.get("once", false)) or randf() < float(_cfg["deplete_chance"]) * (1.0 - world.perk(skill, "keep")):
 		world.gather.spend(_node, float(def["respawn"]) * maxf(1.0 - world.perk(skill, "regrow"), 0.2))
 		_node = {}
 

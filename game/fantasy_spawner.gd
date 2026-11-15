@@ -1,6 +1,7 @@
 # Purpose: the creatures of the fantasy world: keeps a few of the current region's enemies around the players, removes
 # the ones left far behind, wakes each region's boss when someone walks into its arena, keeps the two desert tribes
-# fighting each other on their battlefield, and pays out a kill (Magic experience, drops, quest progress). Nothing is
+# fighting each other on their battlefield, keeps a few wild animals roaming (Hunting: data/fantasy/world.json animals),
+# and pays out a kill (Magic experience, or Hunting for an animal, drops, quest progress). Nothing is
 # gated: a boss is simply far stronger than its region, so the quests that level you up are the practical way to it.
 # Creatures move by the world's own walker (around houses, trees and deep water) and never spawn inside something.
 # Online this runs on the host only (game/net_fantasy.gd).
@@ -33,6 +34,7 @@ var _fill_at := {}  # banner -> engine time the next fallen warrior is replaced
 var _rng := RandomNumberGenerator.new()
 var _timer := 0.0
 var _acc := 0.0
+var _acc_animals := 0.0
 
 
 func setup(fantasy_world: Node3D, director: Node3D, player: Node3D) -> void:
@@ -111,6 +113,11 @@ func _process(delta: float) -> void:
 		_acc -= 1.0
 		if _count() < int(_cfg["max_alive"]):
 			_spawn_group(all[_rng.randi() % all.size()])
+	_acc_animals += float(_cfg.get("animals_per_second", 0.0)) * 0.5
+	while _acc_animals >= 1.0:
+		_acc_animals -= 1.0
+		if _count(true) < int(_cfg.get("animals_max", 0)):
+			_spawn_animal(all[_rng.randi() % all.size()])
 
 
 func _mine(enemy: Variant) -> bool:
@@ -121,12 +128,36 @@ func _roams(enemy: Variant) -> bool:
 	return _mine(enemy) and not (enemy as Node).has_meta("fantasy_boss") and String((enemy as Node).get("feud")) == ""
 
 
-func _count() -> int:
+# Roaming creatures, or (animals true) wild animals: they are counted apart, so the two never crowd each other out.
+func _count(animals: bool = false) -> int:
 	var n := 0
 	for enemy in _director.call("enemy_list"):
-		if _roams(enemy):
+		if _roams(enemy) and (enemy as Node).has_meta("animal") == animals:
 			n += 1
 	return n
+
+
+# One of the region's wild animals (data/fantasy/world.json "animals") out in the open country, not in a town.
+func _spawn_animal(near: Node3D) -> void:
+	var local: Vector3 = _world.local_of(near.global_position)
+	var a := _rng.randf() * TAU
+	var d := _rng.randf_range(float(_cfg.get("animal_min_dist", 30.0)), float(_cfg.get("animal_max_dist", 60.0)))
+	var x := local.x + cos(a) * d
+	var z := local.z + sin(a) * d
+	for place: Dictionary in _world.terrain.places:
+		if String(place["kind"]) != "arena" and Vector2(x - float(place["pos"][0]), z - float(place["pos"][1])).length() < float(place["flat"]) + 12.0:
+			return
+	var kinds: Dictionary = _world.terrain.region_at(x, z).get("animals", {})
+	var total := 0.0
+	for id: String in kinds:
+		total += float(kinds[id])
+	var pick := _rng.randf() * total
+	for id: String in kinds:
+		pick -= float(kinds[id])
+		if pick <= 0.0:
+			if _enemies.has(id) and _fits(id, x, z):
+				_spawn(id, x, z, near)
+			return
 
 
 func _nearest(list: Array, at: Vector3) -> Node3D:
@@ -192,6 +223,8 @@ func _spawn(id: String, x: float, z: float, near: Node3D) -> Node3D:
 	enemy.set_meta("fantasy", true)
 	enemy.set("walker", walker_for(stats))
 	enemy.set_meta("tier", int(stats["level"]))
+	if stats.has("temper"):  # a wild animal (Hunting): no squad, counted apart
+		enemy.set_meta("animal", true)
 	if bool(stats.get("boss", false)):
 		enemy.set_meta("fantasy_boss", true)
 	elif stats.has("moves"):
@@ -335,7 +368,13 @@ func pay(enemy_id: String) -> void:
 	var stats: Dictionary = _enemies.get(enemy_id, {})
 	if stats.is_empty():
 		return
-	_world.gain_xp("magic", int(stats["xp"]))
+	var skill := String(stats.get("skill", "magic"))
+	if skill != "magic" and int(_world.skills.level(skill)) < int(stats["level"]):  # an animal above your Hunting: a little experience, nothing to take
+		_world.gain_xp(skill, roundi(float(stats["xp"]) * 0.25))
+		notice.emit("Needs %s %d to dress the %s." % [_world.skills.skill_name(skill), int(stats["level"]), String(stats["name"]).to_lower()])
+		return
+	_world.gain_xp(skill, int(stats["xp"]))
+	var extra := 1 if skill != "magic" and _rng.randf() < float(_world.perk(skill, "double")) else 0
 	for item: String in stats.get("drops", {}):
 		if _rng.randf() < float(stats["drops"][item]):
-			_world.give(item, 1)
+			_world.give(item, 1 + extra)

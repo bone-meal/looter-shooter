@@ -65,7 +65,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !neartrack (stand at the nearest animal tracks), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -432,6 +432,36 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", land.call("ground_world", node["at"].x + 1.5, node["at"].z + 1.5), 0.0)
 				player.call("look_at_point", land.call("world_of", node["at"]) + Vector3(0, 1.0, 0))
 			_lines.append("nearest node: %s" % str(node.get("id", "none")))
+		"neartrack":  # fantasy world: stand next to the nearest animal tracks (Hunting)
+			var land: Node = session.call("fantasy")
+			var here: Vector3 = land.call("player_local")
+			var best := {}
+			for key: Vector2i in land.get("gather").get("_nodes"):
+				for node: Dictionary in land.get("gather").get("_nodes")[key]:
+					if String(node["id"]).ends_with("_tracks") and (best.is_empty() or here.distance_to(node["at"]) < here.distance_to(best["at"])):
+						best = node
+			if not best.is_empty():
+				player.call("teleport", land.call("ground_world", best["at"].x + 1.0, best["at"].z + 1.0), 0.0)
+				player.call("look_at_point", land.call("world_of", best["at"]))
+			_lines.append("nearest tracks: %s" % str(best.get("id", "none")))
+		"animals":  # fantasy world: every wild animal near, with what it is doing, for the log
+			var seen := PackedStringArray()
+			for enemy: Variant in session.call("director").call("enemy_list"):
+				if is_instance_valid(enemy) and (enemy as Node).has_meta("animal"):
+					var e := enemy as Node3D
+					seen.append("%s %.0f m hp %d moving %.1f m/s" % [String(e.get("enemy_id")), e.global_position.distance_to(player.global_position), int(e.get("health").hp), Vector2(e.get("velocity").x, e.get("velocity").z).length()])
+			_lines.append("animals %s: [%s]" % [" ".join(words.slice(1)), ", ".join(seen)])
+			var closest: Node3D = null
+			for enemy: Variant in session.call("director").call("enemy_list"):
+				if is_instance_valid(enemy) and (enemy as Node).has_meta("animal") and (closest == null or (enemy as Node3D).global_position.distance_to(player.global_position) < closest.global_position.distance_to(player.global_position)):
+					closest = enemy
+			if closest != null and words.size() > 1 and words[1] == "go":  # "!animals go": stand 6 m from the nearest one
+				var off := (player.global_position - closest.global_position)
+				off.y = 0.0
+				player.call("teleport", closest.global_position + off.normalized() * 6.0 + Vector3(0, 0.5, 0), 0.0)
+				player.call("look_at_point", closest.global_position)
+			elif closest != null and words.size() > 1 and words[1] == "kill":  # "!animals kill": the nearest one falls to the player
+				closest.call("on_hit", 99999.0)
 		"neardoor":  # fantasy world: stand at the nearest door of a building that is entered into a room
 			var doors: Array = session.call("fantasy").get("rooms").get("_doors")
 			_lines.append("doors here: %d" % doors.size())

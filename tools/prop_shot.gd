@@ -1,7 +1,7 @@
 # Purpose: developer check. Stands fantasy prop models (houses, walls, gates ...) in a row with the materials the game
 # gives them and saves two pictures, front and back three-quarter, to res://tools/shots/prop_<name>_a.jpg / _b.jpg,
 # plus triangles and draw calls to tools/prop_shot.log. Models and name come after `--`:
-# `--models=cottage_amber,hall_amber --name=amber`.
+# `--models=cottage_amber,hall_amber --name=amber`; c:<id> stands a creature (assets/models/fantasy/creatures/).
 # Dependencies: game/fantasy_models.gd, game/surface_library.gd.
 extends Node3D
 
@@ -48,7 +48,8 @@ func _ready() -> void:
 	var tallest := 1.0
 	var deep := 1.0
 	for id in models:
-		var made := FantasyModels.scene(id)
+		var own: Array[StandardMaterial3D] = []
+		var made := FantasyModels.creature(id.trim_prefix("c:"), Color(1, 0.85, 0.3), own) if id.begins_with("c:") else FantasyModels.scene(id)  # c:<id> = a creature
 		if made == null:
 			continue
 		add_child(made)

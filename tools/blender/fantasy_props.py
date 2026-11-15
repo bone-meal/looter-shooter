@@ -73,7 +73,7 @@ def build_all():
     init()
     maker = Maker()
     glow = fantasy_kit.GLOW
-    SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples")  # things you can walk through or step over
+    SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples", "snare", "tracks_")  # things you can walk through or step over
 
     def model(name, build, uv=0.5, plain=False):  # plain: a building, which also gets its plain model for the low graphics tiers
         maker.model(name, build, solid=not name.startswith(SOFT), uv=uv, plain=plain)
@@ -257,6 +257,43 @@ def build_all():
         for r in (0.35, 0.7, 1.05):
             m.lathe(c((0.85, 0.95, 1.0)), [(r, 0.0), (r + 0.05, 0.012), (r + 0.1, 0.0)], (0.0, 0, 0.0), segs=14)
     model("ripples", ripples)
+
+    # sea step 3, Hunting: a snare (a peg, a bent sapling and a loop of cord) and its sprung look, and tracks on the ground
+    cord = (0.78, 0.7, 0.52)
+    def snare(m, sprung=False):
+        m.rod(K("wood", (0.42, 0.3, 0.18)), 0.025, (0, -0.05, 0), (0, 0.22, 0), r2=0.015, segs=5)  # the peg
+        bend = (0.0, 0.9, -0.55) if sprung else (0.0, 0.45, -0.1)
+        m.rod(K("bark", (0.4, 0.34, 0.22)), 0.022, (0, 0, -0.75), (0, 0.5, -0.6), r2=0.016, segs=5)  # the sapling
+        m.rod(K("bark", (0.4, 0.34, 0.22)), 0.016, (0, 0.5, -0.6), bend, r2=0.01, segs=5)
+        m.rod(c(cord), 0.006, bend, (0, 0.18 if not sprung else 0.6, 0.05), segs=4)
+        if sprung:  # pulled tight round a little furred bundle
+            m.lathe(c(cord), [(0.05, 0.5), (0.055, 0.51), (0.05, 0.52)], (0, 0, 0.05), segs=10)
+            fantasy_kit.blob(m, K("fur", (0.58, 0.47, 0.34)), (0.1, 0.13, 0.08), (0, 0.38, 0.05), seed=3)
+        else:
+            m.lathe(c(cord), [(0.14, 0.12), (0.145, 0.13), (0.14, 0.14)], (0, 0, 0.05), segs=14)
+            for k in range(3):  # leaves scattered over it
+                a = k * 2.1
+                m.ball(c((0.5, 0.42, 0.2)), (0.05, 0.01, 0.03), (math.cos(a) * 0.12, 0.02, 0.05 + math.sin(a) * 0.12), yaw=k * 50, u=5, v=3)
+    model("snare", lambda m: snare(m, False))
+    model("snare_sprung", lambda m: snare(m, True))
+
+    def tracks(m, hoof=True):  # a trodden strip of earth, prints pressed deep into it and a broken twig: something walked here
+        mud, soil = (0.11, 0.08, 0.05), (0.3, 0.22, 0.14)
+        m.ball(c(soil), (0.42, 0.012, 1.55), (0, 0.004, -0.1), u=10, v=3)  # the scuffed strip
+        for k in range(6):
+            z = -1.2 + k * 0.45
+            x = 0.13 if k % 2 else -0.13
+            if hoof:
+                for side in (-1, 1):
+                    m.ball(c(mud), (0.06, 0.016, 0.11), (x + side * 0.05, 0.012, z), u=6, v=3)
+            else:
+                m.ball(c(mud), (0.08, 0.016, 0.08), (x, 0.012, z), u=6, v=3)
+                for t in (-1, 0, 1):
+                    m.ball(c(mud), (0.03, 0.014, 0.034), (x + t * 0.06, 0.012, z + 0.12), u=5, v=3)
+        m.rod(K("bark", (0.5, 0.42, 0.28)), 0.016, (0.42, 0.03, 0.4), (0.18, 0.04, 0.58), segs=4)
+        m.rod(K("bark", (0.5, 0.42, 0.28)), 0.013, (0.18, 0.04, 0.58), (0.0, 0.03, 0.5), segs=4)
+    model("tracks_hoof", lambda m: tracks(m, True))
+    model("tracks_paw", lambda m: tracks(m, False))
     maker.plain_pass()
     maker.save()
 

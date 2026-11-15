@@ -1,10 +1,10 @@
-Sea step 3a: 15 skills with ten milestones each
+Sea step 3b: Hunting
 
-- data/fantasy/skilling.json v2: six new skills, unlocks at levels 5..50 (content or perks), old content moved onto the milestones
-- core/skill_perks.gd sums perks; gathering, recipes, fires, food, potions and magic use them
-- skills page: 15 cards and the milestone list; level-up notice names what opened
-- Stormoak tree, Stormlily, Storm Tonic, rough and flawless gems; new icons
-- tools/skill_unlock_check
+- eight wild animals (hare, pheasant, deer, boar, dune antelope, ice elk, mountain goat, the Pale Stag) with new models
+- skittish animals wander and flee, defensive ones fight back when pressed (game/enemy.gd temper)
+- animals roam each region apart from the creatures; kills train Hunting and drop meat, hides, feathers, bone
+- tracks to follow lay a trail to an animal (online through the host); snares catch small game
+- meat recipes at the fire, Hunting milestones, new icons; dev !neartrack and !animals
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

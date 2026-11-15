@@ -114,6 +114,8 @@
   "relic": 107,
   "brush": 108,
   "crate": 109,
-  "course": 110
+  "course": 110,
+  "meat": 111,
+  "roast": 112
  }
 }

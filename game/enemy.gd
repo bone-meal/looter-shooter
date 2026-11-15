@@ -97,6 +97,11 @@ var _crawling := false  # see cripple()
 var _blocked := 0.0  # seconds it has been walking without getting anywhere
 var _dodge_until := 0.0  # it walks turned aside until this engine time ...
 var _dodge_side := 1.0  # ... to this side (+1 / -1)
+var _temper := ""  # a wild animal (stats "temper"): skittish runs away, defensive fights back when pressed; "" = always hunts
+var _provoked_until := 0.0  # hurt (or crowded, if defensive) until this engine time
+var _wander_at := 0.0  # a wandering animal picks a new way to amble at this engine time ...
+var _wander_yaw := 0.0
+var _wander_go := false  # ... and whether it walks or stands grazing
 
 
 # Call before add_child.
@@ -109,6 +114,7 @@ func configure(id: String, stats: Dictionary, target: Node3D, pool: Node3D, bloo
 	health = HealthState.new(float(stats["max_hp"]))
 	_brain = EnemyBrain.new(stats)
 	_speed = float(stats["speed"])
+	_temper = String(stats.get("temper", ""))
 	var s: Array = stats["size"]
 	_size = Vector3(s[0], s[1], s[2])
 	var c: Array = stats["color"]
@@ -294,6 +300,8 @@ func _physics_process(delta: float) -> void:
 		return
 	if not walker.is_valid() and not is_on_floor():
 		velocity.y -= _gravity * delta
+	if _temper != "" and _roam(delta):
+		return
 
 	var flat := _target.global_position - global_position
 	flat.y = 0.0
@@ -361,6 +369,7 @@ func _physics_process(delta: float) -> void:
 func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vector3.UP) -> void:
 	if health.is_dead():
 		return
+	_provoked_until = Time.get_ticks_msec() / 1000.0 + 12.0  # a wild animal that is hurt runs (or turns on you)
 	var spot := point if point != Vector3.ZERO else global_position + Vector3(0, _size.y * 0.6, 0)
 	_flinch = 1.0
 	if puppet:
@@ -386,6 +395,55 @@ func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vect
 	_blood.burst(spot, normal, false, _chips)
 	_set_tint(_flash_color)
 	get_tree().create_timer(0.1).timeout.connect(_reset_color)
+
+
+# A wild animal (stats "temper") while it is not fighting: it ambles and grazes, and runs straight away from anyone
+# within notice_m metres or who has hurt it; a defensive one instead turns to fight (the ordinary chase) when hurt or
+# crowded. Returns true while it is not fighting.
+func _roam(delta: float) -> bool:
+	var now := Time.get_ticks_msec() / 1000.0
+	var away := global_position - _target.global_position
+	away.y = 0.0
+	var near := away.length() < float(_stats.get("notice_m", 12.0))
+	if _temper == "defensive" and (near or now < _provoked_until):
+		if near:
+			_provoked_until = maxf(_provoked_until, now + 6.0)
+		return false
+	if near:  # startled: it keeps running for a few seconds, well clear of whoever came close
+		_provoked_until = maxf(_provoked_until, now + 4.0)
+	var walk := Vector3.ZERO
+	if now < _provoked_until:
+		walk = away.normalized() * _speed
+	else:
+		if now >= _wander_at:
+			_wander_at = now + randf_range(2.5, 6.0)
+			_wander_yaw = randf() * TAU
+			_wander_go = randf() < 0.55
+		if _wander_go:
+			walk = Vector3(-sin(_wander_yaw), 0.0, -cos(_wander_yaw)) * _speed * 0.22
+	if now < _freeze_until:
+		walk = Vector3.ZERO
+	elif now < _slow_until:
+		walk *= 1.0 - _slow_amount
+	if now < _burn_until and now >= _burn_tick:
+		_burn_tick = now + 0.5
+		on_hit(_burn_dps * 0.5)
+		if _falling or health.is_dead():
+			return true
+	if walk.length() > 0.05:
+		rotation.y = lerp_angle(rotation.y, atan2(-walk.x, -walk.z), 1.0 - exp(-8.0 * delta))
+	velocity.x = walk.x + _push.x
+	velocity.z = walk.z + _push.z
+	_push = _push.move_toward(Vector3.ZERO, PUSH_DECAY * delta)
+	if walker.is_valid():
+		var before := position
+		position = walker.call(position, Vector3(velocity.x, 0.0, velocity.z) * delta)
+		velocity.x = (position.x - before.x) / maxf(delta, 0.001)
+		velocity.z = (position.z - before.z) / maxf(delta, 0.001)
+	else:
+		move_and_slide()
+	_animate(delta)
+	return true
 
 
 # Gun buffs: slow by `amount` (0..1) for `seconds`, set on fire for `dps` damage per second.

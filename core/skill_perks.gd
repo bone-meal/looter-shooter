@@ -5,7 +5,7 @@
 extends RefCounted
 
 const KEYS := ["speed", "double", "keep", "save", "regrow", "bonus", "heal", "potency", "fire_time", "fire_regen", "fire_radius",
-	"mana", "regen", "power", "ship_speed", "repair", "cannon_reload"]
+	"mana", "regen", "power", "ship_speed", "repair", "cannon_reload", "snare_speed"]
 
 
 # The sum of one perk key over every step of `skill` reached at `level` (0 when none).
