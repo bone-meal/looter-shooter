@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
+  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), keeps = a number the gun itself remembers (\"record\": Fish Story's biggest hit; the host allows it on that unique only), cfg = numbers its behaviour reads, pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
   "drop_chance": 0.25,
   "bonus": {
     "damage": 0.15,
@@ -31,7 +31,7 @@
         "frost_pulse",
         "rally_cry"
       ],
-      "flavor": "Small. Fast. Kicks like something ten times its size."
+      "flavor": "Small. Fast. Kicks like something ten times its size. One of the 8 old ponies; put to pasture."
     },
     "stampede": {
       "name": "Stampede",
@@ -53,7 +53,7 @@
         "swarm_drones",
         "rally_cry"
       ],
-      "flavor": "You hear it before you see it. Then you stop hearing anything."
+      "flavor": "You hear it before you see it. Then you stop hearing anything. One of the 8 old ponies; put to pasture."
     },
     "thoroughbred": {
       "name": "Thoroughbred",
@@ -75,7 +75,7 @@
         "chain_lightning",
         "gravity_well"
       ],
-      "flavor": "Bred for one thing. It was never second."
+      "flavor": "Bred for one thing. It was never second. One of the 8 old ponies; put to pasture."
     },
     "clydesdale": {
       "name": "Clydesdale",
@@ -97,7 +97,7 @@
         "gravity_well",
         "nova_burst"
       ],
-      "flavor": "Pulls the whole fight behind it and does not notice the weight."
+      "flavor": "Pulls the whole fight behind it and does not notice the weight. One of the 8 old ponies; put to pasture."
     },
     "dark_horse": {
       "name": "Dark Horse",
@@ -119,7 +119,7 @@
         "frost_pulse",
         "chain_lightning"
       ],
-      "flavor": "Nobody bet on it. Nobody saw the shot either."
+      "flavor": "Nobody bet on it. Nobody saw the shot either. One of the 8 old ponies; put to pasture."
     },
     "buckaroo": {
       "name": "Buckaroo",
@@ -139,7 +139,7 @@
         "nova_burst",
         "rally_cry"
       ],
-      "flavor": "Two barrels. Both of them throw you."
+      "flavor": "Two barrels. Both of them throw you. One of the 8 old ponies; put to pasture."
     },
     "carousel": {
       "name": "Carousel",
@@ -158,7 +158,7 @@
         "gravity_well",
         "swarm_drones"
       ],
-      "flavor": "Round and round it goes. Where it lands, everybody knows."
+      "flavor": "Round and round it goes. Where it lands, everybody knows. One of the 8 old ponies; put to pasture."
     },
     "rodeo_clown": {
       "name": "Rodeo Clown",
@@ -177,7 +177,7 @@
         "chain_lightning",
         "nova_burst"
       ],
-      "flavor": "Its whole job is to make the angry thing look the other way."
+      "flavor": "Its whole job is to make the angry thing look the other way. One of the 8 old ponies; put to pasture."
     },
     "mixtape": {
       "name": "Mixtape",
@@ -208,6 +208,49 @@
       "signature": "mixtape",
       "attach": "mixtape_mp3",
       "pool": "region_1_boss"
+    },
+    "fish_story": {
+      "name": "Fish Story",
+      "body": "sniper_basic",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "long",
+        "mag": "box",
+        "sight": "long_scope",
+        "muzzle": "silencer",
+        "grip": "skeleton"
+      },
+      "buffs": [
+        "headshot_damage",
+        "far_reach",
+        "big_game"
+      ],
+      "skills": [
+        "harpoon_yank",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "executioner",
+        "momentum"
+      ],
+      "flavor": "",
+      "red": "The one that got away was twice this size. You had to be there.",
+      "signature": "fish_story",
+      "attach": "fish_story_rod",
+      "pool": "region_1_boss",
+      "keeps": "record",
+      "cfg": {
+        "tell_min": 1.5,
+        "tell_max": 3.0,
+        "tell_words": [
+          "IT WAS THIS BIG",
+          "NO, BIGGER",
+          "SWEAR ON MY BOAT",
+          "YOU SHOULD'VE SEEN IT"
+        ],
+        "boast_seconds": 10.0,
+        "boast_damage": 0.25
+      }
     },
     "beach_day": {
       "name": "Beach Day",

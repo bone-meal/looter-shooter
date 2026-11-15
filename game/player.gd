@@ -912,6 +912,7 @@ func _dress_body(index: int) -> void:
 	WKillsDisplay.show(_models[index], _held_gun)  # the kill counter changes with every kill: not part of the dressing below
 	var plain := _held_gun.duplicate()
 	plain.erase("wkills")
+	plain.erase("record")  # Fish Story's biggest hit (its tag is updated by its behaviour)
 	var h := plain.hash()
 	if int(_gun_hash.get(index, 0)) == h:
 		return
@@ -1353,7 +1354,10 @@ func _shoot() -> void:
 	self_fx.on_shot(_now())  # Phase Step: one charged shot spent
 	if damage_numbers != null:
 		for collider in totals:
-			damage_numbers.spawn(spots[collider], totals[collider])
+			var shown: float = totals[collider]
+			if _sig_node != null and _sig_node.has_method("on_hit_total"):  # Fish Story: kills are told bigger, the record kept
+				shown = float(_sig_node.call("on_hit_total", spots[collider], shown, collider.get("health") != null and collider.health.is_dead()))
+			damage_numbers.spawn(spots[collider], shown)
 
 
 # Damage of one pellet: the weapon's damage, doubled (plus the crit_damage buff) on a critical hit of a rolled gun, times the damage multiplier (berserker, glass cannon, rally).
@@ -1381,6 +1385,8 @@ func _damage_mult() -> float:
 	if now < _rally_until:
 		mult *= 1.0 + _rally_dmg / 100.0
 	mult *= self_fx.damage_mult(now, _near_banner())  # Full Clip, War Banner, Phase Step
+	if _sig_node != null and _sig_node.has_method("damage_mult"):
+		mult *= float(_sig_node.call("damage_mult"))  # a chase gun's own boost (Fish Story's boast)
 	return mult * (1.0 + bonus_damage_pct / 100.0)
 
 
@@ -1741,6 +1747,8 @@ func _follow_signature() -> void:
 		_sig_node = Signatures.make(id)
 		if _sig_node != null:
 			add_child(_sig_node)
+			if _sig_node.has_method("bind"):  # the gun itself (a behaviour may remember things on it) and its data
+				_sig_node.call("bind", self, _held_gun, gun_db.uniques.get(String(_held_gun["unique"]), {}))
 			_sig_node.call("start", UniqueAttach.on(_models[_slot]))
 
 

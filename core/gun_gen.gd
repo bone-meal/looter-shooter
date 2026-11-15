@@ -6,6 +6,7 @@ extends RefCounted
 const SkillState = preload("res://core/skill_state.gd")
 const ItemLevel = preload("res://core/item_level.gd")
 const WKILLS_MAX := 9999999  # the counter shows 7 digits
+const RECORD_MAX := 1e12  # Fish Story's biggest hit can be no bigger
 const VERSION := 4  # 4 = pony "family" + "sea" affix; 3 = item level "lvl" + traits; 2 = skills without a level; 1 = before skills (all still legal)
 const EPS := 0.002
 
@@ -164,6 +165,13 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 			return "bad W kills count"
 		gun = gun.duplicate()
 		gun.erase("wkills")  # the counter says nothing about the rest of the gun
+	if gun.has("record"):  # a number the gun remembers (data/gun_uniques.json "keeps": Fish Story's biggest hit)
+		var best: Variant = gun["record"]
+		var keeps := String((db.uniques.get(String(gun.get("unique", "")), {}) as Dictionary).get("keeps", ""))
+		if keeps != "record" or not (best is int or best is float) or float(best) < 0.0 or float(best) > RECORD_MAX or not is_equal_approx(float(best), roundf(float(best))):
+			return "bad record"
+		gun = gun.duplicate()
+		gun.erase("record")
 	var level_problem := _level_problem(gun)
 	if level_problem != "":
 		return level_problem

@@ -4,6 +4,9 @@
 # MIXTAPE: an MP3 player lying on the LEFT side of the M16 receiver (the side the first-person camera sees), screen
 # toward the muzzle end, click wheel toward the stock, held on by two strips of silver duct tape, earbuds dangling
 # from its jack. An empty "Screen" marks the middle of its screen, where the game puts the scrolling song name.
+# FISH STORY: a bent fishing rod hose-clamped under the sniper's barrel (cork handle and reel at the handguard, the tip
+# bowed down past the muzzle with a red-and-white bobber on its line) and a small brass tag hanging from the
+# handguard's LEFT side on a split ring. An empty "Tag" marks the tag's face, where the game writes the biggest hit.
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import os
 import sys
@@ -18,6 +21,9 @@ SPECS = {  # name: (kind, colour, seed)
     "plastic": ("polymer", (0.86, 0.86, 0.88), 41), "chrome": ("metal", (0.72, 0.74, 0.78), 42),
     "wheel": ("polymer", (0.62, 0.63, 0.66), 43), "tape": ("fabric", (0.5, 0.51, 0.53), 44),
     "cable": ("polymer", (0.92, 0.92, 0.93), 45), "rubber": ("polymer", (0.08, 0.08, 0.09), 46),
+    "brass": ("metal", (0.78, 0.6, 0.28), 47), "cork": ("wood", (0.66, 0.5, 0.32), 48),
+    "rodglass": ("polymer", (0.12, 0.22, 0.2), 49), "bobred": ("polymer", (0.85, 0.12, 0.1), 50),
+    "line": ("polymer", (0.9, 0.92, 0.95), 51),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -80,7 +86,55 @@ def mixtape_mp3(m, M):
     tape_strip(m, M, f1 - 0.006, -9.0, reach=0.058)
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3}
+ROD_Y = -0.018  # under the sniper's barrel (barrel axis y 0.01, radius 0.016)
+TAG_X = -0.031  # just off the handguard's left face (half width 0.026)
+
+
+def fish_story_rod(m, M):
+    # cork handle and reel seat at the front of the handguard, hose-clamped to the barrel
+    m.cyl(M["cork"], 0.0085, 0.6, 0.7, ROD_Y, segs=14, bevel=0.002)
+    m.cyl(M["chrome"], 0.0095, 0.7, 0.712, ROD_Y, segs=14, bevel=0.001)
+    m.cyl(M["rodglass"], 0.0062, 0.712, 0.9, ROD_Y, segs=12, r2=0.0045, bevel=0.0)
+    # the reel hanging under the seat: spool, side plates, crank and knob
+    reel_f, reel_y = 0.665, ROD_Y - 0.026
+    m.rod(M["chrome"], 0.003, (0.0, ROD_Y - 0.006, reel_f), (0.0, reel_y + 0.012, reel_f), segs=8)
+    m.cylx(M["chrome"], 0.017, -0.009, 0.009, reel_f, reel_y, segs=22, bevel=0.0015)
+    m.cylx(M["line"], 0.0135, -0.0095, 0.0095, reel_f, reel_y, segs=22, bevel=0.0)
+    m.cylx(M["chrome"], 0.0045, -0.0215, -0.0095, reel_f, reel_y, segs=10)
+    m.rod(M["chrome"], 0.0018, (-0.021, reel_y, reel_f), (-0.024, reel_y - 0.016, reel_f + 0.004), segs=6)
+    m.ball(M["rubber"], (0.0045, 0.006, 0.0045), (-0.029, reel_y - 0.018, reel_f + 0.004))
+    # two hose clamps round barrel and rod
+    for f in (0.78, 0.93):
+        m.cyl(M["chrome"], 0.0215, f - 0.006, f + 0.006, (0.01 + ROD_Y) / 2, segs=18, bevel=0.0008)
+        m.box(M["chrome"], (0.006, 0.008, 0.01), (0.022, (0.01 + ROD_Y) / 2, f), bevel=0.001)  # the screw housing
+    # the blank: straight along the barrel, then bowed down past the muzzle (it caught something once)
+    pts = [(0.0, ROD_Y, 0.9), (0.0, ROD_Y - 0.002, 1.0), (0.0, ROD_Y - 0.01, 1.08), (0.0, ROD_Y - 0.03, 1.15),
+        (0.0, ROD_Y - 0.062, 1.2), (0.0, ROD_Y - 0.1, 1.225)]
+    radius = 0.0045
+    for a, b in zip(pts, pts[1:]):
+        m.rod(M["rodglass"], radius, a, b, r2=radius * 0.78, segs=8)
+        radius *= 0.78
+    for a in pts[1:-1]:  # line guides
+        m.ball(M["chrome"], (0.0035, 0.0035, 0.0012), (a[0], a[1] - 0.005, a[2]))
+    # line from the reel along the blank to the tip, then down to a bobber
+    tip = pts[-1]
+    m.rod(M["line"], 0.0006, (0.0, reel_y - 0.004, reel_f + 0.01), (0.0, ROD_Y - 0.006, 0.9), segs=4)
+    m.rod(M["line"], 0.0006, tip, (tip[0], tip[1] - 0.07, tip[2] + 0.004), segs=4)
+    bob = (tip[0], tip[1] - 0.082, tip[2] + 0.004)
+    m.ball(M["bobred"], (0.0105, 0.009, 0.0105), (bob[0], bob[1] - 0.004, bob[2]))
+    m.ball(M["cable"], (0.0108, 0.0085, 0.0108), (bob[0], bob[1] + 0.0045, bob[2]))
+    m.rod(M["rubber"], 0.0016, (bob[0], bob[1] + 0.012, bob[2]), (bob[0], bob[1] + 0.02, bob[2]), segs=6)
+    # brass tag on a split ring from the handguard's left side, hanging a little skew
+    ring_f, ring_y = 0.47, -0.036
+    m.cylx(M["chrome"], 0.0045, TAG_X - 0.0012, TAG_X + 0.0012, ring_f, ring_y, segs=12, bevel=0.0)
+    m.rod(M["chrome"], 0.001, (TAG_X, ring_y - 0.004, ring_f), (TAG_X - 0.001, ring_y - 0.012, ring_f + 0.002), segs=4)
+    tag_y, tag_f = ring_y - 0.044, ring_f + 0.004
+    m.box(M["brass"], (0.0018, 0.06, 0.075), (TAG_X - 0.002, tag_y, tag_f), tilt=3.0, bevel=0.003)
+    m.cylx(M["rubber"], 0.0026, TAG_X - 0.0038, TAG_X - 0.0005, tag_f, tag_y + 0.023, segs=10, bevel=0.0)  # punched hole
+    m.empty("Tag", TAG_X - 0.0034, tag_y - 0.005, tag_f)
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "fish_story_rod": fish_story_rod}
 
 if __name__ == "__main__":
     import bpy

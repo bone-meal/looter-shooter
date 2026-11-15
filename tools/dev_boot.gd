@@ -107,6 +107,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.get("inventory").call("set_holster_gun", slot, made)
 				player.call("refresh_held")
 				_lines.append("READYUNIQUE %s in slot %d" % [words[1], slot + 1])
+		"sighit":  # "!sighit <damage> [kill]": the chase gun in hand's behaviour hears one shot's damage (Fish Story: record, tag, told number)
+			var sig_now: Node = player.get("_sig_node")
+			if sig_now != null and sig_now.has_method("on_hit_total"):
+				var told := float(sig_now.call("on_hit_total", player.global_position + Vector3(0, 1.6, -3), float(words[1]), words.size() > 2))
+				_lines.append("SIGHIT %s -> shown %d, record %s" % [words[1], roundi(told), str(player.call("held_gun").get("record", "-"))])
 		"sig":  # "!sig <note>": the chase gun in hand's red-text behaviour and (the Mixtape) what it plays
 			var node: Node = player.get("_sig_node")
 			_lines.append("SIG %s @%.1f: %s | %s" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), String(player.get("_sig_id")), String(node.call("playing_text")) if node != null and node.has_method("playing_text") else "-"])

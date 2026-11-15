@@ -46,6 +46,8 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 		var u: Dictionary = stats["unique"]
 		for wrapped in _wrap(String(u.get("red", "")), 50):  # a chase gun's red text
 			lines.append([wrapped, Color(1.0, 0.22, 0.18)])
+		if String(u.get("keeps", "")) == "record":  # Fish Story's tag
+			lines.append(["Biggest hit on the tag: %s" % (str(int(gun.get("record", 0))) if int(gun.get("record", 0)) > 0 else "none yet"), Color(0.95, 0.78, 0.4)])
 		if String(u.get("flavor", "")) != "":
 			for wrapped in _wrap("\"%s\"" % String(u["flavor"]), 50):
 				lines.append([wrapped, Color(1.0, 0.45, 0.6)])

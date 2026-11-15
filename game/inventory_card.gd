@@ -106,6 +106,8 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	var lines: Array = []  # [text, colour, boxed, icon shape ("" = none)]
 	if stats.has("unique") and String((stats["unique"] as Dictionary).get("red", "")) != "":  # a chase gun's red text comes first
 		lines.append([String(stats["unique"]["red"]), RED_TEXT, false, ""])
+	if stats.has("unique") and String((stats["unique"] as Dictionary).get("keeps", "")) == "record":  # Fish Story's tag
+		lines.append(["Biggest hit on the tag: %s" % (str(int(gun.get("record", 0))) if int(gun.get("record", 0)) > 0 else "none yet"), Color(0.95, 0.78, 0.4), false, ""])
 	if gun.has("family"):
 		var fam: Dictionary = db.family_def(String(gun["family"]))
 		lines.append(["%s  -  %s\n%s" % [String(fam.get("name", "")), String(fam.get("virtue", "")), String(fam.get("role", ""))], TierStyle.family_colour(db, String(gun["family"])), false, ""])

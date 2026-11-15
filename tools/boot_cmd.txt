@@ -1,1 +1,1 @@
-!uncap;!wait 3;/give pool region_4_boss 35;!wait 1;/give pool vault 60;!wait 1;/give pool nope;!wait 1;!inv;!wait 1;!snap pools_bag;!wait 1
+!uncap;!wait 3;/tp island;!wait 2;!immortal;!readyunique fish_story 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1;!sighit 4321;!sighit 900 kill;!wait 0.3;!snap fish_told;!key inspect;!wait 1.4;!snap fish_inspect

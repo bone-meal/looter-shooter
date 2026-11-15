@@ -12,7 +12,41 @@ static var _defs := {}  # data/gun_uniques.json "uniques", read once for apply_i
 
 # Removes any gimmick, then adds `gun`'s own (if it is a unique with one). Returns the added model or null.
 static func apply(model: Node3D, gun: Dictionary, db: RefCounted) -> Node3D:
-	return _attach(model, db.uniques.get(String(gun.get("unique", "")), {}))
+	var def: Dictionary = db.uniques.get(String(gun.get("unique", "")), {})
+	var piece := _attach(model, def)
+	if piece != null and String(def.get("keeps", "")) == "record":
+		show_record(piece, int(gun.get("record", 0)))
+	return piece
+
+
+# Fish Story: the biggest hit stamped on the brass tag ("Tag" marker of the gimmick).
+static func show_record(piece: Node3D, best: int) -> void:
+	var tag := piece.find_child("Tag", true, false) as Node3D
+	if tag == null:
+		return
+	var label := tag.get_node_or_null("Record") as Label3D
+	if label == null:
+		label = Label3D.new()
+		label.name = "Record"
+		label.font_size = 64
+		label.pixel_size = 0.00017
+		label.outline_size = 0
+		label.modulate = Color(0.12, 0.07, 0.02)
+		label.rotation_degrees = Vector3(0, -90, 0)  # the tag's face looks to the gun's left
+		label.double_sided = false
+		label.shaded = false
+		tag.add_child(label)
+	label.text = "BEST\n%s" % _grouped(best) if best > 0 else "BEST\n---"
+
+
+static func _grouped(n: int) -> String:
+	var digits := str(n)
+	var out := ""
+	for i in digits.length():
+		if i > 0 and (digits.length() - i) % 3 == 0:
+			out += ","
+		out += digits[i]
+	return out
 
 
 static func _attach(model: Node3D, def: Dictionary) -> Node3D:

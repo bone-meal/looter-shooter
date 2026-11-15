@@ -1,6 +1,6 @@
-Loot pools + 31 plain named uniques
+Fish Story chase gun + old ponies put to pasture
 
-data/loot_pools.json and core/loot_pool.gd: one kill of a sea boss, raid boss, the Vault or any sea enemy rolls its pool (rolled guns at the pool's luck and lowest tier, plus a chance at a named unique from that pool, chase or plain). A unique joins a pool by its pool field; only the 8 old ponies (no pool) can come out of an ordinary pony drop or the island quest. 31 plain uniques added as data (regions 1-7, raids, vault, sea world), traits and sea affixes included. Dev /give pool id level. Check tools/loot_pool_check: 0 problems.
+Fish Story (region 1 boss pool, sniper): a bent fishing rod hose-clamped under the barrel and a brass tag on the handguard. Kills are told bigger with a fisherman's line, the biggest real hit is kept on the gun (record, host-checked, only on this unique), stamped on the tag and shown on the cards; a new record gives a 10 s damage boast. Own inspect move turns the tag to the eye. The 8 old pony uniques' flavour now ends with: One of the 8 old ponies; put to pasture. Check tools/chase_check: 0 problems. Dev !sighit.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
