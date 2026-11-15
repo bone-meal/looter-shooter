@@ -295,6 +295,46 @@
         "pop_damage": 1.2
       }
     },
+    "croak": {
+      "name": "Croak",
+      "body": "m16",
+      "maker": "moss",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "extended",
+        "sight": "acog",
+        "muzzle": "flash_hider",
+        "grip": "angled"
+      },
+      "buffs": [
+        "slayer_mark",
+        "reload_on_kill",
+        "adrenaline"
+      ],
+      "skills": [
+        "phase_step",
+        "plague_cloud"
+      ],
+      "traits": [
+        "pack_hunter",
+        "momentum"
+      ],
+      "flavor": "",
+      "red": "He was here first.",
+      "signature": "croak",
+      "attach": "croak_scope",
+      "pool": "region_2_boss",
+      "cfg": {
+        "every": 5,
+        "mark": 0.3,
+        "reach": 40.0,
+        "leap_seconds": 0.45,
+        "leap_height": 1.2,
+        "ride_seconds": 20.0,
+        "air_jumps": 1,
+        "frog_scale": 1.6
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

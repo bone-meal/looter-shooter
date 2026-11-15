@@ -1,7 +1,7 @@
-Beach balls online + quiet test copies
+Croak chase gun + quiet test window stays small
 
-Beach Ball Bombardier online (game/net_beachballs.gd): the thrower owns his balls; launches, course changes and pops go through the host to everyone, who fly copies; kicking or shooting a copy is sent to the owner, who applies it (a kick is a volley). Tested with two copies: guest saw the ball, kicked it (volley counted on the host) and shot the second one (popped on the host).
-Quiet test copies (director: tests grabbed his mouse): game/quiet_test.gd via --quiet-test, always passed by the boot and pair checks with small windows: no focus, no mouse capture; player _mouse_held lets them shoot. Dev !fire, !balls, !ballkick, !ballshoot.
+Croak (region 2 boss pool, M16): a little frog sits on the ACOG and blinks. While it rides on the gun you get a second jump in the air; every 5th kill it leaps onto the nearest enemy's head and croaks, marking it (+30 percent damage taken) until that enemy dies, then hops back. tools/chase_check 24 of 24 on his PC.
+Quiet test copies now stay a 640x360 window whatever the player's settings say.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

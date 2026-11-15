@@ -9,6 +9,9 @@
 # handguard's LEFT side on a split ring. An empty "Tag" marks the tag's face, where the game writes the biggest hit.
 # BEACH BALL BOMBARDIER: an inflated beach ball jammed onto the grenade launcher's muzzle (six coloured gores, white
 # caps, the valve on its side), and the beach ball it fires (beach_ball: radius 1 about the origin, scaled in game).
+# CROAK: a small green frog sitting on the M16's ACOG, facing forward, with gold bulging eyes; its eyelids are their
+# own node "Lids" (hidden; the game shows them for a blink). croak_frog = the same frog about the origin, the one that
+# leaps off onto an enemy's head.
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -30,6 +33,8 @@ SPECS = {  # name: (kind, colour, seed)
     "gore_red": ("polymer", (0.86, 0.14, 0.12), 52), "gore_yellow": ("polymer", (0.98, 0.82, 0.16), 53),
     "gore_blue": ("polymer", (0.14, 0.38, 0.86), 54), "gore_white": ("polymer", (0.95, 0.95, 0.94), 55),
     "gore_green": ("polymer", (0.2, 0.7, 0.3), 56), "gore_orange": ("polymer", (0.98, 0.5, 0.12), 57),
+    "frogskin": ("hide", (0.3, 0.62, 0.22), 58), "frogbelly": ("polymer", (0.86, 0.84, 0.55), 59),
+    "frogeye": ("polymer", (0.9, 0.72, 0.18), 60),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -187,7 +192,40 @@ def beach_ball(m, M):
     beach_ball_at(m, M, (0.0, 0.0, 0.0), 1.0, segs_per_gore=5, rings=12)
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def frog_at(m, M, at):
+    """A small frog sitting at `at` (x, y, f: the middle under its belly), facing +f. About 5 cm long."""
+    m.shift = at
+    m.ball(M["frogskin"], (0.019, 0.012, 0.024), (0.0, 0.012, -0.002), pitch=-12.0, u=16, v=10)  # body, rump low
+    m.ball(M["frogbelly"], (0.016, 0.008, 0.02), (0.0, 0.008, 0.0), u=14, v=8)
+    m.ball(M["frogskin"], (0.016, 0.01, 0.014), (0.0, 0.019, 0.017), u=16, v=10)  # head
+    m.ball(M["frogbelly"], (0.013, 0.006, 0.011), (0.0, 0.014, 0.02), u=12, v=8)  # throat
+    m.box(M["rubber"], (0.02, 0.0012, 0.0012), (0.0, 0.0165, 0.0305), bevel=0.0)  # the mouth line
+    for side in (-1.0, 1.0):
+        x = side * 0.0085
+        m.ball(M["frogskin"], 0.0062, (x, 0.0265, 0.017), u=12, v=8)  # eye bulge
+        m.ball(M["frogeye"], 0.0052, (x + side * 0.0012, 0.0275, 0.0185), u=12, v=8)
+        m.ball(M["rubber"], (0.0018, 0.0034, 0.0024), (x + side * 0.0055, 0.0278, 0.0195), u=8, v=6)  # pupil
+        m.ball(M["frogskin"], (0.0058, 0.0035, 0.0058), (x + side * 0.0012, 0.0302, 0.0185), node="Lids", u=12, v=6)  # eyelid
+        # folded back legs and little front legs with splayed toes
+        m.ball(M["frogskin"], (0.007, 0.0065, 0.016), (side * 0.017, 0.007, -0.012), yaw=side * 18.0, u=10, v=8)
+        m.ball(M["frogskin"], (0.0045, 0.003, 0.012), (side * 0.02, 0.002, 0.0), yaw=-side * 12.0, u=8, v=6)
+        m.rod(M["frogskin"], 0.0024, (side * 0.011, 0.01, 0.016), (side * 0.014, 0.002, 0.024), segs=6)
+        for toe in (-1.0, 0.0, 1.0):
+            m.ball(M["frogbelly"], (0.0016, 0.0009, 0.0026), (side * 0.0145 + toe * 0.002, 0.0012, 0.0265 + abs(toe) * -0.0008), u=6, v=4)
+    m.shift = None
+    m.node("Lids", (at[0], at[1] + 0.03, at[2] + 0.018))
+
+
+def croak_scope(m, M):
+    """The frog on the M16's ACOG (sight mount y 0.136; the ACOG's top about 0.06-0.07 above it)."""
+    frog_at(m, M, (0.0, 0.198, -0.02))
+
+
+def croak_frog(m, M):
+    frog_at(m, M, (0.0, 0.0, 0.0))
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

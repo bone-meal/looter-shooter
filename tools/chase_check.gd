@@ -2,7 +2,8 @@
 # accepts what they remember on the gun and refuses forged copies. FISH STORY: kills told bigger with a line, the
 # biggest real hit kept on the gun ("record") and on its tag, the boast after a new record. BEACH BALL BOMBARDIER:
 # balls bounce off heads (each bounce hits), a shot pops one, a kick sends it where the kicker looks and makes its pop
-# bigger, they pop on the ground in the end. Log tools/chase_check.log
+# bigger, they pop on the ground in the end. CROAK: an air jump while the frog is on the gun, every 5th kill it leaps
+# onto the nearest enemy's head and marks it, then hops back when that enemy dies. Log tools/chase_check.log
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -37,8 +38,22 @@ class Mob extends Node3D:
 
 
 class HealthStub extends RefCounted:
+	var dead := false
+
 	func is_dead() -> bool:
-		return false
+		return dead
+
+
+class MarkMob extends Mob:
+	var vuln := 1.0
+
+	func apply_vulnerable(m: float, _s: float) -> void:
+		vuln = m
+
+
+class FrogHolder extends Node3D:
+	var damage_numbers := Numbers.new()
+	var explosives: Node3D
 
 
 class Booms extends Node3D:
@@ -72,6 +87,7 @@ func _ready() -> void:
 	var db := GunDb.new(_json("gun_loot"), _json("gun_parts"), _json("manufacturers"), _json("weapons"), _json("skills"), _json("gun_uniques"))
 	_fish_story(db)
 	await _beach_balls(db)
+	await _croak(db)
 	_finish()
 
 
@@ -163,6 +179,50 @@ func _beach_balls(db: GunDb) -> void:
 	var expect := 120.0 * (1.0 + float(cfg["volley_bonus"]) * float(balls._volleys[i]))
 	_say("a kicked ball pops in the end, bigger for its volleys (%s, expected %.0f)" % [str(booms.blasts), expect], booms.blasts.size() == 1 and is_equal_approx(float(booms.blasts[0][2]), expect))
 	_say("no ball left flying", balls.active_count() == 0)
+
+
+func _croak(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "croak", 20)
+	_say("Croak builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var model := Node3D.new()
+	add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its frog sits on the scope with eyelids that blink", piece != null and piece.find_child("Lids", true, false) != null and ResourceLoader.exists("res://assets/models/weapons/uniques/croak_frog.gltf"))
+	var holder := FrogHolder.new()
+	holder.position = Vector3(2000, 0, 0)
+	add_child(holder)
+	var booms := Booms.new()
+	var source := Source.new()
+	add_child(source)
+	booms.source = source
+	holder.explosives = booms
+	add_child(booms)
+	var near_mob := MarkMob.new()
+	near_mob.position = Vector3(2004, 0, 0)
+	var far_mob := MarkMob.new()
+	far_mob.position = Vector3(2030, 0, 0)
+	add_child(near_mob)
+	add_child(far_mob)
+	source.list = [far_mob, near_mob]
+	var sig: Node3D = Signatures.make("croak")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["croak"])
+	sig.call("start", piece)
+	_say("while the frog rides on the gun: one air jump", int(sig.call("extra_jumps")) == 1)
+	for n in 4:
+		sig.call("on_hit_total", Vector3(2003, 1, 0), 50.0, true)
+	_say("four kills: it stays on the gun", int(sig.call("frog_state")) == 0)
+	sig.call("on_hit_total", Vector3(2003, 1, 0), 50.0, true)
+	for _i in 40:  # by time, not frames: his PC draws hundreds of frames a second
+		await get_tree().create_timer(0.05).timeout
+		if int(sig.call("frog_state")) == 2:
+			break
+	await get_tree().create_timer(0.1).timeout
+	_say("the 5th kill: it leaps onto the NEAREST enemy's head and marks it (x%.2f), no air jump while away" % near_mob.vuln, sig.call("marked") == near_mob and is_equal_approx(near_mob.vuln, 1.3) and is_equal_approx(far_mob.vuln, 1.0) and int(sig.call("extra_jumps")) == 0 and piece.visible == false)
+	near_mob.health.dead = true
+	await get_tree().create_timer(1.2).timeout
+	_say("its enemy dies: the frog hops back on the gun and the air jump returns", int(sig.call("frog_state")) == 0 and int(sig.call("extra_jumps")) == 1 and piece.visible)
+	sig.call("stop")
 
 
 func _json(name: String) -> Dictionary:

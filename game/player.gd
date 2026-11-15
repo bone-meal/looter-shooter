@@ -110,6 +110,7 @@ var _aim_units := 0.0  # top speed while aiming with it (0 = aiming does not slo
 var _tick_left := 0.0  # frame time not yet turned into movement ticks
 var _tick_from := Vector3.ZERO  # where the body stood before its latest tick (the view glides from there, see _process)
 var _jump_until := 0.0  # a jump was pressed: it counts until this time (jump_buffer)
+var _air_jumps := 0  # jumps made in the air since the feet last touched (Croak)
 var _was_grounded := true
 var _calm_since := -100.0  # when a gun was last fired (the Cold Blood perk)
 var _backdraft_at := 0.0  # when the Backdraft perk may answer a blow again
@@ -467,6 +468,12 @@ func _move_tick(input: Vector2) -> void:
 		if jump:
 			_jump_until = 0.0
 		velocity = move.step(velocity, wish, now_top, sprint_top, grounded, jump)
+		if grounded:
+			_air_jumps = 0
+		elif not even_ground and controls_enabled and not downed and _now() <= _jump_until and _air_jumps < _extra_jumps():
+			_jump_until = 0.0  # Croak: a second jump in the air while the frog rides along
+			_air_jumps += 1
+			velocity.y = move.jump_speed
 		if not is_on_floor() or jump:
 			_fall_speed = maxf(-velocity.y, 0.0)
 	var own := Vector2(velocity.x, velocity.z).length()
@@ -1676,6 +1683,11 @@ func _blink(flat: Vector3, distance: float) -> void:
 
 
 # Where we face, flat (gun skills place things beside us: game/skill_summons.gd).
+# Jumps the player may make in the air (a chase gun's gift: Croak's frog).
+func _extra_jumps() -> int:
+	return int(_sig_node.call("extra_jumps")) if _sig_node != null and _sig_node.has_method("extra_jumps") else 0
+
+
 # The mouse belongs to the game (captured), or this is a quiet developer test copy that plays as if it did.
 func _mouse_held() -> bool:
 	return Input.mouse_mode == Input.MOUSE_MODE_CAPTURED or QuietTest.active()
