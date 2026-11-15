@@ -212,6 +212,38 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("GASFIRE lit at %s" % str(spot.snapped(Vector3.ONE * 0.1)))
 				await get_tree().create_timer(1.0, true, false, true).timeout
 				fire.queue_free()
+		"grilldrop":  # "!grilldrop": our Grillmaster food dropped 3 m in front of us (as a burning kill would)
+			var food_d: Node = (load("res://game/signatures/grillmaster.gd") as GDScript).call("pool", player)
+			food_d.call("drop", player.global_position + Vector3(0, 0, -3), 0.25, 20.0)
+			_lines.append("GRILLDROP at %s" % str((player.global_position + Vector3(0, 0, -3)).snapped(Vector3.ONE * 0.1)))
+		"grill":  # "!grill <note>|wait": food lying here (owner, slot) and our health; "wait" waits up to 40 s for food
+			var food_g: Node = get_tree().get_first_node_in_group("grill_food")
+			if words.size() > 1 and words[1] == "wait":
+				for _w in 400:
+					food_g = get_tree().get_first_node_in_group("grill_food")
+					if food_g != null and int(food_g.call("active_count")) > 0:
+						break
+					await get_tree().create_timer(0.1, true, false, true).timeout
+			var foods := PackedStringArray()
+			if food_g != null:
+				for k in (food_g.get("_life") as PackedFloat32Array).size():
+					if (food_g.get("_life") as PackedFloat32Array)[k] > 0.0:
+						foods.append("[%d] owner=%d their=%d at %s" % [k, (food_g.get("_owner") as PackedInt32Array)[k], (food_g.get("_their_slot") as PackedInt32Array)[k], str((food_g.get("_base") as PackedVector3Array)[k].snapped(Vector3.ONE * 0.1))])
+			var hp: Variant = player.get("health")
+			_lines.append("GRILL %s @%.1f: %s | hp %.0f/%.0f, eaten %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(foods) if not foods.is_empty() else "no food", float(hp.get("hp")), float(hp.get("max_hp")), int(food_g.get("eaten")) if food_g != null else 0])
+		"grilleat":  # "!grilleat": walk onto the first food lying here (teleport onto it)
+			var food_e: Node = get_tree().get_first_node_in_group("grill_food")
+			var spot_e := Vector3.INF
+			if food_e != null:
+				for k in (food_e.get("_life") as PackedFloat32Array).size():
+					if (food_e.get("_life") as PackedFloat32Array)[k] > 0.0:
+						spot_e = (food_e.get("_base") as PackedVector3Array)[k]
+						break
+			if spot_e == Vector3.INF:
+				_lines.append("GRILLEAT no food")
+			else:
+				player.call("teleport", spot_e, 0.0)
+				_lines.append("GRILLEAT stepped onto %s" % str(spot_e.snapped(Vector3.ONE * 0.1)))
 		"ghosttag":  # "!ghosttag <note>": what each other player holds and what his Fish Story tag reads on this copy
 			var tags := PackedStringArray()
 			for body: Node in session.get("net").call("target_nodes"):

@@ -1,6 +1,6 @@
-Keeper's Lantern chase gun (online)
+Grillmaster chase gun (online)
 
-Keeper's Lantern (region 2 boss pool, pistol): a small tin storm lantern swings under the barrel, its flame glowing with a small warm light. Enemies in its light glow, and the island fog thins near any lit lantern (yours or a teammate's). The inspect key throws it as a firebomb: a blast and 5 s of burning oil that sets enemies on fire and lights Swamp Gas; a new lantern is lit 10 s later. Others see it go out on the gun, the bomb fly and burn (no damage from copies), and the new one lit. tools/chase_check 35 of 35 on his PC; two-copy test passed.
+Grillmaster (region 3 boss pool, double shotgun): a little grill grate with a sausage on it bolted to the barrels and tongs clipped under. A burning enemy killed by its shot drops a grilled kebab; any player who walks over it eats it for a quarter of their health. Online the food shows for everyone and the host decides who ate it (first come, first fed). tools/chase_check 40 of 40 on his PC; two-copy test: the guest ate the host's kebab, gone on both.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

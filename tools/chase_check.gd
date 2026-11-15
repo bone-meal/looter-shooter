@@ -7,6 +7,7 @@
 # near one sets it off and its blast sets off the next (a chain); a burning enemy in a cloud sets it off too. Log
 # tools/chase_check.log. KEEPER'S LANTERN: its light makes near enemies glow and thins the fog near the camera, the
 # inspect key throws it as a firebomb (blast, burning oil that counts as fire), it is lit again after its wait.
+# GRILLMASTER: a burning enemy killed by it drops food (a plain kill does not); walking over it heals (offline here).
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -127,6 +128,19 @@ class LanternHolder extends Node3D:
 	var weapon := Gun.new()
 
 
+class Hp extends RefCounted:
+	var hp := 40.0
+	var max_hp := 100.0
+
+	func heal(n: float) -> void:
+		hp = minf(hp + n, max_hp)
+
+
+class Eater extends Node3D:
+	var health := Hp.new()
+	var damage_numbers := Numbers.new()
+
+
 class Source extends Node:
 	var list: Array = []
 
@@ -150,6 +164,7 @@ func _ready() -> void:
 	await _croak(db)
 	await _swamp_gas(db)
 	await _lantern(db)
+	await _grill(db)
 	_finish()
 
 
@@ -391,6 +406,40 @@ func _lantern(db: GunDb) -> void:
 	_say("a new lantern is lit after its wait", String(sig.call("held_suffix")) == "" and (piece.find_child("Swing", true, false) as Node3D).visible)
 	booms.remove_from_group("fire_sources")
 	weather.remove_from_group("island_weather")
+
+
+func _grill(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "grillmaster", 30)
+	_say("Grillmaster builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var model := Node3D.new()
+	add_child(model)
+	_say("its grill plate is on the shotgun, the kebab model loads", UniqueAttach.apply(model, gun, db) != null and ResourceLoader.exists("res://assets/models/weapons/uniques/grilled_kebab.gltf"))
+	var eater := Eater.new()
+	eater.position = Vector3(5000, 0, 0)
+	add_child(eater)
+	var sig: Node3D = Signatures.make("grillmaster")
+	eater.add_child(sig)
+	sig.call("bind", eater, gun, db.uniques["grillmaster"])
+	sig.call("start", null)
+	var plain := BurnMob.new()
+	plain.position = Vector3(5010, 0, 0)
+	add_child(plain)
+	plain.health.dead = true
+	sig.call("on_target_hit", plain, plain.position, 80.0, true)
+	var food: Node = get_tree().get_first_node_in_group("grill_food")
+	_say("a plain kill drops nothing", food != null and int(food.call("active_count")) == 0)
+	var burnt := BurnMob.new()
+	burnt.position = Vector3(5010, 0, 0)
+	burnt.burning = true
+	add_child(burnt)
+	burnt.health.dead = true
+	sig.call("on_target_hit", burnt, burnt.position, 80.0, true)
+	await get_tree().process_frame
+	_say("a burning kill drops grilled food", int(food.call("active_count")) == 1)
+	eater.position = Vector3(5010.5, 0, 0)
+	for _i in 10:
+		await get_tree().process_frame
+	_say("walking over it eats it: health %.0f -> %.0f (a quarter of max)" % [40.0, eater.health.hp], int(food.call("active_count")) == 0 and is_equal_approx(eater.health.hp, 65.0))
 
 
 func _json(name: String) -> Dictionary:

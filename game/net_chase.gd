@@ -11,7 +11,8 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take"]
+const Grillmaster = preload("res://game/signatures/grillmaster.gd")
 const KeepersLantern = preload("res://game/signatures/keepers_lantern.gd")
 const FAR := 100000.0
 
@@ -20,6 +21,7 @@ var sent := 0
 var heard := 0
 var _frogs := {}  # peer -> the copy of his frog
 var _frog_goal := {}  # peer -> where his frog is now (the copy glides there)
+var _foods := {}  # host: "owner:slot" -> engine time it spoils (Grillmaster's food not yet eaten)
 
 
 func _ready() -> void:
@@ -56,14 +58,23 @@ func _up(kind: String, slot: int, at: Vector3, target: int, b: Vector3) -> void:
 
 
 func _pass_on(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vector3) -> void:
+	if kind == "food_take":  # the host alone decides who ate it: first come, first fed
+		var key := "%d:%d" % [target, slot]
+		if float(_foods.get(key, 0.0)) > Time.get_ticks_msec() / 1000.0:
+			_foods.erase(key)
+			_down.rpc(target, "food_gone", slot, at, from, b)
+			_down(target, "food_gone", slot, at, from, b)
+		return
+	if kind == "food":
+		_foods["%d:%d" % [from, slot]] = Time.get_ticks_msec() / 1000.0 + float(_grill_cfg().get("food_seconds", 20.0))
 	_down.rpc(from, kind, slot, at, target, b)
 	_down(from, kind, slot, at, target, b)
 
 
 @rpc("authority", "call_remote", "reliable")
 func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vector3) -> void:
-	if from == my_id():
-		return
+	if from == my_id() and kind != "food_gone":
+		return  # our own news, already done here
 	heard += 1
 	match kind:
 		"frog":
@@ -88,6 +99,14 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vect
 			var me: Node3D = net.local_player()
 			if me != null and me.get_parent() != null:
 				KeepersLantern.throw_bomb(me.get_parent(), me.get("explosives"), at, b, false, 0.0, _lantern_cfg(), [])
+		"food":  # another player's barbecue: it lies here too
+			var food := Grillmaster.pool(net.local_player())
+			if food != null:
+				food.remote_drop(from, slot, at, float(_grill_cfg().get("heal_share", 0.25)), float(_grill_cfg().get("food_seconds", 20.0)))
+		"food_gone":  # (from = who dropped it, target = who ate it)
+			var food_g := Grillmaster.pool(net.local_player())
+			if food_g != null:
+				food_g.gone(from, slot, target)
 		"gas_lit":
 			if target == my_id():
 				var gas_l := gas_pool()
@@ -132,3 +151,8 @@ func gas_pool() -> SwampGas:
 func _lantern_cfg() -> Dictionary:
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
 	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get("keepers_lantern", {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}
+
+
+func _grill_cfg() -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
+	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get("grillmaster", {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}

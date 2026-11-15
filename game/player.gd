@@ -1377,6 +1377,8 @@ func _shoot() -> void:
 			var shown: float = totals[collider]
 			if _sig_node != null and _sig_node.has_method("on_hit_total"):  # Fish Story: kills are told bigger, the record kept
 				shown = float(_sig_node.call("on_hit_total", spots[collider], shown, collider.get("health") != null and collider.health.is_dead()))
+			if _sig_node != null and _sig_node.has_method("on_target_hit"):  # Grillmaster: a burning kill drops food
+				_sig_node.call("on_target_hit", collider, spots[collider], float(totals[collider]), collider.get("health") != null and collider.health.is_dead())
 			damage_numbers.spawn(spots[collider], shown)
 
 

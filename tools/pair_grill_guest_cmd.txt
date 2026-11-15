@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 18;/tp island;!wait 3;!grill wait;!hurt 50;!grill g_hurt;!grilleat;!wait 0.6;!grill g_ate;!wait 3;!grill g_end

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;/tp island;!wait 3;!immortal;!readyunique grillmaster 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1;!grilldrop;!grill h0;!wait 3;!grill h3;!wait 3;!grill h6;!wait 6;!grill h12;!wait 10

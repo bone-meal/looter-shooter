@@ -18,6 +18,8 @@
 # KEEPER'S LANTERN: a small tin storm lantern hanging by its bail from a clamp under the pistol's barrel; node "Swing"
 # (pivot at the hook) is swayed by the game, node "Flame" inside the cage gets the game's glow and light.
 # keepers_lantern_free = the same lantern about the origin (thrown as a firebomb).
+# GRILLMASTER: a little grill grate bolted flat against the LEFT of the double shotgun's barrels, a sausage on it, and
+# a pair of tongs clipped under it. grilled_kebab = the food a burning kill drops (about the origin).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -44,6 +46,9 @@ SPECS = {  # name: (kind, colour, seed)
     "swampwater": ("matte", (0.27, 0.34, 0.11), 61), "jarglass": ("polymer", (0.72, 0.82, 0.76), 62),
     "strap": ("hide", (0.36, 0.22, 0.12), 63), "lidtin": ("paint", (0.55, 0.45, 0.22), 64),
     "lanterntin": ("paint", (0.2, 0.24, 0.2), 65), "flame": ("matte", (1.0, 0.7, 0.25), 66),
+    "charsteel": ("metal", (0.16, 0.15, 0.14), 67), "sausage": ("matte", (0.55, 0.26, 0.14), 68),
+    "meat": ("matte", (0.45, 0.22, 0.12), 69), "pepper": ("polymer", (0.25, 0.55, 0.18), 70),
+    "onion": ("matte", (0.86, 0.8, 0.62), 71), "char": ("matte", (0.08, 0.06, 0.05), 72), "skewer": ("wood", (0.72, 0.58, 0.38), 73),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -300,7 +305,54 @@ def keepers_lantern_free(m, M):
     lantern_at(m, M, (0.0, 0.05, 0.0))
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+GRILL_X = -0.048  # left of the barrels (they sit at x +-0.019, radius 0.017)
+GRILL_F = (0.38, 0.54)
+
+
+def grill_plate(m, M):
+    f0, f1 = GRILL_F
+    y0, y1 = -0.02, 0.04
+    # frame and bars of the grate, standing on edge against the barrels
+    for y in (y0, y1):
+        m.box(M["charsteel"], (0.004, 0.004, f1 - f0), (GRILL_X, y, (f0 + f1) / 2), bevel=0.0008)
+    for f in (f0, f1):
+        m.box(M["charsteel"], (0.004, y1 - y0, 0.004), (GRILL_X, (y0 + y1) / 2, f), bevel=0.0008)
+    for k in range(1, 8):
+        f = f0 + (f1 - f0) * k / 8
+        m.box(M["charsteel"], (0.0025, y1 - y0, 0.0022), (GRILL_X, (y0 + y1) / 2, f), bevel=0.0)
+    # two bolts and spacers to the barrel
+    for f in (f0 + 0.02, f1 - 0.02):
+        m.rod(M["chrome"], 0.0028, (GRILL_X + 0.002, 0.01, f), (-0.034, 0.01, f), segs=8)
+        m.cylx(M["chrome"], 0.0045, GRILL_X - 0.004, GRILL_X - 0.002, f, 0.01, segs=6, bevel=0.0)
+    # a sausage cooking on it, with grill marks
+    m.ball(M["sausage"], (0.007, 0.007, 0.03), (GRILL_X - 0.008, 0.012, (f0 + f1) / 2), u=12, v=8)
+    for df in (-0.015, -0.005, 0.005, 0.015):
+        m.box(M["char"], (0.0015, 0.012, 0.0022), (GRILL_X - 0.0148, 0.012, (f0 + f1) / 2 + df), tilt=20.0, bevel=0.0)
+    # tongs clipped along the barrel underneath
+    for side in (-1.0, 1.0):
+        m.box(M["chrome"], (0.003, 0.0015, 0.13), (GRILL_X + 0.006 + side * 0.003, -0.03, 0.47), bevel=0.0005)
+        m.box(M["chrome"], (0.006, 0.004, 0.014), (GRILL_X + 0.006 + side * 0.003, -0.03, 0.535), bevel=0.0008)
+    m.cyl(M["rubber"], 0.004, 0.395, 0.425, -0.03, x=GRILL_X + 0.006, segs=8, bevel=0.001)
+
+
+def grilled_kebab(m, M):
+    """A skewer of grilled meat, pepper and onion, ~22 cm, lying along f about the origin."""
+    m.rod(M["skewer"], 0.003, (0.0, 0.0, -0.11), (0.0, 0.0, 0.12), segs=6)
+    pieces = [("meat", 0.022), ("pepper", 0.018), ("meat", 0.024), ("onion", 0.019), ("meat", 0.022)]
+    f = -0.07
+    for name, r in pieces:
+        if name == "onion":
+            m.cyl(M["onion"], r, f - 0.007, f + 0.007, 0.0, segs=12, bevel=0.002)
+        elif name == "pepper":
+            m.box(M["pepper"], (r * 1.6, r * 1.4, 0.014), (0.0, 0.0, f), tilt=12.0, bevel=0.004)
+        else:
+            m.box(M["meat"], (r * 1.5, r * 1.3, 0.024), (0.0, 0.0, f), tilt=-8.0, bevel=0.006)
+            for dy in (-0.006, 0.004):
+                m.box(M["char"], (r * 1.55, 0.0025, 0.026), (0.0, dy, f), tilt=-8.0, bevel=0.0)
+        f += 0.034
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

@@ -411,6 +411,38 @@
         "relight_seconds": 10.0
       }
     },
+    "grillmaster": {
+      "name": "Grillmaster",
+      "body": "shotgun_double",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "heavy",
+        "muzzle": "choke",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "burn_chance",
+        "kindling",
+        "second_breath"
+      ],
+      "skills": [
+        "fire_trail_dash",
+        "inferno_ring"
+      ],
+      "traits": [
+        "blood_tide",
+        "chain_reaction"
+      ],
+      "flavor": "",
+      "red": "Well done is a choice, and you made the wrong one.",
+      "signature": "grillmaster",
+      "attach": "grill_plate",
+      "pool": "region_3_boss",
+      "cfg": {
+        "heal_share": 0.25,
+        "food_seconds": 20.0
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",
