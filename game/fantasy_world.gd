@@ -24,6 +24,7 @@ const GatherNodes = preload("res://game/gather_nodes.gd")
 const FantasyPlaces = preload("res://game/fantasy_places.gd")
 const FantasyWork = preload("res://game/fantasy_work.gd")
 const Snares = preload("res://game/snares.gd")
+const Agility = preload("res://game/agility.gd")
 const ArmourGen = preload("res://core/armour_gen.gd")
 const StaffCaster = preload("res://game/staff_caster.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
@@ -74,6 +75,7 @@ var gather := GatherNodes.new()
 var places := FantasyPlaces.new()
 var work := FantasyWork.new()
 var snares := Snares.new()  # Hunting: snares set from the bag and the trails that tracks lay
+var agility := Agility.new()  # course obstacles and the cliff shortcuts
 var _craft_rng := RandomNumberGenerator.new()  # Crafting's gun-side pieces roll their bonuses
 var caster := StaffCaster.new()
 var effects := SpellEffects.new()
@@ -156,6 +158,8 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	work.setup(self)
 	add_child(snares)
 	snares.setup(self)
+	add_child(agility)
+	agility.setup(self)
 	add_child(rooms)
 	rooms.setup(self, player)
 	rooms.faded.connect(func() -> void: fade.emit())
@@ -465,6 +469,7 @@ func enter(world_pos: Vector3) -> void:
 func leave() -> void:
 	inside = false
 	snares.clear()
+	_player.set("skill_speed_pct", 0.0)
 	if party == null:
 		spawner.stop()  # online the host keeps running them for whoever is still in there
 	effects.clear()
@@ -526,6 +531,7 @@ func _process(delta: float) -> void:
 	_mood = terrain.mood(local.x, local.z)
 	_set_tint(0.3)
 	places.follow(local)
+	agility.follow(local)
 	if not _buff.is_empty() and now >= float(_buff["until"]):
 		_buff = {}
 		apply_stats()
@@ -596,6 +602,7 @@ func apply_stats() -> void:
 	var hp := float(_caster["hp_per_level"]) * float(magic_level() - 1) + float(bag.robe().get("hp", 0.0))
 	var armor := clampf(float(bag.robe().get("armor", 0.0)) + float(_buff.get("armor", 0.0)), 0.0, 0.8)
 	_player.call("set_world_bonus", hp, 1.0 - armor)
+	_player.set("skill_speed_pct", perk("agility", "run_speed"))  # Agility: quicker on your feet here (and at sea)
 	_player.set("guns_locked", not quests.guns_unlocked())
 	_player.call("refresh_held")
 	mana = minf(mana, max_mana())
@@ -1023,7 +1030,7 @@ func command(command_name: String, args: PackedStringArray, usage: String) -> Pa
 # --- saving ---
 
 func to_dict() -> Dictionary:
-	return {"v": SAVE_VERSION, "bag": bag.to_dict(), "skills": skills.to_dict(), "quests": quests.to_dict(), "found": found.keys(), "looted": _still_empty()}
+	return {"v": SAVE_VERSION, "bag": bag.to_dict(), "skills": skills.to_dict(), "quests": quests.to_dict(), "found": found.keys(), "looted": _still_empty(), "repaired": agility.repaired_keys()}
 
 
 # The containers that have not refilled yet (the others need no remembering).
@@ -1047,6 +1054,7 @@ func from_dict(saved: Variant) -> void:
 	if emptied is Dictionary:
 		for key: Variant in emptied:
 			rooms.looted[String(key)] = float(emptied[key])
+	agility.set_repaired(saved.get("repaired", []))  # ladders mended by Carpentry (older saves: none)
 	found = {}
 	for id: Variant in saved.get("found", []):  # older saves have none: the map starts blank
 		found[String(id)] = true

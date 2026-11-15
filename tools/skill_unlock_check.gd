@@ -8,6 +8,9 @@ extends Node
 
 const FantasyData = preload("res://core/fantasy_data.gd")
 const SkillPerks = preload("res://core/skill_perks.gd")
+const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
+const FantasyLayout = preload("res://core/fantasy_layout.gd")
+const ShortcutSpots = preload("res://core/shortcut_spots.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -25,6 +28,10 @@ func _ready() -> void:
 		known[String(recipe["id"])] = int(recipe["level"])
 	for log_id: String in skilling["fire"]["level"]:
 		known[log_id] = int(skilling["fire"]["level"][log_id])
+	for course: String in all["agility"]["courses"]:  # Agility's courses and cliff shortcuts
+		known[course] = int(all["agility"]["courses"][course]["level"])
+	for kind: String in all["agility"]["shortcuts"]["kinds"]:
+		known[kind] = int(all["agility"]["shortcuts"]["kinds"][kind]["level"])
 	for animal: String in all["enemies"]["enemies"]:  # wild animals (Hunting) a step may open
 		if all["enemies"]["enemies"][animal].has("skill"):
 			known[animal] = int(all["enemies"]["enemies"][animal]["level"])
@@ -44,6 +51,23 @@ func _ready() -> void:
 	for skill: String in skilling["skills"]:
 		var steps: Array = unlocks.get(skill, [])
 		_lines.append("%s: %d steps%s" % [skill, steps.size(), "" if steps.is_empty() else ", e.g. 25 = %s (%s)" % [String(steps[4]["name"]), String(steps[4]["about"])]])
+	# Agility's cliff shortcuts over the whole map: how many of each kind, per region
+	var terrain := FantasyTerrain.new(all["world"])
+	var layout := FantasyLayout.new(terrain, all["layouts"], all["props"], skilling["nodes"])
+	var cfg: Dictionary = all["agility"]["shortcuts"]
+	var half := int(float(all["world"]["size"]) * 0.5 / float(cfg["cell"]))
+	var tally := {}
+	for cx in range(-half, half):
+		for cz in range(-half, half):
+			var spot := ShortcutSpots.spot(terrain, layout, Vector2i(cx, cz), cfg)
+			if not spot.is_empty():
+				var region := String(terrain.region_at(spot["base"].x, spot["base"].z)["id"])
+				tally["%s %s" % [region, spot["kind"]]] = int(tally.get("%s %s" % [region, spot["kind"]], 0)) + 1
+	var keys := tally.keys()
+	keys.sort()
+	for key: String in keys:
+		_lines.append("  shortcuts: %s x%d" % [key, int(tally[key])])
+	_check(tally.size() >= 8, "cliff shortcuts found in many regions (%d kinds-by-region)" % tally.size())
 	var level50 := SkillPerks.total(unlocks, "woodcutting", 50, "double")
 	_check(is_equal_approx(level50, 0.25), "woodcutting double at 50 = 0.25 (%.2f)" % level50)
 	_check(is_equal_approx(SkillPerks.total(unlocks, "woodcutting", 19, "double"), 0.0), "woodcutting double at 19 = 0")

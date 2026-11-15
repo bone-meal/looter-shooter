@@ -1,9 +1,10 @@
-Sea step 3c: Carpentry and Crafting
+Sea step 3d: Agility courses and cliff shortcuts
 
-- sawhorse and crafting table in every town (new models; layout rules with no_salt keep the rest of each town where it was)
-- Carpentry: planks, rods and staffs moved from Woodcutting, ship crates and barrels, the Stormoak rod
-- Crafting: leather, cut gems, sturdy snares, and small gun-side armour pieces that go straight into the backpack (low rarity, item level below the area)
-- Carpentry and Crafting milestones; backpack-full check
+- six Agility courses (one per region, a new place kind) with five obstacles each: hurdles, beam, wall, rope swing, stepping posts
+- crossing carries the body along its path, may slip by level, laps in order pay a bonus
+- cliff shortcuts found on the map: knotted ropes by Agility level, ladders Carpentry must mend first (saved)
+- Agility run-speed perks in Aurelind; course sign on the map; terrain rules version 4
+- dev !nearclimb; skill_unlock_check counts shortcuts per region
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

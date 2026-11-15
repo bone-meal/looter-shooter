@@ -73,7 +73,7 @@ def build_all():
     init()
     maker = Maker()
     glow = fantasy_kit.GLOW
-    SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples", "snare", "tracks_")  # things you can walk through or step over
+    SOFT = ("fence", "haystack", "signpost", "campfire", "herb_", "wheat_sheaf", "ripples", "snare", "tracks_", "ag_", "ladder", "climb_rope", "course_flag")  # things you can walk through or step over
 
     def model(name, build, uv=0.5, plain=False):  # plain: a building, which also gets its plain model for the low graphics tiers
         maker.model(name, build, solid=not name.startswith(SOFT), uv=uv, plain=plain)
@@ -327,6 +327,87 @@ def build_all():
         m.rod(K("bark", (0.5, 0.42, 0.28)), 0.013, (0.18, 0.04, 0.58), (0.0, 0.03, 0.5), segs=4)
     model("tracks_hoof", lambda m: tracks(m, True))
     model("tracks_paw", lambda m: tracks(m, False))
+
+    # sea step 3d, Agility: course obstacles (each starts at its origin and is crossed towards -y in Blender = the
+    # game's -z, `length` metres: data/fantasy/agility.json) and the shortcut ladders and ropes up cliffs (6 m tall,
+    # stretched to the cliff by the game)
+    post = (0.42, 0.32, 0.2)
+    def ag_beam(m):  # a peeled log on trestles, 8 m
+        for z in (0.3, 4.0, 7.7):
+            for side in (-1, 1):
+                m.rod(K("wood", post), 0.06, (side * 0.35, 0.0, z), (0.0, 0.62, z), segs=5)
+        m.loft(K("wood", (0.7, 0.58, 0.4)), [(0, 0.7, 0.0, 0.11, 0.11), (0, 0.7, 8.0, 0.1, 0.1)], segs=10, steps=1)
+        for z in (0.0, 8.0):
+            m.box(K("wood", post), (0.5, 0.08, 0.5), (0, 0.04, z), bevel=0.02)  # stepping blocks at each end
+    model("ag_beam", ag_beam)
+
+    def ag_hurdles(m):  # three rail hurdles to vault, 8 m
+        for z in (1.6, 4.0, 6.4):
+            for side in (-1, 1):
+                m.rod(K("wood", post), 0.05, (side * 0.8, 0.0, z), (side * 0.8, 1.0, z), segs=5)
+            for y in (0.55, 0.95):
+                m.rod(K("wood", (0.66, 0.52, 0.34)), 0.035, (-0.85, y, z), (0.85, y, z), segs=5)
+    model("ag_hurdles", ag_hurdles)
+
+    def ag_wall(m):  # a plank wall with handholds and a knotted rope down the far side, crossed in 3 m
+        for k in range(6):
+            m.box(K("wood", (0.6 - 0.03 * (k % 2), 0.46, 0.3)), (2.4, 0.4, 0.12), (0, 0.2 + k * 0.4, 1.5), bevel=0.01)
+        for side in (-1, 1):
+            m.rod(K("wood", post), 0.08, (side * 1.25, 0.0, 1.5), (side * 1.25, 2.6, 1.5), segs=6)
+        for k in range(5):
+            m.ball(c((0.35, 0.3, 0.26)), 0.06, (-0.6 + (k % 3) * 0.6, 0.5 + k * 0.38, 1.42), u=5, v=4)  # handholds
+        m.rod(c((0.8, 0.72, 0.52)), 0.025, (0.3, 2.45, 1.6), (0.3, 0.1, 1.9), segs=4)
+    model("ag_wall", ag_wall)
+
+    def ag_rope(m):  # an A-frame over a muddy ditch with a rope to swing across, 6 m
+        for side in (-1, 1):
+            m.rod(K("wood", post), 0.09, (side * 1.4, 0.0, 2.2), (0.0, 3.6, 3.0), segs=6)
+            m.rod(K("wood", post), 0.09, (side * 1.4, 0.0, 3.8), (0.0, 3.6, 3.0), segs=6)
+        m.rod(K("wood", post), 0.07, (0, 3.6, 2.6), (0, 3.6, 3.4), segs=5)
+        m.rod(c((0.8, 0.72, 0.52)), 0.03, (0, 3.55, 3.0), (0, 1.0, 1.6), segs=5)  # the rope, pulled back to the start
+        m.ball(c((0.8, 0.72, 0.52)), 0.07, (0, 1.0, 1.6), u=6, v=4)
+        m.ball(c((0.22, 0.17, 0.11)), (1.3, 0.03, 1.4), (0, 0.0, 3.0), u=12, v=3)  # the mud
+    model("ag_rope", ag_rope)
+
+    def ag_stones(m):  # stepping posts of different heights, 7 m
+        for k in range(7):
+            h = 0.35 + 0.45 * ((k * 37) % 5) / 4.0
+            m.lathe(K("wood", (0.5, 0.4, 0.26)), [(0.2, 0.0), (0.2, h), (0.16, h + 0.03), (0.0, h + 0.03)], ((k % 2 - 0.5) * 0.5, 0, 0.5 + k * 1.0), segs=10)
+    model("ag_stones", ag_stones)
+
+    def course_flag(m):  # the post where a course starts, with a pennant
+        m.rod(K("wood", post), 0.06, (0, 0, 0), (0, 3.4, 0), segs=6)
+        m.prof(c((0.85, 0.3, 0.2)), 0.02, [(0.0, 3.3), (0.9, 3.05), (0.0, 2.8)], x=0.0)
+        m.box(K("wood", (0.66, 0.52, 0.34)), (0.7, 0.4, 0.05), (0, 1.5, 0.05), bevel=0.01)
+    model("course_flag", course_flag)
+
+    def ladder(m, broken=False):  # 6 m, leaning against the cliff (towards -y in Blender)
+        for side in (-1, 1):
+            top = 6.0 if not (broken and side > 0) else 2.4
+            m.rod(K("wood", post), 0.05, (side * 0.3, 0.0, 0.0), (side * 0.3, top, -0.9 * top / 6.0), segs=5)
+        for k in range(1, 20):
+            if broken and k % 3 != 1 and k > 3:
+                continue
+            y = k * 0.3
+            if broken and y > 2.4:
+                m.rod(K("wood", post), 0.03, (-0.3, y, -0.9 * y / 6.0), (-0.05, y - 0.15, -0.9 * y / 6.0), segs=4)
+                continue
+            m.rod(K("wood", (0.62, 0.5, 0.32)), 0.03, (-0.3, y, -0.9 * y / 6.0), (0.3, y, -0.9 * y / 6.0), segs=4)
+        if broken:  # the snapped rail and rungs lying at its foot
+            m.rod(K("wood", post), 0.05, (0.5, 0.05, 0.4), (1.8, 0.05, 1.6), segs=5)
+            for k in range(3):
+                m.rod(K("wood", (0.62, 0.5, 0.32)), 0.03, (0.6 + k * 0.3, 0.03, 1.2), (1.0 + k * 0.3, 0.03, 1.0), segs=4)
+    model("ladder", lambda m: ladder(m, False))
+    model("ladder_broken", lambda m: ladder(m, True))
+
+    def climb_rope(m):  # a knotted rope down a cliff, pinned at the top with an iron peg
+        m.rod(c((0.8, 0.72, 0.52)), 0.03, (0, 6.0, -0.9), (0, 0.0, 0.05), segs=5)
+        for k in range(1, 12):
+            y = k * 0.5
+            m.ball(c((0.75, 0.66, 0.46)), 0.055, (0, y, 0.05 - 0.95 * y / 6.0), u=6, v=4)
+        m.rod(c((0.3, 0.3, 0.32)), 0.03, (0, 6.0, -0.9), (0, 5.6, -1.1), segs=4)
+        m.lathe(c((0.3, 0.3, 0.32)), [(0.06, 6.0), (0.07, 6.04), (0.06, 6.08)], (0, 0, -0.9), segs=8)
+    model("climb_rope", climb_rope)
     maker.plain_pass()
     maker.save()
 

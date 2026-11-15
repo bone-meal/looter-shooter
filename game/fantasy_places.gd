@@ -395,8 +395,12 @@ func _build(id: String, items: Array) -> void:
 		var sunk := 0.14 if size.has("inner") else 0.05  # a walk-in house sits lower: its floor is level with the ground
 		var inside := bool(item.get("inside", false))
 		var at := Transform3D(Basis(Vector3.UP, float(item["turn"])), Vector3(x, terrain.height(x, z) - (-0.03 if inside else sunk), z))
-		if String(item["station"]) != "":
-			stations.append({"kind": String(item["station"]), "at": at.origin, "place": id, "until": 0.0})
+		if String(item["station"]) != "":  # model, yaw and n (its number among the place's stations of that kind): Agility's obstacles
+			var n := 0
+			for other: Dictionary in stations:
+				if String(other["place"]) == id and String(other["kind"]) == String(item["station"]):
+					n += 1
+			stations.append({"kind": String(item["station"]), "at": at.origin, "place": id, "until": 0.0, "model": model, "yaw": float(item["turn"]), "n": n})
 		if model in JOINTED or String(item.get("loot", "")) != "":
 			var made := FantasyModels.scene(model)
 			if made != null:

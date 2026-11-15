@@ -2630,6 +2630,81 @@
      "save": 0.1
     }
    }
+  ],
+  "agility": [
+   {
+    "level": 5,
+    "kind": "perk",
+    "perk": {
+     "run_speed": 2
+    }
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "course_greenwald"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "content",
+    "ids": [
+     "ledge_15"
+    ]
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "course_brinemouth"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "perk",
+    "perk": {
+     "run_speed": 3
+    }
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "course_sunscar",
+     "ledge_30"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "course_frostmere"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "sure_foot": 0.5
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "course_stormcrown",
+     "ledge_45"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "run_speed": 5,
+     "sure_foot": 0.5
+    }
+   }
   ]
  }
 }

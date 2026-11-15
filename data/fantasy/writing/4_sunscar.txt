@@ -146,3 +146,7 @@ name: Blue Banner Warrior
 
 # Its own attack (a volley). The name is not shown on screen today, it is here for the writers:
 move spear_cast: Spear Cast
+
+[place course_sunscar]
+# WHAT: an Agility course (sea step 3).
+name: Dunehaven Dune Run

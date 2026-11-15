@@ -5,6 +5,7 @@
 # Dependencies: the running game (finds the player by its set_third_person method).
 extends Node
 
+const ShortcutSpots = preload("res://core/shortcut_spots.gd")
 const GunGen = preload("res://core/gun_gen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 
@@ -65,7 +66,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !neartrack (stand at the nearest animal tracks), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !neartrack (stand at the nearest animal tracks), !nearclimb (stand at the foot of the nearest cliff shortcut), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -444,6 +445,22 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", land.call("ground_world", best["at"].x + 1.0, best["at"].z + 1.0), 0.0)
 				player.call("look_at_point", land.call("world_of", best["at"]))
 			_lines.append("nearest tracks: %s" % str(best.get("id", "none")))
+		"nearclimb":  # fantasy world: stand at the foot of the nearest cliff shortcut (searches the cells round the player)
+			var land: Node = session.call("fantasy")
+			var here: Vector3 = land.call("player_local")
+			var size := float(land.get("data")["agility"]["shortcuts"]["cell"])
+			var best := {}
+			for dx in range(-6, 7):
+				for dz in range(-6, 7):
+					var spot: Dictionary = ShortcutSpots.spot(land.get("terrain"), land.get("layout"), Vector2i(floori(here.x / size) + dx, floori(here.z / size) + dz), land.get("data")["agility"]["shortcuts"])
+					if not spot.is_empty() and (best.is_empty() or here.distance_to(spot["base"]) < here.distance_to(best["base"])):
+						best = spot
+			if not best.is_empty():
+				var dir: Vector2 = best["dir"]
+				var stand: Vector3 = best["base"] - Vector3(dir.x, 0.0, dir.y) * 1.2
+				player.call("teleport", land.call("world_of", stand) + Vector3(0, 0.3, 0), atan2(-dir.x, -dir.y))
+				land.get("agility").call("follow", stand)
+			_lines.append("nearest climb: %s" % ("none" if best.is_empty() else "%s at %s up %.1f m" % [best["kind"], str(best["base"].snapped(Vector3.ONE * 0.1)), best["top"].y - best["base"].y]))
 		"animals":  # fantasy world: every wild animal near, with what it is doing, for the log
 			var seen := PackedStringArray()
 			for enemy: Variant in session.call("director").call("enemy_list"):

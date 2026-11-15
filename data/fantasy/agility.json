@@ -1,0 +1,145 @@
+{
+ "version": 1,
+ "_about": "Agility (sea step 3d; rules: game/agility.gd, spots: core/shortcut_spots.gd). obstacles: a course obstacle's model (made by tools/blender/fantasy_props.py, crossed from its origin `length` metres along its facing), seconds to cross, lift = how high the body goes at most, profile flat | hops | over | swing (the path the body follows). courses: one per region, a place of kind course in data/fantasy/world.json: level needed, xp per obstacle, lap = bonus for every obstacle in order. fail: success chance = base + per_level x (your level - the course's), never above 1; a fall costs damage x max health and gives nothing (perk sure_foot halves the misses). shortcuts: cliffs found in every `cell` metres of open country (chance per cell) get a way up: ladder = must be mended first (Carpentry, recipe mend_ladder) and then anyone may climb, ledge_<n> = a knotted rope that needs Agility n. regions = which kinds a region's cliffs get; climb_seconds; xp per climb (Agility; a mended ladder gives Carpentry its recipe xp once). run_speed perks add percent to running in Aurelind and at sea. All numbers are placeholders for the director.",
+ "obstacles": {
+  "hurdles": {
+   "model": "ag_hurdles",
+   "length": 8,
+   "seconds": 2.6,
+   "lift": 1.1,
+   "profile": "hops"
+  },
+  "beam": {
+   "model": "ag_beam",
+   "length": 8,
+   "seconds": 3.4,
+   "lift": 0.82,
+   "profile": "flat"
+  },
+  "wall": {
+   "model": "ag_wall",
+   "length": 3,
+   "seconds": 2.4,
+   "lift": 2.8,
+   "profile": "over"
+  },
+  "rope": {
+   "model": "ag_rope",
+   "length": 6,
+   "seconds": 2.0,
+   "lift": 1.3,
+   "profile": "swing"
+  },
+  "stones": {
+   "model": "ag_stones",
+   "length": 7,
+   "seconds": 2.8,
+   "lift": 0.95,
+   "profile": "hops"
+  }
+ },
+ "courses": {
+  "course_amberfield": {
+   "level": 1,
+   "xp": 8,
+   "lap": 40
+  },
+  "course_greenwald": {
+   "level": 10,
+   "xp": 16,
+   "lap": 90
+  },
+  "course_brinemouth": {
+   "level": 20,
+   "xp": 28,
+   "lap": 160
+  },
+  "course_sunscar": {
+   "level": 30,
+   "xp": 44,
+   "lap": 250
+  },
+  "course_frostmere": {
+   "level": 35,
+   "xp": 56,
+   "lap": 320
+  },
+  "course_stormcrown": {
+   "level": 45,
+   "xp": 80,
+   "lap": 460
+  }
+ },
+ "fail": {
+  "base": 0.65,
+  "per_level": 0.035,
+  "damage": 0.08
+ },
+ "shortcuts": {
+  "cell": 110,
+  "chance": 0.35,
+  "kinds": {
+   "ladder": {
+    "level": 25,
+    "skill": "carpentry",
+    "repair": "mend_ladder",
+    "model": "ladder",
+    "broken": "ladder_broken"
+   },
+   "ledge_15": {
+    "level": 15,
+    "skill": "agility",
+    "model": "climb_rope"
+   },
+   "ledge_30": {
+    "level": 30,
+    "skill": "agility",
+    "model": "climb_rope"
+   },
+   "ledge_45": {
+    "level": 45,
+    "skill": "agility",
+    "model": "climb_rope"
+   }
+  },
+  "regions": {
+   "amberfield": [
+    "ladder"
+   ],
+   "greenwald": [
+    "ledge_15",
+    "ladder"
+   ],
+   "brinemouth": [
+    "ladder",
+    "ledge_15"
+   ],
+   "sunscar": [
+    "ledge_30",
+    "ladder"
+   ],
+   "frostmere": [
+    "ledge_30",
+    "ladder"
+   ],
+   "cinderreach": [
+    "ledge_45",
+    "ladder"
+   ],
+   "stormcrown": [
+    "ledge_45",
+    "ladder"
+   ],
+   "hollow_crown": [
+    "ledge_45"
+   ]
+  },
+  "climb_seconds": 2.6,
+  "xp": {
+   "ladder": 12,
+   "ledge_15": 30,
+   "ledge_30": 55,
+   "ledge_45": 90
+  }
+ }
+}

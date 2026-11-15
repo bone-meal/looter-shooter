@@ -147,3 +147,7 @@ name: The Rootmother
 move root_snare: Root Snare
 # One of its own attacks (a volley); the name flashes on screen as a warning:
 move seed_burst: Seed Burst
+
+[place course_greenwald]
+# WHAT: an Agility course (sea step 3).
+name: Fernhollow Treetop Course

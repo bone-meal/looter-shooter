@@ -135,3 +135,7 @@ name: The Tidewarden
 move undertow: Undertow
 # One of its own attacks (a charge); the name flashes on screen as a warning:
 move breaker: Breaker
+
+[place course_brinemouth]
+# WHAT: an Agility course (sea step 3).
+name: Dockside Course

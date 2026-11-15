@@ -44,9 +44,16 @@ func prompt(key: String) -> String:
 	var person: Dictionary = world.places.person_near(local, TALK_REACH)
 	if not person.is_empty():
 		return "[%s] Talk to %s" % [key, person["name"]]
+	if world.agility.busy():
+		return ""
 	var station: Dictionary = world.places.station_near(local, TALK_REACH)
+	if not station.is_empty() and String(station["kind"]) == "agility":
+		return world.agility.obstacle_prompt(station, key)
 	if not station.is_empty():
 		return "[%s] %s" % [key, STATION_NAMES[String(station["kind"])]]
+	var shortcut: Dictionary = world.agility.shortcut_near(local)
+	if not shortcut.is_empty():
+		return world.agility.shortcut_prompt(shortcut, key)
 	var snare: Dictionary = world.snares.near(local)
 	if not snare.is_empty():
 		return world.snares.prompt(snare, key)
@@ -85,9 +92,18 @@ func interact() -> void:
 		world.report({"type": "talk", "npc": String(person["id"])})
 		talk_opened.emit(person)
 		return
+	if world.agility.busy():
+		return
 	var station: Dictionary = world.places.station_near(local, TALK_REACH)
+	if not station.is_empty() and String(station["kind"]) == "agility":
+		world.agility.cross(station)
+		return
 	if not station.is_empty():
 		station_opened.emit(String(station["kind"]))
+		return
+	var shortcut: Dictionary = world.agility.shortcut_near(local)
+	if not shortcut.is_empty():
+		world.agility.use_shortcut(shortcut)
 		return
 	var snare: Dictionary = world.snares.near(local)
 	if not snare.is_empty():

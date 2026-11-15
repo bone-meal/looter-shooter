@@ -1309,6 +1309,72 @@
    "kind": "ruins",
    "flat": 30,
    "yard": "g_dirt"
+  },
+  {
+   "id": "course_amberfield",
+   "region": "amberfield",
+   "pos": [
+    330,
+    1140
+   ],
+   "kind": "course",
+   "flat": 20,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "course_greenwald",
+   "region": "greenwald",
+   "pos": [
+    -1500,
+    960
+   ],
+   "kind": "course",
+   "flat": 20,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "course_brinemouth",
+   "region": "brinemouth",
+   "pos": [
+    1440,
+    1920
+   ],
+   "kind": "course",
+   "flat": 20,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "course_sunscar",
+   "region": "sunscar",
+   "pos": [
+    1800,
+    360
+   ],
+   "kind": "course",
+   "flat": 20,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "course_frostmere",
+   "region": "frostmere",
+   "pos": [
+    -180,
+    -1680
+   ],
+   "kind": "course",
+   "flat": 20,
+   "yard": "g_dirt"
+  },
+  {
+   "id": "course_stormcrown",
+   "region": "stormcrown",
+   "pos": [
+    -1800,
+    -870
+   ],
+   "kind": "course",
+   "flat": 20,
+   "yard": "g_dirt"
   }
  ],
  "npcs": [

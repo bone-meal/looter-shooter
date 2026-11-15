@@ -139,3 +139,7 @@ name: The Rime Colossus
 move frozen_ground: Frozen Ground
 # One of its own attacks (a slam); the name flashes on screen as a warning:
 move shatter: Shatter
+
+[place course_frostmere]
+# WHAT: an Agility course (sea step 3).
+name: Rimegate Ice Course

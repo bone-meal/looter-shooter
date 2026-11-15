@@ -334,3 +334,17 @@ name: The Pale Stag
 40: Brilliants | Cut flawless gems; make a frost amulet.
 45: Masterworks | Make an anchor signet and a storm cloak.
 50: Master Crafter | 20% more fine work, 10% chance to keep the materials.
+
+[unlock agility]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Light Feet | Run 2% faster in Aurelind and at sea.
+10: Fernhollow course | Run the Treetop Course in Greenwald.
+15: Knotted ropes | Climb the knotted ropes that need Agility 15: shortcuts up cliffs.
+20: Dockside course | Run the Dockside Course at Brinemouth.
+25: Quick Feet | Run 3% faster.
+30: Dune run and ropes | Run the Dune Run at Dunehaven; climb the Agility 30 ropes.
+35: Ice course | Run the Ice Course at Rimegate.
+40: Sure Foot | Slip half as often.
+45: Cliff run and ropes | Run the Cliff Run at Skyrest; climb the Agility 45 ropes.
+50: Freerunner | Run 5% faster and slip half as often again.
+

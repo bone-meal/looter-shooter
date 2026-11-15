@@ -239,3 +239,7 @@ name: The Harvest King
 move reap: Reap
 # One of its own attacks (a summon); the name flashes on screen as a warning:
 move sow: Sow the Field
+
+[place course_amberfield]
+# WHAT: an Agility course (sea step 3).
+name: Millbrook Runs

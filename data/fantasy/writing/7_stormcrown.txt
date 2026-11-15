@@ -135,3 +135,7 @@ move dive: Dive
 move gale: Gale
 # One of its own attacks (a volley); the name flashes on screen as a warning:
 move feather_storm: Feather Storm
+
+[place course_stormcrown]
+# WHAT: an Agility course (sea step 3).
+name: Skyrest Cliff Run

@@ -1089,6 +1089,73 @@
      1.0
     ]
    }
+  ],
+  "course": [
+   {
+    "model": "course_flag",
+    "at_m": [
+     -10,
+     8
+    ]
+   },
+   {
+    "station": "agility",
+    "model": "ag_hurdles",
+    "at_m": [
+     -8,
+     6
+    ],
+    "turn": 0
+   },
+   {
+    "station": "agility",
+    "model": "ag_beam",
+    "at_m": [
+     -6,
+     -6
+    ],
+    "turn": -90
+   },
+   {
+    "station": "agility",
+    "model": "ag_wall",
+    "at_m": [
+     6,
+     -5
+    ],
+    "turn": 180
+   },
+   {
+    "station": "agility",
+    "model": "ag_rope",
+    "at_m": [
+     6,
+     0
+    ],
+    "turn": 180
+   },
+   {
+    "station": "agility",
+    "model": "ag_stones",
+    "at_m": [
+     3,
+     9
+    ],
+    "turn": 90
+   },
+   {
+    "models": [
+     "bench",
+     "barrel",
+     "crate",
+     "woodpile"
+    ],
+    "count": 4,
+    "ring_m": [
+     14,
+     17
+    ]
+   }
   ]
  },
  "extras": {

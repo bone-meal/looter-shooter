@@ -187,6 +187,9 @@ func _sign(kind: String, at: Vector2, known: bool) -> void:
 			cloth = Color(0.15, 0.28, 0.55, ink.a)
 		draw_colored_polygon(PackedVector2Array([at + Vector2(0, -8), at + Vector2(7, 5), at + Vector2(-7, 5)]), cloth)
 		draw_line(at + Vector2(0, -8), at + Vector2(0, 5), PAPER, 1.0)
+	elif kind == "course":  # an Agility course: a pole with a pennant
+		draw_line(at + Vector2(-3, 6), at + Vector2(-3, -8), ink, 1.5)
+		draw_colored_polygon(PackedVector2Array([at + Vector2(-3, -8), at + Vector2(6, -5), at + Vector2(-3, -2)]), Color(0.75, 0.25, 0.15, ink.a))
 	elif kind == "battlefield":
 		draw_line(at + Vector2(-6, -6), at + Vector2(6, 6), ink, 2.0)
 		draw_line(at + Vector2(6, -6), at + Vector2(-6, 6), ink, 2.0)

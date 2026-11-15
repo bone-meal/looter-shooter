@@ -185,6 +185,7 @@ var head_mult := 1.0  # ... and how much harder a hit there lands
 var perks: RefCounted  # core/perk_state.gd: the islands' perks carried (null in tools); see _perk()
 var bonus_damage_pct := 0.0  # from stats and traits (core/progress_state.gd), set by the session
 var bonus_speed_pct := 0.0
+var skill_speed_pct := 0.0  # Agility's run-speed perks, set by the fantasy world while you are in it (game/fantasy_world.gd)
 var bonus_hp_pct := 0.0
 var _view_kick := Vector2.ZERO  # degrees (pitch up, yaw) the camera is kicked by scoped shots; fades on its own
 var cheat_god := false  # admin commands (game/admin_commands.gd): no damage
@@ -454,7 +455,7 @@ func _move_tick(input: Vector2) -> void:
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
 	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * _traits.speed_mult(_now())
-	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * (1.0 + _armour_bonus("speed_pct") / 100.0) * cheat_speed * _pace * rush
+	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * (1.0 + _armour_bonus("speed_pct") / 100.0) * (1.0 + skill_speed_pct / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
 	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
