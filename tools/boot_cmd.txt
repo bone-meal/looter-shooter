@@ -1,1 +1,1 @@
-!wait 3;/tp fantasy;!wait 8;/skill crafting 50;/gear leather 10;/gear copper_bar 4;/gear hard_leather 12;/gear iron_bar 6;/gear stormoak_plank 4;/gear skysteel_bar 1;!make craft_rucksack;!make craft_satchel;!make craft_satchel;!make craft_rucksack;!make craft_pack_frame;!inv;!wait 1;!snap bag48
+!wait 3;/tp sea;!wait 6;!sea time 0.5;!sea go -100 1600;!sea weather storm;!wait 25;!sea status;!snap sea_storm;!sea weather rain;!wait 20;!snap sea_rain

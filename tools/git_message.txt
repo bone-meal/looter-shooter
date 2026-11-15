@@ -1,8 +1,10 @@
-Crafted bags open more backpack slots
+Sea step 4: sea world core (open grid, floating origin, waves, day, weather)
 
-- the gun-side backpack is 36 slots, 4 more for each bag Crafting makes (satchel, rucksack, pack frame, in order) up to 48
-- saved as bags (inventory version 6); free-slot counts look at open slots only
-- the inventory keeps 4 rows and adds columns; inv_screen_check covers two bags
+- core/sea: sea_map (3 x 3 grid of 2 km regions), sea_waves (3 sines shared with the shader), sea_clock (30 min day), sea_weather (calm, rain, fog, storm per region from the shared clock)
+- game/sea_world: floating origin, region notices, weather, swell, wading floor until swimming
+- game/sea_ocean: camera-following wave mesh on Medium and up, flat on Potato and Low, far ring, depth and crest foam, storm gloom
+- game/sea_islands, sea_look, sea_rain; 4 test islands from tools/blender/sea_islands.py
+- /tp sea, dev !sea time|weather|go|status, tools/sea_core_check (24 checks)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -64,6 +64,7 @@ const ChatBox = preload("res://game/chat_box.gd")
 const ChatCommand = preload("res://core/chat_command.gd")
 const AdminCommands = preload("res://game/admin_commands.gd")
 const FantasyWorld = preload("res://game/fantasy_world.gd")
+const SeaWorld = preload("res://game/sea_world.gd")
 const TradeScreen = preload("res://game/trade_screen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
@@ -161,6 +162,8 @@ var _hud_timer := 0.0
 var _painting := Vector3.ZERO
 var _painting_fantasy := Vector3.ZERO
 var _in_fantasy := false
+var _sea: Node3D  # game/sea_world.gd, built on the first trip (sea step 4)
+var _in_sea := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
 var _fantasy_saved: Variant  # the fantasy part of the profile, until that world is built
 var _fantasy_exit := Vector3.ZERO
@@ -757,6 +760,8 @@ func apply_settings() -> void:
 	if _in_fantasy:
 		_fantasy_detail()
 		_fantasy.enter(_player.global_position)
+	if _in_sea:
+		_sea.enter(settings.graphics)
 	_overlay.visible = settings.show_debug
 	_player_hud.show_speed = settings.show_debug
 	_cross.show_style(_cross_styles.clean(settings.crosshair) if not settings.crosshair.is_empty() else _cross_styles.preset(0))
@@ -1247,6 +1252,16 @@ func refresh_after_command() -> void:
 
 # Command /tp: leaves whatever painting world the player is in and goes to a named place. Returns what to tell them.
 func travel(place: String) -> String:
+	if place == "sea":
+		if _in_arena:
+			_leave_arena()
+		elif _in_fantasy:
+			_leave_fantasy()
+		if not _in_sea:
+			_enter_sea()
+		return "Moved to the sea."
+	if _in_sea:
+		_leave_sea()
 	if place == "fantasy" or (_fantasy != null and _fantasy.place_names().has(place)):
 		if _in_arena:
 			_leave_arena()
@@ -1268,7 +1283,7 @@ func travel(place: String) -> String:
 		"course":
 			_go_to_course()
 		_:
-			return "Unknown place %s. Places: island, club, arena, course, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
+			return "Unknown place %s. Places: island, club, arena, course, sea, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
 	return "Moved to %s." % place
 
 
@@ -3784,6 +3799,37 @@ func drop_power(kind: String, near: Node3D) -> String:
 
 # The third painting: the fantasy world Aurelind (game/fantasy_world.gd), a streamed open land with its own magic,
 # skills and quests.
+# The sea world (sea step 4; the crossing from Gull Rock comes in step 11): built on the first trip.
+func _enter_sea() -> void:
+	if loading != null:
+		loading.call("begin", 3)
+	if _sea == null:
+		_sea = SeaWorld.new()
+		add_child(_sea)
+		_sea.setup(_player, _render_style)
+		_sea.notice.connect(_player_hud.notice)
+	_in_sea = true
+	_rest_worlds()
+	_player.teleport(_sea.spawn_world(), 0.0)
+	apply_settings()  # the look, then the sea takes the sky, light and fog over
+	if loading != null:
+		loading.call("finish")
+	_player_hud.play_fade()
+
+
+func _leave_sea() -> void:
+	_sea.leave()
+	_in_sea = false
+	_rest_worlds()
+	apply_settings()
+	_player.teleport(_island_spawn, 0.0)
+	_player_hud.play_fade()
+
+
+func sea() -> Node3D:
+	return _sea
+
+
 func _enter_fantasy() -> void:
 	LoadClock.mark("(play until the fantasy world was entered)")
 	if loading != null:
@@ -3853,12 +3899,12 @@ func _rest_worlds() -> void:
 		for spot: Vector3 in net.other_positions():
 			if spot.distance_to(_player.global_position) <= PACK_RANGE:
 				_player.allies_close += 1
-	_score.paused = _in_fantasy  # the points game is the gun side's
-	_player_hud.show_points = not _in_fantasy
+	_score.paused = _in_fantasy or _in_sea  # the points game is the gun side's
+	_player_hud.show_points = not _in_fantasy and not _in_sea
 	if _player.knife_stowed != _in_fantasy:  # in Aurelind the hand without a gun holds the staff, not the knife
 		_player.knife_stowed = _in_fantasy
 		_player.refresh_held()
-	var gun_side := not _in_fantasy
+	var gun_side := not _in_fantasy and not _in_sea
 	var aurelind := _in_fantasy or _time - _fantasy_left_at < 3.0
 	if net != null and net.is_active() and net.is_host():
 		for spot: Vector3 in net.other_positions():
@@ -3870,6 +3916,8 @@ func _rest_worlds() -> void:
 		part.process_mode = Node.PROCESS_MODE_INHERIT if gun_side else Node.PROCESS_MODE_DISABLED
 	if _fantasy != null:
 		_fantasy.process_mode = Node.PROCESS_MODE_INHERIT if aurelind else Node.PROCESS_MODE_DISABLED
+	if _sea != null:
+		_sea.process_mode = Node.PROCESS_MODE_INHERIT if _in_sea else Node.PROCESS_MODE_DISABLED
 	var at_club := _player.global_position.distance_to(ClubIsland.CENTER) < CLUB_NEAR
 	if at_club and _casino.is_empty():
 		_build_club()

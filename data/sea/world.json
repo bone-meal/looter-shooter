@@ -1,0 +1,396 @@
+{
+ "version": 1,
+ "_about": "The sea world (sea step 4). Positions here are SEA COORDINATES: metres from the sea's own centre (x east, z south), the same on every machine and in saves; the scene position is found by game/sea_world.gd (floating origin: the sea's root shifts back as you sail so you stay near `anchor`). grid: rows north to south of region ids, each cell `cell` metres square (director: an open grid like Wind Waker's; my layout: region 1 bottom middle where the crossing arrives, the Maelstrom in the centre, regions 2-6 round it, two cells of open deep water for the raid bosses). regions: name, sky / sea / fog colours, weather weights, wind (base strength 0..1), swell (metres of wave at calm). clock: a full day in `day_minutes` (director: about 30), when dawn and dusk fall. weather: each kind's fog (0..1), rain, wind strength added, swell multiplier, light multiplier; a region's weather is picked from its weights every `slot_minutes` from the shared clock (every machine sees the same). waves: the three rolling waves (direction degrees, length m, share of the swell, speed scale); tiers say which graphics tiers get moving waves. All numbers are my placeholders for the director.",
+ "anchor": [
+  -20000,
+  0,
+  0
+ ],
+ "shift_every": 400,
+ "cell": 2000,
+ "grid": [
+  [
+   "region_4",
+   "region_5",
+   "region_6"
+  ],
+  [
+   "region_3",
+   "region_7",
+   "deep_1"
+  ],
+  [
+   "region_2",
+   "region_1",
+   "deep_2"
+  ]
+ ],
+ "regions": {
+  "region_1": {
+   "name": "Sunlit Shallows",
+   "sky": [
+    0.45,
+    0.7,
+    1.0
+   ],
+   "sea": [
+    0.12,
+    0.55,
+    0.62
+   ],
+   "shallow": [
+    0.35,
+    0.85,
+    0.78
+   ],
+   "fog": [
+    0.75,
+    0.88,
+    1.0
+   ],
+   "weather": {
+    "calm": 6,
+    "rain": 2,
+    "fog": 1,
+    "storm": 0.5
+   },
+   "wind": 0.45,
+   "swell": 0.5
+  },
+  "region_2": {
+   "name": "Fog Banks",
+   "sky": [
+    0.6,
+    0.68,
+    0.72
+   ],
+   "sea": [
+    0.12,
+    0.3,
+    0.28
+   ],
+   "shallow": [
+    0.3,
+    0.45,
+    0.35
+   ],
+   "fog": [
+    0.68,
+    0.74,
+    0.74
+   ],
+   "weather": {
+    "calm": 2,
+    "rain": 2,
+    "fog": 6,
+    "storm": 1
+   },
+   "wind": 0.3,
+   "swell": 0.4
+  },
+  "region_3": {
+   "name": "Volcanic Archipelago",
+   "sky": [
+    0.75,
+    0.62,
+    0.55
+   ],
+   "sea": [
+    0.1,
+    0.22,
+    0.3
+   ],
+   "shallow": [
+    0.2,
+    0.4,
+    0.42
+   ],
+   "fog": [
+    0.7,
+    0.58,
+    0.52
+   ],
+   "weather": {
+    "calm": 4,
+    "rain": 2,
+    "fog": 2,
+    "storm": 2
+   },
+   "wind": 0.5,
+   "swell": 0.7
+  },
+  "region_4": {
+   "name": "Frozen Floes",
+   "sky": [
+    0.72,
+    0.82,
+    0.95
+   ],
+   "sea": [
+    0.08,
+    0.25,
+    0.4
+   ],
+   "shallow": [
+    0.4,
+    0.62,
+    0.75
+   ],
+   "fog": [
+    0.85,
+    0.9,
+    0.96
+   ],
+   "weather": {
+    "calm": 3,
+    "rain": 1,
+    "fog": 3,
+    "storm": 2
+   },
+   "wind": 0.6,
+   "swell": 0.8
+  },
+  "region_5": {
+   "name": "Storm Cliffs",
+   "sky": [
+    0.5,
+    0.56,
+    0.66
+   ],
+   "sea": [
+    0.06,
+    0.2,
+    0.3
+   ],
+   "shallow": [
+    0.2,
+    0.38,
+    0.45
+   ],
+   "fog": [
+    0.55,
+    0.6,
+    0.68
+   ],
+   "weather": {
+    "calm": 1,
+    "rain": 3,
+    "fog": 1,
+    "storm": 5
+   },
+   "wind": 0.8,
+   "swell": 1.4
+  },
+  "region_6": {
+   "name": "Coral Ruins",
+   "sky": [
+    0.5,
+    0.78,
+    0.98
+   ],
+   "sea": [
+    0.05,
+    0.45,
+    0.6
+   ],
+   "shallow": [
+    0.3,
+    0.9,
+    0.85
+   ],
+   "fog": [
+    0.75,
+    0.9,
+    0.98
+   ],
+   "weather": {
+    "calm": 6,
+    "rain": 2,
+    "fog": 1,
+    "storm": 1
+   },
+   "wind": 0.4,
+   "swell": 0.6
+  },
+  "region_7": {
+   "name": "The Maelstrom",
+   "sky": [
+    0.35,
+    0.36,
+    0.45
+   ],
+   "sea": [
+    0.04,
+    0.1,
+    0.16
+   ],
+   "shallow": [
+    0.1,
+    0.2,
+    0.25
+   ],
+   "fog": [
+    0.4,
+    0.42,
+    0.5
+   ],
+   "weather": {
+    "calm": 0,
+    "rain": 2,
+    "fog": 1,
+    "storm": 6
+   },
+   "wind": 0.9,
+   "swell": 1.8
+  },
+  "deep_1": {
+   "name": "The Deep",
+   "sky": [
+    0.45,
+    0.62,
+    0.9
+   ],
+   "sea": [
+    0.03,
+    0.18,
+    0.35
+   ],
+   "shallow": [
+    0.1,
+    0.3,
+    0.45
+   ],
+   "fog": [
+    0.7,
+    0.8,
+    0.95
+   ],
+   "weather": {
+    "calm": 4,
+    "rain": 2,
+    "fog": 1,
+    "storm": 2
+   },
+   "wind": 0.6,
+   "swell": 1.0
+  },
+  "deep_2": {
+   "name": "The Trench",
+   "sky": [
+    0.45,
+    0.62,
+    0.9
+   ],
+   "sea": [
+    0.03,
+    0.16,
+    0.32
+   ],
+   "shallow": [
+    0.1,
+    0.3,
+    0.45
+   ],
+   "fog": [
+    0.7,
+    0.8,
+    0.95
+   ],
+   "weather": {
+    "calm": 4,
+    "rain": 2,
+    "fog": 1,
+    "storm": 2
+   },
+   "wind": 0.6,
+   "swell": 1.0
+  }
+ },
+ "clock": {
+  "day_minutes": 30,
+  "dawn": 0.22,
+  "dusk": 0.78,
+  "start": 0.3
+ },
+ "weather": {
+  "slot_minutes": 6,
+  "blend_seconds": 40,
+  "kinds": {
+   "calm": {
+    "fog": 0.0,
+    "rain": 0.0,
+    "wind": 0.0,
+    "swell": 1.0,
+    "light": 1.0
+   },
+   "rain": {
+    "fog": 0.25,
+    "rain": 0.6,
+    "wind": 0.15,
+    "swell": 1.5,
+    "light": 0.7
+   },
+   "fog": {
+    "fog": 0.9,
+    "rain": 0.0,
+    "wind": -0.2,
+    "swell": 0.7,
+    "light": 0.8
+   },
+   "storm": {
+    "fog": 0.45,
+    "rain": 1.0,
+    "wind": 0.4,
+    "swell": 3.0,
+    "light": 0.45
+   }
+  }
+ },
+ "waves": {
+  "list": [
+   {
+    "dir": 20,
+    "length": 38,
+    "share": 0.55,
+    "speed": 1.0
+   },
+   {
+    "dir": -35,
+    "length": 21,
+    "share": 0.3,
+    "speed": 1.1
+   },
+   {
+    "dir": 75,
+    "length": 11,
+    "share": 0.15,
+    "speed": 1.25
+   }
+  ],
+  "moving_tiers": [
+   "medium",
+   "high",
+   "ultimate"
+  ],
+  "mesh": {
+   "medium": [
+    96,
+    320
+   ],
+   "high": [
+    160,
+    360
+   ],
+   "ultimate": [
+    200,
+    400
+   ]
+  },
+  "far": 6000
+ },
+ "fog": {
+  "near": 250,
+  "far": 2600,
+  "heavy_far": 260
+ }
+}

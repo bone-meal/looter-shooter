@@ -1,0 +1,48 @@
+{
+ "version": 1,
+ "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog).",
+ "near": 1200,
+ "far": 5500,
+ "islands": [
+  {
+   "id": "test_tiny",
+   "pos": [
+    120,
+    2300
+   ],
+   "radius": 14,
+   "model": "isle_tiny"
+  },
+  {
+   "id": "test_small",
+   "pos": [
+    -350,
+    2600
+   ],
+   "radius": 55,
+   "model": "isle_small"
+  },
+  {
+   "id": "test_medium",
+   "pos": [
+    500,
+    1700
+   ],
+   "radius": 160,
+   "model": "isle_medium"
+  },
+  {
+   "id": "test_large",
+   "pos": [
+    -700,
+    1300
+   ],
+   "radius": 420,
+   "model": "isle_large"
+  }
+ ],
+ "spawn": [
+  -350,
+  2600
+ ]
+}
