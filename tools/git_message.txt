@@ -1,6 +1,6 @@
-Fish Story record seen by everyone
+Beach Ball Bombardier chase gun (local play)
 
-The held state now carries the record (sniper_basic@fish_story#n); other players' copy of the brass tag shows it and updates when it is beaten, without rebuilding the gun. Tested with two copies: 777, then 5000, unchanged by a smaller kill, gone when put away. Dev !ghosttag, pair set tools/pair_fish_*.
+Region 1 boss pool grenade launcher with a striped beach ball jammed on its muzzle. It fires floaty beach balls: they bounce off enemies' heads (each bounce hits), off ground and walls, and pop in a blast when bounces or time run out. Any gun's shot pops a ball; walking into one kicks it where you look, and every kick makes its pop 25 percent bigger. game/beach_balls.gd, game/signatures/beach_ball.gd, models beach_ball and beach_ball_muzzle. tools/chase_check 19 of 19 on his PC. Other players do not see or kick the balls yet (next).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

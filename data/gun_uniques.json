@@ -252,6 +252,49 @@
         "boast_damage": 0.25
       }
     },
+    "beach_ball_bombardier": {
+      "name": "Beach Ball Bombardier",
+      "body": "grenade_launcher",
+      "maker": "zephyr",
+      "parts": {
+        "sight": "holo",
+        "grip": "folding"
+      },
+      "buffs": [
+        "overkill_splash",
+        "crowd_pleaser",
+        "free_shot"
+      ],
+      "skills": [
+        "vacuum_pulse",
+        "rally_cry"
+      ],
+      "traits": [
+        "chain_reaction",
+        "pack_hunter"
+      ],
+      "flavor": "",
+      "red": "Volleyball rules. No spiking the host.",
+      "signature": "beach_ball",
+      "attach": "beach_ball_muzzle",
+      "pool": "region_1_boss",
+      "cfg": {
+        "ball_radius": 0.22,
+        "speed": 15.0,
+        "gravity": 7.0,
+        "drag": 0.25,
+        "restitution": 0.65,
+        "head_bounce": 7.5,
+        "bounce_damage": 0.5,
+        "max_bounces": 6,
+        "ground_bounces": 3,
+        "life": 7.0,
+        "kick_speed": 10.0,
+        "kick_reach": 0.9,
+        "volley_bonus": 0.25,
+        "pop_damage": 1.2
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

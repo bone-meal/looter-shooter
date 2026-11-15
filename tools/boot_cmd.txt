@@ -1,1 +1,1 @@
-!uncap;!wait 3;/tp island;!wait 2;!immortal;!readyunique fish_story 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1;!sighit 4321;!sighit 900 kill;!wait 0.3;!snap fish_told;!key inspect;!wait 1.4;!snap fish_inspect
+!uncap;!wait 3;/tp island;!wait 2;!immortal;!readyunique beach_ball_bombardier 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 1.5;!snap beach_held;!look 0 8;!wait 0.3;!key shoot;!wait 0.35;!snap beach_fly;!wait 0.4;!snap beach_fly2;!wait 3;!third;!wait 1;!snap beach_third

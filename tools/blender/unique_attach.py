@@ -7,7 +7,10 @@
 # FISH STORY: a bent fishing rod hose-clamped under the sniper's barrel (cork handle and reel at the handguard, the tip
 # bowed down past the muzzle with a red-and-white bobber on its line) and a small brass tag hanging from the
 # handguard's LEFT side on a split ring. An empty "Tag" marks the tag's face, where the game writes the biggest hit.
+# BEACH BALL BOMBARDIER: an inflated beach ball jammed onto the grenade launcher's muzzle (six coloured gores, white
+# caps, the valve on its side), and the beach ball it fires (beach_ball: radius 1 about the origin, scaled in game).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
+import math
 import os
 import sys
 
@@ -24,6 +27,9 @@ SPECS = {  # name: (kind, colour, seed)
     "brass": ("metal", (0.78, 0.6, 0.28), 47), "cork": ("wood", (0.66, 0.5, 0.32), 48),
     "rodglass": ("polymer", (0.12, 0.22, 0.2), 49), "bobred": ("polymer", (0.85, 0.12, 0.1), 50),
     "line": ("polymer", (0.9, 0.92, 0.95), 51),
+    "gore_red": ("polymer", (0.86, 0.14, 0.12), 52), "gore_yellow": ("polymer", (0.98, 0.82, 0.16), 53),
+    "gore_blue": ("polymer", (0.14, 0.38, 0.86), 54), "gore_white": ("polymer", (0.95, 0.95, 0.94), 55),
+    "gore_green": ("polymer", (0.2, 0.7, 0.3), 56), "gore_orange": ("polymer", (0.98, 0.5, 0.12), 57),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -134,7 +140,55 @@ def fish_story_rod(m, M):
     m.empty("Tag", TAG_X - 0.0034, tag_y - 0.005, tag_f)
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "fish_story_rod": fish_story_rod}
+GORES = ("gore_red", "gore_white", "gore_yellow", "gore_blue", "gore_green", "gore_orange")
+
+
+def beach_ball_at(m, M, center, r, segs_per_gore=4, rings=10):
+    """A beach ball of radius r at center (x, y, f): six gores from pole to pole along the gun (f axis), white caps,
+    a valve on its side. Each gore is its own strip of quads so the colours meet on clean seams."""
+    import bmesh
+    from mathutils import Vector
+    cx, cy, cf = center
+    cap = math.radians(14.0)  # the white cap covers the poles
+    for g, name in enumerate(GORES):
+        bm = bmesh.new()
+        rows = []
+        for i in range(rings + 1):
+            lat = -math.pi / 2 + cap + (math.pi - 2 * cap) * i / rings  # along f: pole to pole
+            row = []
+            for j in range(segs_per_gore + 1):
+                lon = 2 * math.pi * (g + j / segs_per_gore) / len(GORES)
+                x = cx + r * math.cos(lat) * math.cos(lon)
+                y = cy + r * math.cos(lat) * math.sin(lon)
+                f = cf + r * math.sin(lat)
+                row.append(bm.verts.new((x, f, y)))  # Blender space: (x, f, y)
+            rows.append(row)
+        for i in range(rings):
+            for j in range(segs_per_gore):
+                bm.faces.new((rows[i][j], rows[i][j + 1], rows[i + 1][j + 1], rows[i + 1][j]))
+        m._add(bm, M[name], "Body", 0)
+    for sign in (1.0, -1.0):  # white caps over both poles
+        m.ball(M["gore_white"], (r * 0.27, r * 0.27, r * 0.06), (cx, cy, cf + sign * r * 0.985), u=16, v=6)
+    # the valve: a little stub and its folded plug on one white gore
+    lon = 2 * math.pi * 1.5 / len(GORES)
+    vx, vy = cx + r * math.cos(lon), cy + r * math.sin(lon)
+    out = (math.cos(lon), math.sin(lon))
+    m.rod(M["gore_white"], r * 0.07, (vx, vy, cf + r * 0.25), (vx + out[0] * r * 0.12, vy + out[1] * r * 0.12, cf + r * 0.25), segs=10)
+    m.ball(M["gore_white"], (r * 0.06, r * 0.06, r * 0.09), (vx + out[0] * r * 0.14, vy + out[1] * r * 0.14, cf + r * 0.33))
+
+
+def beach_ball_muzzle(m, M):
+    """Jammed onto the grenade launcher's muzzle (tube radius 0.034, mouth at f 0.4865): the tube's end sinks into it."""
+    beach_ball_at(m, M, (0.0, 0.0, 0.55), 0.085)
+
+
+def beach_ball(m, M):
+    """The fired ball, radius 1 about the origin (the game scales it)."""
+    beach_ball_at(m, M, (0.0, 0.0, 0.0), 1.0, segs_per_gore=5, rings=12)
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+    "beach_ball": beach_ball}
 
 if __name__ == "__main__":
     import bpy

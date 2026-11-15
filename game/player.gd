@@ -1319,9 +1319,15 @@ func _shoot() -> void:
 		weapon.ammo = mini(weapon.ammo + 1, weapon.mag_size)
 	if not weapon.projectile.is_empty():
 		var aim := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
-		explosives.fire(_head.global_position + aim * 0.6, aim, weapon.projectile)
+		if _sig_node != null and _sig_node.has_method("fire_projectile"):  # Beach Ball Bombardier: beach balls, not grenades
+			_sig_node.call("fire_projectile", _head.global_position + aim * 0.6, aim, weapon.projectile)
+		else:
+			explosives.fire(_head.global_position + aim * 0.6, aim, weapon.projectile)
 		return
 
+	var balls := get_tree().get_first_node_in_group("beach_balls")  # a beach ball in the line of fire pops (game/beach_balls.gd)
+	if balls != null:
+		balls.call("shot_through", origin, forward, SHOT_RANGE)
 	_crowd = _enemies_near(CROWD_RANGE) if buffs.has("crowd_pleaser") else 0
 	var totals := {}  # collider -> damage dealt this shot (one number per target, even for shotgun pellets)
 	var spots := {}
