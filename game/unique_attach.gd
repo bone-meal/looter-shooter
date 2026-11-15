@@ -65,7 +65,11 @@ static func apply_id(model: Node3D, unique_id: String) -> Node3D:
 	if _defs.is_empty():
 		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
 		_defs = (data as Dictionary).get("uniques", {}) if data is Dictionary else {}
-	return _attach(model, _defs.get(unique_id, {}))
+	var def: Dictionary = _defs.get(unique_id, {})
+	var piece := _attach(model, def)
+	if piece != null and String(def.get("keeps", "")) == "record":
+		show_record(piece, 0)
+	return piece
 
 
 static func clear(model: Node3D) -> void:

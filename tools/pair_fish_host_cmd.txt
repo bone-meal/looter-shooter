@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;/tp island;!wait 3;!immortal;!readyunique fish_story 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 6;!sighit 777;!wait 6;!sighit 5000;!wait 6;!sighit 900 kill;!wait 6;!key weapon_1;!wait 25

@@ -34,7 +34,8 @@ var _badge: Sprite3D
 var _held_id := ""
 var _down := false  # see set_down()
 var _held_model: Node3D
-var _held_shown := ""  # the whole held string last shown ("m16@mixtape"); _held_id is its gun body alone
+var _held_shown := ""  # the whole held string last shown ("m16@mixtape", "sniper_basic@fish_story#4321"); _held_id is its gun body alone
+var _held_piece: Node3D  # the chase gun's gimmick on the held model (Fish Story's tag shows the record)
 var _speaker: AudioStreamPlayer3D  # a Mixtape's song heard from this player (game/net_mixtape.gd), made when first needed
 var _slung: MeshInstance3D  # the shield on this player's back, while he carries one and holds something else
 var _smoking := false
@@ -179,7 +180,8 @@ func _apply_smoking() -> void:
 		_cigarette.visible = _smoking
 
 
-# Shows what this player holds: a gun's body id ("m16@mixtape" = a chase gun with its gimmick), "knife:<type>",
+# Shows what this player holds: a gun's body id ("m16@mixtape" = a chase gun with its gimmick, "#n" after it = Fish
+# Story's record on its tag), "knife:<type>",
 # "shield" (held up), or nothing; "|shield" behind it = a shield hangs on his back (game/player.gd `held_id`). Empty
 # or unknown = hands empty.
 func set_held(shown: String) -> void:
@@ -192,8 +194,13 @@ func set_held(shown: String) -> void:
 	var id := shown.trim_suffix("|shield")
 	if id == _held_shown:
 		return
+	if _held_piece != null and is_instance_valid(_held_piece) and id.get_slice("#", 0) == _held_shown.get_slice("#", 0):
+		_held_shown = id  # same gun, a new record (Fish Story): only the tag changes
+		UniqueAttach.show_record(_held_piece, id.get_slice("#", 1).to_int())
+		return
 	_held_shown = id
 	_held_id = id.get_slice("@", 0)
+	_held_piece = null
 	if _held_model != null:
 		_held_model.queue_free()
 		_held_model = null
@@ -204,7 +211,9 @@ func set_held(shown: String) -> void:
 	else:
 		_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(_held_id)
 		if id.contains("@") and _held_model != null:
-			UniqueAttach.apply_id(_held_model, id.get_slice("@", 1))
+			_held_piece = UniqueAttach.apply_id(_held_model, id.get_slice("@", 1).get_slice("#", 0))
+			if _held_piece != null and id.contains("#"):
+				UniqueAttach.show_record(_held_piece, id.get_slice("#", 1).to_int())
 	_place_held()
 
 

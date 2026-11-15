@@ -1,6 +1,6 @@
-Fish Story chase gun + old ponies put to pasture
+Fish Story record seen by everyone
 
-Fish Story (region 1 boss pool, sniper): a bent fishing rod hose-clamped under the barrel and a brass tag on the handguard. Kills are told bigger with a fisherman's line, the biggest real hit is kept on the gun (record, host-checked, only on this unique), stamped on the tag and shown on the cards; a new record gives a 10 s damage boast. Own inspect move turns the tag to the eye. The 8 old pony uniques' flavour now ends with: One of the 8 old ponies; put to pasture. Check tools/chase_check: 0 problems. Dev !sighit.
+The held state now carries the record (sniper_basic@fish_story#n); other players' copy of the brass tag shows it and updates when it is beaten, without rebuilding the gun. Tested with two copies: 777, then 5000, unchanged by a smaller kill, gone when put away. Dev !ghosttag, pair set tools/pair_fish_*.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

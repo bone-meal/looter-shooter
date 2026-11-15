@@ -107,6 +107,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.get("inventory").call("set_holster_gun", slot, made)
 				player.call("refresh_held")
 				_lines.append("READYUNIQUE %s in slot %d" % [words[1], slot + 1])
+		"ghosttag":  # "!ghosttag <note>": what each other player holds and what his Fish Story tag reads on this copy
+			var tags := PackedStringArray()
+			for body: Node in session.get("net").call("target_nodes"):
+				var label: Node = body.find_child("Record", true, false)
+				tags.append("%s held=%s tag=%s" % [body.name, String(body.get("_held_shown")), (label as Label3D).text.replace("\n", " ") if label is Label3D else "-"])
+			_lines.append("GHOSTTAG %s @%.1f: %s" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), " | ".join(tags)])
 		"sighit":  # "!sighit <damage> [kill]": the chase gun in hand's behaviour hears one shot's damage (Fish Story: record, tag, told number)
 			var sig_now: Node = player.get("_sig_node")
 			if sig_now != null and sig_now.has_method("on_hit_total"):
