@@ -9,11 +9,17 @@ const SurfaceLibrary = preload("res://game/surface_library.gd")
 var _glows: Array[StandardMaterial3D] = []
 var _flames: Array[Node3D] = []
 var _running: Array[bool] = []
+var _fire_at := PackedVector3Array()  # a fire pit's centre (electric coils: never fire)
+var _fire_reach := PackedFloat32Array()  # its radius, -1 for a coil
 var _t := 0.0
 
 
 # kind = "electric" (centre = the hut's middle: the coil goes on its roof) or "fire" (centre = the pit). `radius` =
 # how far it reaches; `lever` = where its switch post stands.
+func _ready() -> void:
+	add_to_group("fire_sources")  # fire_near: Swamp Gas clouds catch from a running fire pit
+
+
 func add(kind: String, centre: Vector3, lever: Vector3, radius: float) -> void:
 	var glow := StandardMaterial3D.new()
 	glow.albedo_color = Color(0.25, 0.3, 0.35) if kind == "electric" else Color(0.3, 0.2, 0.15)
@@ -21,6 +27,8 @@ func add(kind: String, centre: Vector3, lever: Vector3, radius: float) -> void:
 	glow.emission_energy_multiplier = 2.5
 	_glows.append(glow)
 	_running.append(false)
+	_fire_at.append(centre)
+	_fire_reach.append(radius if kind == "fire" else -1.0)
 	var flames := Node3D.new()
 	flames.visible = false
 	add_child(flames)
@@ -87,3 +95,11 @@ func _piece(parent: Node3D, mesh: Mesh, material: Material, at: Vector3) -> Mesh
 	part.position = at
 	parent.add_child(part)
 	return part
+
+
+# True when a running fire pit reaches within `reach` of `point` (game/swamp_gas.gd asks).
+func fire_near(point: Vector3, reach: float) -> bool:
+	for i in _running.size():
+		if _running[i] and _fire_reach[i] > 0.0 and point.distance_to(_fire_at[i]) <= _fire_reach[i] + reach:
+			return true
+	return false

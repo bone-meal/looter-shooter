@@ -1,7 +1,6 @@
-Croak chase gun + quiet test window stays small
+Swamp Gas chase gun
 
-Croak (region 2 boss pool, M16): a little frog sits on the ACOG and blinks. While it rides on the gun you get a second jump in the air; every 5th kill it leaps onto the nearest enemy's head and croaks, marking it (+30 percent damage taken) until that enemy dies, then hops back. tools/chase_check 24 of 24 on his PC.
-Quiet test copies now stay a 640x360 window whatever the player's settings say.
+Swamp Gas (region 2 boss pool, double shotgun): a jar of murky swamp water strapped to the fore-end, bubbles jiggling in it. Every shot burps a green gas cloud where the shot went; any fire sets a cloud off (a burning enemy inside it, a running Fire Pit, a burning path or inferno skill, any blast's flash), and each blast lights the clouds near it: a chain that also sets enemies burning. Fire sources answer fire_near (group fire_sources). tools/chase_check 29 of 29 on his PC. Dev !fire retries for up to a second.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

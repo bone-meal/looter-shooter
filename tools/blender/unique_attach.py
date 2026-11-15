@@ -12,6 +12,9 @@
 # CROAK: a small green frog sitting on the M16's ACOG, facing forward, with gold bulging eyes; its eyelids are their
 # own node "Lids" (hidden; the game shows them for a blink). croak_frog = the same frog about the origin, the one that
 # leaps off onto an enemy's head.
+# SWAMP GAS: a jar of murky swamp water lying along the double shotgun's LEFT side at the fore-end, screw lid toward
+# the muzzle, held by two leather straps round the fore-end; bubbles on the water in the jar's air gap are their own
+# node "Bubbles" (the game jiggles them).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -35,6 +38,8 @@ SPECS = {  # name: (kind, colour, seed)
     "gore_green": ("polymer", (0.2, 0.7, 0.3), 56), "gore_orange": ("polymer", (0.98, 0.5, 0.12), 57),
     "frogskin": ("hide", (0.3, 0.62, 0.22), 58), "frogbelly": ("polymer", (0.86, 0.84, 0.55), 59),
     "frogeye": ("polymer", (0.9, 0.72, 0.18), 60),
+    "swampwater": ("matte", (0.27, 0.34, 0.11), 61), "jarglass": ("polymer", (0.72, 0.82, 0.76), 62),
+    "strap": ("hide", (0.36, 0.22, 0.12), 63), "lidtin": ("paint", (0.55, 0.45, 0.22), 64),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -225,7 +230,35 @@ def croak_frog(m, M):
     frog_at(m, M, (0.0, 0.0, 0.0))
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+JAR_X, JAR_Y, JAR_R = -0.058, -0.008, 0.024  # the jar's axis (along f) beside the fore-end (half width 0.028)
+JAR_F = (0.15, 0.25)
+
+
+def swamp_jar(m, M):
+    f0, f1 = JAR_F
+    m.cyl(M["swampwater"], JAR_R, f0 + 0.004, f1 - 0.012, JAR_Y, x=JAR_X, segs=20, bevel=0.0)
+    for f in (f0, f1 - 0.016):  # thick glass rims at both ends, and the glass bottom
+        m.cyl(M["jarglass"], JAR_R + 0.0018, f, f + 0.006, JAR_Y, x=JAR_X, segs=20, bevel=0.001)
+    m.box(M["jarglass"], (0.012, 0.004, f1 - f0 - 0.02), (JAR_X, JAR_Y + JAR_R - 0.001, (f0 + f1) / 2 - 0.004), bevel=0.0015)  # the air gap
+    # screw lid toward the muzzle with ridges
+    m.cyl(M["lidtin"], JAR_R + 0.0012, f1 - 0.012, f1, JAR_Y, x=JAR_X, segs=24, bevel=0.0015)
+    for k in range(12):
+        a = 2 * math.pi * k / 12
+        m.box(M["lidtin"], (0.002, 0.002, 0.01), (JAR_X + math.cos(a) * (JAR_R + 0.0018), JAR_Y + math.sin(a) * (JAR_R + 0.0018), f1 - 0.006), bevel=0.0)
+    # bubbles on the water in the air gap
+    m.node("Bubbles", (JAR_X, JAR_Y + JAR_R, (f0 + f1) / 2))
+    for dx, df, r in ((-0.003, -0.02, 0.0028), (0.002, -0.004, 0.0022), (-0.001, 0.012, 0.0032), (0.003, 0.026, 0.0018)):
+        m.ball(M["jarglass"], r, (JAR_X + dx, JAR_Y + JAR_R + 0.0012, (f0 + f1) / 2 + df), node="Bubbles", u=8, v=6)
+    # two leather straps round jar and fore-end, buckles on the outside
+    for f in (f0 + 0.022, f1 - 0.03):
+        m.cyl(M["strap"], JAR_R + 0.003, f - 0.006, f + 0.006, JAR_Y, x=JAR_X, segs=20, bevel=0.0008)
+        m.box(M["strap"], (0.06, 0.003, 0.012), (JAR_X + 0.03, JAR_Y + JAR_R + 0.0015, f), bevel=0.0008)  # over the top
+        m.box(M["strap"], (0.06, 0.003, 0.012), (JAR_X + 0.03, -0.047, f), bevel=0.0008)  # under the fore-end
+        m.box(M["strap"], (0.003, 0.05, 0.012), (0.03, -0.02, f), bevel=0.0008)  # up the far side
+        m.box(M["chrome"], (0.004, 0.012, 0.014), (JAR_X - JAR_R - 0.004, JAR_Y, f), bevel=0.001)  # buckle
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

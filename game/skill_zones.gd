@@ -32,6 +32,7 @@ var _rim := TorusMesh.new()
 
 
 func _ready() -> void:
+	add_to_group("fire_sources")  # fire_near: Swamp Gas clouds catch from burning paths and infernos
 	_disc.top_radius = 1.0
 	_disc.bottom_radius = 1.0
 	_disc.height = 0.04
@@ -323,3 +324,15 @@ func _off_line(p: Vector3, a: Vector3, b: Vector3) -> float:
 	var ap := Vector2(p.x - a.x, p.z - a.z)
 	var k := clampf(ap.dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
 	return (ap - ab * k).length()
+
+
+# True when a burning path or an inferno is alight within `reach` of `point` (game/swamp_gas.gd asks).
+func fire_near(point: Vector3, reach: float) -> bool:
+	for i in _until.size():
+		if _until[i] <= 0.0:
+			continue
+		if _kind[i] == "inferno" and Vector2(point.x - _pos[i].x, point.z - _pos[i].z).length() <= _radius[i] + reach:
+			return true
+		if _kind[i] == "burn_line" and _off_line(point, _pos[i], _end[i]) <= _radius[i] + reach:
+			return true
+	return false

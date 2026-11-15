@@ -1368,6 +1368,8 @@ func _shoot() -> void:
 		shots_hit += 1
 	_traits.after_shot(not totals.is_empty())
 	self_fx.on_shot(_now())  # Phase Step: one charged shot spent
+	if _sig_node != null and _sig_node.has_method("after_shot"):
+		_sig_node.call("after_shot", origin, forward)  # Swamp Gas: a cloud where the shot went
 	if damage_numbers != null:
 		for collider in totals:
 			var shown: float = totals[collider]

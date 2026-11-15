@@ -115,7 +115,13 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					await get_tree().create_timer(0.1, true, false, true).timeout
 					if not bool(w.call("is_reloading")):
 						break
-			if w != null and bool(w.call("try_fire", Time.get_ticks_msec() / 1000.0)):
+			var fired := false
+			for _f in 20:  # the gun may still be between shots (a reload's end, its fire rate): try for up to a second
+				if w != null and bool(w.call("try_fire", Time.get_ticks_msec() / 1000.0)):
+					fired = true
+					break
+				await get_tree().create_timer(0.05, true, false, true).timeout
+			if fired:
 				player.call("_shoot")
 				_lines.append("FIRE shot (%d left)" % int(w.get("ammo")))
 			else:

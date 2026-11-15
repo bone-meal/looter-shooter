@@ -335,6 +335,43 @@
         "frog_scale": 1.6
       }
     },
+    "swamp_gas": {
+      "name": "Swamp Gas",
+      "body": "shotgun_double",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "short",
+        "muzzle": "choke",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "kindling",
+        "burn_chance",
+        "point_blank"
+      ],
+      "skills": [
+        "plague_cloud",
+        "inferno_ring"
+      ],
+      "traits": [
+        "chain_reaction",
+        "overcharge"
+      ],
+      "flavor": "",
+      "red": "Light it and leave. Don't ask what's in the jar.",
+      "signature": "swamp_gas",
+      "attach": "swamp_jar",
+      "pool": "region_2_boss",
+      "cfg": {
+        "cloud_reach": 5.0,
+        "cloud_radius": 1.8,
+        "cloud_seconds": 9.0,
+        "pop_damage": 2.5,
+        "blast_scale": 1.6,
+        "chain_delay": 0.12,
+        "burn_share": 0.15
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

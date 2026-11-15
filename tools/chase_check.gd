@@ -3,7 +3,9 @@
 # biggest real hit kept on the gun ("record") and on its tag, the boast after a new record. BEACH BALL BOMBARDIER:
 # balls bounce off heads (each bounce hits), a shot pops one, a kick sends it where the kicker looks and makes its pop
 # bigger, they pop on the ground in the end. CROAK: an air jump while the frog is on the gun, every 5th kill it leaps
-# onto the nearest enemy's head and marks it, then hops back when that enemy dies. Log tools/chase_check.log
+# onto the nearest enemy's head and marks it, then hops back when that enemy dies. SWAMP GAS: shots leave clouds; fire
+# near one sets it off and its blast sets off the next (a chain); a burning enemy in a cloud sets it off too. Log
+# tools/chase_check.log
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -13,6 +15,7 @@ const GunDb = preload("res://core/gun_db.gd")
 const Signatures = preload("res://game/signatures/index.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
 const BeachBalls = preload("res://game/beach_balls.gd")
+const SwampGas = preload("res://game/swamp_gas.gd")
 
 
 class Numbers extends Node:
@@ -67,6 +70,38 @@ class Booms extends Node3D:
 		blasts.append([at, radius, damage])
 
 
+class FireSpot extends Node3D:  # a stand-in fire pit for the gas
+	var on := false
+
+	func fire_near(point: Vector3, reach: float) -> bool:
+		return on and point.distance_to(global_position) <= 1.0 + reach
+
+
+class FlashBooms extends Booms:  # blasts that also burn for a moment, like game/explosives.gd's flash
+	var flashes: Array = []
+
+	func blast(at: Vector3, radius: float, damage: float, _flash: bool = true) -> void:
+		blasts.append([at, radius, damage])
+		flashes.append([at, radius, Time.get_ticks_msec() / 1000.0])
+
+	func fire_near(point: Vector3, reach: float) -> bool:
+		for f: Array in flashes:
+			if Time.get_ticks_msec() / 1000.0 - float(f[2]) < 0.35 and point.distance_to(f[0]) <= float(f[1]) + reach:
+				return true
+		return false
+
+
+class BurnMob extends Mob:
+	var burning := false
+	var burned := 0.0
+
+	func is_burning() -> bool:
+		return burning
+
+	func apply_burn(dps: float, _s: float) -> void:
+		burned = dps
+
+
 class Source extends Node:
 	var list: Array = []
 
@@ -88,6 +123,7 @@ func _ready() -> void:
 	_fish_story(db)
 	await _beach_balls(db)
 	await _croak(db)
+	await _swamp_gas(db)
 	_finish()
 
 
@@ -223,6 +259,48 @@ func _croak(db: GunDb) -> void:
 	await get_tree().create_timer(1.2).timeout
 	_say("its enemy dies: the frog hops back on the gun and the air jump returns", int(sig.call("frog_state")) == 0 and int(sig.call("extra_jumps")) == 1 and piece.visible)
 	sig.call("stop")
+
+
+func _swamp_gas(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "swamp_gas", 20)
+	_say("Swamp Gas builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var model := Node3D.new()
+	add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its jar sits on the shotgun with bubbles", piece != null and piece.find_child("Bubbles", true, false) != null)
+	var cfg: Dictionary = db.uniques["swamp_gas"]["cfg"]
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	booms.add_to_group("fire_sources")
+	var gas := SwampGas.new()
+	gas.explosives = booms
+	add_child(gas)
+	await get_tree().process_frame
+	gas.puff(Vector3(3000, 1, 0), cfg, 40.0)
+	gas.puff(Vector3(3003, 1, 0), cfg, 40.0)
+	gas.puff(Vector3(3030, 1, 0), cfg, 40.0)
+	await get_tree().create_timer(0.3).timeout
+	_say("three clouds hang there, nothing goes off without fire", gas.active_count() == 3 and booms.blasts.is_empty())
+	var pit := FireSpot.new()
+	pit.position = Vector3(2999, 0, 0)
+	add_child(pit)
+	pit.add_to_group("fire_sources")
+	pit.on = true
+	await get_tree().create_timer(0.8).timeout
+	pit.on = false
+	_say("fire beside the first cloud sets it off, its blast sets off the second (%d blasts of %.0f), the far one waits" % [booms.blasts.size(), float(booms.blasts[0][2]) if not booms.blasts.is_empty() else 0.0], booms.blasts.size() == 2 and gas.active_count() == 1 and is_equal_approx(float(booms.blasts[0][2]), 100.0))
+	var mob := BurnMob.new()
+	mob.position = Vector3(3030, 0.5, 0)
+	add_child(mob)
+	source.list = [mob]
+	mob.burning = true
+	await get_tree().create_timer(0.5).timeout
+	_say("a burning enemy in the last cloud sets it off, and the blast sets it burning (%.0f a second)" % mob.burned, booms.blasts.size() == 3 and gas.active_count() == 0 and mob.burned > 0.0)
+	pit.remove_from_group("fire_sources")
+	booms.remove_from_group("fire_sources")
 
 
 func _json(name: String) -> Dictionary:

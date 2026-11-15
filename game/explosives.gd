@@ -31,6 +31,7 @@ var _next_flash := 0
 
 
 func _ready() -> void:
+	add_to_group("fire_sources")  # fire_near: a blast's flash sets Swamp Gas off (and so one gas pop sets off the next)
 	_rocket_mesh.size = Vector3(0.14, 0.14, 0.6)
 	_grenade_mesh.radius = 0.12
 	_grenade_mesh.height = 0.24
@@ -196,3 +197,11 @@ func _show_flash(point: Vector3, radius: float) -> void:
 	_flash_age[_next_flash] = 0.0
 	_flash_radius[_next_flash] = radius
 	_next_flash = (_next_flash + 1) % EXPLOSION_POOL
+
+
+# True while a blast's flash is still burning within `reach` of `point` (game/swamp_gas.gd asks).
+func fire_near(point: Vector3, reach: float) -> bool:
+	for i in EXPLOSION_POOL:
+		if _flash_age[i] < FLASH_TIME and _flashes[i].visible and point.distance_to(_flashes[i].position) <= _flash_radius[i] + reach:
+			return true
+	return false
