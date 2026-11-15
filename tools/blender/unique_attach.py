@@ -26,6 +26,11 @@
 # front to show the split skin and a pat of butter.
 # PENGUIN RESCUE: a small penguin perched on the back of the pistol's slide, facing forward; penguin = the same bird
 # about the origin (the freed ones that belly-slide into enemies).
+# BRAIN FREEZE: a slushie cup taped upright against the LEFT of the M60's barrel jacket near the muzzle end, a striped
+# straw leaning back toward the shooter; the blue slush inside is its own node "Slush" (pivot at the cup's floor: the
+# game scales it down as the cup is drunk).
+# AVALANCHE CONTROL: a ski pole strapped along the LEFT of the rocket tube (rubber grip and wrist loop at the back, a
+# basket and steel tip at the front). snowball = the rolling snowball its rockets start (radius 1 about the origin).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -57,6 +62,9 @@ SPECS = {  # name: (kind, colour, seed)
     "onion": ("matte", (0.86, 0.8, 0.62), 71), "char": ("matte", (0.08, 0.06, 0.05), 72), "skewer": ("wood", (0.72, 0.58, 0.38), 73),
     "hotsauce": ("polymer", (0.72, 0.08, 0.05), 74), "saucelabel": ("matte", (0.95, 0.85, 0.45), 75),
     "potatoskin": ("matte", (0.55, 0.38, 0.2), 76), "potatoflesh": ("matte", (0.95, 0.88, 0.62), 77), "butter": ("polymer", (1.0, 0.86, 0.3), 78),
+    "cupwhite": ("polymer", (0.95, 0.95, 0.97), 82), "cupband": ("polymer", (0.15, 0.45, 0.9), 83),
+    "slush": ("matte", (0.3, 0.72, 1.0), 84), "strawred": ("polymer", (0.9, 0.15, 0.2), 85), "snow": ("matte", (0.93, 0.96, 1.0), 86),
+    "alu": ("metal", (0.6, 0.66, 0.74), 87),
     "penguinback": ("polymer", (0.07, 0.08, 0.1), 79), "penguinbelly": ("polymer", (0.94, 0.94, 0.92), 80), "beak": ("polymer", (1.0, 0.55, 0.12), 81),
 }
 
@@ -411,7 +419,53 @@ def penguin(m, M):
     penguin_at(m, M, (0.0, 0.0, 0.0), s=1.0)
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+CUP = (-0.062, -0.034, 0.52)  # the slushie cup's foot (x, y, f) beside the M60's barrel jacket (radius 0.033)
+
+
+def brain_freeze_cup(m, M):
+    cx, cy, cf = CUP
+    m.lathe(M["cupwhite"], [(0.019, 0.0), (0.0205, 0.002), (0.026, 0.072), (0.0275, 0.075), (0.0262, 0.077), (0.0245, 0.074), (0.0185, 0.004), (0.001, 0.004)], (cx, cy, cf), segs=20)
+    m.lathe(M["cupband"], [(0.0236, 0.03), (0.0244, 0.032), (0.0254, 0.05), (0.0246, 0.052)], (cx, cy, cf), segs=20)  # the blue band round it
+    m.node("Slush", (cx, cy + 0.004, cf))
+    m.lathe(M["slush"], [(0.0183, 0.0), (0.0242, 0.069), (0.0225, 0.078), (0.016, 0.086), (0.007, 0.0895), (0.001, 0.09)], (cx, cy + 0.004, cf), node="Slush", segs=18)
+    pts = [(cx + 0.004, cy + 0.04, cf), (cx + 0.006, cy + 0.12, cf - 0.012), (cx + 0.008, cy + 0.14, cf - 0.04)]  # the straw, bent back toward the shooter
+    for (a, b) in zip(pts, pts[1:]):
+        n = 4
+        for k in range(n):
+            p0 = tuple(a[i] + (b[i] - a[i]) * k / n for i in range(3))
+            p1 = tuple(a[i] + (b[i] - a[i]) * (k + 1) / n for i in range(3))
+            m.rod(M["strawred"] if k % 2 == 0 else M["cupwhite"], 0.0032, p0, p1, segs=8)
+    for y, tilt in ((cy + 0.016, 3.0), (cy + 0.056, -4.0)):  # two strips of silver tape round cup and barrel jacket
+        for side in (-1.0, 1.0):
+            m.box(M["tape"], (0.1, 0.012, 0.0012), (-0.02, y, cf + side * 0.0255), tilt=tilt, bevel=0.0004)
+        m.box(M["tape"], (0.0012, 0.012, 0.052), (cx - 0.0262, y, cf), tilt=tilt, bevel=0.0004)
+        m.box(M["tape"], (0.0012, 0.012, 0.052), (0.0345, y, cf), tilt=tilt, bevel=0.0004)
+
+
+POLE_X, POLE_Y = -0.082, 0.032  # the ski pole beside the rocket tube (radius 0.07 at y 0.02)
+
+
+def ski_pole(m, M):
+    m.cyl(M["alu"], 0.006, -0.36, 0.6, POLE_Y, x=POLE_X, segs=10, bevel=0.0)  # shaft
+    m.cyl(M["rubber"], 0.011, -0.46, -0.34, POLE_Y, x=POLE_X, segs=12, bevel=0.003)  # grip
+    m.cyl(M["rubber"], 0.014, -0.47, -0.455, POLE_Y, x=POLE_X, segs=12, bevel=0.002)  # grip cap
+    loop = [(-0.45, 0.0), (-0.43, -0.05), (-0.39, -0.07), (-0.36, -0.045), (-0.355, 0.0)]  # the wrist loop hanging down
+    for (f0, d0), (f1, d1) in zip(loop, loop[1:]):
+        m.rod(M["strap"], 0.0025, (POLE_X - 0.004, POLE_Y + d0, f0), (POLE_X - 0.004, POLE_Y + d1, f1), segs=6)
+    m.lathe(M["rubber"], [(0.0065, -0.0015), (0.032, -0.0015), (0.033, 0.0), (0.032, 0.0015), (0.0065, 0.0015)], (POLE_X, POLE_Y, 0.5), segs=18, axis="f")  # basket
+    m.cyl(M["alu"], 0.006, 0.6, 0.65, POLE_Y, x=POLE_X, segs=10, bevel=0.0, r2=0.0012)  # steel tip
+    for f in (-0.25, 0.32):  # two straps round pole and tube
+        m.cyl(M["strap"], 0.073, f - 0.005, f + 0.005, 0.02, segs=24, bevel=0.0006)
+        m.box(M["strap"], (0.016, 0.012, 0.01), (POLE_X + 0.004, POLE_Y, f), bevel=0.0008)
+
+
+def snowball(m, M):
+    m.ball(M["snow"], 1.0, (0.0, 0.0, 0.0), u=16, v=10)
+    for x, y, f, r in ((0.6, 0.5, 0.3, 0.42), (-0.55, 0.3, -0.5, 0.45), (0.1, -0.6, 0.6, 0.4), (-0.3, 0.7, 0.4, 0.35), (0.5, -0.3, -0.6, 0.38)):
+        m.ball(M["snow"], r, (x, y, f), u=10, v=6)  # lumps of packed snow
+
+
+MODELS = {"brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

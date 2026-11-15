@@ -12,7 +12,10 @@
 # erupts a geyser (blast, burning, fire for Swamp Gas), heat cools off after a pause. HOT POTATO: shots heat the gun
 # (it glows), the reload key throws it only at full heat (a big blast where it lands), it is gone and cannot fire
 # until it comes back; another player's copy shows the glow and the gun gone. PENGUIN RESCUE: a kill frees a penguin
-# that slides into the nearest other enemy and pops there.
+# that slides into the nearest other enemy and pops there. BRAIN FREEZE: each shot drinks the cup down, the 30th gives
+# brain freeze (frosted gun and screen edges, every hit freezes) until a reload refills it; another player's copy shows
+# the level and the frost. AVALANCHE CONTROL: a rocket that hits the ground starts a snowball that rolls on, grows and
+# buries the enemies in its path (freeze + push, once each); one that hits a wall does not.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -155,6 +158,29 @@ class Source extends Node:
 		return list
 
 
+class ReloadGun extends RefCounted:
+	var reloading := false
+
+	func is_reloading() -> bool:
+		return reloading
+
+
+class FreezeHolder extends Node3D:
+	var weapon := ReloadGun.new()
+	var explosives: Node3D
+
+
+class FreezeMob extends Mob:
+	var frozen := 0.0
+	var pushed := Vector3.ZERO
+
+	func apply_freeze(seconds: float) -> void:
+		frozen = seconds
+
+	func push(v: Vector3) -> void:
+		pushed = v
+
+
 class Kicker extends Node3D:
 	func aim_flat() -> Vector3:
 		return Vector3(1, 0, 0)
@@ -175,6 +201,8 @@ func _ready() -> void:
 	await _sauce(db)
 	await _potato(db)
 	await _penguin(db)
+	await _brain_freeze(db)
+	await _avalanche(db)
 	_finish()
 
 
@@ -602,6 +630,106 @@ func _penguin(db: GunDb) -> void:
 			break
 	var at: Vector3 = booms.blasts[0][0] if not booms.blasts.is_empty() else Vector3.INF
 	_say("the kill frees a penguin that slides into the next enemy and pops there (%s)" % str(booms.blasts), booms.blasts.size() == 1 and at.distance_to(next.position) < 1.6 and is_equal_approx(float(booms.blasts[0][2]), 90.0))
+
+
+func _brain_freeze(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "brain_freeze", 40)
+	_say("Brain Freeze builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := FreezeHolder.new()
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var slush := piece.find_child("Slush", true, false) as Node3D if piece != null else null
+	_say("its slushie cup is taped on, slush inside", slush != null)
+	var sig: Node3D = Signatures.make("brain_freeze")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["brain_freeze"])
+	sig.call("start", piece)
+	var mob := FreezeMob.new()
+	add_child(mob)
+	for _n in 29:
+		sig.call("on_fired")
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	_say("29 sips: the cup is nearly empty (%s), no brain freeze, hits do not freeze" % String(sig.call("held_suffix")), String(sig.call("held_suffix")) == "c1" and slush.scale.y < 0.1 and is_zero_approx(mob.frozen))
+	sig.call("on_fired")
+	await get_tree().process_frame
+	var overlay: Variant = (model.find_children("*", "GeometryInstance3D", true, false)[0] as GeometryInstance3D).material_overlay
+	var frost_layer := sig.find_children("*", "CanvasLayer", true, false)
+	_say("the 30th: brain freeze, cup empty, gun frosted, screen frost made, others see \"bf\"", bool(sig.call("frozen")) and not slush.visible and overlay != null and frost_layer.size() == 1 and String(sig.call("held_suffix")) == "bf")
+	sig.call("on_target_hit", mob, Vector3.ZERO, 10.0, false)
+	_say("now every hit freezes for 3 s (%.1f)" % mob.frozen, is_equal_approx(mob.frozen, 3.0))
+	holder.weapon.reloading = true
+	await get_tree().process_frame
+	holder.weapon.reloading = false
+	var overlay2: Variant = (model.find_children("*", "GeometryInstance3D", true, false)[0] as GeometryInstance3D).material_overlay
+	_say("a reload refills the cup and thaws the gun (%s)" % String(sig.call("held_suffix")), not bool(sig.call("frozen")) and String(sig.call("held_suffix")) == "c9" and slush.visible and is_equal_approx(slush.scale.y, 1.0) and overlay2 == null)
+	var copy := Node3D.new()
+	add_child(copy)
+	var copy_piece := UniqueAttach.apply_id(copy, "brain_freeze")
+	UniqueAttach.show_extra(copy_piece, "brain_freeze", "c4")
+	var half := (copy_piece.find_child("Slush", true, false) as Node3D).scale.y
+	UniqueAttach.show_extra(copy_piece, "brain_freeze", "bf")
+	var copy_frost: Variant = (copy.find_children("*", "GeometryInstance3D", true, false)[0] as GeometryInstance3D).material_overlay
+	_say("another player's copy: half a cup at c4 (%.2f), empty and frosted at bf" % half, absf(half - 4.0 / 9.0) < 0.01 and not (copy_piece.find_child("Slush", true, false) as Node3D).visible and copy_frost != null)
+	sig.call("stop")
+
+
+func _avalanche(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "avalanche_control", 40)
+	_say("Avalanche Control builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var model := Node3D.new()
+	add_child(model)
+	_say("its ski pole is strapped on, the snowball model loads", UniqueAttach.apply(model, gun, db) != null and ResourceLoader.exists("res://assets/models/weapons/uniques/snowball.gltf"))
+	var source := Source.new()
+	add_child(source)
+	var booms: Node3D = (load("res://game/explosives.gd") as GDScript).new()
+	booms.set("source", source)
+	add_child(booms)
+	var holder := FreezeHolder.new()
+	holder.position = Vector3(9000, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(100, 1, 100)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(9000, -0.5, 0)
+	add_child(floor_body)
+	var wall := StaticBody3D.new()
+	var wall_shape := CollisionShape3D.new()
+	var wall_box := BoxShape3D.new()
+	wall_box.size = Vector3(1, 10, 10)
+	wall_shape.shape = wall_box
+	wall.add_child(wall_shape)
+	wall.position = Vector3(9010, 5, -20)
+	add_child(wall)
+	var near := FreezeMob.new()
+	near.position = Vector3(9000, 0, 11)
+	add_child(near)
+	var far := FreezeMob.new()
+	far.position = Vector3(9006, 0, 14)
+	add_child(far)
+	source.list = [near, far]
+	var sig: Node3D = Signatures.make("avalanche_control")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["avalanche_control"])
+	var stats := {"kind": "rocket", "speed": 40.0, "gravity": 0.0, "splash_radius": 2.0, "splash_damage": 200.0}
+	sig.call("fire_projectile", Vector3(9000, 3, 0), Vector3(0, -0.5, 1).normalized(), stats)
+	for _i in 60:
+		await get_tree().create_timer(0.05).timeout
+		if near.frozen > 0.0:
+			break
+	_say("the rocket hits the ground: a snowball starts (%d) and rolls on" % int(sig.get("started")), int(sig.get("started")) == 1 and get_tree().get_nodes_in_group("snowballs").size() == 1)
+	_say("it buries the enemy in its path: hit, frozen 2 s, pushed along its way (%s, %.0f)" % [str(near.pushed), near.got], is_equal_approx(near.frozen, 2.0) and near.pushed.z > 7.0 and is_equal_approx(near.got, 50.0))
+	_say("not the one off its path", is_zero_approx(far.frozen))
+	sig.call("fire_projectile", Vector3(9005, 3, -10), Vector3(1, 0, -2).normalized(), stats)
+	await get_tree().create_timer(0.8).timeout
+	_say("a rocket into a wall starts no snowball", int(sig.get("started")) == 1)
+	await get_tree().create_timer(4.0).timeout
+	_say("the snowball breaks up when its time is out", get_tree().get_nodes_in_group("snowballs").is_empty())
 
 
 func _json(name: String) -> Dictionary:

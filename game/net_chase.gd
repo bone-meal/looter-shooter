@@ -1,4 +1,4 @@
-# Purpose: the chase guns' effects for the other players (director 2026-11-15: "effects should be seen by online
+# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction) (director 2026-11-15: "effects should be seen by online
 # players too"). The holder's machine plays an effect and tells the host; the host passes it to everyone else, who
 # show it. CROAK: where the holder's frog is (leaping, riding an enemy's head) or that it is back on the gun.
 # KEEPER'S LANTERN: a thrown lantern ("bomb": from, velocity) flies and burns on every machine (damage only from the
@@ -11,8 +11,9 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball"]
 const PenguinRescue = preload("res://game/signatures/penguin_rescue.gd")
+const AvalancheControl = preload("res://game/signatures/avalanche_control.gd")
 const HotPotato = preload("res://game/signatures/hot_potato.gd")
 const VolcanoSauce = preload("res://game/signatures/volcano_sauce.gd")
 const Grillmaster = preload("res://game/signatures/grillmaster.gd")
@@ -106,6 +107,10 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vect
 			var me_n: Node3D = net.local_player()
 			if me_n != null:
 				PenguinRescue.release(me_n.get_parent(), me_n.get("explosives"), at, null, b, false, 0.0, {})
+		"snowball":  # another player's Avalanche Control snowball: it rolls the same way here (no damage from ours)
+			var me_s: Node3D = net.local_player()
+			if me_s != null:
+				AvalancheControl.roll(me_s.get_parent(), me_s.get("explosives"), at, Vector3(b.x, 0.0, b.z).normalized(), false, 0.0, cfg_of("avalanche_control"))
 		"potato":  # another player's thrown Hot Potato: it flies and goes off here too (no damage from ours)
 			var me_p: Node3D = net.local_player()
 			if me_p != null:
@@ -176,3 +181,9 @@ func _grill_cfg() -> Dictionary:
 func _sauce_cfg() -> Dictionary:
 	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
 	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get("volcano_sauce", {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}
+
+
+# A chase gun's "cfg" from data/gun_uniques.json.
+func cfg_of(unique_id: String) -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
+	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get(unique_id, {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}

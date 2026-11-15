@@ -553,6 +553,79 @@
         "reach": 25.0
       }
     },
+    "brain_freeze": {
+      "name": "Brain Freeze",
+      "body": "m60",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "drum",
+        "sight": "holo",
+        "muzzle": "compensator",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "slow_on_hit",
+        "crowd_pleaser",
+        "steady"
+      ],
+      "skills": [
+        "frost_pulse",
+        "bullet_storm"
+      ],
+      "traits": [
+        "tempest",
+        "pack_hunter"
+      ],
+      "sea": "saltglass",
+      "flavor": "",
+      "red": "Worth it.",
+      "signature": "brain_freeze",
+      "attach": "brain_freeze_cup",
+      "pool": "region_4_boss",
+      "slushie": true,
+      "cfg": {
+        "sips": 30,
+        "freeze_seconds": 3.0
+      }
+    },
+    "avalanche_control": {
+      "name": "Avalanche Control",
+      "body": "rocket_launcher",
+      "maker": "brawn",
+      "parts": {
+        "sight": "acog",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "big_game",
+        "slow_on_hit",
+        "opener"
+      ],
+      "skills": [
+        "frost_pulse",
+        "shockwave_slam"
+      ],
+      "traits": [
+        "overcharge",
+        "chain_reaction"
+      ],
+      "sea": "krakenkissed",
+      "flavor": "",
+      "red": "Control is a strong word.",
+      "signature": "avalanche_control",
+      "attach": "ski_pole",
+      "pool": "region_4_boss",
+      "cfg": {
+        "damage_share": 0.25,
+        "roll_speed": 7.0,
+        "roll_seconds": 4.0,
+        "start_radius": 0.5,
+        "end_radius": 1.6,
+        "freeze_seconds": 2.0,
+        "push": 8.0
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

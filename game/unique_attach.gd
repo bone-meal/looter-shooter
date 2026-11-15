@@ -20,7 +20,7 @@ static func apply(model: Node3D, gun: Dictionary, db: RefCounted) -> Node3D:
 
 
 # The part of another player's held string after "#" (game/player.gd held_id): Fish Story's record, or "out" for a
-# Keeper's Lantern that was thrown.
+# Keeper's Lantern that was thrown, Hot Potato heat, Brain Freeze cup level.
 static func show_extra(piece: Node3D, unique_id: String, extra: String) -> void:
 	var def := _def_of(unique_id)
 	if String(def.get("keeps", "")) == "record":
@@ -34,6 +34,10 @@ static func show_extra(piece: Node3D, unique_id: String, extra: String) -> void:
 		gun_model.visible = extra != "out"
 		if extra.begins_with("h"):
 			(load("res://game/signatures/hot_potato.gd") as GDScript).call("paint", gun_model, float(extra.substr(1).to_int()) / 9.0)
+
+
+	if bool(def.get("slushie", false)):  # Brain Freeze: "c0".."c9" = how full the cup is, "bf" = brain freeze
+		(load("res://game/signatures/brain_freeze.gd") as GDScript).call("show_cup", piece, 0.0 if extra == "bf" else float(extra.substr(1).to_int()) / 9.0, extra == "bf")
 
 
 static func _def_of(unique_id: String) -> Dictionary:

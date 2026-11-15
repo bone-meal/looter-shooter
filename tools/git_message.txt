@@ -1,6 +1,8 @@
-Penguin Rescue chase gun (online)
+Brain Freeze and Avalanche Control: region 4 chase guns, online
 
-Penguin Rescue (region 4 boss pool, pistol): a little penguin rides on the slide. Every kill frees a penguin where the enemy fell; it flops onto its belly, slides along the ground into the nearest other enemy and pops in a small blast (with nobody left it slides on and pops anyway). Others see it slide and pop (no damage from copies). tools/chase_check 57 of 57 on his PC; two-copy run: the guest received the penguin.
+Brain Freeze (machine gun): a slushie cup taped to the M60, every shot a sip. The 30th gives brain freeze: frosted gun and screen edges, every hit freezes 3 s until a reload refills the cup. Others see the cup level and the frost.
+Avalanche Control (rocket launcher): a ski pole on the tube. A rocket that hits the ground starts a rolling snowball that grows and buries enemies in its path (freeze + push). Others see it roll (net_chase snowball).
+explosives.fire takes an optional on_land callback. Chase check 72 ok. Pair sets freeze and avalanche.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

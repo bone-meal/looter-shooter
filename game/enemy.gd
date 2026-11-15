@@ -401,6 +401,8 @@ func apply_burn(dps: float, seconds: float) -> void:
 func apply_freeze(seconds: float) -> void:
 	if puppet:
 		puppet_effect.emit("freeze", 0.0, seconds)
+		_set_tint(Color(0.6, 0.85, 1.0))  # (shown here at once; the host does the freezing)
+		get_tree().create_timer(seconds).timeout.connect(_reset_color)
 		return
 	_freeze_until = maxf(_freeze_until, Time.get_ticks_msec() / 1000.0 + seconds)
 	_guard_until = 0.0  # a stagger knocks its guard down

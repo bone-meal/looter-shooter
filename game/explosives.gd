@@ -21,6 +21,7 @@ var _life := PackedFloat32Array()
 var _gravity := PackedFloat32Array()
 var _radius := PackedFloat32Array()
 var _damage := PackedFloat32Array()
+var _on_land: Array[Callable] = []  # per shot: called with (point, normal, collider) where it lands (Avalanche Control)
 var _rocket_mesh := BoxMesh.new()
 var _grenade_mesh := SphereMesh.new()
 var _flashes: Array[MeshInstance3D] = []
@@ -42,6 +43,7 @@ func _ready() -> void:
 	_gravity.resize(POOL_SIZE)
 	_radius.resize(POOL_SIZE)
 	_damage.resize(POOL_SIZE)
+	_on_land.resize(POOL_SIZE)
 	for i in POOL_SIZE:
 		var m := MeshInstance3D.new()
 		m.material_override = rocket_mat
@@ -71,8 +73,8 @@ func _ready() -> void:
 
 
 # `stats` is the weapon's "projectile" block: kind ("rocket" or "grenade"), speed, gravity, splash_radius, splash_damage.
-# Silently drops the shot when the pool is full.
-func fire(origin: Vector3, direction: Vector3, stats: Dictionary) -> void:
+# Silently drops the shot when the pool is full. `on_land` (optional): told (point, normal, collider) where it hits.
+func fire(origin: Vector3, direction: Vector3, stats: Dictionary, on_land: Callable = Callable()) -> void:
 	for i in POOL_SIZE:
 		if _life[i] <= 0.0:
 			var is_rocket: bool = stats["kind"] == "rocket"
@@ -89,6 +91,7 @@ func fire(origin: Vector3, direction: Vector3, stats: Dictionary) -> void:
 			_radius[i] = float(stats["splash_radius"])
 			_damage[i] = float(stats["splash_damage"])
 			_life[i] = LIFETIME
+			_on_land[i] = on_land
 			return
 
 
@@ -113,7 +116,10 @@ func _physics_process(delta: float) -> void:
 		_query.to = to
 		var hit := space.intersect_ray(_query)
 		if not hit.is_empty():
+			var told := _on_land[i]
 			_explode(i, hit.position)
+			if told.is_valid():
+				told.call(hit.position, hit.normal, hit.collider)
 			continue
 		_meshes[i].position = to
 		_life[i] -= delta

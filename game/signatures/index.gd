@@ -14,6 +14,8 @@ const SCRIPTS := {
 	"volcano_sauce": preload("res://game/signatures/volcano_sauce.gd"),
 	"hot_potato": preload("res://game/signatures/hot_potato.gd"),
 	"penguin_rescue": preload("res://game/signatures/penguin_rescue.gd"),
+	"brain_freeze": preload("res://game/signatures/brain_freeze.gd"),
+	"avalanche_control": preload("res://game/signatures/avalanche_control.gd"),
 }
 
 
