@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), keeps = a number the gun itself remembers (\"record\": Fish Story's biggest hit; the host allows it on that unique only), cfg = numbers its behaviour reads, pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
+  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), keeps = a number the gun itself remembers (\"record\": Fish Story's biggest hit; the host allows it on that unique only), cfg = numbers its behaviour reads, lantern = a Keeper's Lantern gimmick (its flame glows and lights), pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
   "drop_chance": 0.25,
   "bonus": {
     "damage": 0.15,
@@ -370,6 +370,45 @@
         "blast_scale": 1.6,
         "chain_delay": 0.12,
         "burn_share": 0.15
+      }
+    },
+    "keepers_lantern": {
+      "name": "Keeper's Lantern",
+      "body": "pistol_basic",
+      "maker": "lumen",
+      "parts": {
+        "barrel": "short",
+        "mag": "extended",
+        "sight": "peep",
+        "muzzle": "flash_hider"
+      },
+      "buffs": [
+        "kindling",
+        "burn_chance",
+        "pristine"
+      ],
+      "skills": [
+        "inferno_ring",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "pack_hunter",
+        "ricochet"
+      ],
+      "flavor": "",
+      "red": "Somebody has to stay up.",
+      "signature": "keepers_lantern",
+      "attach": "keepers_lantern",
+      "pool": "region_2_boss",
+      "lantern": true,
+      "cfg": {
+        "throw_speed": 14.0,
+        "throw_lift": 3.0,
+        "bomb_damage": 4.0,
+        "fire_radius": 3.0,
+        "fire_seconds": 5.0,
+        "burn_share": 0.12,
+        "relight_seconds": 10.0
       }
     },
     "beach_day": {

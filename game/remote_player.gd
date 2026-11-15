@@ -14,6 +14,7 @@ const KnifeModels = preload("res://game/knife_models.gd")
 const ShieldModel = preload("res://game/shield_model.gd")
 const DataStore = preload("res://core/data_store.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
+const LanternGlow = preload("res://game/lantern_glow.gd")
 const Mixtape = preload("res://game/signatures/mixtape.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
 
@@ -195,8 +196,8 @@ func set_held(shown: String) -> void:
 	if id == _held_shown:
 		return
 	if _held_piece != null and is_instance_valid(_held_piece) and id.get_slice("#", 0) == _held_shown.get_slice("#", 0):
-		_held_shown = id  # same gun, a new record (Fish Story): only the tag changes
-		UniqueAttach.show_record(_held_piece, id.get_slice("#", 1).to_int())
+		_held_shown = id  # same gun, a new record (Fish Story) or its lantern thrown / lit again: only that part changes
+		UniqueAttach.show_extra(_held_piece, id.get_slice("@", 1).get_slice("#", 0), id.get_slice("#", 1))
 		return
 	_held_shown = id
 	_held_id = id.get_slice("@", 0)
@@ -212,8 +213,11 @@ func set_held(shown: String) -> void:
 		_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(_held_id)
 		if id.contains("@") and _held_model != null:
 			_held_piece = UniqueAttach.apply_id(_held_model, id.get_slice("@", 1).get_slice("#", 0))
-			if _held_piece != null and id.contains("#"):
-				UniqueAttach.show_record(_held_piece, id.get_slice("#", 1).to_int())
+			if _held_piece != null:
+				_held_piece.set_meta("lantern_held", true)  # a Keeper's Lantern in his hand lights our world too
+				if _held_piece.is_in_group("lanterns"):
+					LanternGlow.ensure(get_parent())
+				UniqueAttach.show_extra(_held_piece, id.get_slice("@", 1).get_slice("#", 0), id.get_slice("#", 1))
 	_place_held()
 
 

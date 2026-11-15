@@ -5,7 +5,8 @@
 # bigger, they pop on the ground in the end. CROAK: an air jump while the frog is on the gun, every 5th kill it leaps
 # onto the nearest enemy's head and marks it, then hops back when that enemy dies. SWAMP GAS: shots leave clouds; fire
 # near one sets it off and its blast sets off the next (a chain); a burning enemy in a cloud sets it off too. Log
-# tools/chase_check.log
+# tools/chase_check.log. KEEPER'S LANTERN: its light makes near enemies glow and thins the fog near the camera, the
+# inspect key throws it as a firebomb (blast, burning oil that counts as fire), it is lit again after its wait.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -16,6 +17,7 @@ const Signatures = preload("res://game/signatures/index.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
 const BeachBalls = preload("res://game/beach_balls.gd")
 const SwampGas = preload("res://game/swamp_gas.gd")
+const LanternGlow = preload("res://game/lantern_glow.gd")
 
 
 class Numbers extends Node:
@@ -102,6 +104,29 @@ class BurnMob extends Mob:
 		burned = dps
 
 
+class GlowMob extends BurnMob:
+	var glowing := false
+
+	func set_glow(on: bool) -> void:
+		glowing = on
+
+
+class Weather extends Node:
+	var left := 1.0
+
+	func set_clear(v: float) -> void:
+		left = v
+
+
+class Gun extends RefCounted:
+	var damage := 30.0
+
+
+class LanternHolder extends Node3D:
+	var explosives: Node3D
+	var weapon := Gun.new()
+
+
 class Source extends Node:
 	var list: Array = []
 
@@ -124,6 +149,7 @@ func _ready() -> void:
 	await _beach_balls(db)
 	await _croak(db)
 	await _swamp_gas(db)
+	await _lantern(db)
 	_finish()
 
 
@@ -301,6 +327,70 @@ func _swamp_gas(db: GunDb) -> void:
 	_say("a burning enemy in the last cloud sets it off, and the blast sets it burning (%.0f a second)" % mob.burned, booms.blasts.size() == 3 and gas.active_count() == 0 and mob.burned > 0.0)
 	pit.remove_from_group("fire_sources")
 	booms.remove_from_group("fire_sources")
+
+
+func _lantern(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "keepers_lantern", 20)
+	_say("Keeper's Lantern builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var holder := LanternHolder.new()
+	holder.position = Vector3(4000, 0, 0)
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	model.position = Vector3(0, 1.4, 0)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var flame := piece.find_child("Flame", true, false) if piece != null else null
+	_say("its lantern hangs under the barrel with a lit flame and a small light", piece != null and piece.find_child("Swing", true, false) != null and flame != null and not flame.find_children("*", "OmniLight3D", true, false).is_empty() and piece.is_in_group("lanterns"))
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(100, 1, 100)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(4000, -0.5, 0)
+	add_child(floor_body)
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	booms.add_to_group("fire_sources")
+	holder.explosives = booms
+	var near_mob := GlowMob.new()
+	near_mob.position = Vector3(4003, 0, 0)
+	var far_mob := GlowMob.new()
+	far_mob.position = Vector3(4040, 0, 0)
+	add_child(near_mob)
+	add_child(far_mob)
+	source.list = [near_mob, far_mob]
+	var weather := Weather.new()
+	add_child(weather)
+	weather.add_to_group("island_weather")
+	var def: Dictionary = (db.uniques["keepers_lantern"] as Dictionary).duplicate(true)
+	(def["cfg"] as Dictionary)["relight_seconds"] = 1.0
+	var sig: Node3D = Signatures.make("keepers_lantern")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, def)
+	sig.call("start", piece)
+	await get_tree().create_timer(0.5).timeout
+	_say("lit: the near enemy glows (%s), the far one not (%s)" % [str(near_mob.glowing), str(far_mob.glowing)], near_mob.glowing and not far_mob.glowing)
+	booms.blasts.clear()
+	holder.rotation.y = PI * 0.5  # throws toward -x... any way: the floor catches it
+	sig.call("on_inspect")
+	_say("the inspect key throws it: the lantern is gone from the gun, others see \"out\"", String(sig.call("held_suffix")) == "out" and not (piece.find_child("Swing", true, false) as Node3D).visible)
+	var bomb: Node = null
+	for _i in 60:
+		await get_tree().create_timer(0.05).timeout
+		for n: Node in get_tree().get_nodes_in_group("fire_sources"):
+			if n.get_script() != null and String(n.get_script().resource_path).ends_with("firebomb.gd") and float(n.get("_burning")) > 0.0:
+				bomb = n
+		if bomb != null:
+			break
+	_say("it smashes in a blast (%s) and leaves burning oil that counts as fire" % str(booms.blasts), bomb != null and booms.blasts.size() >= 1 and bool(bomb.call("fire_near", (bomb as Node3D).global_position, 0.5)))
+	await get_tree().create_timer(1.3).timeout
+	_say("a new lantern is lit after its wait", String(sig.call("held_suffix")) == "" and (piece.find_child("Swing", true, false) as Node3D).visible)
+	booms.remove_from_group("fire_sources")
+	weather.remove_from_group("island_weather")
 
 
 func _json(name: String) -> Dictionary:

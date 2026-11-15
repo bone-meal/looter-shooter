@@ -50,6 +50,8 @@ var _sun: DirectionalLight3D
 var _photo := false  # the look has the photo sky: the weather tints it; a plain look gets fog over its sky instead
 # The look's own values, remembered each time the look is applied.
 var _base_fog_on := false
+var _clear := 1.0  # share of the weather's fog left (Keeper's Lantern near the camera: less)
+var _weather_density := 0.0  # the weather's own fog last written
 var _base_density := 0.0
 var _base_fog_color := Color.WHITE
 var _base_sky_affect := 0.0
@@ -83,6 +85,7 @@ var _thunder_in := -1.0
 
 
 func setup(config: Dictionary, style: Node, sounds: Node) -> void:
+	add_to_group("island_weather")  # Keeper's Lantern thins the fog round its light (set_clear)
 	rules.setup(config)
 	_style = style
 	_sounds = sounds
@@ -195,7 +198,8 @@ func _apply(last_step: bool) -> void:
 	var cover := float(_shown["sky_cover"])
 	var dim := float(_shown["sun"])
 	_env.fog_enabled = _base_fog_on or density > 0.0
-	_env.fog_density = _base_density + density
+	_env.fog_density = _base_density + density * _clear
+	_weather_density = density
 	_env.fog_light_color = _base_fog_color.lerp(_shown["fog_color"], weight)
 	_env.fog_sky_affect = lerpf(_base_sky_affect, 1.0, cover)
 	_env.fog_aerial_perspective = _base_aerial * (1.0 - cover)  # under cover the fog has its own colour, not the sky's
@@ -253,6 +257,14 @@ func _lightning(delta: float) -> void:
 
 
 # For test scripts: what is on screen now, in one line.
+# Keeper's Lantern (game/lantern_glow.gd): `left` = the share of the weather's fog that stays (1 = all of it).
+func set_clear(left: float) -> void:
+	if is_equal_approx(left, _clear) or _env == null:
+		return
+	_clear = left
+	_env.fog_density = _base_density + _weather_density * _clear
+
+
 func describe() -> String:
 	return "stage %s blend %.2f fog %.4f cover %.2f sun %.2f rain %d of %d bed '%s' fog on %s" % [
 		String(_to["stage"]), _blend, _env.fog_density, float(_shown["sky_cover"]), _sun.light_energy,

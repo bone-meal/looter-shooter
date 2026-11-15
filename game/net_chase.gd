@@ -1,7 +1,8 @@
 # Purpose: the chase guns' effects for the other players (director 2026-11-15: "effects should be seen by online
 # players too"). The holder's machine plays an effect and tells the host; the host passes it to everyone else, who
 # show it. CROAK: where the holder's frog is (leaping, riding an enemy's head) or that it is back on the gun.
-# SWAMP GAS: the holder's clouds (made, gone off); a copy of a cloud near fire on another machine (a teammate's
+# KEEPER'S LANTERN: a thrown lantern ("bomb": from, velocity) flies and burns on every machine (damage only from the
+# thrower's own). SWAMP GAS: the holder's clouds (made, gone off); a copy of a cloud near fire on another machine (a teammate's
 # inferno, his burning enemy) tells the owner, whose cloud goes off for real (his blast, his damage).
 # Node "Chase" under game/net_session.gd (`chase`). (The Mixtape and the beach balls have their own: net_mixtape.gd,
 # net_beachballs.gd.)
@@ -10,7 +11,8 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb"]
+const KeepersLantern = preload("res://game/signatures/keepers_lantern.gd")
 const FAR := 100000.0
 
 var net: Node3D
@@ -33,33 +35,33 @@ func my_id() -> int:
 
 
 # From an effect on this machine. slot = which of our things (a cloud's number), target = whose thing it is (gas_lit).
-func send(kind: String, slot: int, at: Vector3, target: int = 0) -> void:
+func send(kind: String, slot: int, at: Vector3, target: int = 0, b: Vector3 = Vector3.ZERO) -> void:
 	if not active():
 		return
 	sent += 1
 	if net.is_host():
-		_pass_on(my_id(), kind, slot, at, target)
+		_pass_on(my_id(), kind, slot, at, target, b)
 	else:
-		_up.rpc_id(1, kind, slot, at, target)
+		_up.rpc_id(1, kind, slot, at, target, b)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _up(kind: String, slot: int, at: Vector3, target: int) -> void:
+func _up(kind: String, slot: int, at: Vector3, target: int, b: Vector3) -> void:
 	var from := multiplayer.get_remote_sender_id()
 	if not net.is_host() or not net.roster.has(from) or not KINDS.has(kind) or slot < -1 or slot > 64:
 		return
-	if not at.is_finite() or at.length() > FAR:
+	if not at.is_finite() or at.length() > FAR or not b.is_finite() or b.length() > FAR:
 		return
-	_pass_on(from, kind, slot, at, target)
+	_pass_on(from, kind, slot, at, target, b)
 
 
-func _pass_on(from: int, kind: String, slot: int, at: Vector3, target: int) -> void:
-	_down.rpc(from, kind, slot, at, target)
-	_down(from, kind, slot, at, target)
+func _pass_on(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vector3) -> void:
+	_down.rpc(from, kind, slot, at, target, b)
+	_down(from, kind, slot, at, target, b)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _down(from: int, kind: String, slot: int, at: Vector3, target: int) -> void:
+func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vector3) -> void:
 	if from == my_id():
 		return
 	heard += 1
@@ -82,6 +84,10 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int) -> void
 			var gas_p := gas_pool()
 			if gas_p != null:
 				gas_p.remote_pop(from, slot, at)
+		"bomb":  # another player's thrown lantern: it flies and burns here too (no damage from ours)
+			var me: Node3D = net.local_player()
+			if me != null and me.get_parent() != null:
+				KeepersLantern.throw_bomb(me.get_parent(), me.get("explosives"), at, b, false, 0.0, _lantern_cfg(), [])
 		"gas_lit":
 			if target == my_id():
 				var gas_l := gas_pool()
@@ -121,3 +127,8 @@ func gas_pool() -> SwampGas:
 	if found != null and found.explosives == null and me != null:
 		found.explosives = me.get("explosives")
 	return found
+
+
+func _lantern_cfg() -> Dictionary:
+	var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
+	return ((((data as Dictionary).get("uniques", {}) as Dictionary).get("keepers_lantern", {}) as Dictionary).get("cfg", {})) if data is Dictionary else {}

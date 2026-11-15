@@ -19,6 +19,25 @@ static func apply(model: Node3D, gun: Dictionary, db: RefCounted) -> Node3D:
 	return piece
 
 
+# The part of another player's held string after "#" (game/player.gd held_id): Fish Story's record, or "out" for a
+# Keeper's Lantern that was thrown.
+static func show_extra(piece: Node3D, unique_id: String, extra: String) -> void:
+	var def := _def_of(unique_id)
+	if String(def.get("keeps", "")) == "record":
+		show_record(piece, extra.to_int())
+	if bool(def.get("lantern", false)):
+		var swing := piece.find_child("Swing", true, false) as Node3D
+		if swing != null:
+			swing.visible = extra != "out"
+
+
+static func _def_of(unique_id: String) -> Dictionary:
+	if _defs.is_empty():
+		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
+		_defs = (data as Dictionary).get("uniques", {}) if data is Dictionary else {}
+	return _defs.get(unique_id, {})
+
+
 # Fish Story: the biggest hit stamped on the brass tag ("Tag" marker of the gimmick).
 static func show_record(piece: Node3D, best: int) -> void:
 	var tag := piece.find_child("Tag", true, false) as Node3D
@@ -57,15 +76,33 @@ static func _attach(model: Node3D, def: Dictionary) -> Node3D:
 	var piece := (load(path) as PackedScene).instantiate() as Node3D
 	piece.set_meta(META, true)
 	model.add_child(piece)
+	if bool(def.get("lantern", false)):
+		_light_lantern(piece)
 	return piece
+
+
+# Keeper's Lantern: its flame glows and gives a small warm light (no shadows); game/lantern_glow.gd finds it.
+static func _light_lantern(piece: Node3D) -> void:
+	piece.add_to_group("lanterns")
+	var flame := piece.find_child("Flame", true, false) as Node3D
+	if flame == null:
+		return
+	var glow := StandardMaterial3D.new()
+	glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	glow.albedo_color = Color(1.0, 0.75, 0.35)
+	for mesh in flame.find_children("*", "MeshInstance3D", true, false):
+		(mesh as MeshInstance3D).material_override = glow
+	var light := OmniLight3D.new()
+	light.light_color = Color(1.0, 0.7, 0.35)
+	light.omni_range = 7.0
+	light.light_energy = 1.1
+	light.shadow_enabled = false
+	flame.add_child(light)
 
 
 # The same from a unique's id alone (another player's gun: game/remote_player.gd), reading data/gun_uniques.json.
 static func apply_id(model: Node3D, unique_id: String) -> Node3D:
-	if _defs.is_empty():
-		var data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/gun_uniques.json"))
-		_defs = (data as Dictionary).get("uniques", {}) if data is Dictionary else {}
-	var def: Dictionary = _defs.get(unique_id, {})
+	var def := _def_of(unique_id)
 	var piece := _attach(model, def)
 	if piece != null and String(def.get("keeps", "")) == "record":
 		show_record(piece, 0)

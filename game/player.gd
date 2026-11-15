@@ -744,6 +744,8 @@ func held_id() -> String:
 		unique = "@" + String(_held_gun["unique"])
 		if _held_gun.has("record"):
 			unique += "#%d" % int(_held_gun["record"])  # Fish Story's biggest hit: others' copy of the tag shows it too
+		elif _sig_node != null and _sig_node.has_method("held_suffix") and String(_sig_node.call("held_suffix")) != "":
+			unique += "#" + String(_sig_node.call("held_suffix"))  # Keeper's Lantern thrown: "out"
 	return (inventory.holster_body(_hand) + unique if _holding else "") + slung
 
 

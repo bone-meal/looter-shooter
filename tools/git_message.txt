@@ -1,7 +1,6 @@
-UI scales with the window + chase gun effects online
+Keeper's Lantern chase gun (online)
 
-project.godot: base size 1920x1080, stretch canvas_items / expand, so the HUD and menus scale with any window size (at 1920x1080 nothing changes; 3D renders at the window's own resolution).
-game/net_chase.gd: other players see Croak's frog leap onto and ride an enemy's head, and Swamp Gas clouds; a copy of a cloud near fire on another machine (a teammate's inferno, his fire) sets off the owner's cloud. Tested with two copies.
+Keeper's Lantern (region 2 boss pool, pistol): a small tin storm lantern swings under the barrel, its flame glowing with a small warm light. Enemies in its light glow, and the island fog thins near any lit lantern (yours or a teammate's). The inspect key throws it as a firebomb: a blast and 5 s of burning oil that sets enemies on fire and lights Swamp Gas; a new lantern is lit 10 s later. Others see it go out on the gun, the bomb fly and burn (no damage from copies), and the new one lit. tools/chase_check 35 of 35 on his PC; two-copy test passed.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

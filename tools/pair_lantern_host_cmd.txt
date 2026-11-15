@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;/tp island;!wait 3;!immortal;!readyunique keepers_lantern 2;!key weapon_1;!wait 0.5;!key weapon_2;!wait 4;!snap lantern_held;!chase h0;!key inspect;!wait 0.4;!snap lantern_throw;!wait 0.6;!chase h_thrown;!wait 6;!chase h7;!wait 6;!chase h_relit;!wait 12

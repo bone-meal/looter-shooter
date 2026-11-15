@@ -15,6 +15,9 @@
 # SWAMP GAS: a jar of murky swamp water lying along the double shotgun's LEFT side at the fore-end, screw lid toward
 # the muzzle, held by two leather straps round the fore-end; bubbles on the water in the jar's air gap are their own
 # node "Bubbles" (the game jiggles them).
+# KEEPER'S LANTERN: a small tin storm lantern hanging by its bail from a clamp under the pistol's barrel; node "Swing"
+# (pivot at the hook) is swayed by the game, node "Flame" inside the cage gets the game's glow and light.
+# keepers_lantern_free = the same lantern about the origin (thrown as a firebomb).
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -40,6 +43,7 @@ SPECS = {  # name: (kind, colour, seed)
     "frogeye": ("polymer", (0.9, 0.72, 0.18), 60),
     "swampwater": ("matte", (0.27, 0.34, 0.11), 61), "jarglass": ("polymer", (0.72, 0.82, 0.76), 62),
     "strap": ("hide", (0.36, 0.22, 0.12), 63), "lidtin": ("paint", (0.55, 0.45, 0.22), 64),
+    "lanterntin": ("paint", (0.2, 0.24, 0.2), 65), "flame": ("matte", (1.0, 0.7, 0.25), 66),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -258,7 +262,45 @@ def swamp_jar(m, M):
         m.box(M["chrome"], (0.004, 0.012, 0.014), (JAR_X - JAR_R - 0.004, JAR_Y, f), bevel=0.001)  # buckle
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def lantern_at(m, M, hook, node="Swing"):
+    """A storm lantern hanging from `hook` (x, y, f): bail, cap, four posts round the flame, fuel tank. ~9 cm tall."""
+    hx, hy, hf = hook
+    top = hy - 0.028  # the cap's top
+    r = 0.018
+    m.node(node, (hx, hy, hf))
+    # the wire bail from the hook down to both sides of the cap
+    for side in (-1.0, 1.0):
+        m.rod(M["chrome"], 0.0011, (hx, hy - 0.002, hf), (hx + side * 0.016, top - 0.004, hf), segs=5, node=node)
+    m.cylx(M["chrome"], 0.0035, hx - 0.0015, hx + 0.0015, hf, hy - 0.002, segs=10, bevel=0.0, node=node)  # the bail's eye on the hook
+    # cap: a little cone with a vent ring
+    m.lathe(M["lanterntin"], [(r + 0.004, 0.0), (r + 0.003, 0.002), (0.006, 0.012), (0.004, 0.018)], (hx, top - 0.018, hf), node=node, segs=16)
+    m.cyl(M["lanterntin"], 0.0055, hf - 0.003, hf + 0.003, top + 0.002, x=hx, segs=10, bevel=0.0, node=node)
+    # four posts round the flame, a guard ring halfway
+    for k in range(4):
+        a = math.pi / 4 + math.pi / 2 * k
+        x, f = hx + math.cos(a) * r, hf + math.sin(a) * r
+        m.rod(M["lanterntin"], 0.0012, (x, top - 0.018, f), (x, top - 0.06, f), segs=5, node=node)
+    m.lathe(M["lanterntin"], [(r + 0.0005, 0.0), (r + 0.0012, 0.0015)], (hx, top - 0.04, hf), node=node, segs=16)
+    # fuel tank and base
+    m.lathe(M["lanterntin"], [(0.0, 0.0), (r + 0.004, 0.0), (r + 0.005, 0.006), (r + 0.002, 0.014), (0.007, 0.016)], (hx, top - 0.076, hf), node=node, segs=16)
+    m.rod(M["chrome"], 0.0012, (hx, top - 0.06, hf), (hx, top - 0.054, hf), segs=5, node=node)  # wick tube
+    # the flame (the game gives it its glow and light)
+    m.node("Flame", (hx, top - 0.046, hf), parent=node)
+    m.ball(M["flame"], (0.0035, 0.008, 0.0035), (hx, top - 0.046, hf), node="Flame", u=10, v=8)
+
+
+def keepers_lantern(m, M):
+    """Under the pistol's barrel (barrel axis y 0.022, the muzzle at f 0.294): a clamp ring with a hook at f 0.25."""
+    m.cyl(M["chrome"], 0.0145, 0.244, 0.256, 0.022, segs=16, bevel=0.0008)
+    m.rod(M["chrome"], 0.0016, (0.0, 0.008, 0.25), (0.0, -0.004, 0.25), segs=6)
+    lantern_at(m, M, (0.0, -0.004, 0.25))
+
+
+def keepers_lantern_free(m, M):
+    lantern_at(m, M, (0.0, 0.05, 0.0))
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

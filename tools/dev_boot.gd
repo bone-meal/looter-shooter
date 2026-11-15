@@ -184,7 +184,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				for k in (gas.get("_life") as PackedFloat32Array).size():
 					if (gas.get("_life") as PackedFloat32Array)[k] > 0.0:
 						clouds.append("[%d] owner=%d" % [k, (gas.get("_owner") as PackedInt32Array)[k]])
-			_lines.append("CHASE %s @%.1f: %s | clouds %s | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", int(link_c.get("sent")), int(link_c.get("heard"))])
+			var bombs := 0
+			for n: Node in get_tree().get_nodes_in_group("fire_sources"):
+				if n.get_script() != null and String(n.get_script().resource_path).ends_with("firebomb.gd"):
+					bombs += 1
+			var lanterns := 0
+			for n: Node in get_tree().get_nodes_in_group("lanterns"):
+				var sw := (n as Node3D).find_child("Swing", true, false) as Node3D
+				if n.has_meta("lantern_held") and sw != null and sw.visible and (n as Node3D).is_visible_in_tree():
+					lanterns += 1
+			_lines.append("CHASE %s @%.1f: %s | clouds %s | bombs %d, lit lanterns %d | sent %d heard %d" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), ", ".join(frogs) if not frogs.is_empty() else "no frogs", ", ".join(clouds) if not clouds.is_empty() else "none", bombs, lanterns, int(link_c.get("sent")), int(link_c.get("heard"))])
 		"gasfire":  # "!gasfire": a fire for one second at the first copy of somebody else's gas cloud (the copy tells its owner)
 			var gas_f: Node = get_tree().get_first_node_in_group("swamp_gas")
 			var spot := Vector3.INF

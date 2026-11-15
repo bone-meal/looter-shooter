@@ -72,6 +72,8 @@ var _swings: Array[Node3D] = []  # fantasy creatures: legs that swing against ea
 var _flaps: Array[Node3D] = []  # wings (FlapL, FlapR)
 var _pulse: Node3D  # the part of a blob or spirit that breathes
 var _model: Node3D  # a fantasy creature's body (leans when hit, sinks when it dies)
+static var _glow_material: StandardMaterial3D  # Keeper's Lantern glow, shared by every enemy
+var _glowing := false
 var _own: Array[StandardMaterial3D] = []  # a fantasy creature's own materials, one per kind of part
 var _own_base: Array[Color] = []  # their colours before any tint
 var _walk_phase := 0.0
@@ -472,6 +474,20 @@ func _reset_color() -> void:
 
 
 # Colours the whole body: the one shared material of the older models, or each of a fantasy creature's own.
+# Lit by a Keeper's Lantern (game/lantern_glow.gd): a warm glow over the whole body, so it shows in the fog.
+func set_glow(on: bool) -> void:
+	if on == _glowing:
+		return
+	_glowing = on
+	if _glow_material == null:
+		_glow_material = StandardMaterial3D.new()
+		_glow_material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_glow_material.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		_glow_material.albedo_color = Color(0.55, 0.35, 0.12)
+	for mesh in find_children("*", "GeometryInstance3D", true, false):
+		(mesh as GeometryInstance3D).material_overlay = _glow_material if on else null
+
+
 func _set_tint(color: Color) -> void:
 	_material.albedo_color = color
 	for i in _own.size():
