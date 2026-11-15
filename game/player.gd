@@ -89,6 +89,7 @@ var items: ItemDb
 var status: StatusState  # burning / poisoned / chilled timers
 var armor := {}  # totals from core/armor_math.gd, refreshed by refresh_equipment()
 var carried := false  # true while the crow carries the player (movement is driven from outside)
+var at_helm := false  # steering a ship at sea (game/sea_ships.gd): the move keys work the ship, the body stays at the wheel
 var controls_enabled := true  # false while the inventory screen is open
 var damage_numbers: DamageNumbers  # optional; game/damage_numbers.gd
 var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
@@ -527,10 +528,10 @@ func _move_and_shoot(delta: float) -> void:
 		_tick_left = 0.0
 		_tick_from = global_position
 		return
-	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back") if controls_enabled and not downed else Vector2.ZERO
+	var input := Input.get_vector("move_left", "move_right", "move_forward", "move_back") if controls_enabled and not downed and not at_helm else Vector2.ZERO
 	if downed:
 		_jump_until = 0.0
-	elif controls_enabled and Input.is_action_just_pressed("jump"):
+	elif controls_enabled and not at_helm and Input.is_action_just_pressed("jump"):
 		_jump_until = _now() + move.tick + float(_move_cfg["jump_buffer"])
 	_set_crouch(downed or (controls_enabled and Input.is_action_pressed("crouch")), delta)
 	if not emote.is_empty() and (input != Vector2.ZERO or Input.is_action_just_pressed("jump") or Input.is_action_pressed("shoot")):
@@ -729,6 +730,23 @@ func teleport(to: Vector3, yaw: float) -> void:
 	_spawn_position = to
 	_yaw = yaw
 	_head.rotation = Vector3(0.0, yaw, 0.0)
+
+
+# A ship's deck moved under the body (game/sea_ships.gd, before this frame's own movement): the body, the spot the
+# view glides from and the facing move with it, so the place on the deck is kept while the hull rolls and turns.
+func carry(move_by: Transform3D, turn: float) -> void:
+	global_position = move_by * global_position
+	_tick_from = move_by * _tick_from
+	_yaw += turn
+	_head.rotation.y = _yaw
+	velocity = velocity.rotated(Vector3.UP, turn)
+
+
+# Holds the body on a spot (at a ship's wheel).
+func pin(at: Vector3) -> void:
+	global_position = at
+	_tick_from = at
+	velocity = Vector3.ZERO
 
 
 # Turns the view towards a world point (used when you sit down at a casino machine).

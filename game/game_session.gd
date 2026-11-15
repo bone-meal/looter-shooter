@@ -1539,6 +1539,8 @@ func _prompt() -> String:
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
 	if _in_fantasy:
 		return _fantasy.prompt(key)
+	if _in_sea:
+		return _sea.prompt(key)
 	if _reward != null:
 		if not _reward.is_chest_open() and _near(_reward.chest_position(), REWARD_RANGE):
 			return "[%s] Open the chest" % key
@@ -1615,6 +1617,8 @@ func _interact() -> void:
 		_leave_fantasy()
 	elif _in_fantasy:
 		_fantasy.interact()
+	elif _in_sea and _sea.interact():
+		pass
 	elif _near_painting():
 		_open_board()
 	elif _reward != null and not _reward.is_chest_open() and _near(_reward.chest_position(), REWARD_RANGE):
@@ -3808,6 +3812,8 @@ func _enter_sea() -> void:
 		add_child(_sea)
 		_sea.setup(_player, _render_style)
 		_sea.notice.connect(_player_hud.notice)
+	_build_fantasy()  # the skills are shared (Sailing at the helm): the fantasy world keeps them
+	_sea.set("skills", _fantasy)
 	_in_sea = true
 	_rest_worlds()
 	_player.teleport(_sea.spawn_world(), 0.0)
@@ -3916,6 +3922,7 @@ func _rest_worlds() -> void:
 		part.process_mode = Node.PROCESS_MODE_INHERIT if gun_side else Node.PROCESS_MODE_DISABLED
 	if _fantasy != null:
 		_fantasy.process_mode = Node.PROCESS_MODE_INHERIT if aurelind else Node.PROCESS_MODE_DISABLED
+		_fantasy.visible = aurelind  # asleep = not drawn either (built for its skills at sea, it drew ~160k triangles there)
 	if _sea != null:
 		_sea.process_mode = Node.PROCESS_MODE_INHERIT if _in_sea else Node.PROCESS_MODE_DISABLED
 	var at_club := _player.global_position.distance_to(ClubIsland.CENTER) < CLUB_NEAR

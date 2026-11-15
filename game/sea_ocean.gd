@@ -183,6 +183,11 @@ func _ring(inner: float, outer: float, sides: int) -> ArrayMesh:
 	return st.commit()
 
 
+# Are the waves drawn moving (Medium and up)? Ships ride only a small bob on the flat tiers.
+func is_moving() -> bool:
+	return _moving
+
+
 # Each frame: follow the camera, push the clock, the swell and the colours.
 func follow(camera_at: Vector3, sea_offset: Vector2, seconds: float, region: Dictionary) -> void:
 	var snap := Vector3(snappedf(camera_at.x, _step), 0.0, snappedf(camera_at.z, _step))

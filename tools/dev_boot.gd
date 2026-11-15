@@ -66,7 +66,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !sea time|weather|go|status (sea world), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !sea time|weather|go|status (sea world), !ship status|board|helm|letgo|anchor up|down|stage n|rudder r|off|wind deg|head deg (sea ships), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -458,6 +458,35 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), 25.0, float(words[3]))), 0.0)
 			else:
 				_lines.append(String(sea_world.call("status")))
+		"ship":  # sea ships (step 5a): !ship status | board | helm | letgo | anchor up|down | stage <n> | rudder <-1..1|off> | wind <degrees off> | head <compass degrees>
+			var sea_now: Node = session.call("sea")
+			var fleet: Node = sea_now.get("ships") if sea_now != null else null
+			if fleet == null or (fleet.get("ships") as Array).is_empty():
+				_lines.append("ship: no sea / no ships (use /tp sea first)")
+			else:
+				var first: Node = (fleet.get("ships") as Array)[0]
+				var arg := words[2] if words.size() > 2 else ""
+				match words[1] if words.size() > 1 else "status":
+					"board":
+						player.call("teleport", first.call("deck_spot", [0.0, 1.5], 0.3), 0.0)
+					"helm":
+						player.call("teleport", first.call("deck_spot", [0.0, 1.5], 0.3), 0.0)
+						fleet.call("take_helm", first)
+					"letgo":
+						fleet.call("let_go")
+					"anchor":
+						if bool(first.get("state")["anchored"]) != (arg == "down"):
+							fleet.call("toggle_anchor", first)
+					"stage":
+						first.get("state")["stage"] = int(arg)
+					"rudder":
+						fleet.set("dev_rudder", NAN if arg == "off" else float(arg))
+					"wind":
+						fleet.call("dev_face_wind", first, float(arg))
+					"head":  # compass heading: 0 north, 90 east
+						first.get("state")["yaw"] = -deg_to_rad(float(arg))
+					_:
+						_lines.append(String(fleet.call("status")))
 		"nearclimb":  # fantasy world: stand at the foot of the nearest cliff shortcut (searches the cells round the player)
 			var land: Node = session.call("fantasy")
 			var here: Vector3 = land.call("player_local")

@@ -1,1 +1,1 @@
-!wait 3;/tp sea;!wait 6;!sea time 0.5;!sea go -100 1600;!sea weather storm;!wait 25;!sea status;!snap sea_storm;!sea weather rain;!wait 20;!snap sea_rain
+!wait 3;/tp sea;!wait 6;!sea time 0.42;!wait 2;!ship helm;!ship anchor up;!ship head 100;!ship stage 4;!wait 25;!ship status;!snap ship_helm;!above ship_sail 22 200;!ship rudder 1;!wait 5;!ship rudder off;!ship status;!sea weather storm;!wait 20;!ship status;!third;!wait 2;!snap ship_storm;!above ship_storm_air 18 120;!sea status

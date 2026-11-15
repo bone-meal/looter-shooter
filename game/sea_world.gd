@@ -14,6 +14,7 @@ const SeaOcean = preload("res://game/sea_ocean.gd")
 const SeaIslands = preload("res://game/sea_islands.gd")
 const SeaLook = preload("res://game/sea_look.gd")
 const SeaRain = preload("res://game/sea_rain.gd")
+const SeaShips = preload("res://game/sea_ships.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -27,6 +28,8 @@ var look := SeaLook.new()
 var ocean := SeaOcean.new()
 var islands := SeaIslands.new()
 var rain := SeaRain.new()
+var ships := SeaShips.new()  # the world fleet (sea step 5a)
+var skills: Node = null  # the shared skills (game/fantasy_world.gd: Sailing level, perks, xp), set by the session
 var inside := false
 var weather := {}  # the weather where the player is (core/sea/sea_weather.gd at())
 var region_id := ""
@@ -65,6 +68,8 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	_floor.add_child(shape)
 	add_child(_floor)
 	_floor.position = Vector3(_anchor.x, WATER_FLOOR, _anchor.z)
+	_root.add_child(ships)
+	ships.setup(self, _player, _floor.get_rid())
 	_clock_start = Time.get_ticks_msec() / 1000.0
 
 
@@ -105,6 +110,7 @@ func spawn_world() -> Vector3:
 
 func enter(graphics: String) -> void:
 	inside = true
+	_player.platform_floor_layers = 0  # decks carry the body themselves (game/sea_ships.gd): no engine platform push on top
 	visible = true
 	ocean.set_detail(graphics, world["waves"])
 	rain.set_tier(graphics)
@@ -115,6 +121,8 @@ func enter(graphics: String) -> void:
 
 func leave() -> void:
 	inside = false
+	ships.let_go()
+	_player.platform_floor_layers = 0xFFFFFFFF
 	visible = false
 
 
@@ -182,3 +190,13 @@ func status() -> String:
 	var part := look.clock.day_part(seconds())
 	return "sea %s at (%.0f, %.0f) day %.2f %s wind %.2f to %.0f deg swell %.1f m, islands %s, shift %s" % [region_id, here.x, here.z, part,
 		String(weather.get("kind", "?")), float(weather.get("wind", 0.0)), fposmod(rad_to_deg(float(weather.get("wind_dir", 0.0))), 360.0), ocean.swell, str(islands.shown_count()), str(_shift)]
+
+
+# --- the interact key at sea (ships for now) ---
+
+func prompt(key: String) -> String:
+	return ships.prompt(key)
+
+
+func interact() -> bool:
+	return ships.interact()

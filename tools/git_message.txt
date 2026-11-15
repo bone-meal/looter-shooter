@@ -1,10 +1,11 @@
-Sea step 4: sea world core (open grid, floating origin, waves, day, weather)
+Sea step 5a: ship core (ship-local decks, helm, Valheim wind, anchor, sloop)
 
-- core/sea: sea_map (3 x 3 grid of 2 km regions), sea_waves (3 sines shared with the shader), sea_clock (30 min day), sea_weather (calm, rain, fog, storm per region from the shared clock)
-- game/sea_world: floating origin, region notices, weather, swell, wading floor until swimming
-- game/sea_ocean: camera-following wave mesh on Medium and up, flat on Potato and Low, far ring, depth and crest foam, storm gloom
-- game/sea_islands, sea_look, sea_rain; 4 test islands from tools/blender/sea_islands.py
-- /tp sea, dev !sea time|weather|go|status, tools/sea_core_check (24 checks)
+- data/sea/ships.json + core/sea/ship_rules.gd: sail stages and oars, wind share by heading, turning, lean, deck outline, helmsman Sailing level gate
+- game/sea_ship.gd: solid hull, bulwarks and mast from the data, rides the waves, sail / yard / pennant / wheel / anchor / oars animated
+- game/sea_ships.gd: world fleet stepped before the player, player.carry keeps his place on the moving deck, helm and anchor, aground probe, Sailing xp and perks
+- game/ship_helm_panel.gd: helm UI (compass with wind, sail stages, point of sail, speed, rudder)
+- tools/blender/sea_ships.py: the sloop model; tools/ship_check (22 checks); dev !ship
+- the fantasy world is hidden while asleep (it drew about 160k triangles at sea)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
