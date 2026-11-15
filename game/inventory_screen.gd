@@ -1,7 +1,7 @@
 # Purpose: the inventory screen, laid out like a looter shooter's (director's choice 2026-11-14, diary/DECISIONS_SEA.md):
 # full screen; a header with the tabs Guns / Gear / Items / All and a sort button; LEFT the character (3D portrait) with
 # the 18 gear slots round it (at the bank: the bank's slots instead, core/bank_state.gd); MIDDLE the READY guns as big
-# gun cards with the knife, and the BACKPACK (36 slots, filtered and sorted by the tabs); RIGHT the chosen item's card
+# gun cards with the knife, and the BACKPACK (36 slots, up to 48 with crafted bags: 4 rows, more columns; filtered and sorted by the tabs); RIGHT the chosen item's card
 # DOCKED (game/inventory_card.gd) with Equip / Wear / Unequip / Drop buttons; a bottom bar with chips, points and keys.
 # Click to pick up / place / swap / wear, right click for half or one; the drop key (or carrying a gun out of the window
 # and clicking) lays a rolled gun on the ground (signal `dropped`); holding Shift shows the gun in hand on the card.
@@ -34,7 +34,7 @@ const BANK_BUTTON := 900  # the bank's "more slots" button
 const TAB_BASE := 1000  # the header's tabs
 const SORT_BUTTON := 1100
 const CLOSE_BUTTON := 1200
-const COLUMNS := 9
+const ROWS := 4  # the backpack grid is 4 rows; crafted bags add columns (9 for 36 slots ... 12 for 48)
 const GAP := 8.0
 const PAD := 22.0
 const TABS := [["guns", "Guns"], ["gear", "Gear"], ["items", "Items"], ["all", "All"]]
@@ -158,7 +158,7 @@ func _redraw_all() -> void:
 
 
 func _signature() -> int:
-	return [inventory._slots, inventory.holsters, inventory.equipment, inventory.loaded, inventory.cursor, inventory.holster_count, in_hand, chips, points, tab, sort_by, bank != null, bank_price, knife_name, 0 if bank == null else int(bank.call("used"))].hash()
+	return [inventory._slots, inventory.holsters, inventory.equipment, inventory.loaded, inventory.cursor, inventory.holster_count, inventory.slot_count, in_hand, chips, points, tab, sort_by, bank != null, bank_price, knife_name, 0 if bank == null else int(bank.call("used"))].hash()
 
 
 func _place_portrait() -> void:
@@ -175,10 +175,11 @@ func _now() -> float:
 # ---------------------------------------------------------------- layout (all from the window's size)
 
 # The layout is worked out once per window size (and holster count) and kept: the rects below are only read from it.
-var _laid_for := Vector3(-1, -1, -1)
+var _laid_for := Vector4(-1, -1, -1, -1)
 var _frame_r := Rect2()
 var _cols: Array[Rect2] = []
 var _cell_s := 0.0
+var _columns_n := 9  # backpack grid columns (slot_count / ROWS)
 var _equip_s := 0.0
 var _card_w := 0.0
 var _card_h := 0.0
@@ -188,7 +189,7 @@ var _grid_x := 0.0
 
 func _layout() -> void:
 	var view := get_viewport_rect().size
-	var key := Vector3(view.x, view.y, inventory.holster_count)
+	var key := Vector4(view.x, view.y, inventory.holster_count, inventory.slot_count)
 	if key == _laid_for:
 		return
 	_laid_for = key
@@ -202,12 +203,14 @@ func _layout() -> void:
 	var mid_w := f.size.x - left_w - right_w - 28.0
 	_cols = [Rect2(f.position.x, top, left_w, h), Rect2(f.position.x + left_w + 14.0, top, mid_w, h), Rect2(f.end.x - right_w, top, right_w, h)]
 	var mid := _cols[1]
-	_cell_s = clampf((mid.size.x - 2.0 * PAD - GAP * float(COLUMNS - 1)) / float(COLUMNS), 36.0, 84.0)
+	_columns_n = ceili(float(inventory.slot_count) / float(ROWS))
+	var width_cell := clampf((mid.size.x - 2.0 * PAD - GAP * 8.0) / 9.0, 36.0, 84.0)  # the cards keep the 36-slot size
+	_cell_s = clampf((mid.size.x - 2.0 * PAD - GAP * float(_columns_n - 1)) / float(_columns_n), 30.0, 84.0)
 	_equip_s = clampf(minf((_cols[0].size.y - 2.0 * PAD - 40.0) / 9.0 - GAP, _cols[0].size.x * 0.17), 30.0, 62.0)
 	_card_w = (mid.size.x - 2.0 * PAD - GAP) * 0.5
-	_card_h = clampf(_cell_s * 1.35, 70.0, 110.0)
+	_card_h = clampf(width_cell * 1.35, 70.0, 110.0)
 	_bag_y = _holster_rect(inventory.holster_count).end.y + 26.0
-	_grid_x = mid.position.x + PAD + (mid.size.x - 2.0 * PAD - (_cell_s + GAP) * float(COLUMNS) + GAP) * 0.5
+	_grid_x = mid.position.x + PAD + (mid.size.x - 2.0 * PAD - (_cell_s + GAP) * float(_columns_n) + GAP) * 0.5
 
 
 func _frame() -> Rect2:
@@ -268,7 +271,7 @@ func _bag_top() -> float:
 
 func _cell_rect(cell: int) -> Rect2:
 	_layout()
-	return Rect2(_grid_x + float(cell % COLUMNS) * (_cell_s + GAP), _bag_y + 40.0 + float(floori(float(cell) / float(COLUMNS))) * (_cell_s + GAP), _cell_s, _cell_s)
+	return Rect2(_grid_x + float(cell % _columns_n) * (_cell_s + GAP), _bag_y + 40.0 + float(floori(float(cell) / float(_columns_n))) * (_cell_s + GAP), _cell_s, _cell_s)
 
 
 # The rect where a backpack slot is shown now (an empty Rect2 when the tab hides it).
@@ -313,14 +316,14 @@ func _bank_button() -> Rect2:
 # The backpack as shown: the tab's matches in the sort order, then the empty slots (so things can be put down).
 func _make_order() -> void:
 	if tab == "all" and sort_by == "slot":  # the bag as it is
-		if _order.size() != inventory.SIZE or _order[inventory.SIZE - 1] != inventory.SIZE - 1:
+		if _order.size() != inventory.slot_count or _order[inventory.slot_count - 1] != inventory.slot_count - 1:
 			_order.clear()
-			for i in inventory.SIZE:
+			for i in inventory.slot_count:
 				_order.append(i)
 		return
 	var hits: Array[int] = []
 	var empty: Array[int] = []
-	for i in inventory.SIZE:
+	for i in inventory.slot_count:
 		var id: String = inventory.item_id(i)
 		if id == "":
 			empty.append(i)
@@ -332,7 +335,7 @@ func _make_order() -> void:
 	_order.append_array(hits)
 	_order.append_array(empty)
 	if tab == "all":  # every slot keeps a cell; the order only changes with a sort
-		while _order.size() < inventory.SIZE:
+		while _order.size() < inventory.slot_count:
 			_order.append(-1)
 
 
@@ -744,7 +747,7 @@ func _draw_backpack() -> void:
 	for i in inventory.SIZE:
 		if inventory.item_id(i) != "":
 			used += 1
-	UiSkin.header(self, _font, Vector2(mid.position.x + PAD, _bag_top()), mid.size.x - 2.0 * PAD, "BACKPACK", "%d / %d" % [used, inventory.SIZE])
+	UiSkin.header(self, _font, Vector2(mid.position.x + PAD, _bag_top()), mid.size.x - 2.0 * PAD, "BACKPACK", "%d / %d" % [used, inventory.slot_count])
 	var s := _cell()
 	for cell in _order.size():
 		var r := _cell_rect(cell)

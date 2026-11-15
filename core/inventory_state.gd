@@ -1,14 +1,18 @@
-# Purpose: pure inventory: the holsters (the guns carried ready: two, more with a perk or rare armour), a 36-slot
-# backpack of stackable items, a cursor stack for mouse moves, and 18 equipment slots.
+# Purpose: pure inventory: the holsters (the guns carried ready: two, more with a perk or rare armour), a backpack of
+# stackable items (36 slots, 4 more for each bag Crafting makes, up to 48), a cursor stack for mouse moves, and 18
+# equipment slots.
 # A gun arriving goes into a free holster first. A ready gun's rounds are counted here (`loaded`); when it leaves its
 # holster they are handed back through `returned` for whoever keeps the ammo pools (core/ammo_pools.gd).
 # Dependencies: core/item_db.gd. Saved as IDs + counts with a version (to_dict / from_dict). No nodes, no rendering.
 extends RefCounted
 
-const SIZE := 36
+const SIZE := 48  # the most backpack slots there can ever be; slot_count of them are open
+const BASE_SLOTS := 36
+const BAG_SLOTS := 4  # each crafted bag (data/fantasy/gear.json kind backpack) opens this many more
+const MAX_BAGS := 3
 const HOLSTERS := 4  # the most guns that can ever be carried ready
 const FRESH := -1  # `loaded` of a gun that just arrived: its owner fills it from the pool the first time it is held
-const VERSION := 5  # 5 = rolled armour pieces (stacks with "arm", worn ones saved as [id, 1, arm])
+const VERSION := 6  # 5 = rolled armour pieces (stacks with "arm", worn ones saved as [id, 1, arm]); 6 = "bags" (backpack size)
 const GunGen = preload("res://core/gun_gen.gd")
 const ArmourGen = preload("res://core/armour_gen.gd")
 # Order matters: the equipment panel draws these in 3 columns of 6.
@@ -19,6 +23,8 @@ const EQUIP_SLOTS := ["hat", "head", "earrings", "necklace", "glasses", "mouth",
 var equipment := {}  # slot name -> {"id", "count"} (+ "arm" for a rolled piece) or {}
 var cursor := {}  # stack held by the mouse: {} or {"id": String, "count": int}
 var holster_count := 2  # how many holsters are open
+var bags := 0  # bags made by Crafting: the backpack has BASE_SLOTS + BAG_SLOTS x bags open slots
+var slot_count := BASE_SLOTS
 var holsters: Array[Dictionary] = []  # {} or a stack as in a slot: a plain weapon item or a rolled gun
 var loaded: Array[int] = []  # rounds in each ready gun (FRESH = not loaded yet)
 var returned := {}  # gun body -> rounds taken out of guns that left their holster, waiting to go back to the pool
@@ -164,8 +170,26 @@ func has_room() -> bool:
 	return _empty_slot() >= 0
 
 
+# Opens the backpack slots of `count` bags (0..MAX_BAGS). Slots never close while they hold something.
+func set_bags(count: int) -> void:
+	bags = clampi(count, 0, MAX_BAGS)
+	slot_count = BASE_SLOTS + BAG_SLOTS * bags
+	for i in range(slot_count, SIZE):
+		if not _slots[i].is_empty():
+			slot_count = i + 1
+
+
+# How many open backpack slots are empty.
+func free_slots() -> int:
+	var free := 0
+	for i in slot_count:
+		if _slots[i].is_empty():
+			free += 1
+	return free
+
+
 func _empty_slot() -> int:
-	for i in SIZE:
+	for i in slot_count:
 		if _slots[i].is_empty():
 			return i
 	return -1
@@ -178,7 +202,7 @@ func add_gun(gun: Dictionary) -> bool:
 		holsters[holster] = {"id": "gun", "count": 1, "gun": gun}
 		loaded[holster] = FRESH
 		return true
-	for i in SIZE:
+	for i in slot_count:
 		if _slots[i].is_empty():
 			_slots[i] = {"id": "gun", "count": 1, "gun": gun}
 			return true
@@ -223,12 +247,12 @@ func add(id: String, count: int) -> int:
 		holsters[holster] = {"id": id, "count": 1}
 		loaded[holster] = FRESH
 		left -= 1
-	for i in SIZE:
+	for i in slot_count:
 		if left > 0 and item_id(i) == id and item_count(i) < limit:
 			var moved := mini(limit - item_count(i), left)
 			_slots[i]["count"] = item_count(i) + moved
 			left -= moved
-	for i in SIZE:
+	for i in slot_count:
 		if left > 0 and item_id(i) == "":
 			var moved := mini(limit, left)
 			_slots[i] = {"id": id, "count": moved}
@@ -414,7 +438,7 @@ func to_dict() -> Dictionary:
 	var ready: Array = []
 	for i in HOLSTERS:
 		ready.append(_saved_stack(holsters[i]))
-	return {"version": VERSION, "slots": out, "equipment": worn, "holsters": ready, "loaded": loaded.duplicate()}
+	return {"version": VERSION, "slots": out, "equipment": worn, "holsters": ready, "loaded": loaded.duplicate(), "bags": bags}
 
 
 # One stack as it is written into a save, and back ({} for anything that is no known item or valid gun): for other
@@ -439,8 +463,10 @@ func from_dict(data: Dictionary) -> void:
 	returned = {}
 	load_equipment(data.get("equipment", {}))
 	var saved: Array = data.get("slots", [])
-	for i in mini(SIZE, saved.size()):
-		_slots[i] = _loaded_stack(saved[i])
+	for i in SIZE:
+		_slots[i] = _loaded_stack(saved[i]) if i < saved.size() else {}
+	var bag_count: Variant = data.get("bags", 0)
+	set_bags(int(bag_count) if bag_count is int or bag_count is float else 0)
 	var ready: Variant = data.get("holsters")
 	var rounds: Variant = data.get("loaded")
 	for i in HOLSTERS:

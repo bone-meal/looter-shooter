@@ -417,11 +417,7 @@ func _thing_in(slot: int) -> Dictionary:
 
 
 func _free_slots() -> int:
-	var free := 0
-	for slot in InventoryState.SIZE:
-		if _inventory.item_id(slot) == "":
-			free += 1
-	return free
+	return _inventory.free_slots()
 
 
 func _colour_of(thing: Dictionary) -> Color:

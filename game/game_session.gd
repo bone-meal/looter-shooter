@@ -1030,11 +1030,7 @@ func _legal_thing(thing: Dictionary) -> bool:
 
 
 func _free_slots() -> int:
-	var free := 0
-	for slot in InventoryState.SIZE:
-		if _player.inventory.item_id(slot) == "":
-			free += 1
-	return free
+	return _player.inventory.free_slots()
 
 
 # The other player this one is looking at from close by (0 = nobody): hold the interact key on them to ask for a trade.

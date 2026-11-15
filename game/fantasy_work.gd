@@ -207,6 +207,12 @@ func cannot_make(recipe: Dictionary) -> String:
 	for item: String in recipe["out"]:
 		if String(world.bag.def(item).get("kind", "")) == "gunside" and not bool(world.gun_room()):
 			return "Your backpack (gun side) is full."
+		if String(world.bag.def(item).get("kind", "")) == "backpack":  # bags go in order, one of each
+			var size := int(world.bag.def(item)["bag"])
+			if int(world.gun_bags()) >= size:
+				return "Your backpack already has that bag."
+			if int(world.gun_bags()) < size - 1:
+				return "Make the smaller bag first."
 	return ""
 
 

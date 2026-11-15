@@ -340,11 +340,11 @@ name: The Pale Stag
 10: Boots and snares | Make work boots and sturdy snares.
 15: Thrifty Hands | 10% chance to keep the materials.
 20: Gloves and gems | Tan hard leather, cut gems; make gloves and a charm bracelet.
-25: Jewellery | Make gold hoops and an ember ring.
+25: Jewellery and a satchel | Make gold hoops, an ember ring and a satchel (+4 backpack slots).
 30: Diving gear | Make sea boots and a diving helm.
 35: Fine Work | 20% chance a gun-side piece comes out one rarity better.
-40: Brilliants | Cut flawless gems; make a frost amulet.
-45: Masterworks | Make an anchor signet and a storm cloak.
+40: Brilliants and a rucksack | Cut flawless gems; make a frost amulet and a rucksack (+4 backpack slots).
+45: Masterworks and a pack frame | Make an anchor signet, a storm cloak and a pack frame (+4 backpack slots).
 50: Master Crafter | 20% more fine work, 10% chance to keep the materials.
 
 [unlock agility]

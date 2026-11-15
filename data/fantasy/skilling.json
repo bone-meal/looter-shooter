@@ -2175,6 +2175,49 @@
     "flawless_gem": 2
    },
    "lore": "collection_hollow_crown"
+  },
+  {
+   "id": "craft_satchel",
+   "skill": "crafting",
+   "level": 25,
+   "xp": 260,
+   "station": "crafting_table",
+   "in": {
+    "leather": 6,
+    "copper_bar": 2
+   },
+   "out": {
+    "satchel": 1
+   }
+  },
+  {
+   "id": "craft_rucksack",
+   "skill": "crafting",
+   "level": 40,
+   "xp": 520,
+   "station": "crafting_table",
+   "in": {
+    "hard_leather": 6,
+    "iron_bar": 3
+   },
+   "out": {
+    "rucksack": 1
+   }
+  },
+  {
+   "id": "craft_pack_frame",
+   "skill": "crafting",
+   "level": 45,
+   "xp": 700,
+   "station": "crafting_table",
+   "in": {
+    "hard_leather": 4,
+    "stormoak_plank": 4,
+    "skysteel_bar": 1
+   },
+   "out": {
+    "pack_frame": 1
+   }
   }
  ],
  "gather": {
@@ -3167,7 +3210,8 @@
     "kind": "content",
     "ids": [
      "craft_hoops",
-     "craft_ring"
+     "craft_ring",
+     "craft_satchel"
     ]
    },
    {
@@ -3190,7 +3234,8 @@
     "kind": "content",
     "ids": [
      "cut_flawless",
-     "craft_amulet"
+     "craft_amulet",
+     "craft_rucksack"
     ]
    },
    {
@@ -3198,7 +3243,8 @@
     "kind": "content",
     "ids": [
      "craft_signet",
-     "craft_cloak"
+     "craft_cloak",
+     "craft_pack_frame"
     ]
    },
    {

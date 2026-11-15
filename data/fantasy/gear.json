@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches. Sea step 3e: relics (Archaeology) and the collections' trophies (for the home port's trophy hall later).",
+ "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches. Sea step 3e: relics (Archaeology) and the collections' trophies (for the home port's trophy hall later). Kind backpack = a bag for the gun side's backpack: bag n opens its 4 slots (core/inventory_state.gd set_bags), made in order 1, 2, 3.",
  "start": {
   "equip": {
    "staff": "ash_staff",
@@ -1846,6 +1846,36 @@
     0.92,
     0.92,
     0.95
+   ]
+  },
+  "satchel": {
+   "kind": "backpack",
+   "bag": 1,
+   "icon": "bag",
+   "color": [
+    0.6,
+    0.42,
+    0.26
+   ]
+  },
+  "rucksack": {
+   "kind": "backpack",
+   "bag": 2,
+   "icon": "bag",
+   "color": [
+    0.42,
+    0.32,
+    0.24
+   ]
+  },
+  "pack_frame": {
+   "kind": "backpack",
+   "bag": 3,
+   "icon": "bag",
+   "color": [
+    0.55,
+    0.58,
+    0.66
    ]
   }
  }

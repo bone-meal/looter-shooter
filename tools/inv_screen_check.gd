@@ -50,7 +50,12 @@ func _ready() -> void:
 	_expect(inv.item_id(s._order[0]) == "worm", "items tab: the worms first")
 	s.tab = "all"
 	s._make_order()
-	_expect(s._order.size() == inv.SIZE, "all tab: every slot")
+	_expect(s._order.size() == inv.slot_count, "all tab: every open slot")
+	inv.set_bags(2)  # crafted bags: 8 more slots, 11 columns
+	s._make_order()
+	_expect(inv.slot_count == 44 and s._order.size() == 44, "two bags: 44 slots shown")
+	inv.set_bags(0)
+	s._make_order()
 	var free := inv.free_holster()
 	s._focus = 0
 	_expect(s._actions().size() == 2, "a backpack gun offers Equip and Drop")

@@ -224,3 +224,9 @@ craft_diving_helm: Diving Helm (crafted)
 craft_amulet: Frost Amulet (crafted)
 craft_signet: Anchor Signet (crafted)
 craft_cloak: Storm Cloak (crafted)
+
+[items backpack]
+# WHAT: bags Crafting makes: each opens 4 more slots in the gun side's backpack. Read a line as  id: Name .
+satchel: Satchel
+rucksack: Rucksack
+pack_frame: Pack Frame

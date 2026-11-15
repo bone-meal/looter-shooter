@@ -648,6 +648,14 @@ func give(item: String, count: int = 1) -> void:
 	if String(bag.def(item).get("kind", "")) == "gunside":  # Crafting made a piece for the gun side: into the backpack
 		_make_gun_piece(bag.def(item), count)
 		return
+	if String(bag.def(item).get("kind", "")) == "backpack":  # Crafting made a bag: the gun side's backpack grows
+		var size := int(bag.def(item)["bag"])
+		if int(_player.inventory.bags) < size:
+			_player.inventory.set_bags(size)
+			sound("item")
+			toast.emit("Your backpack holds %d now" % int(_player.inventory.slot_count), Color.WHITE)
+			_after_change()
+		return
 	var staff_before := String(bag.equipped.get("staff", ""))
 	bag.add(item, count)
 	sound("item")
@@ -673,6 +681,11 @@ func _make_gun_piece(def: Dictionary, count: int) -> void:
 		else:
 			notice.emit("Your backpack is full.")
 	_after_change()
+
+
+# The bags the gun side's backpack has (0..3).
+func gun_bags() -> int:
+	return int(_player.inventory.bags)
 
 
 # True while the gun side's backpack can take a crafted piece.
