@@ -30,36 +30,36 @@ func my_id() -> int:
 
 
 # From game/beach_balls.gd: something happened to a ball. owner = whose ball, slot = its number on the owner's machine.
-func send(kind: String, owner: int, slot: int, a: Vector3, b: Vector3) -> void:
+func send(kind: String, holder: int, slot: int, a: Vector3, b: Vector3) -> void:
 	if not active():
 		return
 	sent += 1
 	if net.is_host():
-		_pass_on(my_id(), kind, owner, slot, a, b)
+		_pass_on(my_id(), kind, holder, slot, a, b)
 	else:
-		_up.rpc_id(1, kind, owner, slot, a, b)
+		_up.rpc_id(1, kind, holder, slot, a, b)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _up(kind: String, owner: int, slot: int, a: Vector3, b: Vector3) -> void:
+func _up(kind: String, holder: int, slot: int, a: Vector3, b: Vector3) -> void:
 	var from := multiplayer.get_remote_sender_id()
 	if not net.is_host() or not net.roster.has(from) or not KINDS.has(kind) or slot < 0 or slot >= BeachBalls.POOL_SIZE:
 		return
-	if (kind == "launch" or kind == "move" or kind == "pop") and owner != from:
+	if (kind == "launch" or kind == "move" or kind == "pop") and holder != from:
 		return  # only the owner says where his ball is
 	if not a.is_finite() or not b.is_finite() or a.length() > FAR or b.length() > FAR:
 		return
-	_pass_on(from, kind, owner, slot, a, b)
+	_pass_on(from, kind, holder, slot, a, b)
 
 
 # Host: to everyone else, and to itself.
-func _pass_on(from: int, kind: String, owner: int, slot: int, a: Vector3, b: Vector3) -> void:
-	_down.rpc(from, kind, owner, slot, a, b)
-	_down(from, kind, owner, slot, a, b)
+func _pass_on(from: int, kind: String, holder: int, slot: int, a: Vector3, b: Vector3) -> void:
+	_down.rpc(from, kind, holder, slot, a, b)
+	_down(from, kind, holder, slot, a, b)
 
 
 @rpc("authority", "call_remote", "reliable")
-func _down(from: int, kind: String, owner: int, slot: int, a: Vector3, b: Vector3) -> void:
+func _down(from: int, kind: String, holder: int, slot: int, a: Vector3, b: Vector3) -> void:
 	if from == my_id():
 		return  # our own news, already done here
 	var balls := pool()
@@ -68,16 +68,16 @@ func _down(from: int, kind: String, owner: int, slot: int, a: Vector3, b: Vector
 	heard += 1
 	match kind:
 		"launch":
-			balls.remote_launch(owner, slot, a, b)
+			balls.remote_launch(holder, slot, a, b)
 		"move":
-			balls.remote_move(owner, slot, a, b)
+			balls.remote_move(holder, slot, a, b)
 		"pop":
-			balls.remote_pop(owner, slot, a)
+			balls.remote_pop(holder, slot, a)
 		"kick":
-			if owner == my_id():
+			if holder == my_id():
 				balls.friend_kick(slot, b)
 		"shoot":
-			if owner == my_id():
+			if holder == my_id():
 				balls.friend_shot(slot)
 
 

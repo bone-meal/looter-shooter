@@ -58,14 +58,14 @@ func drop(at: Vector3, heal_share: float, seconds: float) -> int:
 
 
 # Another player's drop, told by the host.
-func remote_drop(owner: int, slot: int, at: Vector3, heal_share: float, seconds: float) -> void:
-	_place(_free_slot(), at, heal_share, seconds, owner, slot)
+func remote_drop(holder: int, slot: int, at: Vector3, heal_share: float, seconds: float) -> void:
+	_place(_free_slot(), at, heal_share, seconds, holder, slot)
 
 
 # The host says this food is gone (eaten by `taker`): it vanishes; if we were the taker we eat.
-func gone(owner: int, slot: int, taker: int) -> void:
+func gone(holder: int, slot: int, taker: int) -> void:
 	for i in POOL_SIZE:
-		if _life[i] > 0.0 and _owner_id(i) == owner and _their_slot[i] == slot:
+		if _life[i] > 0.0 and _owner_id(i) == holder and _their_slot[i] == slot:
 			if taker == _my_id():
 				_eat(i)
 			_life[i] = 0.0
@@ -116,11 +116,11 @@ func _eat(i: int) -> void:
 		(numbers as Node).call("say", _base[i] + Vector3(0, 1.0, 0), "BARBECUE", Color(1.0, 0.7, 0.3))
 
 
-func _place(i: int, at: Vector3, heal_share: float, seconds: float, owner: int, slot: int) -> void:
+func _place(i: int, at: Vector3, heal_share: float, seconds: float, holder: int, slot: int) -> void:
 	_base[i] = at
 	_heal[i] = heal_share
 	_life[i] = seconds
-	_owner[i] = owner
+	_owner[i] = holder
 	_their_slot[i] = slot
 	_asked[i] = 0
 	_food[i].position = at

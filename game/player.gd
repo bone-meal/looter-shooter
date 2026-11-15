@@ -1241,12 +1241,12 @@ func _use_knife() -> void:
 
 func _knife_blow(attack: Dictionary) -> void:
 	var origin := _camera.global_position
-	var basis := _camera.global_transform.basis
+	var turn_basis := _camera.global_transform.basis
 	var off := tan(deg_to_rad(float(KnifeModels.db().view()["aim_spread_deg"])))
 	var space := get_world_3d().direct_space_state
 	var best := {}
 	for ray: Vector2 in [Vector2.ZERO, Vector2(off, 0), Vector2(-off, 0), Vector2(0, off), Vector2(0, -off)]:
-		var dir := (-basis.z + basis.x * ray.x + basis.y * ray.y).normalized()
+		var dir := (-turn_basis.z + turn_basis.x * ray.x + turn_basis.y * ray.y).normalized()
 		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * float(attack["reach_m"]))
 		query.exclude = [get_rid()]
 		var hit := space.intersect_ray(query)

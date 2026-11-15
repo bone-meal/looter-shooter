@@ -604,13 +604,13 @@ func _draw_top() -> void:
 	if chosen.has_area():
 		UiSkin.outline(_top, chosen, UiSkin.ACCENT)
 	var r := _rect_of(_slot_at(_mouse))
-	var round := 8
+	var corner := 8
 	for pill: Rect2 in [_tab_rect(0), _tab_rect(1), _tab_rect(2), _tab_rect(3), _sort_rect(), _close_rect()]:
 		if pill.has_point(_mouse):
 			r = pill
-			round = 18
+			corner = 18
 	if r.has_area():
-		UiSkin.outline(_top, r, Color(1, 1, 1, 0.85), round)
+		UiSkin.outline(_top, r, Color(1, 1, 1, 0.85), corner)
 	_draw_cursor()
 
 

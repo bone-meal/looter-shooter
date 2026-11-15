@@ -1620,8 +1620,8 @@ func _bottle(db: GunDb) -> void:
 	_say("the fourth finishes the verse: the buff", int(sig.get("verses")) == 1 and holder.self_fx.clips == 1)
 
 
-func _json(name: String) -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % name))
+func _json(shot_name: String) -> Dictionary:
+	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % shot_name))
 
 
 func _say(text: String, ok: bool) -> void:

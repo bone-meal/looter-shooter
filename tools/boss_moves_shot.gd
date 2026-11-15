@@ -18,6 +18,7 @@ class Health:
 class Dummy extends Node3D:  # stands in for game/enemy.gd (the boss) and for the player
 	var health := Health.new()
 	var _stats := {}
+	@warning_ignore("unused_private_class_variable")
 	var _size := Vector3(2.4, 4.0, 2.4)
 	var element := "physical"
 	var puppet := false

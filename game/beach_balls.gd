@@ -251,11 +251,11 @@ func _free_slot() -> int:
 # ---- online (game/net_beachballs.gd) ----
 
 # Another player's ball, launched on his machine: a copy flies here.
-func remote_launch(owner: int, slot: int, origin: Vector3, vel: Vector3) -> void:
-	var i := _copy_of(owner, slot)
+func remote_launch(holder: int, slot: int, origin: Vector3, vel: Vector3) -> void:
+	var i := _copy_of(holder, slot)
 	if i < 0:
 		i = _free_slot()
-	_owner[i] = owner
+	_owner[i] = holder
 	_their_slot[i] = slot
 	_balls[i].scale = Vector3.ONE * float(_cfg.get("ball_radius", 0.22))
 	_balls[i].position = origin
@@ -266,10 +266,10 @@ func remote_launch(owner: int, slot: int, origin: Vector3, vel: Vector3) -> void
 
 
 # The owner says his ball is here, going this way now (a head bounce, a kick).
-func remote_move(owner: int, slot: int, pos: Vector3, vel: Vector3) -> void:
-	var i := _copy_of(owner, slot)
+func remote_move(holder: int, slot: int, pos: Vector3, vel: Vector3) -> void:
+	var i := _copy_of(holder, slot)
 	if i < 0:
-		remote_launch(owner, slot, pos, vel)
+		remote_launch(holder, slot, pos, vel)
 		return
 	_balls[i].position = pos
 	_vel[i] = vel
@@ -277,8 +277,8 @@ func remote_move(owner: int, slot: int, pos: Vector3, vel: Vector3) -> void:
 
 
 # The owner's ball popped (his blast did the damage): ours shows the pop.
-func remote_pop(owner: int, slot: int, at: Vector3) -> void:
-	var i := _copy_of(owner, slot)
+func remote_pop(holder: int, slot: int, at: Vector3) -> void:
+	var i := _copy_of(holder, slot)
 	if i >= 0:
 		_hide(i, false)
 	if explosives != null:
@@ -304,9 +304,9 @@ func friend_shot(slot: int) -> void:
 		_pop_ball(slot)
 
 
-func _copy_of(owner: int, slot: int) -> int:
+func _copy_of(holder: int, slot: int) -> int:
 	for i in POOL_SIZE:
-		if _life[i] > 0.0 and _owner[i] == owner and _their_slot[i] == slot:
+		if _life[i] > 0.0 and _owner[i] == holder and _their_slot[i] == slot:
 			return i
 	return -1
 

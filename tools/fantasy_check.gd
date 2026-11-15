@@ -101,7 +101,7 @@ func _ready() -> void:
 					names[String(book.resolve(a + b + c + d)["name"])] = true
 	_lines.append("different spell names from up to 4 elements: %d; secrets: %d" % [names.size(), (spells["secrets"] as Array).size()])
 	# --- quests: play the whole line in order ---
-	var log := QuestLog.new(quests)
+	var out_log := QuestLog.new(quests)
 	var skills := SkillLevels.new(skilling)
 	var total_xp := 0
 	var finished := 0
@@ -109,43 +109,43 @@ func _ready() -> void:
 	while guard < 200:
 		guard += 1
 		var started := false
-		for id in log.ids():
-			if log.can_start(id):
-				log.start(id)
+		for id in out_log.ids():
+			if out_log.can_start(id):
+				out_log.start(id)
 				started = true
-		for id: String in log.active.keys():
+		for id: String in out_log.active.keys():
 			var steps_left := 50
-			while log.active.has(id) and steps_left > 0:
+			while out_log.active.has(id) and steps_left > 0:
 				steps_left -= 1
-				var s := log.step(id)
+				var s := out_log.step(id)
 				var changes: Array = []
 				match String(s["type"]):
-					"have": changes = log.check({String(s["item"]): int(s["count"])}, {})
-					"skill": changes = log.check({}, {String(s["skill"]): int(s["level"])})
+					"have": changes = out_log.check({String(s["item"]): int(s["count"])}, {})
+					"skill": changes = out_log.check({}, {String(s["skill"]): int(s["level"])})
 					"kill":
 						for _n in int(s["count"]):
 							total_xp += int(enemies[String(s["enemy"])]["xp"])
-							changes = log.note({"type": "kill", "enemy": s["enemy"]})
+							changes = out_log.note({"type": "kill", "enemy": s["enemy"]})
 					"cast":
 						for _n in int(s["count"]):
-							changes = log.note({"type": "cast", "sequence": s.get("sequence", ""), "substance": s.get("substance", ""), "secret": s.get("secret", "")})
-					"talk": changes = log.note({"type": "talk", "npc": s["npc"]})
-					"reach": changes = log.note({"type": "reach", "place": s["place"]})
-					"fire": changes = log.note({"type": "fire"})
+							changes = out_log.note({"type": "cast", "sequence": s.get("sequence", ""), "substance": s.get("substance", ""), "secret": s.get("secret", "")})
+					"talk": changes = out_log.note({"type": "talk", "npc": s["npc"]})
+					"reach": changes = out_log.note({"type": "reach", "place": s["place"]})
+					"fire": changes = out_log.note({"type": "fire"})
 				for change: Dictionary in changes:
 					if bool(change["finished"]):
 						finished += 1
 						total_xp += int((change["rewards"] as Dictionary).get("xp", 0))
-						if (change["rewards"] as Dictionary).has("pigment") or int(log.quest(String(change["quest"]))["chapter"]) == 8:
+						if (change["rewards"] as Dictionary).has("pigment") or int(out_log.quest(String(change["quest"]))["chapter"]) == 8:
 							skills.xp["magic"] = total_xp
-							_lines.append("after %s (%s): Magic xp %d = level %d, advised %d, slots from story %d" % [change["quest"], log.quest(String(change["quest"]))["name"], total_xp, skills.level("magic"), int(log.quest(String(change["quest"])).get("level", 0)), log.pigments()])
-		if not started and log.active.is_empty():
+							_lines.append("after %s (%s): Magic xp %d = level %d, advised %d, slots from story %d" % [change["quest"], out_log.quest(String(change["quest"]))["name"], total_xp, skills.level("magic"), int(out_log.quest(String(change["quest"])).get("level", 0)), out_log.pigments()])
+		if not started and out_log.active.is_empty():
 			break
-	_lines.append("quests finished %d of %d; guns unlocked %s; secrets taught %d; chapter now %d" % [finished, log.ids().size(), str(log.guns_unlocked()), log.secrets().size(), log.chapter()])
-	var saved: Variant = JSON.parse_string(JSON.stringify(log.to_dict()))
+	_lines.append("quests finished %d of %d; guns unlocked %s; secrets taught %d; chapter now %d" % [finished, out_log.ids().size(), str(out_log.guns_unlocked()), out_log.secrets().size(), out_log.chapter()])
+	var saved: Variant = JSON.parse_string(JSON.stringify(out_log.to_dict()))
 	var again := QuestLog.new(quests)
 	again.from_dict(saved)
-	_lines.append("quest log survives a save: %s; edited save (last quest only) keeps %d quests" % [str(again.done.size() == log.done.size()), _edited_keeps(quests)])
+	_lines.append("quest log survives a save: %s; edited save (last quest only) keeps %d quests" % [str(again.done.size() == out_log.done.size()), _edited_keeps(quests)])
 	# --- skills and bag ---
 	_lines.append("xp for level 2 / 10 / 25 / 50: %d / %d / %d / %d" % [skills.xp_for(2), skills.xp_for(10), skills.xp_for(25), skills.xp_for(50)])
 	var bag := FantasyBag.new(gear)
@@ -180,9 +180,9 @@ func _ready() -> void:
 
 
 func _edited_keeps(quests: Dictionary) -> int:
-	var log := QuestLog.new(quests)
-	log.from_dict({"done": ["m34"], "active": {}})
-	return log.done.size()
+	var out_log := QuestLog.new(quests)
+	out_log.from_dict({"done": ["m34"], "active": {}})
+	return out_log.done.size()
 
 
 func _secret_sequence(spells: Dictionary, id: String) -> String:

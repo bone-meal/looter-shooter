@@ -105,8 +105,8 @@ func _pools(db: GunDb, rng: RandomNumberGenerator) -> void:
 	_say("an unknown pool drops nothing", LootPool.roll(db, rng, "nope", 10).is_empty())
 
 
-func _json(name: String) -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % name))
+func _json(shot_name: String) -> Dictionary:
+	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % shot_name))
 
 
 func _say(text: String, ok: bool) -> void:

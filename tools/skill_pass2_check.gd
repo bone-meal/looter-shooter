@@ -115,8 +115,8 @@ func _ready() -> void:
 	_next()
 
 
-func _json(name: String) -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % name))
+func _json(shot_name: String) -> Dictionary:
+	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % shot_name))
 
 
 func _entry(id: String) -> Dictionary:

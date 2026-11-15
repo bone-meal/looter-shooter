@@ -302,8 +302,8 @@ func _effects() -> void:
 	_say("Joyburst: kills in a row add fire rate up to 5 (+40 %)", is_equal_approx(fx.rate_mult(joy, t), 1.4) and fx.rate_mult(joy, t + 5.0) == 1.0)
 
 
-func _json(name: String) -> Dictionary:
-	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % name))
+func _json(shot_name: String) -> Dictionary:
+	return JSON.parse_string(FileAccess.get_file_as_string("res://data/%s.json" % shot_name))
 
 
 func _say(text: String, ok: bool) -> void:

@@ -111,11 +111,11 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	if gun.has("family"):
 		var fam: Dictionary = db.family_def(String(gun["family"]))
 		lines.append(["%s  -  %s\n%s" % [String(fam.get("name", "")), String(fam.get("virtue", "")), String(fam.get("role", ""))], TierStyle.family_colour(db, String(gun["family"])), false, ""])
-	for tr: Dictionary in gun.get("traits", []):
-		var tdef: Dictionary = db.trait_def(String(tr["id"]))
+	for tr_roll: Dictionary in gun.get("traits", []):
+		var tdef: Dictionary = db.trait_def(String(tr_roll["id"]))
 		if not tdef.is_empty():
 			var of := String(tdef.get("family", ""))  # a pony-only trait wears its family's colour
-			lines.append(["%s  -  %s" % [tdef["name"], _fill(tdef, float(tr["q"]))], TierStyle.family_colour(db, of) if of != "" else TRAIT_COLOUR, true, ""])
+			lines.append(["%s  -  %s" % [tdef["name"], _fill(tdef, float(tr_roll["q"]))], TierStyle.family_colour(db, of) if of != "" else TRAIT_COLOUR, true, ""])
 	if gun.has("sea"):
 		lines.append([GunStats.sea_text(db, gun), SEA_COLOUR, true, ""])
 	for b: Dictionary in gun["buffs"]:

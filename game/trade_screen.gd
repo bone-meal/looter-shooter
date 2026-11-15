@@ -472,14 +472,14 @@ func _draw_board() -> void:
 			[GET_AT, GET, "YOU GET", bool(_view.get("ready_theirs", false)), false]]:
 		var at: Vector2 = side[0]
 		var col: Color = side[1]
-		var ready: bool = side[3]
+		var ready_now: bool = side[3]
 		var frame := Rect2(at - Vector2(14, 14), tray + Vector2(28, 28))
 		var box := StyleBoxFlat.new()
 		box.set_corner_radius_all(14)
 		box.bg_color = Color(col, 0.07)
-		box.border_color = OK if ready else Color(col, 0.7)
-		box.set_border_width_all(4 if ready else 2)
-		if ready:
+		box.border_color = OK if ready_now else Color(col, 0.7)
+		box.set_border_width_all(4 if ready_now else 2)
+		if ready_now:
 			box.shadow_color = Color(OK, 0.35)
 			box.shadow_size = 12
 		_board.draw_style_box(box, frame)
@@ -488,11 +488,11 @@ func _draw_board() -> void:
 		var pill := Rect2(Vector2(frame.get_center().x - 80, frame.end.y + 10), Vector2(160, 34))
 		var p := StyleBoxFlat.new()
 		p.set_corner_radius_all(17)
-		p.bg_color = Color(OK, 0.25) if ready else Color(1, 1, 1, 0.06)
+		p.bg_color = Color(OK, 0.25) if ready_now else Color(1, 1, 1, 0.06)
 		_board.draw_style_box(p, pill)
-		IconArt.draw(_board, "check" if ready else "clock", Rect2(pill.position + Vector2(10, 4), Vector2(26, 26)), OK if ready else Color(0.7, 0.7, 0.75))
+		IconArt.draw(_board, "check" if ready_now else "clock", Rect2(pill.position + Vector2(10, 4), Vector2(26, 26)), OK if ready_now else Color(0.7, 0.7, 0.75))
 		var who := "YOU" if side[2] == "YOU GIVE" else with.to_upper()
-		_board.draw_string(_font, pill.position + Vector2(44, 24), ("%s: OK" % who) if ready else who, HORIZONTAL_ALIGNMENT_LEFT, 110, 16, OK if ready else Color(1, 1, 1, 0.6))
+		_board.draw_string(_font, pill.position + Vector2(44, 24), ("%s: OK" % who) if ready_now else who, HORIZONTAL_ALIGNMENT_LEFT, 110, 16, OK if ready_now else Color(1, 1, 1, 0.6))
 		if bool(side[4]):  # confirmed: a gold seal on the tray
 			_board.draw_circle(frame.end - Vector2(6, 6), 18, Color(1.0, 0.8, 0.3))
 			IconArt.draw(_board, "star", Rect2(frame.end - Vector2(20, 20), Vector2(28, 28)), Color(0.5, 0.3, 0.0))

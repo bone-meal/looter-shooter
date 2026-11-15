@@ -53,8 +53,8 @@ func _draw() -> void:
 	var bar := Rect2(right - 230.0, bottom + 10.0, 230.0, 12.0)
 	Style.bar(self, bar, float(world.get("mana")) / maxf(float(world.call("max_mana")), 1.0), Color(0.27, 0.48, 0.86))
 	Style.text(self, bar.position + Vector2(0, 28), "Mana  %d / %d" % [int(world.get("mana")), int(world.call("max_mana"))], 13, Style.FADED)
-	var ready := float(world.combat.dodge_ready())  # the thin line over the mana bar: the dodge step coming back
-	draw_rect(Rect2(right - 230.0, bottom + 5.0, 230.0 * ready, 3.0), Style.GOLD_DIM if ready < 1.0 else Style.PARCHMENT)
+	var ready_now := float(world.combat.dodge_ready())  # the thin line over the mana bar: the dodge step coming back
+	draw_rect(Rect2(right - 230.0, bottom + 5.0, 230.0 * ready_now, 3.0), Style.GOLD_DIM if ready_now < 1.0 else Style.PARCHMENT)
 	if not bool(caster.get("channelling")):
 		Style.text(self, Vector2(right - 460.0, bottom - 18.0), "Hold %s: gather a spell   tap: staff strike" % InputSetup.label(settings, "shoot"), 13, Style.FADED, HORIZONTAL_ALIGNMENT_RIGHT, 460.0)
 		Style.text(self, Vector2(right - 460.0, bottom - 2.0), "Hold %s: ward   %s: dodge step" % [InputSetup.label(settings, "aim"), InputSetup.label(settings, "dodge")], 13, Style.FADED, HORIZONTAL_ALIGNMENT_RIGHT, 460.0)

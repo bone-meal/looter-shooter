@@ -92,5 +92,5 @@ func _process(delta: float) -> void:
 		get_tree().quit()
 
 
-func _save(name: String) -> void:
-	get_viewport().get_texture().get_image().save_png(ProjectSettings.globalize_path("res://tools/shots/%s.png" % name))
+func _save(shot_name: String) -> void:
+	get_viewport().get_texture().get_image().save_png(ProjectSettings.globalize_path("res://tools/shots/%s.png" % shot_name))

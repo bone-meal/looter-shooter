@@ -178,19 +178,19 @@ func _bubble(puff_node: Node3D, on: bool) -> void:
 # ---- online (game/net_chase.gd) ----
 
 # Another player's cloud: a copy hangs here (it never blasts by itself).
-func remote_puff(owner: int, slot: int, at: Vector3) -> void:
-	var i := _copy_of(owner, slot)
+func remote_puff(holder: int, slot: int, at: Vector3) -> void:
+	var i := _copy_of(holder, slot)
 	if i < 0:
 		i = _slot_for_new()
-	_owner[i] = owner
+	_owner[i] = holder
 	_their_slot[i] = slot
 	_show(i, at)
 	_life[i] += 1.0  # the owner says when it is gone
 
 
 # The owner's cloud went off (his blast did the damage): ours shows the blast.
-func remote_pop(owner: int, slot: int, at: Vector3) -> void:
-	var i := _copy_of(owner, slot)
+func remote_pop(holder: int, slot: int, at: Vector3) -> void:
+	var i := _copy_of(holder, slot)
 	if i >= 0:
 		_hide(i)
 	if explosives != null:
@@ -205,9 +205,9 @@ func friend_lit(slot: int) -> void:
 		_fuse[slot] = float(_cfg.get("chain_delay", 0.12))
 
 
-func _copy_of(owner: int, slot: int) -> int:
+func _copy_of(holder: int, slot: int) -> int:
 	for i in POOL_SIZE:
-		if _life[i] > 0.0 and _owner[i] == owner and _their_slot[i] == slot:
+		if _life[i] > 0.0 and _owner[i] == holder and _their_slot[i] == slot:
 			return i
 	return -1
 

@@ -107,11 +107,11 @@ func _tell(kind: String, slot: int, at: Vector3) -> void:
 
 
 # An X in the world (ours: owner 0; another player's: his peer id).
-static func place(world: Node, at: Vector3, owner: int, slot_no: int) -> Node3D:
+static func place(world: Node, at: Vector3, holder: int, slot_no: int) -> Node3D:
 	if world == null:
 		return null
 	var x := TreasureX.new()
-	x.owner_id = owner
+	x.owner_id = holder
 	x.slot = slot_no
 	world.add_child(x)
 	x.global_position = at

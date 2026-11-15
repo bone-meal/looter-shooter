@@ -111,18 +111,18 @@ func _tell(kind: String, at: Vector3) -> void:
 static func mark(enemy: Node3D) -> void:
 	if enemy == null or enemy.has_node(MARK):
 		return
-	var sign := Label3D.new()
-	sign.name = MARK
-	sign.text = "WANTED"
-	sign.font_size = 48
-	sign.pixel_size = 0.01
-	sign.outline_size = 12
-	sign.modulate = Color(1.0, 0.25, 0.2)
-	sign.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-	sign.no_depth_test = true
-	sign.fixed_size = false
-	sign.position = Vector3(0, 2.6, 0)
-	enemy.add_child(sign)
+	var poster := Label3D.new()
+	poster.name = MARK
+	poster.text = "WANTED"
+	poster.font_size = 48
+	poster.pixel_size = 0.01
+	poster.outline_size = 12
+	poster.modulate = Color(1.0, 0.25, 0.2)
+	poster.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	poster.no_depth_test = true
+	poster.fixed_size = false
+	poster.position = Vector3(0, 2.6, 0)
+	enemy.add_child(poster)
 
 
 static func unmark(enemy: Node3D) -> void:

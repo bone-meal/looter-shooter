@@ -13,7 +13,7 @@ func _ready() -> void:
 	var db := GunDb.new(DataStore.load_json("res://data/gun_loot.json"), DataStore.load_json("res://data/gun_parts.json"), DataStore.load_json("res://data/manufacturers.json"), DataStore.load_json("res://data/weapons.json"), DataStore.load_json("res://data/skills.json"), DataStore.load_json("res://data/gun_uniques.json"))
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 7
-	var log: PackedStringArray = []
+	var out_log: PackedStringArray = []
 	var counts: Dictionary = {}
 	var bad := 0
 	for _i in 20000:
@@ -22,19 +22,19 @@ func _ready() -> void:
 		if why != "":
 			bad += 1
 			if bad < 5:
-				log.append("INVALID %s: %s" % [JSON.stringify(gun), why])
+				out_log.append("INVALID %s: %s" % [JSON.stringify(gun), why])
 		counts[gun["tier"]] = int(counts.get(gun["tier"], 0)) + 1
-	log.append("20000 guns, invalid: %d" % bad)
+	out_log.append("20000 guns, invalid: %d" % bad)
 	for t: Dictionary in db.tiers:
-		log.append("  %-8s %5d  (%.2f%%)" % [t["id"], int(counts.get(t["id"], 0)), float(counts.get(t["id"], 0)) / 200.0])
+		out_log.append("  %-8s %5d  (%.2f%%)" % [t["id"], int(counts.get(t["id"], 0)), float(counts.get(t["id"], 0)) / 200.0])
 	# luck shifts tiers up
 	var lucky_counts: Dictionary = {}
 	for _i in 20000:
 		var t := GunGen.pick_tier(db, rng, 0.8)
 		lucky_counts[t] = int(lucky_counts.get(t, 0)) + 1
-	log.append("with luck 0.8:")
+	out_log.append("with luck 0.8:")
 	for t: Dictionary in db.tiers:
-		log.append("  %-8s %5d" % [t["id"], int(lucky_counts.get(t["id"], 0))])
+		out_log.append("  %-8s %5d" % [t["id"], int(lucky_counts.get(t["id"], 0))])
 	# tamper tests
 	var g := GunGen.generate(db, rng, 0.0, "ak47", "grey")
 	var tests: Array[String] = []
@@ -77,15 +77,15 @@ func _ready() -> void:
 	tests.append("pony skills %s cd x%s" % [JSON.stringify(pony["skills"]), db.tier("pony")["skill_cd"]])
 	for e: Dictionary in pony["skills"]:
 		tests.append("  %s | cd %.1f s" % [SkillState.describe(db, e), SkillState.cooldown(db, e, "pony")])
-	log.append_array(tests)
+	out_log.append_array(tests)
 	# json round trip stays valid
 	var round_trip: Variant = JSON.parse_string(JSON.stringify(GunGen.generate(db, rng, 0.0, "m16", "rainbow")))
-	log.append("json round trip valid: %s" % (GunGen.validate(db, round_trip as Dictionary) == ""))
+	out_log.append("json round trip valid: %s" % (GunGen.validate(db, round_trip as Dictionary) == ""))
 	# samples
 	for t: Dictionary in db.tiers:
 		var gun := GunGen.generate(db, rng, 0.0, "ak47", String(t["id"]))
 		var s := GunStats.final_stats(db, gun)
-		log.append("%s | dmg %.1f rate %.2f mag %d reload %.2f spread %.4f recoil x%.2f crit %.0f%% buffs %s" % [GunStats.display_name(db, gun), s["damage"], s["fire_rate"], s["mag_size"], s["reload_time"], s["spread"], s["recoil"], float(s["crit_chance"]) * 100.0, JSON.stringify(s["buffs"])])
+		out_log.append("%s | dmg %.1f rate %.2f mag %d reload %.2f spread %.4f recoil x%.2f crit %.0f%% buffs %s" % [GunStats.display_name(db, gun), s["damage"], s["fire_rate"], s["mag_size"], s["reload_time"], s["spread"], s["recoil"], float(s["crit_chance"]) * 100.0, JSON.stringify(s["buffs"])])
 	# hand-made uniques: each must be legal, survive a save, and be refused when edited
 	for id: String in db.uniques:
 		var unique_gun := GunGen.unique(db, id)
@@ -93,11 +93,11 @@ func _ready() -> void:
 		var edited: Dictionary = unique_gun.duplicate(true)
 		(edited["buffs"] as Array)[0]["id"] = "lifesteal" if String((edited["buffs"] as Array)[0]["id"]) != "lifesteal" else "free_shot"
 		var u := GunStats.final_stats(db, unique_gun)
-		log.append("%s | legal %s, after save %s, edited refused %s | dmg %.1f rate %.2f mag %d reload %.2f spread %.4f recoil x%.2f crit %.0f%% combos %d" % [GunStats.display_name(db, unique_gun),
+		out_log.append("%s | legal %s, after save %s, edited refused %s | dmg %.1f rate %.2f mag %d reload %.2f spread %.4f recoil x%.2f crit %.0f%% combos %d" % [GunStats.display_name(db, unique_gun),
 			GunGen.validate(db, unique_gun) == "", GunGen.validate(db, saved as Dictionary) == "", GunGen.validate(db, edited) != "", u["damage"], u["fire_rate"], u["mag_size"], u["reload_time"], u["spread"], u["recoil"], float(u["crit_chance"]) * 100.0, (u["combos"] as Array).size()])
 	var base: Dictionary = db.weapons["ak47"]
-	log.append("base ak47: dmg %s rate %s mag %s reload %s spread %s" % [base["damage"], base["fire_rate"], base["mag_size"], base["reload_time"], base["spread"]])
+	out_log.append("base ak47: dmg %s rate %s mag %s reload %s spread %s" % [base["damage"], base["fire_rate"], base["mag_size"], base["reload_time"], base["spread"]])
 	var f := FileAccess.open("res://tools/gun_gen_check.log", FileAccess.WRITE)
-	f.store_string("\n".join(log))
+	f.store_string("\n".join(out_log))
 	f.close()
 	get_tree().quit()

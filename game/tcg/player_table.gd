@@ -211,9 +211,9 @@ func _on_message(what: String, args: Array) -> void:
 			if int(args[0]) == _at and not _watching:
 				var leaders: Dictionary = _db.get("leaders")
 				var choices: Array = []
-				var ready: Dictionary = collection.call("playable", _db)
-				for slot: int in ready:
-					var d: Dictionary = ready[slot]
+				var ready_now: Dictionary = collection.call("playable", _db)
+				for slot: int in ready_now:
+					var d: Dictionary = ready_now[slot]
 					choices.append({"key": "slot:%d" % slot, "label": String(d["name"]), "leader": d["leader"], "name": d["name"],
 						"sub": (leaders[String(d["leader"])] as Dictionary)["name"]})
 				_screen.open_pick("Pick your deck", "" if not choices.is_empty() else "None of your deck slots is a full, legal deck you own. Build one in the binder (P).", choices)

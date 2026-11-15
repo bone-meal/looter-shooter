@@ -275,9 +275,9 @@ func _draw_perks(view: Vector2, shift: float) -> void:
 
 
 # Text with a dark edge, readable over sand and sky alike.
-func _text(at: Vector2, text: String, align: HorizontalAlignment, width: float, size: int, color: Color) -> void:
-	draw_string_outline(_font, at, text, align, width, size, 4, Color(0, 0, 0, 0.7 * color.a))
-	draw_string(_font, at, text, align, width, size, color)
+func _text(at: Vector2, text: String, align: HorizontalAlignment, width: float, box_size: int, color: Color) -> void:
+	draw_string_outline(_font, at, text, align, width, box_size, 4, Color(0, 0, 0, 0.7 * color.a))
+	draw_string(_font, at, text, align, width, box_size, color)
 
 
 func _draw_flash(view: Vector2) -> void:
@@ -411,18 +411,18 @@ func _draw_skills(x: float, top: float, _tint: Color) -> void:
 		var total: float = maxf(player.skill_cooldown_total(i), 0.01)
 		var look: Array = player.skill_look(i)
 		var colour: Color = look[1]
-		var ready := left <= 0.0
-		UiSkin.panel(self, r, UiSkin.INK, Color(colour, 0.9) if ready else UiSkin.EDGE, 8)
+		var ready_now := left <= 0.0
+		UiSkin.panel(self, r, UiSkin.INK, Color(colour, 0.9) if ready_now else UiSkin.EDGE, 8)
 		var icon := Rect2(r.position + Vector2(5, 4), Vector2(SKILL_H - 8.0, SKILL_H - 8.0))
-		IconArt.draw(self, String(look[0]), icon, colour, 1.0 if ready else 0.35)
-		if not ready:
+		IconArt.draw(self, String(look[0]), icon, colour, 1.0 if ready_now else 0.35)
+		if not ready_now:
 			var shade := icon.size.y * clampf(left / total, 0.0, 1.0)
 			draw_rect(Rect2(icon.position, Vector2(icon.size.x, shade)), Color(0, 0, 0, 0.55))
 			draw_string_outline(_font, Vector2(icon.position.x, icon.get_center().y + 6.0), "%.0f" % ceilf(left), HORIZONTAL_ALIGNMENT_CENTER, icon.size.x, 16, 4, Color(0, 0, 0, 0.9))
 			draw_string(_font, Vector2(icon.position.x, icon.get_center().y + 6.0), "%.0f" % ceilf(left), HORIZONTAL_ALIGNMENT_CENTER, icon.size.x, 16, WHITE)
 		var tx := icon.end.x + 8.0
 		UiSkin.key_cap(self, _font, Vector2(tx, r.position.y + 5.0), InputSetup.label(player.settings, "skill_%d" % (i + 1)))
-		draw_string(_font, Vector2(tx, r.end.y - 7.0), player.skill_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 6.0, 13, WHITE if ready else DIM)
+		draw_string(_font, Vector2(tx, r.end.y - 7.0), player.skill_name(i), HORIZONTAL_ALIGNMENT_LEFT, r.end.x - tx - 6.0, 13, WHITE if ready_now else DIM)
 
 
 # What is carried ready, in the order of its keys: gun 1, gun 2, the knife, then the guns of extra holsters. Each

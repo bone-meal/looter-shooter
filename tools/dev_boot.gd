@@ -1084,10 +1084,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var in_bag := 0
 				for i in 36:
 					in_bag += 0 if String(bag.call("item_id", i)) == "" else 1
-				var ready := PackedStringArray()
+				var ready_now := PackedStringArray()
 				for i in int(bag.get("holster_count")):
-					ready.append(String(bag.call("holster_body", i)) if String(bag.call("holster_body", i)) != "" else "-")
-				_lines.append("PACK %s: %s; holsters [%s], %d stacks in the bag, best round %d, downs %d, game-over screen %s" % [" ".join(words.slice(1)), "none lying" if lying == null else "lying %.0f m away with %d things" % [lying.global_position.distance_to(player.global_position), (lying.get("bundle")["things"] as Array).size()], ", ".join(ready), in_bag, int(session.get("_best_round")), int(session.call("score").get("downs")), "up" if (session.get("_game_over") as Control).visible else "gone"])
+					ready_now.append(String(bag.call("holster_body", i)) if String(bag.call("holster_body", i)) != "" else "-")
+				_lines.append("PACK %s: %s; holsters [%s], %d stacks in the bag, best round %d, downs %d, game-over screen %s" % [" ".join(words.slice(1)), "none lying" if lying == null else "lying %.0f m away with %d things" % [lying.global_position.distance_to(player.global_position), (lying.get("bundle")["things"] as Array).size()], ", ".join(ready_now), in_bag, int(session.get("_best_round")), int(session.call("score").get("downs")), "up" if (session.get("_game_over") as Control).visible else "gone"])
 		"bank":  # "!bank goto" stand at the bank, "!bank click 3" a click on its slot 3, "!bank upgrade" its button, "!bank <note>" what is in it
 			var vault: RefCounted = session.get("_bank")
 			match words[1] if words.size() > 1 else "":
@@ -1113,11 +1113,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"ammo":  # "!ammo <note>": what is in hand, the rounds in it and in its pool, every holster, the knife type
 			var bag: RefCounted = player.get("inventory")
 			var pools: RefCounted = player.get("pools")
-			var ready := PackedStringArray()
+			var ready_now := PackedStringArray()
 			for i in int(bag.get("holster_count")):
 				var body := String(bag.call("holster_body", i))
-				ready.append("%d:%s loaded %d pool %d/%d" % [i + 1, body if body != "" else "-", int((bag.get("loaded") as Array)[i]), int(pools.call("left", body)), int(pools.call("size_of", body))])
-			_lines.append("AMMO %s: in hand %s | %s | knife %s | %d u/s top" % [" ".join(words.slice(1)), String(player.call("held_id")), "; ".join(ready), String(player.get("knife")), roundi(float(player.get("_top_units")))])
+				ready_now.append("%d:%s loaded %d pool %d/%d" % [i + 1, body if body != "" else "-", int((bag.get("loaded") as Array)[i]), int(pools.call("left", body)), int(pools.call("size_of", body))])
+			_lines.append("AMMO %s: in hand %s | %s | knife %s | %d u/s top" % [" ".join(words.slice(1)), String(player.call("held_id")), "; ".join(ready_now), String(player.get("knife")), roundi(float(player.get("_top_units")))])
 		"slot":  # "!slot 2": take the gun of holster n (1-4) in hand; "!slot knife": the knife
 			player.call("select_hand", -1 if words[1] == "knife" else int(words[1]) - 1)
 		"closepanel":

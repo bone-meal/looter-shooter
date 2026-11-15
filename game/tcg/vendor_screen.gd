@@ -130,7 +130,7 @@ func _fit() -> void:
 
 # cfg = data/tcg/packs.json; starters = data/tcg/starters.json "starters"; leaders = id -> {"name"};
 # mats = data/tcg/mats.json (the play mats sold here show under a second tab of the bottom row).
-func setup(cfg: Dictionary, starters: Dictionary, leaders: Dictionary, mats: Dictionary = {}) -> void:
+func setup(cfg: Dictionary, starters: Dictionary, _leaders: Dictionary, mats: Dictionary = {}) -> void:
 	var dim := ColorRect.new()
 	dim.color = Color(0.03, 0.0, 0.03, 0.55)
 	dim.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

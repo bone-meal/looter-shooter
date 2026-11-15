@@ -54,10 +54,10 @@ func _draw() -> void:
 	draw_string(_font, Vector2(x, y), "%d/%d ready" % [int(view.get("ready", 0)), int(view.get("total", 0))], HORIZONTAL_ALIGNMENT_LEFT, -1, 20, GOLD)
 	for peer: int in players:
 		y += 26.0
-		var ready := bool((players[peer] as Dictionary).get("ready", false))
-		_tick(Vector2(x + 8.0, y - 6.0), ready)
-		var name := String(names.call(peer)) if names.is_valid() else "Player"
-		draw_string(_font, Vector2(x + 26.0, y), name, HORIZONTAL_ALIGNMENT_LEFT, 200.0, 18, Color.WHITE if ready else Color(0.75, 0.75, 0.75))
+		var ready_now := bool((players[peer] as Dictionary).get("ready", false))
+		_tick(Vector2(x + 8.0, y - 6.0), ready_now)
+		var who_name := String(names.call(peer)) if names.is_valid() else "Player"
+		draw_string(_font, Vector2(x + 26.0, y), who_name, HORIZONTAL_ALIGNMENT_LEFT, 200.0, 18, Color.WHITE if ready_now else Color(0.75, 0.75, 0.75))
 	_trophy_card()
 	# my ring and prompt, only on the stage
 	var mine := _mine()

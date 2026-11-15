@@ -149,9 +149,9 @@ func _open_pick() -> void:
 				"leader": d["leader"], "name": d["name"], "sub": String(d["style"]).capitalize()})
 		_screen.open_pick("You got me Lobster?  -  pick your starter deck", "It is yours to keep, with %d packs to open." % Collection.START_PACKS, choices)
 		return
-	var ready: Dictionary = collection.call("playable", _db)
-	for slot: int in ready:
-		var d: Dictionary = ready[slot]
+	var ready_now: Dictionary = collection.call("playable", _db)
+	for slot: int in ready_now:
+		var d: Dictionary = ready_now[slot]
 		choices.append({"key": "slot:%d" % slot, "label": "%s  -  %s" % [d["name"], (leaders[String(d["leader"])] as Dictionary)["name"]],
 			"leader": d["leader"], "name": d["name"], "sub": (leaders[String(d["leader"])] as Dictionary)["name"]})
 	_screen.open_pick("You got me Lobster?  -  pick your deck", "" if not choices.is_empty() else "None of your deck slots is a full, legal deck you own. Build one in the binder (P).", choices)

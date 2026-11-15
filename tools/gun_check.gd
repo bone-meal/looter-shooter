@@ -128,9 +128,9 @@ func _ready() -> void:
 	_say("... and a profile without holsters (another game version)", JoinCheck.check({"name": "Tester", "inv": cheat}, items) != "")
 
 	# --- everything carried, taken and given back (the backpack left where you go down) ---
-	var carried_guns := 0
+	var _carried_guns := 0
 	for i in InventoryState.HOLSTERS:
-		carried_guns += 1 if loaded_bag.holster_body(i) != "" else 0
+		_carried_guns += 1 if loaded_bag.holster_body(i) != "" else 0
 	loaded_bag.loaded[0] = 7
 	var bundle: Dictionary = loaded_bag.take_all()
 	var gone := loaded_bag.holster_body(0) == "" and loaded_bag.holster_body(1) == "" and loaded_bag.count_of("worm") == 0 and loaded_bag.gun_at(0).is_empty()

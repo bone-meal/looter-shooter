@@ -59,11 +59,11 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 		var def: Dictionary = gun_db.buff_def(String(b["id"]))
 		var value := lerpf(float(def["min"]), float(def["max"]), float(b["q"]))
 		lines.append(["%s: %s" % [def["name"], String(def["desc"]) % (("%.1f" % value) if value < 10.0 else ("%.0f" % value))], Color(1.0, 0.8, 0.4)])
-	for tr: Dictionary in gun.get("traits", []):  # the big effects, in their own colour (data/gun_traits.json)
-		var tdef: Dictionary = gun_db.trait_def(String(tr["id"]))
+	for tr_roll: Dictionary in gun.get("traits", []):  # the big effects, in their own colour (data/gun_traits.json)
+		var tdef: Dictionary = gun_db.trait_def(String(tr_roll["id"]))
 		if tdef.is_empty():
 			continue
-		var tvalue := lerpf(float(tdef["min"]), float(tdef["max"]), float(tr["q"]))
+		var tvalue := lerpf(float(tdef["min"]), float(tdef["max"]), float(tr_roll["q"]))
 		var pony_trait := String(tdef.get("family", "")) != ""
 		for wrapped in _wrap("%s %s: %s" % ["PONY" if pony_trait else "TRAIT", tdef["name"], String(tdef["desc"]) % (("%.1f" % tvalue) if tvalue < 10.0 else ("%.0f" % tvalue))], 50):
 			lines.append([wrapped, TierStyle.family_colour(gun_db, String(tdef["family"])) if pony_trait else TRAIT_COLOR])

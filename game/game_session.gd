@@ -3013,11 +3013,11 @@ func _box_changed(before: String, took: bool) -> void:
 
 
 # As a client: what the host's box does now.
-func _on_box_state(state: String, spot: int, owner: int, gun: Dictionary, took: bool) -> void:
+func _on_box_state(state: String, spot: int, holder: int, gun: Dictionary, took: bool) -> void:
 	var before := _box.state
 	var offered := _box_gun
 	_box.mirror(state, spot)
-	_box_owner = owner
+	_box_owner = holder
 	if state == "offer" and GunGen.validate(_player.gun_db, gun) == "":
 		_box_gun = gun
 	if took:
@@ -4123,8 +4123,8 @@ func back_to_hub() -> String:
 
 # Inside the hub nothing of the islands, the colosseum or the club can be seen (walls all round), yet they lie within
 # the camera's reach: hide them while we stand in the hub (drawing only; what runs is decided by _rest_worlds).
-func _show_far_world(show: bool) -> void:
-	if show:  # only what we hid comes back (some parts are hidden on purpose)
+func _show_far_world(shown: bool) -> void:
+	if shown:  # only what we hid comes back (some parts are hidden on purpose)
 		for thing: Node3D in _far_hidden:
 			if is_instance_valid(thing):
 				thing.visible = true

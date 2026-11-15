@@ -552,7 +552,6 @@ func _animate(delta: float) -> void:
 
 
 func _attack() -> void:
-	var damage := float(_stats["damage"])
 	if _stats["attack_type"] == "melee":
 		_swing_left = SWING_TIME
 		_windup = float(_stats.get("attack_windup", 0.0))

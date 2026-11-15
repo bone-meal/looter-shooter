@@ -511,9 +511,9 @@ func ask_box(action: int) -> void:
 		_box_ask.rpc_id(1, action)
 
 
-func tell_box(state: String, spot: int, owner: int, gun: Dictionary, took: bool) -> void:
+func tell_box(state: String, spot: int, holder: int, gun: Dictionary, took: bool) -> void:
 	if net.can_send() and net.is_host():
-		_box.rpc(state, spot, owner, gun, took)
+		_box.rpc(state, spot, holder, gun, took)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -525,8 +525,8 @@ func _box_ask(action: int) -> void:
 
 
 @rpc("authority", "call_remote", "reliable")
-func _box(state: String, spot: int, owner: int, gun: Dictionary, took: bool) -> void:
-	box_state.emit(state, spot, owner, gun, took)
+func _box(state: String, spot: int, holder: int, gun: Dictionary, took: bool) -> void:
+	box_state.emit(state, spot, holder, gun, took)
 
 
 func ask_trap(trap: int) -> void:

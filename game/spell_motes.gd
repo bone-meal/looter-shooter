@@ -139,15 +139,15 @@ func _process(delta: float) -> void:
 			pool.pos[i] += v * delta
 			var age := 1.0 - pool.left[i] / pool.life[i]
 			var grow := pool.size[i] * lerpf(1.0, growth, age)
-			var basis := Basis.IDENTITY
+			var turn_basis := Basis.IDENTITY
 			if stretch != 1.0 and shape != "flame" and v.length_squared() > 0.01:
 				var along := v.normalized()
 				var side := along.cross(Vector3.UP)
 				side = side.normalized() if side.length_squared() > 0.001 else Vector3.RIGHT
-				basis = Basis(side, along, side.cross(along))  # the mesh's long axis (y) points where it flies
+				turn_basis = Basis(side, along, side.cross(along))  # the mesh's long axis (y) points where it flies
 			if spin != 0.0:
-				basis = basis * Basis(Vector3(0.6, 0.5, 0.62).normalized(), clock * spin + float(i))
-			multi.set_instance_transform(i, Transform3D(basis.scaled_local(Vector3(grow, grow * stretch, grow)), pool.pos[i]))
+				turn_basis = turn_basis * Basis(Vector3(0.6, 0.5, 0.62).normalized(), clock * spin + float(i))
+			multi.set_instance_transform(i, Transform3D(turn_basis.scaled_local(Vector3(grow, grow * stretch, grow)), pool.pos[i]))
 			var shade := pool.color[i].lerp(pool.tail[i], age * age)
 			if shape == "prism":  # the rainbow turns through every colour
 				shade = Color.from_hsv(fmod(age * 1.5 + float(i) * 0.13, 1.0), 0.75, 1.0, 1.0 - age * age)

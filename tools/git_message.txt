@@ -1,9 +1,6 @@
-Chase guns: joiner kill credit, taunts online, storm charge, modelled effects
+Editor warnings cleared: shadowed names, unused variables; quest writing in exports
 
-Joiners: the host now tells the shooter which enemy his hit killed (net_rounds _credit); player credit_kill runs the on-kill buffs, traits and the chase gun's kill (two-copy test: 4 penguins from a joiner's kills, keys earned).
-Key Ring jingle and Golden Goose honk taunt host-run enemies (enemy.taunt, puppet effect taunt; retargeting no longer overrides it; test: 4 taunts on the host from the joiner).
-Weathervane stores a bolt and Kite Flyer catches one every 8 kills outside storms too.
-Effect models: game/fx_kit.gd + assets/models/fx (flame tongues, gas cloud, vortex, shards, egg shell, painted X, dirt heap) for Swamp Gas, Volcano Sauce, Keeper's Lantern, Flush, Lighthouse, lightning, Split Decision, Golden Goose, Treasure Map, Carbon Copy, Avalanche Control; Brain Freeze frost shader. tools/fx_shot pictures them. Chase check 164 ok.
+Renamed locals and parameters that shadowed Node / Node3D / Control members (owner, ready, basis, show, size, name, hidden, tr) and built-ins (round, sign, log), removed an unused damage local in enemy.gd, prefixed unused parameters, and added data/zombies/writing/*.txt to the three export include filters. chase_check 164/164, trade_check, hub_check and the beach-ball two-copy test pass.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

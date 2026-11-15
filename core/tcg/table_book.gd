@@ -89,7 +89,7 @@ func leave(peer: int, names: Dictionary) -> Array:
 	return out
 
 
-func deck(peer: int, chosen: Dictionary, names: Dictionary) -> Array:
+func deck(peer: int, chosen: Dictionary, _names: Dictionary) -> Array:
 	var i := table_of(peer)
 	if i < 0:
 		return []

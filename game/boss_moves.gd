@@ -133,12 +133,12 @@ func _process(delta: float) -> void:
 			_watched.remove_at(i)
 			continue
 		var wait: PackedFloat32Array = entry["wait"]
-		var ready := -1
+		var ready_now := -1
 		for m in wait.size():
 			wait[m] -= delta
-			if wait[m] <= 0.0 and ready < 0:
-				ready = m
-		if ready >= 0 and not _busy(entry["boss"]) and bodies.is_valid() and float(entry["boss"].get("calm_until")) < now:
+			if wait[m] <= 0.0 and ready_now < 0:
+				ready_now = m
+		if ready_now >= 0 and not _busy(entry["boss"]) and bodies.is_valid() and float(entry["boss"].get("calm_until")) < now:
 			var boss: Node3D = entry["boss"]
 			var all: Array = bodies.call()
 			var target: Node3D = all[0]
@@ -146,13 +146,13 @@ func _process(delta: float) -> void:
 				if body.global_position.distance_to(boss.global_position) < target.global_position.distance_to(boss.global_position):
 					target = body
 			var gap := target.global_position.distance_to(boss.global_position)
-			if gap > minf(reach_m, float(entry["moves"][ready].get("range", reach_m))) or gap < float(entry["moves"][ready].get("min_range", 0.0)):
-				wait[ready] = 1.0 + randf()  # nobody at the right distance: look again shortly
+			if gap > minf(reach_m, float(entry["moves"][ready_now].get("range", reach_m))) or gap < float(entry["moves"][ready_now].get("min_range", 0.0)):
+				wait[ready_now] = 1.0 + randf()  # nobody at the right distance: look again shortly
 			else:
-				wait[ready] = float(entry["moves"][ready]["every"])
+				wait[ready_now] = float(entry["moves"][ready_now]["every"])
 				var roll := randi() & 0xFFFF
-				_begin(boss, entry["moves"][ready], target.global_position, roll, false)
-				started.emit(boss, ready, target.global_position, roll)
+				_begin(boss, entry["moves"][ready_now], target.global_position, roll, false)
+				started.emit(boss, ready_now, target.global_position, roll)
 		entry["wait"] = wait
 	for i in range(_running.size() - 1, -1, -1):
 		var run: Dictionary = _running[i]
@@ -191,8 +191,8 @@ func _mark(at: Vector3, radius: float, color: Color, seconds: float) -> int:
 func _lane(from: Vector3, dir: Vector3, length: float, width: float, color: Color, seconds: float) -> int:
 	var i := _mark(from + dir * length * 0.5, 1.0, color, seconds)
 	if i >= 0:
-		var basis := Basis(Vector3.UP, atan2(dir.x, dir.z)).scaled_local(Vector3(width * 0.5, 1.0, length * 0.5))
-		_marks[i].global_transform = Transform3D(basis, _ground(from + dir * length * 0.5))
+		var turn_basis := Basis(Vector3.UP, atan2(dir.x, dir.z)).scaled_local(Vector3(width * 0.5, 1.0, length * 0.5))
+		_marks[i].global_transform = Transform3D(turn_basis, _ground(from + dir * length * 0.5))
 		_mats[i].set_shader_parameter("strip", 1.0)
 	return i
 

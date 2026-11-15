@@ -105,10 +105,10 @@ static func final_stats(db: RefCounted, gun: Dictionary) -> Dictionary:
 		buff_values[id] = float(buff_values.get(id, 0.0)) + lerpf(float(span[0]), float(span[1]), affix_q)
 	out["buffs"] = buff_values
 	var trait_values: Dictionary = {}  # the big effects (data/gun_traits.json, game/gun_traits.gd)
-	for tr: Dictionary in gun.get("traits", []):
-		var tdef: Dictionary = db.trait_def(String(tr["id"]))
+	for tr_roll: Dictionary in gun.get("traits", []):
+		var tdef: Dictionary = db.trait_def(String(tr_roll["id"]))
 		if not tdef.is_empty():
-			trait_values[String(tr["id"])] = lerpf(float(tdef["min"]), float(tdef["max"]), float(tr["q"]))
+			trait_values[String(tr_roll["id"])] = lerpf(float(tdef["min"]), float(tdef["max"]), float(tr_roll["q"]))
 	out["traits"] = trait_values
 	out["combos"] = combo_list
 	return out

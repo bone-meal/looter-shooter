@@ -427,10 +427,10 @@ func _within(at: Vector3, radius: float) -> Array:
 
 
 # Everything within `radius` of a point takes the hit (pushed away from the middle when the spell pushes).
-func _burst(at: Vector3, radius: float, damage: float, job: Dictionary, _dir: Vector3, show := true) -> void:
+func _burst(at: Vector3, radius: float, damage: float, job: Dictionary, _dir: Vector3, shown := true) -> void:
 	if String(job["kind"]) != "zone":
 		touched.emit(at, radius, damage, job["spell"], bool(job.get("show", false)))
-	if show:
+	if shown:
 		_shape(BALL, at, Vector3.ONE * 0.6, Vector3.ONE * radius * 2.0, Color(job["color"], 0.6), 0.35)
 		if job.has("look"):
 			motes.burst(job["look"], at, 14 + 5 * int(job["count"]), 5.0 + radius * 2.0, 0.7, 0.42 * float(job["scale"]), job["color"])

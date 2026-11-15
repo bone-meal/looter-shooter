@@ -73,7 +73,7 @@ func after_shot(origin: Vector3, dir: Vector3) -> void:
 
 
 # Stretches every enemy near the line into a noodle; `pull` (the shooter's own) also pulls them into it. Returns how many.
-static func stretch_line(tree: SceneTree, explosives: Node3D, origin: Vector3, dir: Vector3, cfg: Dictionary, pull: bool) -> int:
+static func stretch_line(_tree: SceneTree, explosives: Node3D, origin: Vector3, dir: Vector3, cfg: Dictionary, pull: bool) -> int:
 	var source: Variant = explosives.get("source") if explosives != null else null
 	if source == null:
 		return 0

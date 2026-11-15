@@ -132,8 +132,8 @@ func _draw() -> void:
 		draw_texture_rect_region(art, art_box, src)
 	else:
 		draw_rect(art_box, Color(FACTION_COLORS.get(String(c["faction"]), Color.GRAY)).darkened(0.35))
-	var hidden: bool = not creature.is_empty() and (creature["kw"] as Dictionary).has("hidden")
-	if hidden:
+	var is_hidden: bool = not creature.is_empty() and (creature["kw"] as Dictionary).has("hidden")
+	if is_hidden:
 		draw_rect(art_box, Color(0.05, 0.05, 0.1, 0.55))
 	_layer("frame_%s_%s" % [c["faction"], kind], k)
 	if String(c["rarity"]) == "legendary":
