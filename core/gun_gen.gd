@@ -89,10 +89,7 @@ static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0
 		if not affix_ids.is_empty():
 			gun["sea"] = {"id": String(affix_ids[rng.randi_range(0, affix_ids.size() - 1)]), "q": snappedf(rng.randf_range(q_lo, q_hi), 0.001)}
 	if tid == String(db.tiers[db.tiers.size() - 1]["id"]) and rng.randf() < db.unique_chance:  # a top-tier drop may be a hand-made unique
-		var fitting: Array = []
-		for id: String in db.uniques:
-			if body == "" or String(db.uniques[id]["body"]) == body:
-				fitting.append(id)
+		var fitting: Array = db.world_uniques(body)  # a boss's pool guns drop only from that boss (data/loot_pools.json)
 		if not fitting.is_empty():
 			gun = unique(db, String(fitting[rng.randi_range(0, fitting.size() - 1)]), int(gun["lvl"]))
 	if rng.randf() < db.wkills_chance:

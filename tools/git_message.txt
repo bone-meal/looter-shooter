@@ -1,6 +1,6 @@
-Mixtape online: others hear the song from the holder and see the MP3
+Loot pools + 31 plain named uniques
 
-The holder tells the host what plays; the host announces it and serves the file (or has the holder upload it in pieces) to anyone without it. Remote players play it from the holder's body (full to 6 m, gone at 45 m) and show the MP3 model. Tested with two copies: song arrives, stays in step, both skips follow within a second, putting the gun away stops it. Dev steps !mixnet and !readyunique; pair set tools/pair_mixtape_*.
+data/loot_pools.json and core/loot_pool.gd: one kill of a sea boss, raid boss, the Vault or any sea enemy rolls its pool (rolled guns at the pool's luck and lowest tier, plus a chance at a named unique from that pool, chase or plain). A unique joins a pool by its pool field; only the 8 old ponies (no pool) can come out of an ordinary pony drop or the island quest. 31 plain uniques added as data (regions 1-7, raids, vault, sea world), traits and sea affixes included. Dev /give pool id level. Check tools/loot_pool_check: 0 problems.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

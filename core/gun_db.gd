@@ -1,5 +1,5 @@
 # Purpose: read-only lookup over the gun loot data: tiers, manufacturers, parts, buffs, rolled-stat definitions and the base weapons that guns are built on. Pure data, no nodes.
-# Dependencies: none. Data: data/gun_loot.json, gun_parts.json, manufacturers.json, weapons.json, skills.json, gun_uniques.json (checked by tools/validate_data.gd), gun_traits.json (read here).
+# Dependencies: none. Data: data/gun_loot.json, gun_parts.json, manufacturers.json, weapons.json, skills.json, gun_uniques.json (checked by tools/validate_data.gd), gun_traits.json, loot_pools.json (read here).
 extends RefCounted
 
 var stats: Dictionary
@@ -22,6 +22,8 @@ var traits: Array  # data/gun_traits.json "traits": the big build-defining effec
 var trait_slots: Dictionary  # data/gun_traits.json "slots_by_tier": tier id -> how many traits it rolls
 var families: Dictionary  # data/pony_families.json "families": pony family id -> {name, hue, span, sat, traits}
 var sea: Dictionary  # data/sea_affixes.json (min_level, chance_by_level, affixes)
+var pools: Dictionary  # data/loot_pools.json "pools": pool id -> {guns, luck, min_tier, unique_chance, unique_rolls, chase_share}
+var world_pools: Array  # data/loot_pools.json: pools whose uniques may also come out of any pony drop
 
 
 func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weapon_data: Dictionary, skill_data: Dictionary = {}, unique_data: Dictionary = {}) -> void:
@@ -48,7 +50,33 @@ func _init(loot: Dictionary, part_data: Dictionary, maker_data: Dictionary, weap
 	families = (family_data as Dictionary).get("families", {}) if family_data is Dictionary else {}
 	var sea_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea_affixes.json"))
 	sea = sea_data if sea_data is Dictionary else {"affixes": {}}
+	var pool_data: Variant = JSON.parse_string(FileAccess.get_file_as_string("res://data/loot_pools.json"))
+	pools = (pool_data as Dictionary).get("pools", {}) if pool_data is Dictionary else {}
+	world_pools = (pool_data as Dictionary).get("world_pools", ["world"]) if pool_data is Dictionary else ["world"]
 
+
+
+# The loot pool a unique drops from ("world" when its data names none).
+func pool_of(unique_id: String) -> String:
+	return String((uniques.get(unique_id, {}) as Dictionary).get("pool", "world"))
+
+
+# Uniques that any pony drop may turn into (their pool is a world pool), optionally only for one body.
+func world_uniques(body: String = "") -> Array:
+	var out: Array = []
+	for id: String in uniques:
+		if world_pools.has(pool_of(id)) and (body == "" or String(uniques[id]["body"]) == body):
+			out.append(id)
+	return out
+
+
+# A pool's uniques: chase guns (red text) when chase is true, else the plain ones.
+func pool_uniques(pool_id: String, chase: bool) -> Array:
+	var out: Array = []
+	for id: String in uniques:
+		if pool_of(id) == pool_id and (uniques[id] as Dictionary).has("red") == chase:
+			out.append(id)
+	return out
 
 func tier_index(id: String) -> int:
 	for i in tiers.size():

@@ -1,213 +1,1039 @@
 {
- "version": 1,
- "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), pool = the loot pool it drops from.",
- "drop_chance": 0.25,
- "bonus": {
-  "damage": 0.15,
-  "fire_rate": 0.1,
-  "mag_size": 0.25,
-  "reload_time": -0.15,
-  "spread": -0.2,
-  "recoil": -0.2,
-  "crit_chance": 0.05
- },
- "uniques": {
-  "little_hoof": {
-   "name": "Little Hoof",
-   "body": "pistol_basic",
-   "maker": "kestrel",
-   "parts": {
-    "barrel": "long",
-    "mag": "extended",
-    "sight": "red_dot",
-    "muzzle": "silencer"
-   },
-   "buffs": [
-    "crit_damage",
-    "free_shot",
-    "slayer_mark"
-   ],
-   "skills": [
-    "frost_pulse",
-    "rally_cry"
-   ],
-   "flavor": "Small. Fast. Kicks like something ten times its size."
+  "version": 1,
+  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
+  "drop_chance": 0.25,
+  "bonus": {
+    "damage": 0.15,
+    "fire_rate": 0.1,
+    "mag_size": 0.25,
+    "reload_time": -0.15,
+    "spread": -0.2,
+    "recoil": -0.2,
+    "crit_chance": 0.05
   },
-  "stampede": {
-   "name": "Stampede",
-   "body": "ak47",
-   "maker": "zephyr",
-   "parts": {
-    "barrel": "short",
-    "mag": "drum",
-    "sight": "holo",
-    "muzzle": "compensator",
-    "grip": "stubby"
-   },
-   "buffs": [
-    "free_shot",
-    "berserker_chain",
-    "reload_on_kill"
-   ],
-   "skills": [
-    "swarm_drones",
-    "rally_cry"
-   ],
-   "flavor": "You hear it before you see it. Then you stop hearing anything."
-  },
-  "thoroughbred": {
-   "name": "Thoroughbred",
-   "body": "m16",
-   "maker": "kestrel",
-   "parts": {
-    "barrel": "long",
-    "mag": "fast",
-    "sight": "acog",
-    "muzzle": "silencer",
-    "grip": "angled"
-   },
-   "buffs": [
-    "crit_damage",
-    "slayer_mark",
-    "cooldown_siphon"
-   ],
-   "skills": [
-    "chain_lightning",
-    "gravity_well"
-   ],
-   "flavor": "Bred for one thing. It was never second."
-  },
-  "clydesdale": {
-   "name": "Clydesdale",
-   "body": "m60",
-   "maker": "moss",
-   "parts": {
-    "barrel": "heavy",
-    "mag": "drum",
-    "sight": "holo",
-    "muzzle": "compensator",
-    "grip": "vertical"
-   },
-   "buffs": [
-    "lifesteal",
-    "overkill_splash",
-    "slow_on_hit"
-   ],
-   "skills": [
-    "gravity_well",
-    "nova_burst"
-   ],
-   "flavor": "Pulls the whole fight behind it and does not notice the weight."
-  },
-  "dark_horse": {
-   "name": "Dark Horse",
-   "body": "sniper_basic",
-   "maker": "brawn",
-   "parts": {
-    "barrel": "long",
-    "mag": "fast",
-    "sight": "acog",
-    "muzzle": "silencer",
-    "grip": "vertical"
-   },
-   "buffs": [
-    "crit_damage",
-    "glass_cannon",
-    "explosive_chance"
-   ],
-   "skills": [
-    "frost_pulse",
-    "chain_lightning"
-   ],
-   "flavor": "Nobody bet on it. Nobody saw the shot either."
-  },
-  "buckaroo": {
-   "name": "Buckaroo",
-   "body": "shotgun_double",
-   "maker": "brawn",
-   "parts": {
-    "barrel": "heavy",
-    "muzzle": "compensator",
-    "grip": "stubby"
-   },
-   "buffs": [
-    "overkill_splash",
-    "burn_chance",
-    "reload_on_kill"
-   ],
-   "skills": [
-    "nova_burst",
-    "rally_cry"
-   ],
-   "flavor": "Two barrels. Both of them throw you."
-  },
-  "carousel": {
-   "name": "Carousel",
-   "body": "rocket_launcher",
-   "maker": "vantor",
-   "parts": {
-    "sight": "holo",
-    "grip": "stubby"
-   },
-   "buffs": [
-    "explosive_chance",
-    "free_shot",
-    "skill_echo"
-   ],
-   "skills": [
-    "gravity_well",
-    "swarm_drones"
-   ],
-   "flavor": "Round and round it goes. Where it lands, everybody knows."
-  },
-  "rodeo_clown": {
-   "name": "Rodeo Clown",
-   "body": "grenade_launcher",
-   "maker": "zephyr",
-   "parts": {
-    "sight": "acog",
-    "grip": "vertical"
-   },
-   "buffs": [
-    "shock_chance",
-    "burn_chance",
-    "skill_echo"
-   ],
-   "skills": [
-    "chain_lightning",
-    "nova_burst"
-   ],
-   "flavor": "Its whole job is to make the angry thing look the other way."
-  },
-  "mixtape": {
-   "name": "Mixtape",
-   "body": "m16",
-   "maker": "kestrel",
-   "parts": {
-    "barrel": "fluted",
-    "mag": "extended",
-    "sight": "red_dot",
-    "muzzle": "brake",
-    "grip": "vertical"
-   },
-   "buffs": [
-    "adrenaline",
-    "crowd_pleaser",
-    "second_breath"
-   ],
-   "skills": [
-    "rally_cry",
-    "war_banner"
-   ],
-   "traits": [
-    "momentum",
-    "pack_hunter"
-   ],
-   "flavor": "",
-   "red": "the soundcloud era was a glitch in the scheduled rule of loosh. thank goodness too or else we wouldve never gotten uber everywhere",
-   "signature": "mixtape",
-   "attach": "mixtape_mp3",
-   "pool": "region_1_boss"
+  "uniques": {
+    "little_hoof": {
+      "name": "Little Hoof",
+      "body": "pistol_basic",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "long",
+        "mag": "extended",
+        "sight": "red_dot",
+        "muzzle": "silencer"
+      },
+      "buffs": [
+        "crit_damage",
+        "free_shot",
+        "slayer_mark"
+      ],
+      "skills": [
+        "frost_pulse",
+        "rally_cry"
+      ],
+      "flavor": "Small. Fast. Kicks like something ten times its size."
+    },
+    "stampede": {
+      "name": "Stampede",
+      "body": "ak47",
+      "maker": "zephyr",
+      "parts": {
+        "barrel": "short",
+        "mag": "drum",
+        "sight": "holo",
+        "muzzle": "compensator",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "free_shot",
+        "berserker_chain",
+        "reload_on_kill"
+      ],
+      "skills": [
+        "swarm_drones",
+        "rally_cry"
+      ],
+      "flavor": "You hear it before you see it. Then you stop hearing anything."
+    },
+    "thoroughbred": {
+      "name": "Thoroughbred",
+      "body": "m16",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "long",
+        "mag": "fast",
+        "sight": "acog",
+        "muzzle": "silencer",
+        "grip": "angled"
+      },
+      "buffs": [
+        "crit_damage",
+        "slayer_mark",
+        "cooldown_siphon"
+      ],
+      "skills": [
+        "chain_lightning",
+        "gravity_well"
+      ],
+      "flavor": "Bred for one thing. It was never second."
+    },
+    "clydesdale": {
+      "name": "Clydesdale",
+      "body": "m60",
+      "maker": "moss",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "drum",
+        "sight": "holo",
+        "muzzle": "compensator",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "lifesteal",
+        "overkill_splash",
+        "slow_on_hit"
+      ],
+      "skills": [
+        "gravity_well",
+        "nova_burst"
+      ],
+      "flavor": "Pulls the whole fight behind it and does not notice the weight."
+    },
+    "dark_horse": {
+      "name": "Dark Horse",
+      "body": "sniper_basic",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "long",
+        "mag": "fast",
+        "sight": "acog",
+        "muzzle": "silencer",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "crit_damage",
+        "glass_cannon",
+        "explosive_chance"
+      ],
+      "skills": [
+        "frost_pulse",
+        "chain_lightning"
+      ],
+      "flavor": "Nobody bet on it. Nobody saw the shot either."
+    },
+    "buckaroo": {
+      "name": "Buckaroo",
+      "body": "shotgun_double",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "heavy",
+        "muzzle": "compensator",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "overkill_splash",
+        "burn_chance",
+        "reload_on_kill"
+      ],
+      "skills": [
+        "nova_burst",
+        "rally_cry"
+      ],
+      "flavor": "Two barrels. Both of them throw you."
+    },
+    "carousel": {
+      "name": "Carousel",
+      "body": "rocket_launcher",
+      "maker": "vantor",
+      "parts": {
+        "sight": "holo",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "explosive_chance",
+        "free_shot",
+        "skill_echo"
+      ],
+      "skills": [
+        "gravity_well",
+        "swarm_drones"
+      ],
+      "flavor": "Round and round it goes. Where it lands, everybody knows."
+    },
+    "rodeo_clown": {
+      "name": "Rodeo Clown",
+      "body": "grenade_launcher",
+      "maker": "zephyr",
+      "parts": {
+        "sight": "acog",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "shock_chance",
+        "burn_chance",
+        "skill_echo"
+      ],
+      "skills": [
+        "chain_lightning",
+        "nova_burst"
+      ],
+      "flavor": "Its whole job is to make the angry thing look the other way."
+    },
+    "mixtape": {
+      "name": "Mixtape",
+      "body": "m16",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "extended",
+        "sight": "red_dot",
+        "muzzle": "brake",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "adrenaline",
+        "crowd_pleaser",
+        "second_breath"
+      ],
+      "skills": [
+        "rally_cry",
+        "war_banner"
+      ],
+      "traits": [
+        "momentum",
+        "pack_hunter"
+      ],
+      "flavor": "",
+      "red": "the soundcloud era was a glitch in the scheduled rule of loosh. thank goodness too or else we wouldve never gotten uber everywhere",
+      "signature": "mixtape",
+      "attach": "mixtape_mp3",
+      "pool": "region_1_boss"
+    },
+    "beach_day": {
+      "name": "Beach Day",
+      "body": "pistol_basic",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "short",
+        "mag": "fast",
+        "sight": "red_dot",
+        "muzzle": "flash_hider"
+      },
+      "buffs": [
+        "adrenaline",
+        "pristine",
+        "hip_shooter"
+      ],
+      "skills": [
+        "fire_trail_dash",
+        "overshield"
+      ],
+      "traits": [
+        "quick_change",
+        "momentum"
+      ],
+      "flavor": "Sunscreen, snacks, sidearm. In that order.",
+      "pool": "region_1_boss"
+    },
+    "lifeguards_whistle": {
+      "name": "Lifeguard's Whistle",
+      "body": "sniper_basic",
+      "maker": "lumen",
+      "parts": {
+        "barrel": "long",
+        "mag": "slim",
+        "sight": "long_scope",
+        "muzzle": "silencer",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "headshot_damage",
+        "far_reach",
+        "second_breath"
+      ],
+      "skills": [
+        "harpoon_yank",
+        "rally_cry"
+      ],
+      "traits": [
+        "executioner",
+        "pack_hunter"
+      ],
+      "flavor": "Two short blasts means get out of the water. One long one means it's too late.",
+      "pool": "region_1_boss"
+    },
+    "sandcastle": {
+      "name": "Sandcastle",
+      "body": "grenade_launcher",
+      "maker": "moss",
+      "parts": {
+        "sight": "holo",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "explosive_chance",
+        "overkill_splash",
+        "steady"
+      ],
+      "skills": [
+        "sentry_turret",
+        "shockwave_slam"
+      ],
+      "traits": [
+        "chain_reaction",
+        "last_stand"
+      ],
+      "flavor": "Built with care. Knocked over with more.",
+      "pool": "region_1_boss"
+    },
+    "foghorn": {
+      "name": "Foghorn",
+      "body": "rocket_launcher",
+      "maker": "vantor",
+      "parts": {
+        "sight": "thermal",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "big_game",
+        "explosive_chance",
+        "opener"
+      ],
+      "skills": [
+        "vacuum_pulse",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "chain_reaction",
+        "overcharge"
+      ],
+      "flavor": "Heard for miles. Felt for considerably fewer.",
+      "pool": "region_2_boss"
+    },
+    "heron": {
+      "name": "Heron",
+      "body": "m16",
+      "maker": "lumen",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "slim",
+        "sight": "peep",
+        "muzzle": "silencer",
+        "grip": "skeleton"
+      },
+      "buffs": [
+        "steady",
+        "headshot_damage",
+        "slow_on_hit"
+      ],
+      "skills": [
+        "phase_step",
+        "ice_lance"
+      ],
+      "traits": [
+        "twin_shot",
+        "executioner"
+      ],
+      "flavor": "Stands perfectly still for an hour. Moves once.",
+      "pool": "region_2_boss"
+    },
+    "swamp_lantern": {
+      "name": "Swamp Lantern",
+      "body": "pistol_basic",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "ported",
+        "mag": "extended",
+        "sight": "holo",
+        "muzzle": "compensator"
+      },
+      "buffs": [
+        "burn_chance",
+        "kindling",
+        "lifesteal"
+      ],
+      "skills": [
+        "plague_cloud",
+        "inferno_ring"
+      ],
+      "traits": [
+        "blood_tide",
+        "ricochet"
+      ],
+      "flavor": "Follow the light. Most people don't come back, but most people aren't armed.",
+      "pool": "region_2_boss"
+    },
+    "ashfall": {
+      "name": "Ashfall",
+      "body": "m60",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "drum",
+        "sight": "holo",
+        "muzzle": "compensator",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "burn_chance",
+        "kindling",
+        "crowd_pleaser"
+      ],
+      "skills": [
+        "meteor_shower",
+        "bullet_storm"
+      ],
+      "traits": [
+        "tempest",
+        "chain_reaction"
+      ],
+      "flavor": "It doesn't stop. It just runs out of things to land on.",
+      "pool": "region_3_boss"
+    },
+    "fumarole": {
+      "name": "Fumarole",
+      "body": "shotgun_double",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "bull",
+        "muzzle": "choke",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "point_blank",
+        "burn_chance",
+        "desperado"
+      ],
+      "skills": [
+        "inferno_ring",
+        "blood_rush"
+      ],
+      "traits": [
+        "overcharge",
+        "last_stand"
+      ],
+      "flavor": "The ground was warning you. This is the second warning.",
+      "pool": "region_3_boss"
+    },
+    "cinder_cone": {
+      "name": "Cinder Cone",
+      "body": "grenade_launcher",
+      "maker": "cinder",
+      "parts": {
+        "sight": "red_dot",
+        "grip": "folding"
+      },
+      "buffs": [
+        "kindling",
+        "overkill_splash",
+        "free_shot"
+      ],
+      "skills": [
+        "rocket_barrage",
+        "fire_trail_dash"
+      ],
+      "traits": [
+        "chain_reaction",
+        "momentum"
+      ],
+      "flavor": "Small mountain, big temper.",
+      "pool": "region_3_boss"
+    },
+    "permafrost": {
+      "name": "Permafrost",
+      "body": "ak47",
+      "maker": "moss",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "box",
+        "sight": "acog",
+        "muzzle": "flash_hider",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "slow_on_hit",
+        "pristine",
+        "big_game"
+      ],
+      "skills": [
+        "frost_pulse",
+        "time_bubble"
+      ],
+      "traits": [
+        "tempest",
+        "pack_hunter"
+      ],
+      "sea": "saltglass",
+      "flavor": "Some things are meant to stay frozen. You, for instance.",
+      "pool": "region_4_boss"
+    },
+    "whiteout": {
+      "name": "Whiteout",
+      "body": "shotgun_double",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "short",
+        "muzzle": "brake",
+        "grip": "folding"
+      },
+      "buffs": [
+        "point_blank",
+        "slow_on_hit",
+        "adrenaline"
+      ],
+      "skills": [
+        "ice_lance",
+        "phase_step"
+      ],
+      "traits": [
+        "twin_shot",
+        "quick_change"
+      ],
+      "sea": "tidebound",
+      "flavor": "You won't see it coming. Neither will it.",
+      "pool": "region_4_boss"
+    },
+    "icebreaker": {
+      "name": "Icebreaker",
+      "body": "rocket_launcher",
+      "maker": "brawn",
+      "parts": {
+        "sight": "acog",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "big_game",
+        "glass_cannon",
+        "opener"
+      ],
+      "skills": [
+        "shockwave_slam",
+        "harpoon_yank"
+      ],
+      "traits": [
+        "overcharge",
+        "executioner"
+      ],
+      "sea": "krakenkissed",
+      "flavor": "Built for pack ice. Works on everything else too.",
+      "pool": "region_4_boss"
+    },
+    "gale": {
+      "name": "Gale",
+      "body": "m16",
+      "maker": "zephyr",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "fast",
+        "sight": "holo",
+        "muzzle": "brake",
+        "grip": "angled"
+      },
+      "buffs": [
+        "adrenaline",
+        "hip_shooter",
+        "reload_on_kill"
+      ],
+      "skills": [
+        "storm_call",
+        "fire_trail_dash"
+      ],
+      "traits": [
+        "momentum",
+        "quick_change"
+      ],
+      "sea": "galeblessed",
+      "flavor": "Hold onto your hat. Hold onto everything, actually.",
+      "pool": "region_5_boss"
+    },
+    "sea_stack": {
+      "name": "Sea Stack",
+      "body": "m60",
+      "maker": "moss",
+      "parts": {
+        "barrel": "bull",
+        "mag": "drum",
+        "sight": "red_dot",
+        "muzzle": "compensator",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "steady",
+        "crowd_pleaser",
+        "lifesteal"
+      ],
+      "skills": [
+        "thunder_totem",
+        "overshield"
+      ],
+      "traits": [
+        "last_stand",
+        "tempest"
+      ],
+      "sea": "coralforged",
+      "flavor": "The sea has been hitting it for ten thousand years. It's still here.",
+      "pool": "region_5_boss"
+    },
+    "thunderhead": {
+      "name": "Thunderhead",
+      "body": "sniper_basic",
+      "maker": "vantor",
+      "parts": {
+        "barrel": "long",
+        "mag": "box",
+        "sight": "long_scope",
+        "muzzle": "silencer",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "shock_chance",
+        "headshot_damage",
+        "far_reach"
+      ],
+      "skills": [
+        "chain_lightning",
+        "storm_call"
+      ],
+      "traits": [
+        "tempest",
+        "executioner"
+      ],
+      "sea": "stormwrack",
+      "flavor": "Count the seconds between the flash and the bang. Then stop counting.",
+      "pool": "region_5_boss"
+    },
+    "reef_shark": {
+      "name": "Reef Shark",
+      "body": "shotgun_double",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "ported",
+        "muzzle": "bayonet",
+        "grip": "skeleton"
+      },
+      "buffs": [
+        "lifesteal",
+        "point_blank",
+        "berserker_chain"
+      ],
+      "skills": [
+        "harpoon_yank",
+        "blood_rush"
+      ],
+      "traits": [
+        "blood_tide",
+        "momentum"
+      ],
+      "sea": "riptide",
+      "flavor": "It smells one drop of blood in a mile of water. You are not a mile away.",
+      "pool": "region_6_boss"
+    },
+    "sunken_bell": {
+      "name": "Sunken Bell",
+      "body": "rocket_launcher",
+      "maker": "vantor",
+      "parts": {
+        "sight": "holo",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "overkill_splash",
+        "shock_chance",
+        "skill_echo"
+      ],
+      "skills": [
+        "vacuum_pulse",
+        "gravity_well"
+      ],
+      "traits": [
+        "chain_reaction",
+        "skill_surge"
+      ],
+      "sea": "deepcurrent",
+      "flavor": "It still rings at low tide. Nobody pulls the rope.",
+      "pool": "region_6_boss"
+    },
+    "tidepool": {
+      "name": "Tidepool",
+      "body": "pistol_basic",
+      "maker": "lumen",
+      "parts": {
+        "barrel": "fluted",
+        "mag": "twin",
+        "sight": "peep",
+        "muzzle": "silencer"
+      },
+      "buffs": [
+        "cooldown_siphon",
+        "skill_echo",
+        "second_breath"
+      ],
+      "skills": [
+        "mirror_clone",
+        "spinning_blades"
+      ],
+      "traits": [
+        "skill_surge",
+        "ricochet"
+      ],
+      "sea": "brined",
+      "flavor": "A whole little world in a rock pool. Most of it bites.",
+      "pool": "region_6_boss"
+    },
+    "drift": {
+      "name": "Drift",
+      "body": "pistol_basic",
+      "maker": "zephyr",
+      "parts": {
+        "barrel": "short",
+        "mag": "fast",
+        "sight": "holo",
+        "muzzle": "brake"
+      },
+      "buffs": [
+        "hip_shooter",
+        "adrenaline",
+        "last_word"
+      ],
+      "skills": [
+        "phase_step",
+        "decoy_hologram"
+      ],
+      "traits": [
+        "quick_change",
+        "twin_shot"
+      ],
+      "sea": "riptide",
+      "flavor": "Goes where the current goes. The current goes through people.",
+      "pool": "region_7_boss"
+    },
+    "abyss": {
+      "name": "Abyss",
+      "body": "sniper_basic",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "slim",
+        "sight": "thermal",
+        "muzzle": "silencer",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "glass_cannon",
+        "headshot_damage",
+        "big_game"
+      ],
+      "skills": [
+        "orbital_strike",
+        "gravity_well"
+      ],
+      "traits": [
+        "executioner",
+        "overcharge"
+      ],
+      "sea": "krakenkissed",
+      "flavor": "Look into it long enough and it lines up a shot.",
+      "pool": "region_7_boss"
+    },
+    "tidewrack": {
+      "name": "Tidewrack",
+      "body": "m60",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "bull",
+        "mag": "twin",
+        "sight": "acog",
+        "muzzle": "flash_hider",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "crowd_pleaser",
+        "free_shot",
+        "reload_on_kill"
+      ],
+      "skills": [
+        "bullet_storm",
+        "full_clip"
+      ],
+      "traits": [
+        "tempest",
+        "last_stand"
+      ],
+      "sea": "stormwrack",
+      "flavor": "Everything the storm took, it brings back at once.",
+      "pool": "region_7_boss"
+    },
+    "hard_mode": {
+      "name": "Hard Mode",
+      "body": "ak47",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "box",
+        "sight": "acog",
+        "muzzle": "compensator",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "desperado",
+        "glass_cannon",
+        "big_game"
+      ],
+      "skills": [
+        "blood_rush",
+        "war_banner"
+      ],
+      "traits": [
+        "last_stand",
+        "overcharge"
+      ],
+      "sea": "saltglass",
+      "flavor": "You turned it on yourself. Don't look at us.",
+      "pool": "raid_1"
+    },
+    "wipe_count": {
+      "name": "Wipe Count",
+      "body": "shotgun_double",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "bull",
+        "muzzle": "choke",
+        "grip": "stubby"
+      },
+      "buffs": [
+        "point_blank",
+        "second_breath",
+        "berserker_chain"
+      ],
+      "skills": [
+        "overshield",
+        "shockwave_slam"
+      ],
+      "traits": [
+        "blood_tide",
+        "last_stand"
+      ],
+      "sea": "coralforged",
+      "flavor": "Attempt forty-one. This is the one. It was not the one.",
+      "pool": "raid_1"
+    },
+    "enrage_timer": {
+      "name": "Enrage Timer",
+      "body": "m60",
+      "maker": "vantor",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "drum",
+        "sight": "red_dot",
+        "muzzle": "brake",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "berserker_chain",
+        "crowd_pleaser",
+        "free_shot"
+      ],
+      "skills": [
+        "bullet_storm",
+        "rocket_barrage"
+      ],
+      "traits": [
+        "momentum",
+        "tempest"
+      ],
+      "sea": "stormwrack",
+      "flavor": "Damage check. You pass, or the floor does.",
+      "pool": "raid_2"
+    },
+    "loot_goblin": {
+      "name": "Loot Goblin",
+      "body": "pistol_basic",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "long",
+        "mag": "extended",
+        "sight": "red_dot",
+        "muzzle": "silencer"
+      },
+      "buffs": [
+        "reload_on_kill",
+        "free_shot",
+        "opener"
+      ],
+      "skills": [
+        "decoy_hologram",
+        "phase_step"
+      ],
+      "traits": [
+        "quick_change",
+        "pack_hunter"
+      ],
+      "sea": "mariners",
+      "flavor": "Fast, greedy, and gone before the party noticed what dropped.",
+      "pool": "raid_2"
+    },
+    "gilded_age": {
+      "name": "Gilded Age",
+      "body": "m16",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "long",
+        "mag": "extended",
+        "sight": "acog",
+        "muzzle": "silencer",
+        "grip": "angled"
+      },
+      "buffs": [
+        "crit_damage",
+        "headshot_damage",
+        "pristine"
+      ],
+      "skills": [
+        "orbital_strike",
+        "war_banner"
+      ],
+      "traits": [
+        "executioner",
+        "twin_shot"
+      ],
+      "sea": "saltglass",
+      "flavor": "Everything shines when you've already won.",
+      "pool": "vault"
+    },
+    "last_coin": {
+      "name": "Last Coin",
+      "body": "pistol_basic",
+      "maker": "cinder",
+      "parts": {
+        "barrel": "heavy",
+        "mag": "slim",
+        "sight": "peep",
+        "muzzle": "compensator"
+      },
+      "buffs": [
+        "last_word",
+        "crit_damage",
+        "desperado"
+      ],
+      "skills": [
+        "full_clip",
+        "spinning_blades"
+      ],
+      "traits": [
+        "overcharge",
+        "executioner"
+      ],
+      "sea": "mariners",
+      "flavor": "Heads, you live. Tails, you also live. The coin is for them.",
+      "pool": "vault"
+    },
+    "driftwood": {
+      "name": "Driftwood",
+      "body": "shotgun_double",
+      "maker": "moss",
+      "parts": {
+        "barrel": "short",
+        "muzzle": "flash_hider",
+        "grip": "folding"
+      },
+      "buffs": [
+        "point_blank",
+        "lifesteal",
+        "second_breath"
+      ],
+      "skills": [
+        "sticky_mines",
+        "overshield"
+      ],
+      "traits": [
+        "last_stand",
+        "ricochet"
+      ],
+      "flavor": "Washed up somewhere. Still floats. Still kicks.",
+      "pool": "sea_world"
+    },
+    "barnacle": {
+      "name": "Barnacle",
+      "body": "pistol_basic",
+      "maker": "halyard",
+      "parts": {
+        "barrel": "bull",
+        "mag": "box",
+        "sight": "red_dot",
+        "muzzle": "choke"
+      },
+      "buffs": [
+        "slow_on_hit",
+        "steady",
+        "pristine"
+      ],
+      "skills": [
+        "sticky_mines",
+        "frost_pulse"
+      ],
+      "traits": [
+        "pack_hunter",
+        "last_stand"
+      ],
+      "sea": "brined",
+      "flavor": "Once it holds on, it does not let go.",
+      "pool": "sea_world"
+    },
+    "sea_glass": {
+      "name": "Sea Glass",
+      "body": "sniper_basic",
+      "maker": "lumen",
+      "parts": {
+        "barrel": "long",
+        "mag": "fast",
+        "sight": "long_scope",
+        "muzzle": "silencer",
+        "grip": "skeleton"
+      },
+      "buffs": [
+        "headshot_damage",
+        "crit_damage",
+        "far_reach"
+      ],
+      "skills": [
+        "ice_lance",
+        "time_bubble"
+      ],
+      "traits": [
+        "ricochet",
+        "executioner"
+      ],
+      "sea": "saltglass",
+      "flavor": "The sea took a broken bottle and polished it into something worth keeping.",
+      "pool": "sea_world"
+    },
+    "ship_in_a_bottle": {
+      "name": "Ship in a Bottle",
+      "body": "ak47",
+      "maker": "kestrel",
+      "parts": {
+        "barrel": "long",
+        "mag": "fast",
+        "sight": "peep",
+        "muzzle": "brake",
+        "grip": "skeleton"
+      },
+      "buffs": [
+        "steady",
+        "cooldown_siphon",
+        "opener"
+      ],
+      "skills": [
+        "swarm_drones",
+        "rally_cry"
+      ],
+      "traits": [
+        "skill_surge",
+        "momentum"
+      ],
+      "sea": "mariners",
+      "flavor": "How did they get it in there? How did they get it to fire?",
+      "pool": "sea_world"
+    }
   }
- }
 }

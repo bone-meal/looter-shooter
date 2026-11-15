@@ -3427,7 +3427,7 @@ func _quest_reward() -> void:
 	_stats.add("main_quests")
 	var which := String(reward.get("unique", ""))
 	if which == "any":
-		var ids: Array = _player.gun_db.uniques.keys()
+		var ids: Array = _player.gun_db.world_uniques()  # not a sea boss's own guns
 		which = String(ids[_rng.randi_range(0, ids.size() - 1)]) if not ids.is_empty() else ""
 	if which != "":
 		var gun := GunGen.unique(_player.gun_db, which)

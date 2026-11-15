@@ -1,1 +1,2 @@
 args=--fullscreen
+only=compatibility

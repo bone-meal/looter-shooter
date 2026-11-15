@@ -9,6 +9,7 @@ extends Node
 const ChatCommand = preload("res://core/chat_command.gd")
 const GunGen = preload("res://core/gun_gen.gd")
 const GunStats = preload("res://core/gun_stats.gd")
+const LootPool = preload("res://core/loot_pool.gd")
 const DataStore = preload("res://core/data_store.gd")
 const Player = preload("res://game/player.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
@@ -148,6 +149,17 @@ func _give(args: Array) -> String:
 			if not player.gun_db.uniques.has(id):
 				return "Uniques: %s, or all." % ", ".join(player.gun_db.uniques.keys())
 			return _hand_over(GunGen.unique(player.gun_db, id))
+		"pool":  # one kill of a loot pool's source (a sea boss, raid, the Vault): everything it drops goes into the bag
+			var pool_id := String(args[1]) if args.size() > 1 else ""
+			if not player.gun_db.pools.has(pool_id):
+				return "Pools: %s." % ", ".join(player.gun_db.pools.keys())
+			var level := int(args[2]) if args.size() > 2 and String(args[2]).is_valid_int() else 1
+			var names := PackedStringArray()
+			for gun: Dictionary in LootPool.roll(player.gun_db, _rng, pool_id, level):
+				if player.inventory.add_gun(gun):
+					names.append(GunStats.display_name(player.gun_db, gun))
+			session.refresh_after_command()
+			return "%s dropped: %s." % [String(player.gun_db.pools[pool_id].get("name", pool_id)), ", ".join(names) if not names.is_empty() else "nothing"]
 		"item":
 			var item := String(args[1]) if args.size() > 1 else ""
 			if not player.items.has_item(item):

@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "_about": "Loot pools (sea step 1e, diary/DESIGN_UNIQUES.md). A unique belongs to a pool by its own \"pool\" field in data/gun_uniques.json (no field = the world). One kill of a pool's source rolls core/loot_pool.gd roll(): `guns` rolled guns at the given luck and lowest tier, then each roll of `unique_chance` adds one named unique from the pool (a chase gun with chance `chase_share`, else a plain one; if that kind is empty the other kind). `world_pools` = the pools (\"world\" = uniques with no pool field: the 8 old ponies) whose uniques may also come out of an ordinary pony drop anywhere (core/gun_gen.gd); every other pool's uniques drop only from their own source. Item level = the caller's (the boss's level). All numbers are placeholders for the director.",
+  "world_pools": ["world"],
+  "pools": {
+    "region_1_boss": {"name": "Sunlit Shallows boss", "guns": 3, "luck": 3.0, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "region_2_boss": {"name": "Fog Banks boss", "guns": 3, "luck": 3.0, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "region_3_boss": {"name": "Volcanic boss", "guns": 3, "luck": 3.2, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "region_4_boss": {"name": "Ice Floes boss", "guns": 3, "luck": 3.4, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "region_5_boss": {"name": "Storm Cliffs boss", "guns": 3, "luck": 3.6, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "region_6_boss": {"name": "Coral Ruins boss", "guns": 3, "luck": 3.8, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "region_7_boss": {"name": "Maelstrom boss", "guns": 3, "luck": 4.0, "min_tier": "orange", "unique_chance": 0.15, "unique_rolls": 1, "chase_share": 0.5},
+    "raid_1": {"name": "Raid boss one", "guns": 4, "luck": 5.0, "min_tier": "orange", "unique_chance": 0.25, "unique_rolls": 2, "chase_share": 0.5},
+    "raid_2": {"name": "Raid boss two", "guns": 4, "luck": 5.0, "min_tier": "orange", "unique_chance": 0.25, "unique_rolls": 2, "chase_share": 0.5},
+    "vault": {"name": "The Vault", "guns": 5, "luck": 6.0, "min_tier": "rainbow", "unique_chance": 0.35, "unique_rolls": 2, "chase_share": 0.6},
+    "sea_world": {"name": "Rare sea drop (any sea enemy)", "guns": 0, "luck": 0.0, "min_tier": "", "unique_chance": 0.002, "unique_rolls": 1, "chase_share": 0.2}
+  }
+}
