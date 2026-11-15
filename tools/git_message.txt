@@ -1,10 +1,9 @@
-Sea step 3b: Hunting
+Sea step 3c: Carpentry and Crafting
 
-- eight wild animals (hare, pheasant, deer, boar, dune antelope, ice elk, mountain goat, the Pale Stag) with new models
-- skittish animals wander and flee, defensive ones fight back when pressed (game/enemy.gd temper)
-- animals roam each region apart from the creatures; kills train Hunting and drop meat, hides, feathers, bone
-- tracks to follow lay a trail to an animal (online through the host); snares catch small game
-- meat recipes at the fire, Hunting milestones, new icons; dev !neartrack and !animals
+- sawhorse and crafting table in every town (new models; layout rules with no_salt keep the rest of each town where it was)
+- Carpentry: planks, rods and staffs moved from Woodcutting, ship crates and barrels, the Stormoak rod
+- Crafting: leather, cut gems, sturdy snares, and small gun-side armour pieces that go straight into the backpack (low rarity, item level below the area)
+- Carpentry and Crafting milestones; backpack-full check
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -141,7 +141,8 @@ func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x
 					taken.append([cx + cos(way) * out_m, cz + sin(way) * out_m, 2.0])
 	var salt := 0
 	for rule: Dictionary in list:
-		salt += 97
+		if not bool(rule.get("no_salt", false)):  # rules added later carry no_salt, so everything placed by chance stays where it was
+			salt += 97
 		if rule.has("wall"):
 			_wall(out, taken, rule, cx, cz, flat)
 		elif rule.has("model"):

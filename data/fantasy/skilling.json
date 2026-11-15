@@ -1,6 +1,6 @@
 {
  "version": 2,
- "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>]. Hunting: nodes with `animal` are tracks (following them takes `seconds`, then that animal is met 25-35 m on along the trail; once = used up by one go); gather.snare: a set snare catches the region's best small game you may hunt after `seconds` (less with snare_speed perks), max snares out at once, keep_snare = chance the snare comes back. Content steps may also open animals (data/fantasy/enemies.json with skill hunting).",
+ "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>]. Hunting: nodes with `animal` are tracks (following them takes `seconds`, then that animal is met 25-35 m on along the trail; once = used up by one go); gather.snare: a set snare catches the region's best small game you may hunt after `seconds` (less with snare_speed perks), max snares out at once, keep_snare = chance the snare comes back. Content steps may also open animals (data/fantasy/enemies.json with skill hunting). Sea step 3c: stations sawhorse (Carpentry: planks, crates, barrels) and crafting_table (Crafting: leather, cut gems, snares, and pieces for the gun side's gear: gear.json kind gunside); station site = repairs done where the broken thing stands (ladders, sea step 3d). Perk finer = chance a crafted gun-side piece comes one tier up.",
  "max_level": 50,
  "xp_base": 30,
  "xp_power": 2.2,
@@ -762,12 +762,12 @@
   },
   {
    "id": "make_oak_rod",
-   "skill": "woodcutting",
-   "level": 12,
+   "skill": "carpentry",
+   "level": 10,
    "xp": 90,
    "station": "workbench",
    "in": {
-    "oak_log": 3,
+    "oak_plank": 3,
     "copper_bar": 1
    },
    "out": {
@@ -776,12 +776,12 @@
   },
   {
    "id": "make_frostpine_rod",
-   "skill": "woodcutting",
-   "level": 26,
+   "skill": "carpentry",
+   "level": 30,
    "xp": 220,
    "station": "workbench",
    "in": {
-    "frostpine_log": 3,
+    "frostpine_plank": 3,
     "iron_bar": 2
    },
    "out": {
@@ -790,12 +790,12 @@
   },
   {
    "id": "make_ember_rod",
-   "skill": "woodcutting",
+   "skill": "carpentry",
    "level": 35,
    "xp": 380,
    "station": "workbench",
    "in": {
-    "emberwood_log": 3,
+    "ember_plank": 3,
     "obsidian": 2
    },
    "out": {
@@ -804,12 +804,12 @@
   },
   {
    "id": "staff_oak",
-   "skill": "woodcutting",
-   "level": 8,
+   "skill": "carpentry",
+   "level": 5,
    "xp": 150,
    "station": "workbench",
    "in": {
-    "oak_log": 6,
+    "oak_plank": 6,
     "copper_bar": 2,
     "amber_pigment": 1
    },
@@ -819,12 +819,12 @@
   },
   {
    "id": "staff_coral",
-   "skill": "woodcutting",
-   "level": 15,
+   "skill": "carpentry",
+   "level": 20,
    "xp": 300,
    "station": "workbench",
    "in": {
-    "palm_log": 6,
+    "palm_plank": 6,
     "iron_bar": 3,
     "verdant_pigment": 1
    },
@@ -849,12 +849,12 @@
   },
   {
    "id": "staff_frostpine",
-   "skill": "woodcutting",
-   "level": 26,
+   "skill": "carpentry",
+   "level": 30,
    "xp": 700,
    "station": "workbench",
    "in": {
-    "frostpine_log": 8,
+    "frostpine_plank": 8,
     "frost_crystal": 5,
     "ochre_pigment": 1
    },
@@ -1194,6 +1194,411 @@
     "goat_stew": 1
    },
    "batch": true
+  },
+  {
+   "id": "saw_ash",
+   "skill": "carpentry",
+   "level": 1,
+   "xp": 12,
+   "station": "sawhorse",
+   "in": {
+    "ash_log": 1
+   },
+   "out": {
+    "ash_plank": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "saw_oak",
+   "skill": "carpentry",
+   "level": 5,
+   "xp": 26,
+   "station": "sawhorse",
+   "in": {
+    "oak_log": 1
+   },
+   "out": {
+    "oak_plank": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "saw_palm",
+   "skill": "carpentry",
+   "level": 20,
+   "xp": 50,
+   "station": "sawhorse",
+   "in": {
+    "palm_log": 1
+   },
+   "out": {
+    "palm_plank": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "saw_frostpine",
+   "skill": "carpentry",
+   "level": 30,
+   "xp": 85,
+   "station": "sawhorse",
+   "in": {
+    "frostpine_log": 1
+   },
+   "out": {
+    "frostpine_plank": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "saw_emberwood",
+   "skill": "carpentry",
+   "level": 35,
+   "xp": 120,
+   "station": "sawhorse",
+   "in": {
+    "emberwood_log": 1
+   },
+   "out": {
+    "ember_plank": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "saw_stormoak",
+   "skill": "carpentry",
+   "level": 45,
+   "xp": 170,
+   "station": "sawhorse",
+   "in": {
+    "stormoak_log": 1
+   },
+   "out": {
+    "stormoak_plank": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "build_crate",
+   "skill": "carpentry",
+   "level": 10,
+   "xp": 60,
+   "station": "sawhorse",
+   "in": {
+    "oak_plank": 4,
+    "copper_bar": 1
+   },
+   "out": {
+    "crate": 1
+   }
+  },
+  {
+   "id": "build_barrel",
+   "skill": "carpentry",
+   "level": 20,
+   "xp": 110,
+   "station": "sawhorse",
+   "in": {
+    "palm_plank": 4,
+    "iron_bar": 1
+   },
+   "out": {
+    "barrel": 1
+   }
+  },
+  {
+   "id": "mend_ladder",
+   "skill": "carpentry",
+   "level": 25,
+   "xp": 160,
+   "station": "site",
+   "in": {
+    "oak_plank": 4,
+    "iron_bar": 1
+   },
+   "out": {}
+  },
+  {
+   "id": "make_stormoak_rod",
+   "skill": "carpentry",
+   "level": 45,
+   "xp": 420,
+   "station": "workbench",
+   "in": {
+    "stormoak_plank": 3,
+    "skysteel_bar": 1,
+    "goat_wool": 2
+   },
+   "out": {
+    "stormoak_rod": 1
+   }
+  },
+  {
+   "id": "tan_pelts",
+   "skill": "crafting",
+   "level": 1,
+   "xp": 14,
+   "station": "crafting_table",
+   "in": {
+    "small_pelt": 3
+   },
+   "out": {
+    "leather": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "tan_hide",
+   "skill": "crafting",
+   "level": 1,
+   "xp": 22,
+   "station": "crafting_table",
+   "in": {
+    "hide": 1
+   },
+   "out": {
+    "leather": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "tan_desert",
+   "skill": "crafting",
+   "level": 1,
+   "xp": 30,
+   "station": "crafting_table",
+   "in": {
+    "desert_hide": 1
+   },
+   "out": {
+    "leather": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "tan_boar",
+   "skill": "crafting",
+   "level": 20,
+   "xp": 48,
+   "station": "crafting_table",
+   "in": {
+    "boar_hide": 1
+   },
+   "out": {
+    "hard_leather": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "tan_elk",
+   "skill": "crafting",
+   "level": 20,
+   "xp": 70,
+   "station": "crafting_table",
+   "in": {
+    "thick_hide": 1
+   },
+   "out": {
+    "hard_leather": 2
+   },
+   "batch": true
+  },
+  {
+   "id": "cut_gem",
+   "skill": "crafting",
+   "level": 20,
+   "xp": 60,
+   "station": "crafting_table",
+   "in": {
+    "rough_gem": 1
+   },
+   "out": {
+    "cut_gem": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "cut_flawless",
+   "skill": "crafting",
+   "level": 40,
+   "xp": 150,
+   "station": "crafting_table",
+   "in": {
+    "flawless_gem": 1
+   },
+   "out": {
+    "brilliant_gem": 1
+   },
+   "batch": true
+  },
+  {
+   "id": "make_sturdy_snare",
+   "skill": "crafting",
+   "level": 10,
+   "xp": 40,
+   "station": "crafting_table",
+   "in": {
+    "leather": 1,
+    "oak_plank": 1
+   },
+   "out": {
+    "sturdy_snare": 2
+   }
+  },
+  {
+   "id": "craft_belt",
+   "skill": "crafting",
+   "level": 5,
+   "xp": 40,
+   "station": "crafting_table",
+   "in": {
+    "leather": 3
+   },
+   "out": {
+    "craft_belt": 1
+   }
+  },
+  {
+   "id": "craft_boots",
+   "skill": "crafting",
+   "level": 10,
+   "xp": 70,
+   "station": "crafting_table",
+   "in": {
+    "leather": 4,
+    "copper_bar": 1
+   },
+   "out": {
+    "craft_boots": 1
+   }
+  },
+  {
+   "id": "craft_gloves",
+   "skill": "crafting",
+   "level": 20,
+   "xp": 120,
+   "station": "crafting_table",
+   "in": {
+    "hard_leather": 3
+   },
+   "out": {
+    "craft_gloves": 1
+   }
+  },
+  {
+   "id": "craft_bracelet",
+   "skill": "crafting",
+   "level": 20,
+   "xp": 130,
+   "station": "crafting_table",
+   "in": {
+    "leather": 2,
+    "cut_gem": 1,
+    "copper_bar": 2
+   },
+   "out": {
+    "craft_bracelet": 1
+   }
+  },
+  {
+   "id": "craft_hoops",
+   "skill": "crafting",
+   "level": 25,
+   "xp": 170,
+   "station": "crafting_table",
+   "in": {
+    "cut_gem": 2,
+    "iron_bar": 2
+   },
+   "out": {
+    "craft_hoops": 1
+   }
+  },
+  {
+   "id": "craft_ring",
+   "skill": "crafting",
+   "level": 25,
+   "xp": 180,
+   "station": "crafting_table",
+   "in": {
+    "cut_gem": 1,
+    "sunstone": 2
+   },
+   "out": {
+    "craft_ring": 1
+   }
+  },
+  {
+   "id": "craft_sea_boots",
+   "skill": "crafting",
+   "level": 30,
+   "xp": 230,
+   "station": "crafting_table",
+   "in": {
+    "hard_leather": 4,
+    "frost_crystal": 1
+   },
+   "out": {
+    "craft_sea_boots": 1
+   }
+  },
+  {
+   "id": "craft_diving_helm",
+   "skill": "crafting",
+   "level": 30,
+   "xp": 240,
+   "station": "crafting_table",
+   "in": {
+    "iron_bar": 4,
+    "cut_gem": 2
+   },
+   "out": {
+    "craft_diving_helm": 1
+   }
+  },
+  {
+   "id": "craft_amulet",
+   "skill": "crafting",
+   "level": 40,
+   "xp": 360,
+   "station": "crafting_table",
+   "in": {
+    "brilliant_gem": 1,
+    "frost_crystal": 3,
+    "iron_bar": 2
+   },
+   "out": {
+    "craft_amulet": 1
+   }
+  },
+  {
+   "id": "craft_signet",
+   "skill": "crafting",
+   "level": 45,
+   "xp": 430,
+   "station": "crafting_table",
+   "in": {
+    "brilliant_gem": 1,
+    "skysteel_bar": 2
+   },
+   "out": {
+    "craft_signet": 1
+   }
+  },
+  {
+   "id": "craft_cloak",
+   "skill": "crafting",
+   "level": 45,
+   "xp": 440,
+   "station": "crafting_table",
+   "in": {
+    "hard_leather": 4,
+    "goat_wool": 6
+   },
+   "out": {
+    "craft_cloak": 1
+   }
   }
  ],
  "gather": {
@@ -1221,6 +1626,15 @@
   },
   "cauldron": {
    "icon": "pot"
+  },
+  "sawhorse": {
+   "icon": "saw"
+  },
+  "crafting_table": {
+   "icon": "needle"
+  },
+  "site": {
+   "icon": "hammer"
   }
  },
  "unlocks": {
@@ -2052,6 +2466,169 @@
      "pale_stag",
      "stag_tracks"
     ]
+   }
+  ],
+  "carpentry": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "saw_oak",
+     "staff_oak"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "make_oak_rod",
+     "build_crate"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "save": 0.1
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "saw_palm",
+     "staff_coral",
+     "build_barrel"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "content",
+    "ids": [
+     "mend_ladder"
+    ]
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "saw_frostpine",
+     "make_frostpine_rod",
+     "staff_frostpine"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "content",
+    "ids": [
+     "saw_emberwood",
+     "make_ember_rod"
+    ]
+   },
+   {
+    "level": 40,
+    "kind": "perk",
+    "perk": {
+     "double": 0.15
+    }
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "saw_stormoak",
+     "make_stormoak_rod"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "save": 0.15,
+     "double": 0.1
+    }
+   }
+  ],
+  "crafting": [
+   {
+    "level": 5,
+    "kind": "content",
+    "ids": [
+     "craft_belt"
+    ]
+   },
+   {
+    "level": 10,
+    "kind": "content",
+    "ids": [
+     "craft_boots",
+     "make_sturdy_snare"
+    ]
+   },
+   {
+    "level": 15,
+    "kind": "perk",
+    "perk": {
+     "save": 0.1
+    }
+   },
+   {
+    "level": 20,
+    "kind": "content",
+    "ids": [
+     "tan_boar",
+     "tan_elk",
+     "cut_gem",
+     "craft_gloves",
+     "craft_bracelet"
+    ]
+   },
+   {
+    "level": 25,
+    "kind": "content",
+    "ids": [
+     "craft_hoops",
+     "craft_ring"
+    ]
+   },
+   {
+    "level": 30,
+    "kind": "content",
+    "ids": [
+     "craft_sea_boots",
+     "craft_diving_helm"
+    ]
+   },
+   {
+    "level": 35,
+    "kind": "perk",
+    "perk": {
+     "finer": 0.2
+    }
+   },
+   {
+    "level": 40,
+    "kind": "content",
+    "ids": [
+     "cut_flawless",
+     "craft_amulet"
+    ]
+   },
+   {
+    "level": 45,
+    "kind": "content",
+    "ids": [
+     "craft_signet",
+     "craft_cloak"
+    ]
+   },
+   {
+    "level": 50,
+    "kind": "perk",
+    "perk": {
+     "finer": 0.2,
+     "save": 0.1
+    }
    }
   ]
  }

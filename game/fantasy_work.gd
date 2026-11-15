@@ -1,7 +1,7 @@
 # Purpose: what the interact key does in the fantasy world and the skilling that follows from it: gathering (chop,
 # mine, fish, reap, pick: needs the skill level and the right tool, takes seconds, gives an item and experience, and
 # keeps going until the node is used up), crafting at stations (recipes: cook at a fire, smith at a forge, build at a
-# workbench, brew at a cauldron), and talking to people (quests are offered and reported there).
+# workbench, brew at a cauldron, saw at a sawhorse, craft at a crafting table), and talking to people (quests are offered and reported there).
 # Dependencies: game/fantasy_world.gd (bag, skills, perks, quests, gather nodes, places), core/skill_perks.gd, data/fantasy/skilling.json.
 extends Node
 
@@ -12,7 +12,8 @@ signal station_opened(kind: String)
 
 const WATERS := {"fresh": "freshwater", "salt": "saltwater", "lava": "lava"}
 const VERBS := {"woodcutting": "Chop", "mining": "Mine", "fishing": "Fish at", "farming": "Reap", "alchemy": "Pick", "hunting": "Follow"}
-const STATION_NAMES := {"fire": "Cook at the fire", "forge": "Work the forge", "workbench": "Use the workbench", "cauldron": "Brew at the cauldron"}
+const STATION_NAMES := {"fire": "Cook at the fire", "forge": "Work the forge", "workbench": "Use the workbench", "cauldron": "Brew at the cauldron",
+	"sawhorse": "Saw at the sawhorse", "crafting_table": "Craft at the table"}
 const TALK_REACH := 3.0
 
 var world: Node3D  # game/fantasy_world.gd
@@ -170,6 +171,9 @@ func cannot_make(recipe: Dictionary) -> String:
 		return "Needs %s %d." % [world.skills.skill_name(String(recipe["skill"])), int(recipe["level"])]
 	if not bool(world.bag.has_all(recipe["in"])):
 		return "You lack the materials."
+	for item: String in recipe["out"]:
+		if String(world.bag.def(item).get("kind", "")) == "gunside" and not bool(world.gun_room()):
+			return "Your backpack (gun side) is full."
 	return ""
 
 

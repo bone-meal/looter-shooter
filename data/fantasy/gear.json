@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting).",
+ "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches.",
  "start": {
   "equip": {
    "staff": "ash_staff",
@@ -1081,6 +1081,267 @@
     0.78,
     0.7,
     0.52
+   ]
+  },
+  "ash_plank": {
+   "kind": "material",
+   "icon": "plank",
+   "color": [
+    0.82,
+    0.74,
+    0.56
+   ]
+  },
+  "oak_plank": {
+   "kind": "material",
+   "icon": "plank",
+   "color": [
+    0.62,
+    0.46,
+    0.3
+   ]
+  },
+  "palm_plank": {
+   "kind": "material",
+   "icon": "plank",
+   "color": [
+    0.78,
+    0.64,
+    0.42
+   ]
+  },
+  "frostpine_plank": {
+   "kind": "material",
+   "icon": "plank",
+   "color": [
+    0.75,
+    0.8,
+    0.82
+   ]
+  },
+  "ember_plank": {
+   "kind": "material",
+   "icon": "plank",
+   "color": [
+    0.6,
+    0.3,
+    0.18
+   ]
+  },
+  "stormoak_plank": {
+   "kind": "material",
+   "icon": "plank",
+   "color": [
+    0.55,
+    0.58,
+    0.66
+   ]
+  },
+  "crate": {
+   "kind": "material",
+   "icon": "crate",
+   "color": [
+    0.62,
+    0.46,
+    0.3
+   ]
+  },
+  "barrel": {
+   "kind": "material",
+   "icon": "crate",
+   "color": [
+    0.55,
+    0.4,
+    0.26
+   ]
+  },
+  "leather": {
+   "kind": "material",
+   "icon": "pelt",
+   "color": [
+    0.58,
+    0.4,
+    0.24
+   ]
+  },
+  "hard_leather": {
+   "kind": "material",
+   "icon": "pelt",
+   "color": [
+    0.38,
+    0.28,
+    0.2
+   ]
+  },
+  "cut_gem": {
+   "kind": "material",
+   "icon": "gem",
+   "color": [
+    0.95,
+    0.5,
+    0.35
+   ]
+  },
+  "brilliant_gem": {
+   "kind": "material",
+   "icon": "gem",
+   "color": [
+    0.55,
+    0.9,
+    1.0
+   ]
+  },
+  "stormoak_rod": {
+   "kind": "tool",
+   "slot": "rod",
+   "tier": 5,
+   "icon": "rod",
+   "color": [
+    0.55,
+    0.58,
+    0.66
+   ]
+  },
+  "sturdy_snare": {
+   "kind": "trap",
+   "speed": 0.4,
+   "icon": "snare",
+   "color": [
+    0.5,
+    0.36,
+    0.22
+   ]
+  },
+  "craft_belt": {
+   "kind": "gunside",
+   "base": "leather_belt",
+   "tier": "grey",
+   "lvl": 5,
+   "icon": "belt",
+   "color": [
+    0.55,
+    0.38,
+    0.24
+   ]
+  },
+  "craft_boots": {
+   "kind": "gunside",
+   "base": "work_boots",
+   "tier": "grey",
+   "lvl": 10,
+   "icon": "boots",
+   "color": [
+    0.5,
+    0.36,
+    0.24
+   ]
+  },
+  "craft_gloves": {
+   "kind": "gunside",
+   "base": "sharkskin_gloves",
+   "tier": "green",
+   "lvl": 18,
+   "icon": "gauntlets",
+   "color": [
+    0.45,
+    0.52,
+    0.56
+   ]
+  },
+  "craft_bracelet": {
+   "kind": "gunside",
+   "base": "charm_bracelet",
+   "tier": "green",
+   "lvl": 18,
+   "icon": "bracelet",
+   "color": [
+    0.9,
+    0.7,
+    0.4
+   ]
+  },
+  "craft_hoops": {
+   "kind": "gunside",
+   "base": "gold_hoops",
+   "tier": "green",
+   "lvl": 22,
+   "icon": "earrings",
+   "color": [
+    0.95,
+    0.8,
+    0.35
+   ]
+  },
+  "craft_ring": {
+   "kind": "gunside",
+   "base": "ember_ring",
+   "tier": "green",
+   "lvl": 24,
+   "icon": "ring",
+   "color": [
+    0.95,
+    0.5,
+    0.25
+   ]
+  },
+  "craft_sea_boots": {
+   "kind": "gunside",
+   "base": "sea_boots",
+   "tier": "green",
+   "lvl": 28,
+   "icon": "boots",
+   "color": [
+    0.3,
+    0.32,
+    0.36
+   ]
+  },
+  "craft_diving_helm": {
+   "kind": "gunside",
+   "base": "diving_helm",
+   "tier": "green",
+   "lvl": 28,
+   "icon": "helm",
+   "color": [
+    0.75,
+    0.6,
+    0.35
+   ]
+  },
+  "craft_amulet": {
+   "kind": "gunside",
+   "base": "frost_amulet",
+   "tier": "blue",
+   "lvl": 36,
+   "icon": "necklace",
+   "color": [
+    0.6,
+    0.85,
+    1.0
+   ]
+  },
+  "craft_signet": {
+   "kind": "gunside",
+   "base": "anchor_signet",
+   "tier": "blue",
+   "lvl": 40,
+   "icon": "ring",
+   "color": [
+    0.8,
+    0.75,
+    0.5
+   ]
+  },
+  "craft_cloak": {
+   "kind": "gunside",
+   "base": "storm_cloak",
+   "tier": "blue",
+   "lvl": 42,
+   "icon": "cape",
+   "color": [
+    0.3,
+    0.34,
+    0.42
    ]
   }
  }

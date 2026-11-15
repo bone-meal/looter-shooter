@@ -162,6 +162,39 @@ def build_all():
         m.ball(c((0.4, 0.8, 1.0)), 0.07, (0.92, 1.05, 0.16), u=6, v=4)
     model("workbench", workbench)
 
+    def sawhorse(m):  # Carpentry: a trestle with a log on it, a bow saw, a heap of fresh planks and sawdust
+        for sx in (-1, 1):
+            for sf in (-1, 1):
+                m.rod(S(amber, "timber"), 0.06, (sx * 0.75, 0.0, sf * 0.35), (sx * 0.75, 0.82, 0.0), segs=6)
+        m.box(S(amber, "timber"), (1.7, 0.12, 0.14), (0, 0.82, 0), bevel=0.02)
+        m.loft(K("bark", (0.42, 0.34, 0.22)), [(-1.0, 1.02, 0, 0.17, 0.17), (1.0, 1.02, 0, 0.15, 0.15)], segs=10, steps=1)  # the log, lying along x
+        m.rod(c((0.72, 0.73, 0.76)), 0.006, (0.15, 1.2, -0.05), (0.15, 0.8, 0.05), segs=4)  # the saw blade in the cut
+        m.rod(S(amber, "timber"), 0.025, (0.15, 1.2, -0.05), (0.15, 1.45, 0.2), segs=5)
+        m.rod(S(amber, "timber"), 0.025, (0.15, 0.8, 0.05), (0.15, 1.45, 0.2), segs=5)
+        for k in range(4):  # planks stacked beside it
+            m.box(c((0.78, 0.6, 0.38)), (1.4, 0.05, 0.22), (0.1, 0.03 + k * 0.055, 0.85 + (k % 2) * 0.02), bevel=0.005)
+        m.ball(c((0.85, 0.72, 0.48)), (0.5, 0.04, 0.35), (0.2, 0.0, -0.1), u=10, v=4)  # sawdust
+    model("sawhorse", sawhorse)
+
+    def crafting_table(m):  # Crafting: a stout table with a pegged hide, needles and thread, a gem tray and a lamp
+        m.box(S(amber, "timber"), (2.0, 0.12, 1.0), (0, 0.9, 0), bevel=0.02)
+        for sx in (-1, 1):
+            for sf in (-1, 1):
+                m.box(S(amber, "timber"), (0.14, 0.9, 0.14), (sx * 0.85, 0.45, sf * 0.38), bevel=0.02)
+        m.box(S(amber, "timber"), (1.7, 0.08, 0.8), (0, 0.2, 0), bevel=0.01)  # the shelf below
+        m.box(K("leather", (0.55, 0.38, 0.24)), (0.9, 0.02, 0.6), (-0.35, 0.97, 0.0), bevel=0.01)  # a hide stretched on the top
+        for x, z in ((-0.78, -0.28), (0.08, -0.28), (-0.78, 0.28), (0.08, 0.28)):
+            m.rod(c((0.7, 0.7, 0.72)), 0.012, (x, 0.96, z), (x, 1.02, z), segs=4)
+        m.lathe(c((0.85, 0.82, 0.7)), [(0.06, 0.0), (0.06, 0.08)], (0.45, 0.96, -0.25), segs=10)  # a spool of thread
+        m.box(S(amber, "timber"), (0.36, 0.05, 0.24), (0.6, 0.98, 0.18), bevel=0.01)  # the gem tray
+        for k, col in enumerate(((0.9, 0.3, 0.3), (0.3, 0.6, 0.95), (0.4, 0.85, 0.5))):
+            m.ball(c(col), 0.03, (0.5 + k * 0.1, 1.02, 0.18), u=6, v=4)
+        m.rod(c((0.25, 0.25, 0.28)), 0.02, (0.85, 0.96, -0.35), (0.85, 1.25, -0.35), segs=5)  # a little lamp
+        m.ball(glow, 0.06, (0.85, 1.3, -0.35), u=6, v=4)
+        for k in range(3):  # rolled leathers on the shelf
+            m.loft(K("leather", (0.5 - 0.05 * k, 0.34, 0.2)), [(-0.6 + k * 0.4, 0.33, -0.2, 0.11, 0.11), (-0.6 + k * 0.4, 0.33, 0.2, 0.11, 0.11)], segs=8, steps=1)
+    model("crafting_table", crafting_table)
+
     def cauldron(m):
         m.lathe(K("metal", (0.2, 0.2, 0.22)), [(0.3, 0.25), (0.62, 0.5), (0.66, 0.9), (0.55, 1.05), (0.6, 1.1)], (0, 0, 0), segs=12)
         m.ball(glow, (0.52, 0.04, 0.52), (0, 1.02, 0), u=10, v=4)

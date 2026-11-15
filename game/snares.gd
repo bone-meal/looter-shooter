@@ -27,16 +27,17 @@ func _now() -> float:
 
 
 # Sets a snare at `local` (the player's feet). Returns what to tell the player ("" = set).
-func place(local: Vector3) -> String:
+func place(local: Vector3, item: String = "snare") -> String:
 	if _snares.size() >= int(_cfg["max"]):
 		return "You already have %d snares out." % int(_cfg["max"])
 	var game: Array = world.terrain.region_at(local.x, local.z).get("small_game", [])
 	if game.is_empty():
 		return "Nothing small lives here to snare."
-	if not world.bag.remove("snare", 1):
+	if not world.bag.remove(item, 1):
 		return "You have no snare."
-	var seconds := float(_cfg["seconds"]) * maxf(1.0 - world.perk("hunting", "snare_speed"), 0.2)
-	var snare := {"at": local, "ready_at": _now() + seconds * randf_range(0.8, 1.2), "catch": _pick(game), "node": null}
+	var quick: float = world.perk("hunting", "snare_speed") + float(world.bag.def(item).get("speed", 0.0))  # perks and a sturdier snare
+	var seconds := float(_cfg["seconds"]) * maxf(1.0 - quick, 0.2)
+	var snare := {"at": local, "ready_at": _now() + seconds * randf_range(0.8, 1.2), "catch": _pick(game), "node": null, "item": item}
 	snare["node"] = _model("snare", local)
 	_snares.append(snare)
 	world.sound("craft_workbench", world.world_of(local))
@@ -86,9 +87,9 @@ func collect(snare: Dictionary) -> void:
 		world.gain_xp("hunting", roundi(float(stats.get("xp", 0)) * float(_cfg["catch_xp_mult"])))
 		world.report({"type": "kill", "enemy": String(snare["catch"])})
 		if randf() < float(_cfg["keep_snare"]):
-			world.give("snare", 1)
+			world.give(String(snare["item"]), 1)
 	else:
-		world.give("snare", 1)
+		world.give(String(snare["item"]), 1)
 	(snare["node"] as Node3D).queue_free()
 	_snares.erase(snare)
 
@@ -132,7 +133,7 @@ func _process(_delta: float) -> void:
 func clear() -> void:
 	for snare: Dictionary in _snares:
 		(snare["node"] as Node3D).queue_free()
-		world.bag.add("snare", 1)
+		world.bag.add(String(snare["item"]), 1)
 	_snares.clear()
 	for trail: Array in _trails:
 		(trail[0] as Node3D).queue_free()

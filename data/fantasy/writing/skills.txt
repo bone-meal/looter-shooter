@@ -133,6 +133,18 @@ name: Forge
 # WHAT: the name of this kind of work place, shown on the tab of its window.
 name: Workbench
 
+[station sawhorse]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Sawhorse
+
+[station crafting_table]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Crafting Table
+
+[station site]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Repairs
+
 [station cauldron]
 # WHAT: the name of this kind of work place, shown on the tab of its window.
 name: Cauldron
@@ -296,3 +308,29 @@ name: Ice Elk
 name: Mountain Goat
 [creature pale_stag]
 name: The Pale Stag
+
+[unlock carpentry]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Oak work | Saw oak planks; build the Oak staff.
+10: Rods and crates | Build oak rods and ship's crates.
+15: Measure Twice | 10% chance to keep the materials.
+20: Palm work | Saw palm planks; build the Coral staff and ship's barrels.
+25: Ladders | Mend broken ladders up the cliffs: shortcuts.
+30: Frostpine work | Saw frostpine; build its rod and staff.
+35: Emberwood work | Saw emberwood; build the Ember rod.
+40: Clean Cuts | 15% chance of extra planks.
+45: Stormoak work | Saw stormoak; build the Stormoak rod.
+50: Master Joiner | 15% chance to keep the materials, 10% more extra planks.
+
+[unlock crafting]
+# WHAT: what the skill opens at levels 5, 10 ... 50: a short name, then | and one line for the skills page.
+5: Belts | Make a leather belt for your gun-side gear.
+10: Boots and snares | Make work boots and sturdy snares.
+15: Thrifty Hands | 10% chance to keep the materials.
+20: Gloves and gems | Tan hard leather, cut gems; make gloves and a charm bracelet.
+25: Jewellery | Make gold hoops and an ember ring.
+30: Diving gear | Make sea boots and a diving helm.
+35: Fine Work | 20% chance a gun-side piece comes out one rarity better.
+40: Brilliants | Cut flawless gems; make a frost amulet.
+45: Masterworks | Make an anchor signet and a storm cloak.
+50: Master Crafter | 20% more fine work, 10% chance to keep the materials.

@@ -24,6 +24,7 @@ const GatherNodes = preload("res://game/gather_nodes.gd")
 const FantasyPlaces = preload("res://game/fantasy_places.gd")
 const FantasyWork = preload("res://game/fantasy_work.gd")
 const Snares = preload("res://game/snares.gd")
+const ArmourGen = preload("res://core/armour_gen.gd")
 const StaffCaster = preload("res://game/staff_caster.gd")
 const SpellEffects = preload("res://game/spell_effects.gd")
 const CombatTools = preload("res://game/combat_tools.gd")
@@ -73,6 +74,7 @@ var gather := GatherNodes.new()
 var places := FantasyPlaces.new()
 var work := FantasyWork.new()
 var snares := Snares.new()  # Hunting: snares set from the bag and the trails that tracks lay
+var _craft_rng := RandomNumberGenerator.new()  # Crafting's gun-side pieces roll their bonuses
 var caster := StaffCaster.new()
 var effects := SpellEffects.new()
 var combat := CombatTools.new()  # dodge, ward, staff strike
@@ -636,6 +638,9 @@ func gain_xp(skill: String, amount: int) -> void:
 func give(item: String, count: int = 1) -> void:
 	if count <= 0 or not bag.has_item(item):
 		return
+	if String(bag.def(item).get("kind", "")) == "gunside":  # Crafting made a piece for the gun side: into the backpack
+		_make_gun_piece(bag.def(item), count)
+		return
 	var staff_before := String(bag.equipped.get("staff", ""))
 	bag.add(item, count)
 	sound("item")
@@ -644,6 +649,28 @@ func give(item: String, count: int = 1) -> void:
 		notice.emit("Now wielding: %s" % bag.item_name(String(bag.equipped["staff"])))
 	apply_stats()
 	_after_change()
+
+
+# A Crafting piece for the gun side's gear: a rolled armour piece of the item's base at its tier and item level, or
+# (perk "finer") one tier better, put straight into the gun side's backpack.
+func _make_gun_piece(def: Dictionary, count: int) -> void:
+	var tiers: Array = ["grey", "green", "blue", "purple", "gold"]
+	for _i in count:
+		var tier := String(def["tier"])
+		if randf() < perk("crafting", "finer") and tiers.find(tier) >= 0 and tiers.find(tier) < tiers.size() - 1:
+			tier = String(tiers[tiers.find(tier) + 1])
+		var piece := ArmourGen.generate(_player.items, _craft_rng, tier, int(def["lvl"]), String(def["base"]), "")
+		if _player.inventory.add_armour(piece):
+			sound("item")
+			toast.emit("+%s (Lv %d) in your backpack" % [String(_player.items.item_name(String(def["base"]))), int(def["lvl"])], Color.WHITE)
+		else:
+			notice.emit("Your backpack is full.")
+	_after_change()
+
+
+# True while the gun side's backpack can take a crafted piece.
+func gun_room() -> bool:
+	return _player.inventory.has_room()
 
 
 # Eats, drinks or lights an item from the bag. Returns what to tell the player ("" = done silently).
@@ -664,7 +691,7 @@ func use_item(item: String) -> String:
 			_after_change()
 			return ""
 		"trap":
-			var why := snares.place(player_local())
+			var why := snares.place(player_local(), item)
 			_after_change()
 			return why
 		"staff", "robe", "tool":

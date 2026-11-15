@@ -45,6 +45,7 @@ reed_rod: Reed Rod
 oak_rod: Oak Rod
 frostpine_rod: Frostpine Rod
 ember_rod: Ember Rod
+stormoak_rod: Stormoak Rod
 
 [items food]
 # WHAT: the names of every food. Read a line as  item id: Name .
@@ -97,6 +98,18 @@ goat_wool: Goat Wool
 bone: Bone
 pale_hide: Pale Hide
 pale_antler: Pale Antler
+ash_plank: Ash Plank
+oak_plank: Oak Plank
+palm_plank: Palm Plank
+frostpine_plank: Frostpine Plank
+ember_plank: Emberwood Plank
+stormoak_plank: Stormoak Plank
+crate: Ship's Crate
+barrel: Ship's Barrel
+leather: Leather
+hard_leather: Hard Leather
+cut_gem: Cut Gem
+brilliant_gem: Brilliant Gem
 flawless_gem: Flawless Gem
 copper_ore: Copper Ore
 iron_ore: Iron Ore
@@ -140,3 +153,18 @@ storm_pigment: Storm Pigment
 [items trap]
 # WHAT: a trap set from the bag where you stand. Read a line as  id: Name .
 snare: Snare
+sturdy_snare: Sturdy Snare
+
+[items gunside]
+# WHAT: things Crafting makes for the gun side's gear (they go straight into the backpack there). Read a line as  id: Name .
+craft_belt: Leather Belt (crafted)
+craft_boots: Work Boots (crafted)
+craft_gloves: Sharkskin Gloves (crafted)
+craft_bracelet: Charm Bracelet (crafted)
+craft_hoops: Gold Hoops (crafted)
+craft_ring: Ember Ring (crafted)
+craft_sea_boots: Sea Boots (crafted)
+craft_diving_helm: Diving Helm (crafted)
+craft_amulet: Frost Amulet (crafted)
+craft_signet: Anchor Signet (crafted)
+craft_cloak: Storm Cloak (crafted)

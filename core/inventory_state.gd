@@ -159,6 +159,11 @@ func _unload(index: int) -> void:
 	loaded[index] = 0
 
 
+# True while the backpack has an empty slot (things made elsewhere, e.g. Crafting's gun-side pieces, need one).
+func has_room() -> bool:
+	return _empty_slot() >= 0
+
+
 func _empty_slot() -> int:
 	for i in SIZE:
 		if _slots[i].is_empty():
