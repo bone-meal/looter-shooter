@@ -22,6 +22,8 @@
 # a pair of tongs clipped under it. grilled_kebab = the food a burning kill drops (about the origin).
 # VOLCANO SAUCE: a small bottle of red hot sauce (white cap, label) taped upright against the LEFT of the pistol grip
 # with two strips of silver duct tape.
+# HOT POTATO: a foil-wrapped baked potato strapped on top of the grenade launcher's tube, foil peeled back at the
+# front to show the split skin and a pat of butter.
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -52,6 +54,7 @@ SPECS = {  # name: (kind, colour, seed)
     "meat": ("matte", (0.45, 0.22, 0.12), 69), "pepper": ("polymer", (0.25, 0.55, 0.18), 70),
     "onion": ("matte", (0.86, 0.8, 0.62), 71), "char": ("matte", (0.08, 0.06, 0.05), 72), "skewer": ("wood", (0.72, 0.58, 0.38), 73),
     "hotsauce": ("polymer", (0.72, 0.08, 0.05), 74), "saucelabel": ("matte", (0.95, 0.85, 0.45), 75),
+    "potatoskin": ("matte", (0.55, 0.38, 0.2), 76), "potatoflesh": ("matte", (0.95, 0.88, 0.62), 77), "butter": ("polymer", (1.0, 0.86, 0.3), 78),
 }
 
 LEFT = -0.0415  # the M16 receiver's left face (x)
@@ -368,7 +371,20 @@ def sauce_bottle(m, M):
         m.box(M["tape"], (0.0012, 0.014, 0.024), (0.0235, y, bf), tilt=tilt, bevel=0.0004)
 
 
-MODELS = {"mixtape_mp3": mixtape_mp3, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def hot_potato(m, M):
+    py, pf = 0.066, 0.3  # on top of the tube (radius 0.034 at y 0)
+    m.ball(M["chrome"], (0.034, 0.03, 0.05), (0.0, py, pf - 0.008), u=16, v=10)  # the foil
+    for dx, dy, df, s in ((0.02, 0.012, -0.03, 0.012), (-0.022, 0.01, 0.0, 0.01), (0.012, 0.024, 0.012, 0.009), (-0.01, 0.022, -0.035, 0.011)):
+        m.box(M["chrome"], (s, s * 0.5, s * 1.3), (dx, py + dy, pf + df), tilt=37.0, bevel=0.002)  # crumples
+    m.ball(M["potatoskin"], (0.03, 0.026, 0.02), (0.0, py + 0.002, pf + 0.036), u=14, v=8)  # the potato showing at the front
+    m.ball(M["potatoflesh"], (0.02, 0.008, 0.014), (0.0, py + 0.024, pf + 0.034), u=12, v=6)  # split open
+    m.box(M["butter"], (0.012, 0.006, 0.012), (0.0, py + 0.03, pf + 0.034), tilt=12.0, bevel=0.0015)
+    for f in (pf - 0.03, pf + 0.012):  # two straps round potato and tube
+        m.cyl(M["strap"], 0.037, f - 0.004, f + 0.004, 0.0, segs=20, bevel=0.0006)
+        m.box(M["strap"], (0.07, 0.003, 0.008), (0.0, py + 0.031, f), bevel=0.0005)
+
+
+MODELS = {"mixtape_mp3": mixtape_mp3, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

@@ -123,6 +123,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				await get_tree().create_timer(0.05, true, false, true).timeout
 			if fired:
 				player.call("_shoot")
+				var sig_f: Node = player.get("_sig_node")
+				if sig_f != null and sig_f.has_method("on_fired"):
+					sig_f.call("on_fired")  # as the real trigger does (Hot Potato heat)
 				_lines.append("FIRE shot (%d left)" % int(w.get("ammo")))
 			else:
 				_lines.append("FIRE could not shoot: hand %d held %s ammo %s reloading %s paused %s" % [int(player.get("_hand")), String(player.call("held_id")), str(w.get("ammo")) if w != null else "-", str(w.call("is_reloading")) if w != null else "-", str(get_tree().paused)])
@@ -190,6 +193,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					bombs += 1
 				if n.get_script() != null and String(n.get_script().resource_path).ends_with("fire_geyser.gd"):
 					bombs += 100  # (a geyser counts as 100 in "bombs")
+			for n: Node in get_tree().get_root().find_children("*", "Node3D", true, false):
+				if n.get_script() != null and String(n.get_script().resource_path).ends_with("potato_bomb.gd"):
+					bombs += 10000  # (a flying Hot Potato counts as 10000)
 			var lanterns := 0
 			for n: Node in get_tree().get_nodes_in_group("lanterns"):
 				var sw := (n as Node3D).find_child("Swing", true, false) as Node3D

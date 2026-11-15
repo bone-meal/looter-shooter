@@ -9,7 +9,9 @@
 # inspect key throws it as a firebomb (blast, burning oil that counts as fire), it is lit again after its wait.
 # GRILLMASTER: a burning enemy killed by it drops food (a plain kill does not), so does one it hit that burns to death
 # later; walking over it heals (offline here). VOLCANO SAUCE: hits add heat to a target, the 5th within the cool-off
-# erupts a geyser (blast, burning, fire for Swamp Gas), heat cools off after a pause.
+# erupts a geyser (blast, burning, fire for Swamp Gas), heat cools off after a pause. HOT POTATO: shots heat the gun
+# (it glows), the reload key throws it only at full heat (a big blast where it lands), it is gone and cannot fire
+# until it comes back; another player's copy shows the glow and the gun gone.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -170,6 +172,7 @@ func _ready() -> void:
 	await _lantern(db)
 	await _grill(db)
 	await _sauce(db)
+	await _potato(db)
 	_finish()
 
 
@@ -494,6 +497,66 @@ func _sauce(db: GunDb) -> void:
 	mob.set_meta("sauce_at", Time.get_ticks_msec() / 1000.0 - 10.0)  # a long pause
 	sig.call("on_target_hit", mob, mob.position, 20.0, false)
 	_say("after a pause the heat has cooled (back to 1)", int(mob.get_meta("sauce_heat")) == 1)
+
+
+func _potato(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "hot_potato", 30)
+	_say("Hot Potato builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := LanternHolder.new()
+	holder.position = Vector3(7000, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(100, 1, 100)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(7000, -0.5, 0)
+	add_child(floor_body)
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its foil potato is strapped on", piece != null)
+	var def: Dictionary = (db.uniques["hot_potato"] as Dictionary).duplicate(true)
+	(def["cfg"] as Dictionary)["back_seconds"] = 0.8
+	var sig: Node3D = Signatures.make("hot_potato")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, def)
+	sig.call("start", piece)
+	for _n in 4:
+		sig.call("on_fired")
+	_say("half hot after 4 shots: the reload key reloads as usual", not bool(sig.call("on_reload")) and is_equal_approx(float(sig.call("heat")), 0.5))
+	for _n in 4:
+		sig.call("on_fired")
+	await get_tree().process_frame
+	var glow: Variant = (model.find_children("*", "GeometryInstance3D", true, false)[0] as GeometryInstance3D).material_overlay
+	_say("full heat after 8 shots: the gun glows (%s)" % String(sig.call("held_suffix")), glow != null and String(sig.call("held_suffix")) == "h9")
+	booms.blasts.clear()
+	_say("at full heat the reload key throws it: gone from the hands, cannot fire, others see \"out\"", bool(sig.call("on_reload")) and bool(sig.call("blocks_fire")) and String(sig.call("held_suffix")) == "out")
+	await get_tree().process_frame
+	_say("the gun model is hidden while it is away", not model.visible)
+	for _i in 40:
+		await get_tree().create_timer(0.05).timeout
+		if not booms.blasts.is_empty():
+			break
+	_say("it lands in a big blast %s" % str(booms.blasts), booms.blasts.size() == 1 and is_equal_approx(float(booms.blasts[0][1]), 6.0) and is_equal_approx(float(booms.blasts[0][2]), 240.0))
+	await get_tree().create_timer(0.8).timeout
+	_say("back in the hands, cooled", model.visible and not bool(sig.call("blocks_fire")) and String(sig.call("held_suffix")) == "h0")
+	var copy := Node3D.new()
+	add_child(copy)
+	var copy_piece := UniqueAttach.apply_id(copy, "hot_potato")
+	UniqueAttach.show_extra(copy_piece, "hot_potato", "h9")
+	var copy_glow: Variant = (copy.find_children("*", "GeometryInstance3D", true, false)[0] as GeometryInstance3D).material_overlay
+	UniqueAttach.show_extra(copy_piece, "hot_potato", "out")
+	_say("another player's copy: glows at h9, hidden at out", copy_glow != null and not copy.visible)
+	sig.call("stop")
 
 
 func _json(name: String) -> Dictionary:

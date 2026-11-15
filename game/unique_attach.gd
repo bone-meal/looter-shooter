@@ -29,6 +29,11 @@ static func show_extra(piece: Node3D, unique_id: String, extra: String) -> void:
 		var swing := piece.find_child("Swing", true, false) as Node3D
 		if swing != null:
 			swing.visible = extra != "out"
+	if bool(def.get("hot", false)) and piece.get_parent() is Node3D:  # Hot Potato: "out" = thrown, "h0".."h9" = how hot
+		var gun_model := piece.get_parent() as Node3D
+		gun_model.visible = extra != "out"
+		if extra.begins_with("h"):
+			(load("res://game/signatures/hot_potato.gd") as GDScript).call("paint", gun_model, float(extra.substr(1).to_int()) / 9.0)
 
 
 static func _def_of(unique_id: String) -> Dictionary:

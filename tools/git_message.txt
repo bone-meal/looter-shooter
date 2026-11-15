@@ -1,6 +1,6 @@
-Volcano Sauce chase gun (online)
+Hot Potato chase gun (online)
 
-Volcano Sauce (region 3 boss pool, pistol): a bottle of red hot sauce taped to the grip with silver duct tape. Every hit adds heat to its target (MILD, MEDIUM, HOT, EXTRA HOT over it; it cools after 4 s without a hit); the 5th erupts a geyser of fire at its feet that blasts, sets nearby enemies burning and counts as fire for Swamp Gas. Others see the eruption (no damage from copies). tools/chase_check 46 of 46 on his PC; two-copy run: the guest received the eruption.
+Hot Potato (region 3 boss pool, grenade launcher): a foil-wrapped baked potato strapped on top. The whole gun glows hotter with every shot; at full heat (8 shots) the reload key throws the gun as a big bomb that blasts where it lands, and it is back in your hands 5 s later, cooled (it cannot fire while away). Others see the glow grow, the gun gone and the bomb fly (damage only from the thrower). tools/chase_check 54 of 54 on his PC; two-copy test passed. Cooling is off by default (the design never asked for it; data cool_per_second).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

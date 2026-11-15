@@ -323,8 +323,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		third_person = not third_person
 		_apply_view()
 	elif event.is_action_pressed("reload"):
-		if _holding:
-			_reload()
+		if _holding and not (_sig_node != null and _sig_node.has_method("on_reload") and bool(_sig_node.call("on_reload"))):
+			_reload()  # (Hot Potato at full heat throws the gun instead)
 	elif event.is_action_pressed("inspect"):
 		start_inspect()
 	elif event.is_action_pressed("skill_1"):
@@ -544,12 +544,14 @@ func _move_and_shoot(delta: float) -> void:
 		_use_knife()
 	elif _shield_out:
 		_use_shield()
-	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and _mouse_held():
+	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and _mouse_held() and not (_sig_node != null and _sig_node.has_method("blocks_fire") and bool(_sig_node.call("blocks_fire"))):
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
 		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now())  # Bullet Storm, Joyburst
 		if weapon.try_fire(_now()):
 			_shoot()
+			if _sig_node != null and _sig_node.has_method("on_fired"):
+				_sig_node.call("on_fired")  # Hot Potato: hotter with every shot
 			_motion.fire()
 		elif weapon.ammo <= 0 and not weapon.is_reloading() and Input.is_action_just_pressed("shoot"):
 			_gun_sound("dry_fire")

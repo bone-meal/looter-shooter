@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), keeps = a number the gun itself remembers (\"record\": Fish Story's biggest hit; the host allows it on that unique only), cfg = numbers its behaviour reads, lantern = a Keeper's Lantern gimmick (its flame glows and lights), pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
+  "_about": "Hand-made PONY guns. A unique is saved as its id plus the gun it stands for; core/gun_gen.gd rebuilds it from this file and refuses any copy that differs. Every unique gets: the listed parts (all made by the gun's own maker, so the factory-perfect bonus applies), all seven stat rolls at the maximum, three buffs and two skills at full quality, and the `bonus` below on top. `drop_chance` = how often a pony-tier drop is one of these. All names and numbers are placeholders for the director. CHASE GUNS (diary/DESIGN_UNIQUES.md) add: red = the red text on the card, signature = its hand-made behaviour (game/signatures/<id>.gd), attach = its gimmick model (assets/models/weapons/uniques/<id>.gltf), keeps = a number the gun itself remembers (\"record\": Fish Story's biggest hit; the host allows it on that unique only), cfg = numbers its behaviour reads, lantern = a Keeper's Lantern gimmick (its flame glows and lights), hot = Hot Potato (others see its heat glow and the gun gone while thrown), pool = the loot pool it drops from (data/loot_pools.json; no pool = any pony drop anywhere). PLAIN UNIQUES (no red text, no signature) may also carry traits and a sea affix (\"sea\").",
   "drop_chance": 0.25,
   "bonus": {
     "damage": 0.15,
@@ -478,6 +478,43 @@
         "erupt_damage": 6.0,
         "erupt_radius": 2.5,
         "burn_share": 0.2
+      }
+    },
+    "hot_potato": {
+      "name": "Hot Potato",
+      "body": "grenade_launcher",
+      "maker": "brawn",
+      "parts": {
+        "sight": "red_dot",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "explosive_chance",
+        "overkill_splash",
+        "big_game"
+      ],
+      "skills": [
+        "rocket_barrage",
+        "overshield"
+      ],
+      "traits": [
+        "overcharge",
+        "last_stand"
+      ],
+      "flavor": "",
+      "red": "Ow. Ow. Ow. OW.",
+      "signature": "hot_potato",
+      "attach": "hot_potato",
+      "pool": "region_3_boss",
+      "hot": true,
+      "cfg": {
+        "heat_per_shot": 0.125,
+        "cool_per_second": 0.0,
+        "throw_speed": 16.0,
+        "throw_lift": 3.5,
+        "bomb_damage": 8.0,
+        "bomb_radius": 6.0,
+        "back_seconds": 5.0
       }
     },
     "beach_day": {

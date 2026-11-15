@@ -1,5 +1,5 @@
 # Purpose: which script plays each chase gun's red-text behaviour (data/gun_uniques.json "signature" -> a node made
-# here). A behaviour node lives under the player while its gun is in hand: start(gimmick), stop(), on_inspect(); optional bind(player, gun, def) first, on_hit_total(at, amount, killed) -> shown number, damage_mult(), fire_projectile(origin, dir, stats) instead of a grenade / rocket, extra_jumps(), after_shot(origin, dir) after a hitscan shot, held_suffix() for what others see after "#", on_target_hit(target, at, amount, killed).
+# here). A behaviour node lives under the player while its gun is in hand: start(gimmick), stop(), on_inspect(); optional bind(player, gun, def) first, on_hit_total(at, amount, killed) -> shown number, damage_mult(), fire_projectile(origin, dir, stats) instead of a grenade / rocket, extra_jumps(), after_shot(origin, dir) after a hitscan shot, held_suffix() for what others see after "#", on_target_hit(target, at, amount, killed), on_fired() after any shot, on_reload() -> true to take the reload key, blocks_fire().
 # Dependencies: the scripts in game/signatures/.
 extends RefCounted
 
@@ -12,6 +12,7 @@ const SCRIPTS := {
 	"keepers_lantern": preload("res://game/signatures/keepers_lantern.gd"),
 	"grillmaster": preload("res://game/signatures/grillmaster.gd"),
 	"volcano_sauce": preload("res://game/signatures/volcano_sauce.gd"),
+	"hot_potato": preload("res://game/signatures/hot_potato.gd"),
 }
 
 
