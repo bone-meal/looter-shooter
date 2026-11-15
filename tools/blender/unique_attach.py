@@ -38,6 +38,16 @@
 # CHIP THIEF: a crinkled bag of chips taped to the LEFT of the double shotgun's receiver, its crimped top open a
 # little with chips showing; gull = a seagull (about the origin, facing +f) with its wings as nodes "WingL" / "WingR"
 # (pivots at the shoulders: the game flaps them).
+# CLAM SHELL: a big ribbed clam closed round the front of the double shotgun's barrels: the lower shell fixed, the
+# upper one its own node "Lid" (pivot at the hinge at the back: the game opens it to fire and snaps it shut), a pearl
+# inside as node "Pearl" (the game grows it while the shot charges).
+# ANGLER LIGHT: an anglerfish's lure: a thin bent stalk from the back of the pistol's slide arching out past the muzzle,
+# its glowing bulb hanging from the tip as node "Lure" (pivot at the tip: the game sways it and lights it).
+# FLUSH: a toilet tank's copper float ball on its brass arm and a chrome flush handle on top of the grenade launcher.
+# SPAGHETTI: the sniper's barrel stretched far too long: a thin extension tube sagging on past the muzzle with two
+# clamps and a second muzzle at its end.
+# LIGHTHOUSE IN A BOTTLE: a corked glass bottle strapped along the LEFT of the rocket tube with a tiny striped
+# lighthouse on a rock inside; the glass is node "Glass" (the game makes it see-through), the lamp node "Lamp".
 # Run: python3 tools/blender/unique_attach.py [ids]   (from the project folder)
 import math
 import os
@@ -75,7 +85,9 @@ SPECS = {  # name: (kind, colour, seed)
     "vaneiron": ("paint", (0.12, 0.12, 0.13), 88), "gilt": ("paint", (0.85, 0.66, 0.22), 89), "comb": ("polymer", (0.85, 0.1, 0.08), 90),
     "kitered": ("fabric", (0.88, 0.16, 0.14), 91), "kiteyellow": ("fabric", (0.98, 0.82, 0.2), 92), "spar": ("wood", (0.7, 0.55, 0.35), 93),
     "bagfoil": ("polymer", (0.98, 0.78, 0.12), 94), "bagred": ("polymer", (0.85, 0.12, 0.1), 95), "chip": ("matte", (0.95, 0.78, 0.38), 96),
-    "gullwhite": ("matte", (0.95, 0.95, 0.94), 97), "gullgrey": ("matte", (0.62, 0.65, 0.7), 98),
+    "gullwhite": ("matte", (0.95, 0.95, 0.94), 97), "shell": ("matte", (0.92, 0.78, 0.66), 99),
+    "shellrib": ("matte", (0.78, 0.55, 0.45), 100), "nacre": ("polymer", (0.95, 0.92, 0.96), 101), "lure": ("matte", (0.75, 0.95, 0.85), 102),
+    "copper": ("paint", (0.78, 0.45, 0.25), 103), "lightred": ("polymer", (0.85, 0.15, 0.12), 104), "rock": ("matte", (0.45, 0.42, 0.4), 105), "gullgrey": ("matte", (0.62, 0.65, 0.7), 98),
     "penguinback": ("polymer", (0.07, 0.08, 0.1), 79), "penguinbelly": ("polymer", (0.94, 0.94, 0.92), 80), "beak": ("polymer", (1.0, 0.55, 0.12), 81),
 }
 
@@ -565,7 +577,74 @@ def gull(m, M):
         m.box(M["rubber"], (0.08, 0.011, 0.08), (side * 0.32, 0.02, 0.0), node=name, bevel=0.003)  # black wing tips
 
 
-MODELS = {"weathervane": weathervane, "kite_reel": kite_reel, "kite": kite, "chip_bag": chip_bag, "gull": gull, "brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
+def clam_shell(m, M):
+    hinge_f = 0.4
+    m.ball(M["shell"], (0.052, 0.022, 0.17), (0.0, -0.006, 0.56), u=20, v=10)  # lower shell
+    m.node("Lid", (0.0, 0.02, hinge_f))
+    m.ball(M["shell"], (0.054, 0.026, 0.172), (0.0, 0.03, 0.56), node="Lid", u=20, v=10)  # upper shell
+    for k in range(-3, 4):  # ribs fanning from the hinge over the lid
+        a = k * 0.14
+        m.rod(M["shellrib"], 0.0035, (math.sin(a) * 0.01, 0.05, hinge_f + 0.01), (math.sin(a) * 0.05, 0.05 - abs(math.sin(a)) * 0.012, 0.72), node="Lid", segs=6)
+        m.rod(M["shellrib"], 0.003, (math.sin(a) * 0.01, -0.024, hinge_f + 0.01), (math.sin(a) * 0.05, -0.022, 0.72), segs=6)
+    m.box(M["shellrib"], (0.03, 0.012, 0.02), (0.0, 0.016, hinge_f), bevel=0.003)  # hinge
+    m.node("Pearl", (0.0, 0.03, 0.66))
+    m.ball(M["nacre"], 0.012, (0.0, 0.03, 0.66), node="Pearl", u=12, v=8)
+
+
+def angler_lure(m, M):
+    pts = [(0.0, 0.058, 0.03), (0.0, 0.1, 0.07), (0.0, 0.135, 0.15), (0.0, 0.14, 0.23), (0.0, 0.125, 0.3)]  # the stalk, arching forward
+    for a, b in zip(pts, pts[1:]):
+        m.rod(M["rubber"], 0.0025, a, b, r2=0.002, segs=6)
+    m.box(M["rubber"], (0.012, 0.008, 0.02), (0.0, 0.055, 0.03), bevel=0.002)  # its clamp on the slide
+    tip = pts[-1]
+    m.node("Lure", tip)
+    m.rod(M["cable"], 0.0008, tip, (0.0, tip[1] - 0.03, tip[2]), segs=4, node="Lure")
+    m.ball(M["lure"], 0.009, (0.0, tip[1] - 0.039, tip[2]), node="Lure", u=12, v=8)  # the glowing bulb
+    m.ball(M["lure"], (0.004, 0.006, 0.004), (0.0, tip[1] - 0.05, tip[2]), node="Lure", u=8, v=6)
+
+
+def float_ball(m, M):
+    m.box(M["chrome"], (0.018, 0.016, 0.03), (0.0, 0.045, 0.16), bevel=0.003)  # valve block on the tube
+    m.rod(M["brass"], 0.003, (0.0, 0.05, 0.17), (0.0, 0.07, 0.34), segs=8)  # float arm
+    m.ball(M["copper"], 0.03, (0.0, 0.075, 0.37), u=16, v=10)  # the float
+    m.lathe(M["copper"], [(0.006, -0.002), (0.006, 0.004)], (0.0, 0.105, 0.37), segs=10)  # its seam knob
+    m.box(M["chrome"], (0.01, 0.01, 0.012), (-0.033, 0.03, 0.12), bevel=0.002)  # the flush handle on the side
+    m.box(M["chrome"], (0.006, 0.006, 0.045), (-0.04, 0.03, 0.145), bevel=0.002)
+
+
+def long_barrel(m, M):
+    y = 0.01
+    pts = [(0.0, y, 1.04), (0.0, y - 0.004, 1.35), (0.0, y - 0.016, 1.65), (0.0, y - 0.03, 1.9)]  # sagging
+    for a, b in zip(pts, pts[1:]):
+        m.rod(M["chrome"], 0.012, a, b, segs=12)
+    for f, yy in ((1.3, y - 0.003), (1.6, y - 0.014)):  # clamps
+        m.cyl(M["vaneiron"], 0.016, f - 0.01, f + 0.01, yy, segs=12, bevel=0.002)
+    m.cyl(M["vaneiron"], 0.018, 1.88, 1.94, y - 0.03, segs=12, bevel=0.003)  # the far muzzle
+    m.cyl(M["rubber"], 0.009, 1.94, 1.945, y - 0.03, segs=12, bevel=0.0)
+
+
+BOTTLE = (-0.112, 0.03, 0.0)  # the lying bottle's axis (x, y) and its back end f, beside the rocket tube (radius 0.07)
+
+
+def bottle_lighthouse(m, M):
+    x, y, f = BOTTLE
+    m.node("Glass", (x, y, f + 0.15))
+    m.lathe(M["jarglass"], [(0.03, 0.0), (0.036, 0.006), (0.036, 0.24), (0.026, 0.27), (0.012, 0.29), (0.012, 0.33)], (x, y, f), node="Glass", segs=20, axis="f")
+    m.lathe(M["cork"], [(0.0115, 0.32), (0.0125, 0.345), (0.011, 0.35)], (x, y, f), segs=12, axis="f")
+    m.ball(M["rock"], (0.026, 0.012, 0.05), (x, y - 0.026, f + 0.13), u=12, v=6)  # the rock inside
+    by = y - 0.018
+    for k in range(5):  # striped tower, red and white bands
+        r0 = 0.0085 - k * 0.0006
+        m.lathe(M["lightred"] if k % 2 == 0 else M["cupwhite"], [(r0, by + k * 0.008), (r0 - 0.0006, by + (k + 1) * 0.008)], (x, 0.0, f + 0.13), segs=12)
+    m.node("Lamp", (x, by + 0.046, f + 0.13))
+    m.lathe(M["flame"], [(0.0055, by + 0.04), (0.0055, by + 0.05)], (x, 0.0, f + 0.13), node="Lamp", segs=10)
+    m.lathe(M["vaneiron"], [(0.0068, by + 0.05), (0.0068, by + 0.052), (0.001, by + 0.058)], (x, 0.0, f + 0.13), segs=10)  # cap
+    for ff in (f + 0.05, f + 0.21):  # two straps round bottle and tube
+        m.cyl(M["strap"], 0.073, ff - 0.005, ff + 0.005, 0.02, segs=24, bevel=0.0006)
+        m.box(M["strap"], (0.03, 0.01, 0.01), (x + 0.02, y + 0.034, ff), bevel=0.0008)
+
+
+MODELS = {"clam_shell": clam_shell, "angler_lure": angler_lure, "float_ball": float_ball, "long_barrel": long_barrel, "bottle_lighthouse": bottle_lighthouse, "weathervane": weathervane, "kite_reel": kite_reel, "kite": kite, "chip_bag": chip_bag, "gull": gull, "brain_freeze_cup": brain_freeze_cup, "ski_pole": ski_pole, "snowball": snowball, "mixtape_mp3": mixtape_mp3, "penguin_slide": penguin_slide, "penguin": penguin, "hot_potato": hot_potato, "sauce_bottle": sauce_bottle, "grill_plate": grill_plate, "grilled_kebab": grilled_kebab, "keepers_lantern": keepers_lantern, "keepers_lantern_free": keepers_lantern_free, "swamp_jar": swamp_jar, "croak_scope": croak_scope, "croak_frog": croak_frog, "fish_story_rod": fish_story_rod, "beach_ball_muzzle": beach_ball_muzzle,
     "beach_ball": beach_ball}
 
 if __name__ == "__main__":

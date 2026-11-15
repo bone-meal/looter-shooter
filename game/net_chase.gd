@@ -1,4 +1,4 @@
-# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction; WEATHERVANE "bolt"; KITE FLYER "kite_dive"; CHIP THIEF "gull") (director 2026-11-15: "effects should be seen by online
+# Purpose: the chase guns' effects for the other players (AVALANCHE CONTROL: a snowball "snowball": from, flat direction; WEATHERVANE "bolt"; KITE FLYER "kite_dive"; CHIP THIEF "gull"; CLAM SHELL "clam" / "pearl"; FLUSH "whirl"; SPAGHETTI "noodle") (director 2026-11-15: "effects should be seen by online
 # players too"). The holder's machine plays an effect and tells the host; the host passes it to everyone else, who
 # show it. CROAK: where the holder's frog is (leaping, riding an enemy's head) or that it is back on the gun.
 # KEEPER'S LANTERN: a thrown lantern ("bomb": from, velocity) flies and burns on every machine (damage only from the
@@ -11,10 +11,13 @@ extends Node
 
 const SwampGas = preload("res://game/swamp_gas.gd")
 const FROG := "res://assets/models/weapons/uniques/croak_frog.gltf"
-const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball", "bolt", "kite_dive", "gull"]
+const KINDS := ["frog", "frog_off", "gas", "gas_pop", "gas_lit", "bomb", "food", "food_take", "geyser", "potato", "penguin", "snowball", "bolt", "kite_dive", "gull", "clam", "pearl", "whirl", "noodle"]
 const PenguinRescue = preload("res://game/signatures/penguin_rescue.gd")
 const AvalancheControl = preload("res://game/signatures/avalanche_control.gd")
 const LightningBolt = preload("res://game/lightning_bolt.gd")
+const ClamShell = preload("res://game/signatures/clam_shell.gd")
+const Flush = preload("res://game/signatures/flush.gd")
+const Spaghetti = preload("res://game/signatures/spaghetti.gd")
 const HotPotato = preload("res://game/signatures/hot_potato.gd")
 const VolcanoSauce = preload("res://game/signatures/volcano_sauce.gd")
 const Grillmaster = preload("res://game/signatures/grillmaster.gd")
@@ -124,6 +127,22 @@ func _down(from: int, kind: String, slot: int, at: Vector3, target: int, b: Vect
 			var flock := _of_peer("gull_flocks", from)
 			if flock != null:
 				flock.call("send_gull", at, null, b)
+		"clam":  # another player's clam snaps shut (his copy's lid)
+			var body: Node3D = net.player_node(from)
+			if body != null and body.get("_held_piece") != null:
+				ClamShell.snap(body.get("_held_piece"))
+		"pearl":  # another player's pearl flies from at to b (no damage from ours)
+			var me_c: Node3D = net.local_player()
+			if me_c != null:
+				ClamShell.fly_pearl(me_c.get_parent(), at, b)
+		"whirl":  # another player's Flush whirlpool opens at `at` (it only shows here)
+			var me_w: Node3D = net.local_player()
+			if me_w != null:
+				Flush.open(me_w.get_parent(), me_w.get("explosives"), at, false, cfg_of("flush"))
+		"noodle":  # another player's charged Spaghetti shot from at along b: the enemies near the line stretch here too
+			var me_n2: Node3D = net.local_player()
+			if me_n2 != null:
+				Spaghetti.stretch_line(get_tree(), me_n2.get("explosives"), at, b.normalized(), cfg_of("spaghetti"), false)
 		"snowball":  # another player's Avalanche Control snowball: it rolls the same way here (no damage from ours)
 			var me_s: Node3D = net.local_player()
 			if me_s != null:

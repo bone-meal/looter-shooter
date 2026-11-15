@@ -738,6 +738,187 @@
         "bag_seconds": 12.0
       }
     },
+    "clam_shell": {
+      "name": "Clam Shell",
+      "body": "shotgun_double",
+      "maker": "brawn",
+      "parts": {
+        "barrel": "short",
+        "grip": "folding"
+      },
+      "buffs": [
+        "point_blank",
+        "big_game",
+        "pristine"
+      ],
+      "skills": [
+        "shockwave_slam",
+        "overshield"
+      ],
+      "traits": [
+        "overcharge",
+        "twin_shot"
+      ],
+      "sea": "coralforged",
+      "flavor": "",
+      "red": "Rude to open someone without asking.",
+      "signature": "clam_shell",
+      "attach": "clam_shell",
+      "pool": "region_6_boss",
+      "clam": true,
+      "cfg": {
+        "bite": 8.0,
+        "bite_reach": 2.5,
+        "hold_start": 0.35,
+        "charge_seconds": 1.5,
+        "min_charge": 0.25,
+        "pearl_damage": 10.0,
+        "pierce": 4
+      }
+    },
+    "angler_light": {
+      "name": "Angler Light",
+      "body": "pistol_basic",
+      "maker": "lumen",
+      "parts": {
+        "barrel": "long",
+        "mag": "extended",
+        "sight": "peep"
+      },
+      "buffs": [
+        "headshot_damage",
+        "steady",
+        "slayer_mark"
+      ],
+      "skills": [
+        "decoy_hologram",
+        "vacuum_pulse"
+      ],
+      "traits": [
+        "pack_hunter",
+        "executioner"
+      ],
+      "sea": "deepcurrent",
+      "flavor": "",
+      "red": "Come closer. No, closer. Perfect.",
+      "signature": "angler_light",
+      "attach": "angler_lure",
+      "pool": "region_6_boss",
+      "angler": true,
+      "cfg": {
+        "drift_every": 0.5,
+        "reach": 14.0,
+        "stop_at": 3.0,
+        "drift": 3.0
+      }
+    },
+    "flush": {
+      "name": "Flush",
+      "body": "grenade_launcher",
+      "maker": "moss",
+      "parts": {
+        "sight": "red_dot",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "overkill_splash",
+        "explosive_chance",
+        "crowd_pleaser"
+      ],
+      "skills": [
+        "vacuum_pulse",
+        "gravity_well"
+      ],
+      "traits": [
+        "chain_reaction",
+        "executioner"
+      ],
+      "sea": "riptide",
+      "flavor": "",
+      "red": "Everything goes down eventually. Some things faster.",
+      "signature": "flush",
+      "attach": "float_ball",
+      "pool": "region_7_boss",
+      "cfg": {
+        "radius": 4.0,
+        "seconds": 4.0,
+        "flush_share": 0.15,
+        "swirl": 6.0
+      }
+    },
+    "spaghetti": {
+      "name": "Spaghetti",
+      "body": "sniper_basic",
+      "maker": "vantor",
+      "parts": {
+        "mag": "box",
+        "sight": "long_scope",
+        "grip": "bipod"
+      },
+      "buffs": [
+        "headshot_damage",
+        "far_reach",
+        "glass_cannon"
+      ],
+      "skills": [
+        "harpoon_yank",
+        "time_bubble"
+      ],
+      "traits": [
+        "executioner",
+        "overcharge"
+      ],
+      "sea": "deepcurrent",
+      "flavor": "",
+      "red": "Al dente, if you ask the physicists.",
+      "signature": "spaghetti",
+      "attach": "long_barrel",
+      "pool": "region_7_boss",
+      "noodle": true,
+      "cfg": {
+        "charge_seconds": 2.0,
+        "charged_mult": 2.0,
+        "line_reach": 1.5,
+        "length": 80.0,
+        "pull": 6.0
+      }
+    },
+    "lighthouse": {
+      "name": "Lighthouse in a Bottle",
+      "body": "rocket_launcher",
+      "maker": "lumen",
+      "parts": {
+        "sight": "holo",
+        "grip": "vertical"
+      },
+      "buffs": [
+        "burn_chance",
+        "kindling",
+        "second_breath"
+      ],
+      "skills": [
+        "inferno_ring",
+        "war_banner"
+      ],
+      "traits": [
+        "blood_tide",
+        "pack_hunter"
+      ],
+      "sea": "mariners",
+      "flavor": "",
+      "red": "Keep the light on. Someone's still out there.",
+      "signature": "lighthouse",
+      "attach": "bottle_lighthouse",
+      "pool": "region_7_boss",
+      "beam": true,
+      "cfg": {
+        "reach": 12.0,
+        "sweep_seconds": 3.0,
+        "burn_share": 0.1,
+        "burn_seconds": 3.0,
+        "heal_share": 0.04
+      }
+    },
     "beach_day": {
       "name": "Beach Day",
       "body": "pistol_basic",

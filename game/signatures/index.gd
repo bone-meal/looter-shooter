@@ -19,6 +19,11 @@ const SCRIPTS := {
 	"weathervane": preload("res://game/signatures/weathervane.gd"),
 	"kite_flyer": preload("res://game/signatures/kite_flyer.gd"),
 	"chip_thief": preload("res://game/signatures/chip_thief.gd"),
+	"clam_shell": preload("res://game/signatures/clam_shell.gd"),
+	"angler_light": preload("res://game/signatures/angler_light.gd"),
+	"flush": preload("res://game/signatures/flush.gd"),
+	"spaghetti": preload("res://game/signatures/spaghetti.gd"),
+	"lighthouse": preload("res://game/signatures/lighthouse.gd"),
 }
 
 

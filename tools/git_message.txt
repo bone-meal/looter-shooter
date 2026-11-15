@@ -1,9 +1,11 @@
-Region 5 chase guns: Weathervane, Kite Flyer, Chip Thief, online
+Regions 6 and 7 chase guns: Clam Shell, Angler Light, Flush, Spaghetti, Lighthouse in a Bottle, online
 
-Weathervane (sniper): a weathervane with a gilt rooster on the scope turns into the wind on every machine; damage follows the wind; in a storm a hit calls a lightning bolt onto the target (net_chase bolt).
-Kite Flyer (machine gun): a reel on the gun and a kite flying behind the holder; a lightning flash makes it dive onto the nearest enemy (net_chase kite_dive); a teammate can grab the string from the air and be towed (player tow_point).
-Chip Thief (shotgun): a chip bag and four circling gulls; kills send a gull pecking at the next enemy, inspect sends them all (net_chase gull).
-island_weather: wind, wind_yaw, storming, lightning_flash (wind per stage in data). Brain Freeze frost stronger. Chase check 91 ok, pair set storm.
+Clam Shell (shotgun): a clam round the barrels opens to fire, the reload key snaps it shut and bites, a held trigger grows a pearl that pierces a line (net_chase clam, pearl).
+Angler Light (pistol): a glowing lure; enemies near drift toward it.
+Flush (grenade launcher): grenades open whirlpools that swirl enemies and flush the weak ones (net_chase whirl).
+Spaghetti (sniper): a stretched barrel; a held scope charges a double-damage shot that stretches and pulls enemies near its line (net_chase noodle).
+Lighthouse in a Bottle (rocket launcher): a sweeping beam burns enemies; teammates' copies heal them.
+Gimmicks with a Glass node are see-through. Chase check 114 ok, pair set deep.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -19,7 +19,11 @@
 # follows the wind, its rooster turns into the wind, in a storm a hit calls a bolt (once per wait). KITE FLYER: the kite
 # flies above, a lightning flash makes it dive onto the nearest enemy (blast), a teammate's copy tows a player who
 # touches its string in the air. CHIP THIEF: gulls circle, a kill sends one pecking at the next enemy, the inspect key
-# sends every idle gull (then waits); other players' copies get the kite and the flock.
+# sends every idle gull (then waits); other players' copies get the kite and the flock. CLAM SHELL: opens to fire,
+# the reload key bites what is in front, a grown pearl pierces enemies in a line. ANGLER LIGHT: the lure glows and
+# lights, enemies in reach drift toward it. FLUSH: a grenade opens a whirlpool that swirls enemies and flushes the weak.
+# SPAGHETTI: a held scope charges the next shot (x2), which stretches and pulls the enemies near its line.
+# LIGHTHOUSE IN A BOTTLE: the beam sweeps, burns enemies it passes; another player's copy heals the local player.
 # (CHASE_CHECK_DONE problems=n).
 # Dependencies: core/gun_db.gd, core/gun_gen.gd, game/signatures/index.gd, game/unique_attach.gd.
 extends Node
@@ -213,6 +217,51 @@ class TowMe extends Node3D:
 		return false
 
 
+class HpHealth extends RefCounted:
+	var hp := 100.0
+	var max_hp := 100.0
+
+	func is_dead() -> bool:
+		return hp <= 0.0
+
+
+class HpMob extends Node3D:
+	var health := HpHealth.new()
+	var pushed := Vector3.ZERO
+	var enemy_id := "chaser"
+
+	func head_height() -> float:
+		return 1.7
+
+	func on_hit(d: float, _p: Vector3 = Vector3.ZERO, _n: Vector3 = Vector3.UP) -> void:
+		health.hp -= d
+
+	func push(v: Vector3) -> void:
+		pushed = v
+
+
+class BodyMob extends StaticBody3D:
+	var health := HealthStub.new()
+	var got := 0.0
+
+	func _init() -> void:
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = Vector3(0.8, 2.0, 0.8)
+		shape.shape = box
+		shape.position.y = 1.0
+		add_child(shape)
+		collision_layer = 2
+
+	func on_hit(d: float, _p: Vector3 = Vector3.ZERO, _n: Vector3 = Vector3.UP) -> void:
+		got += d
+
+
+class ScopeHolder extends GunHolder:
+	func scope_amount() -> float:
+		return 1.0
+
+
 class Kicker extends Node3D:
 	func aim_flat() -> Vector3:
 		return Vector3(1, 0, 0)
@@ -238,6 +287,11 @@ func _ready() -> void:
 	await _weathervane(db)
 	await _kite(db)
 	await _chips(db)
+	await _clam(db)
+	await _angler(db)
+	await _flush(db)
+	await _spaghetti(db)
+	await _lighthouse(db)
 	_finish()
 
 
@@ -906,6 +960,236 @@ func _chips(db: GunDb) -> void:
 	for n: Node in copy_piece.get_children():
 		copy_flock = copy_flock or n.is_in_group("gull_flocks")
 	_say("another player's copy has its own circling flock", copy_flock)
+	sig.call("stop")
+
+
+func _clam(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "clam_shell", 50)
+	_say("Clam Shell builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.position = Vector3(10000, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var camera := Camera3D.new()
+	camera.position = Vector3(0, 1.2, 0)
+	holder.add_child(camera)
+	camera.current = true
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var lid := piece.find_child("Lid", true, false) as Node3D if piece != null else null
+	_say("the clam closes round the barrels (lid + pearl)", lid != null and piece.find_child("Pearl", true, false) != null)
+	var sig: Node3D = Signatures.make("clam_shell")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["clam_shell"])
+	sig.call("start", piece)
+	await get_tree().process_frame
+	sig.call("on_fired")
+	var widest := 0.0
+	for _f in 5:
+		await get_tree().process_frame
+		widest = minf(widest, lid.rotation.x)
+	_say("a shot opens the clam (%.2f)" % widest, widest < -0.3)
+	var near := BodyMob.new()
+	near.position = Vector3(10000, 0, -1.6)
+	add_child(near)
+	var far := BodyMob.new()
+	far.position = Vector3(10000, 0, -6)
+	add_child(far)
+	var far2 := BodyMob.new()
+	far2.position = Vector3(10000.2, 0, -9)
+	add_child(far2)
+	source.list = [near, far, far2]
+	_say("the reload key snaps it shut and bites what is in front (%.0f), the far one is spared" % near.got, not bool(sig.call("on_reload")) and is_equal_approx(near.got, 240.0) and is_zero_approx(far.got))
+	near.position.x += 3.0
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	sig.call("release_pearl", 1.0)
+	_say("a full pearl goes through the enemies in its line (%.0f, %.0f)" % [far.got, far2.got], is_equal_approx(far.got, 300.0) and is_equal_approx(far2.got, 300.0))
+	var copy := Node3D.new()
+	add_child(copy)
+	var copy_piece := UniqueAttach.apply_id(copy, "clam_shell")
+	UniqueAttach.show_extra(copy_piece, "clam_shell", "p4")
+	var shown := (copy_piece.find_child("Pearl", true, false) as Node3D).visible
+	UniqueAttach.show_extra(copy_piece, "clam_shell", "")
+	_say("another player's copy shows the pearl growing, gone after", shown and not (copy_piece.find_child("Pearl", true, false) as Node3D).visible)
+	camera.queue_free()
+	sig.call("stop")
+
+
+func _angler(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "angler_light", 50)
+	_say("Angler Light builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.position = Vector3(10200, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var lure := piece.find_child("Lure", true, false) if piece != null else null
+	_say("its lure hangs from the pistol, glowing with a light", lure != null and not lure.find_children("*", "OmniLight3D", true, false).is_empty())
+	var sig: Node3D = Signatures.make("angler_light")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["angler_light"])
+	sig.call("start", piece)
+	var near := HpMob.new()
+	near.position = Vector3(10208, 0, 0)
+	add_child(near)
+	var far := HpMob.new()
+	far.position = Vector3(10230, 0, 0)
+	add_child(far)
+	source.list = [near, far]
+	await get_tree().process_frame
+	sig.call("drift")
+	_say("an enemy in reach drifts toward the light %s, one far off does not" % str(near.pushed), near.pushed.x < -2.0 and far.pushed == Vector3.ZERO)
+
+
+func _flush(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "flush", 50)
+	_say("Flush builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms: Node3D = (load("res://game/explosives.gd") as GDScript).new()
+	booms.set("source", source)
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.position = Vector3(10400, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var floor_body := StaticBody3D.new()
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	box.size = Vector3(100, 1, 100)
+	shape.shape = box
+	floor_body.add_child(shape)
+	floor_body.position = Vector3(10400, -0.5, 0)
+	add_child(floor_body)
+	var model := Node3D.new()
+	holder.add_child(model)
+	_say("its float ball and handle sit on the tube", UniqueAttach.apply(model, gun, db) != null)
+	var weak := HpMob.new()
+	weak.health.hp = 10.0
+	weak.position = Vector3(10401, 0, 9)
+	add_child(weak)
+	var strong := HpMob.new()
+	strong.position = Vector3(10398, 0, 11)
+	add_child(strong)
+	source.list = [weak, strong]
+	var sig: Node3D = Signatures.make("flush")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["flush"])
+	sig.call("fire_projectile", Vector3(10400, 3, 0), Vector3(0, -0.3, 1).normalized(), {"kind": "grenade", "speed": 30.0, "gravity": 0.0, "splash_radius": 1.0, "splash_damage": 1.0})
+	for _i in 40:
+		await get_tree().create_timer(0.05).timeout
+		if weak.health.is_dead():
+			break
+	_say("the grenade opens a whirlpool (%d)" % int(sig.get("opened")), int(sig.get("opened")) == 1 and get_tree().get_nodes_in_group("whirlpools").size() == 1)
+	await get_tree().create_timer(0.3).timeout
+	_say("a weak enemy is flushed, a strong one swirls (%s)" % str(strong.pushed), weak.health.is_dead() and strong.pushed.length() > 3.0 and not strong.health.is_dead())
+	await get_tree().create_timer(4.0).timeout
+	_say("the whirlpool closes after its time", get_tree().get_nodes_in_group("whirlpools").is_empty())
+
+
+func _spaghetti(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "spaghetti", 50)
+	_say("Spaghetti builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := ScopeHolder.new()
+	holder.position = Vector3(10600, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	_say("its stretched barrel is on", piece != null)
+	var def: Dictionary = (db.uniques["spaghetti"] as Dictionary).duplicate(true)
+	(def["cfg"] as Dictionary)["charge_seconds"] = 0.3
+	var sig: Node3D = Signatures.make("spaghetti")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, def)
+	sig.call("start", piece)
+	_say("not charged at first (x%.1f)" % float(sig.call("damage_mult")), is_equal_approx(float(sig.call("damage_mult")), 1.0))
+	await get_tree().create_timer(0.5).timeout
+	var overlay: Variant = (model.find_children("*", "GeometryInstance3D", true, false)[0] as GeometryInstance3D).material_overlay
+	_say("held scope: the next shot is charged (x%.1f), the gun glows, others see \"c\"" % float(sig.call("damage_mult")), is_equal_approx(float(sig.call("damage_mult")), 2.0) and overlay != null and String(sig.call("held_suffix")) == "c")
+	var on_line := HpMob.new()
+	on_line.position = Vector3(10600.8, -1.0, -20)
+	add_child(on_line)
+	var off_line := HpMob.new()
+	off_line.position = Vector3(10606, -1.0, -20)
+	add_child(off_line)
+	source.list = [on_line, off_line]
+	sig.call("after_shot", Vector3(10600, 0, 0), Vector3(0, 0, -1))
+	_say("the charged shot stretches and pulls the enemy near its line %s, not one off it; charge spent" % str(on_line.pushed), on_line.pushed.x < -3.0 and off_line.pushed == Vector3.ZERO and not bool(sig.call("charged")) and int(sig.get("noodled")) == 1)
+	sig.call("stop")
+
+
+func _lighthouse(db: GunDb) -> void:
+	var gun := GunGen.unique(db, "lighthouse", 50)
+	_say("Lighthouse in a Bottle builds and is legal", not gun.is_empty() and GunGen.validate(db, gun) == "")
+	var source := Source.new()
+	add_child(source)
+	var booms := FlashBooms.new()
+	booms.source = source
+	add_child(booms)
+	var holder := GunHolder.new()
+	holder.position = Vector3(10800, 0, 0)
+	holder.explosives = booms
+	add_child(holder)
+	var model := Node3D.new()
+	model.position = Vector3(0, 1.4, 0)
+	holder.add_child(model)
+	var piece := UniqueAttach.apply(model, gun, db)
+	var glass := piece.find_child("Glass", true, false) if piece != null else null
+	var see_through := false
+	var glass_meshes: Array = glass.find_children("*", "MeshInstance3D", true, false) if glass != null else []
+	if glass is MeshInstance3D:
+		glass_meshes.append(glass)
+	for mesh in glass_meshes:
+		see_through = see_through or ((mesh as MeshInstance3D).material_override as StandardMaterial3D).transparency != BaseMaterial3D.TRANSPARENCY_DISABLED
+	_say("its bottle is strapped on, the glass see-through", see_through)
+	var sig: Node3D = Signatures.make("lighthouse")
+	holder.add_child(sig)
+	sig.call("bind", holder, gun, db.uniques["lighthouse"])
+	sig.call("start", piece)
+	var mob := BurnMob.new()
+	mob.position = Vector3(10806, 0, 3)
+	add_child(mob)
+	source.list = [mob]
+	await get_tree().create_timer(3.5).timeout
+	_say("the beam sweeps round and sets the enemy it passes burning (%.0f a second)" % mob.burned, mob.burned > 0.0)
+	var other := Node3D.new()
+	other.position = Vector3(11000, 1.4, 0)
+	add_child(other)
+	var copy_piece := UniqueAttach.apply_id(other, "lighthouse")
+	var me := Eater.new()
+	me.position = Vector3(11005, 0, 2)
+	add_child(me)
+	var copy_beam: Node3D = null
+	for n: Node in copy_piece.get_children():
+		if n.is_in_group("lighthouse_beams"):
+			copy_beam = n
+	if copy_beam != null:
+		copy_beam.set("local_player", me)
+	await get_tree().create_timer(3.5).timeout
+	_say("another player's beam heals the local player when it passes (%.0f)" % me.health.hp, copy_beam != null and me.health.hp > 40.0)
 	sig.call("stop")
 
 

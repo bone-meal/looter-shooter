@@ -203,6 +203,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var kites := PackedStringArray()
 			for k: Node in get_tree().get_nodes_in_group("kites"):
 				kites.append("kite of %d%s%s" % [int(k.call("peer")), " diving" if bool(k.call("diving")) else "", " shown" if (k as Node3D).is_visible_in_tree() else " hidden"])
+			for bm: Node in get_tree().get_nodes_in_group("lighthouse_beams"):
+				kites.append("beam %s healed %d burned %d" % ["mine" if bool(bm.get("owned")) else "copy", int(bm.get("healed")), int(bm.get("burned"))])
+			if not get_tree().get_nodes_in_group("whirlpools").is_empty():
+				kites.append("whirlpools %d" % get_tree().get_nodes_in_group("whirlpools").size())
 			for fl: Node in get_tree().get_nodes_in_group("gull_flocks"):
 				kites.append("gulls of %d idle %d" % [int(fl.call("peer")), int(fl.call("idle_count"))])
 			var lanterns := 0
@@ -236,6 +240,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("KITECATCH caught %d" % int(sig_c.get("caught")))
 			else:
 				_lines.append("KITECATCH no kite gun in hand")
+		"pearl":  # "!pearl": the Clam Shell in hand fires a full pearl now (a held trigger cannot be held in a test window)
+			var sig_p: Node = player.get("_sig_node")
+			if sig_p != null and sig_p.has_method("release_pearl"):
+				sig_p.call("release_pearl", 1.0)
+			_lines.append("PEARL %s" % (str(sig_p.get("pearls")) if sig_p != null and "pearls" in sig_p else "no clam"))
+		"charge":  # "!charge": the Spaghetti in hand is charged now (as if the scope had been held up)
+			var sig_s2: Node = player.get("_sig_node")
+			if sig_s2 != null and sig_s2.has_method("charge_now"):
+				sig_s2.call("charge_now")
+			_lines.append("CHARGE %s" % str(sig_s2 != null and sig_s2.has_method("charge_now")))
 		"vanestorm":  # "!vanestorm": the Weathervane in hand acts as if it storms
 			var sig_v: Node = player.get("_sig_node")
 			if sig_v != null and "force_storm" in sig_v:
