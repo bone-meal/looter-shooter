@@ -3854,6 +3854,8 @@ func _build_sea() -> void:
 	_sea.set("skills", _fantasy)
 	if not _fantasy.ship_built.is_connected(_sea.ships.build):
 		_fantasy.ship_built.connect(_sea.ships.build)
+	if not _fantasy.ship_part_made.is_connected(_sea.ships.fit_part):
+		_fantasy.ship_part_made.connect(_sea.ships.fit_part)
 
 
 func _leave_sea() -> void:

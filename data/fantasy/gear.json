@@ -1973,6 +1973,16 @@
     0.88,
     0.76
    ]
+  },
+  "ship_crane": {
+   "kind": "ship_part",
+   "part": "crane",
+   "icon": "sail",
+   "color": [
+    0.45,
+    0.31,
+    0.19
+   ]
   }
  }
 }

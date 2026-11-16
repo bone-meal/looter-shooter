@@ -217,9 +217,9 @@ func work(delta: float, holding: bool) -> void:
 		patch_shown = 0.0
 		return
 	if _patching.is_empty() or _patching["ship"] != ship or int(_patching["zone"]) != int(job[0]):
-		_patching = {"ship": ship, "zone": int(job[0]), "left": float(hull.cfg["patch_seconds"])}
+		_patching = {"ship": ship, "zone": int(job[0]), "left": _patch_seconds()}
 	_patching["left"] = float(_patching["left"]) - delta
-	patch_shown = 1.0 - float(_patching["left"]) / float(hull.cfg["patch_seconds"])
+	patch_shown = 1.0 - float(_patching["left"]) / _patch_seconds()
 	if float(_patching["left"]) > 0.0:
 		return
 	var plank := _plank()
@@ -232,6 +232,13 @@ func work(delta: float, holding: bool) -> void:
 		_sea.emit_signal("notice", "Plank nailed on")
 		return
 	use_plank(ship, int(job[0]))
+
+
+# Seconds a plank takes this player: the Sailing perk "repair" makes it quicker.
+func _patch_seconds() -> float:
+	var skills: Variant = _sea.get("skills")
+	var faster := clampf(float((skills as Node).call("perk", "sailing", "repair")), 0.0, 0.8) if skills != null else 0.0
+	return float(hull.cfg["patch_seconds"]) * (1.0 - faster)
 
 
 # Host / alone: a plank used at a zone of a ship.

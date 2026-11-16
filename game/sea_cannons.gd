@@ -222,7 +222,7 @@ func fire(ship: Node3D, index: int, yaw: float, pitch: float, real: bool) -> boo
 	if index < 0 or index >= list.size() or not is_finite(yaw) or not is_finite(pitch):
 		return false
 	var gun: Dictionary = list[index]
-	gun["ready_at"] = _now() + float(cfg["reload"])
+	gun["ready_at"] = _now() + float(cfg["reload"]) * (1.0 - _perk("cannon_reload"))
 	_aim(gun, clampf(yaw, -deg_to_rad(float(cfg["arc_deg"])), deg_to_rad(float(cfg["arc_deg"]))), clampf(pitch, deg_to_rad(float(cfg["pitch_min"])), deg_to_rad(float(cfg["pitch_max"]))))
 	gun["kick"] = 1.0
 	var pivot := gun["pivot"] as Node3D
@@ -294,6 +294,12 @@ func _fly(delta: float) -> void:
 			_balls.remove_at(i)
 		else:
 			ball.global_position = after
+
+
+# A Sailing perk of this player (data/fantasy/skilling.json unlocks: cannon_reload ...), 0 without skills.
+func _perk(key: String) -> float:
+	var skills: Variant = _sea.get("skills")
+	return clampf(float((skills as Node).call("perk", "sailing", key)), 0.0, 0.9) if skills != null else 0.0
 
 
 func _sound(at: Vector3) -> void:

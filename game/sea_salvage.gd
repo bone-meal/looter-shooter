@@ -167,27 +167,50 @@ func prompt(key: String) -> String:
 	var spot := spot_near()
 	if spot.is_empty():
 		return ""
+	return "[%s] Salvage: %s" % [key, spot_name(spot)]
+
+
+func spot_name(spot: Dictionary) -> String:
 	var cfg_spot: Dictionary = spot["cfg"]
 	if cfg_spot.has("plan"):
-		return "[%s] Salvage: %s" % [key, String((_sea.get("skills") as Node).get("bag").call("item_name", String(cfg_spot["plan"])))]
-	return "[%s] Salvage: %s" % [key, book.name_of(String(cfg_spot["find"]))]
+		return String((_sea.get("skills") as Node).get("bag").call("item_name", String(cfg_spot["plan"])))
+	return book.name_of(String(cfg_spot["find"]))
+
+
+# The nearest spot this player has not taken within `reach` m (flat) of a scene point: for the ship's crane.
+func spot_within(at: Vector3, reach: float) -> Dictionary:
+	var best := {}
+	var best_d := reach
+	for spot: Dictionary in _spots:
+		var node: Node3D = spot["node"]
+		var d := Vector2(node.global_position.x - at.x, node.global_position.z - at.z).length()
+		if not _taken(spot["cfg"]) and d <= best_d:
+			best = spot
+			best_d = d
+	return best
 
 
 func interact() -> bool:
 	var spot := spot_near()
 	if spot.is_empty():
 		return false
+	return take(spot, true)
+
+
+# Takes what a spot holds: dived = by hand (Agility xp), else hauled up by the ship's crane (game/sea_crane.gd).
+func take(spot: Dictionary, dived: bool) -> bool:
+	if _taken(spot["cfg"]):
+		return false
 	if (spot["cfg"] as Dictionary).has("plan"):  # a ship's plan: into the bag, built at the shipyard
 		var plan := String(spot["cfg"]["plan"])
 		var skills: Node = _sea.get("skills")
 		skills.call("give", plan, 1)
 		_sea.emit_signal("notice", "Found the %s: build it at the shipyard" % String(skills.get("bag").call("item_name", plan)))
+	else:
+		var id := String(spot["cfg"]["find"])
+		_logged(id, book.record(id))
+	if dived:
 		_xp(int(cfg["dive"]["xp_spot"]))
-		_show_found(spot)
-		return true
-	var id := String(spot["cfg"]["find"])
-	_logged(id, book.record(id))
-	_xp(int(cfg["dive"]["xp_spot"]))
 	_show_found(spot)
 	return true
 

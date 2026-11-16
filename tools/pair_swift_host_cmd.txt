@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!isle wait_ghost 400;!ship wait_helmsman;!wait 4;!ship status host_low;!wait 3;!ship wind 175;!ship anchor up;!wait 14;!ship status host_swift;!wait 20;!crane status host_fit;!wait 5

@@ -18,6 +18,7 @@ func _ready() -> void:
 	var cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/ships.json"))
 	var rules := ShipRules.new(cfg)
 	_hull_checks(rules)
+	_swift_checks(rules)
 	_check(rules.wind_share(45.0) > rules.wind_share(90.0) and rules.wind_share(90.0) > rules.wind_share(135.0), "broad reach > beam reach > close hauled")
 	_check(rules.wind_share(175.0) == 0.0, "no way forward straight into the wind")
 	var s := rules.new_state("sloop", 0.0, 0.0, 0.0)  # bow to the north (-z)
@@ -142,3 +143,22 @@ func _hull_checks(rules: ShipRules) -> void:
 	_check(hull.seaworthy(s), "two planks make her seaworthy")
 	_check(hull.aground_damage(1.5) == 0.0 and hull.aground_damage(6.0) > hull.aground_damage(4.0), "aground: harmless slow, worse faster")
 	_check(hull.hit(s, spec, 0.0, 0.0, NAN) == -1, "a bad number does nothing")
+
+
+# Sea step 5e: the swift sail (the last stage, gated by Sailing level; the wind always from astern).
+func _swift_checks(rules: ShipRules) -> void:
+	var top := rules.stage_count() - 1
+	_check(bool((rules.cfg["stages"][top] as Dictionary).get("swift", false)), "the last stage is the swift sail")
+	_check(rules.top_stage(1) == top - 1 and rules.top_stage(70) == top, "the swift sail needs its Sailing level (top %d at 1, %d at 70)" % [rules.top_stage(1), rules.top_stage(70)])
+	var s := rules.new_state("sloop", 0.0, 0.0, 0.0)
+	s["anchored"] = false
+	s["stage"] = top - 1
+	var into := PI * 0.5  # bow north, the wind blowing south = straight into it
+	_check(rules.target_speed(s, 0.6, into, 0.0) == 0.0, "full sail goes nowhere into the wind")
+	s["stage"] = top
+	var swift_into := rules.target_speed(s, 0.6, into, 0.0)
+	s["stage"] = top - 1
+	var full_best := rules.target_speed(s, 0.6, -PI * 0.5 + deg_to_rad(45.0), 0.0)
+	s["stage"] = top
+	_check(swift_into > full_best, "the swift sail into the wind beats full sail at its best (%.1f vs %.1f)" % [swift_into, full_best])
+	_check(rules.target_speed(s, 0.0, into, 0.0) > 0.0, "the swift sail moves even in a calm")

@@ -17,6 +17,7 @@ const SkillPerks = preload("res://core/skill_perks.gd")
 const SeaHull = preload("res://game/sea_hull.gd")
 const SeaCannons = preload("res://game/sea_cannons.gd")
 const SeaBoarding = preload("res://game/sea_boarding.gd")
+const SeaCrane = preload("res://game/sea_crane.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -47,6 +48,7 @@ var hull_part := SeaHull.new()  # hulls, leaks, sinking, patching (sea step 5d)
 var dev_patch := false  # dev: interact held for patching without keys
 var cannons := SeaCannons.new()  # the ships' cannons (sea step 5d-2)
 var boarding := SeaBoarding.new()  # grappling lines and boarding planks (sea step 5d-3)
+var crane := SeaCrane.new()  # the salvage crane upgrade (sea step 5e)
 
 
 func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
@@ -69,6 +71,9 @@ func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
 	boarding.name = "Boarding"
 	add_child(boarding)
 	boarding.setup(self, _sea, _player)
+	crane.name = "Crane"
+	add_child(crane)
+	crane.setup(self, _sea, _player)
 	for entry: Dictionary in rules.cfg["fleet"]:
 		spawn(String(entry["ship"]), float(entry["at"][0]), float(entry["at"][1]), float(entry["yaw"]))
 
@@ -109,6 +114,9 @@ func _process(delta: float) -> void:
 		var weather: Dictionary = ship.get_meta("weather", {})
 		var wind := float(weather.get("wind", 0.3))
 		var wind_dir := float(weather.get("wind_dir", 0.0))
+		if bool(rules.stage(ship.state).get("swift", false)):  # the swift sail: the wind blows from astern for her
+			wind_dir = atan2(-cos(float(ship.state["yaw"])), -sin(float(ship.state["yaw"])))
+		crane.show_for(ship)
 		var before: Transform3D = ship.global_transform
 		var yaw_before := float(ship.state["yaw"])
 		var riding := inside and (ship == helm_ship or rules.aboard(String(ship.state["ship"]), before.affine_inverse() * here))
@@ -149,6 +157,7 @@ func _process(delta: float) -> void:
 	hull_part.work(delta, deck_now != null and (dev_patch or (bool(_player.get("controls_enabled")) and Input.is_action_pressed("interact"))))
 	if helm_ship != null:
 		var w: Dictionary = helm_ship.get_meta("weather", {})
+		panel.top_stage = rules.top_stage(sailing_level())
 		panel.show_ship(helm_ship.state, helm_ship.spec, rules, float(w.get("wind", 0.3)), float(w.get("wind_dir", 0.0)))
 
 
@@ -159,12 +168,13 @@ func _steer(ship: SeaShip, delta: float, client: bool) -> void:
 	wanted_rudder = move_toward(wanted_rudder, held, delta * (1.6 if held != 0.0 else 2.4))
 	if bool(_player.get("controls_enabled")):
 		if Input.is_action_just_pressed("move_forward"):
-			wanted_stage = mini(wanted_stage + 1, rules.stage_count() - 1)
+			wanted_stage = mini(wanted_stage + 1, rules.top_stage(sailing_level()))
 		elif Input.is_action_just_pressed("move_back"):
 			wanted_stage = maxi(wanted_stage - 1, 0)
 		elif Input.is_action_just_pressed("jump"):
 			let_go()
 			return
+	wanted_stage = mini(wanted_stage, rules.top_stage(sailing_level()))
 	if not client:  # online the host takes these from game/net_sea.gd; here they are ours to set
 		ship.state["rudder"] = wanted_rudder
 		ship.state["stage"] = wanted_stage
@@ -200,6 +210,8 @@ func host_states(states: Array) -> void:
 				if helm_ship == ship:
 					_leave_helm_here()
 			ship.state["sinking"] = bool(got[14])
+		if got.size() >= 16:
+			ship.state["crane"] = bool(got[15])
 		_helmsmen[ship] = {"id": int(got[7]), "level": 0}
 		var mine := int(got[7]) == int(_net().call("my_id"))
 		if mine and helm_ship == null and _asked == ship:
@@ -221,6 +233,7 @@ func _match_fleet(states: Array) -> void:
 	boarding.clear()
 	for ship: SeaShip in ships:
 		cannons.forget(ship)
+		crane.forget(ship)
 		ship.queue_free()
 	ships.clear()
 	_helmsmen.clear()
@@ -274,6 +287,11 @@ func _check_helmsmen() -> void:
 	for ship: SeaShip in _helmsmen.keys():
 		var id := helmsman_of(ship)
 		if id == int(net.call("my_id")):
+			continue
+		var deck: Array = net.get("net").call("deck_of", id)  # riding her deck: his exact ship-space spot (no lag)
+		if not deck.is_empty() and deck[0] == ship:
+			if Vector2((deck[1] as Vector3).x - float(ship.spec["helm"][0]), (deck[1] as Vector3).z - float(ship.spec["helm"][1]) - 1.0).length() > 6.0:
+				free_helm(ship)
 			continue
 		var spot: Vector3 = ship.deck_spot([float(ship.spec["helm"][0]), float(ship.spec["helm"][1]) + 1.0])
 		if not at.has(id) or Vector2((at[id] as Vector3).x - spot.x, (at[id] as Vector3).z - spot.z).length() > 6.0:
@@ -384,6 +402,9 @@ func prompt(key: String) -> String:
 	var cannon_said := cannons.prompt(key, ship)
 	if cannon_said != "":
 		return cannon_said
+	var crane_said := crane.prompt(key)
+	if crane_said != "":
+		return crane_said
 	var board_said := boarding.prompt(key)
 	if board_said != "":
 		return board_said
@@ -414,6 +435,8 @@ func interact() -> bool:
 		return true
 	if cannons.cannon_here(ship) >= 0:
 		cannons.sit(ship, cannons.cannon_here(ship))
+		return true
+	if crane.interact():
 		return true
 	if boarding.interact():
 		return true
@@ -507,6 +530,28 @@ func launch(ship_id: String) -> void:
 	_sea.emit_signal("notice", "The %s slides down the slipway" % String(rules.spec(ship_id)["name"]))
 
 
+# The shipyard made a ship's part (game/fantasy_world.gd ship_part_made: "crane"): the host (or alone) fits it to the
+# ship nearest the slipway without one; a client asks the host.
+func fit_part(part: String) -> void:
+	if part != "crane":
+		return
+	var net := _net()
+	if net != null and bool(net.call("is_client")):
+		net.call("request_part", part)
+		_sea.emit_signal("notice", "The crane goes to the shipyard's nearest ship")
+		return
+	var at: Vector3 = shipyard.call("launch_spot", 0, 6.0)
+	var fitted := crane.fit(Vector3(at.x, 0.0, at.y))
+	_sea.emit_signal("notice", "A salvage crane fitted to the %s" % fitted if fitted != "" else "No ship without a crane lies at the shipyard: sail one in and build it again")
+
+
+# The highest sail stage this ship's helmsman may set (his Sailing level: the swift sail at its level).
+func top_stage_of(ship: SeaShip) -> int:
+	if ship == helm_ship:
+		return rules.top_stage(sailing_level())
+	return rules.top_stage(int((_helmsmen.get(ship, {}) as Dictionary).get("level", 1)))
+
+
 # The first lane off the slipway with no ship lying in it (but `except`): (x, z, yaw degrees).
 func free_lane(ship_id: String, except: Node3D) -> Vector3:
 	var outline: Array = rules.spec(ship_id)["outline"]
@@ -528,7 +573,7 @@ func to_list() -> Array:
 	var out: Array = []
 	for ship: SeaShip in ships:
 		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell"),
-			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001)})
+			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001), "crane": bool(ship.state.get("crane", false))})
 	return out
 
 
@@ -554,6 +599,7 @@ func from_list(saved: Variant) -> void:
 	boarding.clear()
 	for ship: SeaShip in ships:
 		cannons.forget(ship)
+		crane.forget(ship)
 		ship.queue_free()
 	ships.clear()
 	_helmsmen.clear()
@@ -566,6 +612,7 @@ func from_list(saved: Variant) -> void:
 			ship.state["leaks"] = (entry["leaks"] as Array).map(func(h: Variant) -> float: return clampf(float(h), 0.0, 1.0))
 		if entry.get("water") is float or entry.get("water") is int:
 			ship.state["water"] = clampf(float(entry["water"]), 0.0, 0.99)
+		ship.state["crane"] = bool(entry.get("crane", false))
 		if bool(ship.state.get("sinking", false)) or hull_part.hull.sunk(ship.state):
 			hull_part.hull.refloat(ship.state)
 
@@ -586,5 +633,5 @@ func status() -> String:
 		lines.append("ship %s at (%.0f, %.0f) heading %.0f deg, %.1f m/s, %s, %s, %s %.0f deg off the wind (%.0f %%), rudder %.2f, deck y %.2f%s" % [s["ship"], s["x"], s["z"],
 			fposmod(-rad_to_deg(float(s["yaw"])), 360.0), s["speed"], String(rules.stage(s)["name"]), "anchored" if bool(s["anchored"]) else "under way",
 			ShipRules.point_of_sail(off), off, rules.wind_share(off) * 100.0, s["rudder"], (ship.global_transform * Vector3(0, float(ship.spec["deck"]), 0)).y,
-			", player aboard" if ship == ship_aboard() else ""])
+			", player aboard" if ship == ship_aboard() else ""] + (", helmsman %d (Sailing %d, top stage %d), wanted stage %d" % [helmsman_of(ship), int((_helmsmen.get(ship, {}) as Dictionary).get("level", 0)), top_stage_of(ship), wanted_stage] if helmsman_of(ship) != 0 or ship == helm_ship else ""))
 	return "\n".join(lines) + ("\nlast ground: " + last_ground if last_ground != "" else "")

@@ -78,7 +78,7 @@ func _send_fleet(fleet: Node) -> void:
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
 		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"]),
-			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false))])
+			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false))])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 	_board_down.rpc(fleet.get("boarding").call("to_net"))
@@ -166,7 +166,7 @@ func _helm_input(ship_index: int, rudder: float, stage: int) -> void:
 		return
 	var s: Dictionary = ship.get("state")
 	s["rudder"] = clampf(rudder, -1.0, 1.0)
-	s["stage"] = clampi(stage, 0, int(_fleet().get("rules").call("stage_count")) - 1)
+	s["stage"] = clampi(stage, 0, int(_fleet().call("top_stage_of", ship)))  # the swift sail only at its Sailing level
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -266,6 +266,18 @@ func _board_down(items: Array) -> void:
 	var fleet := _fleet()
 	if fleet != null:
 		fleet.get("boarding").call("from_net", items)
+
+
+# A ship's part made at the shipyard by a client (his Carpentry and materials: his claim): the host fits it.
+func request_part(part: String) -> void:
+	_part_up.rpc_id(1, part)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _part_up(part: String) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	if net.is_host() and net.roster.has(from) and part in ["crane"] and _fleet() != null:
+		_fleet().call("fit_part", part)
 
 
 # --- the shipyard (client -> host): the client's own Carpentry and materials built it (his bag is his own claim);

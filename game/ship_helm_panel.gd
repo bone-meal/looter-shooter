@@ -8,7 +8,7 @@ extends Control
 const UiSkin = preload("res://game/ui_skin.gd")
 const ShipRules = preload("res://core/sea/ship_rules.gd")
 
-const SIZE := Vector2(560, 172)
+const SIZE := Vector2(620, 172)
 const KNOTS := 1.944
 
 var _font: Font = ThemeDB.fallback_font
@@ -17,6 +17,7 @@ var _spec: Dictionary
 var _rules: ShipRules
 var _wind := 0.0
 var _wind_dir := 0.0
+var top_stage := 99  # the highest stage this helmsman may set (the swift sail needs its Sailing level): higher ones are not shown
 
 
 func _ready() -> void:
@@ -69,7 +70,7 @@ func _draw() -> void:
 	_right(Vector2(r.end.x - 20, r.position.y + 30), "%.1f kn" % speed, 20, UiSkin.TEXT)
 	var stages: Array = _rules.cfg["stages"]
 	var px := x
-	for i in stages.size():
+	for i in mini(stages.size(), top_stage + 1):
 		var label := String(stages[i]["name"])
 		var w := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 18.0
 		UiSkin.pill(self, _font, Rect2(Vector2(px, r.position.y + 42), Vector2(w, 24)), label, i == int(_state["stage"]), false, 13)
@@ -78,6 +79,9 @@ func _draw() -> void:
 	var share := _rules.wind_share(off)
 	var sail := float(_rules.stage(_state)["sail"]) > 0.0
 	var line := "%s  -  %d%% of the wind" % [ShipRules.point_of_sail(off), roundi(share * 100.0)] if sail else "Rowing" if float(_rules.stage(_state)["oars"]) != 0.0 else "Sails furled"
+	if bool(_rules.stage(_state).get("swift", false)):  # the swift sail: the heading does not matter
+		line = "Swift sail  -  the wind always behind you"
+		share = 1.0
 	draw_string(_font, Vector2(x, r.position.y + 90), line, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiSkin.GOOD if share > 0.6 or not sail else (UiSkin.TEXT if share > 0.2 else UiSkin.BAD))
 	if bool(_state["anchored"]):
 		_right(Vector2(r.end.x - 20, r.position.y + 90), "ANCHORED: weigh it at the bow", 14, UiSkin.BAD)

@@ -1,0 +1,8 @@
+{
+ "_about": "Sea step 5e salvage crane (game/sea_crane.gd). A ship that has one (fitted at the shipyard: Carpentry recipe build_crane -> item ship_crane) carries it at spot [x, z] (data/sea/ships.json \"crane\", else at the stern quarter on the starboard rail). A player within use_reach m of its post, the ship slower than max_speed m/s, and a salvage spot (data/sea/salvage.json) not yet taken within reach m of the jib's tip: interact lowers the hook; seconds later the find comes up (logbook as by diving, no Agility xp). The ship is fitted to the ship nearest the slipway within fit_range m that has no crane. ALL NUMBERS ARE PLACEHOLDERS.",
+ "use_reach": 1.8,
+ "reach": 18.0,
+ "max_speed": 0.6,
+ "seconds": 6.0,
+ "fit_range": 80.0
+}

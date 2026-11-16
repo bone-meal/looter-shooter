@@ -1,10 +1,11 @@
-Sea 5d-3: boarding by grappling hooks and a boarding plank; gun put away at a cannon
+Sea 5e: swift sail and salvage crane - step 5 complete
 
-- director chose hooks and plank: tools/blender/sea_boarding.py -> grapnel + boarding_plank models
-- data/sea/boarding.json + game/sea_boarding.gd: hook flies over, host hauls her alongside and holds both until cut; gangway ramp-bridge-ramp laid between rails, solid, taken up or falls when ships part
-- online: request_board checked by the host (deck spot), lines and planks in every fleet send
-- player.manning setter: sitting at a cannon puts the gun away, getting up brings it back
-- dev !board, pair set board
+- Swift stage (Sailing 25): wind always from astern, never weak, x1.3; gated by the helmsman level, host clamps remote helmsmen
+- salvage crane: Carpentry recipe build_crane fits a davit to the ship at the shipyard (materials until doubloons); hook hauls up a salvage find from the deck
+- tools/blender/sea_crane.py -> crane model; sea_salvage take(spot, dived) shared by diving and the crane
+- Sailing perks repair and cannon_reload now apply
+- fix: host freed a remote helmsman from a stale world position, now checks his deck spot
+- pair set swift; ship_check +4
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

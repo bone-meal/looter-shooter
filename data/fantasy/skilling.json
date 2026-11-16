@@ -2331,6 +2331,21 @@
    "out": {
     "ship_galleon": 1
    }
+  },
+  {
+   "id": "build_crane",
+   "skill": "carpentry",
+   "level": 20,
+   "xp": 300,
+   "station": "shipyard",
+   "in": {
+    "oak_plank": 20,
+    "iron_bar": 6,
+    "sailcloth": 1
+   },
+   "out": {
+    "ship_crane": 1
+   }
   }
  ],
  "gather": {

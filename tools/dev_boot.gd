@@ -470,6 +470,14 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var first: Node = (fleet.get("ships") as Array)[clampi(_ship_i, 0, (fleet.get("ships") as Array).size() - 1)]
 				var arg := words[2] if words.size() > 2 else ""
 				match words[1] if words.size() > 1 else "status":
+					"tospot":  # "!ship tospot 0": the ship anchored beside salvage spot n (her crane side towards it)
+						var spot_node: Node3D = (sea_now.get("salvage").get("_spots") as Array)[clampi(int(arg), 0, (sea_now.get("salvage").get("_spots") as Array).size() - 1)]["node"]
+						var at_sea: Vector3 = sea_now.call("local_of", spot_node.global_position)
+						var st_t: Dictionary = first.get("state")
+						st_t["x"] = at_sea.x - cos(float(st_t["yaw"])) * 6.0
+						st_t["z"] = at_sea.z + sin(float(st_t["yaw"])) * 6.0
+						st_t["speed"] = 0.0
+						st_t["anchored"] = true
 					"hit":  # "!ship hit 120 bow|waist|stern": a blow to the hull at that leak zone (host / alone)
 						var zone_i := maxi(0, ["bow", "waist", "stern"].find(words[3] if words.size() > 3 else "waist"))
 						var spot: Array = load("res://core/sea/hull_rules.gd").zones(first.get("spec"))[zone_i]
@@ -540,6 +548,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
+		"crane":  # sea step 5e: !crane post (stand at the crane of the ship in use) | use | status <note>
+			var sea_k: Node = session.call("sea")
+			var fleet_k: Node = sea_k.get("ships") if sea_k != null else null
+			var crane_k: Node = fleet_k.get("crane") if fleet_k != null else null
+			var sub_k := words[1] if words.size() > 1 else "status"
+			if crane_k == null:
+				_lines.append("crane: no sea")
+			elif sub_k == "post":
+				var ship_k: Node3D = (fleet_k.get("ships") as Array)[clampi(_ship_i, 0, (fleet_k.get("ships") as Array).size() - 1)]
+				var spot_k: Array = load("res://game/sea_crane.gd").spot_of(ship_k.get("spec"))
+				player.call("teleport", ship_k.call("deck_spot", [float(spot_k[0]) - signf(float(spot_k[0])) * 0.9, float(spot_k[1])], 0.3), 0.0)
+				player.call("look_at_point", ship_k.global_transform * Vector3(float(spot_k[0]) * 3.0, 0.0, float(spot_k[1])))
+			elif sub_k == "use":
+				_lines.append("CRANE use: '%s'" % String(crane_k.call("prompt", "F")))
+				crane_k.set("dev_use", true)
+			else:
+				_lines.append("CRANE %s: %s; logbook found %d" % [" ".join(words.slice(2)), String(crane_k.call("status")), (sea_k.get("salvage").get("book").get("found") as Dictionary).size()])
 		"board":  # sea step 5d-3: !board rail <ship n> | do | status <note> | wait_lash | wait_plank | wait_none | cross
 			var sea_b: Node = session.call("sea")
 			var fleet_b: Node = sea_b.get("ships") if sea_b != null else null

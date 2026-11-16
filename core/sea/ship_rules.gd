@@ -77,8 +77,23 @@ func target_speed(state: Dictionary, wind: float, wind_dir: float, speed_pct: fl
 	var sail := float(s["sail"])
 	if sail <= 0.0:
 		return float(s["oars"]) * float(spec(String(state["ship"])).get("oar_mult", 1.0))
+	if bool(s.get("swift", false)):  # the swift sail (sea step 5e): the wind always from astern, never weak, faster
+		var best := 0.0
+		for row: Array in cfg["wind_efficiency"]:
+			best = maxf(best, float(row[1]))
+		var strong := lerpf(float(cfg["wind_floor"]), 1.0, clampf(maxf(wind, float(s.get("wind_at_least", 0.0))), 0.0, 1.0))
+		return float(spec(String(state["ship"]))["top_speed"]) * sail * best * strong * float(s.get("speed_mult", 1.0)) * (1.0 + speed_pct)
 	var push := lerpf(float(cfg["wind_floor"]), 1.0, clampf(wind, 0.0, 1.0))
 	return float(spec(String(state["ship"]))["top_speed"]) * sail * wind_share(off_wind(float(state["yaw"]), wind_dir)) * push * (1.0 + speed_pct)
+
+
+# The highest sail stage a helmsman of this Sailing level may set (the swift sail needs its level).
+func top_stage(sailing_level: int) -> int:
+	var stages: Array = cfg["stages"]
+	var top := stages.size() - 1
+	while top > 0 and sailing_level < int((stages[top] as Dictionary).get("sailing_level", 0)):
+		top -= 1
+	return top
 
 
 # One step of `dt` seconds. The rudder (-1 .. 1, + = to starboard) is set by the helm before. Returns the metres
