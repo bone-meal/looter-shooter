@@ -1,9 +1,8 @@
-Sea step 6: sea chart, doubloons, harbour master stall with shop, money changer and ferry
+Money icons: points coin, casino chip and doubloon drawn the same everywhere
 
-- core/sea/sea_chart.gd + game/sea_chart_window.gd (key M): squares A1-I9 completed by exploring their islands, fog of war, pins, unfinished tracker, secret charts marking hidden places
-- doubloons wallet saved with the character, counter at sea, salvage set rewards pay doubloons
-- tools/blender/sea_port.py -> harbour stall; game/sea_port.gd + port_shop_window.gd: buy charts for chips, supplies and the crane for doubloons, sell rolled guns and armour, change chips at 250 to 1, ferry to explored ports
-- data: chart.json, port.json, writing/chart.txt, chart items; dev !chart !port
+- game/currency_art.gd: island coin with a star for points, the red poker chip for chips, an old struck doubloon for doubloons
+- inventory footer shows all three with their icons (doubloons added); island HUD points get their coin; sea counter and harbour window use them
+- save menu says chips instead of coins
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

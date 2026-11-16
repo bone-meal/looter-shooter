@@ -954,6 +954,7 @@ func _toggle_inventory() -> void:
 		for n in InventoryState.HOLSTERS:
 			_inventory_screen.gun_keys.append(InputSetup.label(settings, "weapon_%d" % (n + 1)))
 		_inventory_screen.chips = _wallet.balance  # the bottom bar
+		_inventory_screen.doubloons = _doubloons.balance
 		_inventory_screen.points = _score.points
 		_inventory_screen.look = _player.appearance  # the character in the left panel
 		_inventory_screen.open()

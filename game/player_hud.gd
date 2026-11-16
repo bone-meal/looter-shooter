@@ -6,6 +6,7 @@
 # game/chalk_marks.gd. game/game_session.gd sets `player`, the round, `enemies_left`, `party`, `wave_text`, `boss_ratio`.
 extends Control
 
+const CurrencyArt = preload("res://game/currency_art.gd")
 const ChipArt = preload("res://game/chip_art.gd")
 const ChalkMarks = preload("res://game/chalk_marks.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
@@ -211,8 +212,9 @@ func _draw_points(view: Vector2) -> void:
 	for other: Dictionary in party:
 		widest = maxf(widest, _font.get_string_size("%s   %d" % [other["name"], other["points"]], HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x)
 	var top := base - 30.0 if party.is_empty() else base - 40.0 - 20.0 * float(party.size() - 1) - 15.0
-	draw_rect(Rect2(right - widest - 12.0, top, widest + 20.0, base - top + 10.0), Color(0.12, 0.12, 0.13, 0.42))  # a faint box behind our points and the party's
+	draw_rect(Rect2(right - widest - 40.0, top, widest + 48.0, base - top + 10.0), Color(0.12, 0.12, 0.13, 0.42))  # a faint box behind our points and the party's
 	_text(Vector2(right - 300.0, base), "%d" % int(_score.points), HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 34, POINTS)
+	CurrencyArt.draw(self, "points", Vector2(right - _font.get_string_size("%d" % int(_score.points), HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x - 18.0, base - 11.0), 11.0)  # the island's coin, as in the inventory
 	for i in party.size():
 		var other: Dictionary = party[i]
 		_text(Vector2(right - 300.0, base - 40.0 - 20.0 * i), "%s   %d" % [other["name"], other["points"]], HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 15, Color(1, 1, 1, 0.85))

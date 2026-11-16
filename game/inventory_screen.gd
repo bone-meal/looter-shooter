@@ -2,7 +2,7 @@
 # full screen; a header with the tabs Guns / Gear / Items / All and a sort button; LEFT the character (3D portrait) with
 # the 18 gear slots round it (at the bank: the bank's slots instead, core/bank_state.gd); MIDDLE the READY guns as big
 # gun cards with the knife, and the BACKPACK (36 slots, up to 48 with crafted bags: 4 rows, more columns; filtered and sorted by the tabs); RIGHT the chosen item's card
-# DOCKED (game/inventory_card.gd) with Equip / Wear / Unequip / Drop buttons; a bottom bar with chips, points and keys.
+# DOCKED (game/inventory_card.gd) with Equip / Wear / Unequip / Drop buttons; a bottom bar with points, chips and doubloons (each with its coin, game/currency_art.gd) and keys.
 # Click to pick up / place / swap / wear, right click for half or one; the drop key (or carrying a gun out of the window
 # and clicking) lays a rolled gun on the ground (signal `dropped`); holding Shift shows the gun in hand on the card.
 # Dependencies: core/inventory_state.gd, core/item_db.gd, core/gun_db.gd, game/item_icons.gd, game/icon_art.gd,
@@ -17,6 +17,7 @@ const ItemDb = preload("res://core/item_db.gd")
 const GunDb = preload("res://core/gun_db.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const TierStyle = preload("res://game/tier_style.gd")
+const CurrencyArt = preload("res://game/currency_art.gd")
 const UiSkin = preload("res://game/ui_skin.gd")
 const InventoryCard = preload("res://game/inventory_card.gd")
 const ArmourStats = preload("res://core/armour_stats.gd")
@@ -54,6 +55,7 @@ var bank: RefCounted  # core/bank_state.gd while the window is open AT the bank 
 var bank_price := ""  # what the next bank upgrade costs, worded by the session ("" = no upgrade left)
 var chips := -1  # casino chips and points for the bottom bar (set by the session when it opens the window; -1 = hide)
 var points := -1
+var doubloons := -1  # the sea's money (sea step 6), -1 = hide
 var look := {}  # the character's look for the portrait
 
 var tab := "all"
@@ -158,7 +160,7 @@ func _redraw_all() -> void:
 
 
 func _signature() -> int:
-	return [inventory._slots, inventory.holsters, inventory.equipment, inventory.loaded, inventory.cursor, inventory.holster_count, inventory.slot_count, in_hand, chips, points, tab, sort_by, bank != null, bank_price, knife_name, 0 if bank == null else int(bank.call("used"))].hash()
+	return [inventory._slots, inventory.holsters, inventory.equipment, inventory.loaded, inventory.cursor, inventory.holster_count, inventory.slot_count, in_hand, chips, points, doubloons, tab, sort_by, bank != null, bank_price, knife_name, 0 if bank == null else int(bank.call("used"))].hash()
 
 
 func _place_portrait() -> void:
@@ -830,13 +832,13 @@ func _draw_footer() -> void:
 	UiSkin.panel(self, f, UiSkin.INK_DEEP)
 	var x := f.position.x + 24.0
 	var y := f.position.y + 32.0
-	if chips >= 0:
-		draw_circle(Vector2(x + 8, y - 6), 8.0, Color(0.95, 0.75, 0.25))
-		draw_string(_font, Vector2(x + 22, y), "%s chips" % _thousands(chips), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
-		x += 200.0
-	if points >= 0:
-		draw_circle(Vector2(x + 8, y - 6), 8.0, Color(0.45, 0.85, 1.0))
-		draw_string(_font, Vector2(x + 22, y), "%s points" % _thousands(points), HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
+	for money: Array in [["points", points], ["chips", chips], ["doubloons", doubloons]]:  # each with its own coin (game/currency_art.gd)
+		if int(money[1]) < 0:
+			continue
+		CurrencyArt.draw(self, String(money[0]), Vector2(x + 9, y - 6), 10.0)
+		var label := "%s %s" % [_thousands(int(money[1])), String(money[0])]
+		draw_string(_font, Vector2(x + 24, y), label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
+		x += _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 56.0
 	var keys := [[_action_key("drop_item"), "Drop gun"], ["Shift", "Compare with gun in hand"], ["Right click", "Split a stack"], [_action_key("inventory"), "Close"]]
 	var kx := f.end.x - 24.0
 	for k in range(keys.size() - 1, -1, -1):

@@ -8,6 +8,7 @@ extends Control
 
 const UiSkin = preload("res://game/ui_skin.gd")
 const TierStyle = preload("res://game/tier_style.gd")
+const CurrencyArt = preload("res://game/currency_art.gd")
 const SIZE := Vector2(900, 600)
 const TABS := ["BUY", "SELL", "CHANGE", "FERRY"]
 const ROW := 46.0
@@ -113,7 +114,10 @@ func _draw() -> void:
 	var chips := int(port.call("chips").get("balance")) if port.call("chips") != null else 0
 	var dbl := int(port.call("doubloons").get("balance")) if port.call("doubloons") != null else 0
 	var by := r.end.y - 44.0
-	draw_string(_font, Vector2(r.position.x + 28.0, by + 20.0), "%d chips      %d doubloons" % [chips, dbl], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, UiSkin.TEXT)
+	CurrencyArt.draw(self, "chips", Vector2(r.position.x + 38.0, by + 14.0), 10.0)
+	draw_string(_font, Vector2(r.position.x + 54.0, by + 20.0), "%d chips" % chips, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, UiSkin.TEXT)
+	CurrencyArt.draw(self, "doubloons", Vector2(r.position.x + 238.0, by + 14.0), 10.0)
+	draw_string(_font, Vector2(r.position.x + 254.0, by + 20.0), "%d doubloons" % dbl, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, UiSkin.TEXT)
 	var kx := r.end.x - 200.0
 	kx += UiSkin.key_cap(self, _font, Vector2(kx, by + 4.0), "F / Esc") + 6.0
 	draw_string(_font, Vector2(kx, by + 19.0), "Leave", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.TEXT_DIM)
@@ -132,6 +136,7 @@ func _buy(area: Rect2) -> void:
 		var count := int(entry.get("count", 1))
 		draw_string(_font, row.position + Vector2(14, 26), "%s%s" % [port.call("item_name", String(entry["item"])), "  x%d" % count if count > 1 else ""], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
 		var price := "%d chips" % int(entry["chips"]) if entry.has("chips") else "%d doubloons" % int(entry["doubloons"])
+		CurrencyArt.draw(self, "chips" if entry.has("chips") else "doubloons", Vector2(row.end.x - 312.0, row.position.y + 20.0), 8.0)
 		draw_string(_font, Vector2(row.end.x - 300.0, row.position.y + 26.0), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiSkin.TEXT_DIM)
 		var e := entry
 		_button(Rect2(Vector2(row.end.x - 110.0, row.position.y + 6.0), Vector2(100, 28)), "Buy", "Buy " + String(entry["item"]), true, func() -> void: said = String(port.call("buy", e)))

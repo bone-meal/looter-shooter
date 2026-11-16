@@ -11,6 +11,7 @@ extends Node3D
 const PortRules = preload("res://core/sea/port_rules.gd")
 const ShopWindow = preload("res://game/port_shop_window.gd")
 const UiSkin = preload("res://game/ui_skin.gd")
+const CurrencyArt = preload("res://game/currency_art.gd")
 const MODEL := "res://assets/models/sea/harbour_stall.gltf"
 const REACH := 3.2
 
@@ -203,6 +204,5 @@ func _draw_counter() -> void:
 	var w := _font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x + 46.0
 	var r := Rect2(Vector2(view.x - w - 24.0, 92.0), Vector2(w, 30.0))
 	UiSkin.panel(counter, r)
-	counter.draw_circle(r.position + Vector2(17, 15), 8.0, Color(0.92, 0.72, 0.25))
-	counter.draw_circle(r.position + Vector2(17, 15), 5.0, Color(0.75, 0.55, 0.15))
+	CurrencyArt.draw(counter, "doubloons", r.position + Vector2(17, 15), 9.0)
 	counter.draw_string(_font, r.position + Vector2(32, 21), text, HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
