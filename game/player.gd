@@ -94,7 +94,13 @@ var water_level := 0.0  # scene height of the water's surface above the body whi
 var swim := {"speed": 3.0, "sprint": 1.5, "float": 1.35, "max_depth": 30.0}  # data/sea/salvage.json "swim", set at sea
 var swim_fast_ok := true  # stamina left to swim fast
 var at_helm := false  # steering a ship at sea (game/sea_ships.gd): the move keys work the ship, the body stays at the wheel
-var manning := false  # sitting at a ship's cannon (game/sea_cannons.gd): the shoot key fires the cannon, not the gun
+var manning := false:  # sitting at a ship's cannon (game/sea_cannons.gd): hands on the cannon, the gun put away until he gets up
+	set(on):
+		if manning == on:
+			return
+		manning = on
+		if is_inside_tree():
+			refresh_held()
 var controls_enabled := true  # false while the inventory screen is open
 var damage_numbers: DamageNumbers  # optional; game/damage_numbers.gd
 var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
@@ -932,6 +938,8 @@ func refresh_held() -> void:
 				_hand = i
 				break
 	_sling_shield()
+	if manning:  # at a ship's cannon: nothing in hand (refresh_held runs again when he gets up)
+		return
 	if guns_locked:  # Aurelind before its story is done: the staff is out, no gun and no knife
 		_apply_health_cap()
 		return

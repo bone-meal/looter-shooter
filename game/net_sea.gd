@@ -81,6 +81,7 @@ func _send_fleet(fleet: Node) -> void:
 			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false))])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
+	_board_down.rpc(fleet.get("boarding").call("to_net"))
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -119,11 +120,22 @@ func _ship_for(from: int, ship_index: int) -> Node:
 
 
 func _near(from: int, ship: Node, spot: Array, reach: float) -> bool:
+	var deck: Array = net.call("deck_of", from)  # riding a deck: his ship-space spot is exact (no lag, no origin shift)
+	if not deck.is_empty() and deck[0] == ship:
+		return Vector2((deck[1] as Vector3).x - float(spot[0]), (deck[1] as Vector3).z - float(spot[1])).length() <= reach
 	var at: Variant = net.positions().get(from)
 	if not at is Vector3:
 		return false
 	var there: Vector3 = ship.call("deck_spot", spot)
 	return Vector2((at as Vector3).x - there.x, (at as Vector3).z - there.z).length() <= reach
+
+
+func _how_far(from: int, ship: Node, spot: Array) -> String:
+	var deck: Array = net.call("deck_of", from)
+	if not deck.is_empty():
+		return "deck %s of ship %d, %.1f m" % [str(deck[1]), (_fleet().get("ships") as Array).find(deck[0]), Vector2((deck[1] as Vector3).x - float(spot[0]), (deck[1] as Vector3).z - float(spot[1])).length()]
+	var at: Variant = net.positions().get(from)
+	return "%.1f m (no deck)" % ((at as Vector3).distance_to(ship.call("deck_spot", spot)) if at is Vector3 else -1.0)
 
 
 @rpc("any_peer", "call_remote", "reliable")
@@ -217,6 +229,43 @@ func _fire_down(ship_index: int, cannon: int, yaw: float, pitch: float, shooter:
 	var ships: Array = fleet.get("ships")
 	if ship_index >= 0 and ship_index < ships.size():
 		fleet.get("cannons").call("fire", ships[ship_index], cannon, yaw, pitch, false)
+
+
+# Boarding (sea step 5d-3): a client asks to throw a hook / cut / lay or take up a plank from where he stands; the
+# host checks he stands at that rail point of that ship and does it (game/sea_boarding.gd apply). The lines and
+# planks go out with every fleet send.
+func request_board(kind: String, ship_a: int, ship_b: int, pa: Vector2, pb: Vector2) -> void:
+	_board_up.rpc_id(1, kind, ship_a, ship_b, pa, pb)
+
+
+var board_log := PackedStringArray()  # dev: what the host did with boarding asks (newest last, 6 kept)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _board_up(kind: String, ship_a: int, ship_b: int, pa: Vector2, pb: Vector2) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var a := _ship_for(from, ship_a)
+	var b := _ship_for(from, ship_b)
+	var said := "?"
+	if a == null or b == null or not pa.is_finite() or not pb.is_finite() or not kind in ["hook", "cut", "plank", "unplank"]:
+		said = "bad ask (ships %d %d)" % [ship_a, ship_b]
+	else:
+		var board: Node = _fleet().get("boarding")
+		var reach := float(board.get("cfg")["rail_reach"]) + 2.5
+		if _near(from, a, [pa.x, pa.y], reach) or _near(from, b, [pb.x, pb.y], reach):
+			said = "done" if bool(board.call("apply", kind, a, b, pa, pb)) else "refused by the rules"
+		else:
+			said = "not standing there (%s from it)" % _how_far(from, a, [pa.x, pa.y])
+	board_log.append("%s %s" % [kind, said])
+	if board_log.size() > 6:
+		board_log.remove_at(0)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _board_down(items: Array) -> void:
+	var fleet := _fleet()
+	if fleet != null:
+		fleet.get("boarding").call("from_net", items)
 
 
 # --- the shipyard (client -> host): the client's own Carpentry and materials built it (his bag is his own claim);

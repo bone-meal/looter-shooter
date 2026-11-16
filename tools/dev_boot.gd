@@ -540,6 +540,60 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
+		"board":  # sea step 5d-3: !board rail <ship n> | do | status <note> | wait_lash | wait_plank | wait_none | cross
+			var sea_b: Node = session.call("sea")
+			var fleet_b: Node = sea_b.get("ships") if sea_b != null else null
+			var board: Node = fleet_b.get("boarding") if fleet_b != null else null
+			var sub_b := words[1] if words.size() > 1 else "status"
+			if board == null:
+				_lines.append("board: no sea")
+			elif sub_b == "rail":  # stand at our ship's rail, on the side towards ship n
+				var all_b: Array = fleet_b.get("ships")
+				var ours: Node3D = all_b[clampi(_ship_i, 0, all_b.size() - 1)]
+				var theirs_b: Node3D = all_b[clampi(int(words[2]) if words.size() > 2 else 1, 0, all_b.size() - 1)]
+				var rail: Vector2 = board.call("rail_point", ours, ours.global_transform.affine_inverse() * theirs_b.global_position + Vector3(0, 0, float(words[3]) if words.size() > 3 else 0.0))  # "!board rail 1 3": 3 m further aft
+				player.call("teleport", ours.call("deck_spot", [rail.x - signf(rail.x) * 0.7, rail.y], 0.3), 0.0)
+				player.call("look_at_point", theirs_b.global_position + Vector3(0, 1.5, 0))
+			elif sub_b == "do":
+				_lines.append("BOARD do: '%s' -> %s" % [String(board.call("prompt", "F")), str(board.call("interact"))])
+			elif sub_b.begins_with("wait_"):
+				var began_b := Time.get_ticks_msec()
+				while Time.get_ticks_msec() - began_b < 60000:
+					var n_l := (board.get("lashes") as Array).size()
+					var n_p := (board.get("planks") as Array).size()
+					if (sub_b == "wait_lash" and n_l > 0) or (sub_b == "wait_plank" and n_p > 0) or (sub_b == "wait_none" and n_l == 0 and n_p == 0):
+						break
+					await get_tree().create_timer(0.5, true, false, true).timeout
+			elif sub_b == "cross":  # walk over the first plank to the other ship (the real move keys)
+				var plank_c: Array = board.get("planks")
+				if plank_c.is_empty():
+					_lines.append("BOARD cross: no plank")
+				else:
+					var p0: Dictionary = plank_c[0]
+					var start_ship: Node3D = fleet_b.call("ship_aboard")
+					var far_ship: Node3D = p0["b"] if start_ship == p0["a"] else p0["a"]
+					var far_p: Vector2 = p0["pb"] if far_ship == p0["b"] else p0["pa"]
+					var near_p: Vector2 = p0["pa"] if far_ship == p0["b"] else p0["pb"]
+					player.call("teleport", board.call("ramp_foot", start_ship, near_p) + Vector3(0, 0.3, 0), 0.0)
+					await get_tree().create_timer(0.3, true, false, true).timeout
+					var began_x := Time.get_ticks_msec()
+					var lowest := INF
+					Input.action_press("move_forward")
+					while Time.get_ticks_msec() - began_x < 12000 and fleet_b.call("ship_aboard") != far_ship:
+						player.call("look_at_point", (board.call("ramp_foot", far_ship, far_p) as Vector3) + Vector3(0, 1.6, 0))
+						lowest = minf(lowest, player.global_position.y - float(sea_b.call("water_height", player.global_position)))
+						await get_tree().process_frame
+					await get_tree().create_timer(0.6, true, false, true).timeout
+					Input.action_release("move_forward")
+					var arrived: bool = fleet_b.call("ship_aboard") == far_ship
+					_lines.append("BOARD cross: %s after %.1f s, lowest %.1f m above the sea, swimming %s" % ["ON the other ship" if arrived else "NOT across", (Time.get_ticks_msec() - began_x) / 1000.0, lowest, str(player.get("swimming"))])
+			else:
+				var ships_b: Array = fleet_b.get("ships")
+				var hold_b := PackedStringArray()
+				for ship_b: Node in ships_b:
+					hold_b.append("%s (%.0f, %.0f) yaw %.0f" % [String(ship_b.get("state")["ship"]), float(ship_b.get("state")["x"]), float(ship_b.get("state")["z"]), rad_to_deg(float(ship_b.get("state")["yaw"]))])
+				var asks: Variant = session.get("net").get_node_or_null("Sea").get("board_log") if session.get("net") != null and session.get("net").get_node_or_null("Sea") != null else PackedStringArray()
+				_lines.append("BOARD %s: %s; ships %s; aboard %d; host asks %s" % [" ".join(words.slice(2)), String(board.call("status")), ", ".join(hold_b), ships_b.find(fleet_b.call("ship_aboard")), str(asks)])
 		"cannon":  # sea step 5d-2: !cannon target <ship n> (sit at the cannon facing it and aim) | fire | wait_ships <n> | status <note> | leave
 			var sea_c: Node = session.call("sea")
 			var fleet_c: Node = sea_c.get("ships") if sea_c != null else null

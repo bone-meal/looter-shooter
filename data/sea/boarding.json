@@ -1,0 +1,13 @@
+{
+ "_about": "Sea step 5d-3 boarding (game/sea_boarding.gd; director chose 1 AND 3: grappling hooks and a boarding plank). HOOKS: a player at the rail (within rail_reach m of the side) throws at another ship whose rail is within hook_range m: lashed, the other ship is pulled at pull_speed m/s (turning turn_deg_s to lie parallel) until her rail is gap m from ours, then both are held still until somebody cuts the line (interact within cut_reach m of a hook end, measured flat; a step further along the rail offers the plank). PLANK: two ships whose rails are within plank_range m and both slower than plank_speed m/s: a player at the rail lays a gangway (a ramp of ramp m inboard on each deck up to the rail tops and a bridge between); it is taken up by interact at either end or falls when the rails part beyond plank_range + 1 m or either ship moves faster than plank_speed x 2. ALL NUMBERS ARE PLACEHOLDERS.",
+ "rail_reach": 1.6,
+ "hook_range": 15.0,
+ "pull_speed": 2.5,
+ "turn_deg_s": 12.0,
+ "gap": 1.4,
+ "cut_reach": 1.3,
+ "plank_range": 6.0,
+ "plank_speed": 1.0,
+ "ramp": 1.6,
+ "plank_width": 0.62
+}

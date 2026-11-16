@@ -848,6 +848,12 @@ func ghost_deck(id: int, ship: Node3D, local: Vector3, swimming: bool, working: 
 		g["node"].set("deck_ship", ship)
 
 
+# [ship, ship-space spot] of a player riding a deck (game/net_sea.gd), [] when he is not on one.
+func deck_of(id: int) -> Array:
+	var g: Dictionary = _ghosts.get(id, {})
+	return [g["deck"], g["local"]] if g.get("deck") != null and is_instance_valid(g["deck"]) else []
+
+
 func _make_ghost(id: int, pos: Vector3) -> void:
 	var body := RemotePlayer.new()
 	body.peer_id = id
