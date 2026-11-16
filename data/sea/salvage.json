@@ -43,7 +43,8 @@
    ],
    "reward": {
     "chips": 750,
-    "xp": 300
+    "xp": 300,
+    "doubloons": 60
    }
   }
  },
@@ -166,7 +167,8 @@
   ],
   "reward": {
    "chips": 1500,
-   "xp": 500
+   "xp": 500,
+   "doubloons": 25
   }
  },
  "icons": {

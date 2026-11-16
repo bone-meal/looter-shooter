@@ -165,6 +165,7 @@ var _in_fantasy := false
 var _sea: Node3D  # game/sea_world.gd, built on the first trip (sea step 4)
 var _fleet_saved: Variant = null  # the sea's world fleet from the save (this player's own world), until the sea is built (sea step 5c)
 var _salvage_saved: Variant = null  # the salvage logbook from the save, until the sea is built (sea step 5b)
+var _chart_saved: Variant = null  # the sea chart from the save, until the sea is built (sea step 6)
 var _in_sea := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
 var _fantasy_saved: Variant  # the fantasy part of the profile, until that world is built
@@ -188,6 +189,7 @@ var _progress := ProgressState.new(DataStore.load_json("res://data/progression.j
 var _card_screen := CardScreen.new()
 var _render_style := RenderStyle.new()
 var _wallet := Wallet.new()  # casino coins (saved in the profile)
+var _doubloons := Wallet.new()  # the sea's money (sea step 6; saved in the profile)
 var _points_cfg: Dictionary = DataStore.load_json("res://data/points.json")
 var _score := ScoreCard.new(_points_cfg)  # zombies-style points (saved in the profile) and this session's scoreboard row
 var _scoreboard := Scoreboard.new()
@@ -796,6 +798,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("logbook") and _in_sea and not _inventory_screen.visible:
 		_sea.toggle_logbook()
+	elif event.is_action_pressed("map") and _in_sea and not _inventory_screen.visible:
+		_sea.toggle_chart()
 	elif event.is_action_pressed("inventory"):
 		_toggle_inventory()
 	elif event.is_action_pressed("interact") and not _inventory_screen.visible:
@@ -1181,6 +1185,10 @@ func progress() -> ProgressState:
 	return _progress
 
 
+func doubloons() -> Wallet:
+	return _doubloons
+
+
 func wallet() -> Wallet:
 	return _wallet
 
@@ -1312,6 +1320,7 @@ func _load_profile() -> void:
 		if extra.has("coins"):
 			_wallet.balance = maxi(int(extra["coins"]), 0)
 			_jackpot = float(extra.get("jackpot", _jackpot))
+		_doubloons.balance = maxi(int(extra.get("doubloons", 0)), 0)
 		_progress.from_dict(extra.get("progress", {}))
 		_score.from_dict(extra.get("score"))
 		_player.pools.from_dict(extra.get("ammo"))
@@ -1330,6 +1339,7 @@ func _load_profile() -> void:
 			_knife_rolled = true
 		_fantasy_saved = extra.get("fantasy")
 		_salvage_saved = extra.get("salvage")
+		_chart_saved = extra.get("sea_chart")
 		_fleet_saved = extra.get("sea_fleet")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
@@ -1369,7 +1379,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict(), "tcg": _cards.to_dict()}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict(), "tcg": _cards.to_dict()}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1377,6 +1387,7 @@ func save_profile() -> void:
 		elif _fantasy_saved != null:
 			extra["fantasy"] = _fantasy_saved  # never entered this session: keep what was saved
 		extra["salvage"] = _sea.salvage.book.to_dict() if _sea != null else _salvage_saved
+		extra["sea_chart"] = _sea.chart.to_dict() if _sea != null else _chart_saved
 		var guest: bool = net != null and net.is_active() and not net.is_host()  # a guest sails the host's fleet: his own world's stays as saved
 		extra["sea_fleet"] = _sea.ships.to_list() if _sea != null and not guest else _fleet_saved
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
@@ -3844,6 +3855,7 @@ func _build_sea() -> void:
 		_sea.setup(_player, _render_style)
 		_sea.notice.connect(_player_hud.notice)
 		_sea.salvage.load_book(_salvage_saved)
+		_sea.chart.from_dict(_chart_saved)
 		_sea.ships.from_list(_fleet_saved)
 		_sea.set("others", func() -> Array: return net.other_positions() if net != null and net.can_send() else [])
 		_sea.visible = false

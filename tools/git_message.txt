@@ -1,9 +1,9 @@
-Sea 5e follow-up: crane seen online, swift sail model, Sailing level live at the helm
+Sea step 6: sea chart, doubloons, harbour master stall with shop, money changer and ferry
 
-- net_sea tell_crane: every machine draws the haul (rope, grapnel, turning winch); crane model gains a Winch node
-- tools/blender/sea_swift_sail.py -> swift_sail model (crimson and cream, gold boltrope, wind emblem) covering every sail while Swift is set
-- the helmsman level goes with each helm input so levels gained while steering count at once
-- pair set crane
+- core/sea/sea_chart.gd + game/sea_chart_window.gd (key M): squares A1-I9 completed by exploring their islands, fog of war, pins, unfinished tracker, secret charts marking hidden places
+- doubloons wallet saved with the character, counter at sea, salvage set rewards pay doubloons
+- tools/blender/sea_port.py -> harbour stall; game/sea_port.gd + port_shop_window.gd: buy charts for chips, supplies and the crane for doubloons, sell rolled guns and armour, change chips at 250 to 1, ferry to explored ports
+- data: chart.json, port.json, writing/chart.txt, chart items; dev !chart !port
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,0 +1,22 @@
+{
+ "_about": "Sea step 6 ports, DOUBLOONS and shops (core/sea/port_rules.gd, game/sea_port.gd, game/port_shop_window.gd). Director: doubloons come from the sea (salvage, chests, sea enemies, bosses, selling loot at port shops) PLUS casino chips change into doubloons at a REALLY BAD rate (chips_per_doubloon, one way); chips also buy charts and supplies. ports: every port (only the home port until the regions of step 13): its island (the ferry goes only to ports whose island the player has explored), the stall (the harbour master's: shop, money changer, ferry desk) in sea coordinates + yaw, and where a ferried player lands (dock). sell: what the stall pays for a rolled gun by tier, x (1 + level_bonus x item level); armour pieces pay armour_share of that; plain items are not bought. buy: what the stall sells: an item of the fantasy bag (gear.json) for chips or doubloons, count per purchase. crane: the salvage crane fitted to the ship nearest the shipyard for doubloons. ALL NUMBERS ARE PLACEHOLDERS.",
+ "chips_per_doubloon": 250,
+ "sell": {
+  "tier": {"grey": 1, "green": 2, "blue": 4, "purple": 8, "gold": 12, "orange": 20, "rainbow": 35, "pony": 60},
+  "level_bonus": 0.05,
+  "armour_share": 0.6
+ },
+ "buy": [
+  {"item": "chart_captains_log", "chips": 900, "count": 1},
+  {"item": "chart_silver_compass", "chips": 1400, "count": 1},
+  {"item": "chart_longboat_plan", "chips": 4000, "count": 1},
+  {"item": "oak_plank", "doubloons": 6, "count": 5},
+  {"item": "sailcloth", "doubloons": 8, "count": 1},
+  {"item": "iron_bar", "doubloons": 5, "count": 1},
+  {"item": "copper_bar", "doubloons": 3, "count": 1}
+ ],
+ "crane": {"doubloons": 120},
+ "ports": [
+  {"id": "home", "name": "Home Port", "island": "start", "stall": [-68.0, 6652.0], "yaw": 0.0, "dock": [-68.0, 6655.0]}
+ ]
+}

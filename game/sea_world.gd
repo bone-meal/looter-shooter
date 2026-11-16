@@ -18,6 +18,9 @@ const SeaShips = preload("res://game/sea_ships.gd")
 const SeaSwim = preload("res://game/sea_swim.gd")
 const SeaSalvage = preload("res://game/sea_salvage.gd")
 const SeaShipyard = preload("res://game/sea_shipyard.gd")
+const SeaChart = preload("res://core/sea/sea_chart.gd")
+const ChartWindow = preload("res://game/sea_chart_window.gd")
+const SeaPort = preload("res://game/sea_port.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -34,6 +37,11 @@ var ships := SeaShips.new()  # the world fleet (sea step 5a)
 var swim := SeaSwim.new()  # swimming, stamina, ladders, the rope (sea step 5b)
 var shipyard := SeaShipyard.new()  # the slipway on the test island (sea step 5c)
 var salvage := SeaSalvage.new()  # diving finds and the logbook (sea step 5b)
+var chart: SeaChart  # this player's sea chart (sea step 6): fog, explored islands, pins, secrets
+var chart_window := ChartWindow.new()
+var port := SeaPort.new()  # harbour master's stalls, doubloons, ferries (sea step 6)
+var _chart_layer := CanvasLayer.new()
+var _chart_cfg: Dictionary
 var others := Callable()  # the session: other players' scene positions (the rope looks for swimmers)
 const SIDE_X := -10000.0  # scene x below this is the sea (game_session SEA_SIDE_X)
 var someone_else_here := false  # the host: another player is at sea, so the fleet runs here (set by the session)
@@ -79,6 +87,16 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	swim.setup(self, _player, ships, JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/salvage.json"))["swim"])
 	_root.add_child(salvage)
 	salvage.setup(self, _player, swim)
+	_chart_cfg = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/chart.json"))
+	chart = SeaChart.new(_chart_cfg, map.width(), map.height(), _island_cfg["islands"])
+	_chart_layer.layer = 6
+	add_child(_chart_layer)
+	_chart_layer.add_child(chart_window)
+	chart_window.chart = chart
+	chart_window.sea = self
+	_root.add_child(port)
+	port.setup(self, _player, _chart_layer)
+	_read_chart_words()
 	_clock_start = Time.get_ticks_msec() / 1000.0
 
 
@@ -221,6 +239,7 @@ func _tick(delta: float, now: bool) -> void:
 			notice.emit(String(map.regions[id]["name"]))
 		region_id = id if id != "" else region_id
 		weather = weather_at(here)
+		chart.visit(here.x, here.z)
 		islands.follow(_kept_for(), true)
 		rain.show_rain(float(weather.get("rain", 0.0)), float(weather.get("wind", 0.0)), float(weather.get("wind_dir", 0.0)))
 	var region: Dictionary = map.region_at(here.x, here.z)
@@ -254,7 +273,7 @@ func status() -> String:
 func prompt(key: String) -> String:
 	if swim.climbing():
 		return ""
-	for part: Node in [swim, salvage, shipyard]:
+	for part: Node in [swim, salvage, shipyard, port]:
 		var said := String(part.call("prompt", key))
 		if said != "":
 			return said
@@ -264,11 +283,65 @@ func prompt(key: String) -> String:
 func interact() -> bool:
 	if swim.climbing():
 		return true
-	return swim.interact() or salvage.interact() or shipyard.interact() or ships.interact()
+	return swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or ships.interact()
 
 
 func toggle_logbook() -> void:
 	salvage.toggle_window()
+
+
+# --- the sea chart (sea step 6, key M) ---
+
+func toggle_chart() -> void:
+	if chart_window.visible:
+		chart_window.close()
+		_player.set("controls_enabled", true)
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	else:
+		chart_window.open()
+		_player.set("controls_enabled", false)
+		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+
+
+# Secret marks to draw: every chart (data/sea/chart.json secrets) whose item is in the bag or that was read.
+func chart_secrets() -> Array:
+	var out: Array = []
+	var bag: Variant = skills.get("bag") if skills != null else null
+	for secret: Dictionary in _chart_cfg.get("secrets", []):
+		if (chart.get("secrets") as Dictionary).has(String(secret["id"])) or (bag != null and int((bag as Object).call("count", String(secret["item"]))) > 0):
+			out.append(secret)
+	return out
+
+
+# The other players at sea, in sea coordinates (for the chart).
+func party_on_chart() -> Array:
+	var out: Array = []
+	if others.is_valid():
+		for spot: Vector3 in others.call():
+			if spot.x < SIDE_X:
+				out.append(local_of(spot))
+	return out
+
+
+func _read_chart_words() -> void:
+	var section := ""
+	for raw: String in FileAccess.get_file_as_string("res://data/sea/writing/chart.txt").split("\n"):
+		var line := raw.strip_edges()
+		if line == "" or line.begins_with("#"):
+			continue
+		if line.begins_with("["):
+			section = line.trim_prefix("[").trim_suffix("]")
+			continue
+		var at := line.find(":")
+		if at < 0:
+			continue
+		var id := line.substr(0, at).strip_edges()
+		var rest := line.substr(at + 1).strip_edges()
+		if section == "islands":
+			chart_window.names[id] = rest
+		elif section == "secrets":
+			var parts := rest.split("|")
+			chart_window.secret_words[id] = [parts[0].strip_edges(), parts[1].strip_edges() if parts.size() > 1 else ""]
 
 
 # The sea's root (things placed in sea coordinates hang here and shift with the floating origin).

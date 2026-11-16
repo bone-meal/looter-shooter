@@ -1,0 +1,14 @@
+# The sea chart's words (sea step 6). Edit freely. All of it is my placeholder text.
+# [islands] id: Name   (an island's name on the chart once it is explored)
+# [secrets] id: Title | the line written beside its mark
+
+[islands]
+start: Home Port Isle
+test_tiny: Lone Palm
+test_medium: Turtleback
+test_large: Greywater Bluff
+
+[secrets]
+chart_captains_log: The Captain's Last Anchorage | A ring of ink on open water and one word: "here".
+chart_silver_compass: A Compass Points Down | Somebody drew the needle pointing at the sea floor.
+chart_longboat_plan: Northman's Grave | A longship went down where the ice meets the shallows. Her builder's plans went with her.

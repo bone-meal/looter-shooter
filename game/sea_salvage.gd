@@ -225,9 +225,11 @@ func _logged(id: String, result: Dictionary) -> void:
 		var pay: Dictionary = book.reward(set_id)
 		var session := get_tree().get_first_node_in_group("game_session")
 		if session != null and session.has_method("wallet"):
-			session.call("wallet").call("add", int(pay["chips"]))
+			session.call("wallet").call("add", int(pay.get("chips", 0)))
+		if session != null and session.has_method("doubloons"):  # the sea's own money (sea step 6)
+			session.call("doubloons").call("add", int(pay.get("doubloons", 0)))
 		_xp(int(pay["xp"]))
-		_sea.emit_signal("notice", "%s complete: +%d chips. %s" % [title, int(pay["chips"]), String(book.done_lines.get(set_id, ""))])
+		_sea.emit_signal("notice", "%s complete: +%d chips, +%d doubloons. %s" % [title, int(pay.get("chips", 0)), int(pay.get("doubloons", 0)), String(book.done_lines.get(set_id, ""))])
 	window.queue_redraw()
 
 

@@ -1983,6 +1983,33 @@
     0.31,
     0.19
    ]
+  },
+  "chart_captains_log": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.58
+   ]
+  },
+  "chart_silver_compass": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.58
+   ]
+  },
+  "chart_longboat_plan": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.58
+   ]
   }
  }
 }

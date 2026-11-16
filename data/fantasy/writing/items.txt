@@ -250,3 +250,9 @@ ship_crane: Salvage Crane
 raft_plan: Raft Plan
 longboat_plan: Longboat Plan
 junk_plan: Junk Plan
+
+[items sea_chart]
+# WHAT: a chart that marks a hidden place on the sea chart while it is in the bag (bought at a port, found). Read a line as  id: Name .
+chart_captains_log: Chart: Last Anchorage
+chart_silver_compass: Chart: Compass Down
+chart_longboat_plan: Chart: Northman's Grave

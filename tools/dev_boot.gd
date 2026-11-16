@@ -548,6 +548,53 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
+		"port":  # sea step 6: !port go | open | close | tab <n> | press <button text> | money <chips> <doubloons> | status <note>
+			var sea_p: Node = session.call("sea")
+			var port_p: Node = sea_p.get("port") if sea_p != null else null
+			var sub_p := words[1] if words.size() > 1 else "status"
+			if port_p == null:
+				_lines.append("port: no sea")
+			elif sub_p == "go":
+				var home: Dictionary = port_p.get("rules").call("port", "home")
+				player.call("teleport", sea_p.call("world_of", Vector3(float(home["dock"][0]), 30.0, float(home["dock"][1]))), 0.0)
+			elif sub_p == "open":
+				_lines.append("PORT open: here '%s', prompt '%s'" % [String(port_p.call("port_here")), String(port_p.call("prompt", "F"))])
+				port_p.call("open", "home")
+			elif sub_p == "close":
+				port_p.call("close")
+			elif sub_p == "tab":
+				port_p.get("window").set("tab", int(words[2]))
+				port_p.get("window").queue_redraw()
+				await get_tree().process_frame
+				await get_tree().process_frame
+			elif sub_p == "press":
+				var label := " ".join(words.slice(2))
+				var ok_p: bool = port_p.get("window").call("press", label)
+				_lines.append("PORT press '%s': %s -> '%s'" % [label, str(ok_p), String(port_p.get("window").get("said"))])
+				await get_tree().process_frame
+			elif sub_p == "money":
+				session.call("wallet").set("balance", int(words[2]))
+				session.call("doubloons").set("balance", int(words[3]))
+			else:
+				var inv_p: RefCounted = player.get("inventory")
+				var guns_p := 0
+				for slot_p in int(inv_p.get("slot_count")):
+					if not (inv_p.call("gun_at", slot_p) as Dictionary).is_empty():
+						guns_p += 1
+				_lines.append("PORT %s: chips %d, doubloons %d, guns in the backpack %d, sellable %d, oak planks %d, crane on %d ships" % [" ".join(words.slice(2)), int(session.call("wallet").get("balance")), int(session.call("doubloons").get("balance")), guns_p, (port_p.call("sellable") as Array).size(), int(sea_p.get("skills").get("bag").call("count", "oak_plank")), (sea_p.get("ships").get("crane").get("_cranes") as Dictionary).size()])
+		"chart":  # sea step 6: !chart open | close | pin <x> <z> | status <note>
+			var sea_c2: Node = session.call("sea")
+			if sea_c2 == null:
+				_lines.append("chart: no sea")
+			elif words.size() > 1 and words[1] in ["open", "close"]:
+				if bool(sea_c2.get("chart_window").visible) != (words[1] == "open"):
+					sea_c2.call("toggle_chart")
+			elif words.size() > 3 and words[1] == "pin":
+				sea_c2.get("chart").call("toggle_pin", Vector2(float(words[2]), float(words[3])))
+			else:
+				var ch: RefCounted = sea_c2.get("chart")
+				var here_c: Vector3 = sea_c2.call("local_of", player.global_position)
+				_lines.append("CHART %s: square %s, squares complete %d, explored %s, unfinished %s, pins %d, secrets shown %d, saved %d bytes" % [" ".join(words.slice(1)), String(ch.call("square_name", ch.call("square_of", here_c.x, here_c.z))), int(ch.call("complete_count")), str((ch.get("explored") as Dictionary).keys()), str((ch.call("unfinished") as Array).map(func(q: Vector2i) -> String: return String(ch.call("square_name", q)))), (ch.get("pins") as Array).size(), (sea_c2.call("chart_secrets") as Array).size(), JSON.stringify(ch.call("to_dict")).length()])
 		"crane":  # sea step 5e: !crane post (stand at the crane of the ship in use) | use | status <note>
 			var sea_k: Node = session.call("sea")
 			var fleet_k: Node = sea_k.get("ships") if sea_k != null else null
