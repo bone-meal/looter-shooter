@@ -146,6 +146,7 @@ func enter(graphics: String) -> void:
 	visible = true
 	ocean.set_detail(graphics, world["waves"])
 	rain.set_tier(graphics)
+	islands.graphics = graphics
 	look.take_over()
 	islands.follow(local_of(_player.global_position))
 	_tick(0.0, true)
@@ -219,8 +220,8 @@ func water_height(at: Vector3) -> float:
 func status() -> String:
 	var here := local_of(_player.global_position)
 	var part := look.clock.day_part(seconds())
-	return "sea %s at (%.0f, %.0f) day %.2f %s wind %.2f to %.0f deg swell %.1f m, islands %s, shift %s, under water %s fog %.4f" % [region_id, here.x, here.z, part,
-		String(weather.get("kind", "?")), float(weather.get("wind", 0.0)), fposmod(rad_to_deg(float(weather.get("wind_dir", 0.0))), 360.0), ocean.swell, str(islands.shown_count()), str(_shift),
+	return "sea %s at (%.0f, %.0f) day %.2f %s wind %.2f to %.0f deg swell %.1f m, islands %s props %d, shift %s, under water %s fog %.4f" % [region_id, here.x, here.z, part,
+		String(weather.get("kind", "?")), float(weather.get("wind", 0.0)), fposmod(rad_to_deg(float(weather.get("wind_dir", 0.0))), 360.0), ocean.swell, str(islands.shown_count()), int(islands.props_shown()), str(_shift),
 		str(look.under_water), float(look.call("fog_density"))]
 
 

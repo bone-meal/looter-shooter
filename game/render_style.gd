@@ -1,11 +1,12 @@
 # Purpose: applies the Graphics preset (render scale, anti-aliasing, mesh smoothness, view distance, and for the realistic look texture size, shadow size, prop density) and the Lighting shader preset (cel shading, outlines, rim light, sky, glow, fog, colour grading, sun shadows) from data/graphics.json. The "realistic" preset switches the world to PBR textures, lights it from an HDRI sky and adds ambient occlusion; on the Forward+ renderer it also turns on real-time GI, volumetric fog and screen reflections. New meshes are styled as they enter the scene tree; a preset change restyles everything once (never per frame).
-# Dependencies: core/data_store.gd, data/graphics.json, game/surface_library.gd, game/ground_blend.gd, game/water_surface.gd, game/look_props.gd. Owned by game/game_session.gd, which passes its Environment and sun.
+# Dependencies: core/data_store.gd, data/graphics.json, game/surface_library.gd, game/ground_blend.gd, game/water_surface.gd, game/look_props.gd, game/isle_ground.gd. Owned by game/game_session.gd, which passes its Environment and sun.
 extends Node
 
 const DataStore = preload("res://core/data_store.gd")
 const SurfaceLibrary = preload("res://game/surface_library.gd")
 const GroundBlend = preload("res://game/ground_blend.gd")
 const FantasyGround = preload("res://game/fantasy_ground.gd")
+const IsleGround = preload("res://game/isle_ground.gd")
 const WaterSurface = preload("res://game/water_surface.gd")
 const LookProps = preload("res://game/look_props.gd")
 
@@ -157,6 +158,7 @@ func _apply_world_look() -> void:
 	SurfaceLibrary.configure(_textured(), String(tier.get("tex", "1k")), int(tier.get("maps", 3)))
 	GroundBlend.configure(toon)
 	FantasyGround.configure(toon)
+	IsleGround.configure(toon)
 	var water := 0
 	if _textured():
 		water = int(tier.get("water", 1))

@@ -1,9 +1,26 @@
 {
  "version": 1,
- "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog).",
+ "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island replaces test_small; the shipyard (data/sea/ships.json) sits in its east cove.",
  "near": 1200,
  "far": 5500,
  "islands": [
+  {
+   "id": "start",
+   "pos": [
+    -350,
+    2594
+   ],
+   "radius": 125,
+   "model": "isle_start",
+   "props": "isle_start",
+   "ground": {
+    "sand": "#e8d6a6",
+    "grass": "#6f9c48",
+    "rock": "#958b80",
+    "wet": "#9c8664",
+    "path": "#8a7152"
+   }
+  },
   {
    "id": "test_tiny",
    "pos": [
@@ -11,16 +28,8 @@
     2300
    ],
    "radius": 14,
-   "model": "isle_tiny"
-  },
-  {
-   "id": "test_small",
-   "pos": [
-    -350,
-    2600
-   ],
-   "radius": 55,
-   "model": "isle_small"
+   "model": "isle_tiny",
+   "props": "isle_tiny"
   },
   {
    "id": "test_medium",
@@ -29,7 +38,8 @@
     1700
    ],
    "radius": 160,
-   "model": "isle_medium"
+   "model": "isle_medium",
+   "props": "isle_medium"
   },
   {
    "id": "test_large",
@@ -38,11 +48,63 @@
     1300
    ],
    "radius": 420,
-   "model": "isle_large"
+   "model": "isle_large",
+   "props": "isle_large"
   }
  ],
  "spawn": [
-  -350,
-  2600
- ]
+  -328,
+  2590
+ ],
+ "props": {
+  "range": {
+   "default": 260,
+   "grass_tuft": 70,
+   "shells": 45,
+   "coconuts": 60,
+   "fern": 110,
+   "bush": 200,
+   "driftwood": 120,
+   "palm_a": 900,
+   "palm_b": 900,
+   "sea_stack": 2000,
+   "boulder_b": 600
+  },
+  "thin": [
+   "grass_tuft",
+   "shells",
+   "coconuts",
+   "fern",
+   "bush"
+  ],
+  "tiers": {
+   "potato": {
+    "share": 0.25,
+    "range": 0.45
+   },
+   "low": {
+    "share": 0.4,
+    "range": 0.6
+   },
+   "medium": {
+    "share": 0.7,
+    "range": 0.8
+   },
+   "high": {
+    "share": 1.0,
+    "range": 1.0
+   },
+   "ultimate": {
+    "share": 1.0,
+    "range": 1.3
+   }
+  },
+  "shadows": [
+   "palm_a",
+   "palm_b",
+   "sea_stack",
+   "boulder_b",
+   "ruin_wall"
+  ]
+ }
 }

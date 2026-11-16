@@ -1,0 +1,206 @@
+# Purpose: developer-time tool. The island kit's props (director: "plenty of props"): assets/models/sea/props/<id>.gltf,
+# each one mesh node "Body" so the game can draw hundreds of copies in one call (game/sea_isle_props.gd). Coconut palms
+# (two shapes), a broadleaf bush, a fern, three boulders, a sea stack, driftwood, a beach grass tuft, a shell and
+# pebble scatter, a coconut pile, a ruined wall. Materials named after what they are made of (fantasy_kit kinds).
+# Run: python3 tools/blender/sea_isle_props.py   (ONLY=palm_a builds just that one)
+# Dependencies: bpy, bmesh, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
+import math
+import os
+import random
+import sys
+
+sys.path.insert(0, os.path.dirname(__file__))
+import bpy  # noqa: F401
+import bmesh
+import kit
+import fantasy_kit as fk
+from fantasy_kit import K
+
+OUT = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "models", "sea", "props")
+TRUNK = (0.55, 0.45, 0.33)
+FROND = (0.24, 0.42, 0.15)
+FROND_DRY = (0.48, 0.44, 0.22)
+LEAF = (0.28, 0.48, 0.2)
+ROCK = (0.5, 0.47, 0.43)
+DRIFT = (0.7, 0.66, 0.58)
+
+
+def frond(m, base, yaw, length, droop, colour, seed):
+    """A palm frond: one closed leaf strip arching out and down, its edge jagged like leaflets, folded down from the
+    midrib (about 80 triangles, so a whole beach of palms stays cheap)."""
+    rnd = random.Random(seed)
+    fw = (math.cos(yaw), math.sin(yaw))
+    side = (-math.sin(yaw), math.cos(yaw))
+    n = 7
+    centre, left, right = [], [], []
+    for k in range(n + 1):
+        t = k / n
+        out = length * t
+        y = base[1] + length * 0.35 * t - droop * t * t * length
+        c = (base[0] + fw[0] * out, base[2] + fw[1] * out, y)  # Blender order (x, f, up)
+        span = length * 0.3 * math.sin(math.pi * min(t * 1.1, 1.0)) * (1.25 if k % 2 else 0.75) * rnd.uniform(0.9, 1.1)
+        fall = span * 0.5
+        back = span * 0.25 if k % 2 else 0.0
+        centre.append(c)
+        left.append((c[0] + side[0] * span - fw[0] * back, c[1] + side[1] * span - fw[1] * back, c[2] - fall))
+        right.append((c[0] - side[0] * span - fw[0] * back, c[1] - side[1] * span - fw[1] * back, c[2] - fall))
+    bm = bmesh.new()
+    def pair(p):
+        return bm.verts.new(p), bm.verts.new((p[0], p[1], p[2] - 0.025))
+    C = [pair(p) for p in centre]
+    L = [pair(p) for p in left]
+    R = [pair(p) for p in right]
+    for k in range(n):
+        for a, b in ((C, L), (R, C)):
+            bm.faces.new((a[k][0], a[k + 1][0], b[k + 1][0], b[k][0]))
+            bm.faces.new((b[k][1], b[k + 1][1], a[k + 1][1], a[k][1]))
+    ring = [L[k] for k in range(n + 1)] + [R[k] for k in range(n, -1, -1)]
+    ring = ring[:n + 1] + [C[n]] + ring[n + 1:] + [C[0]]
+    for i in range(len(ring)):
+        a, b = ring[i], ring[(i + 1) % len(ring)]
+        bm.faces.new((a[0], a[1], b[1], b[0]))
+    m._add(bm, K("leaf", colour), "Body", 0)
+
+
+def palm(m, height, lean, seed):
+    rnd = random.Random(seed)
+    rings = []
+    segs = 9
+    for k in range(segs + 1):
+        t = k / segs
+        x = lean * height * t * t
+        y = height * t
+        r = 0.24 * (1.0 - 0.35 * t) + (0.08 if k == 0 else 0.0)
+        rings.append((x, y, 0.0, r, r))
+    m.loft(K("bark", TRUNK), rings, segs=8)
+    for k in range(1, 7):  # ring scars
+        t = k / 7.0
+        x = lean * height * t * t
+        r = 0.24 * (1.0 - 0.35 * t) + 0.012
+        m.lathe(K("bark", tuple(c * 0.72 for c in TRUNK)), [(r, -0.04), (r, 0.04)], (x, height * t, 0.0), segs=8)
+    top = (lean * height, height, 0.0)
+    m.ball(K("bark", (0.42, 0.34, 0.22)), (0.3, 0.35, 0.3), top)
+    n = rnd.randint(9, 12)
+    for k in range(n):
+        yaw = 2 * math.pi * k / n + rnd.uniform(-0.2, 0.2)
+        frond(m, (top[0], top[1] + 0.15, top[2]), yaw, rnd.uniform(2.6, 3.6), rnd.uniform(0.5, 0.9), FROND if k % 4 else FROND_DRY, seed * 31 + k)
+    for k in range(4):
+        a = k * 1.7
+        m.ball(K("paint", (0.36, 0.26, 0.12)), 0.13, (top[0] + 0.25 * math.cos(a), top[1] - 0.2, top[2] + 0.25 * math.sin(a)), u=6, v=4)
+
+
+def bush(m, seed):
+    rnd = random.Random(seed)
+    for k in range(4):
+        a = rnd.uniform(0, 6.28)
+        d = rnd.uniform(0.2, 0.7)
+        fk.blob(m, K("leaf", tuple(c * rnd.uniform(0.85, 1.15) for c in LEAF)), (rnd.uniform(0.55, 0.85), rnd.uniform(0.45, 0.7), rnd.uniform(0.55, 0.85)), (d * math.cos(a), 0.5 + rnd.uniform(0, 0.3), d * math.sin(a)), seed=seed + k, rough=0.2, cuts=2)
+
+
+def fern(m, seed):
+    rnd = random.Random(seed)
+    for k in range(9):
+        yaw = 2 * math.pi * k / 9 + rnd.uniform(-0.2, 0.2)
+        frond(m, (0.0, 0.05, 0.0), yaw, rnd.uniform(0.7, 1.0), 0.9, LEAF, seed + k)
+
+
+def boulder(m, size, seed, flat=1.0):
+    fk.blob(m, K("rock", ROCK), (size, size * 0.7 * flat, size * 0.85), (0.0, size * 0.25, 0.0), seed=seed, rough=0.22, cuts=3)
+    rnd = random.Random(seed)
+    for k in range(3):
+        a = rnd.uniform(0, 6.28)
+        fk.blob(m, K("rock", tuple(c * 0.9 for c in ROCK)), (size * 0.35, size * 0.25, size * 0.3), (size * 0.8 * math.cos(a), size * 0.05, size * 0.8 * math.sin(a)), seed=seed + 10 + k, rough=0.25, cuts=2)
+
+
+def sea_stack(m, seed):
+    rnd = random.Random(seed)
+    y = -20.0  # from the sea floor under the cliffs to 16 m above the water
+    r = 6.0
+    while y < 16.0:
+        fk.blob(m, K("rock", tuple(c * rnd.uniform(0.85, 1.05) for c in ROCK)), (r, 2.6, r * 0.85), (rnd.uniform(-0.6, 0.6), y, rnd.uniform(-0.6, 0.6)), seed=seed + int(y * 10), rough=0.18, cuts=3)
+        y += 2.8
+        r *= rnd.uniform(0.9, 0.98) if y > 0.0 else 1.0
+    fk.blob(m, K("leaf", LEAF), (r * 1.1, 0.6, r), (0.0, y - 0.6, 0.0), seed=seed + 99, rough=0.3, cuts=2)
+
+
+def driftwood(m, seed):
+    rnd = random.Random(seed)
+    rings = [(-1.8, 0.18, 0.0, 0.16, 0.16), (-0.6, 0.2, 0.1, 0.2, 0.19), (0.7, 0.18, -0.05, 0.17, 0.16), (1.9, 0.14, 0.12, 0.11, 0.11)]
+    m.loft(K("wood", DRIFT), rings, segs=8)
+    m.rod(K("wood", DRIFT), 0.06, (-1.6, 0.2, 0.05), (-2.4, 0.5, 0.6), segs=6)
+    m.rod(K("wood", DRIFT), 0.05, (0.4, 0.22, 0.0), (0.9, 0.7, -0.5), segs=6)
+
+
+def grass_tuft(m, seed):
+    rnd = random.Random(seed)
+    for k in range(7):
+        a = rnd.uniform(0, 6.28)
+        h = rnd.uniform(0.35, 0.7)
+        base = (0.1 * math.cos(a), 0.0, 0.1 * math.sin(a))
+        tip = (base[0] + 0.25 * math.cos(a) * h, h, base[2] + 0.25 * math.sin(a) * h)
+        bm = bmesh.new()
+        q = [(base[0] - 0.025 * math.sin(a), base[2] + 0.025 * math.cos(a), 0.0), (base[0] + 0.025 * math.sin(a), base[2] - 0.025 * math.cos(a), 0.0), (tip[0], tip[2], tip[1])]
+        top = [bm.verts.new(v) for v in q]
+        low = [bm.verts.new((v[0] + 0.01 * math.cos(a), v[1] + 0.01 * math.sin(a), v[2])) for v in q]
+        bm.faces.new(top)
+        bm.faces.new(low[::-1])
+        for i in range(3):
+            j = (i + 1) % 3
+            bm.faces.new((top[i], low[i], low[j], top[j]))
+        m._add(bm, K("leaf", (0.5, 0.58, 0.28) if k % 3 else (0.62, 0.6, 0.34)), "Body", 0)
+
+
+def shells(m, seed):
+    rnd = random.Random(seed)
+    for k in range(10):
+        a, d = rnd.uniform(0, 6.28), rnd.uniform(0.1, 0.9)
+        x, z = d * math.cos(a), d * math.sin(a)
+        if k % 3 == 0:
+            m.ball(K("paint", (0.92, 0.85, 0.75)), (0.06, 0.025, 0.05), (x, 0.01, z), yaw=rnd.uniform(0, 180), u=8, v=4)
+        else:
+            m.ball(K("rock", (0.6, 0.58, 0.55)), (0.07, 0.04, 0.06), (x, 0.01, z), yaw=rnd.uniform(0, 180), u=6, v=4)
+
+
+def coconuts(m, seed):
+    rnd = random.Random(seed)
+    for k in range(5):
+        a = rnd.uniform(0, 6.28)
+        m.ball(K("paint", (0.38, 0.27, 0.13)), 0.14, (0.25 * math.cos(a), 0.12 + (0.2 if k == 4 else 0.0), 0.25 * math.sin(a)), u=10, v=7)
+
+
+def ruin_wall(m, seed):
+    rnd = random.Random(seed)
+    for row in range(5):
+        x = -2.0
+        while x < 2.0:
+            w = rnd.uniform(0.5, 0.8)
+            if row < 2 or rnd.random() > 0.25 * row:
+                m.box(K("stone", tuple(c * rnd.uniform(0.85, 1.05) for c in (0.62, 0.6, 0.55))), (w - 0.04, 0.38, 0.5), (x + w * 0.5, 0.2 + row * 0.4, rnd.uniform(-0.04, 0.04)), bevel=0.04)
+            x += w
+    fk.blob(m, K("leaf", LEAF), (0.6, 0.4, 0.5), (1.4, 1.5, 0.0), seed=seed, rough=0.3, cuts=2)
+
+
+PROPS = {
+    "palm_a": lambda m: palm(m, 7.5, 0.18, 1),
+    "palm_b": lambda m: palm(m, 9.5, 0.32, 2),
+    "bush": lambda m: bush(m, 3),
+    "fern": lambda m: fern(m, 4),
+    "boulder_a": lambda m: boulder(m, 1.2, 5),
+    "boulder_b": lambda m: boulder(m, 2.4, 6, flat=0.8),
+    "boulder_c": lambda m: boulder(m, 0.6, 7),
+    "sea_stack": lambda m: sea_stack(m, 8),
+    "driftwood": lambda m: driftwood(m, 9),
+    "grass_tuft": lambda m: grass_tuft(m, 10),
+    "shells": lambda m: shells(m, 11),
+    "coconuts": lambda m: coconuts(m, 12),
+    "ruin_wall": lambda m: ruin_wall(m, 13),
+}
+
+if __name__ == "__main__":
+    fk.init()
+    for name, build in PROPS.items():
+        if fk.ONLY and name not in fk.ONLY:
+            continue
+        m = kit.Model(name, uv_scale=0.6, colored=True)
+        build(m)
+        print(name, m.export(OUT))

@@ -1,9 +1,10 @@
-Ships rework: each ship true to its type, walkable castles, fixed see-through decks
+Sea step 5: island kit + showcase start island
 
-- sloop gaff rig and jib; brig two square-rigged masts with stacked sails and a quarterdeck; galleon forecastle, quarterdeck and poop, two rows of gun ports, stern gallery, lateen mizzen and spritsail; longboat clinker-built open Viking hull with dragon head, curled stern, shields, thwarts; junk flat-bottomed slab hull, blunt bow, overhanging stern castle, raked masts with battened fan sails, huge rudder
-- raised decks are walkable: data levels with stairs (core/sea/ship_rules deck_height, solids in game/sea_ship.gd, helm and anchor stand on them)
-- the galleon deck faced down (a single face) so the sea showed through: decks, bulwark walls and sails are closed shapes now; sails had zero thickness from mixed axes
-- head sails (Jib*) set and furl with the rest
+Shared island kit (tools/blender/sea_isle_kit.py), 13 prop models, a hand-designed start island
+(north cliffs + sea stacks, ridge, palm beach, rocky headland, east cove with the shipyard yard,
+meadow spawn and path), test islands rebuilt through the kit, isle_small retired. Ground blend
+shader game/isle_ground.gd (sand, grass, cliff rock, wet shore, path; per-island tints) and
+MultiMesh props with tier thinning and colliders (game/sea_isle_props.gd).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

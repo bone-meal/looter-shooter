@@ -2,11 +2,17 @@
 # the player an island's full model stands (loaded then, freed when it falls behind), out to `far` only a plain
 # silhouette (a low cone in the island's colour) so the horizon is never empty, beyond that nothing (the fog).
 # Island positions are sea coordinates; the nodes hang under the sea world's root, which carries the floating origin.
-# Dependencies: assets/models/sea/<model>.glb (tools/blender/sea_islands.py), data/sea/islands.json.
+# Islands of the kit (an entry with "props"; director: kit + a showcase start island) get the blended textured ground
+# (game/isle_ground.gd, tinted by the entry's "ground") and their props (game/sea_isle_props.gd).
+# Dependencies: assets/models/sea/<model>.glb (tools/blender/sea_islands.py, sea_isle_start.py), data/sea/islands.json,
+# game/isle_ground.gd, game/sea_isle_props.gd.
 extends Node3D
 
+const IsleGround = preload("res://game/isle_ground.gd")
+const IsleProps = preload("res://game/sea_isle_props.gd")
 const MODELS := "res://assets/models/sea/"
 
+var graphics := "medium"  # the graphics tier (game/sea_world.gd enter): how thick and far the props are drawn
 var _cfg: Dictionary
 var _shown := {}  # island id -> {"full": Node3D or null, "far": MeshInstance3D}
 
@@ -48,23 +54,28 @@ func _full(island: Dictionary) -> Node3D:
 	var made: Node3D = (load(path) as PackedScene).instantiate()
 	add_child(made)
 	made.position = Vector3(float(island["pos"][0]), 0.0, float(island["pos"][1]))
-	_solid(made)
+	var ground: Material = _ground()
+	if island.has("props"):
+		ground = IsleGround.material(String(island["id"]), island.get("ground", {}))
+	_solid(made, ground)
+	if island.has("props"):
+		made.set_meta("props", IsleProps.build(made, island, _cfg["props"], graphics))
 	return made
 
 
 # Every mesh of an island model gets a trimesh collider (the islands are walked on and sailed into).
-func _solid(node: Node) -> void:
+func _solid(node: Node, ground: Material) -> void:
 	if node is MeshInstance3D and (node as MeshInstance3D).mesh != null:
 		(node as MeshInstance3D).create_trimesh_collision()
-		(node as MeshInstance3D).material_override = _ground()
+		(node as MeshInstance3D).material_override = ground
 	for child in node.get_children():
-		_solid(child)
+		_solid(child, ground)
 
 
 static var _ground_mat: StandardMaterial3D
 
 
-# The test islands are painted in their vertex colours (sand, grass, rock).
+# The old test islands are painted in their vertex colours (sand, grass, rock).
 static func _ground() -> StandardMaterial3D:
 	if _ground_mat == null:
 		_ground_mat = StandardMaterial3D.new()
@@ -108,3 +119,11 @@ func shown_count() -> Vector2i:  # (full models, silhouettes) for checks
 		elif (_shown[id]["far"] as Node3D).visible:
 			far += 1
 	return Vector2i(full, far)
+
+
+func props_shown() -> int:  # copies of props standing (checks)
+	var n := 0
+	for id: String in _shown:
+		if _shown[id]["full"] != null:
+			n += int((_shown[id]["full"] as Node3D).get_meta("props", 0))
+	return n
