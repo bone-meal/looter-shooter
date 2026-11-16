@@ -57,6 +57,7 @@
   -80.0,
   6640.0
  ],
+ "spawn_spread": 3.0,
  "props": {
   "range": {
    "default": 260,

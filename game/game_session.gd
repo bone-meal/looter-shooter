@@ -3820,11 +3820,20 @@ func _enter_sea() -> void:
 	_build_sea()
 	_in_sea = true
 	_rest_worlds()
-	_player.teleport(_sea.spawn_world(), 0.0)
+	_player.teleport(_sea.spawn_world(_party_slot()), 0.0)
 	apply_settings()  # the look, then the sea takes the sky, light and fog over
 	if loading != null:
 		loading.call("finish")
 	_player_hud.play_fade()
+
+
+# This player's place in the party (0 when alone or the lowest id): arrivals use it to stand apart.
+func _party_slot() -> int:
+	if net == null or not net.can_send():
+		return 0
+	var ids: Array = net.roster.keys()
+	ids.sort()
+	return maxi(0, ids.find(net.my_id()))
 
 
 # Builds the sea once (the first trip, or on the host when another player sails there: the host runs the fleet).

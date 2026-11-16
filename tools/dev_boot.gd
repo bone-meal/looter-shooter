@@ -515,10 +515,40 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
-		"isle":  # island paths (director: every place reachable by a path that can be walked): !isle routes [island] | walk [place|all] [island] [snap]
+		"isle":  # island paths (director: every place reachable by a path that can be walked): !isle routes [island] | walk [place|all] [island] [snap] | ghosts | lookghost | wait_ghost [m]
 			var sea_isle: Node = session.call("sea")
 			if sea_isle == null:
 				_lines.append("isle: no sea (use /tp sea first)")
+			elif words.size() > 1 and words[1] in ["ghosts", "lookghost", "wait_ghost"]:  # online: the other players on the island as this machine shows them
+				var bodies: Array = session.get("net").call("target_nodes") if session.get("net") != null else []
+				if words[1] == "wait_ghost":  # "!isle wait_ghost 300": wait (up to 90 s) for another player within that many metres
+					var began := Time.get_ticks_msec()
+					var within := float(words[2]) if words.size() > 2 else 300.0
+					while Time.get_ticks_msec() - began < 90000:
+						bodies = session.get("net").call("target_nodes")
+						if bodies.any(func(b: Node3D) -> bool: return b.global_position.distance_to(player.global_position) < within):
+							break
+						await get_tree().create_timer(0.5, true, false, true).timeout
+				var island_at := Vector2.ZERO
+				for island: Dictionary in sea_isle.get("islands").get("_cfg")["islands"]:
+					if String(island["id"]) == "start":
+						island_at = Vector2(float(island["pos"][0]), float(island["pos"][1]))
+				var me: Vector3 = sea_isle.call("local_of", player.global_position)
+				var notes := PackedStringArray(["me at island (%.0f, %.1f, %.0f)" % [me.x - island_at.x, me.y, me.z - island_at.y]])
+				var nearest: Node3D = null
+				for body: Node3D in bodies:
+					var there: Vector3 = sea_isle.call("local_of", body.global_position)
+					var down := PhysicsRayQueryParameters3D.create(body.global_position + Vector3(0, 2.0, 0), body.global_position + Vector3(0, -30.0, 0))
+					down.exclude = [player.get_rid()]
+					down.collision_mask = 1  # the ground only: ghosts are on layer 8 (shots only) and would be hit first
+					var hit := player.get_world_3d().direct_space_state.intersect_ray(down)
+					var gap := "no ground under" if hit.is_empty() else "%.2f m above the ground" % (body.global_position.y - (hit["position"] as Vector3).y)
+					notes.append("other at island (%.0f, %.1f, %.0f), %.0f m from me, %s, swimming %s" % [there.x - island_at.x, there.y, there.z - island_at.y, body.global_position.distance_to(player.global_position), gap, str(body.get("_swimming"))])
+					if nearest == null or body.global_position.distance_to(player.global_position) < nearest.global_position.distance_to(player.global_position):
+						nearest = body
+				_lines.append("ISLE GHOSTS " + "; ".join(notes))
+				if words[1] == "lookghost" and nearest != null:
+					player.call("look_at_point", nearest.global_position + Vector3(0, 1.2, 0))
 			elif words.size() > 1 and words[1] == "walk":
 				var walker := IsleWalker.new()
 				add_child(walker)

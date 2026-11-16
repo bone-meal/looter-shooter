@@ -134,10 +134,15 @@ func running() -> bool:
 
 # --- going in and out ---
 
-# Where a new arrival stands (on the test island for now): a scene position.
-func spawn_world() -> Vector3:
+# Where a new arrival stands (the home-port town): a scene position. slot = the player's place in the party (0 = the
+# centre), so players arriving together stand apart on a ring of "spawn_spread" metres instead of inside each other.
+func spawn_world(slot: int = 0) -> Vector3:
 	var at: Array = _island_cfg["spawn"]
-	return world_of(Vector3(float(at[0]), 30.0, float(at[1])))
+	var spot := Vector3(float(at[0]), 30.0, float(at[1]))
+	if slot > 0:
+		var turn := TAU * float(slot - 1) / 6.0
+		spot += Vector3(cos(turn), 0.0, sin(turn)) * float(_island_cfg.get("spawn_spread", 3.0))
+	return world_of(spot)
 
 
 func enter(graphics: String) -> void:
