@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!ship spawn brig 0 45;!isle wait_ghost 400;!wait 20;!cannon status host_mid;!wait 15;!cannon status host_after_guest;!ship board;!cannon target 1;!wait 1;!cannon fire;!wait 3;!cannon status host_fired;!wait 12;!cannon status host_end

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!cannon wait_ships 2;!wait 2;!ship board;!cannon target 1;!wait 1;!cannon fire;!wait 2;!cannon status g1;!wait 4;!cannon fire;!wait 2;!cannon status g2;!wait 4;!cannon fire;!wait 2;!cannon status g3;!third;!snap cannon_guest;!third;!cannon leave;!wait 15;!cannon status guest_end

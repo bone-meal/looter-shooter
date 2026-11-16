@@ -94,6 +94,7 @@ var water_level := 0.0  # scene height of the water's surface above the body whi
 var swim := {"speed": 3.0, "sprint": 1.5, "float": 1.35, "max_depth": 30.0}  # data/sea/salvage.json "swim", set at sea
 var swim_fast_ok := true  # stamina left to swim fast
 var at_helm := false  # steering a ship at sea (game/sea_ships.gd): the move keys work the ship, the body stays at the wheel
+var manning := false  # sitting at a ship's cannon (game/sea_cannons.gd): the shoot key fires the cannon, not the gun
 var controls_enabled := true  # false while the inventory screen is open
 var damage_numbers: DamageNumbers  # optional; game/damage_numbers.gd
 var explosives: Explosives  # rocket/grenade pool, set by game/game_session.gd
@@ -561,7 +562,7 @@ func _move_and_shoot(delta: float) -> void:
 		_use_knife()
 	elif _shield_out:
 		_use_shield()
-	elif _holding and controls_enabled and Input.is_action_pressed("shoot") and _mouse_held() and not (_sig_node != null and _sig_node.has_method("blocks_fire") and bool(_sig_node.call("blocks_fire"))):
+	elif _holding and controls_enabled and not manning and Input.is_action_pressed("shoot") and _mouse_held() and not (_sig_node != null and _sig_node.has_method("blocks_fire") and bool(_sig_node.call("blocks_fire"))):
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
 		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now())  # Bullet Storm, Joyburst

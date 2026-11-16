@@ -1,1 +1,10 @@
-Release v1.10
+Sea 5d-2: cannons - sit, aim by looking, fire; host fires the real ball online
+
+- tools/blender/sea_cannon.py -> assets/models/sea/cannon.gltf (truck carriage + iron barrel), kit.py lathe axis x
+- data/sea/cannons.json + game/sea_cannons.gd: a cannon at every ship cannon spot, F to sit, the look aims inside an arc, shoot fires, reload, recoil, smoke, splashes
+- balls that strike another ship damage her hull and hole the nearest leak zone (sea_hull)
+- online: client fires on his screen and asks the host, host checks seat + reload and fires the damaging ball, others fly copies
+- player.manning keeps the held gun quiet at a cannon; dev !cannon; pair set cannon
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

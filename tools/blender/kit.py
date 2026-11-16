@@ -258,6 +258,8 @@ class Model:
         turn = Matrix.Translation((at[0], at[2], at[1]))
         if axis == "f":
             turn = turn @ Matrix.Rotation(math.radians(-90), 4, "X")
+        elif axis == "x":  # sideways (wheels, bolts): the lathe's axis along x
+            turn = turn @ Matrix.Rotation(math.radians(90), 4, "Y")
         bmesh.ops.transform(bm, matrix=turn, verts=bm.verts[:])
         self._add(bm, mat, node, 0)
 

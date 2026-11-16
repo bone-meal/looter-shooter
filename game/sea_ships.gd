@@ -15,6 +15,7 @@ const SeaShip = preload("res://game/sea_ship.gd")
 const HelmPanel = preload("res://game/ship_helm_panel.gd")
 const SkillPerks = preload("res://core/skill_perks.gd")
 const SeaHull = preload("res://game/sea_hull.gd")
+const SeaCannons = preload("res://game/sea_cannons.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -43,6 +44,7 @@ var working := false  # this player is trimming sails at a rigging spot (holding
 var dev_rudder := NAN  # dev: a rudder held without keys (tests run without focus)
 var hull_part := SeaHull.new()  # hulls, leaks, sinking, patching (sea step 5d)
 var dev_patch := false  # dev: interact held for patching without keys
+var cannons := SeaCannons.new()  # the ships' cannons (sea step 5d-2)
 
 
 func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
@@ -59,6 +61,9 @@ func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
 	hull_part.name = "Hulls"
 	add_child(hull_part)
 	hull_part.setup(self, _sea, _player)
+	cannons.name = "Cannons"
+	add_child(cannons)
+	cannons.setup(self, _sea, _player)
 	for entry: Dictionary in rules.cfg["fleet"]:
 		spawn(String(entry["ship"]), float(entry["at"][0]), float(entry["at"][1]), float(entry["yaw"]))
 
@@ -68,6 +73,7 @@ func spawn(ship_id: String, x: float, z: float, yaw_deg: float) -> SeaShip:
 	add_child(ship)
 	ship.setup(rules, rules.new_state(ship_id, x, z, yaw_deg))
 	hull_part.prepare(ship)
+	cannons.prepare(ship)
 	ships.append(ship)
 	return ship
 
@@ -205,6 +211,7 @@ func _match_fleet(states: Array) -> void:
 		return
 	_leave_helm_here()
 	for ship: SeaShip in ships:
+		cannons.forget(ship)
 		ship.queue_free()
 	ships.clear()
 	_helmsmen.clear()
@@ -354,6 +361,8 @@ func _near_spot(ship: SeaShip, spot: Array, reach: float) -> bool:
 
 
 func prompt(key: String) -> String:
+	if not cannons.seated.is_empty():
+		return cannons.prompt(key, null)
 	if helm_ship != null:
 		return ""
 	var ship := ship_aboard()
@@ -363,6 +372,9 @@ func prompt(key: String) -> String:
 	var hull_said := hull_part.prompt(key)
 	if hull_said != "" or bool(ship.state.get("sinking", false)):  # a going-down ship offers nothing else
 		return hull_said
+	var cannon_said := cannons.prompt(key, ship)
+	if cannon_said != "":
+		return cannon_said
 	if _near_spot(ship, ship.spec["helm"], HELM_REACH):
 		var need := int(ship.spec["sailing_level"])
 		if not rules.can_steer(String(ship.state["ship"]), sailing_level()):
@@ -377,6 +389,9 @@ func prompt(key: String) -> String:
 
 # The interact key at sea; true when a ship used it.
 func interact() -> bool:
+	if not cannons.seated.is_empty():
+		cannons.stand_up()
+		return true
 	if helm_ship != null:
 		let_go()
 		return true
@@ -384,6 +399,9 @@ func interact() -> bool:
 	if ship == null:
 		return false
 	if hull_part.prompt("F") != "":  # at a leak / damaged plank: holding the key works it (game/sea_hull.gd work)
+		return true
+	if cannons.cannon_here(ship) >= 0:
+		cannons.sit(ship, cannons.cannon_here(ship))
 		return true
 	if _near_spot(ship, ship.spec["helm"], HELM_REACH):
 		if rules.can_steer(String(ship.state["ship"]), sailing_level()):
@@ -520,6 +538,7 @@ func from_list(saved: Variant) -> void:
 	if keep.is_empty():
 		return
 	for ship: SeaShip in ships:
+		cannons.forget(ship)
 		ship.queue_free()
 	ships.clear()
 	_helmsmen.clear()

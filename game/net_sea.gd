@@ -183,6 +183,42 @@ func _plank(ship_index: int, zone: int) -> void:
 		hulls.call("use_plank", ship, zone)
 
 
+# Cannons (sea step 5d-2): a client fired on his screen and asks the host, which checks he sits at that cannon and
+# fires the real ball (game/sea_cannons.gd host_fire); the host tells everyone else about every real shot.
+func request_fire(ship_index: int, cannon: int, yaw: float, pitch: float) -> void:
+	_fire_up.rpc_id(1, ship_index, cannon, yaw, pitch)
+
+
+func tell_fire(ship_index: int, cannon: int, yaw: float, pitch: float) -> void:
+	_fire_down.rpc(ship_index, cannon, yaw, pitch, my_id())
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _fire_up(ship_index: int, cannon: int, yaw: float, pitch: float) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var ship := _ship_for(from, ship_index)
+	if ship == null or not is_finite(yaw) or not is_finite(pitch):
+		return
+	var guns: Node = _fleet().get("cannons")
+	var spots: Array = ship.get("spec").get("cannons", [])
+	if cannon < 0 or cannon >= spots.size():
+		return
+	var side := 1.0 if float(spots[cannon][0]) >= 0.0 else -1.0
+	var seat := [float(spots[cannon][0]) - side * float(guns.get("cfg")["seat_back"]), float(spots[cannon][1])]
+	if _near(from, ship, seat, float(guns.get("cfg")["seat_reach"]) + 1.5) and bool(guns.call("host_fire", ship, cannon, yaw, pitch)):
+		_fire_down.rpc(ship_index, cannon, yaw, pitch, from)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _fire_down(ship_index: int, cannon: int, yaw: float, pitch: float, shooter: int) -> void:
+	var fleet := _fleet()
+	if fleet == null or shooter == my_id():
+		return
+	var ships: Array = fleet.get("ships")
+	if ship_index >= 0 and ship_index < ships.size():
+		fleet.get("cannons").call("fire", ships[ship_index], cannon, yaw, pitch, false)
+
+
 # --- the shipyard (client -> host): the client's own Carpentry and materials built it (his bag is his own claim);
 # the host launches her into its world fleet ---
 

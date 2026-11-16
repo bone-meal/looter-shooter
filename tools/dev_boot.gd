@@ -540,6 +540,47 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
+		"cannon":  # sea step 5d-2: !cannon target <ship n> (sit at the cannon facing it and aim) | fire | wait_ships <n> | status <note> | leave
+			var sea_c: Node = session.call("sea")
+			var fleet_c: Node = sea_c.get("ships") if sea_c != null else null
+			var guns: Node = fleet_c.get("cannons") if fleet_c != null else null
+			var sub := words[1] if words.size() > 1 else "status"
+			if guns == null:
+				_lines.append("cannon: no sea")
+			elif sub == "wait_ships":
+				var began_c := Time.get_ticks_msec()
+				while Time.get_ticks_msec() - began_c < 60000 and (fleet_c.get("ships") as Array).size() < int(words[2]):
+					await get_tree().create_timer(0.5, true, false, true).timeout
+			elif sub == "target":
+				var all: Array = fleet_c.get("ships")
+				var mine: Node3D = all[clampi(_ship_i, 0, all.size() - 1)]
+				var aim_at: Node3D = all[clampi(int(words[2]) if words.size() > 2 else 1, 0, all.size() - 1)]
+				var best := -1
+				var best_dot := -2.0
+				var list_c: Array = (guns.get("_guns") as Dictionary).get(mine, [])
+				for i in list_c.size():
+					var holder: Node3D = list_c[i]["holder"]
+					var outward := holder.global_transform.basis * (list_c[i]["m"] as Vector3)
+					var dot := outward.normalized().dot((aim_at.global_position - holder.global_position).normalized())
+					if dot > best_dot:
+						best_dot = dot
+						best = i
+				if best >= 0:
+					guns.call("sit", mine, best)
+					player.call("teleport", mine.call("deck_spot", [float(list_c[best]["spot"][0]) - float(list_c[best]["side"]) * 1.3, float(list_c[best]["spot"][1])], 0.3), 0.0)
+					player.call("look_at_point", aim_at.global_position + Vector3(0, 2.0, 0))
+					var holder_b: Node3D = list_c[best]["holder"]
+					guns.set("dev_target", aim_at)
+					_lines.append("CANNON target ship %d: cannon %d (facing %.2f), %.0f m" % [all.find(aim_at), best, best_dot, aim_at.global_position.distance_to(holder_b.global_position)])
+			elif sub == "fire":
+				guns.set("dev_fire", true)
+			elif sub == "leave":
+				guns.call("stand_up")
+			else:
+				var hulls: Array = []
+				for ship_c: Node in fleet_c.get("ships"):
+					hulls.append("%s %.0f%s" % [String(ship_c.get("state")["ship"]), float(ship_c.get("state")["hull"]), " holed %s" % str(ship_c.get("state")["leaks"]) if float(load("res://core/sea/hull_rules.gd").new({}).holes(ship_c.get("state"))) > 0.0 else ""])
+				_lines.append("CANNON %s: %s; hulls %s" % [" ".join(words.slice(2)), String(guns.call("status")), ", ".join(hulls)])
 		"isle":  # island paths (director: every place reachable by a path that can be walked): !isle routes [island] | walk [place|all] [island] [snap] | ghosts | lookghost | wait_ghost [m]
 			var sea_isle: Node = session.call("sea")
 			if sea_isle == null:
