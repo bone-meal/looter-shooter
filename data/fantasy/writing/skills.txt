@@ -149,6 +149,10 @@ name: Sawhorse
 # WHAT: the name of this kind of work place, shown on the tab of its window.
 name: Crafting Table
 
+[station shipyard]
+# WHAT: the name of this kind of work place, shown on the tab of its window.
+name: Shipyard
+
 [station site]
 # WHAT: the name of this kind of work place, shown on the tab of its window.
 name: Repairs

@@ -75,6 +75,19 @@ func _ready() -> void:
 		_check(found.size() == 8, "the model's moving parts are found (%s)" % str(found.keys()))
 	else:
 		_lines.append("note the sloop model is not imported here (stand-in box)")
+	for ship_id: String in cfg["ships"]:  # every ship: its numbers hang together and its model (once imported) has a yard + sail per mast
+		var sp: Dictionary = cfg["ships"][ship_id]
+		var other := SeaShip.new()
+		add_child(other)
+		other.setup(rules, rules.new_state(ship_id, 0.0, 0.0, 0.0))
+		var masts := (sp["masts"] as Array).size()
+		var shown := "model not imported"
+		if ResourceLoader.exists(String(sp["model"])):
+			shown = "%d yards, %d sails" % [(other.get("_yards") as Array).size(), (other.get("_sails") as Array).size()]
+			_check((other.get("_yards") as Array).size() == masts and (other.get("_sails") as Array).size() == masts, "%s: a yard and a sail on each of %d masts" % [ship_id, masts])
+		_check(rules.half_width(ship_id, float(sp["helm"][1])) > absf(float(sp["helm"][0])) and rules.half_width(ship_id, float(sp["anchor"][1])) > 0.2, "%s: helm and anchor on the deck (%s)" % [ship_id, shown])
+		for place: Array in sp["cannons"] + sp["rigging"]:
+			_check(rules.half_width(ship_id, float(place[1])) >= absf(float(place[0])), "%s: station %s on the deck" % [ship_id, str(place)])
 	_lines.append("SHIP_CHECK problems=%d" % _problems)
 	var f := FileAccess.open("res://tools/ship_check.log", FileAccess.WRITE)
 	f.store_string("\n".join(_lines) + "\n")

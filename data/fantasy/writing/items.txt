@@ -162,6 +162,7 @@ ember_plank: Emberwood Plank
 stormoak_plank: Stormoak Plank
 crate: Ship's Crate
 barrel: Ship's Barrel
+sailcloth: Sailcloth
 leather: Leather
 hard_leather: Hard Leather
 cut_gem: Cut Gem
@@ -230,3 +231,18 @@ craft_cloak: Storm Cloak (crafted)
 satchel: Satchel
 rucksack: Rucksack
 pack_frame: Pack Frame
+
+[items ship]
+# WHAT: the ships the shipyard builds (Carpentry): a made one is launched off the slipway at sea. Read a line as  id: Name .
+ship_raft: Log Raft
+ship_sloop: Sloop
+ship_longboat: Longboat
+ship_brig: Brig
+ship_junk: Junk
+ship_galleon: Galleon
+
+[items plan]
+# WHAT: a found plan the shipyard needs for a side ship (kept when the ship is built). Read a line as  id: Name .
+raft_plan: Raft Plan
+longboat_plan: Longboat Plan
+junk_plan: Junk Plan

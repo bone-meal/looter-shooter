@@ -195,6 +195,8 @@ func recipe_text(recipe: Dictionary) -> String:
 	var makes := PackedStringArray()
 	for item: String in recipe["out"]:
 		makes.append("%s%s" % ["%d " % int(recipe["out"][item]) if int(recipe["out"][item]) > 1 else "", world.bag.item_name(item)])
+	for item: String in recipe.get("needs", {}):
+		needs.append("the %s (kept)" % world.bag.item_name(item))
 	return "%s  <-  %s   (%s %d)" % [", ".join(makes), ", ".join(needs), world.skills.skill_name(String(recipe["skill"])), int(recipe["level"])]
 
 
@@ -204,6 +206,8 @@ func cannot_make(recipe: Dictionary) -> String:
 		return "Needs %s %d." % [world.skills.skill_name(String(recipe["skill"])), int(recipe["level"])]
 	if not bool(world.bag.has_all(recipe["in"])):
 		return "You lack the materials."
+	if recipe.has("needs") and not bool(world.bag.has_all(recipe["needs"])):  # kept, not used up (a ship's plan)
+		return "You need the %s." % world.bag.item_name(String((recipe["needs"] as Dictionary).keys()[0]))
 	for item: String in recipe["out"]:
 		if String(world.bag.def(item).get("kind", "")) == "gunside" and not bool(world.gun_room()):
 			return "Your backpack (gun side) is full."

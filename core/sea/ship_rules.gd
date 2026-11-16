@@ -76,7 +76,7 @@ func target_speed(state: Dictionary, wind: float, wind_dir: float, speed_pct: fl
 	var s := stage(state)
 	var sail := float(s["sail"])
 	if sail <= 0.0:
-		return float(s["oars"])
+		return float(s["oars"]) * float(spec(String(state["ship"])).get("oar_mult", 1.0))
 	var push := lerpf(float(cfg["wind_floor"]), 1.0, clampf(wind, 0.0, 1.0))
 	return float(spec(String(state["ship"]))["top_speed"]) * sail * wind_share(off_wind(float(state["yaw"]), wind_dir)) * push * (1.0 + speed_pct)
 
@@ -120,9 +120,16 @@ func half_width(ship_id: String, z: float) -> float:
 	return 0.0
 
 
+func tallest_mast(ship_id: String) -> float:
+	var top := 4.0
+	for mast: Array in spec(ship_id)["masts"]:
+		top = maxf(top, float(mast[1]))
+	return top
+
+
 # Is a ship-space point on board (over the deck, or up in the air above it)?
 func aboard(ship_id: String, local: Vector3) -> bool:
 	var sp := spec(ship_id)
-	if local.y < float(sp["deck"]) - 0.6 or local.y > float(sp["deck"]) + float(sp["mast_height"]):
+	if local.y < float(sp["deck"]) - 0.6 or local.y > float(sp["deck"]) + tallest_mast(ship_id):
 		return false
 	return absf(local.x) <= half_width(ship_id, local.z) + 0.35

@@ -81,8 +81,15 @@ def deck(m, sp):
     pts = [(x, f) for x, f in inner] + [(-x, f) for x, f in reversed(inner)]
     bm.faces.new([bm.verts.new((x, f, d)) for x, f in pts])
     m._add(bm, K("wood", DECK), "Body", 0)
-    m.box(K("wood", RAIL), (1.6, 0.16, 1.2), (0.0, d + 0.08, -sp["mast"][1] - 2.4))  # hatch coaming
-    m.box(K("timber", HULL_DARK), (1.4, 0.04, 1.0), (0.0, d + 0.17, -sp["mast"][1] - 2.4))  # hatch grating
+    hatch = -sp["masts"][0][0] - 2.4
+    m.box(K("wood", RAIL), (1.6, 0.16, 1.2), (0.0, d + 0.08, hatch))  # hatch coaming
+    m.box(K("timber", HULL_DARK), (1.4, 0.04, 1.0), (0.0, d + 0.17, hatch))  # hatch grating
+    for rx, rz in sp.get("rigging", []):  # pin rails where a crew member trims the sails (crew stations)
+        side = 1 if rx > 0 else -1
+        m.box(K("wood", RAIL), (0.14, 0.1, 1.4), (rx, d + 0.85, -rz))
+        for k in range(5):
+            m.rod(K("wood", HULL_WOOD), 0.025, (rx, d + 0.7, -rz - 0.55 + k * 0.275), (rx, d + 1.1, -rz - 0.55 + k * 0.275), segs=6)
+            m.rod(K("leather", ROPE), 0.015, (rx, d + 1.0, -rz - 0.55 + k * 0.275), (side * 0.2, d + sp["masts"][0][1] * 0.6, -rz - 0.55 + k * 0.275 + 0.6), segs=4)
     ax, az = sp["anchor"]
     m.lathe(K("timber", HULL_DARK), [(0.32, 0.0), (0.26, 0.08), (0.2, 0.12), (0.2, 0.45), (0.28, 0.5), (0.3, 0.6)], (ax, d, -az))  # capstan
     for k in range(4):
@@ -100,43 +107,90 @@ def rails(m, sp):
 
 
 def rig(m, sp):
-    """Mast, bowsprit, yard + sail, pennant, stays and shrouds."""
+    """Every mast with its yard + sail (Yard / Sail, Yard2 / Sail2 ...), the bowsprit, the pennant on the tallest mast,
+    stays and shrouds."""
     d = sp["deck"]
-    mx, mz = sp["mast"]
-    mf = -mz
-    top = d + sp["mast_height"]
-    m.rod(K("wood", HULL_WOOD), 0.17, (mx, d - 0.2, mf), (mx, top, mf), r2=0.1, segs=12)
-    m.ball(K("wood", RAIL), (0.16, 0.12, 0.16), (mx, top, mf))  # truck
+    style = sp.get("sail", "square")
+    masts = sp["masts"]
     bow = -sp["outline"][-1][0]
-    sprit = (0.0, d + 1.9, bow + 3.2)
-    m.rod(K("wood", HULL_WOOD), 0.11, (0.0, d + 0.6, bow - 1.2), sprit, r2=0.06, segs=10)
-    yard_y = top - 1.3
-    m.node("Yard", (mx, yard_y, mf))
-    m.rod(K("wood", HULL_WOOD), 0.09, (mx - 3.3, yard_y, mf + 0.18), (mx + 3.3, yard_y, mf + 0.18), segs=10, node="Yard")
-    m.node("Sail", (mx, yard_y, mf), parent="Yard")
-    sail(m, mx, yard_y - 0.15, d + 2.3, mf + 0.3)
-    m.node("Pennant", (mx, top + 0.1, mf))
-    bm = bmesh.new()
-    pts = [(0.0, 0.0), (0.0, -0.5), (-1.6, -0.25)]  # (along, down): pointing aft (game +z)
-    a = [bm.verts.new((mx - 0.01, mf + p[0], top + 0.1 + p[1])) for p in pts]
-    b = [bm.verts.new((mx + 0.01, mf + p[0], top + 0.1 + p[1])) for p in pts]
-    bm.faces.new(a)
-    bm.faces.new(b[::-1])
-    for i in range(3):
-        j = (i + 1) % 3
-        bm.faces.new((a[i], b[i], b[j], a[j]))
-    m._add(bm, K("cloth", (0.75, 0.12, 0.1)), "Pennant", 0)
-    rope = K("leather", ROPE)
-    m.rod(rope, 0.025, (mx, top - 0.4, mf), (0.0, sprit[1], sprit[2]), segs=5)  # forestay
     stern_f = -sp["outline"][0][0]
-    m.rod(rope, 0.025, (mx, top - 0.4, mf), (0.0, d + sp["bulwark"], stern_f + 0.3), segs=5)  # backstay
-    for side in (1, -1):
-        for k, df in enumerate((-1.2, 0.0, 1.0)):
-            f = mf + df
-            hw = max(half(sp, -f), 0.3)
-            m.rod(rope, 0.02, (mx, top - 1.6, mf), (side * (hw + 0.05), d + sp["bulwark"], f), segs=5)
-        hw = max(half(sp, -mf), 0.3)
-        m.box(K("timber", HULL_DARK), (0.12, 0.25, 2.6), (side * (hw + 0.06), d + sp["bulwark"] - 0.2, mf))  # chain plate
+    rope = K("leather", ROPE)
+    beam = max(hw for _z, hw in sp["outline"])
+    sprit = None
+    if style == "square" and sp.get("steer", "wheel") == "wheel":
+        sprit = (0.0, d + 1.9, bow + 3.0 + 0.1 * len(masts) * 2)
+        m.rod(K("wood", HULL_WOOD), 0.11 + 0.02 * len(masts), (0.0, d + 0.6, bow - 1.2), sprit, r2=0.06, segs=10)
+    tallest = max(range(len(masts)), key=lambda i: masts[i][1])
+    for i, (mz, height) in enumerate(masts):
+        mf = -mz
+        top = d + height
+        suffix = "" if i == 0 else str(i + 1)
+        m.rod(K("wood", HULL_WOOD), 0.12 + height * 0.005, (0.0, d - 0.2, mf), (0.0, top, mf), r2=0.08, segs=12)
+        m.ball(K("wood", RAIL), (0.16, 0.12, 0.16), (0.0, top, mf))  # truck
+        yard_y = top - 1.3
+        half_w = min(beam * 1.1, 2.4 + height * 0.1)
+        m.node("Yard" + suffix, (0.0, yard_y, mf))
+        if style == "batten":
+            m.node("Sail" + suffix, (0.0, yard_y, mf), parent="Yard" + suffix)
+            batten_sail(m, yard_y, d + 2.2, mf, half_w * 1.2, "Sail" + suffix)
+            m.rod(K("wood", HULL_WOOD), 0.07, (0.0, yard_y, mf + half_w * 0.4), (0.0, yard_y + 0.4, mf - half_w * 0.8), segs=8, node="Yard" + suffix)
+        else:
+            m.rod(K("wood", HULL_WOOD), 0.09, (-half_w - 0.3, yard_y, mf + 0.18), (half_w + 0.3, yard_y, mf + 0.18), segs=10, node="Yard" + suffix)
+            m.node("Sail" + suffix, (0.0, yard_y, mf), parent="Yard" + suffix)
+            sail(m, 0.0, yard_y - 0.15, d + 2.3, mf + 0.3, half_w, "Sail" + suffix, sp.get("stripes"))
+        for side in (1, -1):  # shrouds to the rail
+            for df in (-1.2, 0.0, 1.0):
+                f = mf + df
+                hw = max(half(sp, -f), 0.3)
+                m.rod(rope, 0.02, (0.0, top - 1.6, mf), (side * (hw + 0.05), d + sp["bulwark"], f), segs=5)
+            if sp["bulwark"] > 0.2:
+                hw = max(half(sp, -mf), 0.3)
+                m.box(K("timber", HULL_DARK), (0.12, 0.25, 2.6), (side * (hw + 0.06), d + sp["bulwark"] - 0.2, mf))  # chain plate
+        if i == tallest:
+            m.node("Pennant", (0.0, top + 0.1, mf))
+            bm = bmesh.new()
+            pts = [(0.0, 0.0), (0.0, -0.5), (-1.6, -0.25)]  # (along, down): pointing aft (game +z)
+            a = [bm.verts.new((-0.01, mf + p[0], top + 0.1 + p[1])) for p in pts]
+            b = [bm.verts.new((0.01, mf + p[0], top + 0.1 + p[1])) for p in pts]
+            bm.faces.new(a)
+            bm.faces.new(b[::-1])
+            for k in range(3):
+                j = (k + 1) % 3
+                bm.faces.new((a[k], b[k], b[j], a[j]))
+            m._add(bm, K("cloth", (0.75, 0.12, 0.1)), "Pennant", 0)
+    fore = max(masts, key=lambda q: -q[0])  # the mast nearest the bow
+    aft = min(masts, key=lambda q: -q[0])
+    m.rod(rope, 0.025, (0.0, d + fore[1] - 0.4, -fore[0]), sprit if sprit else (0.0, d + sp["bulwark"], bow - 0.6), segs=5)  # forestay
+    m.rod(rope, 0.025, (0.0, d + aft[1] - 0.4, -aft[0]), (0.0, d + sp["bulwark"], stern_f + 0.3), segs=5)  # backstay
+    for (za, ha), (zb, hb) in zip(sorted(masts, key=lambda q: q[0]), sorted(masts, key=lambda q: q[0])[1:]):
+        m.rod(rope, 0.02, (0.0, d + ha - 0.6, -za), (0.0, d + hb * 0.55, -zb), segs=5)  # stay between masts
+
+
+def batten_sail(m, y_top, y_bottom, f, length, node):
+    """A junk's lug sail: a flat panel along the ship (fore and aft) stiffened by battens, deep red."""
+    import bmesh as bmm
+    rows = 6
+    bm = bmm.new()
+    front, back = [], []
+    for r in range(rows + 1):
+        v = r / rows
+        y = y_top + (y_bottom - y_top) * v
+        aft_end = f - length * (0.55 + 0.25 * v)
+        fore_end = f + length * (0.3 + 0.12 * v)
+        front.append((bm.verts.new((0.03, fore_end, y)), bm.verts.new((0.03, aft_end, y))))
+        back.append((bm.verts.new((-0.03, fore_end, y)), bm.verts.new((-0.03, aft_end, y))))
+    for r in range(rows):
+        bm.faces.new((front[r][0], front[r][1], front[r + 1][1], front[r + 1][0]))
+        bm.faces.new((back[r][0], back[r + 1][0], back[r + 1][1], back[r][1]))
+        bm.faces.new((front[r][0], front[r + 1][0], back[r + 1][0], back[r][0]))
+        bm.faces.new((front[r][1], back[r][1], back[r + 1][1], front[r + 1][1]))
+    bm.faces.new((front[0][0], back[0][0], back[0][1], front[0][1]))
+    bm.faces.new((front[rows][0], front[rows][1], back[rows][1], back[rows][0]))
+    m._add(bm, K("cloth", (0.66, 0.26, 0.16)), node, 0)
+    for r in range(rows + 1):
+        v = r / rows
+        y = y_top + (y_bottom - y_top) * v
+        m.rod(K("wood", HULL_DARK), 0.035, (0.0, y, f + length * (0.3 + 0.12 * v) + 0.1), (0.0, y, f - length * (0.55 + 0.25 * v) - 0.1), segs=6, node=node)
 
 
 def half(sp, z):
@@ -147,7 +201,7 @@ def half(sp, z):
     return 0.0
 
 
-def sail(m, mx, y_top, y_bottom, f):
+def sail(m, mx, y_top, y_bottom, f, half_w=3.0, node="Sail", stripes=None):
     """A square sail as a closed thin slab, bellied forward, wider at the foot."""
     cols, rows = 8, 7
     bm = bmesh.new()
@@ -157,7 +211,7 @@ def sail(m, mx, y_top, y_bottom, f):
         for r in range(rows + 1):
             v = r / rows
             y = y_top + (y_bottom - y_top) * v
-            w = 3.0 + 0.35 * v
+            w = half_w + 0.35 * v
             row = []
             for c in range(cols + 1):
                 u = c / cols
@@ -178,16 +232,40 @@ def sail(m, mx, y_top, y_bottom, f):
         r0, c0 = edge[k]
         r1, c1 = edge[(k + 1) % len(edge)]
         bm.faces.new((a[r0][c0], a[r1][c1], b[r1][c1], b[r0][c0]))
-    m._add(bm, K("cloth", SAILCLOTH), "Sail", 0)
+    m._add(bm, K("cloth", SAILCLOTH), node, 0)
+    if stripes:  # painted bands on the sail (the longboat's red stripes): thin slabs just in front of the cloth
+        for k in range(1, cols, 2):
+            u0, u1 = k / cols, (k + 1) / cols
+            for r in range(rows):
+                v0, v1 = r / rows, (r + 1) / rows
+                quad = []
+                for u, v in ((u0, v0), (u1, v0), (u1, v1), (u0, v1)):
+                    w = half_w + 0.35 * v
+                    belly = 0.75 * math.sin(math.pi * u) * math.sin(math.pi * min(v * 1.1, 1.0))
+                    quad.append((mx - w + 2 * w * u, f + belly + 0.04, y_top + (y_bottom - y_top) * v))
+                sb = bmesh.new()
+                vs = [sb.verts.new(q) for q in quad]
+                sb.faces.new(vs)
+                sb.faces.new([sb.verts.new((q[0], q[1] - 0.075, q[2])) for q in reversed(quad)])
+                m._add(sb, K("cloth", tuple(stripes)), node, 0)
     for side in (1, -1):  # bolt rope down the edges
-        m.rod(K("leather", ROPE), 0.03, (mx + side * 3.0, y_top, f), (mx + side * 3.35, y_bottom, f), segs=5, node="Sail")
+        m.rod(K("leather", ROPE), 0.03, (mx + side * half_w, y_top, f), (mx + side * (half_w + 0.35), y_bottom, f), segs=5, node=node)
 
 
 def helm(m, sp):
-    """The wheel on its stand at the helm spot; the wheel turns about its axle (fore and aft)."""
+    """The wheel on its stand at the helm spot (it turns about its axle), or for steer = tiller a steering oar over
+    the stern quarter that swings about its oarlock."""
     d = sp["deck"]
     hx, hz = sp["helm"]
     f = -hz
+    if sp.get("steer", "wheel") == "tiller":
+        side = 1 if hx >= 0 else -1
+        pivot = (side * max(half(sp, hz + 0.6), 0.4), d + sp["bulwark"] + 0.1, f - 0.6)
+        m.node("Wheel", pivot)
+        m.rod(K("wood", HULL_WOOD), 0.06, (pivot[0] - side * 1.4, d + 1.0, f + 0.6), (pivot[0] + side * 0.6, -0.8, f - 2.6), segs=8, node="Wheel")
+        m.box(K("wood", HULL_WOOD), (0.08, 0.9, 0.35), (pivot[0] + side * 0.62, -0.95, f - 2.75), node="Wheel")  # blade
+        m.box(K("timber", HULL_DARK), (0.2, 0.25, 0.25), pivot)  # oarlock
+        return
     m.box(K("timber", HULL_DARK), (0.35, 1.0, 0.3), (hx, d + 0.5, f - 0.15))
     axle = d + 1.05
     m.node("Wheel", (hx, axle, f + 0.05))
@@ -228,15 +306,20 @@ def oars(m, sp):
     for name, side in (("OarsR", 1), ("OarsL", -1)):
         hw = half(sp, 0.0)
         m.node(name, (side * hw, d + bul, 0.0))
-        for f in (-2.0, 0.0, 2.0):
+        length = sp["outline"][0][0] - sp["outline"][-1][0]
+        n = max(3, int(length / 4))
+        for f in [(-length * 0.32 + k * length * 0.64 / (n - 1)) for k in range(n)]:
             x = side * half(sp, -f)
-            m.rod(K("wood", HULL_WOOD), 0.04, (x - side * 0.8, d + bul + 0.35, f), (x + side * 3.6, -0.05, f - 0.6), node=name, segs=6)
-            m.box(K("wood", HULL_WOOD), (0.06, 0.5, 0.18), (x + side * 3.75, -0.12, f - 0.66), node=name)
+            reach = 2.0 + d * 1.2
+            m.rod(K("wood", HULL_WOOD), 0.04, (x - side * 0.8, d + bul + 0.35, f), (x + side * reach, -0.05, f - 0.6), node=name, segs=6)
+            m.box(K("wood", HULL_WOOD), (0.06, 0.5, 0.18), (x + side * (reach + 0.15), -0.12, f - 0.66), node=name)
 
 
 def ladders(m, sp):
     """A rope ladder over each side at ladder_z, from the rail down into the water."""
     d, bul = sp["deck"], sp["bulwark"]
+    if d < 0.6:
+        return  # a raft is climbed straight onto
     f = -sp["ladder_z"]
     rope, rung = K("leather", ROPE), K("wood", HULL_WOOD)
     for side in (1, -1):
@@ -250,11 +333,77 @@ def ladders(m, sp):
             y -= 0.32
 
 
+def raft_body(m, sp):
+    """A log raft: logs side by side lashed with rope, a few cross beams on top; the deck the game walks on is their top."""
+    d = sp["deck"]
+    stern, bow = -sp["outline"][0][0], -sp["outline"][-1][0]
+    hw = sp["outline"][0][1]
+    n = 7
+    r = hw / n
+    for k in range(n):
+        x = -hw + r + k * 2 * r
+        tip = 0.35 * (1.0 - abs(x) / hw)  # the middle logs reach a little further forward
+        m.cyl(K("bark", (0.42, 0.32, 0.22)), r * 0.98, stern + 0.1 * (k % 2), bow + tip, y=d - r, x=x, segs=10)
+    for f in (stern + 0.6, (stern + bow) * 0.5, bow - 0.6):
+        m.box(K("wood", HULL_WOOD), (hw * 2.0 + 0.1, 0.12, 0.22), (0.0, d + 0.02, f))
+        for side in (1, -1):
+            m.ball(K("leather", ROPE), (0.06, 0.16, 0.14), (side * (hw - 0.05), d - 0.1, f), u=6, v=4)
+
+
+def extras(m, ship_id, sp):
+    """What makes each ship its own: the longboat's dragon prow, stern curl and shields, the junk's high stern and bow
+    eyes, the galleon's stern lanterns and windows, the brig's figurehead."""
+    d, bul = sp["deck"], sp["bulwark"]
+    stern, bow = -sp["outline"][0][0], -sp["outline"][-1][0]
+    if ship_id == "longboat":
+        neck = [(0.0, d + 0.4, bow - 0.3, 0.32, 0.36), (0.0, d + 1.6, bow + 0.4, 0.26, 0.3), (0.0, d + 2.8, bow + 0.5, 0.22, 0.25), (0.0, d + 3.5, bow + 0.9, 0.24, 0.28)]
+        m.loft(K("wood", (0.36, 0.22, 0.12)), neck, segs=10)
+        m.ball(K("wood", (0.36, 0.22, 0.12)), (0.28, 0.25, 0.45), (0.0, d + 3.6, bow + 1.25))  # head
+        m.ball(K("paint", (0.9, 0.75, 0.2)), 0.06, (0.17, d + 3.72, bow + 1.35), u=6, v=4)
+        m.ball(K("paint", (0.9, 0.75, 0.2)), 0.06, (-0.17, d + 3.72, bow + 1.35), u=6, v=4)
+        for side in (1, -1):
+            m.rod(K("wood", (0.36, 0.22, 0.12)), 0.04, (side * 0.12, d + 3.8, bow + 1.1), (side * 0.2, d + 4.2, bow + 0.8), segs=5)  # horns
+        curl = [(0.0, d + 0.4, stern + 0.3, 0.3, 0.32), (0.0, d + 1.8, stern - 0.3, 0.22, 0.26), (0.0, d + 2.6, stern + 0.2, 0.16, 0.2), (0.0, d + 2.4, stern + 0.7, 0.12, 0.14)]
+        m.loft(K("wood", (0.36, 0.22, 0.12)), curl, segs=10)
+        colours = [(0.72, 0.16, 0.12), (0.9, 0.82, 0.55), (0.2, 0.32, 0.55)]
+        for side in (1, -1):  # shields along the rail
+            for k in range(9):
+                f = -6.0 + k * 1.5
+                x = side * (half(sp, -f) + 0.04)
+                m.cylx(K("paint", colours[k % 3]), 0.42, x, x + side * 0.06, f, d + bul - 0.05, segs=16)
+                m.cylx(K("metal", IRON), 0.09, x + side * 0.06, x + side * 0.12, f, d + bul - 0.05, segs=10)
+    elif ship_id == "junk":
+        hw = sp["outline"][0][1]
+        m.box(K("paint", (0.62, 0.18, 0.12)), (hw * 2.0, 1.4, 0.18), (0.0, d + bul + 0.7, stern - 0.05))  # high stern board
+        m.box(K("wood", (0.25, 0.16, 0.1)), (hw * 2.1, 0.12, 0.3), (0.0, d + bul + 1.45, stern - 0.05))
+        for side in (1, -1):
+            for z in (stern - 0.05,):
+                m.rod(K("wood", (0.25, 0.16, 0.1)), 0.06, (side * hw, d + bul, z), (side * (hw + 0.2), d + bul + 1.6, z + 0.3), segs=6)
+            x = side * (half(sp, -(bow - 1.2)) + 0.03)
+            m.cylx(K("paint", (0.95, 0.95, 0.9)), 0.32, x, x + side * 0.03, bow - 1.2, d * 0.6, segs=16)  # painted eye
+            m.cylx(K("paint", (0.05, 0.05, 0.05)), 0.15, x + side * 0.03, x + side * 0.05, bow - 1.15, d * 0.6, segs=12)
+    elif ship_id == "galleon":
+        hw = sp["outline"][0][1]
+        for k in range(5):  # stern windows lit at night
+            x = -hw * 0.7 + k * hw * 0.35
+            m.box(fk.GLOW and (fk.GLOW, (1.0, 0.85, 0.5)) or K("paint", (1.0, 0.85, 0.5)), (0.42, 0.5, 0.06), (x, d - 0.2, stern - 0.08))
+        for side in (1, -1):  # stern lanterns on brackets out past the quarters, clear of the helm
+            m.rod(K("metal", IRON), 0.03, (side * (hw - 0.1), d + bul, stern - 0.1), (side * (hw + 0.5), d + bul + 1.4, stern + 0.4), segs=6)
+            m.ball((fk.GLOW, (1.0, 0.8, 0.45)), (0.12, 0.18, 0.12), (side * (hw + 0.55), d + bul + 1.25, stern + 0.45), u=8, v=6)
+        m.loft(K("paint", (0.85, 0.7, 0.3)), [(0.0, d - 0.2, bow - 0.4, 0.2, 0.22), (0.0, d + 0.6, bow + 0.4, 0.22, 0.24), (0.0, d + 1.2, bow + 0.6, 0.16, 0.18)], segs=10)
+    elif ship_id == "brig":
+        m.loft(K("paint", (0.86, 0.84, 0.78)), [(0.0, d - 0.3, bow - 0.3, 0.16, 0.18), (0.0, d + 0.4, bow + 0.3, 0.18, 0.2), (0.0, d + 0.9, bow + 0.45, 0.14, 0.16)], segs=10)
+
+
 def build_ship(ship_id, sp):
     m = kit.Model("ship_" + ship_id, uv_scale=0.5, colored=True)
-    hull(m, sp)
-    deck(m, sp)
-    rails(m, sp)
+    if ship_id == "raft":
+        raft_body(m, sp)
+    else:
+        hull(m, sp)
+        deck(m, sp)
+        rails(m, sp)
+    extras(m, ship_id, sp)
     rig(m, sp)
     helm(m, sp)
     anchor(m, sp)

@@ -1,10 +1,11 @@
-Sea online: host-run fleet, helm and anchor as checked requests, players ride decks and swim on every screen, ropes shared
+Sea step 5c: ship tiers, side ships, the slipway shipyard, rigging stations, saved fleet
 
-- game/net_sea.gd: the host steps the fleet and sends ship states, the sea clock and held weather at 10 Hz; helm (free, at the wheel, claimed Sailing level), rudder and sails, anchor are intents the host checks; deck spots and swimming sent per player; thrown ropes shown everywhere and pulled in when used
-- floating origin online: positions at sea travel as shared positions (net_session to_shared / from_shared, shift_ghosts)
-- ghosts ride the hull in ship space and lie forward while swimming (remote_player set_swimming)
-- the host builds and runs the sea while another player is there; each ship sails in the wind where she is
-- two-copy test tools/pair_sea_*: guest took the helm and sailed, both saw each other on the deck, host roped the swimming guest aboard
+- data/sea/ships.json: sloop, brig (Sailing 15), galleon (Sailing 35), raft, longboat, junk with masts, sail style, steering, oar strength, cannon places (for 5d) and rigging stations
+- tools/blender/sea_ships.py builds all six (multi-mast rigs, batten sails, steering oars, dragon prow and shields, junk stern and eyes, galleon lanterns); slipway model tools/blender/sea_shipyard.py
+- game/sea_shipyard.gd: slipway on the test island; its workbench opens the Carpentry station shipyard (build_<ship> recipes, side ships need their found plan, kept)
+- plans lie at salvage spots (raft region 1, longboat region 4, junk region 6); sailcloth woven at the crafting table
+- holding interact at a rigging spot adds speed (host counts crew at the rigging online); a client's build is launched by the host
+- the host's world fleet is saved with its profile (extra sea_fleet)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

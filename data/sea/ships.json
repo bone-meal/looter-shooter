@@ -1,14 +1,63 @@
 {
- "_about": "Ships at sea (sea step 5a). Director: ship-local decks (players walk the rolling deck), a WORLD FLEET (ships belong to the host's world and stay where left), Valheim wind with sail settings, the HELMSMAN'S Sailing level gates the ship tier and his perks apply. stages: what W / S step through at the helm (sail 0..1 of the wind's push, oars m/s without wind, negative = backwards). wind_efficiency: [degrees off the wind, share of the push]; 0 = the wind straight from behind, 180 = straight into it (no way forward on sail). wind_floor: the push at no wind (0) .. full at wind 1. Per ship (all sizes metres, ship space: x starboard, y up from the waterline, -z the bow): outline = half-widths of the deck along z (stern first), deck = deck height, draft = keel below the waterline, bulwark = rail height above the deck, top_speed m/s at full sail in the best wind, accel m/s per second, turn_deg per second at full way (turn_slow share at rest), sailing_level = the helmsman's Sailing level needed, xp_per_100m = Sailing xp for the helmsman per 100 m under sail, helm / anchor / mast = spots on deck, ladder_z = where the rope ladders hang over both sides, tilt = how far waves and wind may lean her. fleet: ships placed in the sea at the start (sea coordinates x, z, yaw degrees with 0 = bow to the north). ALL NUMBERS ARE MY PLACEHOLDERS.",
+ "_about": "Ships at sea (sea step 5a). Director: ship-local decks (players walk the rolling deck), a WORLD FLEET (ships belong to the host's world and stay where left), Valheim wind with sail settings, the HELMSMAN'S Sailing level gates the ship tier and his perks apply. stages: what W / S step through at the helm (sail 0..1 of the wind's push, oars m/s without wind, negative = backwards). wind_efficiency: [degrees off the wind, share of the push]; 0 = the wind straight from behind, 180 = straight into it (no way forward on sail). wind_floor: the push at no wind (0) .. full at wind 1. Per ship (all sizes metres, ship space: x starboard, y up from the waterline, -z the bow): outline = half-widths of the deck along z (stern first), deck = deck height, draft = keel below the waterline, bulwark = rail height above the deck, top_speed m/s at full sail in the best wind, accel m/s per second, turn_deg per second at full way (turn_slow share at rest), sailing_level = the helmsman's Sailing level needed, xp_per_100m = Sailing xp for the helmsman per 100 m under sail, helm / anchor / mast = spots on deck, ladder_z = where the rope ladders hang over both sides, tilt = how far waves and wind may lean her. fleet: ships placed in the sea at the start (sea coordinates x, z, yaw degrees with 0 = bow to the north). ALL NUMBERS ARE MY PLACEHOLDERS. 5c (director: a SLIPWAY on region 1's test island now, the home port's dockyard later; SIDE SHIPS from FOUND PLANS; bigger ships = more CREW STATIONS): per ship also masts [[z, height], ...], sail = square / batten, steer = wheel / tiller, oar_mult (oars' strength), cannons = [[x, z], ...] cannon places for step 5d, rigging = [[x, z], ...] spots where a crew member holding interact trims the sails (rigging_bonus each while the sails are set), recipe = what the shipyard needs (data/fantasy/skilling.json recipes build_<id>), plan = the found plan the side ships need. shipyard: the slipway (sea coordinates, yaw), where its workbench stands (metres from the slipway along / across) and where a launched ship lies (launch m out to sea, spread m apart).",
  "stages": [
-  {"name": "Oars back", "sail": 0.0, "oars": -1.6},
-  {"name": "Sails furled", "sail": 0.0, "oars": 0.0},
-  {"name": "Oars", "sail": 0.0, "oars": 2.4},
-  {"name": "Half sail", "sail": 0.55, "oars": 0.0},
-  {"name": "Full sail", "sail": 1.0, "oars": 0.0}
+  {
+   "name": "Oars back",
+   "sail": 0.0,
+   "oars": -1.6
+  },
+  {
+   "name": "Sails furled",
+   "sail": 0.0,
+   "oars": 0.0
+  },
+  {
+   "name": "Oars",
+   "sail": 0.0,
+   "oars": 2.4
+  },
+  {
+   "name": "Half sail",
+   "sail": 0.55,
+   "oars": 0.0
+  },
+  {
+   "name": "Full sail",
+   "sail": 1.0,
+   "oars": 0.0
+  }
  ],
  "start_stage": 1,
- "wind_efficiency": [[0, 0.82], [45, 1.0], [90, 0.92], [120, 0.62], [150, 0.22], [165, 0.0], [180, 0.0]],
+ "wind_efficiency": [
+  [
+   0,
+   0.82
+  ],
+  [
+   45,
+   1.0
+  ],
+  [
+   90,
+   0.92
+  ],
+  [
+   120,
+   0.62
+  ],
+  [
+   150,
+   0.22
+  ],
+  [
+   165,
+   0.0
+  ],
+  [
+   180,
+   0.0
+  ]
+ ],
  "wind_floor": 0.35,
  "aground_slow": 0.0,
  "ships": {
@@ -16,7 +65,36 @@
    "name": "Sloop",
    "model": "res://assets/models/sea/ship_sloop.gltf",
    "sailing_level": 1,
-   "outline": [[6.6, 1.25], [5.0, 1.95], [2.0, 2.2], [-1.5, 2.2], [-4.0, 1.85], [-6.0, 1.05], [-7.2, 0.0]],
+   "outline": [
+    [
+     6.6,
+     1.25
+    ],
+    [
+     5.0,
+     1.95
+    ],
+    [
+     2.0,
+     2.2
+    ],
+    [
+     -1.5,
+     2.2
+    ],
+    [
+     -4.0,
+     1.85
+    ],
+    [
+     -6.0,
+     1.05
+    ],
+    [
+     -7.2,
+     0.0
+    ]
+   ],
    "deck": 1.3,
    "draft": 1.2,
    "bulwark": 0.75,
@@ -25,15 +103,530 @@
    "turn_deg": 20.0,
    "turn_slow": 0.3,
    "xp_per_100m": 8,
-   "helm": [0.0, 5.3],
-   "anchor": [0.0, -5.6],
+   "helm": [
+    0.0,
+    5.3
+   ],
+   "anchor": [
+    0.0,
+    -5.6
+   ],
    "ladder_z": 1.4,
-   "mast": [0.0, -1.2],
-   "mast_height": 11.0,
-   "tilt": {"pitch_max": 7.0, "roll_max": 9.0, "heel": 6.0, "follow": 2.5}
+   "tilt": {
+    "pitch_max": 7.0,
+    "roll_max": 9.0,
+    "heel": 6.0,
+    "follow": 2.5
+   },
+   "masts": [
+    [
+     -1.2,
+     11.0
+    ]
+   ],
+   "sail": "square",
+   "steer": "wheel",
+   "oar_mult": 1.0,
+   "cannons": [
+    [
+     1.6,
+     0.6
+    ],
+    [
+     -1.6,
+     0.6
+    ]
+   ],
+   "rigging": [
+    [
+     1.5,
+     -2.6
+    ]
+   ]
+  },
+  "brig": {
+   "name": "Brig",
+   "model": "res://assets/models/sea/ship_brig.gltf",
+   "sailing_level": 15,
+   "outline": [
+    [
+     11.5,
+     2.2
+    ],
+    [
+     9.0,
+     3.2
+    ],
+    [
+     4.0,
+     3.5
+    ],
+    [
+     -3.0,
+     3.5
+    ],
+    [
+     -7.5,
+     3.0
+    ],
+    [
+     -10.5,
+     1.8
+    ],
+    [
+     -12.5,
+     0.0
+    ]
+   ],
+   "deck": 1.8,
+   "draft": 1.8,
+   "bulwark": 0.9,
+   "top_speed": 10.5,
+   "accel": 0.6,
+   "turn_deg": 13.0,
+   "turn_slow": 0.25,
+   "xp_per_100m": 12,
+   "helm": [
+    0.0,
+    9.6
+   ],
+   "anchor": [
+    0.0,
+    -10.0
+   ],
+   "ladder_z": 1.5,
+   "masts": [
+    [
+     3.6,
+     15.0
+    ],
+    [
+     -4.8,
+     16.5
+    ]
+   ],
+   "sail": "square",
+   "steer": "wheel",
+   "oar_mult": 0.7,
+   "cannons": [
+    [
+     2.9,
+     -4.0
+    ],
+    [
+     2.9,
+     0.0
+    ],
+    [
+     2.9,
+     4.0
+    ],
+    [
+     -2.9,
+     -4.0
+    ],
+    [
+     -2.9,
+     0.0
+    ],
+    [
+     -2.9,
+     4.0
+    ]
+   ],
+   "rigging": [
+    [
+     2.8,
+     2.2
+    ],
+    [
+     -2.8,
+     -6.2
+    ]
+   ],
+   "tilt": {
+    "pitch_max": 6.0,
+    "roll_max": 7.5,
+    "heel": 5.0,
+    "follow": 2.0
+   }
+  },
+  "galleon": {
+   "name": "Galleon",
+   "model": "res://assets/models/sea/ship_galleon.gltf",
+   "sailing_level": 35,
+   "outline": [
+    [
+     17.0,
+     3.2
+    ],
+    [
+     14.0,
+     4.4
+    ],
+    [
+     7.0,
+     4.8
+    ],
+    [
+     -4.0,
+     4.8
+    ],
+    [
+     -11.0,
+     4.2
+    ],
+    [
+     -16.0,
+     2.5
+    ],
+    [
+     -19.0,
+     0.0
+    ]
+   ],
+   "deck": 2.4,
+   "draft": 2.6,
+   "bulwark": 1.0,
+   "top_speed": 11.5,
+   "accel": 0.45,
+   "turn_deg": 9.0,
+   "turn_slow": 0.2,
+   "xp_per_100m": 16,
+   "helm": [
+    0.0,
+    15.0
+   ],
+   "anchor": [
+    0.0,
+    -15.5
+   ],
+   "ladder_z": 2.0,
+   "masts": [
+    [
+     8.5,
+     18.0
+    ],
+    [
+     -1.0,
+     22.0
+    ],
+    [
+     -10.0,
+     19.0
+    ]
+   ],
+   "sail": "square",
+   "steer": "wheel",
+   "oar_mult": 0.5,
+   "cannons": [
+    [
+     4.1,
+     -9.0
+    ],
+    [
+     4.1,
+     -4.5
+    ],
+    [
+     4.1,
+     0.0
+    ],
+    [
+     4.1,
+     4.5
+    ],
+    [
+     4.1,
+     9.0
+    ],
+    [
+     -4.1,
+     -9.0
+    ],
+    [
+     -4.1,
+     -4.5
+    ],
+    [
+     -4.1,
+     0.0
+    ],
+    [
+     -4.1,
+     4.5
+    ],
+    [
+     -4.1,
+     9.0
+    ]
+   ],
+   "rigging": [
+    [
+     4.0,
+     7.0
+    ],
+    [
+     -4.0,
+     -2.4
+    ],
+    [
+     4.0,
+     -11.4
+    ]
+   ],
+   "tilt": {
+    "pitch_max": 5.0,
+    "roll_max": 6.0,
+    "heel": 4.0,
+    "follow": 1.6
+   }
+  },
+  "raft": {
+   "name": "Log Raft",
+   "model": "res://assets/models/sea/ship_raft.gltf",
+   "sailing_level": 1,
+   "plan": "raft_plan",
+   "outline": [
+    [
+     3.0,
+     1.8
+    ],
+    [
+     -2.8,
+     1.8
+    ],
+    [
+     -3.2,
+     1.4
+    ]
+   ],
+   "deck": 0.35,
+   "draft": 0.3,
+   "bulwark": 0.05,
+   "top_speed": 6.0,
+   "accel": 1.2,
+   "turn_deg": 30.0,
+   "turn_slow": 0.5,
+   "xp_per_100m": 5,
+   "helm": [
+    0.0,
+    2.3
+   ],
+   "anchor": [
+    0.0,
+    -2.4
+   ],
+   "ladder_z": 0.0,
+   "masts": [
+    [
+     0.0,
+     5.0
+    ]
+   ],
+   "sail": "square",
+   "steer": "tiller",
+   "oar_mult": 0.6,
+   "cannons": [],
+   "rigging": [],
+   "tilt": {
+    "pitch_max": 10.0,
+    "roll_max": 12.0,
+    "heel": 8.0,
+    "follow": 3.5
+   }
+  },
+  "longboat": {
+   "name": "Longboat",
+   "model": "res://assets/models/sea/ship_longboat.gltf",
+   "sailing_level": 10,
+   "plan": "longboat_plan",
+   "outline": [
+    [
+     9.0,
+     1.0
+    ],
+    [
+     7.0,
+     1.7
+    ],
+    [
+     3.0,
+     2.0
+    ],
+    [
+     -3.0,
+     2.0
+    ],
+    [
+     -7.0,
+     1.6
+    ],
+    [
+     -9.5,
+     0.0
+    ]
+   ],
+   "deck": 0.9,
+   "draft": 0.8,
+   "bulwark": 0.5,
+   "top_speed": 10.0,
+   "accel": 1.0,
+   "turn_deg": 18.0,
+   "turn_slow": 0.35,
+   "xp_per_100m": 10,
+   "helm": [
+    0.9,
+    7.7
+   ],
+   "anchor": [
+    0.0,
+    -7.8
+   ],
+   "ladder_z": 0.5,
+   "masts": [
+    [
+     0.0,
+     10.0
+    ]
+   ],
+   "sail": "square",
+   "steer": "tiller",
+   "oar_mult": 1.6,
+   "cannons": [],
+   "rigging": [
+    [
+     1.6,
+     1.4
+    ]
+   ],
+   "tilt": {
+    "pitch_max": 8.0,
+    "roll_max": 10.0,
+    "heel": 7.0,
+    "follow": 2.8
+   }
+  },
+  "junk": {
+   "name": "Junk",
+   "model": "res://assets/models/sea/ship_junk.gltf",
+   "sailing_level": 25,
+   "plan": "junk_plan",
+   "outline": [
+    [
+     10.0,
+     2.8
+    ],
+    [
+     7.5,
+     3.4
+    ],
+    [
+     2.0,
+     3.6
+    ],
+    [
+     -4.0,
+     3.4
+    ],
+    [
+     -8.5,
+     2.6
+    ],
+    [
+     -11.5,
+     1.2
+    ]
+   ],
+   "deck": 1.6,
+   "draft": 1.4,
+   "bulwark": 0.8,
+   "top_speed": 10.0,
+   "accel": 0.8,
+   "turn_deg": 15.0,
+   "turn_slow": 0.3,
+   "xp_per_100m": 12,
+   "helm": [
+    0.0,
+    8.4
+   ],
+   "anchor": [
+    0.0,
+    -9.5
+   ],
+   "ladder_z": 1.0,
+   "masts": [
+    [
+     2.8,
+     13.0
+    ],
+    [
+     -5.0,
+     15.0
+    ]
+   ],
+   "sail": "batten",
+   "steer": "wheel",
+   "oar_mult": 0.8,
+   "cannons": [
+    [
+     3.0,
+     -2.5
+    ],
+    [
+     3.0,
+     2.0
+    ],
+    [
+     -3.0,
+     -2.5
+    ],
+    [
+     -3.0,
+     2.0
+    ]
+   ],
+   "rigging": [
+    [
+     3.0,
+     4.6
+    ],
+    [
+     -2.6,
+     -6.6
+    ]
+   ],
+   "tilt": {
+    "pitch_max": 6.0,
+    "roll_max": 8.0,
+    "heel": 4.0,
+    "follow": 2.2
+   }
   }
  },
  "fleet": [
-  {"ship": "sloop", "at": [-250, 2560], "yaw": -100}
- ]
+  {
+   "ship": "sloop",
+   "at": [
+    -250,
+    2560
+   ],
+   "yaw": -100
+  }
+ ],
+ "rigging_bonus": 0.08,
+ "rigging_reach": 1.3,
+ "shipyard": {
+  "at": [
+   -298.0,
+   2600.0
+  ],
+  "yaw": -90.0,
+  "bench": [
+   -4.0,
+   5.0
+  ],
+  "launch": 32.0,
+  "spread": 40.0
+ }
 }

@@ -20,7 +20,10 @@ func _ready() -> void:
 		for id: String in book.set_finds(set_id):
 			_check(book.names.has(id), "%s has a name" % id)
 	for spot: Dictionary in cfg["spots"]:
-		_check(book.set_of(String(spot["find"])) != "", "spot %s belongs to a set" % spot["find"])
+		if spot.has("plan"):
+			_check(String(spot["plan"]).ends_with("_plan"), "spot holds the %s" % spot["plan"])
+		else:
+			_check(book.set_of(String(spot["find"])) != "", "spot %s belongs to a set" % spot["find"])
 	var finds: Array = book.set_finds("region_1")
 	var paid := 0
 	for id: String in finds:

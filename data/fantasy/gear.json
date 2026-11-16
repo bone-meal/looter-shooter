@@ -1877,6 +1877,102 @@
     0.58,
     0.66
    ]
+  },
+  "ship_sloop": {
+   "kind": "ship",
+   "ship": "sloop",
+   "icon": "sail",
+   "color": [
+    0.55,
+    0.42,
+    0.28
+   ]
+  },
+  "ship_brig": {
+   "kind": "ship",
+   "ship": "brig",
+   "icon": "sail",
+   "color": [
+    0.5,
+    0.38,
+    0.26
+   ]
+  },
+  "ship_galleon": {
+   "kind": "ship",
+   "ship": "galleon",
+   "icon": "sail",
+   "color": [
+    0.62,
+    0.48,
+    0.26
+   ]
+  },
+  "ship_raft": {
+   "kind": "ship",
+   "ship": "raft",
+   "icon": "sail",
+   "color": [
+    0.45,
+    0.36,
+    0.24
+   ]
+  },
+  "ship_longboat": {
+   "kind": "ship",
+   "ship": "longboat",
+   "icon": "sail",
+   "color": [
+    0.6,
+    0.3,
+    0.2
+   ]
+  },
+  "ship_junk": {
+   "kind": "ship",
+   "ship": "junk",
+   "icon": "sail",
+   "color": [
+    0.66,
+    0.26,
+    0.16
+   ]
+  },
+  "raft_plan": {
+   "kind": "plan",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.6
+   ]
+  },
+  "longboat_plan": {
+   "kind": "plan",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.6
+   ]
+  },
+  "junk_plan": {
+   "kind": "plan",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.6
+   ]
+  },
+  "sailcloth": {
+   "kind": "material",
+   "icon": "sail",
+   "color": [
+    0.92,
+    0.88,
+    0.76
+   ]
   }
  }
 }

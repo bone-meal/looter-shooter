@@ -53,7 +53,7 @@ func _build_spot(spot: Dictionary) -> void:
 			var made := (load(MODELS + model + ".gltf") as PackedScene).instantiate() as Node3D
 			for found in made.find_children("*", "MeshInstance3D", true, false):
 				FantasyModels.dress((found as MeshInstance3D).mesh)
-			made.rotation.y = float(String(spot["find"]).hash() % 628) / 100.0
+			made.rotation.y = float(_id(spot).hash() % 628) / 100.0
 			node.add_child(made)
 	var column := _bubbles(float(spot["depth"]) / 1.6, Vector3(0.4, 0.2, 0.4), 18, 1.6)  # rising from the find
 	column.position.y = 0.6
@@ -99,8 +99,21 @@ func load_book(saved: Variant) -> void:
 		_show_found(spot)
 
 
+# A spot's find id, or the plan it holds.
+func _id(spot_cfg: Dictionary) -> String:
+	return String(spot_cfg.get("find", spot_cfg.get("plan", "")))
+
+
+# Has this player already taken what a spot holds (a logged find, or a plan in the bag)?
+func _taken(spot_cfg: Dictionary) -> bool:
+	if spot_cfg.has("plan"):
+		var skills: Variant = _sea.get("skills")
+		return skills != null and int((skills as Node).get("bag").call("count", String(spot_cfg["plan"]))) > 0
+	return book.found.has(String(spot_cfg["find"]))
+
+
 func _show_found(spot: Dictionary) -> void:
-	var taken := book.found.has(String(spot["cfg"]["find"]))
+	var taken := _taken(spot["cfg"])
 	for p: CPUParticles3D in spot["bubbles"]:
 		p.emitting = not taken
 		p.visible = not taken
@@ -118,6 +131,8 @@ func _process(delta: float) -> void:
 		for spot: Dictionary in _spots:
 			var node: Node3D = spot["node"]
 			node.visible = Vector2(node.position.x - here.x, node.position.z - here.z).length() <= float(cfg["dive"]["show_within"])
+			if (spot["cfg"] as Dictionary).has("plan"):
+				_show_found(spot)  # the plan may have come into the bag another way
 	var dive: Dictionary = cfg["dive"]
 	if not bool(_swim.get("under")):
 		return
@@ -143,20 +158,33 @@ func spot_near() -> Dictionary:
 		return {}
 	for spot: Dictionary in _spots:
 		var node: Node3D = spot["node"]
-		if not book.found.has(String(spot["cfg"]["find"])) and node.global_position.distance_to(_player.global_position + Vector3(0, 0.8, 0)) <= float(cfg["dive"]["spot_reach"]) + 0.8:
+		if not _taken(spot["cfg"]) and node.global_position.distance_to(_player.global_position + Vector3(0, 0.8, 0)) <= float(cfg["dive"]["spot_reach"]) + 0.8:
 			return spot
 	return {}
 
 
 func prompt(key: String) -> String:
 	var spot := spot_near()
-	return "[%s] Salvage: %s" % [key, book.name_of(String(spot["cfg"]["find"]))] if not spot.is_empty() else ""
+	if spot.is_empty():
+		return ""
+	var cfg_spot: Dictionary = spot["cfg"]
+	if cfg_spot.has("plan"):
+		return "[%s] Salvage: %s" % [key, String((_sea.get("skills") as Node).get("bag").call("item_name", String(cfg_spot["plan"])))]
+	return "[%s] Salvage: %s" % [key, book.name_of(String(cfg_spot["find"]))]
 
 
 func interact() -> bool:
 	var spot := spot_near()
 	if spot.is_empty():
 		return false
+	if (spot["cfg"] as Dictionary).has("plan"):  # a ship's plan: into the bag, built at the shipyard
+		var plan := String(spot["cfg"]["plan"])
+		var skills: Node = _sea.get("skills")
+		skills.call("give", plan, 1)
+		_sea.emit_signal("notice", "Found the %s: build it at the shipyard" % String(skills.get("bag").call("item_name", plan)))
+		_xp(int(cfg["dive"]["xp_spot"]))
+		_show_found(spot)
+		return true
 	var id := String(spot["cfg"]["find"])
 	_logged(id, book.record(id))
 	_xp(int(cfg["dive"]["xp_spot"]))

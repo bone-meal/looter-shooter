@@ -807,6 +807,17 @@ func shift_ghosts(delta: Vector3) -> void:
 				(g["node"] as Node3D).global_position -= delta
 
 
+# The ship-space spots of the other players standing on `ship` who say they are trimming its sails (game/sea_ships.gd
+# checks each is at a rigging spot).
+func workers_on(ship: Node3D) -> Array:
+	var out: Array = []
+	for id in _ghosts:
+		var g: Dictionary = _ghosts[id]
+		if g.get("deck") == ship and bool(g.get("working", false)):
+			out.append(g["local"])
+	return out
+
+
 # Dev: each other player as this machine shows him (scene position, on which deck, swimming).
 func ghost_note() -> String:
 	var out := PackedStringArray()
@@ -819,10 +830,11 @@ func ghost_note() -> String:
 
 
 # game/net_sea.gd: a player stands on a ship (ship-space point) or not (ship null); he swims or not.
-func ghost_deck(id: int, ship: Node3D, local: Vector3, swimming: bool) -> void:
+func ghost_deck(id: int, ship: Node3D, local: Vector3, swimming: bool, working: bool = false) -> void:
 	if not _ghosts.has(id):
 		return
 	var g: Dictionary = _ghosts[id]
+	g["working"] = working and ship != null
 	if ship == null:
 		g.erase("deck")
 		g.erase("shown")

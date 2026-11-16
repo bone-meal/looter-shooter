@@ -15,6 +15,7 @@ const INPUT_HZ := 15.0
 const HELM_REACH := 4.0  # m: how far from the wheel the host accepts a helm request (positions lag a little)
 const MAX_LEVEL := 70
 const FAR := 100000.0
+const MAX_SHIPS := 24  # the world fleet's cap (a client cannot flood the host with launches)
 
 var net: Node3D
 var heard := 0  # fleet packets received (dev)
@@ -76,7 +77,7 @@ func _send_fleet(fleet: Node) -> void:
 	var states: Array = []
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
-		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship))])
+		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"])])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 
@@ -163,6 +164,22 @@ func _anchor(ship_index: int) -> void:
 		_fleet().call("toggle_anchor", ship)
 
 
+# --- the shipyard (client -> host): the client's own Carpentry and materials built it (his bag is his own claim);
+# the host launches her into its world fleet ---
+
+func request_build(ship_id: String) -> void:
+	_build.rpc_id(1, ship_id)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _build(ship_id: String) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var fleet := _fleet()
+	if not net.is_host() or not net.roster.has(from) or fleet == null or ship_id.length() > 24 or (fleet.get("ships") as Array).size() >= MAX_SHIPS:
+		return
+	fleet.call("launch", ship_id)
+
+
 # --- where each player stands on a deck, and whether he swims (everyone -> host -> everyone) ---
 
 func _send_me(fleet: Node) -> void:
@@ -173,34 +190,35 @@ func _send_me(fleet: Node) -> void:
 	var index := (fleet.get("ships") as Array).find(ship) if ship != null else -1
 	var local := (ship as Node3D).global_transform.affine_inverse() * me.global_position if ship != null else Vector3.ZERO
 	var swimming := bool(me.get("swimming"))
+	var working := bool(fleet.get("working"))
 	if net.is_host():
-		_me_down.rpc(1, index, local, swimming)
+		_me_down.rpc(1, index, local, swimming, working)
 	else:
-		_me_up.rpc_id(1, index, local, swimming)
+		_me_up.rpc_id(1, index, local, swimming, working)
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
-func _me_up(index: int, local: Vector3, swimming: bool) -> void:
+func _me_up(index: int, local: Vector3, swimming: bool, working: bool) -> void:
 	var from := multiplayer.get_remote_sender_id()
 	if not net.is_host() or not net.roster.has(from) or not local.is_finite() or local.length() > 40.0 or index < -1 or index > 64:
 		return
-	_apply_me(from, index, local, swimming)
-	_me_down.rpc(from, index, local, swimming)
+	_apply_me(from, index, local, swimming, working)
+	_me_down.rpc(from, index, local, swimming, working)
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
-func _me_down(id: int, index: int, local: Vector3, swimming: bool) -> void:
-	_apply_me(id, index, local, swimming)
+func _me_down(id: int, index: int, local: Vector3, swimming: bool, working: bool) -> void:
+	_apply_me(id, index, local, swimming, working)
 
 
-func _apply_me(id: int, index: int, local: Vector3, swimming: bool) -> void:
+func _apply_me(id: int, index: int, local: Vector3, swimming: bool, working: bool) -> void:
 	if id == my_id():
 		return
 	var fleet := _fleet()
 	var ship: Node3D = null
 	if fleet != null and index >= 0 and index < (fleet.get("ships") as Array).size():
 		ship = (fleet.get("ships") as Array)[index]
-	net.call("ghost_deck", id, ship, local, swimming)
+	net.call("ghost_deck", id, ship, local, swimming, working)
 
 
 # --- thrown ropes ---

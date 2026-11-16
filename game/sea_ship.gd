@@ -14,6 +14,8 @@ var spec: Dictionary  # data/sea/ships.json ships[id]
 var rules: RefCounted  # core/sea/ship_rules.gd
 
 var _parts := {}  # model node name -> Node3D
+var _yards: Array = []  # one per mast
+var _sails: Array = []
 var _heave := 0.0
 var _pitch := 0.0
 var _roll := 0.0
@@ -58,17 +60,18 @@ func _build_solid() -> void:
 			var p0 := Vector2(side * (maxf(float(a[1]), 0.08) - 0.07), float(a[0]))
 			var p1 := Vector2(side * (maxf(float(b[1]), 0.08) - 0.07), float(b[0]))
 			var box := BoxShape3D.new()
-			box.size = Vector3(0.14, bul, p0.distance_to(p1) + 0.1)
+			box.size = Vector3(0.14, maxf(bul, 0.05), p0.distance_to(p1) + 0.1)
 			var mid := (p0 + p1) * 0.5
 			_add_shape(box, Transform3D(Basis(Vector3.UP, atan2(p1.x - p0.x, p1.y - p0.y)), Vector3(mid.x, deck + bul * 0.5, mid.y)))
 	var stern: Array = outline[0]
 	var transom := BoxShape3D.new()
-	transom.size = Vector3(float(stern[1]) * 2.0, bul, 0.14)
+	transom.size = Vector3(float(stern[1]) * 2.0, maxf(bul, 0.05), 0.14)
 	_add_shape(transom, Transform3D(Basis.IDENTITY, Vector3(0.0, deck + bul * 0.5, float(stern[0]) - 0.07)))
-	var mast := CylinderShape3D.new()
-	mast.radius = 0.18
-	mast.height = float(spec["mast_height"])
-	_add_shape(mast, Transform3D(Basis.IDENTITY, Vector3(float(spec["mast"][0]), deck + mast.height * 0.5, float(spec["mast"][1]))))
+	for spot: Array in spec["masts"]:
+		var mast := CylinderShape3D.new()
+		mast.radius = 0.18
+		mast.height = float(spot[1])
+		_add_shape(mast, Transform3D(Basis.IDENTITY, Vector3(0.0, deck + mast.height * 0.5, float(spot[0]))))
 
 
 func _add_shape(shape: Shape3D, at: Transform3D) -> void:
@@ -94,6 +97,12 @@ func _build_model() -> void:
 	add_child(model)
 	for found in model.find_children("*", "MeshInstance3D", true, false):
 		FantasyModels.dress((found as MeshInstance3D).mesh)
+	for i in (spec["masts"] as Array).size():  # one yard + sail per mast: Yard / Sail, Yard2 / Sail2 ...
+		var suffix := "" if i == 0 else str(i + 1)
+		for part: String in ["Yard", "Sail"]:
+			var node := model.find_child(part + suffix, true, false) as Node3D
+			if node != null:
+				(_yards if part == "Yard" else _sails).append(node)
 	for part: String in ["Yard", "Sail", "Pennant", "Wheel", "Anchor", "AnchorRope", "OarsL", "OarsR"]:
 		var node := model.find_child(part, true, false) as Node3D
 		if node != null:
@@ -132,18 +141,21 @@ func _animate(wind: float, wind_dir: float, delta: float) -> void:
 	var stage: Dictionary = rules.call("stage", state)
 	var anchored := bool(state["anchored"])
 	_sail_shown = move_toward(_sail_shown, float(stage["sail"]), delta * 0.6)
-	if _parts.has("Sail"):
-		(_parts["Sail"] as Node3D).scale = Vector3(1.0, lerpf(0.07, 1.0, _sail_shown), 1.0 + 0.15 * (1.0 - _sail_shown))
+	for sail: Node3D in _sails:
+		sail.scale = Vector3(1.0, lerpf(0.07, 1.0, _sail_shown), 1.0 + 0.15 * (1.0 - _sail_shown))
 	var to := Basis(Vector3.UP, float(state["yaw"])).inverse() * Vector3(cos(wind_dir), 0.0, sin(wind_dir))  # down-wind, ship space
-	if _parts.has("Yard"):  # braced round so the wind fills the sail
-		var across := atan2(-to.x, -to.z)  # where the wind blows to, from the bow (0 = dead ahead)
-		(_parts["Yard"] as Node3D).rotation.y = lerp_angle((_parts["Yard"] as Node3D).rotation.y, clampf(across * 0.45, -0.7, 0.7), delta * 1.5)
+	var across := atan2(-to.x, -to.z)  # where the wind blows to, from the bow (0 = dead ahead)
+	for yard: Node3D in _yards:  # braced round so the wind fills the sail
+		yard.rotation.y = lerp_angle(yard.rotation.y, clampf(across * 0.45, -0.7, 0.7), delta * 1.5)
 	if _parts.has("Pennant"):
 		_wind_flutter += delta * (4.0 + wind * 8.0)
 		(_parts["Pennant"] as Node3D).rotation = Vector3(0.0, atan2(to.x, to.z) + sin(_wind_flutter) * 0.12 * (0.3 + wind), sin(_wind_flutter * 1.7) * 0.15)
 	_wheel = lerpf(_wheel, float(state["rudder"]) * 2.4, minf(delta * 5.0, 1.0))
 	if _parts.has("Wheel"):
-		(_parts["Wheel"] as Node3D).rotation.z = -_wheel
+		if String(spec.get("steer", "wheel")) == "tiller":  # a tiller or steering oar swings the other way to the turn
+			(_parts["Wheel"] as Node3D).rotation.y = _wheel * 0.22
+		else:
+			(_parts["Wheel"] as Node3D).rotation.z = -_wheel
 	if _parts.has("Anchor"):
 		(_parts["Anchor"] as Node3D).visible = not anchored
 	if _parts.has("AnchorRope"):

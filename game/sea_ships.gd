@@ -37,6 +37,8 @@ var wanted_stage := 1
 var _helmsmen := {}  # SeaShip -> {"id": peer, "level": claimed Sailing level} (the host's word online)
 var _asked: SeaShip = null  # client: the helm we asked the host for
 var _slow := 0.0
+var shipyard: Node3D  # game/sea_shipyard.gd: where built ships are launched
+var working := false  # this player is trimming sails at a rigging spot (holding interact)
 var dev_rudder := NAN  # dev: a rudder held without keys (tests run without focus)
 
 
@@ -116,6 +118,8 @@ func _process(delta: float) -> void:
 			_player.call("pin", ship.deck_spot([float(ship.spec["helm"][0]), float(ship.spec["helm"][1]) + 1.0]))
 			if float(rules.stage(ship.state)["sail"]) > 0.0:
 				_sailing_xp(ship, moved)
+	var deck_now := ship_aboard() if inside and helm_ship == null else null
+	working = deck_now != null and _rigging_spot(deck_now, deck_now.global_transform.affine_inverse() * here) >= 0 and bool(_player.get("controls_enabled")) and Input.is_action_pressed("interact")
 	if helm_ship != null:
 		var w: Dictionary = helm_ship.get_meta("weather", {})
 		panel.show_ship(helm_ship.state, helm_ship.spec, rules, float(w.get("wind", 0.3)), float(w.get("wind_dir", 0.0)))
@@ -149,9 +153,10 @@ func _net() -> Node:
 # Client: the host's states (one array per ship: x, z, yaw, speed, stage, rudder, anchored, helmsman).
 func host_states(states: Array) -> void:
 	var now := Time.get_ticks_msec() / 1000.0
+	_match_fleet(states)
 	for i in mini(states.size(), ships.size()):
 		var got: Array = states[i]
-		if got.size() < 8:
+		if got.size() < 9:
 			continue
 		var ship: SeaShip = ships[i]
 		ship.set_meta("host", {"x": float(got[0]), "z": float(got[1]), "yaw": float(got[2]), "at": now})
@@ -166,6 +171,24 @@ func host_states(states: Array) -> void:
 			_enter_helm(ship)
 		elif not mine and helm_ship == ship:
 			_leave_helm_here()
+
+
+# Client: the host's fleet decides which ships exist (its ship ids, in order): ours is rebuilt when it differs.
+func _match_fleet(states: Array) -> void:
+	var same := states.size() == ships.size()
+	for i in mini(states.size(), ships.size()):
+		if (states[i] as Array).size() < 9 or String(states[i][8]) != String(ships[i].state["ship"]):
+			same = false
+	if same:
+		return
+	_leave_helm_here()
+	for ship: SeaShip in ships:
+		ship.queue_free()
+	ships.clear()
+	_helmsmen.clear()
+	for got: Array in states:
+		if got.size() >= 9 and (rules.cfg["ships"] as Dictionary).has(String(got[8])):
+			spawn(String(got[8]), float(got[0]), float(got[1]), rad_to_deg(float(got[2])))
 
 
 # Client: glide towards where the host says the ship is (moving on at her speed since that word was sent).
@@ -245,6 +268,33 @@ func sailing_level() -> int:
 
 
 func _speed_pct(ship: SeaShip) -> float:
+	return _helm_pct(ship) + float(rules.cfg["rigging_bonus"]) * float(_crew_at_rigging(ship))
+
+
+# How many players trim this ship's sails right now: this player, and (online, the host) others whose deck spot lies
+# at one of her rigging spots and who say they are working it.
+func _crew_at_rigging(ship: SeaShip) -> int:
+	var n := 0
+	if working and ship_aboard() == ship:
+		n += 1
+	var net := _net()
+	if net != null:
+		for local: Vector3 in net.get("net").call("workers_on", ship):
+			if _rigging_spot(ship, local) >= 0:
+				n += 1
+	return mini(n, (ship.spec["rigging"] as Array).size())
+
+
+# The index of the rigging spot a ship-space point stands at (-1 = none).
+func _rigging_spot(ship: SeaShip, local: Vector3) -> int:
+	var spots: Array = ship.spec["rigging"]
+	for i in spots.size():
+		if Vector2(local.x - float(spots[i][0]), local.z - float(spots[i][1])).length() <= float(rules.cfg["rigging_reach"]):
+			return i
+	return -1
+
+
+func _helm_pct(ship: SeaShip) -> float:
 	var skills: Variant = _sea.get("skills")
 	if skills == null:
 		return 0.0
@@ -295,6 +345,8 @@ func prompt(key: String) -> String:
 		return "[%s] Take the helm of the %s" % [key, ship_name]
 	if _near_spot(ship, ship.spec["anchor"], ANCHOR_REACH):
 		return "[%s] %s" % [key, "Weigh the anchor" if bool(ship.state["anchored"]) else "Let the anchor go"]
+	if _rigging_spot(ship, ship.global_transform.affine_inverse() * _player.global_position) >= 0:
+		return "Trimming the sails: +%d%% speed" % roundi(float(rules.cfg["rigging_bonus"]) * 100.0) if working else "[hold %s] Trim the sails (+%d%% speed while held)" % [key, roundi(float(rules.cfg["rigging_bonus"]) * 100.0)]
 	return ""
 
 
@@ -370,6 +422,64 @@ func toggle_anchor(ship: SeaShip) -> void:
 		return
 	ship.state["anchored"] = not bool(ship.state["anchored"])
 	_sea.emit_signal("notice", "Anchor weighed" if not bool(ship.state["anchored"]) else "Anchor let go")
+
+
+# --- the shipyard and the saved fleet ---
+
+# The shipyard launched a ship (game/fantasy_world.gd ship_built): the host (or alone) puts her in the water off the
+# slipway; a client asks the host.
+func build(ship_id: String) -> void:
+	if not (rules.cfg["ships"] as Dictionary).has(ship_id):
+		return
+	var net := _net()
+	if net != null and bool(net.call("is_client")):
+		net.call("request_build", ship_id)
+		_sea.emit_signal("notice", "The %s slides down the slipway" % String(rules.spec(ship_id)["name"]))
+		return
+	launch(ship_id)
+
+
+func launch(ship_id: String) -> void:
+	var outline: Array = rules.spec(ship_id)["outline"]
+	var half_length := absf(float(outline[0][0]) - float(outline.back()[0])) * 0.5
+	var spot: Vector3 = shipyard.call("launch_spot", 0, half_length)
+	for k in 12:  # the first lane off the slipway with no ship lying in it
+		spot = shipyard.call("launch_spot", k, half_length)
+		var free := true
+		for other: SeaShip in ships:
+			if Vector2(float(other.state["x"]) - spot.x, float(other.state["z"]) - spot.y).length() < 16.0 + half_length:
+				free = false
+		if free:
+			break
+	spawn(ship_id, spot.x, spot.y, spot.z)
+	_sea.emit_signal("notice", "The %s slides down the slipway" % String(rules.spec(ship_id)["name"]))
+
+
+# The fleet for the host's save: every ship's kind, place, heading and anchor.
+func to_list() -> Array:
+	var out: Array = []
+	for ship: SeaShip in ships:
+		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"]})
+	return out
+
+
+# A saved fleet replaces the starting one (unknown kinds and places off the map are dropped; anchored as left).
+func from_list(saved: Variant) -> void:
+	if not saved is Array or (saved as Array).is_empty():
+		return
+	var keep: Array = []
+	for entry: Variant in saved:
+		if entry is Dictionary and (rules.cfg["ships"] as Dictionary).has(str(entry.get("ship"))) and absf(float(entry.get("x", 0.0))) < 4000.0 and absf(float(entry.get("z", 0.0))) < 4000.0:
+			keep.append(entry)
+	if keep.is_empty():
+		return
+	for ship: SeaShip in ships:
+		ship.queue_free()
+	ships.clear()
+	_helmsmen.clear()
+	for entry: Dictionary in keep:
+		var ship := spawn(String(entry["ship"]), float(entry["x"]), float(entry["z"]), rad_to_deg(float(entry.get("yaw", 0.0))))
+		ship.state["anchored"] = bool(entry.get("anchored", true))
 
 
 # --- dev ---

@@ -51,6 +51,7 @@ const WALK_LAND := 0
 const WALK_SWIM := 1
 const WALK_FLY := 2
 
+signal ship_built(ship_id: String)  # the shipyard launched a ship (game/sea_ships.gd build)
 signal notice(text: String)  # big line in the middle of the screen
 signal toast(text: String, color: Color)  # small rising line: experience, items
 signal said(text: String, color: Color)  # a line for the chat box (quest text)
@@ -647,6 +648,10 @@ func give(item: String, count: int = 1) -> void:
 		return
 	if String(bag.def(item).get("kind", "")) == "gunside":  # Crafting made a piece for the gun side: into the backpack
 		_make_gun_piece(bag.def(item), count)
+		return
+	if String(bag.def(item).get("kind", "")) == "ship":  # Carpentry built a ship at the slipway: it is launched into the sea
+		ship_built.emit(String(bag.def(item)["ship"]))
+		sound("item")
 		return
 	if String(bag.def(item).get("kind", "")) == "backpack":  # Crafting made a bag: the gun side's backpack grows
 		var size := int(bag.def(item)["bag"])

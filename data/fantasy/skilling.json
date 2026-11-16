@@ -2218,6 +2218,119 @@
    "out": {
     "pack_frame": 1
    }
+  },
+  {
+   "id": "weave_sailcloth",
+   "skill": "crafting",
+   "level": 5,
+   "xp": 30,
+   "station": "crafting_table",
+   "in": {
+    "wheat": 5,
+    "leather": 1
+   },
+   "out": {
+    "sailcloth": 1
+   }
+  },
+  {
+   "id": "build_raft",
+   "skill": "carpentry",
+   "level": 1,
+   "xp": 200,
+   "station": "shipyard",
+   "needs": {
+    "raft_plan": 1
+   },
+   "in": {
+    "ash_plank": 10,
+    "leather": 2
+   },
+   "out": {
+    "ship_raft": 1
+   }
+  },
+  {
+   "id": "build_sloop",
+   "skill": "carpentry",
+   "level": 10,
+   "xp": 800,
+   "station": "shipyard",
+   "in": {
+    "oak_plank": 40,
+    "copper_bar": 10,
+    "sailcloth": 4
+   },
+   "out": {
+    "ship_sloop": 1
+   }
+  },
+  {
+   "id": "build_longboat",
+   "skill": "carpentry",
+   "level": 20,
+   "xp": 1400,
+   "station": "shipyard",
+   "needs": {
+    "longboat_plan": 1
+   },
+   "in": {
+    "oak_plank": 50,
+    "iron_bar": 12,
+    "sailcloth": 4,
+    "leather": 6
+   },
+   "out": {
+    "ship_longboat": 1
+   }
+  },
+  {
+   "id": "build_brig",
+   "skill": "carpentry",
+   "level": 25,
+   "xp": 2400,
+   "station": "shipyard",
+   "in": {
+    "frostpine_plank": 80,
+    "iron_bar": 30,
+    "sailcloth": 10
+   },
+   "out": {
+    "ship_brig": 1
+   }
+  },
+  {
+   "id": "build_junk",
+   "skill": "carpentry",
+   "level": 30,
+   "xp": 2600,
+   "station": "shipyard",
+   "needs": {
+    "junk_plan": 1
+   },
+   "in": {
+    "palm_plank": 70,
+    "iron_bar": 20,
+    "sailcloth": 8
+   },
+   "out": {
+    "ship_junk": 1
+   }
+  },
+  {
+   "id": "build_galleon",
+   "skill": "carpentry",
+   "level": 45,
+   "xp": 6000,
+   "station": "shipyard",
+   "in": {
+    "stormoak_plank": 120,
+    "skysteel_bar": 30,
+    "sailcloth": 18
+   },
+   "out": {
+    "ship_galleon": 1
+   }
   }
  ],
  "gather": {
@@ -2257,6 +2370,9 @@
   },
   "restore_table": {
    "icon": "brush"
+  },
+  "shipyard": {
+   "icon": "sail"
   }
  },
  "unlocks": {

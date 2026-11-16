@@ -17,6 +17,7 @@ const SeaRain = preload("res://game/sea_rain.gd")
 const SeaShips = preload("res://game/sea_ships.gd")
 const SeaSwim = preload("res://game/sea_swim.gd")
 const SeaSalvage = preload("res://game/sea_salvage.gd")
+const SeaShipyard = preload("res://game/sea_shipyard.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -31,6 +32,7 @@ var islands := SeaIslands.new()
 var rain := SeaRain.new()
 var ships := SeaShips.new()  # the world fleet (sea step 5a)
 var swim := SeaSwim.new()  # swimming, stamina, ladders, the rope (sea step 5b)
+var shipyard := SeaShipyard.new()  # the slipway on the test island (sea step 5c)
 var salvage := SeaSalvage.new()  # diving finds and the logbook (sea step 5b)
 var others := Callable()  # the session: other players' scene positions (the rope looks for swimmers)
 var someone_else_here := false  # the host: another player is at sea, so the fleet runs here (set by the session)
@@ -69,6 +71,9 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	add_child(rain)
 	_root.add_child(ships)
 	ships.setup(self, _player, RID())
+	_root.add_child(shipyard)
+	shipyard.setup(self, _player, ships.rules.cfg["shipyard"])
+	ships.shipyard = shipyard
 	_root.add_child(swim)
 	swim.setup(self, _player, ships, JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/salvage.json"))["swim"])
 	_root.add_child(salvage)
@@ -224,7 +229,7 @@ func status() -> String:
 func prompt(key: String) -> String:
 	if swim.climbing():
 		return ""
-	for part: Node in [swim, salvage]:
+	for part: Node in [swim, salvage, shipyard]:
 		var said := String(part.call("prompt", key))
 		if said != "":
 			return said
@@ -234,7 +239,7 @@ func prompt(key: String) -> String:
 func interact() -> bool:
 	if swim.climbing():
 		return true
-	return swim.interact() or salvage.interact() or ships.interact()
+	return swim.interact() or salvage.interact() or shipyard.interact() or ships.interact()
 
 
 func toggle_logbook() -> void:

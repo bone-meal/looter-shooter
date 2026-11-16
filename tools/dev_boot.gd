@@ -11,6 +11,7 @@ const InventoryState = preload("res://core/inventory_state.gd")
 
 const OUT := "res://tools/userdata/"
 
+var _ship_i := 0  # !ship use: which ship of the fleet the !ship steps act on
 var _lines := PackedStringArray()
 var _counting := false  # !fight has hooked the ward's signal
 var _listening := false  # !moves has hooked the special attacks' signal
@@ -464,7 +465,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			if fleet == null or (fleet.get("ships") as Array).is_empty():
 				_lines.append("ship: no sea / no ships (use /tp sea first)")
 			else:
-				var first: Node = (fleet.get("ships") as Array)[0]
+				var first: Node = (fleet.get("ships") as Array)[clampi(_ship_i, 0, (fleet.get("ships") as Array).size() - 1)]
 				var arg := words[2] if words.size() > 2 else ""
 				match words[1] if words.size() > 1 else "status":
 					"board":
@@ -490,6 +491,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					"stage":
 						first.get("state")["stage"] = int(arg)
 						fleet.set("wanted_stage", int(arg))
+					"spawn":  # "!ship spawn brig 0 40": a new ship of that kind that far from the first ship (sea metres x z)
+						var fs: Dictionary = first.get("state")
+						fleet.call("spawn", arg, float(fs["x"]) + (float(words[3]) if words.size() > 3 else 0.0), float(fs["z"]) + (float(words[4]) if words.size() > 4 else 30.0), rad_to_deg(float(fs["yaw"])))
+					"rig":  # "!ship rig 0": stand at rigging spot n of the ship
+						var rig_at: Array = first.get("spec")["rigging"][int(arg) if arg != "" else 0]
+						player.call("teleport", first.call("deck_spot", [float(rig_at[0]) * 0.92, float(rig_at[1])], 0.3), 0.0)
+					"crew":  # what the ship's speed gets from the crew at the rigging now
+						_lines.append("crew at rigging %d, working %s, speed share %.3f" % [int(fleet.call("_crew_at_rigging", first)), str(fleet.get("working")), float(fleet.call("_speed_pct", first))])
+					"use":  # "!ship use 2": the !ship steps after this act on ship n of the fleet (0 = the first)
+						_ship_i = int(arg)
 					"rail":  # stand at the starboard rail, midships
 						player.call("teleport", first.call("deck_spot", [float(first.get("spec")["outline"][3][1]) - 0.6, 0.0], 0.3), 0.0)
 					"ghosts":  # online: where the other players stand on this machine (deck, swimming) and the fleet's packets
@@ -618,6 +629,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			window.call("open", words[1])
 			if words.size() > 2:
 				window.call("pick", words[2])
+		"fgive":  # "!fgive oak_plank 40": items straight into the fantasy bag (also from the sea: the skills' world)
+			session.get("_fantasy").call("give", words[1], int(words[2]) if words.size() > 2 else 1)
+		"flevel":  # "!flevel carpentry 45": a skill's level (dev runs never save)
+			session.get("_fantasy").get("skills").call("set_level", words[1], int(words[2]))
+		"fmake":  # "!fmake build_sloop": make a recipe through the station code (needs its level and materials)
+			var land_w: Node = session.get("_fantasy")
+			for recipe: Dictionary in land_w.get("skilling")["recipes"]:
+				if String(recipe["id"]) == words[1]:
+					var why := String(land_w.get("work").call("make", recipe))
+					_lines.append("make %s: %s" % [words[1], "made" if why == "" else why])
 		"station":  # fantasy world: open the window of a station (fire, forge, workbench, cauldron) and pick a recipe
 			var window: Control = session.call("fantasy").get("panel")
 			window.call("open_station", words[1])

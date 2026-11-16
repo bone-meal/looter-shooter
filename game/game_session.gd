@@ -163,6 +163,7 @@ var _painting := Vector3.ZERO
 var _painting_fantasy := Vector3.ZERO
 var _in_fantasy := false
 var _sea: Node3D  # game/sea_world.gd, built on the first trip (sea step 4)
+var _fleet_saved: Variant = null  # the sea's world fleet from the save (this player's own world), until the sea is built (sea step 5c)
 var _salvage_saved: Variant = null  # the salvage logbook from the save, until the sea is built (sea step 5b)
 var _in_sea := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
@@ -1329,6 +1330,7 @@ func _load_profile() -> void:
 			_knife_rolled = true
 		_fantasy_saved = extra.get("fantasy")
 		_salvage_saved = extra.get("salvage")
+		_fleet_saved = extra.get("sea_fleet")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
 	if not _knife_rolled:  # a new character (or one from before the knives): its knife type is rolled once and kept
@@ -1375,6 +1377,8 @@ func save_profile() -> void:
 		elif _fantasy_saved != null:
 			extra["fantasy"] = _fantasy_saved  # never entered this session: keep what was saved
 		extra["salvage"] = _sea.salvage.book.to_dict() if _sea != null else _salvage_saved
+		var guest: bool = net != null and net.is_active() and not net.is_host()  # a guest sails the host's fleet: his own world's stays as saved
+		extra["sea_fleet"] = _sea.ships.to_list() if _sea != null and not guest else _fleet_saved
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
 
 
@@ -3831,6 +3835,7 @@ func _build_sea() -> void:
 		_sea.setup(_player, _render_style)
 		_sea.notice.connect(_player_hud.notice)
 		_sea.salvage.load_book(_salvage_saved)
+		_sea.ships.from_list(_fleet_saved)
 		_sea.set("others", func() -> Array: return net.other_positions() if net != null and net.can_send() else [])
 		_sea.visible = false
 		if net != null:
@@ -3838,6 +3843,8 @@ func _build_sea() -> void:
 			_sea.origin_shifted.connect(net.shift_ghosts)
 	_build_fantasy()  # the skills are shared (Sailing at the helm): the fantasy world keeps them
 	_sea.set("skills", _fantasy)
+	if not _fantasy.ship_built.is_connected(_sea.ships.build):
+		_fantasy.ship_built.connect(_sea.ships.build)
 
 
 func _leave_sea() -> void:
