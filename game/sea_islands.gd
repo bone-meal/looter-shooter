@@ -5,7 +5,8 @@
 # Islands of the kit (an entry with "props"; director: kit + a showcase start island) get the blended textured ground
 # (game/isle_ground.gd, tinted by the entry's "ground"), their props and set pieces (game/sea_isle_props.gd) and
 # their rivers / waterfalls (<model>_water.glb, game/isle_water.gd). A big island (its data has "chunks") is streamed
-# by chunk instead (game/sea_isle_stream.gd: near / far ground, collision and clutter near the player).
+# by chunk instead (game/sea_isle_stream.gd: near / far ground, collision and clutter near the player; on the host
+# collision near every player at sea).
 # Dependencies: assets/models/sea/<model>.glb (tools/blender/sea_islands.py, sea_isle_start.py), data/sea/islands.json,
 # game/isle_ground.gd, game/sea_isle_props.gd, game/isle_water.gd, game/sea_isle_stream.gd.
 extends Node3D
@@ -25,14 +26,22 @@ func setup(cfg: Dictionary) -> void:
 	_cfg = cfg
 
 
-# Call every half second with the player's sea position.
-func follow(sea_pos: Vector3) -> void:
+# Call every half second. points = sea positions of the players the islands are kept for: the first is this machine's
+# own player when own is true; on the host the rest are other players at sea (director 2026-11-16 "1": the host keeps
+# the full island and its detailed collision round every player out there, as it decides hits and drops round them).
+# Small clutter only follows this machine's own player.
+func follow(points: Array, own: bool = true) -> void:
 	var near := float(_cfg["near"])
 	var far := float(_cfg["far"])
+	var flat: Array = []
+	for point: Vector3 in points:
+		flat.append(Vector2(point.x, point.z))
 	for island: Dictionary in _cfg["islands"]:
 		var id := String(island["id"])
 		var at := Vector2(float(island["pos"][0]), float(island["pos"][1]))
-		var d := at.distance_to(Vector2(sea_pos.x, sea_pos.z)) - float(island["radius"])
+		var d := INF
+		for point: Vector2 in flat:
+			d = minf(d, at.distance_to(point) - float(island["radius"]))
 		var entry: Dictionary = _shown.get(id, {})
 		if d > far * 1.05:
 			if not entry.is_empty():
@@ -50,7 +59,8 @@ func follow(sea_pos: Vector3) -> void:
 			entry["full"] = null
 		(entry["far"] as Node3D).visible = entry["full"] == null
 		if entry["full"] != null and (entry["full"] as Node).has_node("Stream"):
-			((entry["full"] as Node).get_node("Stream") as Object).call("follow", Vector2(sea_pos.x, sea_pos.z) - at)
+			var locals: Array = flat.map(func(point: Vector2) -> Vector2: return point - at)
+			((entry["full"] as Node).get_node("Stream") as Object).call("follow", locals, own)
 
 
 func _full(island: Dictionary) -> Node3D:

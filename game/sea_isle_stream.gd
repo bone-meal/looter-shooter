@@ -5,7 +5,7 @@
 # run aground everywhere); trees, rocks and set pieces stand for the whole island, small clutter (grass, ferns,
 # flowers, shells, coral ...) and the props' colliders only in chunks near the player.
 # Dependencies: game/sea_isle_props.gd (drawing props, colliders, set pieces), data/sea/islands.json "props".
-# Made by game/sea_islands.gd, which calls follow() with the player's island-local position.
+# Made by game/sea_islands.gd, which calls follow() with the players' island-local positions.
 extends Node3D
 
 const IsleProps = preload("res://game/sea_isle_props.gd")
@@ -80,15 +80,21 @@ func _big_by_chunk(big: Array, size: float, reach: float) -> void:
 			(_chunks[key]["solid_props"] as Array).append(p)
 
 
-# Call every half second or so with the player's island-local position (x, z).
-func follow(here: Vector2) -> void:
+# Call every half second or so with island-local positions (x, z): points[0] is this machine's own player when own
+# is true (small clutter follows only him); every point keeps the chunks round it solid at full detail (on the host
+# that is every player at sea, director 2026-11-16 "1").
+func follow(points: Array, own: bool = true) -> void:
 	for key: String in _chunks:
 		var chunk: Dictionary = _chunks[key]
-		var d := here.distance_to(chunk["centre"])
-		if d < SOLID_ON and chunk["near_body"] == null:
+		var centre: Vector2 = chunk["centre"]
+		var solid_d := INF
+		for point: Vector2 in points:
+			solid_d = minf(solid_d, point.distance_to(centre))
+		if solid_d < SOLID_ON and chunk["near_body"] == null:
 			_near_solid(chunk, true)
-		elif d > SOLID_OFF and chunk["near_body"] != null:
+		elif solid_d > SOLID_OFF and chunk["near_body"] != null:
 			_near_solid(chunk, false)
+		var d := (points[0] as Vector2).distance_to(centre) if own and not points.is_empty() else INF
 		if d < SMALL_ON and chunk["small"] == null and not (chunk["props"] as Array).is_empty():
 			var small := Node3D.new()
 			add_child(small)

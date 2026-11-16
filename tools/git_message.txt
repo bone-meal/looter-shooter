@@ -1,8 +1,8 @@
-Sea: start island online - two-copy test, spawn ring by party slot
+Sea: host keeps islands solid round every player at sea
 
-- dev !isle ghosts / lookghost / wait_ghost: other players on the island as this machine shows them
-- pair set isle: host walks to the shipyard, guest to the lighthouse, each sees the other on the ground
-- data/sea/islands.json spawn_spread + sea_world.spawn_world(slot) + game_session _party_slot: arrivals no longer stand inside each other
+- director chose 1: full island + detailed collision round each player at sea on the host, also with the host away from the sea
+- sea_world _kept_for, sea_islands follow(points, own), sea_isle_stream follow(points, own): clutter only round the own player
+- dev !isle ghosts also shows the start island chunk counts; pair set isle checks it (guest feet 0.00 m on the host)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

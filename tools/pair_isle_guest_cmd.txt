@@ -1,1 +1,1 @@
-!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!isle wait_ghost 400;!wait 3;!isle ghosts;!isle lookghost;!wait 1;!snap isle_guest_a;!isle walk lighthouse start snap;!isle ghosts;!isle lookghost;!wait 1;!snap isle_guest_b;!third;!wait 1;!snap isle_guest_c;!third;!wait 20;!isle ghosts
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!isle wait_ghost 400;!wait 3;!isle ghosts;!isle walk lighthouse start;!isle ghosts;!isle walk wreck start;!isle ghosts;!wait 10

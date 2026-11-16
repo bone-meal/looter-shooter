@@ -546,6 +546,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					notes.append("other at island (%.0f, %.1f, %.0f), %.0f m from me, %s, swimming %s" % [there.x - island_at.x, there.y, there.z - island_at.y, body.global_position.distance_to(player.global_position), gap, str(body.get("_swimming"))])
 					if nearest == null or body.global_position.distance_to(player.global_position) < nearest.global_position.distance_to(player.global_position):
 						nearest = body
+				var shown: Dictionary = (sea_isle.get("islands").get("_shown") as Dictionary).get("start", {})
+				if shown.get("full") != null and (shown["full"] as Node).has_node("Stream"):
+					notes.append("start island chunks (all, solid, clutter) %s" % str((shown["full"] as Node).get_node("Stream").call("chunk_counts")))
+				else:
+					notes.append("start island not loaded here")
 				_lines.append("ISLE GHOSTS " + "; ".join(notes))
 				if words[1] == "lookghost" and nearest != null:
 					player.call("look_at_point", nearest.global_position + Vector3(0, 1.2, 0))

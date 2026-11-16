@@ -35,6 +35,7 @@ var swim := SeaSwim.new()  # swimming, stamina, ladders, the rope (sea step 5b)
 var shipyard := SeaShipyard.new()  # the slipway on the test island (sea step 5c)
 var salvage := SeaSalvage.new()  # diving finds and the logbook (sea step 5b)
 var others := Callable()  # the session: other players' scene positions (the rope looks for swimmers)
+const SIDE_X := -10000.0  # scene x below this is the sea (game_session SEA_SIDE_X)
 var someone_else_here := false  # the host: another player is at sea, so the fleet runs here (set by the session)
 var skills: Node = null  # the shared skills (game/fantasy_world.gd: Sailing level, perks, xp), set by the session
 var inside := false
@@ -153,7 +154,7 @@ func enter(graphics: String) -> void:
 	rain.set_tier(graphics)
 	islands.graphics = graphics
 	look.take_over()
-	islands.follow(local_of(_player.global_position))
+	islands.follow(_kept_for(), true)
 	_tick(0.0, true)
 
 
@@ -186,8 +187,26 @@ func _recentre() -> void:
 
 func _process(delta: float) -> void:
 	if not inside:
+		if someone_else_here:  # the host away from the sea: the islands stay solid round the players out there
+			_slow -= delta
+			if _slow <= 0.0:
+				_slow = 0.5
+				islands.follow(_kept_for(), false)
 		return
 	_tick(delta, false)
+
+
+# Sea positions the islands are kept for: this player first when he is out here, then (the host: someone_else_here)
+# every other player at sea (scene x below SIDE_X), so the host's islands are solid round them too.
+func _kept_for() -> Array:
+	var out: Array = []
+	if inside:
+		out.append(local_of(_player.global_position))
+	if someone_else_here and others.is_valid():
+		for spot: Vector3 in others.call():
+			if spot.x < SIDE_X:
+				out.append(local_of(spot))
+	return out
 
 
 func _tick(delta: float, now: bool) -> void:
@@ -202,7 +221,7 @@ func _tick(delta: float, now: bool) -> void:
 			notice.emit(String(map.regions[id]["name"]))
 		region_id = id if id != "" else region_id
 		weather = weather_at(here)
-		islands.follow(here)
+		islands.follow(_kept_for(), true)
 		rain.show_rain(float(weather.get("rain", 0.0)), float(weather.get("wind", 0.0)), float(weather.get("wind_dir", 0.0)))
 	var region: Dictionary = map.region_at(here.x, here.z)
 	ocean.swell = lerpf(ocean.swell, float(weather.get("swell", 0.5)), 1.0 if now else 1.0 - exp(-0.5 * delta))
