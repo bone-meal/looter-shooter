@@ -56,6 +56,122 @@ WALK_INTO = {}  # filled in by places(): where the walk check also goes past a d
 AVOID = []  # set pieces' footprints the paths go round: (x, z, radius), filled in by places()
 
 
+TOWN_DATA = os.path.join(os.path.dirname(__file__), "..", "..", "data", "sea", "town.json")
+TOWN_MODELS = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "models", "sea", "town")
+ISLE_X, ISLE_Z = -520.0, 6570.0  # this island's centre in the sea (data/sea/islands.json)
+RECTS = []  # town plots and house lots the roads go round and nothing grows in: (cx, cz, half along x', half along z', yaw rad)
+HOUSE_LOTS = []  # (x, z, yaw degrees, variant): residents' houses beside the town's streets (sea step 7b)
+HOUSE_SIZE = (11.0, 12.0)  # a house lot: width along the street, depth (house, steps and yard)
+
+
+def _gltf_box(name):
+    """Footprint of a town model (game axes: x, z) and its Door marker, read from the glTF."""
+    import json as _json
+    g = _json.load(open(os.path.join(TOWN_MODELS, name + ".gltf")))
+    lo, hi = [1e9] * 3, [-1e9] * 3
+    for mesh in g["meshes"]:
+        for prim in mesh["primitives"]:
+            a = g["accessors"][prim["attributes"]["POSITION"]]
+            for i in range(3):
+                lo[i], hi[i] = min(lo[i], a["min"][i]), max(hi[i], a["max"][i])
+    door = None
+    for node in g["nodes"]:
+        if node.get("name") == "Door":
+            door = node.get("translation", [0, 0, 0])
+    return (lo[0], hi[0], lo[2], hi[2]), door
+
+
+def _turn(x, z, yaw):
+    """A model-space point (game axes) turned by the plot's yaw (Godot rotation.y)."""
+    c, s_ = math.cos(yaw), math.sin(yaw)
+    return x * c + z * s_, -x * s_ + z * c
+
+
+def town_plots():
+    """{plot id: (centre x, z, yaw rad, (x0, x1, z0, z1) model box, access point)} in island-local metres, for the
+    biggest level of each plot (sea step 7: the streets lead to every plot's door)."""
+    import json as _json
+    out = {}
+    if not os.path.exists(TOWN_DATA):
+        return out
+    for p in _json.load(open(TOWN_DATA))["plots"]:
+        box, door = _gltf_box("%s_%d" % (p["building"], len(p["levels"])))
+        yaw = math.radians(float(p.get("yaw", 0.0)))
+        cx, cz = float(p["at"][0]) - ISLE_X, float(p["at"][1]) - ISLE_Z
+        if p.get("sea_level"):  # the dock: reached from the bank behind its root
+            ax, az = _turn(0.0, 4.0, yaw)
+        else:
+            dx, dz = (door[0], door[2]) if door else (0.0, box[2])
+            ln = max(math.hypot(dx, dz), 0.01)
+            ax, az = _turn(dx + dx / ln * 3.0, dz + dz / ln * 3.0, yaw)
+        out[p["id"]] = (cx, cz, yaw, box, (cx + ax, cz + az))
+    if RECTS:  # an access point inside a plot's footprint (a deep terrace) moves out past its edge
+        for k, (cx, cz, yaw, box, (ax, az)) in list(out.items()):
+            dx, dz = ax - cx, az - cz
+            ln = max(math.hypot(dx, dz), 0.01)
+            n = 0
+            while in_rects(ax, az, 2.5) and n < 80:
+                ax, az, n = ax + dx / ln * 0.5, az + dz / ln * 0.5, n + 1
+            out[k] = (cx, cz, yaw, box, (ax + dx / ln * 1.0, az + dz / ln * 1.0))
+    return out
+
+
+def in_rects(x, z, grow=0.0):
+    for cx, cz, hx, hz, yaw in RECTS:
+        lx, lz = _turn(x - cx, z - cz, -yaw)
+        if abs(lx) < hx + grow and abs(lz) < hz + grow:
+            return True
+    return False
+
+
+def _plot_rects():
+    for _id, (cx, cz, yaw, box, _acc) in town_plots().items():
+        mx, mz = _turn((box[0] + box[1]) / 2, (box[2] + box[3]) / 2, yaw)
+        RECTS.append((cx + mx, cz + mz, (box[1] - box[0]) / 2 + 1.0, (box[3] - box[2]) / 2 + 1.0, yaw))
+
+
+def house_lots(final):
+    """Lots for residents' houses (director: streets + houses that appear as the town grows): beside the town's
+    streets, facing them, clear of every road, plot and other lot, on gentle ground. Nearest the plaza first."""
+    if HOUSE_LOTS:
+        return HOUSE_LOTS
+    rnd = random.Random(77)
+    found = []
+    w, d = HOUSE_SIZE
+    for line in paths():
+        for i in range(2, len(line) - 2, 3):
+            (x0, z0), (x1, z1) = line[i - 1], line[i + 1]
+            ln = math.hypot(x1 - x0, z1 - z0)
+            if ln < 0.1:
+                continue
+            fx, fz = (x1 - x0) / ln, (z1 - z0) / ln
+            for side in (-1.0, 1.0):
+                nx, nz = -fz * side, fx * side  # out from the street
+                off = 6.5 + d / 2
+                x, z = line[i][0] + nx * off, line[i][1] + nz * off
+                if town_w(x, z) < 0.75 or math.hypot(x - TOWN[0], z - TOWN[1]) < 26.0:
+                    continue
+                yaw = math.atan2(nx, nz)  # the model's front (-z) faces the street
+                corners = [(x + a * fx * w / 2 + b * nx * d / 2, z + a * fz * w / 2 + b * nz * d / 2) for a in (-1, 1) for b in (-1, 1)]
+                hs = [final.at(cx, cz) for cx, cz in corners + [(x, z)]]
+                if min(hs) < 2.0 or max(hs) - min(hs) > 2.6:
+                    continue
+                if min(path_off(cx, cz) for cx, cz in corners + [(x, z)]) < 5.5:
+                    continue
+                if any(in_rects(cx, cz, 3.0) for cx, cz in corners + [(x, z)]):
+                    continue
+                if any(math.hypot(x - q[0], z - q[1]) < max(w, d) + 3.0 for q in found):
+                    continue
+                if SLIP[0] - 30.0 < x < SLIP[0] + 30.0 and abs(z - SLIP[1]) < 22.0:
+                    continue
+                found.append((x, z, yaw))
+    found.sort(key=lambda q: math.hypot(q[0] - TOWN[0], q[1] - TOWN[1]))
+    for k, (x, z, yaw) in enumerate(found[:24]):
+        HOUSE_LOTS.append((round(x, 2), round(z, 2), round(math.degrees(yaw), 1), rnd.randint(0, 3)))
+        RECTS.append((x, z, w / 2, d / 2, yaw))
+    return HOUSE_LOTS
+
+
 def ang_d(a, b):
     return math.atan2(math.sin(a - b), math.cos(a - b))
 
@@ -243,6 +359,7 @@ def places_list():
         "waterfall_top": (RIVER[FALL][0] + 10.0, RIVER[FALL][1] - 9.0), "waterfall_foot": (RIVER[FALL + 1][0] + 16.0, RIVER[FALL + 1][1] + 2.0),
         "ruins": (RUINS[0], RUINS[1] + 14.0), "cave": (CAVE[0] + 4.0, CAVE[1] + 13.0), "jetty": (LAGOON[0] + 20.0, LAGOON[1] - LAGOON[2] - 6.0),
         "wreck": (WRECK[0] + 8.0, WRECK[1] - 18.0), "camp": (CAMP[0] + 8.0, CAMP[1] + 6.0), "tide_pools": polar(math.pi, shore_radius(math.pi) - 40.0),
+        **{"plot_" + k: v[4] for k, v in town_plots().items()},  # the town's streets to every plot's door (sea step 7b)
     }
 
 
@@ -255,7 +372,7 @@ def paths():
             raw = kit.HeightGrid(land, REACH, 4.0, "raw grid")
             pois = places_list()
             found = kit.route(raw.at, REACH, pois[START], {k: v for k, v in pois.items() if k != START},
-                avoid=lambda x, z: any(math.hypot(x - ax, z - az) < ar for ax, az, ar in AVOID), river=lambda x, z: river_at(x, z)[0])
+                avoid=lambda x, z: any(math.hypot(x - ax, z - az) < ar for ax, az, ar in AVOID) or in_rects(x, z, 1.5), river=lambda x, z: river_at(x, z)[0])
             for line in found.values():
                 pts, fixed = _straight_over_river(kit.smooth_path(line), raw)
                 hs = [fixed.get(p, raw.at(p[0], p[1])) for p in pts]
@@ -474,7 +591,7 @@ def blocks(p):
 def place(final):
     """The kit's zoned props plus this island's hand-placed set pieces. `final` = the ground as built."""
     def clear(x, z):  # the shipyard's ground, roads, the places' pads, the river
-        if (SLIP[0] - 16.0 < x < SLIP[0] + 20.0 and abs(z - SLIP[1]) < 10.0) or path_off(x, z) < 5.0:
+        if (SLIP[0] - 16.0 < x < SLIP[0] + 20.0 and abs(z - SLIP[1]) < 10.0) or path_off(x, z) < 5.0 or in_rects(x, z, 1.0):
             return True
         for px, pz, pr, _ph in LIFTS:
             if math.hypot(x - px, z - pz) < pr:
@@ -544,15 +661,41 @@ def water():
     return [kit.water_strip("river_upper", upper), kit.water_strip("waterfall", fall, "waterfall"), kit.water_strip("river_lower", lower)]
 
 
+def trodden(x, z):
+    """The path weight painted on the ground (UV2 v). Inside the town a street is marked by adding 2 (game/isle_ground.gd
+    paves it: dirt, then cobbles, then flagstones as the town grows)."""
+    off = path_off(x, z)
+    if off >= 5.0:
+        return 0.0
+    w = 0.75 * (1.0 - off / 5.0)
+    if off < 4.6 and town_w(x, z) > 0.55:
+        return 2.0 + w
+    return w
+
+
+def _write_houses(final):
+    """The house lots into data/sea/town.json "houses" (sea coordinates + the ground's height there)."""
+    import json as _json
+    if not os.path.exists(TOWN_DATA):
+        return
+    data = _json.load(open(TOWN_DATA))
+    data["houses"] = [{"at": [round(x + ISLE_X, 2), round(z + ISLE_Z, 2)], "y": round(final.at(x, z), 2), "yaw": yaw, "variant": v} for x, z, yaw, v in HOUSE_LOTS]
+    _json.dump(data, open(TOWN_DATA, "w"), indent=1)
+    print("HOUSE LOTS", len(HOUSE_LOTS))
+
+
 def main():
     AVOID.extend([(RUINS[0], RUINS[1], 9.5), (CAVE[0], CAVE[1], 10.0), (LIGHTHOUSE[0], LIGHTHOUSE[1], 6.0), (WRECK[0], WRECK[1], 12.0)])
     WALK_INTO.update({"cave": (CAVE[0], CAVE[1] + 2.0), "ruins": (RUINS[0], RUINS[1] + 4.0)})
     bpy.ops.wm.read_factory_settings(use_empty=True)
+    _plot_rects()
     paths()
     final = kit.HeightGrid(land, REACH, STEP, "ground grid")
+    house_lots(final)
+    _write_houses(final)
     def keep(x0, z0, x1, z1):  # chunks wholly in deep sea away from the island are left out
         return min(abs(x0), abs(x1)) ** 2 + min(abs(z0), abs(z1)) ** 2 < (REACH * 0.98) ** 2
-    objs = kit.ground_chunks(NAME, final, CHUNK, 4, lambda x, z: 0.75 * (1.0 - path_off(x, z) / 5.0) if path_off(x, z) < 5.0 else 0.0,
+    objs = kit.ground_chunks(NAME, final, CHUNK, 4, trodden,
         lambda x, z: 1.0 if zone(x, z, final.at(x, z)) == "jungle" else 0.0, keep)
     props, places = place(final)
     problems = route_check(final.at) + ["%s at (%.0f, %.0f) blocks a path" % (p[0], p[1], p[3]) for p in props if blocks(p)]

@@ -3,7 +3,7 @@
 # face, not from above), wet sand at the waterline and the trodden ground of paths; each layer is coloured by the
 # island's own tint (data/sea/islands.json "ground") and the model's vertex colour adds light and dark patches. The
 # weights come per corner from the model (tools/blender/sea_isle_kit.py): UV = (grass, rock), UV2 = (wet, trodden),
-# vertex alpha = forest floor.
+# vertex alpha = forest floor. A trodden weight above 1 marks a town street (weight + 2), paved by `paving`.
 # Without textures it is the same blend in the plain tints. One shader source with #defines (Compatibility + Forward+).
 # Dependencies: game/surface_library.gd (texture sets, gains, current quality). Configured by game/render_style.gd.
 extends RefCounted
@@ -24,6 +24,7 @@ uniform vec3 tint_rock = vec3(0.55, 0.52, 0.48);
 uniform vec3 tint_wet = vec3(0.62, 0.55, 0.42);
 uniform vec3 tint_path = vec3(0.55, 0.45, 0.33);
 uniform vec3 tint_forest = vec3(0.4, 0.36, 0.24);
+uniform float paving = 0.0;  // the town's streets: 0 dirt, 1 cobbles, 2 flagstones (game/sea_town.gd, by the town's growth)
 
 #ifdef TEXTURED
 uniform vec4 tiles = vec4(3.0);
@@ -68,6 +69,25 @@ vec3 detail(vec3 t, vec3 g) {
 	return mix(vec3(l), t * g, 0.3);
 }
 
+float stone_hash(vec2 q) {
+	return fract(sin(dot(q, vec2(127.1, 311.7))) * 43758.5453);
+}
+
+// Paving laid in courses, every other course shifted by half a stone: small setts (cobbles) or big flagstones.
+// Returns the stone's colour factor (about 1) in rgb and how much of the pixel is stone (not the joint) in a.
+vec4 paved(vec2 p, float kind) {
+	vec2 size = kind < 1.5 ? vec2(0.34, 0.24) : vec2(1.15, 0.8);
+	vec2 q = p / size;
+	float row = floor(q.y);
+	q.x += fract(row * 0.5);
+	vec2 cell = floor(q);
+	vec2 f = fract(q);
+	float edge = min(min(f.x, 1.0 - f.x) * size.x, min(f.y, 1.0 - f.y) * size.y);
+	float h = stone_hash(cell + vec2(row * 7.13, 0.0));
+	float dome = kind < 1.5 ? 0.9 + 0.2 * (1.0 - length(f - 0.5) * 1.4) : 1.0;  // setts are rounded on top
+	return vec4(vec3((0.74 + 0.4 * h) * dome), smoothstep(0.008, 0.03, edge));
+}
+
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
 	world_nor = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
@@ -102,7 +122,18 @@ void fragment() {
 	vec3 c = mix(sand, wet, mix_w.b);
 	c = mix(c, grass, mix_w.r);
 	c = mix(c, floor_c, woods * mix_w.r);
-	c = mix(c, path, mix_w.a);
+	float path_w = clamp(mix_w.a, 0.0, 1.0);
+	float street_w = clamp(mix_w.a - 1.0, 0.0, 1.0);  // a town street: the path weight plus 2 (tools/blender/sea_isle_start.py)
+	c = mix(c, path, path_w);
+	if (paving > 0.5 && street_w > 0.0) {
+		vec4 stone = paved(world_pos.xz, paving);
+		vec3 base = paving < 1.5 ? toned(vec3(0.46, 0.43, 0.39)) : toned(vec3(0.56, 0.53, 0.47));
+#ifdef TEXTURED
+		base *= mix(vec3(1.0), detail(texture(tex_rock, world_pos.xz / tiles.z).rgb, gain_rock), 0.5);
+#endif
+		vec3 street = mix(path * 0.55, base * stone.rgb, stone.a);
+		c = mix(c, street, street_w);
+	}
 	c = mix(c, rock, mix_w.g);
 	ALBEDO = c * shade;
 #if defined(TEXTURED) && defined(NORMALS)
@@ -121,6 +152,7 @@ static var _materials := {}  # island id -> ShaderMaterial
 static var _tints := {}  # island id -> {layer: Color}
 static var _shaders := {}  # "#define ..." prefix -> Shader
 static var _toon := false
+static var _paving := {}  # island id -> 0 dirt / 1 cobbles / 2 flagstones on its town's streets
 
 
 # The ground material of an island; `ground` = its data/sea/islands.json "ground" tints ({} = the defaults above).
@@ -133,6 +165,13 @@ static func material(island_id: String, ground: Dictionary) -> ShaderMaterial:
 		_materials[island_id] = ShaderMaterial.new()
 		_fill(island_id)
 	return _materials[island_id]
+
+
+# The town's streets on an island (sea step 7b): 0 dirt, 1 cobbles, 2 flagstones.
+static func set_paving(island_id: String, kind: int) -> void:
+	_paving[island_id] = kind
+	if _materials.has(island_id):
+		(_materials[island_id] as ShaderMaterial).set_shader_parameter("paving", float(kind))
 
 
 static func configure(toon: bool) -> void:
@@ -174,6 +213,7 @@ static func _fill(island_id: String) -> void:
 				else:
 					m.set_shader_parameter("nor_" + layer, nor)
 	m.set_shader_parameter("tiles", tiles)
+	m.set_shader_parameter("paving", float(_paving.get(island_id, 0)))
 	var prefix := ""
 	if _toon:
 		prefix += "#define TOON\n"

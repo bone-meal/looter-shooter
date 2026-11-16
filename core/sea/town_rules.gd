@@ -112,6 +112,27 @@ func growth() -> float:
 	return float(have) / float(maxi(most, 1))
 
 
+# The town's streets by its growth: 0 dirt tracks, 1 cobbles, 2 flagstones (data "paving_at").
+func paving() -> int:
+	var at: Array = cfg.get("paving_at", [0.3, 0.65])
+	var g := growth()
+	return 2 if g >= float(at[1]) else (1 if g >= float(at[0]) else 0)
+
+
+# Which residents' house stands on lot i at this growth ("" = none yet): more lots fill as the town grows (the first
+# few from the start, nearest the plaza first) and each is rebuilt in newer styles, not all at once.
+func house_model(i: int, g: float) -> String:
+	var lots: Array = cfg.get("houses", [])
+	if i < 0 or i >= lots.size():
+		return ""
+	var first := int(cfg.get("houses_at_start", 3))
+	var standing := mini(lots.size(), first + floori(g * float(lots.size() - first) * 1.25))
+	if i >= standing:
+		return ""
+	var style := clampi(floori(g * 5.0 - float(i % 4) * 0.3), 0, 4)
+	return "house_%d_%d" % [int((lots[i] as Dictionary).get("variant", 0)), style]
+
+
 # Levels in plot order (sent online).
 func to_list() -> Array:
 	var out: Array = []

@@ -14,6 +14,7 @@ extends Node3D
 const TownRules = preload("res://core/sea/town_rules.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
 const FxKit = preload("res://game/fx_kit.gd")
+const IsleGround = preload("res://game/isle_ground.gd")
 const TownWindow = preload("res://game/town_window.gd")
 const NEAR := 900.0  # m from the plaza: the town is built when the player comes this close
 const PLAZA := Vector2(-80.0, 6640.0)
@@ -27,6 +28,8 @@ var waiting := ""  # a plot whose upgrade we asked the host for
 var _sea: Node3D
 var _player: CharacterBody3D
 var _plots := {}  # id -> {"holder": Node3D, "model": Node3D, "shown": String, "sign": Node3D, "label": Label3D}
+var _houses: Array = []  # [{"holder": Node3D, "model": Node3D, "shown": String}] in data order (nearest the plaza first)
+var _paving := -1
 var _reach := 3.0
 
 
@@ -55,9 +58,13 @@ func _process(_delta: float) -> void:
 		if Vector2(here.x, here.z).distance_to(PLAZA) < NEAR:
 			_build_all()
 		return
+	var changed := false
 	for id: String in _plots:  # a level that changed (here or from the host) rebuilds that plot
 		if String(_plots[id]["shown"]) != rules.model(id):
 			_show(id, true)
+			changed = true
+	if changed or _paving < 0:
+		_grow_town()
 
 
 func _build_all() -> void:
@@ -71,6 +78,44 @@ func _build_all() -> void:
 		holder.rotation.y = deg_to_rad(float(p.get("yaw", 0.0)))
 		_plots[id] = {"holder": holder, "model": null, "shown": "", "sign": null, "label": null}
 		_show(id, false)
+	for h: Dictionary in rules.cfg.get("houses", []):
+		var holder := Node3D.new()
+		add_child(holder)
+		holder.position = Vector3(float(h["at"][0]), float(h.get("y", 0.0)), float(h["at"][1]))
+		holder.rotation.y = deg_to_rad(float(h.get("yaw", 0.0)))
+		_houses.append({"holder": holder, "model": null, "shown": ""})
+	_grow_town()
+
+
+# The residents' houses and the streets follow the town's growth (director: streets + houses that appear as the town
+# grows): more houses stand, each rebuilt in newer styles, and the streets go from dirt to cobbles to flagstones.
+func _grow_town() -> void:
+	var g := rules.growth()
+	var paving := int(rules.paving())
+	if paving != _paving:
+		_paving = paving
+		IsleGround.set_paving(String(rules.cfg.get("island", "start")), paving)
+	for i in _houses.size():
+		var entry: Dictionary = _houses[i]
+		var want := rules.house_model(i, g)
+		if String(entry["shown"]) == want:
+			continue
+		var was_up := String(entry["shown"]) != ""
+		if entry["model"] != null:
+			(entry["model"] as Node).queue_free()
+		entry["model"] = null
+		entry["shown"] = want
+		if want == "":
+			continue
+		var made := FantasyModels.scene("../sea/town/" + want)
+		if made == null:
+			continue
+		(entry["holder"] as Node3D).add_child(made)
+		entry["model"] = made
+		for found in made.find_children("*", "MeshInstance3D", true, false):
+			(found as MeshInstance3D).create_trimesh_collision()
+		if was_up or _paving >= 0:
+			FxKit.burst(self, (entry["holder"] as Node3D).global_position + Vector3(0, 2.0, 0), Color(0.75, 0.68, 0.55, 0.8), 14, 1.4, 0.5, 2.5, -1.0)
 
 
 # Puts the plot's current model up (dust and a notice when it was just rebuilt).
@@ -285,4 +330,8 @@ func status() -> String:
 	var parts := PackedStringArray()
 	for id: String in rules.ids():
 		parts.append("%s %d/%d" % [id, rules.level(id), rules.top(id)])
-	return "town built %s growth %.2f: %s" % [str(built), rules.growth(), ", ".join(parts)]
+	var standing := 0
+	for h: Dictionary in _houses:
+		if String(h["shown"]) != "":
+			standing += 1
+	return "town built %s growth %.2f paving %d houses %d/%d: %s" % [str(built), rules.growth(), _paving, standing, _houses.size(), ", ".join(parts)]

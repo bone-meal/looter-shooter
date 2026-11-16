@@ -780,6 +780,67 @@ def shipyard(m, lv):
         sign_post_mark(m, 9.4, 10.6)
 
 
+# --- residents' houses (sea step 7b, director: streets + houses that appear as the town grows): four kinds of
+# house in every style; the game shows more of them and rebuilds them in newer styles as the town grows ---
+HOUSE_KINDS = [  # width, depth, door, gable to the street, colours by style 1..4
+    (6.0, 5.0, 0.0, False, [(0.78, 0.62, 0.32), (0.9, 0.82, 0.62), (0.9, 0.8, 0.58), (0.96, 0.9, 0.72)]),
+    (7.5, 6.0, -1.3, False, [(0.34, 0.5, 0.42), (0.86, 0.86, 0.78), (0.86, 0.9, 0.86), (0.84, 0.92, 0.88)]),
+    (5.5, 7.0, 0.0, True, [(0.62, 0.28, 0.22), (0.9, 0.8, 0.7), (0.94, 0.82, 0.74), (0.96, 0.84, 0.78)]),
+    (9.0, 6.0, 1.6, False, [(0.3, 0.38, 0.55), (0.88, 0.86, 0.8), (0.84, 0.86, 0.92), (0.88, 0.9, 0.96)]),
+]
+SHUTTERS = [(0.2, 0.36, 0.4), (0.55, 0.22, 0.18), (0.24, 0.4, 0.26), (0.18, 0.28, 0.5)]
+
+
+def house(m, kind, st):
+    w, d, door, gable, colours = HOUSE_KINDS[kind]
+    trim = SHUTTERS[kind]
+    rnd = random.Random(kind * 10 + st)
+    if st == 0:
+        s = scheme(0)
+        P.shack(m, w * 0.75, d * 0.75, s, door_u=door * 0.6, windows={"front": [-w * 0.25] if door >= 0 else [w * 0.25], "left": [0.0], "right": [0.0]})
+        P.steps(m, K("wood", P.DRIFT), door * 0.6, d * 0.375 + 0.05, 1.1, P.FLOOR[0])
+        if kind % 2 == 0:
+            P.nets(m, w * 0.55, 0.0, 0.0, 2.0, 1.3, yaw=90.0)
+        else:  # a rack of fish drying
+            for x in (-1.0, 1.0):
+                m.rod(K("wood", P.DRIFT), 0.04, (w * 0.5 + 0.6, 0.0, x), (w * 0.5 + 0.6, 1.6, x), segs=4)
+            m.rod(K("wood", P.DRIFT), 0.03, (w * 0.5 + 0.6, 1.55, -1.1), (w * 0.5 + 0.6, 1.55, 1.1), segs=4)
+            for k in range(6):
+                m.ball(K("leather", (0.62, 0.55, 0.42)), (0.04, 0.2, 0.08), (w * 0.5 + 0.6, 1.32, -0.9 + k * 0.36), u=6, v=4)
+        P.barrel(m, (-w * 0.45, 0.0, d * 0.45))
+    elif st == 1:
+        s = scheme(1, wall=colours[0], trim=P.WHITE)
+        P.cottage(m, w, d, s, door_u=door, roof_h=1.9, gable_front=gable, porch=kind != 2)
+        P.steps(m, K("stone", s["stone"]), door, d / 2 + (1.45 if kind != 2 else 0.2), 1.4, P.FLOOR[1])
+        P.bench(m, (w / 2 - 1.2 if door <= 0 else -w / 2 + 1.2, 0.0, d / 2 + 0.6), 1.3)
+        for k in range(2):
+            m.lathe(K("paint", (0.66, 0.36, 0.24)), [(0.0, 0.0), (0.16, 0.0), (0.2, 0.3), (0.0, 0.3)], (door + (k * 2 - 1) * 1.0, 0.0, d / 2 + 0.9), segs=8)
+            P.plant(m, (door + (k * 2 - 1) * 1.0, 0.42, d / 2 + 0.9), 0.2)
+    elif st == 2:
+        s = scheme(2, wall=colours[1], trim=trim)
+        fk.house(m, s, w, d, 2 if kind in (1, 3) else 1, 2.4 if kind != 2 else 3.0, chimney=True, frame=True, door_x=door, gable_front=gable)
+        blk(m, K("stone", s["stone"]), (w + 0.3, -P.DEEP, d + 0.3), (0.0, P.DEEP / 2, 0.0))
+        for x in (-w / 2 - 0.4, w / 2 + 0.4):  # a washing line along the side
+            m.rod(K("wood", (0.42, 0.32, 0.22)), 0.04, (x, 0.0, d / 2 + 2.2), (x, 1.9, d / 2 + 2.2), segs=4)
+        m.rod(K("cloth", P.ROPE), 0.008, (-w / 2 - 0.4, 1.85, d / 2 + 2.2), (w / 2 + 0.4, 1.85, d / 2 + 2.2), segs=3)
+        for k in range(4):
+            col = [(0.9, 0.9, 0.86), (0.5, 0.6, 0.8), (0.85, 0.5, 0.45), (0.9, 0.85, 0.6)][(k + kind) % 4]
+            blk(m, K("cloth", col), (0.5, 0.65, 0.02), (-w / 2 + 0.8 + k * (w / 4), 1.5, d / 2 + 2.2))
+    elif st == 3:
+        s = scheme(3, wall=colours[2], trim=trim)
+        P.stone_timber(m, w, d, s, door_u=door, roof_h=2.6 if kind != 2 else 3.2, balcony=kind in (1, 3), dormers=1 if kind == 3 else 0, gable_front=gable)
+        P.steps(m, K("stone", s["stone"]), door, d / 2 + 0.2, 1.8, P.FLOOR[3])
+        P.lantern(m, (door + 1.1, 2.6, d / 2 + 0.25))
+    else:
+        s = scheme(4, wall=colours[3], trim=trim)
+        P.colonial(m, w, d, s, floors=2, roof_h=2.4, door_u=door, spots=[u for u in ([-w / 2 + 1.4, 0.0, w / 2 - 1.4] if w > 7 else [-w / 2 + 1.3, w / 2 - 1.3])])
+        P.steps(m, K("stone", s["stone"]), door, d / 2 + 0.25, 2.4, P.FLOOR[4])
+        for k in (-1, 1):
+            m.lathe(K("stone", s["stone"]), [(0.0, 0.0), (0.3, 0.0), (0.35, 0.5), (0.0, 0.5)], (door + k * 1.6, 0.0, d / 2 + 1.4), segs=10)
+            P.plant(m, (door + k * 1.6, 0.75, d / 2 + 1.4), 0.32, (0.22, 0.4, 0.18))
+    m.empty("Door", door, 0.0, d / 2 + 1.0)
+
+
 BUILDERS = {"harbour_master": harbour_master, "tavern": tavern, "workshop": workshop, "storage": storage,
     "trophy_hall": trophy_hall, "gallery": gallery, "garden": garden, "dock": dock, "shipyard": shipyard}
 RUIN = {"harbour_master": (4.6, 3.6), "tavern": (4.4, 3.4), "workshop": (4.6, 3.0), "storage": (4.4, 3.0),
@@ -842,6 +903,9 @@ if __name__ == "__main__":
     only = set(sys.argv[1:])
     made = []
     jobs = [("town_sign", town_sign)]
+    for kind in range(len(HOUSE_KINDS)):
+        for st in range(5):
+            jobs.append(("house_%d_%d" % (kind, st), lambda m, k=kind, st=st: house(m, k, st)))
     for building, build in BUILDERS.items():
         if RUIN.get(building) is not None or building == "garden":
             jobs.append((building + "_0", lambda m, b=building: ruin_of(m, b)))

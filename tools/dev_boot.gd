@@ -582,7 +582,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					if not (inv_p.call("gun_at", slot_p) as Dictionary).is_empty():
 						guns_p += 1
 				_lines.append("PORT %s: chips %d, doubloons %d, guns in the backpack %d, sellable %d, oak planks %d, crane on %d ships" % [" ".join(words.slice(2)), int(session.call("wallet").get("balance")), int(session.call("doubloons").get("balance")), guns_p, (port_p.call("sellable") as Array).size(), int(sea_p.get("skills").get("bag").call("count", "oak_plank")), (sea_p.get("ships").get("crane").get("_cranes") as Dictionary).size()])
-		"town":  # sea step 7: !town go <plot> | ledger | look <plot> [mark] | open <plot> [ledger] | close | choose <plot> | press <key> | set <plot> <level> | stock (materials + doubloons) | wait_level <plot> <level> | status <note>
+		"town":  # sea step 7: !town view | grow <0..1> | go <plot> | ledger | look <plot> [mark] | open <plot> [ledger] | close | choose <plot> | press <key> | set <plot> <level> | stock (materials + doubloons) | wait_level <plot> <level> | status <note>
 			var sea_t: Node = session.call("sea")
 			var town_t: Node = sea_t.get("town") if sea_t != null else null
 			var sub_t := words[1] if words.size() > 1 else "status"
@@ -628,6 +628,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("TOWN press '%s': %s -> '%s'" % [" ".join(words.slice(2)), str(ok_t), String(town_t.get("said"))])
 			elif sub_t == "set":
 				town_t.get("rules").get("levels")[words[2]] = int(words[3])
+			elif sub_t == "grow":  # every plot to this share of its top level
+				var rules_t: RefCounted = town_t.get("rules")
+				for id_g: String in rules_t.call("ids"):
+					rules_t.get("levels")[id_g] = roundi(float(words[2]) * float(rules_t.call("top", id_g)))
+			elif sub_t == "view":  # from the trophy hall's plot, up the hill, looking down the town to the harbour
+				var th_t: Node3D = town_t.get("_plots")["trophy_hall"]["holder"]
+				player.call("teleport", th_t.global_position + Vector3(-6.0, 4.0, -22.0), 0.0)
+				await get_tree().create_timer(0.4).timeout
+				player.call("look_at_point", th_t.global_position + Vector3(120.0, -6.0, 10.0))
 			elif sub_t == "stock":
 				for item_t in ["oak_plank", "palm_plank", "stormoak_plank", "iron_bar", "copper_bar", "skysteel_bar", "sailcloth", "cut_gem", "brilliant_gem"]:
 					sea_t.get("skills").call("give", item_t, 600)

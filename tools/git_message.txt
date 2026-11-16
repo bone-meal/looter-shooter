@@ -1,12 +1,11 @@
-Sea step 7a: the home port town grows from fishing shacks to a stone colonial port
+Sea step 7b-1: town streets and residents houses that grow with the town
 
-- nine plots on the start island: harbour master, dock and shipyard stand as a hamlet, tavern, workshop, storehouse, trophy hall, gallery and garden wait run down to be repaired
-- tools/blender/sea_town.py + sea_town_parts.py: every level of every building rebuilt in its own style (fishing shack, painted cottage, framed house, stone and timber, stone colonial), ruins, trade signs, sign post (47 models)
-- data/sea/town.json + core/sea/town_rules.gd: levels, costs in materials and doubloons, what each level adds (proposal)
-- game/sea_town.gd: buildings by level with sign posts, upgrade at each sign or in the town ledger at the harbour master; the harbour master's counter now is the shop
-- game/town_window.gd: the ledger window with now and next pictures, costs with have and need, repair and upgrade
-- online: the host's world owns the town levels, guests ask and pay when the host says yes (net_sea); saved in the host's profile
-- tools/town_shot.tscn renders the ledger pictures; dev !town
+- start island rebuilt with streets to every town plot, graded and painted as town streets; nothing grows on plots, lots or streets
+- 24 house lots beside the streets (data/sea/town.json houses), nearest the plaza first
+- 20 house models: four kinds in every style from fishing shack to stone colonial (tools/blender/sea_town.py)
+- game/sea_town.gd: more houses stand and are rebuilt in newer styles as the town grows
+- game/isle_ground.gd: town streets go from dirt to cobbles to flagstones by the town growth
+- dev !town view, !town grow
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
