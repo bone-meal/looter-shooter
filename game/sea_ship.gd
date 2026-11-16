@@ -16,6 +16,7 @@ var rules: RefCounted  # core/sea/ship_rules.gd
 var _parts := {}  # model node name -> Node3D
 var _yards: Array = []  # one per mast
 var _sails: Array = []
+var _jibs: Array = []  # head sails (no yard)
 var _heave := 0.0
 var _pitch := 0.0
 var _roll := 0.0
@@ -67,6 +68,20 @@ func _build_solid() -> void:
 	var transom := BoxShape3D.new()
 	transom.size = Vector3(float(stern[1]) * 2.0, maxf(bul, 0.05), 0.14)
 	_add_shape(transom, Transform3D(Basis.IDENTITY, Vector3(0.0, deck + bul * 0.5, float(stern[0]) - 0.07)))
+	for level: Dictionary in spec.get("levels", []):  # raised decks you walk up to, and the stairs
+		var z0 := float(level["from"])
+		var z1 := float(level["to"])
+		var hw := minf(float(rules.call("half_width", String(state["ship"]), z0)), float(rules.call("half_width", String(state["ship"]), z1)))
+		hw = maxf(hw, float(rules.call("half_width", String(state["ship"]), (z0 + z1) * 0.5)) * 0.9) - 0.15
+		var raised := BoxShape3D.new()
+		raised.size = Vector3(hw * 2.0, float(level["height"]), z1 - z0)
+		_add_shape(raised, Transform3D(Basis.IDENTITY, Vector3(0.0, deck + float(level["height"]) * 0.5, (z0 + z1) * 0.5)))
+		for stair: Dictionary in level["stairs"]:
+			var run := float(stair["high"]) - float(stair["low"])
+			var ramp := BoxShape3D.new()
+			ramp.size = Vector3(1.0, 0.1, sqrt(run * run + pow(float(level["height"]), 2.0)))
+			var slope := -atan2(float(level["height"]), absf(run)) * signf(run)  # the +z end rises when the stairs climb towards +z
+			_add_shape(ramp, Transform3D(Basis(Vector3.RIGHT, slope), Vector3(float(stair["x"]), deck + float(level["height"]) * 0.5 - 0.05, (float(stair["low"]) + float(stair["high"])) * 0.5)))
 	for spot: Array in spec["masts"]:
 		var mast := CylinderShape3D.new()
 		mast.radius = 0.18
@@ -103,6 +118,8 @@ func _build_model() -> void:
 			var node := model.find_child(part + suffix, true, false) as Node3D
 			if node != null:
 				(_yards if part == "Yard" else _sails).append(node)
+	for jib in model.find_children("Jib*", "", true, false):  # head sails on the bowsprit set and furl with the rest
+		_jibs.append(jib)
 	for part: String in ["Yard", "Sail", "Pennant", "Wheel", "Anchor", "AnchorRope", "OarsL", "OarsR"]:
 		var node := model.find_child(part, true, false) as Node3D
 		if node != null:
@@ -143,6 +160,8 @@ func _animate(wind: float, wind_dir: float, delta: float) -> void:
 	_sail_shown = move_toward(_sail_shown, float(stage["sail"]), delta * 0.6)
 	for sail: Node3D in _sails:
 		sail.scale = Vector3(1.0, lerpf(0.07, 1.0, _sail_shown), 1.0 + 0.15 * (1.0 - _sail_shown))
+	for jib: Node3D in _jibs:
+		jib.scale = Vector3.ONE * lerpf(0.05, 1.0, _sail_shown)
 	var to := Basis(Vector3.UP, float(state["yaw"])).inverse() * Vector3(cos(wind_dir), 0.0, sin(wind_dir))  # down-wind, ship space
 	var across := atan2(-to.x, -to.z)  # where the wind blows to, from the bow (0 = dead ahead)
 	for yard: Node3D in _yards:  # braced round so the wind fills the sail
@@ -171,4 +190,4 @@ func _animate(wind: float, wind_dir: float, delta: float) -> void:
 
 # Ship space -> scene, and a deck spot (data [x, z]) as a scene position at deck height.
 func deck_spot(spot: Array, up: float = 0.0) -> Vector3:
-	return global_transform * Vector3(float(spot[0]), float(spec["deck"]) + up, float(spot[1]))
+	return global_transform * Vector3(float(spot[0]), float(rules.call("deck_height", String(state["ship"]), float(spot[1]))) + up, float(spot[1]))

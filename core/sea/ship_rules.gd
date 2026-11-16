@@ -120,6 +120,17 @@ func half_width(ship_id: String, z: float) -> float:
 	return 0.0
 
 
+# The walking height above the waterline at ship-space z: the main deck, or a raised deck (quarterdeck, forecastle,
+# stern castle) over it.
+func deck_height(ship_id: String, z: float) -> float:
+	var sp := spec(ship_id)
+	var top := float(sp["deck"])
+	for level: Dictionary in sp.get("levels", []):
+		if z >= float(level["from"]) and z <= float(level["to"]):
+			top = maxf(top, float(sp["deck"]) + float(level["height"]))
+	return top
+
+
 func tallest_mast(ship_id: String) -> float:
 	var top := 4.0
 	for mast: Array in spec(ship_id)["masts"]:

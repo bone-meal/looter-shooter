@@ -1,11 +1,9 @@
-Sea step 5c: ship tiers, side ships, the slipway shipyard, rigging stations, saved fleet
+Ships rework: each ship true to its type, walkable castles, fixed see-through decks
 
-- data/sea/ships.json: sloop, brig (Sailing 15), galleon (Sailing 35), raft, longboat, junk with masts, sail style, steering, oar strength, cannon places (for 5d) and rigging stations
-- tools/blender/sea_ships.py builds all six (multi-mast rigs, batten sails, steering oars, dragon prow and shields, junk stern and eyes, galleon lanterns); slipway model tools/blender/sea_shipyard.py
-- game/sea_shipyard.gd: slipway on the test island; its workbench opens the Carpentry station shipyard (build_<ship> recipes, side ships need their found plan, kept)
-- plans lie at salvage spots (raft region 1, longboat region 4, junk region 6); sailcloth woven at the crafting table
-- holding interact at a rigging spot adds speed (host counts crew at the rigging online); a client's build is launched by the host
-- the host's world fleet is saved with its profile (extra sea_fleet)
+- sloop gaff rig and jib; brig two square-rigged masts with stacked sails and a quarterdeck; galleon forecastle, quarterdeck and poop, two rows of gun ports, stern gallery, lateen mizzen and spritsail; longboat clinker-built open Viking hull with dragon head, curled stern, shields, thwarts; junk flat-bottomed slab hull, blunt bow, overhanging stern castle, raked masts with battened fan sails, huge rudder
+- raised decks are walkable: data levels with stairs (core/sea/ship_rules deck_height, solids in game/sea_ship.gd, helm and anchor stand on them)
+- the galleon deck faced down (a single face) so the sea showed through: decks, bulwark walls and sails are closed shapes now; sails had zero thickness from mixed axes
+- head sails (Jib*) set and furl with the rest
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
