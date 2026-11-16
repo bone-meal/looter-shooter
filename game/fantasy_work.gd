@@ -17,6 +17,8 @@ const STATION_NAMES := {"fire": "Cook at the fire", "forge": "Work the forge", "
 const TALK_REACH := 3.0
 
 var world: Node3D  # game/fantasy_world.gd
+var town_lock := Callable()  # set by the sea's home port (game/sea_town.gd): recipe -> why the town cannot make it yet ("" = it can)
+var town_share := Callable()  # recipe -> share of its materials used (a grand shipyard builds for less)
 
 var _node := {}  # the gather node being worked ({} = idle)
 var _done := 0.0
@@ -185,6 +187,26 @@ func recipes(station: String) -> Array:
 	for recipe: Dictionary in world.skilling["recipes"]:
 		if String(recipe["station"]) == station:
 			out.append(recipe)
+		elif station == "ship_parts" and _makes_ship_part(recipe):  # the home port's workshop makes the ship parts too
+			out.append(recipe)
+	return out
+
+
+func _makes_ship_part(recipe: Dictionary) -> bool:
+	for item: String in recipe["out"]:
+		if String(world.bag.def(item).get("kind", "")) == "ship_part":
+			return true
+	return false
+
+
+# What a recipe really takes (a grand shipyard's ships cost less).
+func cost_of(recipe: Dictionary) -> Dictionary:
+	var share := float(town_share.call(recipe)) if town_share.is_valid() else 1.0
+	if share >= 0.999:
+		return recipe["in"]
+	var out := {}
+	for item: String in recipe["in"]:
+		out[item] = maxi(1, ceili(float(recipe["in"][item]) * share))
 	return out
 
 
@@ -204,7 +226,11 @@ func recipe_text(recipe: Dictionary) -> String:
 func cannot_make(recipe: Dictionary) -> String:
 	if int(world.skills.level(String(recipe["skill"]))) < int(recipe["level"]):
 		return "Needs %s %d." % [world.skills.skill_name(String(recipe["skill"])), int(recipe["level"])]
-	if not bool(world.bag.has_all(recipe["in"])):
+	if town_lock.is_valid():
+		var why_town := String(town_lock.call(recipe))
+		if why_town != "":
+			return why_town
+	if not bool(world.bag.has_all(cost_of(recipe))):
 		return "You lack the materials."
 	if recipe.has("needs") and not bool(world.bag.has_all(recipe["needs"])):  # kept, not used up (a ship's plan)
 		return "You need the %s." % world.bag.item_name(String((recipe["needs"] as Dictionary).keys()[0]))
@@ -226,7 +252,7 @@ func make(recipe: Dictionary) -> String:
 		return why
 	var skill := String(recipe["skill"])
 	if randf() >= world.perk(skill, "save"):  # thrifty perks: sometimes the materials are kept
-		world.bag.take_all(recipe["in"])
+		world.bag.take_all(cost_of(recipe))
 	world.sound("craft_" + String(recipe["station"]))
 	var extra := 1 if bool(recipe.get("batch", false)) and randf() < world.perk(skill, "double") else 0
 	for item: String in recipe["out"]:

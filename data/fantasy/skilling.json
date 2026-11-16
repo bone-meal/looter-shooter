@@ -2248,6 +2248,10 @@
    },
    "out": {
     "ship_raft": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 1
    }
   },
   {
@@ -2263,6 +2267,10 @@
    },
    "out": {
     "ship_sloop": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 1
    }
   },
   {
@@ -2282,6 +2290,10 @@
    },
    "out": {
     "ship_longboat": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 3
    }
   },
   {
@@ -2297,6 +2309,10 @@
    },
    "out": {
     "ship_brig": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 2
    }
   },
   {
@@ -2315,6 +2331,10 @@
    },
    "out": {
     "ship_junk": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 3
    }
   },
   {
@@ -2330,6 +2350,10 @@
    },
    "out": {
     "ship_galleon": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 4
    }
   },
   {
@@ -2345,6 +2369,10 @@
    },
    "out": {
     "ship_crane": 1
+   },
+   "town": {
+    "plot": "shipyard",
+    "level": 1
    }
   }
  ],
@@ -2387,6 +2415,9 @@
    "icon": "brush"
   },
   "shipyard": {
+   "icon": "sail"
+  },
+  "ship_parts": {
    "icon": "sail"
   }
  },

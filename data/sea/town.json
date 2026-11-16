@@ -1,5 +1,5 @@
 {
- "_about": "Sea step 7 HOME PORT TOWN on the start island (director: the town GROWS from weathered fishing shacks to a stone colonial port, each upgrade visibly rebuilt; a hamlet stands (harbour master, dock, shipyard: start 1) and the rest are run-down plots the crew repairs and grows (start 0); upgrades are bought at each building's own sign AND in the town ledger at the harbour master; costs are materials (the fantasy bag, data/fantasy/gear.json ids) + doubloons). plots: id, name, building (models assets/models/sea/town/<building>_<level>.gltf, _0 = run down; tools/blender/sea_town.py), at = sea coordinates x, z of the model's origin, y = the island's ground there (written from tools/blender/sea_isle_start.py's height; sea_level = at the sea's surface: the dock), yaw degrees (0 = the model's front, its door, faces north), start level, levels[i] = level i+1: name, look (0 fishing shack .. 4 stone colonial), cost {doubloons, items {id: count}}, adds = what the level gives (shown in the ledger; WHAT EACH LEVEL ADDS IS A PROPOSAL waiting for the director's word, built in step 7b). The town's levels belong to the HOST's saved world (profile extra sea_town); a player pays from his own bag and purse. ALL NUMBERS, NAMES AND PLACES ARE PLACEHOLDERS.",
+ "_about": "Sea step 7 HOME PORT TOWN on the start island (director: the town GROWS from weathered fishing shacks to a stone colonial port, each upgrade visibly rebuilt; a hamlet stands (harbour master, dock, shipyard: start 1) and the rest are run-down plots the crew repairs and grows (start 0); upgrades are bought at each building's own sign AND in the town ledger at the harbour master; costs are materials (the fantasy bag, data/fantasy/gear.json ids) + doubloons). plots: id, name, building (models assets/models/sea/town/<building>_<level>.gltf, _0 = run down; tools/blender/sea_town.py), at = sea coordinates x, z of the model's origin, y = the island's ground there (written from tools/blender/sea_isle_start.py's height; sea_level = at the sea's surface: the dock), yaw degrees (0 = the model's front, its door, faces north), start level, levels[i] = level i+1: name, look (0 fishing shack .. 4 stone colonial), cost {doubloons, items {id: count}}, adds = what the level gives (shown in the ledger; what each level adds was APPROVED by the director (\"1) a\", 2026-11-16); services[] = what the building offers from a level (shop, station:<fantasy station>, store, pick:<picks id>), effects{} = numbers per level (index = level - 1): sell_mult (harbour master's buying prices), build_share (share of a ship recipe's materials used), mend_mult (hull mended per plank), finer (extra chance a crafted gun-side piece rolls a tier up), slots / shared (the store chest; shared = one chest of the host's world for the whole crew), rest_heal (share of max health per second resting still by the garden's fountain); picks = what picking gives and how many minutes before the same player picks there again). The town's levels belong to the HOST's saved world (profile extra sea_town); a player pays from his own bag and purse. ALL NUMBERS, NAMES AND PLACES ARE PLACEHOLDERS.",
  "island": "start",
  "reach": 3.0,
  "build_seconds": 2.5,
@@ -78,7 +78,23 @@
      "adds": "The best prices in the sea; the town's flag flies."
     }
    ],
-   "y": 10.47
+   "y": 10.47,
+   "services": [
+    {
+     "level": 1,
+     "kind": "shop",
+     "name": "Shop, money changer and ferry"
+    }
+   ],
+   "effects": {
+    "sell_mult": [
+     1.0,
+     1.0,
+     1.1,
+     1.1,
+     1.25
+    ]
+   }
   },
   {
    "id": "dock",
@@ -155,7 +171,9 @@
      "adds": "The harbour light guides ships home at night; room for six ships."
     }
    ],
-   "y": 0.0
+   "y": 0.0,
+   "services": [],
+   "effects": {}
   },
   {
    "id": "shipyard",
@@ -231,7 +249,30 @@
      "adds": "Ships built and mended for less."
     }
    ],
-   "y": 6.16
+   "y": 6.16,
+   "services": [
+    {
+     "level": 1,
+     "kind": "station:shipyard",
+     "name": "Build a ship"
+    }
+   ],
+   "effects": {
+    "build_share": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     0.75
+    ],
+    "mend_mult": [
+     1.0,
+     1.0,
+     1.0,
+     1.0,
+     1.5
+    ]
+   }
   },
   {
    "id": "tavern",
@@ -310,7 +351,9 @@
      "adds": "Feasts: long-lasting buffs for the whole party."
     }
    ],
-   "y": 17.98
+   "y": 17.98,
+   "services": [],
+   "effects": {}
   },
   {
    "id": "workshop",
@@ -376,7 +419,42 @@
      "adds": "Master work: crafted pieces roll better."
     }
    ],
-   "y": 13.01
+   "y": 13.01,
+   "services": [
+    {
+     "level": 1,
+     "kind": "station:crafting_table",
+     "name": "Crafting table"
+    },
+    {
+     "level": 1,
+     "kind": "station:sawhorse",
+     "name": "Sawhorse"
+    },
+    {
+     "level": 2,
+     "kind": "station:forge",
+     "name": "Furnace and anvil"
+    },
+    {
+     "level": 2,
+     "kind": "station:workbench",
+     "name": "Workbench"
+    },
+    {
+     "level": 3,
+     "kind": "station:ship_parts",
+     "name": "Ship parts"
+    }
+   ],
+   "effects": {
+    "finer": [
+     0.0,
+     0.0,
+     0.0,
+     0.5
+    ]
+   }
   },
   {
    "id": "storage",
@@ -441,7 +519,28 @@
      "adds": "96 slots, shared by the whole crew."
     }
    ],
-   "y": 5.15
+   "y": 5.15,
+   "services": [
+    {
+     "level": 1,
+     "kind": "store",
+     "name": "Store chest"
+    }
+   ],
+   "effects": {
+    "slots": [
+     12,
+     24,
+     48,
+     96
+    ],
+    "shared": [
+     0,
+     0,
+     0,
+     1
+    ]
+   }
   },
   {
    "id": "trophy_hall",
@@ -508,7 +607,9 @@
      "adds": "The whole crew's legend on show."
     }
    ],
-   "y": 21.13
+   "y": 21.13,
+   "services": [],
+   "effects": {}
   },
   {
    "id": "gallery",
@@ -562,7 +663,9 @@
      "adds": "Walls for all three paintings."
     }
    ],
-   "y": 14.72
+   "y": 14.72,
+   "services": [],
+   "effects": {}
   },
   {
    "id": "garden",
@@ -614,7 +717,26 @@
      "adds": "A fountain: resting here heals faster."
     }
    ],
-   "y": 13.98
+   "y": 13.98,
+   "services": [
+    {
+     "level": 1,
+     "kind": "pick:herbs",
+     "name": "Pick herbs"
+    },
+    {
+     "level": 2,
+     "kind": "pick:kitchen",
+     "name": "Pick vegetables and fruit"
+    }
+   ],
+   "effects": {
+    "rest_heal": [
+     0.0,
+     0.0,
+     0.03
+    ]
+   }
   }
  ],
  "houses": [
@@ -834,5 +956,25 @@
    "yaw": 45.0,
    "variant": 3
   }
- ]
+ ],
+ "picks": {
+  "herbs": {
+   "items": {
+    "stormlily": 2,
+    "wheat": 3
+   },
+   "minutes": 10
+  },
+  "kitchen": {
+   "items": {
+    "garden_greens": 3,
+    "garden_roots": 3
+   },
+   "minutes": 15
+  }
+ },
+ "rest": {
+  "reach": 12.0,
+  "still_speed": 0.6
+ }
 }

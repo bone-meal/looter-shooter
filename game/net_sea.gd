@@ -77,6 +77,7 @@ func _process(delta: float) -> void:
 		var town := _town()
 		if town != null:
 			_town_levels.rpc(town.get("rules").call("to_list"))
+			_store_list.rpc((town.get("crew_chest") as RefCounted).call("to_list"))
 	_input_t += delta
 	if _input_t >= 1.0 / INPUT_HZ and is_client() and fleet.get("helm_ship") != null:
 		_input_t = 0.0
@@ -511,3 +512,44 @@ func _in_town(from: int) -> bool:
 		if Vector2(here.x, here.z).distance_to(Vector2(float(p["at"][0]), float(p["at"][1]))) < TOWN_REACH:
 			return true
 	return false
+
+
+# --- the crew's chest at the storehouse (its top level): the host's world keeps it; a player asks to put in or take
+# out, the host does it and tells him how many (his bag follows only then) and everyone the chest ---
+
+func request_store(op: String, item: String, n: int) -> void:
+	_store_up.rpc_id(1, op, item, n)
+
+
+func tell_store(list: Array) -> void:
+	if active() and net.is_host():
+		_store_list.rpc(list)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _store_up(op: String, item: String, n: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var town := _town()
+	if not net.is_host() or not net.roster.has(from) or town == null or not op in ["put", "take"] or item.length() > 48 or n <= 0 or n > 9999:
+		return
+	if not bool(town.call("chest_shared")) or not _in_town(from):
+		_store_done.rpc_id(from, op, item, 0)
+		return
+	var chest: RefCounted = town.call("chest")
+	var did := int(chest.call("put" if op == "put" else "take", item, n))
+	_store_done.rpc_id(from, op, item, did)
+	_store_list.rpc(chest.call("to_list"))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _store_done(op: String, item: String, n: int) -> void:
+	var town := _town()
+	if town != null:
+		town.call("store_done", op, item, n)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _store_list(list: Array) -> void:
+	var town := _town()
+	if town != null and list.size() <= 200:
+		(town.get("crew_chest") as RefCounted).call("from_list", list)

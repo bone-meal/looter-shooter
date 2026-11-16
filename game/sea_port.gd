@@ -158,7 +158,7 @@ func buy_crane() -> String:
 func sell(slot: int) -> String:
 	var inv: RefCounted = _player.get("inventory")
 	var stack: Dictionary = {"gun": inv.call("gun_at", slot)} if not (inv.call("gun_at", slot) as Dictionary).is_empty() else {"arm": inv.call("arm_at", slot), "id": inv.call("item_id", slot)}
-	var price := rules.sell_price(stack)
+	var price := price_of(stack)
 	if price <= 0:
 		return "The harbour master does not buy that"
 	inv.call("take_slot", slot)
@@ -185,6 +185,20 @@ func ferry(port: Dictionary) -> String:
 	return "Ferried to %s" % String(port["name"])
 
 
+# What the harbour master pays: the stall's price x the home port's harbour master's level (sea step 7b).
+func price_of(stack: Dictionary) -> int:
+	var base := rules.sell_price(stack)
+	if base <= 0 or town == null:
+		return base
+	return maxi(1, roundi(float(base) * float(town.get("rules").call("effect", "harbour_master", "sell_mult", 1.0))))
+
+
+# The goods on the shelves now: the stall's stock that the harbour master's level allows.
+func stock() -> Array:
+	var lv := int(town.get("rules").call("level", "harbour_master")) if town != null else 99
+	return rules.stock().filter(func(e: Dictionary) -> bool: return int(e.get("town_level", 1)) <= lv)
+
+
 func item_name(id: String) -> String:
 	var skills: Variant = _sea.get("skills")
 	return String((skills as Node).get("bag").call("item_name", id)) if skills != null else id
@@ -198,11 +212,11 @@ func sellable() -> Array:
 		var gun: Dictionary = inv.call("gun_at", slot)
 		var arm: Dictionary = inv.call("arm_at", slot)
 		if not gun.is_empty():
-			out.append([slot, {"gun": gun}, String(load("res://core/gun_stats.gd").call("display_name", _player.get("gun_db"), gun)), String(gun.get("tier", "grey")), rules.sell_price({"gun": gun})])
+			out.append([slot, {"gun": gun}, String(load("res://core/gun_stats.gd").call("display_name", _player.get("gun_db"), gun)), String(gun.get("tier", "grey")), price_of({"gun": gun})])
 		elif not arm.is_empty():
 			var stack := {"id": inv.call("item_id", slot), "count": 1, "arm": arm}
 			var tier := String(arm.get("tier", "grey"))
-			out.append([slot, stack, String(load("res://core/armour_stats.gd").call("display_name", _player.get("items"), stack, String(_player.get("gun_db").call("tier", tier)["name"]))), tier, rules.sell_price(stack)])
+			out.append([slot, stack, String(load("res://core/armour_stats.gd").call("display_name", _player.get("items"), stack, String(_player.get("gun_db").call("tier", tier)["name"]))), tier, price_of(stack)])
 	return out
 
 

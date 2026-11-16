@@ -112,6 +112,41 @@ func growth() -> float:
 	return float(have) / float(maxi(most, 1))
 
 
+# A number a plot's level gives (data effects{key: [per level]}); `none` below level 1 or when the plot has none.
+func effect(id: String, key: String, none: Variant = 0.0) -> Variant:
+	var lv := level(id)
+	var list: Variant = plot(id).get("effects", {}).get(key)
+	if lv <= 0 or not list is Array or (list as Array).is_empty():
+		return none
+	return (list as Array)[mini(lv, (list as Array).size()) - 1]
+
+
+# What a plot offers: [[service {level, kind, name}, open now], ...].
+func services(id: String) -> Array:
+	var out: Array = []
+	for sv: Dictionary in plot(id).get("services", []):
+		out.append([sv, level(id) >= int(sv.get("level", 1))])
+	return out
+
+
+func has_service(id: String, kind: String) -> bool:
+	for pair: Array in services(id):
+		if String(pair[0]["kind"]) == kind and bool(pair[1]):
+			return true
+	return false
+
+
+# Why a recipe that needs a town building's level cannot be made ("" = it can): recipe "town" {plot, level}.
+func recipe_lock(recipe: Dictionary) -> String:
+	var need: Variant = recipe.get("town")
+	if not need is Dictionary:
+		return ""
+	var id := String(need.get("plot", ""))
+	if level(id) < int(need.get("level", 1)):
+		return "Needs the %s at level %d." % [String(plot(id).get("name", id)), int(need.get("level", 1))]
+	return ""
+
+
 # The town's streets by its growth: 0 dirt tracks, 1 cobbles, 2 flagstones (data "paving_at").
 func paving() -> int:
 	var at: Array = cfg.get("paving_at", [0.3, 0.65])

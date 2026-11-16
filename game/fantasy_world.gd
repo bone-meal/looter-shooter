@@ -67,6 +67,7 @@ var data: Dictionary  # everything core/fantasy_data.gd loaded: world, quests, g
 var terrain: FantasyTerrain
 var layout: FantasyLayout  # where every house, prop, tree and fishing spot stands (drawing, colliders and creatures all ask it)
 var bag: FantasyBag
+var town_finer := 0.0  # set while a station of the home port's top-level workshop is open (sea step 7b): master work
 var skills: SkillLevels
 var quests: QuestLog
 var spells: SpellBook
@@ -682,7 +683,7 @@ func _make_gun_piece(def: Dictionary, count: int) -> void:
 	var tiers: Array = ["grey", "green", "blue", "purple", "gold"]
 	for _i in count:
 		var tier := String(def["tier"])
-		if randf() < perk("crafting", "finer") and tiers.find(tier) >= 0 and tiers.find(tier) < tiers.size() - 1:
+		if randf() < perk("crafting", "finer") + town_finer and tiers.find(tier) >= 0 and tiers.find(tier) < tiers.size() - 1:
 			tier = String(tiers[tiers.find(tier) + 1])
 		var piece := ArmourGen.generate(_player.items, _craft_rng, tier, int(def["lvl"]), String(def["base"]), "")
 		if _player.inventory.add_armour(piece):

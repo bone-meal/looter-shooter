@@ -128,11 +128,19 @@ func _row(area: Rect2, i: int) -> Rect2:
 
 
 func _buy(area: Rect2) -> void:
-	var stock: Array = port.get("rules").call("stock")
-	var i := 0
-	for entry: Dictionary in stock:
-		var row := _row(area, i)
+	var stock: Array = port.call("stock")
+	var rows := int(area.size.y / ROW)
+	var total := stock.size() + 1  # the goods, then the crane
+	_scroll = clampi(_scroll, 0, maxi(0, total - rows))
+	for k in range(_scroll, mini(total, _scroll + rows)):
+		var row := _row(area, k - _scroll)
 		UiSkin.slot(self, row, Color(0, 0, 0, 0), false, "")
+		if k == stock.size():
+			draw_string(_font, row.position + Vector2(14, 26), "Salvage crane, fitted to the ship at the shipyard", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
+			draw_string(_font, Vector2(row.end.x - 300.0, row.position.y + 26.0), "%d doubloons" % int(port.get("rules").cfg["crane"]["doubloons"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiSkin.TEXT_DIM)
+			_button(Rect2(Vector2(row.end.x - 110.0, row.position.y + 6.0), Vector2(100, 28)), "Buy", "Buy crane", true, func() -> void: said = String(port.call("buy_crane")))
+			continue
+		var entry: Dictionary = stock[k]
 		var count := int(entry.get("count", 1))
 		draw_string(_font, row.position + Vector2(14, 26), "%s%s" % [port.call("item_name", String(entry["item"])), "  x%d" % count if count > 1 else ""], HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
 		var price := "%d chips" % int(entry["chips"]) if entry.has("chips") else "%d doubloons" % int(entry["doubloons"])
@@ -140,12 +148,8 @@ func _buy(area: Rect2) -> void:
 		draw_string(_font, Vector2(row.end.x - 300.0, row.position.y + 26.0), price, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiSkin.TEXT_DIM)
 		var e := entry
 		_button(Rect2(Vector2(row.end.x - 110.0, row.position.y + 6.0), Vector2(100, 28)), "Buy", "Buy " + String(entry["item"]), true, func() -> void: said = String(port.call("buy", e)))
-		i += 1
-	var crane := _row(area, i)
-	UiSkin.slot(self, crane, Color(0, 0, 0, 0), false, "")
-	draw_string(_font, crane.position + Vector2(14, 26), "Salvage crane, fitted to the ship at the shipyard", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.TEXT)
-	draw_string(_font, Vector2(crane.end.x - 300.0, crane.position.y + 26.0), "%d doubloons" % int(port.get("rules").cfg["crane"]["doubloons"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiSkin.TEXT_DIM)
-	_button(Rect2(Vector2(crane.end.x - 110.0, crane.position.y + 6.0), Vector2(100, 28)), "Buy", "Buy crane", true, func() -> void: said = String(port.call("buy_crane")))
+	if total > rows:
+		draw_string(_font, Vector2(area.end.x - 160.0, area.end.y + 4.0), "scroll for more (%d / %d)" % [mini(total, _scroll + rows), total], HORIZONTAL_ALIGNMENT_LEFT, -1, 12, UiSkin.TEXT_DIM)
 
 
 func _sell(area: Rect2) -> void:

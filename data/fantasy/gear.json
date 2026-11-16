@@ -2010,6 +2010,26 @@
     0.78,
     0.58
    ]
+  },
+  "garden_greens": {
+   "kind": "food",
+   "heal": 20,
+   "icon": "herb",
+   "color": [
+    0.45,
+    0.75,
+    0.35
+   ]
+  },
+  "garden_roots": {
+   "kind": "food",
+   "heal": 25,
+   "icon": "root",
+   "color": [
+    0.92,
+    0.55,
+    0.22
+   ]
   }
  }
 }

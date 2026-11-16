@@ -29,8 +29,9 @@ static func draw(p: Variant, body: Rect2, side: Rect2) -> void:
 		p.draw_rect(card, Color(0.4, 0.31, 0.15, 0.4) if picked else Color(0, 0, 0, 0.3))
 		p.draw_rect(card, Style.GOLD if picked else (Style.PARCHMENT if over else Style.GOLD_DIM), false, 2.0 if picked else 1.0)
 		var x := card.position.x + 8.0
-		for item: String in recipe["in"]:
-			p.item_cell(Rect2(x, card.position.y + 10.0, 42.0, 42.0), item, "", Callable(), int(recipe["in"][item]), int(p.world.bag.count(item)) < int(recipe["in"][item]))
+		var cost: Dictionary = p.work.call("cost_of", recipe)  # a grand shipyard's ships cost less (sea step 7b)
+		for item: String in cost:
+			p.item_cell(Rect2(x, card.position.y + 10.0, 42.0, 42.0), item, "", Callable(), int(cost[item]), int(p.world.bag.count(item)) < int(cost[item]))
 			x += 46.0
 		IconArt.draw(p, "arrow", Rect2(x + 2.0, card.position.y + 20.0, 22.0, 22.0), Style.GOLD, 0.35 if blocked else 1.0)
 		x += 30.0
@@ -52,9 +53,10 @@ static func _card(p: Variant, side: Rect2, recipe: Dictionary) -> void:
 	var made := String((recipe["out"] as Dictionary).keys()[0])
 	var skill := String(recipe["skill"])
 	var top: float = p.card_head(side, String(p.item_shape(made)), p.item_color(made), String(p.world.bag.item_name(made)), "You have %d" % int(p.world.bag.count(made)))
-	for item: String in recipe["in"]:
+	var need_all: Dictionary = p.work.call("cost_of", recipe)
+	for item: String in need_all:
 		var have := int(p.world.bag.count(item))
-		var need := int(recipe["in"][item])
+		var need := int(need_all[item])
 		top = p.card_row(side, top, String(p.item_shape(item)), p.item_color(item), "%s   %d / %d" % [p.world.bag.item_name(item), have, need], Style.PARCHMENT if have >= need else Color(0.9, 0.45, 0.4))
 	var about: Dictionary = p.world.skilling["skills"][skill]
 	var enough := int(p.world.skills.level(skill)) >= int(recipe["level"])

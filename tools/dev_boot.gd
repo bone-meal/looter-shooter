@@ -582,7 +582,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					if not (inv_p.call("gun_at", slot_p) as Dictionary).is_empty():
 						guns_p += 1
 				_lines.append("PORT %s: chips %d, doubloons %d, guns in the backpack %d, sellable %d, oak planks %d, crane on %d ships" % [" ".join(words.slice(2)), int(session.call("wallet").get("balance")), int(session.call("doubloons").get("balance")), guns_p, (port_p.call("sellable") as Array).size(), int(sea_p.get("skills").get("bag").call("count", "oak_plank")), (sea_p.get("ships").get("crane").get("_cranes") as Dictionary).size()])
-		"town":  # sea step 7: !town view | grow <0..1> | go <plot> | ledger | look <plot> [mark] | open <plot> [ledger] | close | choose <plot> | press <key> | set <plot> <level> | stock (materials + doubloons) | wait_level <plot> <level> | status <note>
+		"town":  # sea step 7: !town use <plot> <kind> | store put|take <item> [all] | door <plot> | effects | view | grow <0..1> | go <plot> | ledger | look <plot> [mark] | open <plot> [ledger] | close | choose <plot> | press <key> | set <plot> <level> | stock (materials + doubloons) | wait_level <plot> <level> | status <note>
 			var sea_t: Node = session.call("sea")
 			var town_t: Node = sea_t.get("town") if sea_t != null else null
 			var sub_t := words[1] if words.size() > 1 else "status"
@@ -613,8 +613,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("TOWN counter: port prompt '%s'" % String(sea_t.get("port").call("prompt", "F")))
 			elif sub_t == "open":
 				town_t.call("open", words[2] if words.size() > 2 else "harbour_master", words.size() > 3)
-			elif sub_t == "close":
+			elif sub_t in ["close", "close_store"]:
 				town_t.call("close")
+				town_t.call("close_store")
 			elif sub_t == "choose":
 				town_t.get("window").set("chosen", words[2])
 				town_t.get("window").queue_redraw()
@@ -628,6 +629,30 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("TOWN press '%s': %s -> '%s'" % [" ".join(words.slice(2)), str(ok_t), String(town_t.get("said"))])
 			elif sub_t == "set":
 				town_t.get("rules").get("levels")[words[2]] = int(words[3])
+			elif sub_t == "use":  # !town use <plot> <service kind>
+				_lines.append("TOWN use %s %s: %s" % [words[2], words[3], String(town_t.call("use", words[2], words[3]))])
+				await get_tree().process_frame
+			elif sub_t == "store":  # !town store put|take <item> [all]
+				_lines.append("TOWN store %s: %s; chest %s, bag %s %d" % [" ".join(words.slice(2)), str(town_t.get("store_window").call("press", " ".join(words.slice(2)))) + " " + String(town_t.get("store_window").get("said")), str((town_t.call("chest") as RefCounted).call("to_list")), words[3], int(sea_t.get("skills").get("bag").call("count", words[3]))])
+			elif sub_t == "door":  # stand at a building's door
+				var door_t: Node3D = town_t.call("marker", words[2], "Door")
+				if door_t != null:
+					player.call("teleport", door_t.global_position + Vector3(0, 1.0, 0), 0.0)
+					await get_tree().create_timer(0.4).timeout
+				_lines.append("TOWN door %s: prompt '%s'" % [words[2], String(sea_t.call("prompt", "F"))])
+			elif sub_t == "panel":  # what the fantasy window shows (a station opened in town), then shut it
+				var sk_t: Node = sea_t.get("skills")
+				var pn_t: Node = sk_t.get("panel")
+				var gal: Dictionary = {}
+				for rc: Dictionary in sk_t.get("skilling")["recipes"]:
+					if String(rc["id"]) == "build_galleon":
+						gal = rc
+				_lines.append("TOWN panel: open %s station %s, recipes there %d, galleon '%s' cost %s, finer %.2f" % [str(pn_t.visible), String(pn_t.get("station")), (sk_t.get("work").call("recipes", String(pn_t.get("station"))) as Array).size(), String(sk_t.get("work").call("cannot_make", gal)), str(sk_t.get("work").call("cost_of", gal)), float(sk_t.get("town_finer"))])
+				if words.size() > 2:
+					sk_t.call("close_panel")
+			elif sub_t == "effects":
+				var r_e: RefCounted = town_t.get("rules")
+				_lines.append("TOWN effects: sell x%.2f, build share %.2f, mend x%.2f, finer %.2f, chest %d slots shared %d, rest %.2f; shop has %d goods; galleon lock '%s'" % [float(r_e.call("effect", "harbour_master", "sell_mult", 1.0)), float(r_e.call("effect", "shipyard", "build_share", 1.0)), float(r_e.call("effect", "shipyard", "mend_mult", 1.0)), float(r_e.call("effect", "workshop", "finer", 0.0)), int(r_e.call("effect", "storage", "slots", 0)), int(r_e.call("effect", "storage", "shared", 0)), float(r_e.call("effect", "garden", "rest_heal", 0.0)), (sea_t.get("port").call("stock") as Array).size(), String(r_e.call("recipe_lock", {"town": {"plot": "shipyard", "level": 4}}))])
 			elif sub_t == "grow":  # every plot to this share of its top level
 				var rules_t: RefCounted = town_t.get("rules")
 				for id_g: String in rules_t.call("ids"):

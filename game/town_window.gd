@@ -70,6 +70,10 @@ func _choose(id: String) -> void:
 	town.set("said", "")
 
 
+func _use(kind: String) -> void:
+	town.set("said", String(town.call("use", chosen, kind)))
+
+
 func _upgrade() -> void:
 	town.set("said", String(town.call("upgrade", chosen)))
 
@@ -149,6 +153,7 @@ func _building(area: Rect2, rules: RefCounted) -> void:
 		draw_multiline_string(_font, Vector2(box.position.x, box.end.y + 58.0), String(e.get("adds", "")), HORIZONTAL_ALIGNMENT_LEFT, PICTURE.x, 13, 2, UiSkin.TEXT_DIM)
 	if lv < top:
 		_arrow(top_y)
+	_services(area, rules)
 	var y := top_y + PICTURE.y + 96.0
 	if lv >= top:
 		draw_string(_font, Vector2(area.position.x, y + 20.0), "As grand as it gets.", HORIZONTAL_ALIGNMENT_LEFT, -1, 16, UiSkin.ACCENT)
@@ -186,6 +191,36 @@ func _building(area: Rect2, rules: RefCounted) -> void:
 	UiSkin.pill(self, _font, b, label, ok, false, 17)
 	if ok:
 		_buttons.append([b, _upgrade, "upgrade"])
+
+
+# What the building offers, as buttons along the bottom left (dim with the level they need until then).
+func _services(area: Rect2, rules: RefCounted) -> void:
+	var list: Array = rules.call("services", chosen)
+	if list.is_empty():
+		return
+	var room := area.size.x - 210.0
+	var lines: Array = [[]]  # buttons wrapped into lines, the last line along the bottom
+	var x := 0.0
+	for pair: Array in list:
+		var sv: Dictionary = pair[0]
+		var label := String(sv["name"]) if bool(pair[1]) else "%s (Lv %d)" % [String(sv["name"]), int(sv["level"])]
+		var w := _font.get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x + 26.0
+		if x + w > room and not (lines[-1] as Array).is_empty():
+			lines.append([])
+			x = 0.0
+		(lines[-1] as Array).append([label, w, sv, bool(pair[1])])
+		x += w + 8.0
+	var y := area.end.y - 40.0 - 42.0 * (lines.size() - 1)
+	draw_string(_font, Vector2(area.position.x, y - 8.0), "USE", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.TEXT_DIM)
+	for line: Array in lines:
+		x = area.position.x
+		for item: Array in line:
+			var b := Rect2(Vector2(x, y), Vector2(float(item[1]), 34))
+			UiSkin.pill(self, _font, b, String(item[0]), bool(item[3]), false, 13)
+			if bool(item[3]):
+				_buttons.append([b, _use.bind(String(item[2]["kind"])), "use " + String(item[2]["kind"])])
+			x += float(item[1]) + 8.0
+		y += 42.0
 
 
 # The arrow between the two pictures.

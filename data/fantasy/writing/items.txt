@@ -48,6 +48,8 @@ ember_rod: Ember Rod
 stormoak_rod: Stormoak Rod
 
 [items food]
+garden_greens: Garden Greens
+garden_roots: Garden Roots
 # WHAT: the names of every food. Read a line as  item id: Name .
 bread: Bread
 fried_minnow: Fried Minnow

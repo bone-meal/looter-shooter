@@ -244,6 +244,13 @@ func _patch_seconds() -> float:
 # Host / alone: a plank used at a zone of a ship.
 func use_plank(ship: Node3D, zone: int) -> String:
 	var did := hull.use_plank(ship.get("state"), zone)
+	var town: Variant = _sea.get("town")
+	if did != "" and town != null:  # a grand shipyard in the home port: every plank mends more (sea step 7b)
+		var more := float((town as Node).get("rules").call("effect", "shipyard", "mend_mult", 1.0)) - 1.0
+		if more > 0.0:
+			var st: Dictionary = ship.get("state")
+			var most := hull.max_hull(String(st["ship"]))
+			st["hull"] = minf(float(st["hull"]) + most * float(hull.cfg["patch_hull" if did == "patched" else "mend_hull"]) * more, most)
 	if did != "" and _fleet.call("ship_aboard") == ship:
 		var state: Dictionary = ship.get("state")
 		_sea.emit_signal("notice", "%s  -  hull %d%%" % ["Leak patched" if did == "patched" else "Hull mended", roundi(float(state["hull"]) / hull.max_hull(String(state["ship"])) * 100.0)])

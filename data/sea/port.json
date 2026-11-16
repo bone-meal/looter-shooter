@@ -1,5 +1,5 @@
 {
- "_about": "Sea step 6 ports, DOUBLOONS and shops (core/sea/port_rules.gd, game/sea_port.gd, game/port_shop_window.gd). Director: doubloons come from the sea (salvage, chests, sea enemies, bosses, selling loot at port shops) PLUS casino chips change into doubloons at a REALLY BAD rate (chips_per_doubloon, one way); chips also buy charts and supplies. ports: every port (only the home port until the regions of step 13): its island (the ferry goes only to ports whose island the player has explored), the stall (the harbour master's: shop, money changer, ferry desk) in sea coordinates + yaw, or \"plot\" = the town building whose Counter marker is the counter (data/sea/town.json; stall then only says where the port is), and where a ferried player lands (dock). sell: what the stall pays for a rolled gun by tier, x (1 + level_bonus x item level); armour pieces pay armour_share of that; plain items are not bought. buy: what the stall sells: an item of the fantasy bag (gear.json) for chips or doubloons, count per purchase. crane: the salvage crane fitted to the ship nearest the shipyard for doubloons. ALL NUMBERS ARE PLACEHOLDERS.",
+ "_about": "Sea step 6 ports, DOUBLOONS and shops (core/sea/port_rules.gd, game/sea_port.gd, game/port_shop_window.gd). Director: doubloons come from the sea (salvage, chests, sea enemies, bosses, selling loot at port shops) PLUS casino chips change into doubloons at a REALLY BAD rate (chips_per_doubloon, one way); chips also buy charts and supplies. ports: every port (only the home port until the regions of step 13): its island (the ferry goes only to ports whose island the player has explored), the stall (the harbour master's: shop, money changer, ferry desk) in sea coordinates + yaw, or \"plot\" = the town building whose Counter marker is the counter (data/sea/town.json; stall then only says where the port is), and where a ferried player lands (dock). sell: what the stall pays for a rolled gun by tier, x (1 + level_bonus x item level); armour pieces pay armour_share of that; plain items are not bought. buy: what the stall sells: an item of the fantasy bag (gear.json) for chips or doubloons, count per purchase. crane: the salvage crane fitted to the ship nearest the shipyard for doubloons. ALL NUMBERS ARE PLACEHOLDERS. town_level = the harbour master's level (data/sea/town.json) a stock entry needs (sea step 7b: more goods at 2, charts at 4); the home port's selling prices x the harbour master's sell_mult.",
  "chips_per_doubloon": 250,
  "sell": {
   "tier": {
@@ -19,17 +19,20 @@
   {
    "item": "chart_captains_log",
    "chips": 900,
-   "count": 1
+   "count": 1,
+   "town_level": 4
   },
   {
    "item": "chart_silver_compass",
    "chips": 1400,
-   "count": 1
+   "count": 1,
+   "town_level": 4
   },
   {
    "item": "chart_longboat_plan",
    "chips": 4000,
-   "count": 1
+   "count": 1,
+   "town_level": 4
   },
   {
    "item": "oak_plank",
@@ -50,6 +53,36 @@
    "item": "copper_bar",
    "doubloons": 3,
    "count": 1
+  },
+  {
+   "item": "ash_plank",
+   "doubloons": 5,
+   "count": 5,
+   "town_level": 2
+  },
+  {
+   "item": "palm_plank",
+   "doubloons": 6,
+   "count": 5,
+   "town_level": 2
+  },
+  {
+   "item": "leather",
+   "doubloons": 4,
+   "count": 2,
+   "town_level": 2
+  },
+  {
+   "item": "stormoak_plank",
+   "doubloons": 14,
+   "count": 5,
+   "town_level": 3
+  },
+  {
+   "item": "cut_gem",
+   "doubloons": 30,
+   "count": 1,
+   "town_level": 3
   }
  ],
  "crane": {

@@ -1,8 +1,12 @@
-Island ground made more detailed: no tiling, sharp ragged edges, real cobbles and flagstones
+Sea step 7b-2: the home port buildings now give what their levels promise
 
-- game/isle_ground.gd: every layer sampled twice (turned and scaled) and blended by noise so it never repeats; meadow patches; ragged sharp edges for paths and streets instead of a soft painted fade; normal maps on paths and streets
-- town streets use real textures: cobblestone_floor_04 and the new patterned_paving_02 flagstones (CC0, Poly Haven), with deeper normals
-- 2k sets fetched for the island ground (cliff_side, stony_dirt_path, cobblestone_floor_04, forest_floor); data/surfaces.json g_paving; credits updated
+- harbour master: more goods at level 2 and 3, secret charts from level 4, better selling prices at 3 and 5; shop list scrolls
+- shipyard: ships need its level (sloop and raft 1, brig 2, longboat and junk 3, galleon 4); at level 5 ships cost a quarter less and planks mend half again as much
+- workshop: crafting table and sawhorse, then furnace and anvil plus workbench, then a ship parts bench; at level 4 crafted gun-side pieces roll better
+- storehouse: a store chest of 12, 24, 48 and then 96 slots; at the top one chest shared by the crew (host's world, online)
+- garden: pick herbs, then vegetables (new Garden Greens and Garden Roots), the walled garden's fountain heals while resting
+- town window: what each building offers as buttons; a building's door opens it too
+- core/sea/town_store.gd, game/store_window.gd
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
