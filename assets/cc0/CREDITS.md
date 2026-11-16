@@ -6,6 +6,7 @@ Rule for this project: only CC0 or original material goes in here. Nothing from 
 
 ## Textures (assets/cc0/textures/)
 
+- Patterned Paving 02 (`patterned_paving_02`) by Dimitrios Savva. https://polyhaven.com/a/patterned_paving_02
 - Sand 01 (`sand_01`) by Rob Tuytel. https://polyhaven.com/a/sand_01
 - Coast Sand 01 (`coast_sand_01`) by Rob Tuytel. https://polyhaven.com/a/coast_sand_01
 - Leafy Grass (`leafy_grass`) by Charlotte Baglioni. https://polyhaven.com/a/leafy_grass

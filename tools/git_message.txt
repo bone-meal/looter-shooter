@@ -1,11 +1,8 @@
-Sea step 7b-1: town streets and residents houses that grow with the town
+Island ground made more detailed: no tiling, sharp ragged edges, real cobbles and flagstones
 
-- start island rebuilt with streets to every town plot, graded and painted as town streets; nothing grows on plots, lots or streets
-- 24 house lots beside the streets (data/sea/town.json houses), nearest the plaza first
-- 20 house models: four kinds in every style from fishing shack to stone colonial (tools/blender/sea_town.py)
-- game/sea_town.gd: more houses stand and are rebuilt in newer styles as the town grows
-- game/isle_ground.gd: town streets go from dirt to cobbles to flagstones by the town growth
-- dev !town view, !town grow
+- game/isle_ground.gd: every layer sampled twice (turned and scaled) and blended by noise so it never repeats; meadow patches; ragged sharp edges for paths and streets instead of a soft painted fade; normal maps on paths and streets
+- town streets use real textures: cobblestone_floor_04 and the new patterned_paving_02 flagstones (CC0, Poly Haven), with deeper normals
+- 2k sets fetched for the island ground (cliff_side, stony_dirt_path, cobblestone_floor_04, forest_floor); data/surfaces.json g_paving; credits updated
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -310,6 +310,16 @@
    ]
   },
   {
+   "id": "g_paving",
+   "set": "patterned_paving_02",
+   "tile": 1.8,
+   "gain": [
+    5.46,
+    7.893,
+    11.814
+   ]
+  },
+  {
    "id": "g_dirt",
    "set": "stony_dirt_path",
    "tile": 3.0,
