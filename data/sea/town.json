@@ -1,0 +1,620 @@
+{
+ "_about": "Sea step 7 HOME PORT TOWN on the start island (director: the town GROWS from weathered fishing shacks to a stone colonial port, each upgrade visibly rebuilt; a hamlet stands (harbour master, dock, shipyard: start 1) and the rest are run-down plots the crew repairs and grows (start 0); upgrades are bought at each building's own sign AND in the town ledger at the harbour master; costs are materials (the fantasy bag, data/fantasy/gear.json ids) + doubloons). plots: id, name, building (models assets/models/sea/town/<building>_<level>.gltf, _0 = run down; tools/blender/sea_town.py), at = sea coordinates x, z of the model's origin, y = the island's ground there (written from tools/blender/sea_isle_start.py's height; sea_level = at the sea's surface: the dock), yaw degrees (0 = the model's front, its door, faces north), start level, levels[i] = level i+1: name, look (0 fishing shack .. 4 stone colonial), cost {doubloons, items {id: count}}, adds = what the level gives (shown in the ledger; WHAT EACH LEVEL ADDS IS A PROPOSAL waiting for the director's word, built in step 7b). The town's levels belong to the HOST's saved world (profile extra sea_town); a player pays from his own bag and purse. ALL NUMBERS, NAMES AND PLACES ARE PLACEHOLDERS.",
+ "island": "start",
+ "reach": 3.0,
+ "build_seconds": 2.5,
+ "plots": [
+  {
+   "id": "harbour_master",
+   "name": "Harbour Master",
+   "building": "harbour_master",
+   "at": [
+    -52.0,
+    6670.0
+   ],
+   "yaw": 0.0,
+   "start": 1,
+   "sign": "anchor",
+   "about": "The harbour master keeps the port's shop, changes chips into doubloons, runs the ferry desk and keeps the town ledger.",
+   "levels": [
+    {
+     "name": "Driftwood hut",
+     "look": 0,
+     "cost": {
+      "doubloons": 0,
+      "items": {}
+     },
+     "adds": "Shop, money changer, ferry desk and the town ledger."
+    },
+    {
+     "name": "Harbour office",
+     "look": 1,
+     "cost": {
+      "doubloons": 60,
+      "items": {
+       "oak_plank": 30,
+       "iron_bar": 4
+      }
+     },
+     "adds": "More goods on the shelves."
+    },
+    {
+     "name": "Harbour house",
+     "look": 2,
+     "cost": {
+      "doubloons": 180,
+      "items": {
+       "oak_plank": 60,
+       "iron_bar": 10,
+       "sailcloth": 4
+      }
+     },
+     "adds": "Better prices when selling."
+    },
+    {
+     "name": "Harbour hall",
+     "look": 3,
+     "cost": {
+      "doubloons": 450,
+      "items": {
+       "stormoak_plank": 40,
+       "iron_bar": 20,
+       "cut_gem": 4
+      }
+     },
+     "adds": "Secret charts for sale."
+    },
+    {
+     "name": "Harbour master's palace",
+     "look": 4,
+     "cost": {
+      "doubloons": 1200,
+      "items": {
+       "stormoak_plank": 80,
+       "skysteel_bar": 12,
+       "brilliant_gem": 6
+      }
+     },
+     "adds": "The best prices in the sea; the town's flag flies."
+    }
+   ],
+   "y": 10.47
+  },
+  {
+   "id": "dock",
+   "name": "Dock",
+   "building": "dock",
+   "at": [
+    39.0,
+    6694.0
+   ],
+   "yaw": -90.0,
+   "start": 1,
+   "sign": "anchor",
+   "sea_level": true,
+   "about": "Where ships tie up and goods come ashore.",
+   "levels": [
+    {
+     "name": "Rickety jetty",
+     "look": 0,
+     "cost": {
+      "doubloons": 0,
+      "items": {}
+     },
+     "adds": "Room to tie up one ship."
+    },
+    {
+     "name": "Plank pier",
+     "look": 1,
+     "cost": {
+      "doubloons": 50,
+      "items": {
+       "oak_plank": 40,
+       "iron_bar": 4
+      }
+     },
+     "adds": "Room for three ships; a ladder up from the water."
+    },
+    {
+     "name": "Wharf",
+     "look": 2,
+     "cost": {
+      "doubloons": 160,
+      "items": {
+       "oak_plank": 80,
+       "iron_bar": 12,
+       "sailcloth": 2
+      }
+     },
+     "adds": "A cargo derrick: unload the hold onto the quay."
+    },
+    {
+     "name": "Stone mole",
+     "look": 3,
+     "cost": {
+      "doubloons": 400,
+      "items": {
+       "stormoak_plank": 40,
+       "iron_bar": 30,
+       "copper_bar": 20
+      }
+     },
+     "adds": "Repairs at the quay."
+    },
+    {
+     "name": "Granite quay",
+     "look": 4,
+     "cost": {
+      "doubloons": 1000,
+      "items": {
+       "stormoak_plank": 60,
+       "skysteel_bar": 10,
+       "iron_bar": 40
+      }
+     },
+     "adds": "The harbour light guides ships home at night; room for six ships."
+    }
+   ],
+   "y": 0.0
+  },
+  {
+   "id": "shipyard",
+   "name": "Shipyard",
+   "building": "shipyard",
+   "at": [
+    -23.0,
+    6604.0
+   ],
+   "yaw": 180.0,
+   "start": 1,
+   "sign": "ship",
+   "about": "The shipwrights' yard beside the slipway.",
+   "levels": [
+    {
+     "name": "Lean-to and sawpit",
+     "look": 0,
+     "cost": {
+      "doubloons": 0,
+      "items": {}
+     },
+     "adds": "Sloops and rafts."
+    },
+    {
+     "name": "Open shed",
+     "look": 1,
+     "cost": {
+      "doubloons": 70,
+      "items": {
+       "oak_plank": 40,
+       "iron_bar": 6
+      }
+     },
+     "adds": "Brigs."
+    },
+    {
+     "name": "Shipwright's shop",
+     "look": 2,
+     "cost": {
+      "doubloons": 200,
+      "items": {
+       "oak_plank": 80,
+       "iron_bar": 14,
+       "sailcloth": 6
+      }
+     },
+     "adds": "Longboats and junks (with their plans)."
+    },
+    {
+     "name": "Mould loft",
+     "look": 3,
+     "cost": {
+      "doubloons": 500,
+      "items": {
+       "stormoak_plank": 50,
+       "iron_bar": 30,
+       "sailcloth": 10
+      }
+     },
+     "adds": "Galleons."
+    },
+    {
+     "name": "Shipwright's hall",
+     "look": 4,
+     "cost": {
+      "doubloons": 1300,
+      "items": {
+       "stormoak_plank": 90,
+       "skysteel_bar": 14,
+       "brilliant_gem": 4
+      }
+     },
+     "adds": "Ships built and mended for less."
+    }
+   ],
+   "y": 6.16
+  },
+  {
+   "id": "tavern",
+   "name": "Tavern",
+   "building": "tavern",
+   "at": [
+    -124.0,
+    6646.0
+   ],
+   "yaw": -90.0,
+   "start": 0,
+   "sign": "tankard",
+   "about": "Food and drink, a card table and the talk of the sea.",
+   "levels": [
+    {
+     "name": "Beach bar",
+     "look": 0,
+     "cost": {
+      "doubloons": 40,
+      "items": {
+       "oak_plank": 25,
+       "palm_plank": 10
+      }
+     },
+     "adds": "Drinks: small buffs for the next voyage."
+    },
+    {
+     "name": "Tavern",
+     "look": 1,
+     "cost": {
+      "doubloons": 120,
+      "items": {
+       "oak_plank": 50,
+       "iron_bar": 6
+      }
+     },
+     "adds": "A card table: play \"You got me Lobster?\"."
+    },
+    {
+     "name": "Inn",
+     "look": 2,
+     "cost": {
+      "doubloons": 300,
+      "items": {
+       "oak_plank": 90,
+       "iron_bar": 12,
+       "sailcloth": 4
+      }
+     },
+     "adds": "Rumours: hints that point to secret charts."
+    },
+    {
+     "name": "Coaching inn",
+     "look": 3,
+     "cost": {
+      "doubloons": 650,
+      "items": {
+       "stormoak_plank": 50,
+       "iron_bar": 24,
+       "cut_gem": 4
+      }
+     },
+     "adds": "Rooms: resting here clears Dread."
+    },
+    {
+     "name": "Grand hotel",
+     "look": 4,
+     "cost": {
+      "doubloons": 1500,
+      "items": {
+       "stormoak_plank": 90,
+       "skysteel_bar": 10,
+       "brilliant_gem": 6
+      }
+     },
+     "adds": "Feasts: long-lasting buffs for the whole party."
+    }
+   ],
+   "y": 17.98
+  },
+  {
+   "id": "workshop",
+   "name": "Workshop",
+   "building": "workshop",
+   "at": [
+    -80.0,
+    6595.0
+   ],
+   "yaw": -90.0,
+   "start": 0,
+   "sign": "hammer",
+   "about": "Benches, an anvil and a forge for the crew's own work.",
+   "levels": [
+    {
+     "name": "Lean-to bench",
+     "look": 0,
+     "cost": {
+      "doubloons": 30,
+      "items": {
+       "oak_plank": 20,
+       "copper_bar": 6
+      }
+     },
+     "adds": "A crafting table and a sawhorse."
+    },
+    {
+     "name": "Smithy",
+     "look": 1,
+     "cost": {
+      "doubloons": 110,
+      "items": {
+       "oak_plank": 40,
+       "iron_bar": 10
+      }
+     },
+     "adds": "An anvil and furnace."
+    },
+    {
+     "name": "Framed workshop",
+     "look": 2,
+     "cost": {
+      "doubloons": 320,
+      "items": {
+       "oak_plank": 70,
+       "iron_bar": 24,
+       "sailcloth": 4
+      }
+     },
+     "adds": "Ship parts and cannons made here."
+    },
+    {
+     "name": "Works hall",
+     "look": 4,
+     "cost": {
+      "doubloons": 900,
+      "items": {
+       "stormoak_plank": 70,
+       "skysteel_bar": 10,
+       "cut_gem": 6
+      }
+     },
+     "adds": "Master work: crafted pieces roll better."
+    }
+   ],
+   "y": 13.01
+  },
+  {
+   "id": "storage",
+   "name": "Storehouse",
+   "building": "storage",
+   "at": [
+    0.0,
+    6704.0
+   ],
+   "yaw": -90.0,
+   "start": 0,
+   "sign": "barrel",
+   "about": "Goods kept safe ashore.",
+   "levels": [
+    {
+     "name": "Tarpaulin store",
+     "look": 0,
+     "cost": {
+      "doubloons": 30,
+      "items": {
+       "oak_plank": 20,
+       "sailcloth": 2
+      }
+     },
+     "adds": "A store chest of 12 slots."
+    },
+    {
+     "name": "Barn store",
+     "look": 1,
+     "cost": {
+      "doubloons": 100,
+      "items": {
+       "oak_plank": 50,
+       "iron_bar": 6
+      }
+     },
+     "adds": "24 slots."
+    },
+    {
+     "name": "Warehouse",
+     "look": 3,
+     "cost": {
+      "doubloons": 350,
+      "items": {
+       "stormoak_plank": 40,
+       "iron_bar": 20
+      }
+     },
+     "adds": "48 slots."
+    },
+    {
+     "name": "Bonded warehouse",
+     "look": 4,
+     "cost": {
+      "doubloons": 900,
+      "items": {
+       "stormoak_plank": 70,
+       "skysteel_bar": 8,
+       "iron_bar": 30
+      }
+     },
+     "adds": "96 slots, shared by the whole crew."
+    }
+   ],
+   "y": 5.15
+  },
+  {
+   "id": "trophy_hall",
+   "name": "Trophy Hall",
+   "building": "trophy_hall",
+   "at": [
+    -168.0,
+    6645.0
+   ],
+   "yaw": -90.0,
+   "start": 0,
+   "sign": "cup",
+   "about": "Cabinets for each player's trophies, the hardest at eye level (like the hub's trophy room).",
+   "levels": [
+    {
+     "name": "Trophy room",
+     "look": 1,
+     "cost": {
+      "doubloons": 80,
+      "items": {
+       "oak_plank": 40,
+       "copper_bar": 10
+      }
+     },
+     "adds": "A cabinet for each player."
+    },
+    {
+     "name": "Trophy house",
+     "look": 2,
+     "cost": {
+      "doubloons": 260,
+      "items": {
+       "oak_plank": 70,
+       "iron_bar": 12,
+       "cut_gem": 2
+      }
+     },
+     "adds": "Archaeology collections shown."
+    },
+    {
+     "name": "Trophy hall",
+     "look": 3,
+     "cost": {
+      "doubloons": 600,
+      "items": {
+       "stormoak_plank": 50,
+       "iron_bar": 24,
+       "cut_gem": 6
+      }
+     },
+     "adds": "Boss trophies shown."
+    },
+    {
+     "name": "Hall of Honour",
+     "look": 4,
+     "cost": {
+      "doubloons": 1600,
+      "items": {
+       "stormoak_plank": 90,
+       "skysteel_bar": 16,
+       "brilliant_gem": 10
+      }
+     },
+     "adds": "The whole crew's legend on show."
+    }
+   ],
+   "y": 21.13
+  },
+  {
+   "id": "gallery",
+   "name": "Gallery",
+   "building": "gallery",
+   "at": [
+    -90.0,
+    6550.0
+   ],
+   "yaw": -90.0,
+   "start": 0,
+   "sign": "frame",
+   "about": "Where the bought paintings hang: portals to the arena, Aurelind and the island.",
+   "levels": [
+    {
+     "name": "Painter's studio",
+     "look": 1,
+     "cost": {
+      "doubloons": 150,
+      "items": {
+       "oak_plank": 40,
+       "sailcloth": 6
+      }
+     },
+     "adds": "A wall for one painting."
+    },
+    {
+     "name": "Picture house",
+     "look": 3,
+     "cost": {
+      "doubloons": 500,
+      "items": {
+       "stormoak_plank": 40,
+       "iron_bar": 20,
+       "cut_gem": 4
+      }
+     },
+     "adds": "Walls for two paintings."
+    },
+    {
+     "name": "Grand gallery",
+     "look": 4,
+     "cost": {
+      "doubloons": 1400,
+      "items": {
+       "stormoak_plank": 80,
+       "skysteel_bar": 12,
+       "brilliant_gem": 8
+      }
+     },
+     "adds": "Walls for all three paintings."
+    }
+   ],
+   "y": 14.72
+  },
+  {
+   "id": "garden",
+   "name": "Garden",
+   "building": "garden",
+   "at": [
+    -80.0,
+    6720.0
+   ],
+   "yaw": 0.0,
+   "start": 0,
+   "sign": "leaf",
+   "about": "Herbs, fruit and quiet.",
+   "levels": [
+    {
+     "name": "Vegetable patch",
+     "look": 0,
+     "cost": {
+      "doubloons": 20,
+      "items": {
+       "oak_plank": 10
+      }
+     },
+     "adds": "Herbs to pick."
+    },
+    {
+     "name": "Kitchen garden",
+     "look": 2,
+     "cost": {
+      "doubloons": 160,
+      "items": {
+       "oak_plank": 40,
+       "iron_bar": 6
+      }
+     },
+     "adds": "Vegetables and fruit trees."
+    },
+    {
+     "name": "Walled garden",
+     "look": 4,
+     "cost": {
+      "doubloons": 700,
+      "items": {
+       "stormoak_plank": 30,
+       "iron_bar": 20,
+       "cut_gem": 4
+      }
+     },
+     "adds": "A fountain: resting here heals faster."
+    }
+   ],
+   "y": 13.98
+  }
+ ]
+}

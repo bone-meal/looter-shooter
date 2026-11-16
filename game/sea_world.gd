@@ -21,6 +21,7 @@ const SeaShipyard = preload("res://game/sea_shipyard.gd")
 const SeaChart = preload("res://core/sea/sea_chart.gd")
 const ChartWindow = preload("res://game/sea_chart_window.gd")
 const SeaPort = preload("res://game/sea_port.gd")
+const SeaTown = preload("res://game/sea_town.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -40,6 +41,7 @@ var salvage := SeaSalvage.new()  # diving finds and the logbook (sea step 5b)
 var chart: SeaChart  # this player's sea chart (sea step 6): fog, explored islands, pins, secrets
 var chart_window := ChartWindow.new()
 var port := SeaPort.new()  # harbour master's stalls, doubloons, ferries (sea step 6)
+var town := SeaTown.new()  # the home port town: buildings by level, signs, the town ledger (sea step 7)
 var _chart_layer := CanvasLayer.new()
 var _chart_cfg: Dictionary
 var others := Callable()  # the session: other players' scene positions (the rope looks for swimmers)
@@ -94,8 +96,11 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	_chart_layer.add_child(chart_window)
 	chart_window.chart = chart
 	chart_window.sea = self
+	_root.add_child(town)
+	town.setup(self, _player, _chart_layer)
 	_root.add_child(port)
 	port.setup(self, _player, _chart_layer)
+	port.town = town
 	_read_chart_words()
 	_clock_start = Time.get_ticks_msec() / 1000.0
 
@@ -273,7 +278,7 @@ func status() -> String:
 func prompt(key: String) -> String:
 	if swim.climbing():
 		return ""
-	for part: Node in [swim, salvage, shipyard, port]:
+	for part: Node in [swim, salvage, shipyard, port, town]:
 		var said := String(part.call("prompt", key))
 		if said != "":
 			return said
@@ -283,7 +288,7 @@ func prompt(key: String) -> String:
 func interact() -> bool:
 	if swim.climbing():
 		return true
-	return swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or ships.interact()
+	return swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or ships.interact()
 
 
 func toggle_logbook() -> void:

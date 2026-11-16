@@ -1,6 +1,6 @@
 # Purpose: the sea's ports (sea step 6): the harbour master's stall at each port of data/sea/port.json (model
-# assets/models/sea/harbour_stall.gltf, tools/blender/sea_port.py; it stands in for the port's buildings until the
-# home port town of step 7), whose interact key opens the port window (game/port_shop_window.gd: buy, sell, change
+# assets/models/sea/harbour_stall.gltf, tools/blender/sea_port.py; a port with "plot" has none: its counter is the
+# "Counter" marker of that building of the town, game/sea_town.gd, as the home port's harbour master since step 7), whose interact key opens the port window (game/port_shop_window.gd: buy, sell, change
 # chips into doubloons, ferry), and the DOUBLOONS counter shown at sea. Doubloons and chips are the character's own
 # (game/game_session.gd doubloons() / wallet(), saved with him), so trading at a stall needs no host; a crane bought
 # here is fitted by the host (game/sea_ships.gd fit_part). A ferry moves only the player (locked: ships, ore and bars
@@ -18,6 +18,7 @@ const REACH := 3.2
 var rules: PortRules
 var window := ShopWindow.new()
 var counter := Control.new()  # the doubloons at sea, top right
+var town: Node3D  # game/sea_town.gd: a port with a "plot" has its counter in that building (the home port's harbour master)
 var _sea: Node3D
 var _player: CharacterBody3D
 var _stalls := {}  # port id -> Node3D (in the sea root)
@@ -65,6 +66,8 @@ func _process(_delta: float) -> void:
 	for port: Dictionary in rules.cfg["ports"]:  # stalls stand once their island is near
 		var id := String(port["id"])
 		var at := Vector2(float(port["stall"][0]), float(port["stall"][1]))
+		if port.has("plot"):  # the counter is a marker of the town's building
+			continue
 		if not _stalls.has(id) and at.distance_to(Vector2(here.x, here.z)) < 600.0 and ResourceLoader.exists(MODEL):
 			_stalls[id] = _build_stall(port)
 
@@ -92,6 +95,11 @@ func _ground(x: float, z: float) -> float:
 
 # The port whose stall this player stands at ("" = none).
 func port_here() -> String:
+	for port: Dictionary in rules.cfg["ports"]:
+		if port.has("plot") and town != null:
+			var desk: Node3D = town.call("marker", String(port["plot"]), "Counter")
+			if desk != null and desk.global_position.distance_to(_player.global_position) <= REACH:
+				return String(port["id"])
 	for id: String in _stalls:
 		if (_stalls[id] as Node3D).global_position.distance_to(_player.global_position) <= REACH:
 			return id

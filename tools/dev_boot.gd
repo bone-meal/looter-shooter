@@ -582,6 +582,63 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					if not (inv_p.call("gun_at", slot_p) as Dictionary).is_empty():
 						guns_p += 1
 				_lines.append("PORT %s: chips %d, doubloons %d, guns in the backpack %d, sellable %d, oak planks %d, crane on %d ships" % [" ".join(words.slice(2)), int(session.call("wallet").get("balance")), int(session.call("doubloons").get("balance")), guns_p, (port_p.call("sellable") as Array).size(), int(sea_p.get("skills").get("bag").call("count", "oak_plank")), (sea_p.get("ships").get("crane").get("_cranes") as Dictionary).size()])
+		"town":  # sea step 7: !town go <plot> | ledger | look <plot> [mark] | open <plot> [ledger] | close | choose <plot> | press <key> | set <plot> <level> | stock (materials + doubloons) | wait_level <plot> <level> | status <note>
+			var sea_t: Node = session.call("sea")
+			var town_t: Node = sea_t.get("town") if sea_t != null else null
+			var sub_t := words[1] if words.size() > 1 else "status"
+			if town_t == null:
+				_lines.append("town: no sea")
+			elif sub_t in ["go", "ledger", "look"]:
+				var id_t := words[2] if words.size() > 2 and sub_t != "ledger" else "harbour_master"
+				var at_t: Node3D = town_t.call("marker", id_t, "Ledger") if sub_t == "ledger" else (town_t.get("_plots")[id_t]["sign"] if (town_t.get("_plots") as Dictionary).has(id_t) else null)
+				if sub_t == "look":
+					var holder_t: Node3D = town_t.get("_plots")[id_t]["holder"]
+					var front_t: Vector3 = holder_t.global_basis * Vector3(0, 0, -1)
+					var far_t := float(words[3]) if words.size() > 3 else 26.0
+					player.call("teleport", holder_t.global_position + front_t * far_t + holder_t.global_basis * Vector3(far_t * 0.35, 0, 0) + Vector3(0, 3.0, 0), 0.0)
+					await get_tree().create_timer(0.3).timeout
+					player.call("look_at_point", holder_t.global_position + Vector3(0, 4.0, 0))
+				elif at_t != null:
+					var out_t: Vector3 = at_t.global_position + (at_t.global_basis * Vector3(0, 0, -1.6) if sub_t == "go" else Vector3.ZERO)
+					player.call("teleport", out_t + Vector3(0, 1.0, 0), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					_lines.append("TOWN at %s: prompt '%s', port '%s'" % [id_t if sub_t != "ledger" else "ledger", String(sea_t.call("prompt", "F")), String(sea_t.get("port").call("prompt", "F"))])
+				else:
+					_lines.append("TOWN %s: no such place yet (built %s)" % [id_t, str(town_t.get("built"))])
+			elif sub_t == "counter":
+				var c_t: Node3D = town_t.call("marker", "harbour_master", "Counter")
+				if c_t != null:
+					player.call("teleport", c_t.global_position + Vector3(0, 1.0, 0), 0.0)
+					await get_tree().create_timer(0.4).timeout
+				_lines.append("TOWN counter: port prompt '%s'" % String(sea_t.get("port").call("prompt", "F")))
+			elif sub_t == "open":
+				town_t.call("open", words[2] if words.size() > 2 else "harbour_master", words.size() > 3)
+			elif sub_t == "close":
+				town_t.call("close")
+			elif sub_t == "choose":
+				town_t.get("window").set("chosen", words[2])
+				town_t.get("window").queue_redraw()
+				await get_tree().process_frame
+			elif sub_t == "press":
+				town_t.get("window").queue_redraw()
+				await get_tree().process_frame
+				await get_tree().process_frame
+				var ok_t: bool = town_t.get("window").call("press", " ".join(words.slice(2)))
+				await get_tree().process_frame
+				_lines.append("TOWN press '%s': %s -> '%s'" % [" ".join(words.slice(2)), str(ok_t), String(town_t.get("said"))])
+			elif sub_t == "set":
+				town_t.get("rules").get("levels")[words[2]] = int(words[3])
+			elif sub_t == "stock":
+				for item_t in ["oak_plank", "palm_plank", "stormoak_plank", "iron_bar", "copper_bar", "skysteel_bar", "sailcloth", "cut_gem", "brilliant_gem"]:
+					sea_t.get("skills").call("give", item_t, 600)
+				session.call("doubloons").set("balance", 20000)
+			elif sub_t == "wait_level":
+				var until_t := Time.get_ticks_msec() + 30000
+				while Time.get_ticks_msec() < until_t and int(town_t.get("rules").call("level", words[2])) < int(words[3]):
+					await get_tree().create_timer(0.5).timeout
+				_lines.append("TOWN wait %s >= %s: %d" % [words[2], words[3], int(town_t.get("rules").call("level", words[2]))])
+			else:
+				_lines.append("TOWN %s: %s, doubloons %d, oak planks %d" % [" ".join(words.slice(2)), String(town_t.call("status")), int(session.call("doubloons").get("balance")), int(sea_t.get("skills").get("bag").call("count", "oak_plank"))])
 		"chart":  # sea step 6: !chart open | close | pin <x> <z> | status <note>
 			var sea_c2: Node = session.call("sea")
 			if sea_c2 == null:

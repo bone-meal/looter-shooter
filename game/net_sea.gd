@@ -16,12 +16,15 @@ const HELM_REACH := 4.0  # m: how far from the wheel the host accepts a helm req
 const MAX_LEVEL := 70
 const FAR := 100000.0
 const MAX_SHIPS := 24  # the world fleet's cap (a client cannot flood the host with launches)
+const TOWN_EVERY := 2.0  # s between the host's town levels (a joiner's town catches up within this)
+const TOWN_REACH := 40.0  # m: how near the town a player must be for the host to take his upgrade
 
 var net: Node3D
 var heard := 0  # fleet packets received (dev)
 var sent := 0
 
 var _send_t := 0.0
+var _town_t := 0.0
 var _input_t := 0.0
 var _rope_n := 0
 
@@ -46,6 +49,11 @@ func _sea() -> Node:
 	return get_tree().get_first_node_in_group("sea_world")
 
 
+func _town() -> Node:
+	var sea := _sea()
+	return sea.get("town") if sea != null else null
+
+
 func _fleet() -> Node:
 	var sea := _sea()
 	return sea.get("ships") if sea != null else null
@@ -63,6 +71,12 @@ func _process(delta: float) -> void:
 		if net.is_host():
 			_send_fleet(fleet)
 		_send_me(fleet)
+	_town_t += delta
+	if _town_t >= TOWN_EVERY and net.is_host():
+		_town_t = 0.0
+		var town := _town()
+		if town != null:
+			_town_levels.rpc(town.get("rules").call("to_list"))
 	_input_t += delta
 	if _input_t >= 1.0 / INPUT_HZ and is_client() and fleet.get("helm_ship") != null:
 		_input_t = 0.0
@@ -433,3 +447,67 @@ func _rope_gone_here(key: String) -> void:
 	var sea := _sea()
 	if sea != null:
 		sea.get("swim").call("drop_rope", key)
+
+
+# --- the home port town (sea step 7): its levels belong to the host's world. A player pays from his own bag and
+# purse (his own claim), but only after the host has raised the level; the host checks the level is the next one and
+# that the player is in the town ---
+
+func request_town(plot_index: int, level: int) -> void:
+	_town_up.rpc_id(1, plot_index, level)
+
+
+# The host (or a lone player) raised a plot itself: everyone else follows.
+func tell_town(plot_index: int, level: int) -> void:
+	if active() and net.is_host():
+		_town_done.rpc(plot_index, level, my_id())
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _town_up(plot_index: int, level: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var town := _town()
+	if not net.is_host() or not net.roster.has(from) or town == null:
+		return
+	var rules: RefCounted = town.get("rules")
+	var all: Array = rules.call("ids")
+	if plot_index < 0 or plot_index >= all.size() or level != int(rules.call("level", String(all[plot_index]))) + 1 or not _in_town(from):
+		_town_no.rpc_id(from, plot_index)
+		return
+	rules.call("upgrade", String(all[plot_index]))
+	_town_done.rpc(plot_index, level, from)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _town_done(plot_index: int, level: int, asker: int) -> void:
+	var town := _town()
+	if town != null and plot_index >= 0 and level > 0:
+		town.call("host_done", plot_index, level, asker, my_id())
+
+
+@rpc("authority", "call_remote", "reliable")
+func _town_no(plot_index: int) -> void:
+	var town := _town()
+	if town != null:
+		town.call("host_refused", plot_index)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _town_levels(list: Array) -> void:
+	var town := _town()
+	if town != null and list.size() <= 64:
+		town.call("host_levels", list)
+
+
+# Is this player standing in the town (near any plot)? By his last shared position in sea coordinates.
+func _in_town(from: int) -> bool:
+	var sea := _sea()
+	var town := _town()
+	var at: Variant = net.positions().get(from)
+	if sea == null or town == null or not at is Vector3:
+		return true  # no position yet: trust the claim (his payment is his own anyway)
+	var here: Vector3 = sea.call("local_of", at)
+	for p: Dictionary in town.get("rules").call("plots"):
+		if Vector2(here.x, here.z).distance_to(Vector2(float(p["at"][0]), float(p["at"][1]))) < TOWN_REACH:
+			return true
+	return false
