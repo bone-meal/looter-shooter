@@ -77,7 +77,8 @@ func _send_fleet(fleet: Node) -> void:
 	var states: Array = []
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
-		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"])])
+		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"]),
+			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false))])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 
@@ -162,6 +163,24 @@ func _anchor(ship_index: int) -> void:
 	var ship := _ship_for(from, ship_index)
 	if ship != null and _near(from, ship, ship.get("spec")["anchor"], 3.5):
 		_fleet().call("toggle_anchor", ship)
+
+
+# A plank nailed on at a leak zone (sea step 5d): the plank is the client's own claim (his bag); the host checks he
+# stands at that zone of that ship and applies it.
+func request_plank(ship_index: int, zone: int) -> void:
+	_plank.rpc_id(1, ship_index, zone)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _plank(ship_index: int, zone: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var ship := _ship_for(from, ship_index)
+	if ship == null or zone < 0 or zone > 2:
+		return
+	var hulls: Node = _fleet().get("hull_part")
+	var spot: Array = load("res://core/sea/hull_rules.gd").zones(ship.get("spec"))[zone]
+	if _near(from, ship, [float(spot[0]) * 0.8, float(spot[1])], float(hulls.get("hull").cfg["patch_reach"]) + 1.5):
+		hulls.call("use_plank", ship, zone)
 
 
 # --- the shipyard (client -> host): the client's own Carpentry and materials built it (his bag is his own claim);

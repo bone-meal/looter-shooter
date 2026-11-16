@@ -461,7 +461,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), float(words[4]) if words.size() > 4 else 25.0, float(words[3]))), 0.0)  # optional height: drop onto high ground
 			else:
 				_lines.append(String(sea_world.call("status")))
-		"ship":  # sea ships (step 5a): !ship status | board | helm | letgo | anchor up|down | stage <n> | rudder <-1..1|off> | wind <degrees off> | head <compass degrees>
+		"ship":  # sea ships (step 5a): !ship status | hit <n> <zone> | hull | patch <zone|off> | wait_hole | board | helm | letgo | anchor up|down | stage <n> | rudder <-1..1|off> | wind <degrees off> | head <compass degrees>
 			var sea_now: Node = session.call("sea")
 			var fleet: Node = sea_now.get("ships") if sea_now != null else null
 			if fleet == null or (fleet.get("ships") as Array).is_empty():
@@ -470,6 +470,31 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var first: Node = (fleet.get("ships") as Array)[clampi(_ship_i, 0, (fleet.get("ships") as Array).size() - 1)]
 				var arg := words[2] if words.size() > 2 else ""
 				match words[1] if words.size() > 1 else "status":
+					"hit":  # "!ship hit 120 bow|waist|stern": a blow to the hull at that leak zone (host / alone)
+						var zone_i := maxi(0, ["bow", "waist", "stern"].find(words[3] if words.size() > 3 else "waist"))
+						var spot: Array = load("res://core/sea/hull_rules.gd").zones(first.get("spec"))[zone_i]
+						fleet.get("hull_part").call("damage", first, Vector3(float(spot[0]), 0.0, float(spot[1])), float(arg))
+					"hull":  # "!ship hull <note>": the hull, holes, water, sinking of the ship
+						var st: Dictionary = first.get("state")
+						_lines.append("HULL %s: %s hull %.0f / %.0f, leaks %s, water %.2f, sinking %s, anchored %s, at (%.0f, %.0f), prompt '%s'" % [" ".join(words.slice(2)), String(st["ship"]), float(st["hull"]), float(st["hull_max"]), str(st["leaks"]), float(st["water"]), str(st.get("sinking", false)), str(st["anchored"]), float(st["x"]), float(st["z"]), String(fleet.call("prompt", "F"))])
+					"patch":  # "!ship patch bow|waist|stern": stand at that leak zone and hold interact (off: "!ship patch off")
+						if arg == "off" or arg == "":
+							fleet.set("dev_patch", false)
+						else:
+							var zone_p := maxi(0, ["bow", "waist", "stern"].find(arg))
+							var spot_p: Array = load("res://core/sea/hull_rules.gd").zones(first.get("spec"))[zone_p]
+							player.call("teleport", first.call("deck_spot", [float(spot_p[0]) * 0.8, float(spot_p[1])], 0.3), 0.0)
+							fleet.set("dev_patch", true)
+					"wait_hole", "wait_sink":  # "!ship wait_hole" / "wait_sink": wait (up to 60 s) for a hole / for her to go down (online: the host's word)
+						var began_h := Time.get_ticks_msec()
+						while Time.get_ticks_msec() - began_h < 60000:
+							var st_w: Dictionary = first.get("state")
+							if (words[1] == "wait_hole" and float(load("res://core/sea/hull_rules.gd").new({}).holes(st_w)) > 0.0) or (words[1] == "wait_sink" and bool(st_w.get("sinking", false))):
+								break
+							await get_tree().create_timer(0.5, true, false, true).timeout
+					"lookzone":  # "!ship lookzone bow": face that leak zone of the ship
+						var spot_l: Array = load("res://core/sea/hull_rules.gd").zones(first.get("spec"))[maxi(0, ["bow", "waist", "stern"].find(arg))]
+						player.call("look_at_point", first.call("deck_spot", [float(spot_l[0]) * 0.8, float(spot_l[1])], 0.6))
 					"board":
 						player.call("teleport", first.call("deck_spot", [0.0, 1.5], 0.3), 0.0)
 					"helm":  # stand at the wheel and take it (online: wait for the host's yes, up to 10 s)

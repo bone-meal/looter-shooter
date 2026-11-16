@@ -24,6 +24,8 @@ var _sail_shown := 0.0
 var _wheel := 0.0
 var _oars_t := 0.0
 var _wind_flutter := 0.0
+var lower := 0.0  # metres she sits lower than the waves carry her (water in the hold, sinking: game/sea_hull.gd)
+var list_deg := 0.0  # degrees she lists to port (flooding, sinking)
 
 
 func setup(ship_rules: RefCounted, ship_state: Dictionary) -> void:
@@ -149,8 +151,8 @@ func pose(waves: RefCounted, t: float, swell: float, wind: float, wind_dir: floa
 	_heave = lerpf(_heave, (h_bow + h_stern + h_star + h_port) * 0.25, k)
 	_pitch = lerpf(_pitch, pitch, k)
 	_roll = lerpf(_roll, roll, k)
-	var turn := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _pitch) * Basis(Vector3.BACK, -_roll)
-	transform = Transform3D(turn, Vector3(x, _heave, z))
+	var turn := Basis(Vector3.UP, yaw) * Basis(Vector3.RIGHT, _pitch) * Basis(Vector3.BACK, -_roll - deg_to_rad(list_deg))
+	transform = Transform3D(turn, Vector3(x, _heave - lower, z))
 	_animate(wind, wind_dir, delta)
 
 

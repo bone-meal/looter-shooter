@@ -1,8 +1,10 @@
-Sea: host keeps islands solid round every player at sea
+Sea 5d-1: hulls - hull bar, 3 leak zones, flooding, sinking, plank repairs
 
-- director chose 1: full island + detailed collision round each player at sea on the host, also with the host away from the sea
-- sea_world _kept_for, sea_islands follow(points, own), sea_isle_stream follow(points, own): clutter only round the own player
-- dev !isle ghosts also shows the start island chunk counts; pair set isle checks it (guest feet 0.00 m on the host)
+- data/sea/hull.json + core/sea/hull_rules.gd (pure) + game/sea_hull.gd: holes at bow / waist / stern, hold floods, slows and sinks her, refloated at the shipyard needing planks before she sails
+- running aground hard damages the hull; hold interact at a leak with a plank patches it, with no holes mends hull
+- online: hull / water / leaks / sinking in the host's fleet states, request_plank intent checked by the host
+- helm panel: hull bar, holes, water in the hold; fleet save keeps the hull; ship_check +24 checks
+- pair set hull: guest patches the host's hole, both see her sink and come back
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

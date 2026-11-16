@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!fgive oak_plank 6;!ship board;!isle wait_ghost 400;!wait 6;!ship hit 120 bow;!wait 2;!ship hull host_holed;!wait 25;!ship hull host_after_guest;!ship hit 600 stern;!wait 4;!ship hull host_sinking;!wait 8;!ship hull host_raised;!wait 25;!ship hull host_end

@@ -1,0 +1,28 @@
+{
+ "_about": "Sea step 5d hull (core/sea/hull_rules.gd, game/sea_hull.gd). hull = max hull points per ship. A single hit of at least open_share of the max opens / widens the hole at the nearest of the 3 leak zones by hole_per_share per share (cap 1). Holds flood at flood_per_second per full hole, pumps drain drain_per_second when no hole is open. Water slows (slow_at_full_water) and sinks the ship lower (sit_lower x draft); sink_water or hull 0 = sunk. Aground faster than aground_from m/s: aground_damage x (speed - from)^2. A plank (any of planks) takes patch_seconds at a leak zone within patch_reach m: closes it + patch_hull of max; with no holes mend_hull of max. Sunk: goes down over sink_seconds, comes back at the shipyard with refloat_hull of max, needs seaworthy of max to weigh anchor. ALL NUMBERS ARE PLACEHOLDERS.",
+ "hull": {
+  "sloop": 400,
+  "brig": 900,
+  "galleon": 1600,
+  "raft": 150,
+  "longboat": 500,
+  "junk": 800
+ },
+ "open_share": 0.05,
+ "hole_per_share": 4.0,
+ "flood_per_second": 0.02,
+ "drain_per_second": 0.015,
+ "slow_at_full_water": 0.7,
+ "sit_lower": 0.6,
+ "sink_water": 1.0,
+ "aground_from": 2.0,
+ "aground_damage": 6.0,
+ "patch_seconds": 2.0,
+ "patch_reach": 2.4,
+ "patch_hull": 0.04,
+ "mend_hull": 0.12,
+ "sink_seconds": 8.0,
+ "refloat_hull": 0.25,
+ "seaworthy": 0.4,
+ "planks": ["oak_plank", "ash_plank", "palm_plank", "frostpine_plank", "ember_plank", "stormoak_plank"]
+}

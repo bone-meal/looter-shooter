@@ -14,6 +14,7 @@ const ShipRules = preload("res://core/sea/ship_rules.gd")
 const SeaShip = preload("res://game/sea_ship.gd")
 const HelmPanel = preload("res://game/ship_helm_panel.gd")
 const SkillPerks = preload("res://core/skill_perks.gd")
+const SeaHull = preload("res://game/sea_hull.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -40,6 +41,8 @@ var _slow := 0.0
 var shipyard: Node3D  # game/sea_shipyard.gd: where built ships are launched
 var working := false  # this player is trimming sails at a rigging spot (holding interact)
 var dev_rudder := NAN  # dev: a rudder held without keys (tests run without focus)
+var hull_part := SeaHull.new()  # hulls, leaks, sinking, patching (sea step 5d)
+var dev_patch := false  # dev: interact held for patching without keys
 
 
 func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
@@ -53,6 +56,9 @@ func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
 	_layer.add_child(panel)
 	panel.visible = false
 	add_child(_layer)
+	hull_part.name = "Hulls"
+	add_child(hull_part)
+	hull_part.setup(self, _sea, _player)
 	for entry: Dictionary in rules.cfg["fleet"]:
 		spawn(String(entry["ship"]), float(entry["at"][0]), float(entry["at"][1]), float(entry["yaw"]))
 
@@ -61,6 +67,7 @@ func spawn(ship_id: String, x: float, z: float, yaw_deg: float) -> SeaShip:
 	var ship := SeaShip.new()
 	add_child(ship)
 	ship.setup(rules, rules.new_state(ship_id, x, z, yaw_deg))
+	hull_part.prepare(ship)
 	ships.append(ship)
 	return ship
 
@@ -100,8 +107,12 @@ func _process(delta: float) -> void:
 			_follow_host(ship, delta)
 			moved = was.distance_to(Vector2(float(ship.state["x"]), float(ship.state["z"])))
 		else:
-			moved = rules.step(ship.state, wind, wind_dir, _speed_pct(ship), delta)
+			moved = rules.step(ship.state, wind, wind_dir, hull_part.speed_pct(ship, _speed_pct(ship)), delta)
+			if hull_part.step(ship, delta):
+				hull_part.sink(ship)
+			hull_part.sunk_done(ship)
 			if moved > 0.0 and _aground(ship):
+				hull_part.aground(ship, float(ship.state["speed"]))
 				ship.state["x"] = was.x
 				ship.state["z"] = was.y
 				ship.state["speed"] = 0.0
@@ -111,6 +122,7 @@ func _process(delta: float) -> void:
 					_sea.emit_signal("notice", "Run aground: back her off with the oars (S)")
 			elif moved > 0.0:
 				_aground_told = false
+		hull_part.display(ship, delta)
 		ship.pose(waves, t, swell, wind, wind_dir, delta)
 		if riding:
 			_player.call("carry", ship.global_transform * before.affine_inverse(), wrapf(float(ship.state["yaw"]) - yaw_before, -PI, PI))
@@ -120,6 +132,7 @@ func _process(delta: float) -> void:
 				_sailing_xp(ship, moved)
 	var deck_now := ship_aboard() if inside and helm_ship == null else null
 	working = deck_now != null and _rigging_spot(deck_now, deck_now.global_transform.affine_inverse() * here) >= 0 and bool(_player.get("controls_enabled")) and Input.is_action_pressed("interact")
+	hull_part.work(delta, deck_now != null and (dev_patch or (bool(_player.get("controls_enabled")) and Input.is_action_pressed("interact"))))
 	if helm_ship != null:
 		var w: Dictionary = helm_ship.get_meta("weather", {})
 		panel.show_ship(helm_ship.state, helm_ship.spec, rules, float(w.get("wind", 0.3)), float(w.get("wind_dir", 0.0)))
@@ -164,6 +177,15 @@ func host_states(states: Array) -> void:
 		ship.state["stage"] = clampi(int(got[4]), 0, rules.stage_count() - 1)
 		ship.state["rudder"] = clampf(float(got[5]), -1.0, 1.0)
 		ship.state["anchored"] = bool(got[6])
+		if got.size() >= 15:  # the hull (sea step 5d): hull, water, the three holes, sinking
+			ship.state["hull"] = float(got[9])
+			ship.state["water"] = clampf(float(got[10]), 0.0, 1.0)
+			ship.state["leaks"] = [clampf(float(got[11]), 0.0, 1.0), clampf(float(got[12]), 0.0, 1.0), clampf(float(got[13]), 0.0, 1.0)]
+			if bool(got[14]) and not bool(ship.state.get("sinking", false)):
+				ship.state["sink_t"] = 0.0
+				if helm_ship == ship:
+					_leave_helm_here()
+			ship.state["sinking"] = bool(got[14])
 		_helmsmen[ship] = {"id": int(got[7]), "level": 0}
 		var mine := int(got[7]) == int(_net().call("my_id"))
 		if mine and helm_ship == null and _asked == ship:
@@ -338,6 +360,9 @@ func prompt(key: String) -> String:
 	if ship == null:
 		return ""
 	var ship_name := String(ship.spec["name"])
+	var hull_said := hull_part.prompt(key)
+	if hull_said != "" or bool(ship.state.get("sinking", false)):  # a going-down ship offers nothing else
+		return hull_said
 	if _near_spot(ship, ship.spec["helm"], HELM_REACH):
 		var need := int(ship.spec["sailing_level"])
 		if not rules.can_steer(String(ship.state["ship"]), sailing_level()):
@@ -358,6 +383,8 @@ func interact() -> bool:
 	var ship := ship_aboard()
 	if ship == null:
 		return false
+	if hull_part.prompt("F") != "":  # at a leak / damaged plank: holding the key works it (game/sea_hull.gd work)
+		return true
 	if _near_spot(ship, ship.spec["helm"], HELM_REACH):
 		if rules.can_steer(String(ship.state["ship"]), sailing_level()):
 			if helmsman_of(ship) != 0 and helmsman_of(ship) != _my_id():
@@ -415,6 +442,9 @@ func _leave_helm_here() -> void:
 
 
 func toggle_anchor(ship: SeaShip) -> void:
+	if bool(ship.state["anchored"]) and (not hull_part.hull.seaworthy(ship.state) or bool(ship.state.get("sinking", false))):
+		_sea.emit_signal("notice", "She is not seaworthy: mend her hull with planks first (hull %d%%)" % roundi(float(ship.state["hull"]) / float(ship.state["hull_max"]) * 100.0))
+		return
 	var net := _net()
 	if net != null and bool(net.call("is_client")):
 		net.call("request_anchor", ships.find(ship))
@@ -440,26 +470,33 @@ func build(ship_id: String) -> void:
 
 
 func launch(ship_id: String) -> void:
+	var spot := free_lane(ship_id, null)
+	spawn(ship_id, spot.x, spot.y, spot.z)
+	_sea.emit_signal("notice", "The %s slides down the slipway" % String(rules.spec(ship_id)["name"]))
+
+
+# The first lane off the slipway with no ship lying in it (but `except`): (x, z, yaw degrees).
+func free_lane(ship_id: String, except: Node3D) -> Vector3:
 	var outline: Array = rules.spec(ship_id)["outline"]
 	var half_length := absf(float(outline[0][0]) - float(outline.back()[0])) * 0.5
 	var spot: Vector3 = shipyard.call("launch_spot", 0, half_length)
-	for k in 12:  # the first lane off the slipway with no ship lying in it
+	for k in 12:
 		spot = shipyard.call("launch_spot", k, half_length)
 		var free := true
 		for other: SeaShip in ships:
-			if Vector2(float(other.state["x"]) - spot.x, float(other.state["z"]) - spot.y).length() < 16.0 + half_length:
+			if other != except and Vector2(float(other.state["x"]) - spot.x, float(other.state["z"]) - spot.y).length() < 16.0 + half_length:
 				free = false
 		if free:
 			break
-	spawn(ship_id, spot.x, spot.y, spot.z)
-	_sea.emit_signal("notice", "The %s slides down the slipway" % String(rules.spec(ship_id)["name"]))
+	return spot
 
 
 # The fleet for the host's save: every ship's kind, place, heading and anchor.
 func to_list() -> Array:
 	var out: Array = []
 	for ship: SeaShip in ships:
-		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell")})
+		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell"),
+			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001)})
 	return out
 
 
@@ -489,6 +526,14 @@ func from_list(saved: Variant) -> void:
 	for entry: Dictionary in keep:
 		var ship := spawn(String(entry["ship"]), float(entry["x"]), float(entry["z"]), rad_to_deg(float(entry.get("yaw", 0.0))))
 		ship.state["anchored"] = bool(entry.get("anchored", true))
+		if entry.get("hull") is float or entry.get("hull") is int:  # fleets saved before step 5d have none (full hull)
+			ship.state["hull"] = clampf(float(entry["hull"]), 0.0, float(ship.state["hull_max"]))
+		if entry.get("leaks") is Array and (entry["leaks"] as Array).size() == 3:
+			ship.state["leaks"] = (entry["leaks"] as Array).map(func(h: Variant) -> float: return clampf(float(h), 0.0, 1.0))
+		if entry.get("water") is float or entry.get("water") is int:
+			ship.state["water"] = clampf(float(entry["water"]), 0.0, 0.99)
+		if bool(ship.state.get("sinking", false)) or hull_part.hull.sunk(ship.state):
+			hull_part.hull.refloat(ship.state)
 
 
 # --- dev ---

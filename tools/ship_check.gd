@@ -8,6 +8,7 @@ extends Node3D
 const ShipRules = preload("res://core/sea/ship_rules.gd")
 const SeaShip = preload("res://game/sea_ship.gd")
 const SeaWaves = preload("res://core/sea/sea_waves.gd")
+const HullRules = preload("res://core/sea/hull_rules.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -16,6 +17,7 @@ var _problems := 0
 func _ready() -> void:
 	var cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/ships.json"))
 	var rules := ShipRules.new(cfg)
+	_hull_checks(rules)
 	_check(rules.wind_share(45.0) > rules.wind_share(90.0) and rules.wind_share(90.0) > rules.wind_share(135.0), "broad reach > beam reach > close hauled")
 	_check(rules.wind_share(175.0) == 0.0, "no way forward straight into the wind")
 	var s := rules.new_state("sloop", 0.0, 0.0, 0.0)  # bow to the north (-z)
@@ -99,3 +101,44 @@ func _check(ok: bool, what: String) -> void:
 	_lines.append(("ok   " if ok else "FAIL ") + what)
 	if not ok:
 		_problems += 1
+
+
+# Sea step 5d: hull, leaks, flooding, sinking, planks, aground damage (core/sea/hull_rules.gd, data/sea/hull.json).
+func _hull_checks(rules: ShipRules) -> void:
+	var hull := HullRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/hull.json")))
+	for id: String in rules.cfg["ships"]:
+		_check((hull.cfg["hull"] as Dictionary).has(id), "%s has a hull size" % id)
+		_check(HullRules.zones(rules.spec(id)).size() == 3, "%s has three leak zones" % id)
+	var s := rules.new_state("sloop", 0.0, 0.0, 0.0)
+	hull.fill(s)
+	var spec: Dictionary = rules.spec("sloop")
+	var most := hull.max_hull("sloop")
+	_check(hull.hit(s, spec, 0.0, -5.0, most * 0.02) == -1 and hull.holes(s) == 0.0, "a light blow holes nothing")
+	_check(hull.hit(s, spec, 0.0, -5.0, most * 0.1) == 0, "a hard blow near the bow holes the bow zone")
+	_check(hull.hit(s, spec, 0.0, 6.0, most * 0.1) == 2, "a hard blow at the stern holes the stern zone")
+	var dry := hull.speed_mult(s)
+	for i in 100:
+		hull.step(s, 0.5)
+	_check(float(s["water"]) > 0.0 and hull.speed_mult(s) < dry, "holes flood the hold and slow her (water %.2f)" % float(s["water"]))
+	_check(hull.use_plank(s, 0) == "patched" and float(s["leaks"][0]) == 0.0, "a plank patches the bow")
+	_check(hull.use_plank(s, 0) == "", "nothing to mend while the stern is still holed")
+	hull.use_plank(s, 2)
+	var water := float(s["water"])
+	hull.step(s, 10.0)
+	_check(float(s["water"]) < water, "the pumps drain a sound hull")
+	var h := float(s["hull"])
+	_check(hull.use_plank(s, 1) == "mended" and float(s["hull"]) > h, "with no holes a plank mends hull")
+	s["leaks"] = [1.0, 1.0, 1.0]
+	var founder := false
+	for i in 400:
+		if hull.step(s, 0.5):
+			founder = true
+			break
+	_check(founder, "three open holes founder her")
+	hull.refloat(s)
+	_check(not hull.sunk(s) and not hull.seaworthy(s), "refloated: afloat but not seaworthy")
+	hull.use_plank(s, 0)
+	hull.use_plank(s, 0)
+	_check(hull.seaworthy(s), "two planks make her seaworthy")
+	_check(hull.aground_damage(1.5) == 0.0 and hull.aground_damage(6.0) > hull.aground_damage(4.0), "aground: harmless slow, worse faster")
+	_check(hull.hit(s, spec, 0.0, 0.0, NAN) == -1, "a bad number does nothing")

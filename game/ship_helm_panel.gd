@@ -1,13 +1,14 @@
 # Purpose: the helm panel shown while steering a ship (sea step 5a), real game UI (game/ui_skin.gd): a compass with
 # the ship pointing up and the wind's arrow round it, the sail stages as pills (the one set lit), the point of sail
-# with the share of the wind the heading gets, the speed in knots, the rudder, the anchor warning and the keys.
+# with the share of the wind the heading gets, the speed in knots, the rudder, the anchor warning and the keys; the hull
+# (sea step 5d): the little ship darkens with damage and shows its holes, a hull bar and the water in the hold.
 # Dependencies: game/ui_skin.gd, core/sea/ship_rules.gd (passed in).
 extends Control
 
 const UiSkin = preload("res://game/ui_skin.gd")
 const ShipRules = preload("res://core/sea/ship_rules.gd")
 
-const SIZE := Vector2(560, 150)
+const SIZE := Vector2(560, 172)
 const KNOTS := 1.944
 
 var _font: Font = ThemeDB.fallback_font
@@ -46,7 +47,12 @@ func _draw() -> void:
 		var a := k * TAU / 8.0
 		draw_line(c + Vector2.from_angle(a) * 50.0, c + Vector2.from_angle(a) * 56.0, Color(1, 1, 1, 0.3), 1.5)
 	var hull := PackedVector2Array([c + Vector2(0, -26), c + Vector2(9, -6), c + Vector2(8, 20), c + Vector2(-8, 20), c + Vector2(-9, -6)])
-	draw_colored_polygon(hull, Color(0.82, 0.66, 0.42))
+	var sound := clampf(float(_state.get("hull", 1.0)) / maxf(float(_state.get("hull_max", 1.0)), 1.0), 0.0, 1.0)
+	draw_colored_polygon(hull, Color(0.82, 0.66, 0.42).lerp(Color(0.45, 0.18, 0.12), 1.0 - sound))
+	var leaks: Array = _state.get("leaks", [])
+	for i in leaks.size():  # the three leak zones (bow, waist, stern) on the little ship: red while holed
+		if float(leaks[i]) > 0.0:
+			draw_circle(c + [Vector2(5, -14), Vector2(-6, 2), Vector2(5, 13)][i], 2.5 + 3.0 * float(leaks[i]), UiSkin.BAD)
 	var yaw := float(_state["yaw"])
 	var to := Basis(Vector3.UP, yaw).inverse() * Vector3(cos(_wind_dir), 0.0, sin(_wind_dir))  # ship space: -z ahead = up
 	var dir := Vector2(to.x, to.z).normalized()
@@ -82,6 +88,12 @@ func _draw() -> void:
 	draw_line(Vector2(mid, bar.position.y - 3), Vector2(mid, bar.end.y + 3), Color(1, 1, 1, 0.35), 1.0)
 	var at := mid + float(_state["rudder"]) * bar.size.x * 0.5
 	draw_rect(Rect2(Vector2(minf(mid, at), bar.position.y), Vector2(absf(at - mid), bar.size.y)), UiSkin.ACCENT)
+	# hull and hold (sea step 5d)
+	if _state.has("hull_max"):
+		var hb := Rect2(Vector2(x, r.position.y + 152), Vector2(150, 8))
+		UiSkin.bar(self, hb, sound, UiSkin.GOOD if sound > 0.5 else (UiSkin.ACCENT if sound > 0.25 else UiSkin.BAD))
+		var water := float(_state.get("water", 0.0))
+		draw_string(_font, Vector2(hb.end.x + 12.0, hb.end.y + 3.0), "HULL %d%%%s" % [roundi(sound * 100.0), "   WATER IN THE HOLD %d%%" % roundi(water * 100.0) if water > 0.005 else ""], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.BAD if water > 0.005 else UiSkin.TEXT_DIM)
 	# keys
 	var kx := x
 	var ky := r.position.y + 118.0

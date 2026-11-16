@@ -1,1 +1,1 @@
-!wait 3;/tp sea;!wait 10;!sea time 0.42;!sea weather calm;!immortal;!wait 2;!sea status;!isle routes start;!isle walk all start snap;!sea status
+!wait 3;/tp sea;!wait 10;!sea time 0.42;!sea weather calm;!immortal;!ship board;!wait 2;!ship hit 120 bow;!ship patch stern;!ship patch off;!ship lookzone bow;!wait 1;!snap hull_spout_near
