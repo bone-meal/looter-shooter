@@ -67,7 +67,7 @@ func _process(delta: float) -> void:
 	if _input_t >= 1.0 / INPUT_HZ and is_client() and fleet.get("helm_ship") != null:
 		_input_t = 0.0
 		var ship: Node = fleet.get("helm_ship")
-		_helm_input.rpc_id(1, (fleet.get("ships") as Array).find(ship), float(fleet.get("wanted_rudder")), int(fleet.get("wanted_stage")))
+		_helm_input.rpc_id(1, (fleet.get("ships") as Array).find(ship), float(fleet.get("wanted_rudder")), int(fleet.get("wanted_stage")), int(fleet.call("sailing_level")))
 
 
 # --- the fleet (host -> everyone) ---
@@ -159,11 +159,12 @@ func _helm_leave(ship_index: int) -> void:
 
 
 @rpc("any_peer", "call_remote", "unreliable_ordered")
-func _helm_input(ship_index: int, rudder: float, stage: int) -> void:
+func _helm_input(ship_index: int, rudder: float, stage: int, level: int) -> void:
 	var from := multiplayer.get_remote_sender_id()
 	var ship := _ship_for(from, ship_index)
 	if ship == null or int(_fleet().call("helmsman_of", ship)) != from or not is_finite(rudder):
 		return
+	_fleet().call("helmsman_level", ship, clampi(level, 1, MAX_LEVEL))  # his Sailing level as it grows while he steers
 	var s: Dictionary = ship.get("state")
 	s["rudder"] = clampf(rudder, -1.0, 1.0)
 	s["stage"] = clampi(stage, 0, int(_fleet().call("top_stage_of", ship)))  # the swift sail only at its Sailing level
@@ -266,6 +267,42 @@ func _board_down(items: Array) -> void:
 	var fleet := _fleet()
 	if fleet != null:
 		fleet.get("boarding").call("from_net", items)
+
+
+# A crane haul started here (game/sea_crane.gd): everybody else sees the hook go down at that ship (sea coordinates).
+func tell_crane(ship_index: int, target_sea: Vector3) -> void:
+	if net.is_host():
+		_crane_down.rpc(ship_index, target_sea, my_id())
+	else:
+		_crane_up.rpc_id(1, ship_index, target_sea)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _crane_up(ship_index: int, target_sea: Vector3) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	if _ship_for(from, ship_index) == null or not target_sea.is_finite():
+		return
+	_crane_here(ship_index, target_sea)
+	_crane_down.rpc(ship_index, target_sea, from)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _crane_down(ship_index: int, target_sea: Vector3, who: int) -> void:
+	if who != my_id():
+		_crane_here(ship_index, target_sea)
+
+
+func _crane_here(ship_index: int, target_sea: Vector3) -> void:
+	var fleet := _fleet()
+	if fleet == null:
+		return
+	var ships: Array = fleet.get("ships")
+	if ship_index >= 0 and ship_index < ships.size():
+		fleet.get("crane").call("show_haul", ships[ship_index], target_sea)
+		crane_seen += 1
+
+
+var crane_seen := 0  # dev: other players' crane hauls shown here
 
 
 # A ship's part made at the shipyard by a client (his Carpentry and materials: his claim): the host fits it.

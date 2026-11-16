@@ -37,12 +37,15 @@ def crane(m):
     m.rod(K("wood", DARK), 0.06, (0.0, POST - 1.0, 0.0), (JIB * 0.55 * math.cos(LIFT), POST + JIB * 0.55 * math.sin(LIFT), 0.0), segs=8)  # brace
     m.lathe(K("wood", DARK), [(0.0, -0.05), (0.13, -0.05), (0.15, 0.0), (0.13, 0.05), (0.0, 0.05)], (TIP[0], TIP[1] - 0.08, TIP[2]), segs=14, axis="f")  # pulley sheave
     m.box(K("metal", IRON), (0.06, 0.32, 0.14), (TIP[0], TIP[1] - 0.04, 0.0))  # block cheeks
-    m.lathe(K("wood", DARK), [(0.0, -0.14), (0.09, -0.14), (0.09, 0.14), (0.0, 0.14)], (-0.22, 1.0, 0.0), segs=12, axis="f")  # winch drum
+    # the hand winch (node "Winch": drum, wound rope, crank; turns round its axle at WINCH while hauling)
+    m.lathe(K("wood", DARK), [(0.0, -0.14), (0.09, -0.14), (0.09, 0.14), (0.0, 0.14)], (-0.22, 1.0, 0.0), segs=12, axis="f", node="Winch")
     for k in range(6):  # rope wound on the drum
-        m.lathe(K("cloth", ROPE), [(0.0, -0.012), (0.1, -0.012), (0.1, 0.012), (0.0, 0.012)], (-0.22, 1.0, -0.1 + 0.04 * k), segs=12, axis="f")
-    m.rod(K("metal", IRON), 0.02, (-0.22, 1.0, 0.16), (-0.22, 1.0, 0.3), segs=6)  # crank
-    m.rod(K("metal", IRON), 0.02, (-0.22, 1.0, 0.3), (-0.22, 0.8, 0.3), segs=6)
-    m.rod(K("wood", DARK), 0.03, (-0.22, 0.8, 0.3), (-0.22, 0.8, 0.42), segs=6)
+        m.lathe(K("cloth", ROPE), [(0.0, -0.012), (0.1, -0.012), (0.1, 0.012), (0.0, 0.012)], (-0.22, 1.0, -0.1 + 0.04 * k), segs=12, axis="f", node="Winch")
+    for size in ((0.025, 0.2, 0.02), (0.2, 0.025, 0.02)):  # a cross on the drum's face so the turning shows
+        m.box(K("metal", IRON), size, (-0.22, 1.0, -0.15), node="Winch")
+    m.rod(K("metal", IRON), 0.02, (-0.22, 1.0, 0.16), (-0.22, 1.0, 0.3), segs=6, node="Winch")  # crank
+    m.rod(K("metal", IRON), 0.02, (-0.22, 1.0, 0.3), (-0.22, 0.8, 0.3), segs=6, node="Winch")
+    m.rod(K("wood", DARK), 0.03, (-0.22, 0.8, 0.3), (-0.22, 0.8, 0.42), segs=6, node="Winch")
     m.rod(K("cloth", ROPE), 0.015, (-0.22, 1.1, 0.0), (0.0, POST + 0.05, 0.0), segs=6)  # rope up the post
     m.rod(K("cloth", ROPE), 0.015, (0.0, POST + 0.05, 0.0), (TIP[0], TIP[1] + 0.06, TIP[2]), segs=6)  # along the jib
     m.box(K("metal", IRON), (0.01, 0.01, 0.01), (TIP[0], TIP[1] - 0.2, TIP[2]), node="Tip")

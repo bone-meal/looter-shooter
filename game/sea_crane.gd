@@ -5,13 +5,15 @@
 # to the ship nearest the slipway without one (the host decides online). Used from her deck: stand at the post, the
 # ship nearly still and a salvage spot not yet taken under the jib's reach: interact lowers a hook on a rope into
 # the sea and hauls the find up after a few seconds (game/sea_salvage.gd take: logbook as by diving, no Agility xp).
-# Finds are each player's own (his logbook), so working the crane needs no host.
+# Finds are each player's own (his logbook), so working the crane needs no host; the haul is SHOWN on every machine
+# (game/net_sea.gd tell_crane: ship + where the hook goes, in sea coordinates): the rope, hook and winch move there too.
 # Dependencies: data/sea/crane.json, game/sea_salvage.gd (through the sea world), the fleet (game/sea_ships.gd).
 extends Node3D
 
 const MODEL := "res://assets/models/sea/crane.gltf"
 const GRAPNEL := "res://assets/models/sea/grapnel.gltf"
 const TIP := Vector3(2.13, 3.69, 0.0)  # tools/blender/sea_crane.py TIP (the jib reaches along +x)
+const WINCH := Vector3(-0.22, 1.0, 0.0)  # the winch's axle (along z)
 
 var cfg: Dictionary
 var dev_use := false  # dev: interact without the key
@@ -21,6 +23,7 @@ var _sea: Node3D
 var _player: CharacterBody3D
 var _cranes := {}  # SeaShip -> {"holder": Node3D, "side": 1 / -1, "spot": [x, z]}
 var _work := {}  # this player's haul: {"ship", "spot": salvage spot, "t", "rope", "hook"}
+var _shows: Array = []  # other players' hauls seen here: {"ship", "target": sea position, "t", "rope", "hook"}
 var _rope_mat: StandardMaterial3D
 
 
@@ -56,7 +59,17 @@ func show_for(ship: Node3D) -> void:
 		holder.position = Vector3(float(spot[0]), float(_fleet.get("rules").call("deck_height", String(ship.get("state")["ship"]), float(spot[1]))), float(spot[1]))
 		var side := 1.0 if float(spot[0]) >= 0.0 else -1.0
 		holder.rotation.y = 0.0 if side > 0.0 else PI  # the jib out over her side
-		_cranes[ship] = {"holder": holder, "side": side, "spot": spot}
+		var winch := holder.find_child("Winch", true, false) as Node3D
+		var axle: Node3D = null
+		if winch != null:  # turn the winch round its own axle (its node sits at the model's origin)
+			axle = Node3D.new()
+			holder.add_child(axle)
+			axle.position = WINCH
+			var keep := winch.global_transform
+			winch.get_parent().remove_child(winch)
+			axle.add_child(winch)
+			winch.global_transform = keep
+		_cranes[ship] = {"holder": holder, "side": side, "spot": spot, "axle": axle}
 	elif not has and _cranes.has(ship):
 		(_cranes[ship]["holder"] as Node).queue_free()
 		_cranes.erase(ship)
@@ -118,13 +131,56 @@ func interact() -> bool:
 	var hook: Node3D = (load(GRAPNEL) as PackedScene).instantiate() as Node3D if ResourceLoader.exists(GRAPNEL) else Node3D.new()
 	add_child(hook)
 	_work = {"ship": job["ship"], "spot": job["spot"], "t": 0.0, "rope": rope, "hook": hook}
+	var net: Node = _fleet.call("_net")
+	if net != null:
+		net.call("tell_crane", (_fleet.get("ships") as Array).find(job["ship"]), _sea.call("local_of", (job["spot"]["node"] as Node3D).global_position))
 	return true
+
+
+# Another player lowers the crane of a ship (game/net_sea.gd): the same rope and hook here, nothing taken.
+func show_haul(ship: Node3D, target_sea: Vector3) -> void:
+	if not _cranes.has(ship) or not target_sea.is_finite():
+		return
+	var rope := MeshInstance3D.new()
+	var tube := CylinderMesh.new()
+	tube.top_radius = 0.02
+	tube.bottom_radius = 0.02
+	tube.height = 1.0
+	tube.radial_segments = 6
+	tube.rings = 1
+	rope.mesh = tube
+	rope.material_override = _rope_mat
+	add_child(rope)
+	var hook: Node3D = (load(GRAPNEL) as PackedScene).instantiate() as Node3D if ResourceLoader.exists(GRAPNEL) else Node3D.new()
+	add_child(hook)
+	_shows.append({"ship": ship, "target": target_sea, "t": 0.0, "rope": rope, "hook": hook})
+
+
+# The rope and hook of a haul k (0..1) of the way through: down to the find and back up.
+func _draw_haul(ship: Node3D, target: Vector3, k: float, rope: MeshInstance3D, hook: Node3D) -> void:
+	var tip := tip_of(ship)
+	var low := Vector3(lerpf(tip.x, target.x, 0.6), target.y, lerpf(tip.z, target.z, 0.6))
+	var hook_at := tip.lerp(low, sin(clampf(k, 0.0, 1.0) * PI))
+	hook.global_position = hook_at
+	_stretch(rope, tip, hook_at + Vector3(0, 0.47, 0))
+	var axle: Node3D = _cranes[ship].get("axle")
+	if axle != null:  # paying out going down, winding in coming up
+		axle.rotation.z += (0.12 if k < 0.5 else -0.12)
 
 
 func _process(delta: float) -> void:
 	if dev_use:
 		dev_use = false
 		interact()
+	for seen: Dictionary in _shows.duplicate():
+		seen["t"] = float(seen["t"]) + delta
+		var k := float(seen["t"]) / float(cfg["seconds"])
+		if k >= 1.0 or not is_instance_valid(seen["ship"]) or not _cranes.has(seen["ship"]):
+			(seen["rope"] as Node).queue_free()
+			(seen["hook"] as Node).queue_free()
+			_shows.erase(seen)
+			continue
+		_draw_haul(seen["ship"], _sea.call("world_of", seen["target"]), k, seen["rope"], seen["hook"])
 	if _work.is_empty():
 		return
 	var ship: Node3D = _work["ship"]
@@ -134,13 +190,7 @@ func _process(delta: float) -> void:
 		return
 	_work["t"] = float(_work["t"]) + delta
 	var k := float(_work["t"]) / float(cfg["seconds"])
-	var tip := tip_of(ship)
-	var target: Vector3 = (_work["spot"]["node"] as Node3D).global_position
-	var low := Vector3(lerpf(tip.x, target.x, 0.6), target.y, lerpf(tip.z, target.z, 0.6))  # the hook goes down to the find and back
-	var down := sin(clampf(k, 0.0, 1.0) * PI)
-	var hook_at := tip.lerp(low, down)
-	(_work["hook"] as Node3D).global_position = hook_at
-	_stretch(_work["rope"] as MeshInstance3D, tip, hook_at + Vector3(0, 0.47, 0))
+	_draw_haul(ship, (_work["spot"]["node"] as Node3D).global_position, k, _work["rope"], _work["hook"])
 	if k >= 1.0:
 		var spot: Dictionary = _work["spot"]
 		_stop()

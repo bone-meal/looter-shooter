@@ -564,7 +564,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("CRANE use: '%s'" % String(crane_k.call("prompt", "F")))
 				crane_k.set("dev_use", true)
 			else:
-				_lines.append("CRANE %s: %s; logbook found %d" % [" ".join(words.slice(2)), String(crane_k.call("status")), (sea_k.get("salvage").get("book").get("found") as Dictionary).size()])
+				var seen_k: Variant = session.get("net").get_node_or_null("Sea").get("crane_seen") if session.get("net") != null and session.get("net").get_node_or_null("Sea") != null else 0
+				_lines.append("CRANE %s: %s; logbook found %d; others' hauls seen here %s" % [" ".join(words.slice(2)), String(crane_k.call("status")), (sea_k.get("salvage").get("book").get("found") as Dictionary).size(), str(seen_k)])
 		"board":  # sea step 5d-3: !board rail <ship n> | do | status <note> | wait_lash | wait_plank | wait_none | cross
 			var sea_b: Node = session.call("sea")
 			var fleet_b: Node = sea_b.get("ships") if sea_b != null else null

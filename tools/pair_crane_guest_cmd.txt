@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!cannon wait_ships 2;!wait 4;!ship use 1;!ship board;!crane post;!wait 2;!crane status g_post;!crane use;!wait 2;!third;!snap guest_crane;!third;!wait 6;!crane status g_hauled;!wait 12;!crane status g_end

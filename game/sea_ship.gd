@@ -24,6 +24,8 @@ var _sail_shown := 0.0
 var _wheel := 0.0
 var _oars_t := 0.0
 var _wind_flutter := 0.0
+var _swift_on := false
+var _swift_parts: Array = []  # [sail mesh, its layers] hidden while the swift sail is set, and the swift sails shown
 var lower := 0.0  # metres she sits lower than the waves carry her (water in the hold, sinking: game/sea_hull.gd)
 var list_deg := 0.0  # degrees she lists to port (flooding, sinking)
 
@@ -164,6 +166,9 @@ func _animate(wind: float, wind_dir: float, delta: float) -> void:
 		sail.scale = Vector3(1.0, lerpf(0.07, 1.0, _sail_shown), 1.0 + 0.15 * (1.0 - _sail_shown))
 	for jib: Node3D in _jibs:
 		jib.scale = Vector3.ONE * lerpf(0.05, 1.0, _sail_shown)
+	var swift := bool(stage.get("swift", false))
+	if swift != _swift_on:
+		_show_swift(swift)
 	var to := Basis(Vector3.UP, float(state["yaw"])).inverse() * Vector3(cos(wind_dir), 0.0, sin(wind_dir))  # down-wind, ship space
 	var across := atan2(-to.x, -to.z)  # where the wind blows to, from the bow (0 = dead ahead)
 	for yard: Node3D in _yards:  # braced round so the wind fills the sail
@@ -188,6 +193,59 @@ func _animate(wind: float, wind_dir: float, delta: float) -> void:
 			var oars := _parts[side] as Node3D
 			oars.visible = rowing
 			oars.rotation.y = sin(_oars_t * signf(float(stage["oars"]) + 0.001)) * 0.32 * (1.0 if side == "OarsR" else -1.0)
+
+
+const SWIFT_MODEL := "res://assets/models/sea/swift_sail.gltf"
+
+
+# The swift sail (sea step 5e; director: "needs new model"): every sail of hers is covered by the crimson-and-cream
+# swift sail (assets/models/sea/swift_sail.gltf, tools/blender/sea_swift_sail.py) stretched to its size, her own
+# cloth and head sails hidden; back to her own sails when the stage is left. Made the first time it is set.
+func _show_swift(on: bool) -> void:
+	_swift_on = on
+	if on and _swift_parts.is_empty() and ResourceLoader.exists(SWIFT_MODEL):
+		for sail: Node3D in _sails:
+			var meshes: Array = []
+			if sail is MeshInstance3D:
+				meshes.append(sail)
+			for found in sail.find_children("*", "MeshInstance3D", true, false):
+				meshes.append(found)
+			if meshes.is_empty():
+				continue
+			var box := AABB()
+			var first := true
+			for mesh: MeshInstance3D in meshes:
+				var into := sail.global_transform.affine_inverse() * mesh.global_transform
+				var part := into * mesh.get_aabb()
+				box = part if first else box.merge(part)
+				first = false
+				_swift_parts.append([mesh, mesh.layers])
+			var cover := (load(SWIFT_MODEL) as PackedScene).instantiate() as Node3D
+			for found in cover.find_children("*", "MeshInstance3D", true, false):
+				var piece := found as MeshInstance3D
+				FantasyModels.dress(piece.mesh)
+				for i in piece.mesh.get_surface_count():
+					var mat := piece.mesh.surface_get_material(i)
+					if mat is BaseMaterial3D:
+						var both := (mat as BaseMaterial3D).duplicate() as BaseMaterial3D
+						both.cull_mode = BaseMaterial3D.CULL_DISABLED  # seen from the deck and from the sea
+						piece.set_surface_override_material(i, both)
+			sail.add_child(cover)
+			var size := box.size
+			var fore_aft := size.x < size.z  # a gaff / lateen / batten sail lies along her, a square sail across
+			var wide := size.z if fore_aft else size.x
+			var deep := clampf(minf(wide, size.y) * 0.25, 0.4, 2.0)
+			var turn := Basis(Vector3.UP, -PI * 0.5) if fore_aft else Basis.IDENTITY  # bellying out to leeward / forward
+			cover.transform = Transform3D(turn * Basis.from_scale(Vector3(wide * 0.5, size.y * 0.5, deep)), box.get_center())
+			_swift_parts.append([cover, -1])
+	for pair: Array in _swift_parts:
+		var node := pair[0] as Node3D
+		if int(pair[1]) < 0:
+			node.visible = on
+		else:
+			(node as MeshInstance3D).layers = 0 if on else int(pair[1])
+	for jib: Node3D in _jibs:
+		jib.visible = not on
 
 
 # Ship space -> scene, and a deck spot (data [x, z]) as a scene position at deck height.

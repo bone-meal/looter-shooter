@@ -275,6 +275,12 @@ func give_helm(ship: SeaShip, id: int, level: int) -> bool:
 	return true
 
 
+# Host: a remote helmsman's Sailing level now (it can rise while he steers: perks and the swift sail follow at once).
+func helmsman_level(ship: SeaShip, level: int) -> void:
+	if _helmsmen.has(ship):
+		(_helmsmen[ship] as Dictionary)["level"] = level
+
+
 func free_helm(ship: SeaShip) -> void:
 	_helmsmen.erase(ship)
 	ship.state["rudder"] = 0.0
