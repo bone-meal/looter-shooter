@@ -51,35 +51,35 @@
   {
    "find": "brass_spyglass",
    "at": [
-    -180,
-    2640
+    138.3,
+    6705.5
    ],
-   "depth": 7.0,
+   "depth": 9.1,
    "model": "salvage_chest"
   },
   {
    "find": "captains_log",
    "at": [
-    60,
-    2360
+    262.2,
+    6286.8
    ],
-   "depth": 9.0,
+   "depth": 9.5,
    "model": "salvage_chest"
   },
   {
    "find": "ships_bell",
    "at": [
-    -40,
-    2720
+    203.4,
+    6796.1
    ],
-   "depth": 12.0,
+   "depth": 9.1,
    "model": "wreck_small"
   },
   {
    "find": "silver_compass",
    "at": [
-    300,
-    1950
+    300.0,
+    5950.0
    ],
    "depth": 10.0,
    "model": "salvage_chest"
@@ -87,26 +87,26 @@
   {
    "find": "pearl_box",
    "at": [
-    -420,
-    2440
+    -160.9,
+    6103.1
    ],
-   "depth": 14.0,
+   "depth": 9.7,
    "model": "wreck_small"
   },
   {
    "plan": "raft_plan",
    "at": [
-    -140,
-    2520
+    236.8,
+    6470.4
    ],
-   "depth": 5.0,
+   "depth": 9.1,
    "model": "salvage_chest"
   },
   {
    "plan": "longboat_plan",
    "at": [
-    -2100,
-    -1900
+    -6100.0,
+    -5900.0
    ],
    "depth": 12.0,
    "model": "wreck_small"
@@ -114,8 +114,8 @@
   {
    "plan": "junk_plan",
    "at": [
-    2050,
-    -2100
+    6050.0,
+    -6100.0
    ],
    "depth": 14.0,
    "model": "wreck_small"

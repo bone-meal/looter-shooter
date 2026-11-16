@@ -74,8 +74,8 @@ func _process(delta: float) -> void:
 	var was := bool(_player.get("swimming"))
 	var wet := false
 	if _ships.call("ship_aboard") == null and not bool(_player.get("carried")):
-		if was:
-			wet = not (_player.is_on_floor() and feet > surface - float(cfg["wade"]) + 0.25)
+		if was:  # out once standing in the shallows, or clear of the water altogether (a teleport, a wave dropping away)
+			wet = feet < surface + 1.0 and not (_player.is_on_floor() and feet > surface - float(cfg["wade"]) + 0.25)
 		else:
 			wet = feet < surface - float(cfg["wade"])
 	_player.set("swimming", wet)

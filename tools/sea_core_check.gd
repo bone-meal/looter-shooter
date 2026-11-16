@@ -17,11 +17,13 @@ var _problems := 0
 func _ready() -> void:
 	var world: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/world.json"))
 	var map := SeaMap.new(world)
-	_check(map.width() == 6000.0 and map.height() == 6000.0, "6 x 6 km grid")
+	_check(map.width() == 18000.0 and map.height() == 18000.0, "18 x 18 km grid (3 x 3 regions of 6 km)")
 	_check(map.region_id_at(0.0, 0.0) == "region_7", "the Maelstrom in the centre")
-	_check(map.region_id_at(0.0, 2500.0) == "region_1", "region 1 bottom middle")
-	_check(map.region_id_at(9000.0, 0.0) == "", "beyond the edge: no region")
-	_check(map.centre_of("region_1") == Vector2(0.0, 2000.0), "centre of region 1")
+	_check(map.region_id_at(0.0, 6500.0) == "region_1", "region 1 bottom middle")
+	_check(map.region_id_at(9500.0, 0.0) == "", "beyond the edge: no region")
+	_check(map.centre_of("region_1") == Vector2(0.0, 6000.0), "centre of region 1")
+	_check(map.moved_from(-350.0, 2594.0, 2000.0).is_equal_approx(Vector2(-350.0, 6594.0)), "a 2 km-cell position moves to the same spot of its region")
+	_check(map.moved_from(-2100.0, -1900.0, 2000.0).is_equal_approx(Vector2(-6100.0, -5900.0)), "region 4 too")
 	for row: Array in world["grid"]:
 		for id: String in row:
 			_check((world["regions"] as Dictionary).has(id), "region %s has data" % id)

@@ -8,6 +8,8 @@ extends Node
 const ShortcutSpots = preload("res://core/shortcut_spots.gd")
 const GunGen = preload("res://core/gun_gen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
+const IsleWalker = preload("res://tools/isle_walker.gd")
+const IsleRoutes = preload("res://core/sea/isle_routes.gd")
 
 const OUT := "res://tools/userdata/"
 
@@ -67,7 +69,7 @@ func _ready() -> void:
 
 # Developer-only steps between chat lines: !wait <s>, !shot <name>, !look <yaw> <pitch> (degrees), !third,
 # !key <action> (a short press), !hold <action> / !release <action>, !snap <name> (picture at once), !cast <elements> (a staff spell in the fantasy world, free of mana), !goto <x> <z>, !nearnode, !accept <quest>, !use <item>, !make <recipe>,
-# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !sea time|weather|go|status (sea world), !ship status|board|helm|letgo|anchor up|down|stage n|rudder r|off|wind deg|head deg (sea ships), !swim status|drop x z|spot n|take|ladder|climb|rope|stamina n|log (swimming, salvage), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
+# !state (fantasy bag, levels and quests into the log), !neartrack [id start] (stand at the nearest animal tracks, or node whose id starts so), !nearclimb (stand at the foot of the nearest cliff shortcut), !sea time|weather|go|status (sea world), !isle routes [island] | walk [place|all] [island] (the island's generated paths: joined up? walked by the real player), !ship status|board|helm|letgo|anchor up|down|stage n|rudder r|off|wind deg|head deg (sea ships), !swim status|drop x z|spot n|take|ladder|climb|rope|stamina n|log (swimming, salvage), !animals [note|go|kill] (wild animals near and what they do; go = stand 6 m from the nearest, kill = it falls to you), !fight [note] (health, mana, ward and nearby creatures into the log), !face (turn to the nearest creature), !marks [note] (spikes, fire and water lying on the ground into the log), !squad [note] (every creature's squad order and where it stands into the log), !moves [note] (the special attacks creatures have used since the last !moves into the log), !usemove (the nearest creature starts its own attack now), !above name [height] [yaw] (a picture from the air), !heard [seconds] (the sounds audible in the last seconds into the log), !tier <id> (graphics tier potato / low / medium / high / ultimate for the rest of the run), !buildings full|plain (which building models places built from now on use), !where [note] (the player's map position into the log), !photo <name> (a HUD-less picture for the loading screens).
 func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 	var player := _find_player(get_tree().root) as Node3D
 	match words[0]:
@@ -447,7 +449,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", land.call("ground_world", best["at"].x + 1.0, best["at"].z + 1.0), 0.0)
 				player.call("look_at_point", land.call("world_of", best["at"]))
 			_lines.append("nearest tracks: %s" % str(best.get("id", "none")))
-		"sea":  # sea world (step 4): !sea time <0..1> | weather <calm|rain|fog|storm|own> | go <x> <z> | status
+		"sea":  # sea world (step 4): !sea time <0..1> | weather <calm|rain|fog|storm|own> | go <x> <z> [y] | status
 			var sea_world: Node = session.call("sea")
 			if sea_world == null:
 				_lines.append("sea: not built (use /tp sea first)")
@@ -456,7 +458,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			elif words.size() > 2 and words[1] == "weather":
 				sea_world.call("force_weather", "" if words[2] == "own" else words[2])
 			elif words.size() > 3 and words[1] == "go":
-				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), 25.0, float(words[3]))), 0.0)
+				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), float(words[4]) if words.size() > 4 else 25.0, float(words[3]))), 0.0)  # optional height: drop onto high ground
 			else:
 				_lines.append(String(sea_world.call("status")))
 		"ship":  # sea ships (step 5a): !ship status | board | helm | letgo | anchor up|down | stage <n> | rudder <-1..1|off> | wind <degrees off> | head <compass degrees>
@@ -513,6 +515,25 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
 					_:
 						_lines.append(String(fleet.call("status")))
+		"isle":  # island paths (director: every place reachable by a path that can be walked): !isle routes [island] | walk [place|all] [island] [snap]
+			var sea_isle: Node = session.call("sea")
+			if sea_isle == null:
+				_lines.append("isle: no sea (use /tp sea first)")
+			elif words.size() > 1 and words[1] == "walk":
+				var walker := IsleWalker.new()
+				add_child(walker)
+				var pictures := func(shot: String) -> void:
+					await _stage(renderer, shot, 0.2)
+				await walker.walk(player as CharacterBody3D, sea_isle, words[3] if words.size() > 3 else "", words[2] if words.size() > 2 else "all", pictures if words.has("snap") else Callable())
+				_lines.append_array(walker.lines)
+				walker.queue_free()
+			else:
+				var wanted := words[2] if words.size() > 2 else "start"
+				for island: Dictionary in sea_isle.get("islands").get("_cfg")["islands"]:
+					if String(island["id"]) == wanted and island.has("props"):
+						var routes := IsleRoutes.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/isles/%s.json" % String(island["props"]))))
+						var found := routes.problems()
+						_lines.append("ROUTES %s: %d places, %d path points, problems %d %s" % [wanted, routes.pois.size(), routes.points.size(), found.size(), "; ".join(found)])
 		"swim":  # sea swimming (step 5b): !swim status | drop <x> <z> | spot <n> | take | ladder | rope | stamina <n> | log
 			var sea_w: Node = session.call("sea")
 			if sea_w == null:

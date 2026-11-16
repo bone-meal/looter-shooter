@@ -47,3 +47,15 @@ func centre_of(id: String) -> Vector2:
 # How far a sea position is inside the map (negative = beyond its edge), for the edge of the world.
 func inside_by(x: float, z: float) -> float:
 	return minf(width() * 0.5 - absf(x), height() * 0.5 - absf(z))
+
+
+# A sea position saved when the cells were `old_cell` metres (director 2026-11-16: regions 2 km -> 6 km) moved to the
+# same spot of the same region now: the offset from its cell's centre is kept.
+func moved_from(x: float, z: float, old_cell: float) -> Vector2:
+	var cols := float((grid[0] as Array).size())
+	var rows := float(grid.size())
+	var col := clampf(floorf((x + old_cell * cols * 0.5) / old_cell), 0.0, cols - 1.0)
+	var row := clampf(floorf((z + old_cell * rows * 0.5) / old_cell), 0.0, rows - 1.0)
+	var old_centre := Vector2((col + 0.5) * old_cell - old_cell * cols * 0.5, (row + 0.5) * old_cell - old_cell * rows * 0.5)
+	var new_centre := Vector2((col + 0.5) * cell - width() * 0.5, (row + 0.5) * cell - height() * 0.5)
+	return Vector2(x, z) - old_centre + new_centre

@@ -1,16 +1,16 @@
 {
  "version": 1,
- "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island replaces test_small; the shipyard (data/sea/ships.json) sits in its east cove.",
+ "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island (~1.6 km, the home-port town island, director 2026-11-16) replaces test_small; the shipyard (data/sea/ships.json) sits on its east harbour's west bank, new arrivals land on the town plaza. Big islands carry \"chunks\" in their isles json and are streamed (game/sea_isle_stream.gd).",
  "near": 1200,
  "far": 5500,
  "islands": [
   {
    "id": "start",
    "pos": [
-    -350,
-    2594
+    -520.0,
+    6570.0
    ],
-   "radius": 125,
+   "radius": 840,
    "model": "isle_start",
    "props": "isle_start",
    "ground": {
@@ -18,14 +18,15 @@
     "grass": "#6f9c48",
     "rock": "#958b80",
     "wet": "#9c8664",
-    "path": "#8a7152"
+    "path": "#8a7152",
+    "forest": "#6a6638"
    }
   },
   {
    "id": "test_tiny",
    "pos": [
-    120,
-    2300
+    1300,
+    6200
    ],
    "radius": 14,
    "model": "isle_tiny",
@@ -34,8 +35,8 @@
   {
    "id": "test_medium",
    "pos": [
-    500,
-    1700
+    1650,
+    5000
    ],
    "radius": 160,
    "model": "isle_medium",
@@ -44,8 +45,8 @@
   {
    "id": "test_large",
    "pos": [
-    -700,
-    1300
+    -1900,
+    4500
    ],
    "radius": 420,
    "model": "isle_large",
@@ -53,8 +54,8 @@
   }
  ],
  "spawn": [
-  -328,
-  2590
+  -80.0,
+  6640.0
  ],
  "props": {
   "range": {
@@ -62,20 +63,37 @@
    "grass_tuft": 70,
    "shells": 45,
    "coconuts": 60,
-   "fern": 110,
-   "bush": 200,
+   "fern": 90,
+   "bush": 170,
    "driftwood": 120,
-   "palm_a": 900,
-   "palm_b": 900,
+   "palm_a": 700,
+   "palm_b": 700,
    "sea_stack": 2000,
-   "boulder_b": 600
+   "boulder_b": 600,
+   "broadleaf_a": 650,
+   "broadleaf_b": 650,
+   "jungle_giant": 900,
+   "flowers": 60,
+   "reeds": 90,
+   "dune_grass": 80,
+   "vine": 220,
+   "outcrop_slabs": 900,
+   "outcrop_spires": 900,
+   "outcrop_tor": 900,
+   "reef_a": 160,
+   "reef_b": 180,
+   "coral": 70
   },
   "thin": [
-   "grass_tuft",
-   "shells",
+   "bush",
    "coconuts",
+   "coral",
+   "dune_grass",
    "fern",
-   "bush"
+   "flowers",
+   "grass_tuft",
+   "reeds",
+   "shells"
   ],
   "tiers": {
    "potato": {
@@ -100,11 +118,17 @@
    }
   },
   "shadows": [
+   "boulder_b",
+   "broadleaf_a",
+   "broadleaf_b",
+   "jungle_giant",
+   "outcrop_slabs",
+   "outcrop_spires",
+   "outcrop_tor",
    "palm_a",
    "palm_b",
-   "sea_stack",
-   "boulder_b",
-   "ruin_wall"
+   "ruin_wall",
+   "sea_stack"
   ]
  }
 }

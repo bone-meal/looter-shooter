@@ -3,7 +3,8 @@
 # printed, errors included), boot_<renderer>.txt (frame cost) and boot_<renderer>_<stage>.jpg. Vsync and the fps cap of
 # the machine's settings apply, so frame_ms is a floor, not a benchmark. Run scene tools/game_boot_check.tscn.
 # Optional res://tools/boot_opts.txt, one per line: `only=forward_plus` (just that renderer) and `args=--fullscreen`
-# (more engine arguments, e.g. the size the director really plays at: only when he asks for fullscreen numbers).
+# (more engine arguments, e.g. the size the director really plays at: only when he asks for fullscreen numbers),
+# `seconds=900` (how long a run may take before it is stopped; default 240: long walks like `!isle walk` need more).
 # Every run is a QUIET test copy (game/quiet_test.gd): it never takes the focus or the director's mouse.
 # Dependencies: game/main.gd (--autostart), tools/dev_boot.gd, game/renderer_switch.gd (its relaunch marker).
 extends Node
@@ -21,12 +22,15 @@ func _ready() -> void:
 	var lines := PackedStringArray()
 	var only := ""
 	var more := PackedStringArray()
+	var limit := 240.0
 	if FileAccess.file_exists("res://tools/boot_opts.txt"):
 		for line in FileAccess.get_file_as_string("res://tools/boot_opts.txt").split("\n", false):
 			if line.strip_edges().begins_with("only="):
 				only = line.strip_edges().trim_prefix("only=")
 			elif line.strip_edges().begins_with("args="):
 				more = line.strip_edges().trim_prefix("args=").split(" ", false)
+			elif line.strip_edges().begins_with("seconds="):
+				limit = float(line.strip_edges().trim_prefix("seconds="))
 	for run: Array in RUNS:
 		if only != "" and String(run[0]) != only:
 			continue
@@ -41,12 +45,12 @@ func _ready() -> void:
 			args.append("--cmd=" + FileAccess.get_file_as_string("res://tools/boot_cmd.txt").strip_edges())
 		var pid := OS.create_process(OS.get_executable_path(), args)
 		var waited := 0.0
-		while pid > 0 and OS.is_process_running(pid) and waited < 240.0:
+		while pid > 0 and OS.is_process_running(pid) and waited < limit:
 			await get_tree().create_timer(0.5).timeout
 			waited += 0.5
 		if pid > 0 and OS.is_process_running(pid):
 			OS.kill(pid)
-			lines.append("%s: still running after 240 s, stopped" % run[0])
+			lines.append("%s: still running after %.0f s, stopped" % [run[0], limit])
 		else:
 			lines.append("%s: pid %d finished after %.1f s" % [run[0], pid, waited])
 	lines.append("BOOT_CHECK_DONE")

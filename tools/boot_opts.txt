@@ -1,1 +1,2 @@
 only=compatibility
+seconds=2700

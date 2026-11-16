@@ -3,13 +3,17 @@
 # silhouette (a low cone in the island's colour) so the horizon is never empty, beyond that nothing (the fog).
 # Island positions are sea coordinates; the nodes hang under the sea world's root, which carries the floating origin.
 # Islands of the kit (an entry with "props"; director: kit + a showcase start island) get the blended textured ground
-# (game/isle_ground.gd, tinted by the entry's "ground") and their props (game/sea_isle_props.gd).
+# (game/isle_ground.gd, tinted by the entry's "ground"), their props and set pieces (game/sea_isle_props.gd) and
+# their rivers / waterfalls (<model>_water.glb, game/isle_water.gd). A big island (its data has "chunks") is streamed
+# by chunk instead (game/sea_isle_stream.gd: near / far ground, collision and clutter near the player).
 # Dependencies: assets/models/sea/<model>.glb (tools/blender/sea_islands.py, sea_isle_start.py), data/sea/islands.json,
-# game/isle_ground.gd, game/sea_isle_props.gd.
+# game/isle_ground.gd, game/sea_isle_props.gd, game/isle_water.gd, game/sea_isle_stream.gd.
 extends Node3D
 
 const IsleGround = preload("res://game/isle_ground.gd")
 const IsleProps = preload("res://game/sea_isle_props.gd")
+const IsleWater = preload("res://game/isle_water.gd")
+const IsleStream = preload("res://game/sea_isle_stream.gd")
 const MODELS := "res://assets/models/sea/"
 
 var graphics := "medium"  # the graphics tier (game/sea_world.gd enter): how thick and far the props are drawn
@@ -45,6 +49,8 @@ func follow(sea_pos: Vector3) -> void:
 			(entry["full"] as Node3D).queue_free()
 			entry["full"] = null
 		(entry["far"] as Node3D).visible = entry["full"] == null
+		if entry["full"] != null and (entry["full"] as Node).has_node("Stream"):
+			((entry["full"] as Node).get_node("Stream") as Object).call("follow", Vector2(sea_pos.x, sea_pos.z) - at)
 
 
 func _full(island: Dictionary) -> Node3D:
@@ -57,9 +63,26 @@ func _full(island: Dictionary) -> Node3D:
 	var ground: Material = _ground()
 	if island.has("props"):
 		ground = IsleGround.material(String(island["id"]), island.get("ground", {}))
-	_solid(made, ground)
-	if island.has("props"):
-		made.set_meta("props", IsleProps.build(made, island, _cfg["props"], graphics))
+	var list: Dictionary = {}
+	if island.has("props") and FileAccess.file_exists(IsleProps.LISTS + String(island["props"]) + ".json"):
+		list = JSON.parse_string(FileAccess.get_file_as_string(IsleProps.LISTS + String(island["props"]) + ".json"))
+	if list.has("chunks"):  # a big island: ground, collision and clutter streamed by chunk (game/sea_isle_stream.gd)
+		var stream := IsleStream.new()
+		stream.name = "Stream"
+		made.add_child(stream)
+		stream.setup(made, ground, list, _cfg["props"], graphics)
+	else:
+		_solid(made, ground)
+		if island.has("props"):
+			made.set_meta("props", IsleProps.build(made, island, _cfg["props"], graphics))
+	var water_path := MODELS + String(island["model"]) + "_water.glb"
+	if ResourceLoader.exists(water_path):  # rivers and waterfalls: seen, not solid
+		var water := (load(water_path) as PackedScene).instantiate() as Node3D
+		made.add_child(water)
+		for found in water.find_children("*", "MeshInstance3D", true, false):
+			var surface := found as MeshInstance3D
+			surface.material_override = IsleWater.material("waterfall" if String(surface.name).begins_with("waterfall") else "water")
+			surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	return made
 
 
@@ -124,6 +147,9 @@ func shown_count() -> Vector2i:  # (full models, silhouettes) for checks
 func props_shown() -> int:  # copies of props standing (checks)
 	var n := 0
 	for id: String in _shown:
-		if _shown[id]["full"] != null:
-			n += int((_shown[id]["full"] as Node3D).get_meta("props", 0))
+		var full: Variant = _shown[id]["full"]
+		if full != null:
+			n += int((full as Node3D).get_meta("props", 0))
+			if (full as Node).has_node("Stream"):
+				n += int((full as Node).get_node("Stream").call("drawn"))
 	return n

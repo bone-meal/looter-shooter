@@ -459,7 +459,7 @@ func launch(ship_id: String) -> void:
 func to_list() -> Array:
 	var out: Array = []
 	for ship: SeaShip in ships:
-		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"]})
+		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell")})
 	return out
 
 
@@ -468,9 +468,18 @@ func from_list(saved: Variant) -> void:
 	if not saved is Array or (saved as Array).is_empty():
 		return
 	var keep: Array = []
+	var map: Object = _sea.get("map")
 	for entry: Variant in saved:
-		if entry is Dictionary and (rules.cfg["ships"] as Dictionary).has(str(entry.get("ship"))) and absf(float(entry.get("x", 0.0))) < 4000.0 and absf(float(entry.get("z", 0.0))) < 4000.0:
-			keep.append(entry)
+		if not entry is Dictionary or not (rules.cfg["ships"] as Dictionary).has(str(entry.get("ship"))):
+			continue
+		var fixed: Dictionary = (entry as Dictionary).duplicate()
+		var old_cell := float(fixed.get("cell", 2000.0))  # fleets saved before the 6 km regions carry no cell
+		if old_cell != float(map.get("cell")) and old_cell > 0.0:
+			var moved: Vector2 = map.call("moved_from", float(fixed.get("x", 0.0)), float(fixed.get("z", 0.0)), old_cell)
+			fixed["x"] = moved.x
+			fixed["z"] = moved.y
+		if float(map.call("inside_by", float(fixed.get("x", 0.0)), float(fixed.get("z", 0.0)))) > 0.0:
+			keep.append(fixed)
 	if keep.is_empty():
 		return
 	for ship: SeaShip in ships:
