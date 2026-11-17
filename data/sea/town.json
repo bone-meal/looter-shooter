@@ -1,5 +1,5 @@
 {
- "_about": "Sea step 7 HOME PORT TOWN on the start island (director: the town GROWS from weathered fishing shacks to a stone colonial port, each upgrade visibly rebuilt; a hamlet stands (harbour master, dock, shipyard: start 1) and the rest are run-down plots the crew repairs and grows (start 0); upgrades are bought at each building's own sign AND in the town ledger at the harbour master; costs are materials (the fantasy bag, data/fantasy/gear.json ids) + doubloons). plots: id, name, building (models assets/models/sea/town/<building>_<level>.gltf, _0 = run down; tools/blender/sea_town.py), at = sea coordinates x, z of the model's origin, y = the island's ground there (written from tools/blender/sea_isle_start.py's height; sea_level = at the sea's surface: the dock), yaw degrees (0 = the model's front, its door, faces north), start level, levels[i] = level i+1: name, look (0 fishing shack .. 4 stone colonial), cost {doubloons, items {id: count}}, adds = what the level gives (shown in the ledger; what each level adds was APPROVED by the director (\"1) a\", 2026-11-16); services[] = what the building offers from a level (shop, station:<fantasy station>, store, pick:<picks id>), effects{} = numbers per level (index = level - 1): sell_mult (harbour master's buying prices), build_share (share of a ship recipe's materials used), mend_mult (hull mended per plank), finer (extra chance a crafted gun-side piece rolls a tier up), slots / shared (the store chest; shared = one chest of the host's world for the whole crew), rest_heal (share of max health per second resting still by the garden's fountain); picks = what picking gives and how many minutes before the same player picks there again). The town's levels belong to the HOST's saved world (profile extra sea_town); a player pays from his own bag and purse. ALL NUMBERS, NAMES AND PLACES ARE PLACEHOLDERS.",
+ "_about": "Sea step 7 HOME PORT TOWN on the start island (director: the town GROWS from weathered fishing shacks to a stone colonial port, each upgrade visibly rebuilt; a hamlet stands (harbour master, dock, shipyard: start 1) and the rest are run-down plots the crew repairs and grows (start 0); upgrades are bought at each building's own sign AND in the town ledger at the harbour master; costs are materials (the fantasy bag, data/fantasy/gear.json ids) + doubloons). plots: id, name, building (models assets/models/sea/town/<building>_<level>.gltf, _0 = run down; tools/blender/sea_town.py), at = sea coordinates x, z of the model's origin, y = the island's ground there (written from tools/blender/sea_isle_start.py's height; sea_level = at the sea's surface: the dock), yaw degrees (0 = the model's front, its door, faces north), start level, levels[i] = level i+1: name, look (0 fishing shack .. 4 stone colonial), cost {doubloons, items {id: count}}, adds = what the level gives (shown in the ledger; what each level adds was APPROVED by the director (\"1) a\", 2026-11-16); services[] = what the building offers from a level (shop, station:<fantasy station>, store, pick:<picks id>), effects{} = numbers per level (index = level - 1): sell_mult (harbour master's buying prices), build_share (share of a ship recipe's materials used), mend_mult (hull mended per plank), finer (extra chance a crafted gun-side piece rolls a tier up), slots / shared (the store chest; shared = one chest of the host's world for the whole crew), rest_heal (share of max health per second resting still by the garden's fountain); picks = what picking gives and how many minutes before the same player picks there again). The town's levels belong to the HOST's saved world (profile extra sea_town); a player pays from his own bag and purse. ALL NUMBERS, NAMES AND PLACES ARE PLACEHOLDERS. Sea step 7b-3: drinks / rest_room / feast = what the tavern serves (doubloons, boons {player bonus key: percent} for minutes; the feast reaches every player within `reach` m of the tavern, online too); rumour_minutes = how often one player hears a rumour (it pins an unfound salvage spot on his chart); tavern effects card_at / card_yaw = where the card table stands per level (model space x, f); dock effects berths (how many of the `berths` sea spots are moorings), quay_repair (share of max hull a second a moored ship mends), beacon (the harbour light shines at night); residents = the person who runs each building (stands at its door when it is up); townsfolk = people walking the streets (start + per_growth x growth). NAMES AND LINES ARE MY PLACEHOLDERS.",
  "island": "start",
  "reach": 3.0,
  "build_seconds": 2.5,
@@ -173,7 +173,29 @@
    ],
    "y": 0.0,
    "services": [],
-   "effects": {}
+   "effects": {
+    "berths": [
+     1,
+     3,
+     3,
+     4,
+     6
+    ],
+    "quay_repair": [
+     0,
+     0,
+     0,
+     0.006,
+     0.008
+    ],
+    "beacon": [
+     0,
+     0,
+     0,
+     0,
+     1
+    ]
+   }
   },
   {
    "id": "shipyard",
@@ -352,8 +374,74 @@
     }
    ],
    "y": 17.98,
-   "services": [],
-   "effects": {}
+   "services": [
+    {
+     "level": 1,
+     "kind": "drink:grog",
+     "name": "Grog (4 db)"
+    },
+    {
+     "level": 1,
+     "kind": "drink:ale",
+     "name": "Gunner's Ale (6 db)"
+    },
+    {
+     "level": 1,
+     "kind": "drink:ginger",
+     "name": "Ginger Beer (5 db)"
+    },
+    {
+     "level": 2,
+     "kind": "cards",
+     "name": "Card table"
+    },
+    {
+     "level": 3,
+     "kind": "rumour",
+     "name": "Listen for rumours"
+    },
+    {
+     "level": 4,
+     "kind": "rest",
+     "name": "Rest in a room (10 db)"
+    },
+    {
+     "level": 5,
+     "kind": "feast",
+     "name": "Order a feast (150 db)"
+    }
+   ],
+   "effects": {
+    "card_at": [
+     [
+      0,
+      0
+     ],
+     [
+      -4.6,
+      5.8
+     ],
+     [
+      -4.4,
+      7.2
+     ],
+     [
+      -5.4,
+      8.4
+     ],
+     [
+      -6.2,
+      10.6
+     ]
+    ],
+    "card_yaw": [
+     0,
+     90,
+     90,
+     90,
+     90
+    ]
+   }
   },
   {
    "id": "workshop",
@@ -976,5 +1064,221 @@
  "rest": {
   "reach": 12.0,
   "still_speed": 0.6
+ },
+ "drinks": {
+  "grog": {
+   "doubloons": 4,
+   "boons": {
+    "speed_pct": 8
+   },
+   "minutes": 10,
+   "name": "Grog"
+  },
+  "ale": {
+   "doubloons": 6,
+   "boons": {
+    "damage_pct": 8
+   },
+   "minutes": 10,
+   "name": "Gunner's Ale"
+  },
+  "ginger": {
+   "doubloons": 5,
+   "boons": {
+    "regen_pct": 0.004
+   },
+   "minutes": 10,
+   "name": "Ginger Beer"
+  }
+ },
+ "rest_room": {
+  "doubloons": 10,
+  "boons": {
+   "regen_pct": 0.003
+  },
+  "minutes": 10
+ },
+ "feast": {
+  "doubloons": 150,
+  "boons": {
+   "damage_pct": 10,
+   "speed_pct": 10,
+   "reload_pct": 10,
+   "cooldown_pct": 10
+  },
+  "minutes": 30,
+  "reach": 80.0
+ },
+ "rumour_minutes": 20,
+ "berths": [
+  [
+   52.0,
+   6686.0
+  ],
+  [
+   70.0,
+   6686.0
+  ],
+  [
+   52.0,
+   6702.0
+  ],
+  [
+   70.0,
+   6702.0
+  ],
+  [
+   88.0,
+   6686.0
+  ],
+  [
+   88.0,
+   6702.0
+  ]
+ ],
+ "berth_reach": 12.0,
+ "residents": {
+  "harbour_master": {
+   "name": "Mara Kell",
+   "trade": "Harbour master",
+   "outfit": "pirate_captain",
+   "gender": "female",
+   "hair": "bun",
+   "say": [
+    "Charts, change and the ferry - and the town ledger, if you mean to build.",
+    "Every doubloon in this port passes my counter sooner or later."
+   ]
+  },
+  "dock": {
+   "name": "Old Tobin",
+   "trade": "Dockmaster",
+   "outfit": "sailor",
+   "gender": "male",
+   "hair": "buzz",
+   "say": [
+    "Tie her up properly, mind.",
+    "The quay remembers every ship that leaves."
+   ]
+  },
+  "shipyard": {
+   "name": "Hanna Bright",
+   "trade": "Shipwright",
+   "outfit": "dwarf_smith",
+   "gender": "female",
+   "hair": "braids",
+   "say": [
+    "Bring me timber and I'll bring you a hull.",
+    "A good keel is laid once."
+   ]
+  },
+  "tavern": {
+   "name": "Corwin Pell",
+   "trade": "Tavern keeper",
+   "outfit": "chef",
+   "gender": "male",
+   "hair": "curly",
+   "say": [
+    "Something to wet the throat before the crossing?",
+    "I hear everything - for the price of a drink."
+   ]
+  },
+  "workshop": {
+   "name": "Isa Varn",
+   "trade": "Smith",
+   "outfit": "dwarf_smith",
+   "gender": "female",
+   "hair": "twin_buns",
+   "say": [
+    "Benches are free to use. Mind the anvil."
+   ]
+  },
+  "storage": {
+   "name": "Pim",
+   "trade": "Storekeeper",
+   "outfit": "farmer",
+   "gender": "male",
+   "hair": "crop",
+   "say": [
+    "Nothing goes missing in my store. Nothing."
+   ]
+  },
+  "trophy_hall": {
+   "name": "Lady Wren",
+   "trade": "Curator",
+   "outfit": "french_artist",
+   "gender": "female",
+   "hair": "sidepart",
+   "say": [
+    "Every trophy has a story. Bring me more stories."
+   ]
+  },
+  "gallery": {
+   "name": "Ottilie",
+   "trade": "Painter",
+   "outfit": "french_artist",
+   "gender": "female",
+   "hair": "bob",
+   "say": [
+    "Some paintings are windows. Some are doors."
+   ]
+  },
+  "garden": {
+   "name": "Fen",
+   "trade": "Gardener",
+   "outfit": "farmer",
+   "gender": "male",
+   "hair": "mullet",
+   "say": [
+    "Help yourself - it grows back."
+   ]
+  }
+ },
+ "townsfolk": {
+  "start": 2,
+  "per_growth": 10,
+  "walk_speed": 1.25,
+  "show_within": 160.0,
+  "looks": [
+   [
+    "fisher",
+    "male",
+    "buzz"
+   ],
+   [
+    "sailor",
+    "female",
+    "bob"
+   ],
+   [
+    "farmer",
+    "female",
+    "braids"
+   ],
+   [
+    "sailor",
+    "male",
+    "curly"
+   ],
+   [
+    "chef",
+    "female",
+    "bun"
+   ],
+   [
+    "fisher",
+    "female",
+    "long"
+   ],
+   [
+    "farmer",
+    "male",
+    "spiky"
+   ],
+   [
+    "pirate_captain",
+    "male",
+    "mohawk"
+   ]
+  ]
  }
 }

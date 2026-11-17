@@ -18,6 +18,9 @@ const IsleGround = preload("res://game/isle_ground.gd")
 const TownWindow = preload("res://game/town_window.gd")
 const StoreWindow = preload("res://game/store_window.gd")
 const TownStore = preload("res://core/sea/town_store.gd")
+const TownPeople = preload("res://game/town_people.gd")
+const BeachTable = preload("res://game/tcg/beach_table.gd")
+const StaffCrew = preload("res://game/staff_crew.gd")
 const NEAR := 900.0  # m from the plaza: the town is built when the player comes this close
 const PLAZA := Vector2(-80.0, 6640.0)
 
@@ -27,6 +30,10 @@ var store_window := StoreWindow.new()
 var own_chest := TownStore.new()  # this player's chest at the storehouse (saved with him)
 var crew_chest := TownStore.new()  # the crew's chest of the host's world (the storehouse's top level)
 var picked := {}  # picks id -> unix time this player last picked there (saved with him)
+var people := TownPeople.new()
+var heard_at := -1e9  # when this player last heard a rumour at the tavern (seconds, this session)
+var _cards := {}  # the tavern's card table: {card_table, card_dealer, crew} once the tavern has one
+var _beacon: Node3D = null
 var built := false
 var said := ""  # the last answer (shown in the window)
 var waiting := ""  # a plot whose upgrade we asked the host for
@@ -49,6 +56,8 @@ func setup(sea_world: Node3D, player: CharacterBody3D, layer: CanvasLayer) -> vo
 	layer.add_child(window)
 	store_window.town = self
 	layer.add_child(store_window)
+	people.town = self
+	add_child(people)
 
 
 func session() -> Node:
@@ -64,6 +73,9 @@ func _process(delta: float) -> void:
 	if not bool(_sea.get("inside")) and not built:
 		return
 	_rest(delta)
+	_boons(delta)
+	if built:
+		_harbour(delta)
 	if not built:
 		var here: Vector3 = _sea.call("local_of", _player.global_position)
 		if Vector2(here.x, here.z).distance_to(PLAZA) < NEAR:
@@ -127,6 +139,8 @@ func _grow_town() -> void:
 			(found as MeshInstance3D).create_trimesh_collision()
 		if was_up or _paving >= 0:
 			FxKit.burst(self, (entry["holder"] as Node3D).global_position + Vector3(0, 2.0, 0), Color(0.75, 0.68, 0.55, 0.8), 14, 1.4, 0.5, 2.5, -1.0)
+	people.refresh()
+	_card_table()
 
 
 # Puts the plot's current model up (dust and a notice when it was just rebuilt).
@@ -201,6 +215,137 @@ func _hook_skills() -> void:
 		(skills as Node).set("town_finer", 0.0)
 
 
+# The tavern's card table with its House Dealer (from level 2), registered with the session's card game once.
+func _card_table() -> void:
+	if not _plots.has("tavern"):
+		return
+	var lv := rules.level("tavern")
+	var spots: Array = rules.plot("tavern").get("effects", {}).get("card_at", [])
+	if lv < 2 or spots.size() < lv:
+		if not _cards.is_empty():
+			(_cards["card_table"] as Node3D).visible = false
+			(_cards["crew"] as Node3D).visible = false
+		return
+	var holder: Node3D = _plots["tavern"]["holder"]
+	var spot: Array = spots[lv - 1]
+	var yaw := float((rules.plot("tavern")["effects"].get("card_yaw", [0, 0, 0, 0, 0]) as Array)[lv - 1])
+	if _cards.is_empty():
+		var table := BeachTable.new()
+		table.indoor = true  # no beach parasol on the tavern's terrace
+		holder.add_child(table)
+		var crew := StaffCrew.new()
+		holder.add_child(crew)
+		var dealer: Node3D = crew.add("sit", StaffCrew.look("chef", "curly", "#553322", "smirk", 2), Vector3.ZERO, 0.0, null, "")
+		_cards = {"card_table": table, "card_dealer": dealer, "crew": crew}
+		var s := session()
+		if s != null and s.has_method("add_card_place"):
+			s.call("add_card_place", _cards)
+	var t: Node3D = _cards["card_table"]
+	t.visible = true
+	(_cards["crew"] as Node3D).visible = true
+	t.position = Vector3(float(spot[0]), 0.05, -float(spot[1]))  # model space x, f -> holder space (f = -z)
+	t.rotation_degrees.y = yaw
+	(_cards["card_dealer"] as Node3D).position = t.position + Vector3(0, 0, 0.85).rotated(Vector3.UP, deg_to_rad(yaw))
+	(_cards["card_dealer"] as Node3D).rotation_degrees.y = yaw
+
+
+# Drinks and rooms that give health back over time (boon regen_pct).
+func _boons(delta: float) -> void:
+	var regen := float(_player.call("boon", "regen_pct"))
+	if regen <= 0.0:
+		return
+	var hp: Variant = _player.get("health")
+	if hp != null:
+		(hp as Object).call("heal", float((hp as Object).get("max_hp")) * regen * delta)
+
+
+# The dock: moorings (a ship anchored at one of the berths its level gives); from level 4 a moored ship is mended at
+# the quay (the host does it: the fleet is his), from level 5 the harbour light shines at night.
+func moored() -> Array:
+	var out: Array = []
+	var count := int(rules.effect("dock", "berths", 0))
+	var spots: Array = rules.cfg.get("berths", [])
+	var fleet: Variant = _sea.get("ships")
+	if fleet == null:
+		return out
+	for ship: Node in (fleet as Node).get("ships"):
+		var st: Dictionary = ship.get("state")
+		if not bool(st.get("anchored", false)):
+			continue
+		for k in mini(count, spots.size()):
+			if Vector2(float(st["x"]), float(st["z"])).distance_to(Vector2(float(spots[k][0]), float(spots[k][1]))) <= float(rules.cfg.get("berth_reach", 12.0)):
+				out.append(ship)
+				break
+	return out
+
+
+func _harbour(delta: float) -> void:
+	var mend := float(rules.effect("dock", "quay_repair", 0.0))
+	var ns := net_sea()
+	if mend > 0.0 and not (ns != null and bool(ns.call("is_client"))):
+		var hulls: Node = (_sea.get("ships") as Node).get("hull_part")
+		for ship: Node in moored():
+			var st: Dictionary = ship.get("state")
+			var most := float(hulls.get("hull").call("max_hull", String(st["ship"])))
+			st["hull"] = minf(float(st["hull"]) + most * mend * delta, most)
+			var leaks: Array = st["leaks"]
+			for i in leaks.size():
+				leaks[i] = maxf(float(leaks[i]) - 0.05 * delta, 0.0)
+	_light(int(rules.effect("dock", "beacon", 0)) == 1)
+
+
+func _light(on: bool) -> void:
+	var look: Variant = _sea.get("look")
+	var night := false
+	if look != null:
+		var clock: RefCounted = (look as RefCounted).get("clock")
+		night = clock != null and float(clock.call("daylight", clock.call("day_part", float(_sea.call("seconds"))))) < 0.3
+	if not on or not _plots.has("dock"):
+		if _beacon != null:
+			_beacon.visible = false
+		return
+	if _beacon == null:
+		_beacon = Node3D.new()
+		(_plots["dock"]["holder"] as Node3D).add_child(_beacon)
+		_beacon.position = Vector3(0.0, 8.8, -35.5)  # the harbour light's lantern room on the granite quay (dock_5)
+		var lamp := MeshInstance3D.new()  # a glowing lamp, no real light: an OmniLight doubled the town's draws at night (Compatibility)
+		var ball := SphereMesh.new()
+		ball.radius = 0.9
+		ball.height = 1.8
+		lamp.mesh = ball
+		var lit := StandardMaterial3D.new()
+		lit.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		lit.albedo_color = Color(1.0, 0.88, 0.6)
+		lit.disable_fog = true
+		lamp.material_override = lit
+		lamp.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		_beacon.add_child(lamp)
+		var beam := MeshInstance3D.new()
+		var cone := CylinderMesh.new()
+		cone.top_radius = 0.4
+		cone.bottom_radius = 9.0
+		cone.height = 260.0
+		beam.mesh = cone
+		var glow := StandardMaterial3D.new()
+		glow.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		glow.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		glow.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		glow.cull_mode = BaseMaterial3D.CULL_DISABLED
+		glow.disable_fog = true
+		glow.albedo_color = Color(1.0, 0.85, 0.5, 0.12)
+		beam.material_override = glow
+		beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		beam.rotation_degrees.x = 90.0
+		beam.position = Vector3(0, 0, -130.0)
+		var turn := Node3D.new()
+		turn.name = "Turn"
+		turn.add_child(beam)
+		_beacon.add_child(turn)
+	_beacon.visible = night
+	if night:
+		(_beacon.get_node("Turn") as Node3D).rotate_y(0.35 * get_process_delta_time())
+
+
 # The walled garden's fountain: standing still by it heals (data effects rest_heal, share of max health a second).
 func _rest(delta: float) -> void:
 	var heal := float(rules.effect("garden", "rest_heal", 0.0))
@@ -234,6 +379,9 @@ func spot_here() -> Array:
 	if not built:
 		return []
 	var me := _player.global_position
+	var who := people.resident_near(me)  # a resident first: they stand by their sign and door
+	if who != "":
+		return ["resident", who]
 	var ledger := marker("harbour_master", "Ledger")
 	if ledger != null and ledger.global_position.distance_to(me) <= _reach:
 		return ["ledger", ""]
@@ -257,6 +405,9 @@ func prompt(key: String) -> String:
 	if spot[0] == "ledger":
 		return "[%s] Town ledger: repair and grow the port" % key
 	var id := String(spot[1])
+	if spot[0] == "resident":
+		var r: Dictionary = rules.cfg.get("residents", {}).get(id, {})
+		return "[%s] Talk to %s (%s)" % [key, String(r.get("name", "")), String(r.get("trade", ""))]
 	if spot[0] == "door":
 		var open_now := 0
 		for pair: Array in rules.services(id):
@@ -272,6 +423,8 @@ func interact() -> bool:
 	if spot.is_empty():
 		return false
 	open(String(spot[1]) if spot[0] != "ledger" else "harbour_master", spot[0] == "ledger")
+	if spot[0] == "resident":
+		said = people.line_of(String(spot[1]))
 	return true
 
 
@@ -405,7 +558,101 @@ func use(id: String, kind: String) -> String:
 		return "Store"
 	if kind.begins_with("pick:"):
 		return pick(kind.trim_prefix("pick:"))
+	if kind.begins_with("drink:"):
+		var drink: Dictionary = rules.cfg.get("drinks", {}).get(kind.trim_prefix("drink:"), {})
+		if not _spend(int(drink.get("doubloons", 0))):
+			return "Not enough doubloons"
+		_give_boons(drink)
+		return "%s: %s for %d minutes" % [String(drink.get("name", "")), _boon_words(drink), int(drink.get("minutes", 10))]
+	if kind == "rest":
+		var room: Dictionary = rules.cfg.get("rest_room", {})
+		if not _spend(int(room.get("doubloons", 0))):
+			return "Not enough doubloons"
+		var hp: Variant = _player.get("health")
+		if hp != null:
+			(hp as Object).call("heal", 99999.0)
+		if _player.has_method("clear_dread"):  # Dread (sea step 10) clears with a rest at a port
+			_player.call("clear_dread")
+		_give_boons(room)
+		return "Rested: full health, well rested for %d minutes" % int(room.get("minutes", 10))
+	if kind == "feast":
+		var feast: Dictionary = rules.cfg.get("feast", {})
+		if not _spend(int(feast.get("doubloons", 0))):
+			return "Not enough doubloons"
+		var ns := net_sea()
+		if ns != null and bool(ns.call("active")):
+			ns.call("tell_feast")
+		feast_here()
+		return "A feast for the whole crew: %s for %d minutes" % [_boon_words(feast), int(feast.get("minutes", 30))]
+	if kind == "rumour":
+		return rumour()
+	if kind == "cards":
+		return "The card table is outside the tavern: sit down there (F) to play the house"
 	return "?"
+
+
+func _spend(doubloons_needed: int) -> bool:
+	var s := session()
+	var purse: RefCounted = s.call("doubloons") if s != null else null
+	return doubloons_needed <= 0 or (purse != null and bool(purse.call("spend", doubloons_needed)))
+
+
+func _give_boons(spec: Dictionary) -> void:
+	var boons: Dictionary = spec.get("boons", {})
+	for key: String in boons:
+		_player.call("give_boon", key, float(boons[key]), float(spec.get("minutes", 10)) * 60.0)
+
+
+func _boon_words(spec: Dictionary) -> String:
+	var words := PackedStringArray()
+	var names := {"speed_pct": "faster", "damage_pct": "more damage", "reload_pct": "faster reloads", "cooldown_pct": "faster skills", "regen_pct": "health back"}
+	var boons: Dictionary = spec.get("boons", {})
+	for key: String in boons:
+		words.append(("+%d%% %s" % [int(boons[key]), String(names.get(key, key))]) if key != "regen_pct" else "%s over time" % String(names[key]))
+	return ", ".join(words)
+
+
+# A feast was ordered (here or by a crewmate online): everyone near the tavern eats.
+func feast_here() -> void:
+	if not _plots.has("tavern"):
+		return
+	var feast: Dictionary = rules.cfg.get("feast", {})
+	if _player.global_position.distance_to((_plots["tavern"]["holder"] as Node3D).global_position) <= float(feast.get("reach", 80.0)):
+		_give_boons(feast)
+		_notice("A feast at the tavern: %s" % _boon_words(feast))
+
+
+# The tavern's talk: an unfound salvage spot pinned on this player's chart, with where it lies.
+func rumour() -> String:
+	var now := Time.get_ticks_msec() / 1000.0
+	var wait := float(rules.cfg.get("rumour_minutes", 20)) * 60.0 - (now - heard_at)
+	if wait > 0.0:
+		return "Nothing new tonight: come back in %d min" % ceili(wait / 60.0)
+	var salvage: Node = _sea.get("salvage")
+	var chart: RefCounted = _sea.get("chart")
+	var here: Vector3 = _sea.call("local_of", _player.global_position)
+	var best: Dictionary = {}
+	var best_d := INF
+	for spot: Dictionary in salvage.get("cfg")["spots"]:
+		if bool(salvage.call("_taken", spot)):
+			continue
+		var at := Vector2(float(spot["at"][0]), float(spot["at"][1]))
+		var pinned := false
+		for pin: Vector2 in chart.get("pins"):
+			pinned = pinned or pin.distance_to(at) < 30.0
+		var d := at.distance_to(Vector2(here.x, here.z))
+		if not pinned and d < best_d:
+			best_d = d
+			best = spot
+	if best.is_empty():
+		return "The old salts have nothing you have not heard"
+	heard_at = now
+	var at := Vector2(float(best["at"][0]), float(best["at"][1]))
+	chart.call("toggle_pin", at)
+	var way := at - Vector2(here.x, here.z)
+	var dirs := ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"]
+	var dir := String(dirs[posmod(roundi((atan2(way.x, -way.y) / TAU) * 8.0), 8)])
+	return "Rumour: something lies on the sea bed %d m to the %s (pinned on your chart)" % [roundi(best_d), dir]
 
 
 func _service_name(id: String, kind: String) -> String:

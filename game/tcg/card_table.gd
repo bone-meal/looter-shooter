@@ -44,6 +44,8 @@ var _hud: Control
 var _table: Node3D
 var _dealer: Node3D
 var _crew: Node
+var _places: Array = []  # every table with a House Dealer (the club beach's, the home port tavern's): {card_table, card_dealer, crew}
+var _near_i := 0
 var _screen: Control  # game/tcg/table_screen.gd, made in setup (a session that never visits the club makes none)
 var _seated := false
 var _deck := ""
@@ -64,6 +66,7 @@ func setup(wallet: Wallet, casino: Dictionary, layer: CanvasLayer, player: Chara
 	_table = casino["card_table"]
 	_dealer = casino["card_dealer"]
 	_crew = casino["crew"]
+	_places = [casino]
 	_cfg = DataStore.load_json("res://data/tcg/table.json")
 	_starters = DataStore.load_json("res://data/tcg/starters.json")["starters"]
 	_db = CardDb.from_files()
@@ -94,12 +97,38 @@ func is_open() -> bool:
 
 
 func spot_near(pos: Vector3) -> bool:
-	if _table == null:
-		return false
-	return Vector2(pos.x - _table.global_position.x, pos.z - _table.global_position.z).length() < float(_cfg["sit_range"])
+	for i in _places.size():
+		var t: Node3D = _places[i]["card_table"]
+		if is_instance_valid(t) and t.is_inside_tree() and Vector2(pos.x - t.global_position.x, pos.z - t.global_position.z).length() < float(_cfg["sit_range"]):
+			_near_i = i
+			return true
+	return false
+
+
+func is_set_up() -> bool:
+	return not _places.is_empty()
+
+
+# Another table with a House Dealer (sea step 7b: the home port's tavern from its level 2).
+func add_place(place: Dictionary) -> void:
+	_places.append(place)
+
+
+# Sits the game at the table the player stands at: the 3D cards move onto that table.
+func _use_place(i: int) -> void:
+	var place: Dictionary = _places[i]
+	if place["card_table"] == _table:
+		return
+	_table = place["card_table"]
+	_dealer = place["card_dealer"]
+	_crew = place["crew"]
+	if _view != null:
+		_view.reparent(_table, false)
 
 
 func open() -> void:
+	if _near_i < _places.size():
+		_use_place(_near_i)
 	_seated = true
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

@@ -650,6 +650,36 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("TOWN panel: open %s station %s, recipes there %d, galleon '%s' cost %s, finer %.2f" % [str(pn_t.visible), String(pn_t.get("station")), (sk_t.get("work").call("recipes", String(pn_t.get("station"))) as Array).size(), String(sk_t.get("work").call("cannot_make", gal)), str(sk_t.get("work").call("cost_of", gal)), float(sk_t.get("town_finer"))])
 				if words.size() > 2:
 					sk_t.call("close_panel")
+			elif sub_t == "people":
+				var pc: Vector2i = town_t.get("people").call("counts")
+				_lines.append("TOWN people: residents %d, townsfolk %d, moored %d, boons speed %.0f damage %.0f regen %.3f, card place %s, tcg near %s, beacon %s" % [pc.x, pc.y, (town_t.call("moored") as Array).size(), float(player.call("boon", "speed_pct")), float(player.call("boon", "damage_pct")), float(player.call("boon", "regen_pct")), str(not (town_t.get("_cards") as Dictionary).is_empty()), str(session.get("_tcg").call("spot_near", player.global_position)), str(town_t.get("_beacon") != null and (town_t.get("_beacon") as Node3D).visible)])
+			elif sub_t == "talk":  # stand by a building's resident
+				var rn: Variant = (town_t.get("people").get("_residents") as Dictionary).get(words[2])
+				if rn != null:
+					var body_r: Node3D = rn["node"]
+					player.call("teleport", body_r.global_position + body_r.global_basis * Vector3(0, 1.0, -1.6), 0.0)
+					await get_tree().create_timer(0.4).timeout
+				_lines.append("TOWN talk %s: prompt '%s'" % [words[2], String(sea_t.call("prompt", "F"))])
+			elif sub_t == "cards":  # stand at the tavern's card table
+				var ct: Dictionary = town_t.get("_cards")
+				if not ct.is_empty():
+					player.call("teleport", (ct["card_table"] as Node3D).global_position + Vector3(0, 1.0, 1.4), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					player.call("look_at_point", (ct["card_table"] as Node3D).global_position)
+				_lines.append("TOWN cards: tcg near %s, prompt '%s'" % [str(session.get("_tcg").call("spot_near", player.global_position)), String(session.call("_prompt"))])
+			elif sub_t == "moor":  # anchor ship n (default 0) at berth k
+				var fl: Node = sea_t.get("ships")
+				var sh: Node = (fl.get("ships") as Array)[int(words[3]) if words.size() > 3 else 0]
+				var b: Array = (town_t.get("rules").get("cfg")["berths"] as Array)[int(words[2])]
+				var st_m: Dictionary = sh.get("state")
+				st_m["x"] = float(b[0])
+				st_m["z"] = float(b[1])
+				st_m["anchored"] = true
+				st_m["hull"] = float(st_m["hull"]) * 0.5
+				_lines.append("TOWN moor: ship hull %.0f" % float(st_m["hull"]))
+			elif sub_t == "hull":
+				var st_h: Dictionary = ((sea_t.get("ships").get("ships") as Array)[0] as Node).get("state")
+				_lines.append("TOWN hull %s: %.0f" % [" ".join(words.slice(2)), float(st_h["hull"])])
 			elif sub_t == "effects":
 				var r_e: RefCounted = town_t.get("rules")
 				_lines.append("TOWN effects: sell x%.2f, build share %.2f, mend x%.2f, finer %.2f, chest %d slots shared %d, rest %.2f; shop has %d goods; galleon lock '%s'" % [float(r_e.call("effect", "harbour_master", "sell_mult", 1.0)), float(r_e.call("effect", "shipyard", "build_share", 1.0)), float(r_e.call("effect", "shipyard", "mend_mult", 1.0)), float(r_e.call("effect", "workshop", "finer", 0.0)), int(r_e.call("effect", "storage", "slots", 0)), int(r_e.call("effect", "storage", "shared", 0)), float(r_e.call("effect", "garden", "rest_heal", 0.0)), (sea_t.get("port").call("stock") as Array).size(), String(r_e.call("recipe_lock", {"town": {"plot": "shipyard", "level": 4}}))])

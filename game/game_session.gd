@@ -1400,6 +1400,15 @@ func save_profile() -> void:
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
 
 
+# Another House Dealer's table (sea step 7b: the home port's tavern): {card_table, card_dealer, crew}. The card game
+# itself (and Esc, the HUD, saving) stays the session's one.
+func add_card_place(place: Dictionary) -> void:
+	if _tcg.is_set_up():
+		_tcg.add_place(place)
+	else:
+		_tcg.setup(_wallet, place, _custom_layer, _player, _player_hud, _cards)
+
+
 func _exit_tree() -> void:
 	save_profile()
 
@@ -4011,7 +4020,10 @@ func _build_club() -> void:
 	for m in _slot_machines:
 		m.finished.connect(_on_slot_finished)
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
-	_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards)
+	if _tcg.is_set_up():  # the home port's tavern table came first (sea step 7b)
+		_tcg.add_place(_casino)
+	else:
+		_tcg.setup(_wallet, _casino, _custom_layer, _player, _player_hud, _cards)
 	_tcg.graphics = settings.graphics
 	_tcg.stats = _stats
 	if _ptables.is_set_up():

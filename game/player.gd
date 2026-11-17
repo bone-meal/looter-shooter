@@ -1581,7 +1581,26 @@ func set_progress_bonuses(damage_pct: float, speed_pct: float, hp_pct: float) ->
 
 # A bonus of the worn armour's rolls and sets (core/armor_math.gd totals "bonus"; percent), 0 without it.
 func _armour_bonus(key: String) -> float:
-	return float((armor.get("bonus", {}) as Dictionary).get(key, 0.0))
+	return float((armor.get("bonus", {}) as Dictionary).get(key, 0.0)) + boon(key)
+
+
+# Timed boons (sea step 7b: the home port tavern's drinks and feasts): key -> [percent, until msec]. Same keys as the
+# armour's bonuses (speed_pct, damage_pct, reload_pct, cooldown_pct); "regen_pct" = share of max health a second.
+var boons := {}
+
+
+func boon(key: String) -> float:
+	var b: Variant = boons.get(key)
+	if not b is Array:
+		return 0.0
+	if Time.get_ticks_msec() > int(b[1]):
+		boons.erase(key)
+		return 0.0
+	return float(b[0])
+
+
+func give_boon(key: String, pct: float, seconds: float) -> void:
+	boons[key] = [pct, Time.get_ticks_msec() + int(seconds * 1000.0)]
 
 
 # A number of the perks carried (core/perk_state.gd `num`), `fallback` without that perk.

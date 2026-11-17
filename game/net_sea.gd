@@ -553,3 +553,29 @@ func _store_list(list: Array) -> void:
 	var town := _town()
 	if town != null and list.size() <= 200:
 		(town.get("crew_chest") as RefCounted).call("from_list", list)
+
+
+# --- a feast at the tavern (sea step 7b-3): the one who ordered it paid; every player near the tavern eats ---
+
+func tell_feast() -> void:
+	if net.is_host():
+		_feast_down.rpc()
+	else:
+		_feast_up.rpc_id(1)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _feast_up() -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var town := _town()
+	if not net.is_host() or not net.roster.has(from) or town == null:
+		return
+	town.call("feast_here")
+	_feast_down.rpc()
+
+
+@rpc("authority", "call_remote", "reliable")
+func _feast_down() -> void:
+	var town := _town()
+	if town != null:
+		town.call("feast_here")

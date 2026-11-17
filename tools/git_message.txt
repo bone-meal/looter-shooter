@@ -1,12 +1,8 @@
-Sea step 7b-2: the home port buildings now give what their levels promise
+Sea step 7b-3: tavern, dock, residents
 
-- harbour master: more goods at level 2 and 3, secret charts from level 4, better selling prices at 3 and 5; shop list scrolls
-- shipyard: ships need its level (sloop and raft 1, brig 2, longboat and junk 3, galleon 4); at level 5 ships cost a quarter less and planks mend half again as much
-- workshop: crafting table and sawhorse, then furnace and anvil plus workbench, then a ship parts bench; at level 4 crafted gun-side pieces roll better
-- storehouse: a store chest of 12, 24, 48 and then 96 slots; at the top one chest shared by the crew (host's world, online)
-- garden: pick herbs, then vegetables (new Garden Greens and Garden Roots), the walled garden's fountain heals while resting
-- town window: what each building offers as buttons; a building's door opens it too
-- core/sea/town_store.gd, game/store_window.gd
+Tavern drinks, card table with the House Dealer, rumours, rooms and feasts (boons on the player, feasts online).
+Dock berths, quay mending of moored ships, harbour light at night.
+Residents at each building door to talk to and townsfolk walking the town streets.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
