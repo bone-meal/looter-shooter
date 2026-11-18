@@ -7,6 +7,13 @@
 #                a horned head with barbels, glowing sea-blue eyes and a hinged jaw ("Jaw"); its body is ten
 #                separate segments "Seg1".."Seg10" (+ "Tail") that the game lays along a curve each frame
 #                (game/sea_serpent.gd); in the file they lie straight out behind the head along -f.
+#   sea_sunskate     region 1's SUNSKATE (sea step 8e): a giant manta ~5 m across, ink-blue back with pale spots,
+#                    white belly, curled head fins, a whip tail; wings on nodes "WingL" / "WingR" (they flap).
+#   sea_fogmaw       region 2's FOGMAW: a mottled moss-green eel ~7 m, a broad head with a hinged jaw ("Jaw") and a
+#                    glowing lure on a stalk ("Lure"); its body is five segments "Seg1".."Seg5" behind the head
+#                    (the game bends them) - only the lure shows while it lurks.
+#   sea_cinder_turtle region 3's CINDER TURTLE: a ~5 m sea turtle whose basalt shell is split by glowing magma vents
+#                    (node "Vents"), a beaked head ("Head") and four flippers ("FlipFL", "FlipFR", "FlipBL", "FlipBR").
 # Model space: x right, y up, f forward (the game's -z). The shark's belly is at y = 0; the serpent's head centre
 # is the origin (it swims at the surface, segments rise and dive).
 # Run: python3 tools/blender/sea_creatures.py   (ONLY=sea_shark builds just that one)
@@ -131,10 +138,105 @@ def serpent(m):
     m.prof(sail, 0.04, [(ft - 0.4, 0.0), (ft - 1.4, 0.05), (ft - 2.4, 1.1), (ft - 2.2, -1.0), (ft - 1.4, -0.05)], x=0.0, bevel=0.005, node="Tail")  # tail fan
 
 
+SKATE_BACK = (0.1, 0.16, 0.3)
+SKATE_SPOT = (0.8, 0.86, 0.9)
+SKATE_BELLY = (0.92, 0.92, 0.88)
+EEL = (0.24, 0.32, 0.18)
+EEL_DARK = (0.1, 0.14, 0.08)
+EEL_BELLY = (0.62, 0.6, 0.42)
+BASALT = (0.13, 0.12, 0.12)
+BASALT_LIGHT = (0.28, 0.25, 0.23)
+TURTLE_SKIN = (0.32, 0.28, 0.22)
+MAGMA = (1.0, 0.45, 0.08)
+
+
+def sunskate(m):
+    back, belly, spot = K("leather", SKATE_BACK), K("leather", SKATE_BELLY), K("paint", SKATE_SPOT)
+    # the body: a wide flat diamond, back above, belly below
+    m.loft(back, [(0.0, 0.25, -0.9, 0.3, 0.12), (0.0, 0.3, -0.2, 0.62, 0.2), (0.0, 0.3, 0.5, 0.58, 0.2), (0.0, 0.26, 1.05, 0.38, 0.12)], segs=16)
+    m.loft(belly, [(0.0, 0.18, -0.7, 0.28, 0.08), (0.0, 0.2, 0.4, 0.52, 0.12), (0.0, 0.2, 0.95, 0.32, 0.07)], segs=14)
+    for side, name in ((-1, "WingL"), (1, "WingR")):
+        m.node(name, (side * 0.55, 0.28, 0.2))
+        # the wing: a thin swept blade out to the tip (chord along f, thickness up)
+        m.loft(back, [(side * 0.5, 0.28, 0.35, 0.75, 0.1), (side * 1.2, 0.3, 0.05, 0.55, 0.07), (side * 1.9, 0.33, -0.3, 0.32, 0.04), (side * 2.5, 0.4, -0.62, 0.1, 0.02)], segs=10, node=name)
+        m.loft(belly, [(side * 0.55, 0.22, 0.3, 0.68, 0.05), (side * 1.3, 0.25, 0.0, 0.48, 0.035), (side * 2.0, 0.29, -0.32, 0.25, 0.02)], segs=10, node=name)
+        for k in range(4):  # pale spots on the back
+            m.ball(spot, (0.09 - k * 0.012, 0.012, 0.08 - k * 0.01), (side * (0.75 + k * 0.38), 0.37 - k * 0.002, 0.25 - k * 0.2), u=8, v=4, node=name)
+        # curled head fins and the eye
+        m.loft(back, [(side * 0.32, 0.28, 1.0, 0.07, 0.05), (side * 0.36, 0.25, 1.35, 0.06, 0.04), (side * 0.26, 0.18, 1.55, 0.04, 0.03)], segs=8)
+        m.ball(K("paint", DARK), (0.05, 0.05, 0.05), (side * 0.36, 0.33, 0.95), u=8, v=6)
+    m.loft(K("leather", (0.08, 0.06, 0.08)), [(0.0, 0.22, 1.05, 0.26, 0.04), (0.0, 0.22, 1.12, 0.22, 0.03)], segs=10, flat=True)  # the wide mouth
+    m.node("Tail", (0.0, 0.26, -0.85))
+    m.loft(back, [(0.0, 0.26, -0.85, 0.06, 0.05), (0.0, 0.27, -1.8, 0.03, 0.03), (0.0, 0.3, -2.9, 0.01, 0.01)], segs=6, node="Tail")
+
+
+def fogmaw(m):
+    skin, dark, belly = K("scale", EEL), K("scale", EEL_DARK), K("leather", EEL_BELLY)
+    R = 0.42
+    m.node("Head", (0.0, 0.0, 0.0))
+    m.loft(skin, [(0.0, 0.0, -0.5, R, R * 0.9), (0.0, 0.08, 0.2, R * 1.2, R * 0.85), (0.0, 0.06, 0.9, R * 1.05, R * 0.6), (0.0, 0.0, 1.35, R * 0.7, R * 0.4)], segs=14, node="Head")
+    for side in (-1, 1):
+        m.ball((fk.GLOW, (0.85, 1.0, 0.55)), (0.06, 0.05, 0.07), (side * 0.36, 0.25, 0.85), u=8, v=6, node="Head")  # small pale eyes
+        m.prof(dark, 0.02, [(-0.3, 0.1), (0.1, 0.15), (-0.1, 0.55), (-0.45, 0.4)], x=side * 0.48, bevel=0.004, node="Head")  # gill frills
+    for k in range(8):  # needle teeth along the upper jaw
+        x = -0.28 + k * 0.08
+        m.rod(K("bone", TOOTH), 0.018, (x, -0.06, 1.0 + 0.2 * (1 - abs(x) * 3)), (x, -0.24, 1.02 + 0.2 * (1 - abs(x) * 3)), r2=0.003, segs=5, node="Head")
+    m.node("Jaw", (0.0, -0.12, 0.2), parent="Head")
+    m.loft(belly, [(0.0, -0.25, 0.1, R * 0.9, R * 0.3), (0.0, -0.25, 0.8, R * 0.75, R * 0.25), (0.0, -0.2, 1.3, R * 0.35, R * 0.15)], segs=12, node="Jaw")
+    for k in range(7):
+        x = -0.24 + k * 0.08
+        m.rod(K("bone", TOOTH), 0.016, (x, -0.16, 0.95 + 0.2 * (1 - abs(x) * 3)), (x, 0.0, 0.97 + 0.2 * (1 - abs(x) * 3)), r2=0.003, segs=5, node="Jaw")
+    # the lure: a stalk from the brow bent forward with a glowing bulb
+    m.node("Lure", (0.0, 0.35, 0.5), parent="Head")
+    m.rod(dark, 0.03, (0.0, 0.32, 0.5), (0.0, 1.1, 0.75), r2=0.02, segs=6, node="Lure")
+    m.rod(dark, 0.02, (0.0, 1.1, 0.75), (0.0, 1.2, 1.25), r2=0.014, segs=6, node="Lure")
+    m.ball((fk.GLOW, (0.7, 1.0, 0.6)), (0.13, 0.13, 0.13), (0.0, 1.1, 1.35), u=12, v=8, node="Lure")
+    L = 1.3
+    for i in range(5):
+        name = "Seg%d" % (i + 1)
+        f0 = -0.45 - i * L
+        r = R * (1.0 - 0.13 * i)
+        m.node(name, (0.0, 0.0, f0 - L * 0.5))
+        m.loft(skin, [(0.0, 0.0, f0 + 0.12, r, r * 0.92), (0.0, 0.0, f0 - L * 0.5, r * 1.04, r * 0.95), (0.0, 0.0, f0 - L - 0.12, r * 0.95, r * 0.88)], segs=12, node=name)
+        m.loft(belly, [(0.0, -r * 0.55, f0, r * 0.7, r * 0.4), (0.0, -r * 0.55, f0 - L, r * 0.68, r * 0.38)], segs=10, steps=1, node=name)
+        for k in range(2):  # dark mottling bands
+            f = f0 - 0.3 - k * 0.6
+            m.ball(dark, (r * 0.6, r * 0.25, 0.2), (0.0, r * 0.75, f), u=8, v=5, node=name)
+        m.prof(dark, 0.025, [(f0, r * 0.85), (f0 - L, r * 0.85), (f0 - L + 0.1, r + 0.22), (f0 - 0.1, r + 0.3)], x=0.0, bevel=0.004, node=name)  # back fin
+
+
+def cinder_turtle(m):
+    shell, light, skin = K("stone", BASALT), K("stone", BASALT_LIGHT), K("leather", TURTLE_SKIN)
+    # the shell: a low basalt dome of plates with a rim
+    m.lathe(shell, [(0.0, 1.35), (0.9, 1.25), (1.6, 0.95), (2.0, 0.55), (2.15, 0.3), (2.1, 0.15), (0.0, 0.15)], (0.0, 0.0, 0.0), segs=22, squash=1.25)
+    for k in range(9):  # raised plates
+        a = 2 * math.pi * k / 9
+        m.ball(light, (0.55, 0.12, 0.5), (math.cos(a) * 1.1, 1.18 - 0.1, math.sin(a) * 1.35), u=8, v=5)
+    m.ball(light, (0.6, 0.16, 0.7), (0.0, 1.32, 0.0), u=10, v=6)
+    m.lathe(skin, [(0.0, 0.15), (1.9, 0.15), (1.95, 0.0), (0.0, -0.05)], (0.0, 0.0, 0.0), segs=20, squash=1.25)  # the belly plate
+    # magma vents: glowing cracks between the plates (their own node, so the game can pulse them)
+    m.node("Vents", (0.0, 1.1, 0.0))
+    for k in range(9):
+        a = 2 * math.pi * (k + 0.5) / 9
+        x, f = math.cos(a), math.sin(a) * 1.25
+        m.rod((fk.GLOW, MAGMA), 0.06, (x * 0.7, 1.24, f * 0.7), (x * 1.75, 0.72, f * 1.75), r2=0.04, segs=5, node="Vents")
+    m.ball((fk.GLOW, MAGMA), (0.25, 0.1, 0.25), (0.0, 1.45, 0.0), u=10, v=5, node="Vents")
+    # the head: neck, beaked skull, small eyes
+    m.node("Head", (0.0, 0.45, 2.3))
+    m.loft(skin, [(0.0, 0.45, 2.0, 0.42, 0.36), (0.0, 0.55, 2.7, 0.38, 0.34), (0.0, 0.6, 3.15, 0.34, 0.3), (0.0, 0.52, 3.45, 0.18, 0.16)], segs=12, node="Head")
+    m.loft(K("bone", (0.3, 0.27, 0.22)), [(0.0, 0.48, 3.35, 0.16, 0.1), (0.0, 0.42, 3.6, 0.07, 0.06)], segs=8, node="Head")  # beak
+    for side in (-1, 1):
+        m.ball((fk.GLOW, MAGMA), (0.05, 0.05, 0.05), (side * 0.24, 0.7, 3.1), u=8, v=6, node="Head")
+    # flippers: front ones long and swept, back ones short
+    for name, side, f, span, chord in (("FlipFL", -1, 1.2, 2.0, 0.55), ("FlipFR", 1, 1.2, 2.0, 0.55), ("FlipBL", -1, -1.3, 1.0, 0.45), ("FlipBR", 1, -1.3, 1.0, 0.45)):
+        m.node(name, (side * 1.7, 0.3, f))
+        m.loft(skin, [(side * 1.6, 0.3, f, chord, 0.12), (side * (1.6 + span * 0.5), 0.25, f - 0.35, chord * 0.75, 0.09), (side * (1.6 + span), 0.2, f - 0.8, chord * 0.3, 0.05)], segs=10, node=name)
+
+
 def main():
     fk.init()
     only = set(filter(None, os.environ.get("ONLY", "").split(",")))
-    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent)):
+    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle)):
         if only and name not in only:
             continue
         m = kit.Model(name, uv_scale=0.5, colored=True)

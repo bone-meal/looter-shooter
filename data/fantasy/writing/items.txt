@@ -84,6 +84,10 @@ raw_shark: Raw Shark
 serpent_scale: Serpent Scale
 serpent_fang: Serpent Fang
 spectral_essence: Spectral Essence
+sunskate_wing: Sunskate Wing
+fogmaw_lure: Fogmaw Lure
+eel_hide: Eel Hide
+cinder_plate: Cinder Shell Plate
 ash_log: Ash Log
 oak_log: Oak Log
 palm_log: Driftpalm Log

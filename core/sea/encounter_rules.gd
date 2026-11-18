@@ -42,6 +42,10 @@ func allowed(region_id: String, night: bool, weather := "") -> Dictionary:
 		var k: Dictionary = cfg["kinds"][id]
 		if n < int(k.get("regions", 1)) or (bool(k.get("night_only", false)) and not night):
 			continue
+		if bool(k.get("region_only", false)) and n != int(k.get("regions", 1)):  # a region's own creature (sea step 8e)
+			continue
+		if k.has("weather_only") and not (k["weather_only"] as Array).has(weather):  # the Fogmaw: fog only
+			continue
 		out[id] = float(k.get("weight", 1.0)) * float((k.get("weather_mult", {}) as Dictionary).get(weather, 1.0))  # (the serpent comes more in storms)
 	return out
 

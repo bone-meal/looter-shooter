@@ -123,6 +123,33 @@
       "below": {
         "ghost_cutlass": 2
       }
+    },
+    "sunskate": {
+      "creature": "beast",
+      "beast": "sunskate",
+      "weight": 3,
+      "regions": 1,
+      "region_only": true,
+      "name": "Sunskates"
+    },
+    "fogmaw": {
+      "creature": "beast",
+      "beast": "fogmaw",
+      "weight": 4,
+      "regions": 2,
+      "region_only": true,
+      "weather_only": [
+        "fog"
+      ],
+      "name": "Fogmaw"
+    },
+    "cinder_turtle": {
+      "creature": "beast",
+      "beast": "cinder_turtle",
+      "weight": 2.5,
+      "regions": 3,
+      "region_only": true,
+      "name": "Cinder Turtle"
     }
   },
   "pirate": {
@@ -328,6 +355,65 @@
         ]
       },
       "gun_chance": 0.65
+    },
+    "sunskate": {
+      "pieces": [
+        1,
+        1
+      ],
+      "doubloons": [
+        10,
+        25
+      ],
+      "items": {
+        "sunskate_wing": [
+          1,
+          2
+        ]
+      },
+      "gun_chance": 0.1
+    },
+    "fogmaw": {
+      "pieces": [
+        2,
+        3
+      ],
+      "doubloons": [
+        25,
+        55
+      ],
+      "items": {
+        "fogmaw_lure": [
+          1,
+          1
+        ],
+        "eel_hide": [
+          1,
+          3
+        ]
+      },
+      "gun_chance": 0.3
+    },
+    "cinder_turtle": {
+      "pieces": [
+        3,
+        5
+      ],
+      "doubloons": [
+        40,
+        90
+      ],
+      "items": {
+        "cinder_plate": [
+          2,
+          4
+        ],
+        "copper_bar": [
+          1,
+          2
+        ]
+      },
+      "gun_chance": 0.45
     }
   },
   "loot_mult": {
@@ -492,5 +578,96 @@
     "pull_speed": 1.6,
     "notice": "Pale shapes rise in the water: the drowned are coming aboard!",
     "grab_notice": "A drowned hand drags you under!"
+  },
+  "beasts": {
+    "_about": "Sea step 8e the regions' own creatures (game/sea_beasts.gd + game/beasts/<kind>.gd; kinds with creature 'beast', region_only = only in their own region, weather_only = only in that weather). hp / damage grow per region past their own. lose_m: gone when every player is that far. Each kind: enemy (data/enemies.json), count, loot (encounters loot table), notice; its own numbers below. ALL NUMBERS MINE.",
+    "lose_m": 400.0,
+    "max_hit": 2500.0,
+    "hp_per_region": 0.35,
+    "damage_per_region": 0.25,
+    "knock_notice": "Knocked flat!",
+    "snatch_notice": "Something dragged you over the side!",
+    "sunskate": {
+      "enemy": "sea_sunskate",
+      "count": [
+        2,
+        3
+      ],
+      "scale": 1.0,
+      "ring_m": [
+        12.0,
+        20.0
+      ],
+      "depth": 0.45,
+      "speed": 4.5,
+      "leap_every": [
+        7.0,
+        12.0
+      ],
+      "leap_s": 1.6,
+      "leap_height": 3.5,
+      "knock_m": 2.8,
+      "knock_damage": 14.0,
+      "knock_push": 9.0,
+      "loot": "sunskate",
+      "notice": "Great dark shapes glide round the ship: sunskates!"
+    },
+    "fogmaw": {
+      "enemy": "sea_fogmaw",
+      "count": [
+        1,
+        1
+      ],
+      "scale": 1.0,
+      "lurk_m": 2.2,
+      "lurk_depth": 0.95,
+      "rail_m": 1.6,
+      "along_m": 4.0,
+      "rise_s": 1.3,
+      "snatch_reach": 3.4,
+      "snatch_damage": 20.0,
+      "throw_m": 7.0,
+      "every": [
+        7.0,
+        12.0
+      ],
+      "sink_s": 2.0,
+      "hull_bite": 45.0,
+      "hull_every": 9.0,
+      "swim_bite_m": 3.0,
+      "swim_bite": 18.0,
+      "loot": "fogmaw",
+      "notice": "A pale light bobs in the fog beside the ship..."
+    },
+    "cinder_turtle": {
+      "enemy": "sea_cinder_turtle",
+      "count": [
+        1,
+        1
+      ],
+      "scale": 1.0,
+      "depth": 0.9,
+      "circle_m": 26.0,
+      "speed": 3.0,
+      "ram_speed": 7.0,
+      "reach": 2.2,
+      "first_ram_s": 6.0,
+      "ram_every": [
+        12.0,
+        16.0
+      ],
+      "back_s": 3.0,
+      "ram_damage": 130.0,
+      "fires_per_ram": [
+        2,
+        3
+      ],
+      "fire_s": 12.0,
+      "fire_m": 1.3,
+      "fire_dps": 10.0,
+      "loot": "cinder_turtle",
+      "notice": "The sea steams: a Cinder Turtle surfaces!",
+      "ram_notice": "The Cinder Turtle rams her! Fire on deck!"
+    }
   }
 }

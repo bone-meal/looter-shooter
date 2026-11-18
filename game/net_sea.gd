@@ -112,6 +112,9 @@ func _send_fleet(fleet: Node) -> void:
 	var wyrm: Node = fleet.get("foes").get("serpent")
 	if bool(wyrm.call("should_send")):
 		_serpent_down.rpc(wyrm.call("to_net"))
+	var beasts: Node = fleet.get("foes").get("beasts")
+	if bool(beasts.call("should_send")):
+		_beast_down.rpc(beasts.call("to_net"), beasts.call("fires_to_net"))
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -879,3 +882,49 @@ func _drag(seconds: float) -> void:
 	var drowned := _foe_part("drowned")
 	if drowned != null and is_finite(seconds):
 		drowned.call("pulled", seconds)
+
+
+# --- the regions' own creatures (sea step 8e): host -> everyone, hits to the host, what they do to a player ---
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _beast_down(list: Array, fire_list: Array) -> void:
+	var beasts := _foe_part("beasts")
+	if beasts != null and list.size() <= 24 and fire_list.size() <= 32:
+		beasts.call("from_net", list, fire_list)
+
+
+func request_beast_hit(id: int, damage: float) -> void:
+	if active() and not net.is_host():
+		_beast_hit.rpc_id(1, id, damage)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _beast_hit(id: int, damage: float) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var beasts := _foe_part("beasts")
+	if net.is_host() and net.roster.has(from) and beasts != null and is_finite(damage):
+		beasts.call("host_hit", id, damage, from)
+
+
+func tell_beast_died(id: int, killer: int) -> void:
+	if active() and net.is_host():
+		_beast_died.rpc(id, killer)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _beast_died(id: int, killer: int) -> void:
+	var beasts := _foe_part("beasts")
+	if beasts != null:
+		beasts.call("fell", id, killer, my_id())
+
+
+func tell_player_fx(peer: int, kind: String, v: Vector3, damage: float) -> void:
+	if active() and net.is_host() and net.roster.has(peer) and peer != my_id():
+		_player_fx.rpc_id(peer, kind, v, damage)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _player_fx(kind: String, v: Vector3, damage: float) -> void:
+	var beasts := _foe_part("beasts")
+	if beasts != null and kind in ["knock", "snatch"]:
+		beasts.call("player_fx", kind, v, damage)

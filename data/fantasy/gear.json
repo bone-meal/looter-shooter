@@ -2106,6 +2106,42 @@
     1.0,
     0.85
    ]
+  },
+  "sunskate_wing": {
+   "kind": "material",
+   "icon": "pelt",
+   "color": [
+    0.1,
+    0.16,
+    0.3
+   ]
+  },
+  "fogmaw_lure": {
+   "kind": "material",
+   "icon": "crystal",
+   "color": [
+    0.7,
+    1.0,
+    0.6
+   ]
+  },
+  "eel_hide": {
+   "kind": "material",
+   "icon": "pelt",
+   "color": [
+    0.24,
+    0.32,
+    0.18
+   ]
+  },
+  "cinder_plate": {
+   "kind": "material",
+   "icon": "shell",
+   "color": [
+    0.2,
+    0.18,
+    0.17
+   ]
   }
  }
 }

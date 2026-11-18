@@ -5,6 +5,8 @@
 # Dependencies: the running game (finds the player by its set_third_person method).
 extends Node
 
+const DeckWalkDev = preload("res://core/sea/deck_walk.gd")
+
 const ShortcutSpots = preload("res://core/shortcut_spots.gd")
 const GunGen = preload("res://core/gun_gen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
@@ -609,6 +611,50 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), float(words[4]) if words.size() > 4 else 25.0, float(words[3]))), 0.0)  # optional height: drop onto high ground
 			else:
 				_lines.append(String(sea_world.call("status")))
+		"rbeast":  # sea step 8e: !rbeast spawn <kind> [m off] | kill [kind] | rail [port|starboard] | mid | onfire | hit <kind> <n> | wait <event> [n] | waitmode <mode> | status <note>
+			var sea_r: Node = session.call("sea")
+			var fleet_r: Node = sea_r.get("ships") if sea_r != null else null
+			if fleet_r == null:
+				_lines.append("rbeast: no sea")
+			else:
+				var mgr: Node = fleet_r.get("foes").get("beasts")
+				var mine_r: Node3D = (fleet_r.get("ships") as Array)[clampi(_ship_i, 0, (fleet_r.get("ships") as Array).size() - 1)]
+				var ms_r: Dictionary = mine_r.get("state")
+				var spec_r: Dictionary = mine_r.get("spec")
+				match words[1] if words.size() > 1 else "status":
+					"spawn":
+						mgr.call("spawn", words[2], float(ms_r["x"]) + (float(words[3]) if words.size() > 3 else 40.0), float(ms_r["z"]), int(words[4]) if words.size() > 4 else 1)
+					"kill", "hit":
+						for id_r: int in (mgr.get("beasts") as Dictionary).keys():
+							var b_r: Dictionary = mgr.get("beasts").get(id_r, {})
+							if b_r.is_empty() or (words.size() > 2 and String(b_r["kind"]) != words[2]):
+								continue
+							session.get("_score").set("blow", "gun")
+							(b_r["enemy"] as Node).call("on_hit", 99999.0 if words[1] == "kill" else float(words[3]), (b_r["enemy"] as Node3D).global_position + Vector3(0.0, 0.5, 0.0))
+					"rail", "mid":  # stand at her rail (starboard unless told port), amidships; or in her middle
+						var side_r := -1.0 if words.size() > 2 and words[2] == "port" else 1.0
+						var x_r := 0.0 if words[1] == "mid" else side_r * (float(DeckWalkDev.half_width(spec_r, 0.0)) - 0.7)
+						player.call("teleport", mine_r.global_transform * Vector3(x_r, float(spec_r["deck"]) + 0.2, 0.0), 0.0)
+					"onfire":  # stand in the first fire on her deck
+						for f_r: Array in mgr.get("fires"):
+							if f_r[0] == mine_r:
+								player.call("teleport", mine_r.global_transform * Vector3(float(f_r[1]), float(spec_r["deck"]) + 0.2, float(f_r[2])), 0.0)
+								break
+					"wait", "waitmode":
+						var until_r := Time.get_ticks_msec() + 90000
+						var hp_r := float(player.get("health").hp)
+						while Time.get_ticks_msec() < until_r:
+							if words[1] == "wait" and (int((mgr.get("counts") as Dictionary).get(words[2], 0)) >= (int(words[3]) if words.size() > 3 else 1) or (words[2] == "hurt" and float(player.get("health").hp) < hp_r - 0.5) or (words[2] == "swim" and bool(player.get("swimming")))):
+								break
+							if words[1] == "waitmode":
+								var hit_m := false
+								for id_m: int in mgr.get("beasts"):
+									if String(mgr.get("beasts")[id_m]["mode"]) == words[2]:
+										hit_m = true
+								if hit_m:
+									break
+							await get_tree().create_timer(0.2, true, false, true).timeout
+				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"])])
 		"spook":  # sea step 8d: !spook fire (our nearest loaded gun at the newest ghost) | wait_solid | wait_faded | wait_gone | rise | wait_grab | wait_aboard | wait_risen <n> | killall | status <note>
 			var sea_g: Node = session.call("sea")
 			var fleet_g: Node = sea_g.get("ships") if sea_g != null else null

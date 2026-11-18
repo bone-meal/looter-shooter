@@ -30,6 +30,10 @@ func _ready() -> void:
 	wm.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	water.material_override = wm
 	add_child(water)
+	if OS.get_cmdline_user_args().has("--beasts") or FileAccess.file_exists("res://tools/sea_creature_beasts.txt"):  # sea step 8e: the region creatures, out of the water (the file: a run from the editor tool)
+		await _beasts()
+		get_tree().quit()
+		return
 	var own: Array[StandardMaterial3D] = []
 	var shark := FantasyModels.creature("sea_shark", Color(0.2, 0.2, 0.2), own)
 	shark.position = Vector3(-6, -0.55, 0)
@@ -51,3 +55,39 @@ func _ready() -> void:
 			await RenderingServer.frame_post_draw
 		get_viewport().get_texture().get_image().save_jpg("res://tools/shots/seacreature_%s.jpg" % v[0], 0.88)
 	get_tree().quit()
+
+
+# Sea step 8e: Sunskate (wings up), Fogmaw (lure up, mouth open), Cinder Turtle - side by side above the water.
+func _beasts() -> void:
+	var placed := {}
+	var x := -9.0
+	for id: String in ["sea_sunskate", "sea_fogmaw", "sea_cinder_turtle"]:
+		var own: Array[StandardMaterial3D] = []
+		var body := FantasyModels.creature(id, Color(0.9, 0.5, 0.2), own)
+		if body == null:
+			continue
+		add_child(body)
+		body.position = Vector3(x, 0.4, 0.0)
+		body.rotation.y = 2.3
+		placed[id] = body
+		x += 9.0
+	var skate: Node3D = placed.get("sea_sunskate")
+	if skate != null:
+		for wing: String in ["WingL", "WingR"]:
+			var w := skate.find_child(wing, true, false) as Node3D
+			if w != null:
+				w.rotation.z = 0.4 if wing == "WingL" else -0.4
+	var eel: Node3D = placed.get("sea_fogmaw")
+	if eel != null:
+		var jaw := eel.find_child("Jaw", true, false) as Node3D
+		if jaw != null:
+			jaw.rotation.x = 0.5
+	var cam := Camera3D.new()
+	add_child(cam)
+	cam.current = true
+	for v: Array in [["beasts", Vector3(0, 7, 15), Vector3(0, 0.5, 0)], ["skate", Vector3(-5, 3, 4), Vector3(-9, 0.5, 0)], ["fogmaw", Vector3(4, 2.5, 4), Vector3(0, 0.6, -1)], ["turtle", Vector3(13, 3, 5), Vector3(9, 0.8, 0)]]:
+		cam.position = v[1]
+		cam.look_at(v[2], Vector3.UP)
+		for i in 8:
+			await RenderingServer.frame_post_draw
+		get_viewport().get_texture().get_image().save_jpg("res://tools/shots/seacreature_%s.jpg" % v[0], 0.88)

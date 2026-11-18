@@ -21,6 +21,7 @@ const SeaSharks = preload("res://game/sea_sharks.gd")
 const SeaSerpent = preload("res://game/sea_serpent.gd")
 const SeaGhosts = preload("res://game/sea_ghosts.gd")
 const SeaDrowned = preload("res://game/sea_drowned.gd")
+const SeaBeasts = preload("res://game/sea_beasts.gd")
 
 var rules: EncounterRules
 var pirate: PirateRules
@@ -30,6 +31,7 @@ var sharks := SeaSharks.new()  # sea step 8c
 var serpent := SeaSerpent.new()
 var ghosts := SeaGhosts.new()  # sea step 8d
 var drowned := SeaDrowned.new()
+var beasts := SeaBeasts.new()  # sea step 8e: each region's own creature
 var paused := false  # dev: no rolls (tests spawn their own)
 var rolled := 0  # dev / checks: checks rolled, foes that came, foes sunk, volleys fired
 var came := 0
@@ -71,11 +73,14 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	add_child(drowned)
 	drowned.setup(fleet, sea, player, crews, sharks, rules.cfg)
 	crews.drowned_part = drowned
+	beasts.name = "Beasts"
+	add_child(beasts)
+	beasts.setup(fleet, sea, player, rules.cfg)
 
 
 # Set by game/game_session.gd: the wave director that makes the crews and creatures, and the score card (kill pay).
 func set_game(director: Node, card: RefCounted) -> void:
-	for part: Node in [crews, sharks, serpent]:
+	for part: Node in [crews, sharks, serpent, beasts]:
 		part.set("director", director)
 		part.set("card", card)
 
@@ -157,6 +162,12 @@ func _roll() -> void:
 		var from := at + Vector2(cos(a), sin(a)) * 120.0
 		if serpent.wyrm == null and sharks.clear_of_land(from.x, from.y, 60.0):
 			serpent.spawn(from.x, from.y)
+		return
+	if String(rules.cfg["kinds"][kind].get("creature", "")) == "beast":  # a region's own creature (sea step 8e)
+		if beasts.beasts.is_empty():
+			var a2 := _rng.randf() * TAU
+			var from2 := at + Vector2(cos(a2), sin(a2)) * 60.0
+			beasts.spawn(String(rules.cfg["kinds"][kind]["beast"]), from2.x, from2.y, EncounterRules.region_number(region))
 		return
 	if String(rules.cfg["kinds"][kind].get("creature", "")) == "drowned":  # the drowned rise round him (sea step 8d)
 		if not drowned.rising():
@@ -299,4 +310,4 @@ func status() -> String:
 	for ship: Node3D in foes():
 		var st: Dictionary = ship.get("state")
 		parts.append("%s hull %.0f/%.0f at (%.0f, %.0f)%s" % [String(st["foe"]), float(st["hull"]), float(st["hull_max"]), float(st["x"]), float(st["z"]), " STRUCK" if bool(st.get("struck", false)) else ""])
-	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s; %s; %s; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status(), sharks.status(), serpent.status(), ghosts.status(), drowned.status()]
+	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s; %s; %s; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status(), sharks.status(), serpent.status(), ghosts.status(), drowned.status() + "; " + beasts.status()]
