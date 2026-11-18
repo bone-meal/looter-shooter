@@ -239,6 +239,14 @@ func strike_colours() -> void:
 	tween.tween_callback(_flag.hide)
 
 
+# Every mesh of her sails (square, fore-and-aft and head sails): a ghost ship's are drawn torn (sea step 8d).
+func sail_meshes() -> Array:
+	var out: Array = []
+	for sail: Node in _sails + _jibs:
+		out.append_array(_meshes(sail))
+	return out
+
+
 static func _meshes(node: Node) -> Array:
 	var out: Array = []
 	if node is MeshInstance3D:

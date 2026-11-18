@@ -1729,6 +1729,20 @@
    }
   },
   {
+   "id": "craft_ghost_charm",
+   "skill": "crafting",
+   "level": 30,
+   "xp": 260,
+   "station": "crafting_table",
+   "in": {
+    "spectral_essence": 3,
+    "copper_bar": 1
+   },
+   "out": {
+    "craft_ghost_charm": 1
+   }
+  },
+  {
    "id": "restore_harvest_sickle",
    "skill": "archaeology",
    "level": 1,
@@ -3396,7 +3410,8 @@
     "kind": "content",
     "ids": [
      "craft_sea_boots",
-     "craft_diving_helm"
+     "craft_diving_helm",
+     "craft_ghost_charm"
     ]
    },
    {

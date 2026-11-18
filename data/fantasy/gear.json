@@ -1344,6 +1344,18 @@
     0.42
    ]
   },
+  "craft_ghost_charm": {
+   "kind": "gunside",
+   "base": "charm_bracelet",
+   "tier": "blue",
+   "lvl": 32,
+   "icon": "bracelet",
+   "color": [
+    0.45,
+    1.0,
+    0.85
+   ]
+  },
   "encrusted_harvest_sickle": {
    "kind": "material",
    "icon": "relic",

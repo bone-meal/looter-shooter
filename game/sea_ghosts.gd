@@ -76,7 +76,7 @@ func _process(delta: float) -> void:
 		var want := float(st.get("phase", 0.0)) * (1.0 - float(st.get("dawn_t", 0.0)))
 		var shown := move_toward(float(_shown.get(ship, 0.0)), want, delta / maxf(float(cfg["fade_s"]), 0.05))
 		_shown[ship] = shown
-		GhostLook.ship(ship, shown)
+		GhostLook.ship(ship, shown)  # (every frame: her flicker)
 		ship.visible = float(st.get("dawn_t", 0.0)) < 1.0
 	for gone: Variant in _shown.keys():  # (untyped: a freed ship cannot be held in a typed variable)
 		if not is_instance_valid(gone):

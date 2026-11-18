@@ -1,12 +1,8 @@
-Sea step 8d: ghost ships and the drowned at night
+Sea step 8d fixes: ghost ship look, Spectral Essence recipe
 
-Ghost ships phase in and out: faded = cannon balls fly through her, solid only
-to fire her broadside; her ghost crew boards like pirates; she fades away with
-her men at dawn; sunk or struck = spectral loot.
-The drowned rise round a ship at night in waves, climb her hull anywhere and
-fight on deck; in the water they hold swimmers and drag them under.
-Fix: only land runs a ship aground (a boarder no longer stops dead under our sails).
-Two-copy tested (set spooks).
+Ghost ships: rot-mottled hull, torn sails, flicker, a stern lantern (bulb + halo,
+no real light: a light doubled the draws). Her crew keep their own glow.
+Spectral Essence: Crafting 30 recipe for a Ghostlight Bracelet (gun-side, blue).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
