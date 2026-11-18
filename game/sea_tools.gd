@@ -8,14 +8,22 @@
 #   GALE GLIDER: hold jump in the air: a slow glide on the way he looks; updraft vents lift him (player.glide_*).
 #   TIDE PEARL: at a tide basin, turns the dungeon's tide (rafts rise or sink); carried, breath lasts longer.
 #   WHORL COMPASS: shows the way to the nearest whorl door; close by, opens it.
-# The tool in use is shown in the hand for a moment (its model, a small swing); the glider is worn while gliding.
-# Online: dungeon changes go through the dungeons manager (host); ice slabs are told to everyone (net_sea tell_tool_fx).
+# IN HAND (director: only the tool or the gun is seen in hand): [T] takes the chosen tool out (the gun is put away:
+# player.tool_in_hand) and uses it; Left Mouse uses it again; a gun key, or hold_s without using it, puts it away and
+# the gun comes back. Shown in first person (on the camera) and on the own body's hand in third person, with its moves
+# (game/tool_models.gd); gliding wears the glider (wings open) and puts the gun away until he lands.
+# Online: other players see the tool in his hand from his held string ("tool:<id>#<uses>": a new count = its use move)
+# and his hook line, ember bolts and ice slabs (net_sea tell_tool_fx); dungeon changes go through the dungeons manager
+# (host).
 # Dependencies: data/sea/tools.json, assets/models/sea/tools/*.gltf (tools/blender/sea_tools.py), the sea world
 # (dungeons, swim, look, world_of, local_of, water_height, notice), game/player.gd (tool_pull, glide_*), game/fx_kit.gd,
 # game/ui_skin.gd (the HUD line), game/net_sea.gd.
 extends Node3D
 
 const FxKit = preload("res://game/fx_kit.gd")
+const ToolModels = preload("res://game/tool_models.gd")
+const HOLD_S := 6.0  # seconds a tool stays in hand after its last use
+const FP_AT := Vector3(0.24, -0.24, -0.5)  # first person: the tool in the right hand
 const UiSkin = preload("res://game/ui_skin.gd")
 const MODEL := "res://assets/models/sea/tools/%s.gltf"
 
@@ -27,15 +35,16 @@ var last := ""
 var hud := Control.new()
 var _sea: Node3D
 var _player: CharacterBody3D
-var _held: Node3D = null
-var _held_t := 0.0
+var _held: Node3D = null  # first person (on the camera)
+var _held_body: Node3D = null  # third person (the own body's hand / back)
+var _idle := 0.0
+var _remote_lines := []  # [{"line", "who", "to", "until"}]
 var _pull_t := 0.0
 var _hook_line: MeshInstance3D
 var _hook_to := Vector3.INF
 var _slabs: Array = []  # {"node", "until"}
 var _bell_until := 0.0
 var _cool := 0.0
-var _wings: Node3D = null
 
 
 func setup(sea: Node3D, player: CharacterBody3D, layer: CanvasLayer) -> void:
@@ -95,7 +104,67 @@ func next() -> void:
 	if owned.is_empty():
 		return
 	chosen = String(owned[(owned.find(chosen) + 1) % owned.size()])
+	if String(_player.get("tool_in_hand")) != "" and chosen != "glider":
+		take(chosen)
 	hud.queue_redraw()
+
+
+# --- in hand ---
+
+# The tool out (the gun put away), drawn up into the hand in first and third person.
+func take(tool: String) -> void:
+	_player.set("tool_in_hand", tool)
+	_drop_models()
+	var cam := get_viewport().get_camera_3d()
+	if cam != null:
+		_held = ToolModels.build(tool)
+		cam.add_child(_held)
+		_held.position = FP_AT + (Vector3(-0.24, 0.62, 0.35) if tool == "glider" else Vector3.ZERO)
+		_held.rotation = Vector3(0.0, PI if tool == "glider" else 0.0, 0.0)
+	var body: Node3D = _player.get("_body")
+	if body != null:
+		_held_body = ToolModels.build(tool)
+		if tool == "glider" and body.has_method("back_anchor"):
+			(body.call("back_anchor") as Node3D).add_child(_held_body)
+			_held_body.rotation.y = PI
+		elif body.has_method("hand_anchor"):
+			(body.call("hand_anchor") as Node3D).add_child(_held_body)
+		else:
+			_player.add_child(_held_body)
+			_held_body.position = Vector3(0.26, 1.3, -0.4)
+	for h: Node3D in [_held, _held_body]:
+		if h != null:
+			ToolModels.draw(h)
+	_idle = HOLD_S
+	_shown()
+
+
+func put_away() -> void:
+	_drop_models()
+	_player.set("tool_in_hand", "")  # (the gun comes back: player.refresh_held)
+
+
+func _drop_models() -> void:
+	for h: Node3D in [_held, _held_body]:
+		if h != null and is_instance_valid(h):
+			h.queue_free()
+	_held = null
+	_held_body = null
+
+
+# First person shows the camera's copy, third person the body's.
+func _shown() -> void:
+	var third := bool(_player.get("third_person"))
+	if _held != null:
+		_held.visible = not third
+	if _held_body != null:
+		_held_body.visible = third
+
+
+func _play_use(target: Vector3 = Vector3.INF) -> void:
+	for h: Node3D in [_held, _held_body]:
+		if h != null:
+			ToolModels.use(h, target)
 
 
 func _t(key: String, tool: String = "") -> float:
@@ -105,9 +174,13 @@ func _t(key: String, tool: String = "") -> float:
 # --- using ---
 
 func use() -> void:
-	if chosen == "" or not bool(_sea.get("inside")):
+	if chosen == "" or not bool(_sea.get("inside")) or bool(_player.get("manning")) or bool(_player.get("at_helm")):
 		return
+	if String(_player.get("tool_in_hand")) != chosen:
+		take(chosen)
 	uses[chosen] = int(uses.get(chosen, 0)) + 1
+	_player.set("tool_uses", int(_player.get("tool_uses")) + 1)
+	_idle = HOLD_S
 	match chosen:
 		"grapple":
 			_grapple()
@@ -169,8 +242,8 @@ func _grapple() -> void:
 		if dot > best_dot and _clear(eye.origin, c[0]):
 			best_dot = dot
 			best = c
-	_show_held("grapple", 0.9)
 	if best.is_empty():
+		_play_use()
 		last = "grapple: no ring in reach"
 		_sea.emit_signal("notice", "No hook ring in reach")
 		return
@@ -179,6 +252,10 @@ func _grapple() -> void:
 	var back := Vector3(_player.global_position.x - foot.x, 0.0, _player.global_position.z - foot.z).normalized()
 	var land := foot + back * 1.3 + Vector3(0.0, 0.5, 0.0)
 	_hook_to = ring
+	_play_use(ring)
+	var net := _net()
+	if net != null:
+		net.call("tell_tool_fx", "hook", _sea.call("local_of", ring), Vector3.ZERO)
 	_player.set("tool_pull_speed", _t("pull_speed"))
 	_player.set("tool_pull", land)
 	_pull_t = 3.0
@@ -193,7 +270,7 @@ func _clear(from: Vector3, to: Vector3) -> bool:
 
 # FOG BELL
 func _ring_bell() -> void:
-	_show_held("bell", 1.2)
+	_play_use()
 	if String(_dungeons().get("where")) != "":
 		_dungeons().call("act", "!")
 		last = "bell rung in the dungeon"
@@ -208,7 +285,7 @@ func _ember() -> void:
 	if _cool > 0.0:
 		return
 	_cool = _t("cooldown_s")
-	_show_held("gauntlet", 0.6)
+	_play_use()
 	var eye := _eye()
 	var from := eye.origin
 	var to := from - eye.basis.z * _t("range_m")
@@ -216,7 +293,11 @@ func _ember() -> void:
 	q.exclude = [(_player as CollisionObject3D).get_rid()]
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	var end: Vector3 = hit["position"] if not hit.is_empty() else to
-	_bolt(from - eye.basis.z * 0.8 + Vector3(0.0, -0.25, 0.0), end)
+	var start := (_held.global_position if _held != null and _held.visible else from - eye.basis.z * 0.8 + Vector3(0.0, -0.25, 0.0))
+	_bolt(start, end)
+	var net := _net()
+	if net != null:
+		net.call("tell_tool_fx", "bolt", _sea.call("local_of", start), _sea.call("local_of", end))
 	var aimed := ""
 	var best := 2.2
 	for kind: String in ["bramble", "brazier"]:
@@ -246,7 +327,7 @@ func _bolt(from: Vector3, to: Vector3) -> void:
 
 # RIME ANCHOR: where the view meets the water (a dungeon pit's or the sea's) within range: an ice slab.
 func _ice() -> void:
-	_show_held("anchor", 0.8)
+	_play_use()
 	var eye := _eye()
 	var ahead := -eye.basis.z
 	var dm := _dungeons()
@@ -279,7 +360,7 @@ func _ice() -> void:
 	add_slab(sea_at)
 	var net := _net()
 	if net != null:
-		net.call("tell_tool_fx", "ice", sea_at)
+		net.call("tell_tool_fx", "ice", sea_at, Vector3.ZERO)
 	last = "ice at %s" % str(sea_at.snapped(Vector3.ONE * 0.1))
 
 
@@ -314,7 +395,7 @@ func add_slab(sea_at: Vector3) -> void:
 
 # TIDE PEARL
 func _pearl() -> void:
-	_show_held("pearl", 1.0)
+	_play_use()
 	for pair: Array in _dungeon_things("basin"):
 		if (pair[1] as Vector3).distance_to(_player.global_position) < _t("range_m") + 1.0:
 			_dungeons().call("act", pair[0])
@@ -327,7 +408,6 @@ func _pearl() -> void:
 
 # WHORL COMPASS
 func _compass() -> void:
-	_show_held("compass", 3.0)
 	var best: Array = []
 	var best_d := _t("point_m")
 	var dm := _dungeons()
@@ -341,9 +421,11 @@ func _compass() -> void:
 			best_d = d
 			best = pair
 	if best.is_empty():
+		_play_use()
 		last = "compass: nothing"
 		_sea.emit_signal("notice", "The needle spins: nothing hidden near")
 		return
+	_play_use(best[1])
 	if best_d < _t("range_m") + 1.5:
 		dm.call("act", best[0])
 		last = "whorl door %s opened" % best[0]
@@ -353,10 +435,6 @@ func _compass() -> void:
 	var dirs := ["north", "north-east", "east", "south-east", "south", "south-west", "west", "north-west"]
 	last = "compass points %.0f m" % best_d
 	_sea.emit_signal("notice", "The needle points %s, %d m" % [dirs[posmod(roundi((atan2(way.x, -way.z) / TAU) * 8.0), 8)], roundi(best_d)])
-	if _held != null:
-		var needle := _held.find_child("Needle", true, false) as Node3D
-		if needle != null:
-			needle.global_rotation.y = atan2(-way.x, -way.z)
 
 
 func _net() -> Node:
@@ -384,7 +462,11 @@ func _physics_process(delta: float) -> void:
 	_player.set("glide_fall", _t("fall_speed", "glider") if gliding else -1.0)
 	_player.set("glide_speed", _t("speed", "glider"))
 	_player.set("glide_lift", _lift_here() if gliding else 0.0)
-	_wear_wings(gliding)
+	if gliding and String(_player.get("tool_in_hand")) != "glider":
+		take("glider")
+		_play_use()  # (the wings open)
+	elif not gliding and String(_player.get("tool_in_hand")) == "glider" and (_player.is_on_floor() or bool(_player.get("swimming"))):
+		put_away()
 	# ice slabs melt
 	for slab: Dictionary in _slabs.duplicate():
 		if now > float(slab["until"]):
@@ -394,17 +476,16 @@ func _physics_process(delta: float) -> void:
 	# the bell's thin fog at sea; the pearl's breath
 	(_sea.get("look") as RefCounted).set("fog_mult", _t("fog_mult", "bell") if now < _bell_until else 1.0)
 	(_sea.get("swim") as Node).set("breath_mult", _t("breath_mult", "pearl") if has("pearl") else 1.0)
-	# the tool in hand
-	if _held != null:
-		_held_t -= delta
-		_held.rotation.x = sin(_held_t * 9.0) * 0.15
-		if chosen == "bell":
-			var clapper := _held.find_child("Clapper", true, false) as Node3D
-			if clapper != null:
-				clapper.rotation.z = sin(_held_t * 22.0) * 0.5
-		if _held_t <= 0.0:
-			_held.queue_free()
-			_held = null
+	# the tool in hand: put away after a while unused (not while hauled or gliding)
+	var in_hand := String(_player.get("tool_in_hand"))
+	if in_hand != "" and in_hand != "glider" and not (_player.get("tool_pull") as Vector3).is_finite():
+		_idle -= delta
+		if _idle <= 0.0:
+			put_away()
+	elif in_hand == "" and (_held != null or _held_body != null):
+		_drop_models()  # (a gun key put it away: game/player.gd select_hand)
+	_shown()
+	_remote_lines_step(now)
 
 
 # An updraft vent under him in a dungeon: its lift while he is below lift_h over it.
@@ -420,15 +501,6 @@ func _lift_here() -> float:
 	return 0.0
 
 
-func _wear_wings(on: bool) -> void:
-	if on and _wings == null:
-		_wings = _model("glider")
-		_player.add_child(_wings)
-		_wings.position = Vector3(0.0, 1.35, 0.2)
-	if _wings != null:
-		_wings.visible = on
-
-
 func _draw_line() -> void:
 	var im := _hook_line.mesh as ImmediateMesh
 	im.clear_surfaces()
@@ -438,30 +510,6 @@ func _draw_line() -> void:
 	im.surface_add_vertex(_player.global_position + Vector3(0.0, 1.3, 0.0))
 	im.surface_add_vertex(_hook_to)
 	im.surface_end()
-
-
-func _model(tool: String) -> Node3D:
-	var path := MODEL % String(cfg["tools"][tool]["model"])
-	if ResourceLoader.exists(path):
-		return (load(path) as PackedScene).instantiate() as Node3D
-	var m := MeshInstance3D.new()
-	m.mesh = BoxMesh.new()
-	m.scale = Vector3.ONE * 0.1
-	return m
-
-
-# The tool shown in the left of the view for a moment.
-func _show_held(tool: String, seconds: float) -> void:
-	var cam := get_viewport().get_camera_3d()
-	if cam == null:
-		return
-	if _held != null:
-		_held.queue_free()
-	_held = _model(tool)
-	cam.add_child(_held)
-	_held.position = Vector3(-0.22, -0.2, -0.45)
-	_held.rotation = Vector3(0.0, 0.25, 0.0)
-	_held_t = seconds
 
 
 # --- the HUD line: the chosen tool and the keys ---
@@ -482,10 +530,47 @@ func _draw_hud() -> void:
 
 
 func _process(_delta: float) -> void:
+	if _player != null and String(_player.get("tool_in_hand")) not in ["", "glider"] and bool(_sea.get("inside")) and Input.is_action_just_pressed("shoot") \
+		and bool(_player.call("_mouse_held")):
+		use()  # Left Mouse uses the tool in hand again
 	hud.visible = bool(_sea.get("inside")) and not owned.is_empty()
 	if hud.visible:
 		hud.queue_redraw()
 
 
+# --- other players' tools (net_sea _tool_fx): an ice slab, a hook line from his body to the ring, an ember bolt ---
+
+func fx_from_net(kind: String, a: Vector3, b: Vector3, who: int) -> void:
+	match kind:
+		"ice":
+			add_slab(a)
+		"bolt":
+			_bolt(_sea.call("world_of", a), _sea.call("world_of", b))
+		"hook":
+			var line := MeshInstance3D.new()
+			line.mesh = ImmediateMesh.new()
+			line.material_override = FxKit.glow(Color(0.55, 0.45, 0.3, 1.0), false)
+			line.top_level = true
+			add_child(line)
+			_remote_lines.append({"line": line, "who": who, "to": a, "until": Time.get_ticks_msec() / 1000.0 + 1.8})
+
+
+func _remote_lines_step(now: float) -> void:
+	var net: Node = _dungeons().call("_net")
+	for r: Dictionary in _remote_lines.duplicate():
+		var line: MeshInstance3D = r["line"]
+		var body: Node3D = (net.get("net") as Node).call("player_node", int(r["who"])) if net != null else null
+		if now > float(r["until"]) or body == null:
+			line.queue_free()
+			_remote_lines.erase(r)
+			continue
+		var im := line.mesh as ImmediateMesh
+		im.clear_surfaces()
+		im.surface_begin(Mesh.PRIMITIVE_LINES)
+		im.surface_add_vertex(body.global_position + Vector3(0.0, 1.3, 0.0))
+		im.surface_add_vertex(_sea.call("world_of", r["to"]))
+		im.surface_end()
+
+
 func status() -> String:
-	return "tools: owned %s, chosen %s, uses %s, pulling %s, gliding %s (lift %.1f), slabs %d, last '%s'" % [str(owned), chosen, str(uses), str((_player.get("tool_pull") as Vector3).is_finite()), str(float(_player.get("glide_fall")) >= 0.0), float(_player.get("glide_lift")), _slabs.size(), last]
+	return "tools: in hand '%s' (fp %s, body %s), owned %s, chosen %s, uses %s, pulling %s, gliding %s (lift %.1f), slabs %d, last '%s'" % [String(_player.get("tool_in_hand")), str(_held != null and _held.visible), str(_held_body != null and _held_body.visible), str(owned), chosen, str(uses), str((_player.get("tool_pull") as Vector3).is_finite()), str(float(_player.get("glide_fall")) >= 0.0), float(_player.get("glide_lift")), _slabs.size(), last]

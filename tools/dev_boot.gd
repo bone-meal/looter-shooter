@@ -394,7 +394,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var tags := PackedStringArray()
 			for body: Node in session.get("net").call("target_nodes"):
 				var label: Node = body.find_child("Record", true, false)
-				tags.append("%s held=%s tag=%s" % [body.name, String(body.get("_held_shown")), (label as Label3D).text.replace("\n", " ") if label is Label3D else "-"])
+				var tool_n: Node = null
+				for c: Node in body.find_children("Tool_*", "Node3D", true, false):
+					tool_n = c
+				tags.append("%s held=%s tag=%s tool=%s" % [body.name, String(body.get("_held_shown")), (label as Label3D).text.replace("\n", " ") if label is Label3D else "-",
+					("%s on %s visible %s" % [tool_n.name, tool_n.get_parent().name, str((tool_n as Node3D).is_visible_in_tree())]) if tool_n != null else "-"])
 			_lines.append("GHOSTTAG %s @%.1f: %s" % [" ".join(words.slice(1)), fmod(Time.get_unix_time_from_system(), 1000.0), " | ".join(tags)])
 		"sighit":  # "!sighit <damage> [kill]": the chase gun in hand's behaviour hears one shot's damage (Fish Story: record, tag, told number)
 			var sig_now: Node = player.get("_sig_node")
@@ -682,6 +686,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						if wt != "":
 							var sp_t: Vector3 = dmt.call("space_of", wt)
 							player.call("look_at_point", sea_t2.call("world_of", sp_t + Vector3(float(words[2]), 0.0, float(words[3])) * float(dmt.get("cfg")["tile"]) + Vector3(0.0, float(words[4]) if words.size() > 4 else 1.0, 0.0)))
+					"gun":  # a gun key: the tool goes away, the gun in hand comes back
+						player.call("select_hand", int(player.get("_hand")))
+					"third":  # third person on / off
+						player.set("third_person", words.size() > 2 and words[2] == "on")
+						player.call("_apply_view")
 					"up":  # lifted that far into the air where he stands
 						player.call("teleport", player.global_position + Vector3(0.0, float(words[2]), 0.0), float(player.call("look_yaw")))
 					"hold":
@@ -689,7 +698,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							Input.action_press(words[2])
 						else:
 							Input.action_release(words[2])
-				_lines.append("TOOL %s: %s; at %s; %s" % [" ".join(words.slice(1)), String(tm.call("status")), str((sea_t2.call("local_of", player.global_position) as Vector3).snapped(Vector3(0.1, 0.1, 0.1))), String(dmt.call("status"))])
+				_lines.append("TOOL %s: held '%s', gun shown %s; %s; at %s; %s" % [" ".join(words.slice(1)), String(player.call("held_id")), str(bool(player.get("_holding"))), String(tm.call("status")), str((sea_t2.call("local_of", player.global_position) as Vector3).snapped(Vector3(0.1, 0.1, 0.1))), String(dmt.call("status"))])
 		"dun":  # sea step 9: !dun gate [id] (stand before its island gate) | enter [id] | leave | stand <cx> <cz> [face cx cz] | use | prompt | reset | wait (state changes) | status <note>
 			var sea_d: Node = session.call("sea")
 			if sea_d == null:

@@ -17,6 +17,7 @@ const UniqueAttach = preload("res://game/unique_attach.gd")
 const LanternGlow = preload("res://game/lantern_glow.gd")
 const Mixtape = preload("res://game/signatures/mixtape.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
+const ToolModels = preload("res://game/tool_models.gd")
 
 const HAND := Vector3(0.26, 1.3, -0.5)  # where the weapon sits in the body model
 const HEAD_HEIGHT := 1.6  # as game/player.gd: a shoulder-carried gun is placed from here
@@ -212,6 +213,22 @@ func set_held(shown: String) -> void:
 	var id := shown.trim_suffix("|shield")
 	if id == _held_shown:
 		return
+	if id.begins_with("tool:"):  # a sea tool in his hand (sea step 9b): a new use count plays its move
+		var tool := id.trim_prefix("tool:").get_slice("#", 0)
+		if _held_model != null and is_instance_valid(_held_model) and _held_shown.begins_with("tool:" + tool + "#"):
+			_held_shown = id
+			ToolModels.use(_held_model)
+			return
+		_held_shown = id
+		_held_id = ""
+		_held_piece = null
+		if _held_model != null:
+			_held_model.queue_free()
+		_held_model = ToolModels.build(tool)
+		_place_tool(tool)
+		ToolModels.draw(_held_model)
+		ToolModels.set_open(_held_model, true)  # (the glider is only out while he glides)
+		return
 	if _held_piece != null and is_instance_valid(_held_piece) and id.get_slice("#", 0) == _held_shown.get_slice("#", 0):
 		_held_shown = id  # same gun, a new record (Fish Story) or its lantern thrown / lit again: only that part changes
 		UniqueAttach.show_extra(_held_piece, id.get_slice("@", 1).get_slice("#", 0), id.get_slice("#", 1))
@@ -269,6 +286,20 @@ func _place_slung() -> void:
 
 
 # Puts the held weapon in the right hand of a rigged body, or at the fixed spot in front of a code-built one.
+func _place_tool(tool: String) -> void:
+	if _model != null and _model.has_method("grip"):
+		_model.call("grip", null)
+		_model.call("support", null)
+	if tool == "glider" and _model != null and _model.has_method("back_anchor"):
+		(_model.call("back_anchor") as Node3D).add_child(_held_model)
+		_held_model.rotation.y = PI
+	elif _model != null and _model.has_method("hand_anchor"):
+		(_model.call("hand_anchor") as Node3D).add_child(_held_model)
+	else:
+		_held_model.position = HAND if tool != "glider" else Vector3(0.0, 1.35, 0.2)
+		add_child(_held_model)
+
+
 func _place_held() -> void:
 	if _held_model == null or _model == null:
 		return

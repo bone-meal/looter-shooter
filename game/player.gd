@@ -225,6 +225,14 @@ var _inspect_at := 0.0
 var _shot_at := {}  # host-run enemy (instance id) -> engine time our gun shot hit it (credit_kill)
 var kills_credited := 0  # online kills the host credited to our gun
 var tow_point := Vector3.INF  # Kite Flyer: while finite, the body glides there (towed on a teammate's kite string)
+var tool_in_hand := "":  # sea step 9b: a sea tool held instead of the gun ("" = the gun / knife as usual; game/sea_tools.gd)
+	set(t):
+		if tool_in_hand == t:
+			return
+		tool_in_hand = t
+		if is_inside_tree():
+			refresh_held()
+var tool_uses := 0  # counts the tool's uses: other players play the use when it changes (held_id "tool:<id>#<n>")
 var tool_pull := Vector3.INF  # sea step 9b Grapple Hook: while finite, the body is hauled there at tool_pull_speed
 var tool_pull_speed := 16.0
 var glide_fall := -1.0  # sea step 9b Gale Glider: 0+ while gliding (falls no faster than this, carried forward at glide_speed)
@@ -824,6 +832,8 @@ func held_weapon() -> WeaponState:
 # What is in hand, for other machines to show: a gun's body id, "knife:<type>" for the knife, "shield" for the
 # shield held up, "" for nothing; "|shield" is added while the shield hangs on the back.
 func held_id() -> String:
+	if tool_in_hand != "":
+		return "tool:%s#%d" % [tool_in_hand, tool_uses]
 	if _shield_out:
 		return "shield"
 	var slung := "|shield" if shield.owned and not guns_locked else ""  # on the back, for others to see
@@ -862,6 +872,8 @@ func knife_out() -> bool:
 # or closed holster is ignored. Putting a gun
 # away stops its reload; putting the knife away stops its swing.
 func select_hand(index: int) -> void:
+	if tool_in_hand != "":  # a gun key puts the sea tool away and takes that gun
+		tool_in_hand = ""
 	if index == _hand or (index == SHIELD and not shield.owned) or (index >= 0 and (index >= inventory.holster_count or inventory.holster_body(index) == "")):
 		return
 	if index == SHIELD:
@@ -884,6 +896,9 @@ func reload_inventory() -> void:
 
 # The wheel: the next or previous thing that can be held (the filled holsters in order, then the knife).
 func _cycle_hand(step: int) -> void:
+	if tool_in_hand != "":
+		tool_in_hand = ""
+		return
 	var slots := inventory.holster_count + 1  # the knife sits after the last holster
 	var at := inventory.holster_count if _hand == KNIFE else _hand
 	for _i in slots:
@@ -954,6 +969,12 @@ func refresh_held() -> void:
 				break
 	_sling_shield()
 	if manning:  # at a ship's cannon: nothing in hand (refresh_held runs again when he gets up)
+		return
+	if tool_in_hand != "":  # a sea tool in hand: the gun is put away (game/sea_tools.gd shows the tool)
+		if _body != null and _body.has_method("support"):
+			_body.call("support", null)
+			if _body.has_method("grip"):
+				_body.call("grip", null)
 		return
 	if guns_locked:  # Aurelind before its story is done: the staff is out, no gun and no knife
 		_apply_health_cap()

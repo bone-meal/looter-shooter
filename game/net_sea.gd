@@ -975,31 +975,32 @@ func _dun_loot(loot: String, region_n: int) -> void:
 
 # --- the sea tools (sea step 9b): an ice slab told to everyone (through the host), a tool from a dungeon chest ---
 
-func tell_tool_fx(kind: String, at: Vector3) -> void:
+func tell_tool_fx(kind: String, a: Vector3, b: Vector3 = Vector3.ZERO) -> void:
 	if not active():
 		return
 	if net.is_host():
-		_tool_fx.rpc(kind, at)
+		_tool_fx.rpc(kind, a, b, my_id())
 	else:
-		_tool_fx_up.rpc_id(1, kind, at)
+		_tool_fx_up.rpc_id(1, kind, a, b)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _tool_fx_up(kind: String, at: Vector3) -> void:
+func _tool_fx_up(kind: String, a: Vector3, b: Vector3) -> void:
 	var from := multiplayer.get_remote_sender_id()
-	if not net.is_host() or not net.roster.has(from) or kind != "ice" or not at.is_finite() or at.length() > 60000.0:
+	if not net.is_host() or not net.roster.has(from) or not kind in ["ice", "hook", "bolt"] or not a.is_finite() or not b.is_finite() or a.length() > 60000.0 or b.length() > 60000.0:
 		return
-	_tool_fx(kind, at)
+	_tool_fx(kind, a, b, from)
 	for peer: int in net.roster:
 		if peer != from and peer != my_id():
-			_tool_fx.rpc_id(peer, kind, at)
+			_tool_fx.rpc_id(peer, kind, a, b, from)
 
 
+# What another player's tool did here (sea coordinates): an ice slab, his hook's line to a ring, an ember bolt.
 @rpc("authority", "call_remote", "reliable")
-func _tool_fx(kind: String, at: Vector3) -> void:
+func _tool_fx(kind: String, a: Vector3, b: Vector3, who: int) -> void:
 	var sea := _sea()
-	if sea != null and kind == "ice" and at.is_finite():
-		sea.get("tools").call("add_slab", at)
+	if sea != null and a.is_finite() and b.is_finite():
+		sea.get("tools").call("fx_from_net", kind, a, b, who)
 
 
 func tell_tool_gift(peer: int, tool: String) -> void:
