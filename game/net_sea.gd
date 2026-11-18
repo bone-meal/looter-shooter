@@ -99,7 +99,7 @@ func _send_fleet(fleet: Node) -> void:
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
 		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"]),
-			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", "")), bool(s.get("struck", false))])
+			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", "")), bool(s.get("struck", false)), snappedf(float(s.get("phase", 1.0)), 0.01)])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 	_board_down.rpc(fleet.get("boarding").call("to_net"))
@@ -865,3 +865,17 @@ func _serpent_died(killer: int) -> void:
 	var wyrm := _foe_part("serpent")
 	if wyrm != null:
 		wyrm.call("fell", killer, my_id())
+
+
+# --- the drowned (sea step 8d): a held swimmer is pulled under on his own machine ---
+
+func tell_drag(peer: int, seconds: float) -> void:
+	if active() and net.is_host() and net.roster.has(peer) and peer != my_id():
+		_drag.rpc_id(peer, seconds)
+
+
+@rpc("authority", "call_remote", "unreliable")
+func _drag(seconds: float) -> void:
+	var drowned := _foe_part("drowned")
+	if drowned != null and is_finite(seconds):
+		drowned.call("pulled", seconds)

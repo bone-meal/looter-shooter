@@ -88,6 +88,41 @@
         "rain": 1.8,
         "fog": 1.4
       }
+    },
+    "drowned_rise": {
+      "creature": "drowned",
+      "weight": 4,
+      "regions": 1,
+      "night_only": true,
+      "name": "The drowned"
+    },
+    "ghost_brig": {
+      "ship": "brig",
+      "weight": 2,
+      "regions": 2,
+      "night_only": true,
+      "ghost": true,
+      "name": "ghost ship",
+      "notice": "A pale light on the water: a %s!",
+      "sails": [
+        0.7,
+        0.9,
+        0.85
+      ],
+      "hull_mult": 0.9,
+      "aim_error_deg": 3.5,
+      "boards": true,
+      "loot": "ghost_ship",
+      "crew": {
+        "ghost_captain": 1,
+        "ghost_cutlass": 4,
+        "ghost_musket": 2
+      },
+      "boarders": 4,
+      "deck_loot": "ghost_deck",
+      "below": {
+        "ghost_cutlass": 2
+      }
     }
   },
   "pirate": {
@@ -251,6 +286,48 @@
         ]
       },
       "gun_chance": 1.0
+    },
+    "ghost_ship": {
+      "pieces": [
+        5,
+        8
+      ],
+      "doubloons": [
+        20,
+        45
+      ],
+      "items": {
+        "spectral_essence": [
+          1,
+          3
+        ],
+        "sailcloth": [
+          0,
+          1
+        ]
+      },
+      "gun_chance": 0.3
+    },
+    "ghost_deck": {
+      "pieces": [
+        2,
+        2
+      ],
+      "doubloons": [
+        40,
+        80
+      ],
+      "items": {
+        "spectral_essence": [
+          2,
+          4
+        ],
+        "iron_bar": [
+          1,
+          3
+        ]
+      },
+      "gun_chance": 0.65
     }
   },
   "loot_mult": {
@@ -382,5 +459,38 @@
     "notice": "Something huge moves under the water...",
     "slain_notice": "The Tide Wyrm is slain: its hoard floats free",
     "scale": 1.6
+  },
+  "ghosts": {
+    "_about": "Sea step 8d ghost ships (game/sea_ghosts.gd; kinds with ghost: true, night only). She starts faded (cannon balls fly through her) and rests first_rest_s; when she wants to fire she turns solid over fade_s and stays solid solid_s (fires only once solid; hittable), then fades for rest_s. At dawn she and her crew fade out over dawn_fade_s and are gone.",
+    "first_rest_s": 4.0,
+    "fade_s": 1.2,
+    "solid_s": 6.0,
+    "rest_s": [
+      7.0,
+      11.0
+    ],
+    "dawn_fade_s": 4.0,
+    "dawn_notice": "First light: the ghost ship fades from the sea"
+  },
+  "drowned": {
+    "_about": "Sea step 8d the drowned (game/sea_drowned.gd; kind drowned_rise, night only). A rising = waves waves wave_gap_s apart of per_wave (+ per_wave_per_region x (region - 1)) drowned, plus one brute from brute_from_region, coming up ring_m round the ship; they swim to her and climb her hull anywhere (game/sea_crews.gd undead swimmers), then fight on deck. In the water one within grab_notice_m of a swimming player goes for him and within grab_m holds him: hold_damage a second and pulled down (pull_speed m/s) for hold_s, or until it is hurt; it grabs again after regrab_s.",
+    "waves": 3,
+    "wave_gap_s": 16.0,
+    "per_wave": 3,
+    "per_wave_per_region": 0.5,
+    "brute_from_region": 2,
+    "ring_m": [
+      18.0,
+      28.0
+    ],
+    "grab_notice_m": 14.0,
+    "grab_m": 1.4,
+    "hold_s": 5.0,
+    "hold_damage": 8.0,
+    "regrab_s": 6.0,
+    "chase_speed": 2.6,
+    "pull_speed": 1.6,
+    "notice": "Pale shapes rise in the water: the drowned are coming aboard!",
+    "grab_notice": "A drowned hand drags you under!"
   }
 }

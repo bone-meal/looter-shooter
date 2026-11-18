@@ -23,6 +23,7 @@ var dev_fire := false  # dev: fire once without the key (tests run without focus
 var dev_target: Node3D = null  # dev: a ship aimed at (with the drop worked out) instead of the look
 var fired := 0  # dev / checks: balls this machine fired; hits: hull strikes it saw
 var hits := 0
+var passed := 0  # dev / checks: balls that flew through a faded ghost ship (sea step 8d)
 var last_end := ""  # dev / checks: how the last ball ended (what, where in sea metres, flight time)
 var _fleet: Node3D  # game/sea_ships.gd
 var _sea: Node3D
@@ -302,8 +303,20 @@ func _fly(delta: float) -> void:
 		if is_instance_valid(b["from"]):
 			skip.append((b["from"] as CollisionObject3D).get_rid())
 		skip.append(_player.get_rid())
+		var faded := 0
+		for ship: Node3D in _fleet.get("ships"):  # a ghost ship while faded (sea step 8d): the ball flies through her
+			if float((ship.get("state") as Dictionary).get("phase", 1.0)) < 0.5:
+				skip.append((ship as CollisionObject3D).get_rid())
+				faded += 1
 		_ray.exclude = skip
 		var hit := get_world_3d().direct_space_state.intersect_ray(_ray)
+		if faded > 0 and not b.has("through"):
+			_ray.exclude = skip.slice(0, skip.size() - faded)
+			var ghost_hit := get_world_3d().direct_space_state.intersect_ray(_ray)
+			if not ghost_hit.is_empty() and (_fleet.get("ships") as Array).has(ghost_hit["collider"]) and (hit.is_empty() or (ghost_hit["position"] as Vector3).distance_to(before) < (hit["position"] as Vector3).distance_to(before)):
+				b["through"] = true
+				passed += 1
+				FxKit.burst(self, ghost_hit["position"], Color(0.45, 1.0, 0.85, 0.7), 14, 0.9, 0.35, 2.5, 0.3)  # a wisp where it went through her
 		var done := float(b["life"]) <= 0.0
 		if not hit.is_empty():
 			var at: Vector3 = hit["position"]

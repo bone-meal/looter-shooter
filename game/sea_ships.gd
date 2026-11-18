@@ -260,7 +260,9 @@ func host_states(states: Array) -> void:
 			foes.dress(ship)
 			var k: Dictionary = foes.rules.cfg["kinds"].get(String(ship.state["foe"]), {})
 			ship.state["hull_max"] = float(ship.state["hull_max"]) * float(k.get("hull_mult", 1.0))
-			_sea.emit_signal("notice", String(foes.rules.cfg["pirate"]["notice"]) % String(k.get("name", "foe")))
+			_sea.emit_signal("notice", String(k.get("notice", foes.rules.cfg["pirate"]["notice"])) % String(k.get("name", "foe")))
+		if got.size() >= 19:  # a ghost ship's phase (sea step 8d): 0 faded .. 1 solid
+			ship.state["phase"] = clampf(float(got[18]), 0.0, 1.0)
 		if got.size() >= 18 and bool(got[17]) and not bool(ship.state.get("struck", false)):  # her crew beaten (sea step 8b)
 			ship.state["struck"] = true
 			ship.strike_colours()
@@ -377,7 +379,9 @@ func _aground(ship: SeaShip) -> bool:
 	var spot: Vector3 = ship.global_transform * Vector3(0.0, 0.0, ahead)
 	_ray.from = Vector3(spot.x, global_position.y + 40.0, spot.z)
 	_ray.to = Vector3(spot.x, global_position.y - float(ship.spec["draft"]), spot.z)
-	var skip: Array[RID] = [_floor_rid, ship.get_rid()]
+	var skip: Array[RID] = [_floor_rid]
+	for other: SeaShip in ships:  # only land runs her aground: another ship's deck or rigging over her bow does not
+		skip.append(other.get_rid())  # (a pirate closing to board stopped dead 16 m off, bow-on, under our sails)
 	_ray.exclude = skip
 	var hit := get_world_3d().direct_space_state.intersect_ray(_ray)
 	if not hit.is_empty():

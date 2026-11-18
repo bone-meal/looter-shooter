@@ -2085,6 +2085,15 @@
     0.9,
     0.72
    ]
+  },
+  "spectral_essence": {
+   "kind": "material",
+   "icon": "crystal",
+   "color": [
+    0.45,
+    1.0,
+    0.85
+   ]
   }
  }
 }

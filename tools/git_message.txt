@@ -1,11 +1,12 @@
-Sea step 8c: sharks and the sea serpent, Minecraft-style /tp
+Sea step 8d: ghost ships and the drowned at night
 
-Sharks circle anyone in deep water, bite (online too), blood draws more;
-a shark killed soon after our harpoon hit gives Hunting xp, hides, teeth, meat.
-The sea serpent surfaces beside the ship, bites the hull, lunges at the deck,
-dives and resurfaces; segment hit boxes, cannons hurt it, slain = cargo afloat + fang.
-/tp: x y z with ~, player, who to player or coordinates, @s @p @r @a, places;
-moving others is checked by the host. Two-copy tested (sets beasts, tp).
+Ghost ships phase in and out: faded = cannon balls fly through her, solid only
+to fire her broadside; her ghost crew boards like pirates; she fades away with
+her men at dawn; sunk or struck = spectral loot.
+The drowned rise round a ship at night in waves, climb her hull anywhere and
+fight on deck; in the water they hold swimmers and drag them under.
+Fix: only land runs a ship aground (a boarder no longer stops dead under our sails).
+Two-copy tested (set spooks).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,11 +1,135 @@
 {
  "version": 1,
  "enemies": {
-    "sea_shark": {"model": "sea_shark", "max_hp": 260, "speed": 3.2, "attack_type": "melee", "damage": 18, "attack_range": 1.8, "attack_interval": 1.6, "size": [1.0, 1.5, 3.4], "color": [0.1, 0.1, 0.1], "body_color": [0.4, 0.46, 0.52], "head_share": 0.0},
-    "sea_serpent": {"model": "sea_serpent", "max_hp": 4200, "speed": 9.0, "attack_type": "melee", "damage": 45, "attack_range": 3.0, "attack_interval": 4.0, "size": [3.2, 2.9, 5.4], "color": [0.4, 0.9, 1.0], "body_color": [0.12, 0.42, 0.44], "head_share": 1.0},
-    "pirate_cutlass": {"model": "pirate_cutlass", "max_hp": 60, "speed": 4.6, "attack_type": "melee", "damage": 11, "attack_range": 1.8, "attack_interval": 0.9, "size": [1.0, 1.85, 1.0], "color": [0.95, 0.75, 0.4], "body_color": [0.3, 0.27, 0.35], "attack_sound": "atk_blade"},
-    "pirate_musket": {"model": "pirate_musket", "max_hp": 45, "speed": 3.4, "attack_type": "ranged", "damage": 12, "attack_range": 28.0, "preferred_range": 12.0, "attack_interval": 2.2, "projectile_speed": 22.0, "burst": 1, "burst_spread": 0.05, "size": [0.95, 1.9, 0.95], "color": [0.95, 0.75, 0.4], "body_color": [0.42, 0.33, 0.24], "attack_sound": "atk_gun"},
-    "pirate_captain": {"model": "pirate_captain", "max_hp": 220, "speed": 4.2, "attack_type": "melee", "damage": 22, "attack_range": 2.0, "attack_interval": 1.0, "size": [1.15, 1.95, 1.15], "color": [0.95, 0.75, 0.2], "body_color": [0.12, 0.14, 0.3], "attack_sound": "atk_blade"},
+  "sea_shark": {
+   "model": "sea_shark",
+   "max_hp": 260,
+   "speed": 3.2,
+   "attack_type": "melee",
+   "damage": 18,
+   "attack_range": 1.8,
+   "attack_interval": 1.6,
+   "size": [
+    1.0,
+    1.5,
+    3.4
+   ],
+   "color": [
+    0.1,
+    0.1,
+    0.1
+   ],
+   "body_color": [
+    0.4,
+    0.46,
+    0.52
+   ],
+   "head_share": 0.0
+  },
+  "sea_serpent": {
+   "model": "sea_serpent",
+   "max_hp": 4200,
+   "speed": 9.0,
+   "attack_type": "melee",
+   "damage": 45,
+   "attack_range": 3.0,
+   "attack_interval": 4.0,
+   "size": [
+    3.2,
+    2.9,
+    5.4
+   ],
+   "color": [
+    0.4,
+    0.9,
+    1.0
+   ],
+   "body_color": [
+    0.12,
+    0.42,
+    0.44
+   ],
+   "head_share": 1.0
+  },
+  "pirate_cutlass": {
+   "model": "pirate_cutlass",
+   "max_hp": 60,
+   "speed": 4.6,
+   "attack_type": "melee",
+   "damage": 11,
+   "attack_range": 1.8,
+   "attack_interval": 0.9,
+   "size": [
+    1.0,
+    1.85,
+    1.0
+   ],
+   "color": [
+    0.95,
+    0.75,
+    0.4
+   ],
+   "body_color": [
+    0.3,
+    0.27,
+    0.35
+   ],
+   "attack_sound": "atk_blade"
+  },
+  "pirate_musket": {
+   "model": "pirate_musket",
+   "max_hp": 45,
+   "speed": 3.4,
+   "attack_type": "ranged",
+   "damage": 12,
+   "attack_range": 28.0,
+   "preferred_range": 12.0,
+   "attack_interval": 2.2,
+   "projectile_speed": 22.0,
+   "burst": 1,
+   "burst_spread": 0.05,
+   "size": [
+    0.95,
+    1.9,
+    0.95
+   ],
+   "color": [
+    0.95,
+    0.75,
+    0.4
+   ],
+   "body_color": [
+    0.42,
+    0.33,
+    0.24
+   ],
+   "attack_sound": "atk_gun"
+  },
+  "pirate_captain": {
+   "model": "pirate_captain",
+   "max_hp": 220,
+   "speed": 4.2,
+   "attack_type": "melee",
+   "damage": 22,
+   "attack_range": 2.0,
+   "attack_interval": 1.0,
+   "size": [
+    1.15,
+    1.95,
+    1.15
+   ],
+   "color": [
+    0.95,
+    0.75,
+    0.2
+   ],
+   "body_color": [
+    0.12,
+    0.14,
+    0.3
+   ],
+   "attack_sound": "atk_blade"
+  },
   "chaser": {
    "model": "skeleton_sword",
    "max_hp": 40,
@@ -341,6 +465,136 @@
     0.35,
     0.25,
     0.4
+   ],
+   "attack_sound": "atk_gun"
+  },
+  "sea_drowned": {
+   "model": "drowned_sailor",
+   "max_hp": 50,
+   "speed": 3.4,
+   "attack_type": "melee",
+   "damage": 13,
+   "attack_range": 1.6,
+   "attack_interval": 1.1,
+   "attack_windup": 0.3,
+   "size": [
+    0.9,
+    1.85,
+    0.9
+   ],
+   "color": [
+    0.3,
+    0.9,
+    0.9
+   ],
+   "body_color": [
+    0.3,
+    0.42,
+    0.45
+   ],
+   "attack_sound": "atk_claw"
+  },
+  "sea_drowned_brute": {
+   "model": "brute",
+   "max_hp": 240,
+   "speed": 2.9,
+   "attack_type": "melee",
+   "damage": 26,
+   "attack_range": 2.2,
+   "attack_interval": 1.4,
+   "size": [
+    1.5,
+    2.7,
+    1.5
+   ],
+   "color": [
+    0.3,
+    0.7,
+    0.7
+   ],
+   "body_color": [
+    0.25,
+    0.4,
+    0.42
+   ],
+   "attack_sound": "atk_slam"
+  },
+  "ghost_captain": {
+   "model": "pirate_captain",
+   "max_hp": 260,
+   "speed": 4.2,
+   "attack_type": "melee",
+   "damage": 24,
+   "attack_range": 2.0,
+   "attack_interval": 1.0,
+   "size": [
+    1.15,
+    1.95,
+    1.15
+   ],
+   "color": [
+    0.45,
+    1.0,
+    0.85
+   ],
+   "body_color": [
+    0.12,
+    0.14,
+    0.3
+   ],
+   "attack_sound": "atk_blade"
+  },
+  "ghost_cutlass": {
+   "model": "pirate_cutlass",
+   "max_hp": 70,
+   "speed": 4.6,
+   "attack_type": "melee",
+   "damage": 12,
+   "attack_range": 1.8,
+   "attack_interval": 0.9,
+   "size": [
+    1.0,
+    1.85,
+    1.0
+   ],
+   "color": [
+    0.45,
+    1.0,
+    0.85
+   ],
+   "body_color": [
+    0.3,
+    0.27,
+    0.35
+   ],
+   "attack_sound": "atk_blade"
+  },
+  "ghost_musket": {
+   "model": "pirate_musket",
+   "max_hp": 50,
+   "speed": 3.4,
+   "attack_type": "ranged",
+   "damage": 13,
+   "attack_range": 28.0,
+   "preferred_range": 12.0,
+   "attack_interval": 2.2,
+   "projectile_speed": 22.0,
+   "burst": 1,
+   "burst_spread": 0.05,
+   "size": [
+    0.95,
+    1.9,
+    0.95
+   ],
+   "color": [
+    0.45,
+    1.0,
+    0.85
+   ],
+   "body_color": [
+    0.42,
+    0.33,
+    0.24
    ],
    "attack_sound": "atk_gun"
   }

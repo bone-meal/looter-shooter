@@ -83,6 +83,7 @@ shark_tooth: Shark Tooth
 raw_shark: Raw Shark
 serpent_scale: Serpent Scale
 serpent_fang: Serpent Fang
+spectral_essence: Spectral Essence
 ash_log: Ash Log
 oak_log: Oak Log
 palm_log: Driftpalm Log

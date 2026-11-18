@@ -11,6 +11,8 @@
 # Positions: this node hangs under the fleet, so its children's positions are sea coordinates.
 extends Node3D
 
+const GhostLook = preload("res://game/ghost_look.gd")
+
 const GunGen = preload("res://core/gun_gen.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const ItemLevel = preload("res://core/item_level.gd")
@@ -83,6 +85,8 @@ func add_piece(id: int, x: float, z: float, model: int, loot_id: String, region_
 		(node as MeshInstance3D).mesh = BoxMesh.new()
 	add_child(node)
 	node.position = Vector3(x, 0.0, z)
+	if loot_id.begins_with("ghost"):  # a ghost ship's spectral cargo (sea step 8d) glows
+		GhostLook.body(node)
 	pieces[id] = {"node": node, "x": x, "z": z, "model": model, "loot": loot_id, "region": region_id,
 		"until": _now() + float(_cfg()["last_seconds"]), "spin": _rng.randf_range(-0.3, 0.3), "phase": _rng.randf() * TAU}
 	if ship != null:

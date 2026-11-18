@@ -609,6 +609,71 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), float(words[4]) if words.size() > 4 else 25.0, float(words[3]))), 0.0)  # optional height: drop onto high ground
 			else:
 				_lines.append(String(sea_world.call("status")))
+		"spook":  # sea step 8d: !spook fire (our nearest loaded gun at the newest ghost) | wait_solid | wait_faded | wait_gone | rise | wait_grab | wait_aboard | wait_risen <n> | killall | status <note>
+			var sea_g: Node = session.call("sea")
+			var fleet_g: Node = sea_g.get("ships") if sea_g != null else null
+			if fleet_g == null:
+				_lines.append("spook: no sea")
+			else:
+				var enc_g: Node = fleet_g.get("foes")
+				var mine_g: Node3D = (fleet_g.get("ships") as Array)[clampi(_ship_i, 0, (fleet_g.get("ships") as Array).size() - 1)]
+				var ghost_g: Node3D = null
+				for ship_g: Node3D in enc_g.call("foes"):
+					if bool(enc_g.get("rules").get("cfg")["kinds"].get(String(ship_g.get("state")["foe"]), {}).get("ghost", false)):
+						ghost_g = ship_g
+				var crews_g: Node = enc_g.get("crews")
+				match words[1] if words.size() > 1 else "status":
+					"fire":
+						if ghost_g != null:
+							var cannons_g: Node = fleet_g.get("cannons")
+							var point_g: Vector3 = ghost_g.call("deck_spot", [0.0, 0.0], -0.8)
+							for gun_g: Dictionary in cannons_g.call("guns_of", mine_g):
+								if not bool(cannons_g.call("loaded", mine_g, int(gun_g["index"]))):
+									continue
+								var aim_g: Vector2 = cannons_g.call("aim_at", mine_g, int(gun_g["index"]), point_g)
+								if not is_nan(aim_g.x) and bool(cannons_g.call("fire", mine_g, int(gun_g["index"]), aim_g.x, aim_g.y, true)):
+									_lines.append("  fired gun %d at the ghost (phase %.2f)" % [int(gun_g["index"]), float(ghost_g.get("state").get("phase", 1.0))])
+									break
+					"rise":
+						var ms_g: Dictionary = mine_g.get("state")
+						enc_g.get("drowned").call("begin", mine_g, Vector2(float(ms_g["x"]), float(ms_g["z"])), int(words[2]) if words.size() > 2 else 1)
+					"killall":
+						for id_g: int in (crews_g.get("men") as Dictionary).keys():
+							if (crews_g.get("men") as Dictionary).has(id_g) and String(crews_g.get("men")[id_g]["kind"]).begins_with(words[2] if words.size() > 2 else "sea_drowned"):
+								session.get("_score").set("blow", "gun")
+								var e_g: Node3D = crews_g.get("men")[id_g]["enemy"]
+								e_g.call("on_hit", 99999.0, e_g.global_position + Vector3(0.0, 1.0, 0.0))
+								await get_tree().create_timer(0.2).timeout
+					"wait_solid", "wait_faded", "wait_gone", "wait_grab", "wait_aboard", "wait_risen":
+						var until_g := Time.get_ticks_msec() + 90000
+						while Time.get_ticks_msec() < until_g:
+							var g_now: Node3D = null
+							for ship_w: Node3D in enc_g.call("foes"):
+								if bool(enc_g.get("rules").get("cfg")["kinds"].get(String(ship_w.get("state")["foe"]), {}).get("ghost", false)):
+									g_now = ship_w
+							var phase_w := float(g_now.get("state").get("phase", 0.0)) if g_now != null else -1.0
+							var aboard_w := 0
+							var undead_w := 0
+							for id_w: int in crews_g.get("men"):
+								var m_w: Dictionary = crews_g.get("men")[id_w]
+								if String(m_w["kind"]).begins_with("sea_drowned"):
+									undead_w += 1
+									if is_instance_valid(m_w["enemy"]) and (m_w["enemy"] as Node).get_parent() == mine_g:
+										aboard_w += 1
+							if (words[1] == "wait_solid" and phase_w >= 0.95) or (words[1] == "wait_faded" and phase_w >= 0.0 and phase_w <= 0.05) or (words[1] == "wait_gone" and g_now == null) \
+								or (words[1] == "wait_grab" and (int(enc_g.get("drowned").get("holds")) > 0 or bool(enc_g.get("drowned").call("held_here")))) or (words[1] == "wait_aboard" and aboard_w > 0) \
+								or (words[1] == "wait_risen" and undead_w >= (int(words[2]) if words.size() > 2 else 1)):
+								break
+							await get_tree().create_timer(0.25, true, false, true).timeout
+				var undead_s := 0
+				var aboard_s := 0
+				for id_s: int in crews_g.get("men"):
+					var m_s: Dictionary = crews_g.get("men")[id_s]
+					if String(m_s["kind"]).begins_with("sea_drowned"):
+						undead_s += 1
+						if is_instance_valid(m_s["enemy"]) and (m_s["enemy"] as Node).get_parent() == mine_g:
+							aboard_s += 1
+				_lines.append("SPOOK %s: %s; %s; drowned now %d (on our deck %d); %s; cannons fired %d hits %d through %d; player hp %.0f swimming %s, night %s; our hull %.0f" % [" ".join(words.slice(1)), String(enc_g.get("ghosts").call("status")), String(enc_g.get("drowned").call("status")), undead_s, aboard_s, String(crews_g.call("status")), int(fleet_g.get("cannons").get("fired")), int(fleet_g.get("cannons").get("hits")), int(fleet_g.get("cannons").get("passed")), float(player.get("health").hp), str(player.get("swimming")), str(enc_g.call("_night")), float(mine_g.get("state")["hull"])])
 		"foe":  # sea step 8: !foe spawn <kind> [metres ahead] [degrees off the bow] | roll (a check with chance 1, out of the safe waters) | pause on|off | hit <n> | sink | spill | collect | wait_volley | status <note>
 			# 8b crews: alongside [m] | board | aboard | crew | kill boarders|deck|all [n] | wait_crew | wait_board | wait_fallen <n> | wait_deck | takedeck
 			var sea_f: Node = session.call("sea")

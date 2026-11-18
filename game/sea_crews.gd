@@ -18,9 +18,14 @@
 extends Node3D
 
 const DeckWalk = preload("res://core/sea/deck_walk.gd")
+const GhostLook = preload("res://game/ghost_look.gd")
+const FxKit = preload("res://game/fx_kit.gd")
+const ORDER := ["pirate_captain", "ghost_captain", "pirate_cutlass", "ghost_cutlass", "pirate_musket", "ghost_musket"]  # who goes first (mustering, boarding)
+const KINDS_SENT := ["pirate_", "ghost_", "sea_drowned"]  # crew kinds a client may make from the host's list
 
 var cfg: Dictionary  # encounters.json "crews"
 var director: Node  # game/wave_director.gd
+var drowned_part: Node  # game/sea_drowned.gd (sea step 8d: undead swimmers chase and hold swimmers)
 var card: RefCounted  # core/score_card.gd: `blow` ("other" = this death pays nobody here)
 var men := {}  # id -> {"enemy": Enemy, "home": the foe ship he came on, "kind": enemy id, "boarder": bool}
 var boardings := {}  # foe ship -> {"target": ship, "queue": Array of ids, "next": float, "aboard": Array of ids, "done": bool}
@@ -136,6 +141,8 @@ func _make(id: int, kind: String, ship: Node3D, at: Vector3, stats: Dictionary, 
 	else:
 		enemy.connect("attacked", _on_attacked.bind(id))
 		enemy.set("aim_fix", _lead)
+	if kind.begins_with("ghost_"):
+		GhostLook.body(enemy)  # (sea step 8d)
 	men[id] = {"enemy": enemy, "home": ship, "kind": kind, "boarder": false}
 	return enemy
 
@@ -150,7 +157,7 @@ func man(ship: Node3D) -> void:
 	var region_n := maxi(int(_region(ship).trim_prefix("region_")), 1)
 	var tier := int(cfg["tier_first"]) + int(cfg["tier_per_region"]) * (region_n - 1)
 	var n := 0
-	for kind: String in ["pirate_captain", "pirate_cutlass", "pirate_musket"]:
+	for kind: String in ORDER:
 		for i in int(crew.get(kind, 0)):
 			var at := DeckWalk.muster(ship.get("spec"), n, total, _rng.randf())
 			var enemy := _make(_next_id, kind, ship, at, _scaled(kind, region_n), false)
@@ -165,7 +172,7 @@ func man(ship: Node3D) -> void:
 	var down_total := 0
 	for kind: String in below:
 		down_total += int(below[kind])
-	for kind: String in ["pirate_captain", "pirate_cutlass", "pirate_musket"]:
+	for kind: String in ORDER:
 		for i in int(below.get(kind, 0)):
 			var enemy := _make(_next_id, kind, ship, DeckWalk.hold_muster(ship.get("spec"), down, down_total), _scaled(kind, region_n), false)
 			if enemy != null:
@@ -184,6 +191,34 @@ func ship_gone(ship: Node3D) -> void:
 			men.erase(id)
 	boardings.erase(ship)
 	struck.erase(ship)
+
+
+# Host (sea step 8d): one of the drowned comes up out of the water at sea (x, z), swimming for `ship` (or the
+# nearest). Returns its id (-1 = none made).
+func rise(kind: String, x: float, z: float, ship: Node3D, region_n: int) -> int:
+	var water := float(_sea.call("water_height", _sea.call("world_of", Vector3(x, 0.0, z)))) - _fleet.global_position.y
+	var enemy := _make(_next_id, kind, _fleet, Vector3(x, water - 1.6, z), _scaled(kind, region_n), false)
+	if enemy == null:
+		return -1
+	enemy.set_meta("tier", int(cfg["tier_first"]) + int(cfg["tier_per_region"]) * (region_n - 1))
+	enemy.set_physics_process(false)
+	men[_next_id]["swim"] = {"t": 0.0, "undead": true, "goal_fixed": ship}
+	_swim_pose(enemy, true)
+	_next_id += 1
+	return _next_id - 1
+
+
+# Host: every man of these kinds is gone at once (a ghost crew at dawn): no kill, no pay.
+func vanish(prefix: String) -> void:
+	for id: int in men.keys():
+		if String(men[id]["kind"]).begins_with(prefix):
+			var enemy: Node3D = men[id]["enemy"]
+			if is_instance_valid(enemy):
+				if director != null:
+					director.call("forget", enemy)
+				FxKit.burst(self, enemy.global_position + Vector3(0.0, 1.0, 0.0), Color(0.45, 1.0, 0.85, 0.7), 16, 1.0, 0.4, 1.5, 0.5)
+				enemy.queue_free()
+			men.erase(id)
 
 
 func _on_died(_enemy: Node, id: int) -> void:
@@ -283,7 +318,7 @@ func board(ship: Node3D, target_ship: Node3D) -> void:
 		return  # one boarding per foe
 	var k: Dictionary = _kinds.get(String(ship.get("state").get("foe", "")), {})
 	var queue: Array = []
-	for kind: String in ["pirate_captain", "pirate_cutlass", "pirate_musket"]:
+	for kind: String in ORDER:
 		for id: int in men:
 			if queue.size() < int(k.get("boarders", 0)) and String(men[id]["kind"]) == kind and (men[id]["enemy"] as Node).get_parent() == ship:
 				queue.append(id)
@@ -550,15 +585,23 @@ func _swim_step(id: int, delta: float) -> void:
 	sw["t"] = float(sw["t"]) + delta
 	var world := enemy.global_position
 	var water := float(_sea.call("water_height", Vector3(world.x, 0.0, world.z))) - (_fleet as Node3D).global_position.y
-	enemy.position.y = move_toward(enemy.position.y, water - 0.35, 6.0 * delta)
+	var undead := bool(sw.get("undead", false))  # the drowned (sea step 8d): never drown, climb her hull anywhere
+	enemy.position.y = move_toward(enemy.position.y, water - (0.5 if undead else 0.35), (2.0 if undead else 6.0) * delta)
+	if undead and drowned_part != null and bool(drowned_part.call("swim", id, enemy, sw, delta)):
+		return
 	var best: Node3D = null
 	var best_d := INF
 	var foot := Vector3.ZERO
+	var fixed: Variant = sw.get("goal_fixed")
+	var fixed_ok := undead and is_instance_valid(fixed) and not bool((fixed as Node).get("state").get("sinking", false))
 	for ship: Node3D in _fleet.get("ships"):
-		if bool(ship.get("state").get("sinking", false)):
+		if bool(ship.get("state").get("sinking", false)) or (fixed_ok and ship != fixed):
 			continue
 		var spec: Dictionary = ship.get("spec")
 		var lz := float(spec.get("ladder_z", 0.0))
+		if undead:  # straight up her side where it is nearest
+			var outline: Array = spec["outline"]
+			lz = clampf((ship.global_transform.affine_inverse() * world).z, float(outline[outline.size() - 1][0]) + 2.0, float(outline[0][0]) - 2.0)
 		var local := ship.global_transform.affine_inverse() * world
 		var side := 1.0 if local.x >= 0.0 else -1.0
 		var at := ship.global_transform * Vector3(side * (DeckWalk.half_width(spec, lz) + 0.45), 0.0, lz)
@@ -567,7 +610,7 @@ func _swim_step(id: int, delta: float) -> void:
 			best_d = d
 			best = ship
 			foot = at
-	if best == null or best_d > 60.0 or float(sw["t"]) > float(cfg["drown_s"]):
+	if best == null or (not undead and (best_d > 60.0 or float(sw["t"]) > float(cfg["drown_s"]))) or (undead and best_d > 400.0):
 		drowned += 1  # nothing to climb: he goes under (nobody is paid)
 		if director != null:
 			director.call("forget", enemy)
@@ -578,12 +621,12 @@ func _swim_step(id: int, delta: float) -> void:
 	var way := Vector2(foot.x - world.x, foot.z - world.z)
 	if way.length() <= 1.0:
 		var spec_b: Dictionary = best.get("spec")
-		var lz_b := float(spec_b.get("ladder_z", 0.0))
+		var lz_b := float(spec_b.get("ladder_z", 0.0)) if not undead else (best.global_transform.affine_inverse() * foot).z
 		var side_b := signf((best.global_transform.affine_inverse() * world).x)
 		var x := side_b * maxf(DeckWalk.half_width(spec_b, lz_b) - 0.8, 0.3)
 		swing(id, best, 0, Vector3(x, DeckWalk.height_at(spec_b, x, lz_b), lz_b))
 		return
-	var step := way.normalized() * minf(float(cfg["swim_speed"]) * delta, way.length())
+	var step := way.normalized() * minf(float(cfg["swim_speed"]) * (1.25 if undead else 1.0) * delta, way.length())
 	enemy.position += Vector3(step.x, 0.0, step.y)
 	enemy.rotation.y = atan2(-way.x, -way.y)
 
@@ -694,7 +737,7 @@ func from_net(list: Array) -> void:
 		var ship: Node3D = _fleet if swimming else ships[index]
 		var kind := String(got[7]).left(24)
 		if not men.has(id) or not is_instance_valid(men[id]["enemy"]):
-			if not kind.begins_with("pirate_"):
+			if not _stats.has(kind) or not KINDS_SENT.any(func(p: String) -> bool: return kind.begins_with(p)):
 				continue
 			_make(id, kind, ship, at, _sea_stats((_stats[kind] as Dictionary).duplicate()), true)
 		var enemy: Node3D = men[id]["enemy"]
