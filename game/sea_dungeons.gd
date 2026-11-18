@@ -5,6 +5,9 @@
 # the host's world (saved in its profile, sent to everyone on every change and every 3 s), changed only by the host:
 # the plates by where the players stand, everything else by [F] asks (net_sea request_dungeon), checked against where
 # the asker really is. A chest's loot is rolled on the opener's own machine (game/sea_flotsam.gd grant).
+# FIGHTS (sea step 9c): a fight thing starts when a player comes within its reach; the host sends its waves one after
+# another (game/sea_crews.gd dungeon_spawn: host-run foes, puppets online); all of the last wave down = cleared (its
+# doors open); everyone gone from the dungeon while it goes on = its foes go and it starts again next time.
 # Dependencies: data/sea/dungeons.json, game/sea_dungeon.gd, core/encounter_rules (region number), the sea world
 # (world_of, local_of, notice, ships.foes.flotsam), the session (fade, net), game/net_sea.gd.
 extends Node3D
@@ -27,6 +30,8 @@ var _send_t := 0.0
 var _press_t := 0.0
 var _gate_t := 0.0
 var _came_from := {}  # id -> [sea position, yaw] where this player stood when he went in (he comes back out there)
+var _fights := {}  # host: "dungeon:letter" -> ids of that fight's foes still standing (game/sea_crews.gd men)
+var _fight_t := 0.0
 var _settle := {}  # after coming out: {"at": sea position, "until": seconds} held until the island's ground is solid under him
 
 
@@ -139,6 +144,10 @@ func _process(delta: float) -> void:
 		if _press_t <= 0.0:
 			_press_t = 0.25
 			_press_plates()
+		_fight_t -= delta
+		if _fight_t <= 0.0:
+			_fight_t = 0.3
+			_run_fights()
 		_send_t -= delta
 		if _dirty or _send_t <= 0.0:
 			_send_t = 3.0
@@ -441,6 +450,14 @@ func grant(loot: String, region_n: int) -> void:
 func _occupied(id: String) -> Array:
 	var out: Array = []
 	var r := (spaces[id] as SeaDungeon).rules
+	for local: Vector3 in _bodies_in(id):
+		out.append(r.cell_of(local))
+	return out
+
+
+# Where every player in that dungeon stands (local to it).
+func _bodies_in(id: String) -> Array:
+	var out: Array = []
 	var bodies: Array = [_player.global_position]
 	var others: Callable = _sea.get("others")
 	if others.is_valid():
@@ -448,8 +465,93 @@ func _occupied(id: String) -> Array:
 	for at: Vector3 in bodies:
 		var sea_at: Vector3 = _sea.call("local_of", at)
 		if dungeon_at(sea_at) == id:
-			out.append(r.cell_of(sea_at - space_of(id)))
+			out.append(sea_at - space_of(id))
 	return out
+
+
+# --- fights (host) ---
+
+func _crews() -> Node:
+	return _sea.get("ships").get("foes").get("crews")
+
+
+func _run_fights() -> void:
+	var crews := _crews()
+	for id: String in spaces:
+		var d: SeaDungeon = spaces[id]
+		var fights := d.rules.of_kind("fight")
+		if fights.is_empty():
+			continue
+		var bodies := _bodies_in(id) if d.built else []
+		var changed := false
+		for ch: String in fights:
+			var key := id + ":" + ch
+			var r := d.rules
+			if r.state["active"].has(ch):
+				if bodies.is_empty():  # everyone left: it starts again next time
+					drop_fight(id, ch)
+					changed = true
+					continue
+				var alive: Array = (_fights.get(key, []) as Array).filter(func(m: int) -> bool: return (crews.get("men") as Dictionary).has(m))
+				_fights[key] = alive
+				if alive.is_empty():
+					if r.next_wave(ch):
+						_spawn_wave(id, ch)
+						last = "%s fight %s wave %d" % [id, ch, int(r.state["active"][ch]) + 1]
+					else:
+						r.clear_fight(ch)
+						_fights.erase(key)
+						last = "%s fight %s cleared" % [id, ch]
+						_sea.emit_signal("notice", String(r.things[ch].get("notice", "The way opens")))
+					changed = true
+			elif not bool(r.state["cleared"].get(ch, false)) and not bodies.is_empty():
+				var spot := r.at_of(r.cell_of_thing(ch))
+				for local: Vector3 in bodies:
+					if Vector2(local.x - spot.x, local.z - spot.z).length() <= float(r.things[ch].get("reach_m", 7.0)):
+						r.start_fight(ch)
+						_spawn_wave(id, ch)
+						last = "%s fight %s started" % [id, ch]
+						changed = true
+						break
+		if changed:
+			d.refresh(false)
+			_dirty = true
+
+
+func _spawn_wave(id: String, ch: String) -> void:
+	var d: SeaDungeon = spaces[id]
+	var r := d.rules
+	var th: Dictionary = r.things[ch]
+	var wave: Array = th["waves"][int(r.state["active"][ch])]
+	var spawns: Array = th.get("spawns", [[r.cell_of_thing(ch).x, r.cell_of_thing(ch).y]])
+	var ids: Array = []
+	for i in wave.size():
+		var c: Array = spawns[i % spawns.size()]
+		var at := r.at_of(Vector2i(int(c[0]), int(c[1]))) + Vector3(float(floori(float(i) / float(spawns.size()))) * 0.9, 0.0, 0.0)
+		var n := int(_crews().call("dungeon_spawn", String(wave[i]), d, at, int(cfg["dungeons"][id].get("region", 1))))
+		if n >= 0:
+			ids.append(n)
+	_fights[id + ":" + ch] = ids
+
+
+# Host: a fight's foes taken away and it set back (everyone left, or the dungeon reset).
+func drop_fight(id: String, ch: String) -> void:
+	_crews().call("dungeon_clear", _fights.get(id + ":" + ch, []))
+	_fights.erase(id + ":" + ch)
+	(spaces[id] as SeaDungeon).rules.reset_fight(ch)
+
+
+# Dev / checks: every foe of this dungeon's fights struck down (as if by this player).
+func slay(id: String) -> int:
+	var n := 0
+	var men: Dictionary = _crews().get("men")
+	for key: String in _fights:
+		if key.begins_with(id + ":"):
+			for m: int in _fights[key]:
+				if men.has(m) and is_instance_valid(men[m]["enemy"]):
+					(men[m]["enemy"] as Node).call("on_hit", 1.0e6)
+					n += 1
+	return n
 
 
 func _press_plates() -> void:
@@ -477,6 +579,7 @@ func load_world(saved: Variant) -> void:
 	for id: String in spaces:
 		if (saved as Dictionary).get(id) is Dictionary:
 			(spaces[id] as SeaDungeon).rules.from_dict(saved[id])
+			(spaces[id] as SeaDungeon).rules.state["active"] = {}  # (nobody is in it now: a fight left going starts again)
 			(spaces[id] as SeaDungeon).refresh(true)
 
 
@@ -493,4 +596,11 @@ func status() -> String:
 	for id: String in spaces:
 		parts.append((spaces[id] as SeaDungeon).status())
 	var camera := get_viewport().get_camera_3d()
-	return "dungeons: in '%s' (dark look %s, settling %s, falls %d), acts %d, applied %d, last '%s'; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, acts, applied, last, "; ".join(parts)]
+	var foes: Array = []
+	var men: Dictionary = _crews().get("men")
+	for m: int in men:
+		if men[m].has("dungeon"):
+			var e: Node3D = men[m]["enemy"]
+			if is_instance_valid(e):
+				foes.append("%s@%s hp%d%s" % [String(men[m]["kind"]).left(8), str(Vector2(e.position.x, e.position.z).snapped(Vector2(0.1, 0.1))), int(float(e.get("health").get("hp"))), " P" if bool(e.get("puppet")) else ""])
+	return "dungeons: in '%s' (dark look %s, settling %s, falls %d), acts %d, applied %d, last '%s'; foes [%s]; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, acts, applied, last, ", ".join(foes), "; ".join(parts)]

@@ -22,7 +22,7 @@ const DeckWalk = preload("res://core/sea/deck_walk.gd")
 const GhostLook = preload("res://game/ghost_look.gd")
 const FxKit = preload("res://game/fx_kit.gd")
 const ORDER := ["pirate_captain", "ghost_captain", "pirate_cutlass", "ghost_cutlass", "pirate_musket", "ghost_musket"]  # who goes first (mustering, boarding)
-const KINDS_SENT := ["pirate_", "ghost_", "sea_drowned"]  # crew kinds a client may make from the host's list
+const KINDS_SENT := ["pirate_", "ghost_", "sea_drowned", "temple_"]  # crew kinds a client may make from the host's list
 
 var cfg: Dictionary  # encounters.json "crews"
 var _threat: Dictionary  # encounters.json "threat" (sea step 8f)
@@ -106,6 +106,52 @@ func _walk(from: Vector3, by: Vector3, enemy: Node3D) -> Vector3:
 	if _host() and push.length() > float(cfg["overboard_push"]) and absf(from.x + by.x) > absf(to.x) + 0.2:
 		_overboard.call_deferred(enemy, "thrown")  # thrown hard against the rail: over it
 	return to
+
+
+# --- foes in a dungeon's space (sea step 9c): the same host-run men (online list, hits, deaths, kill pay), standing in a
+# dungeon instead of on a deck: they walk its map (floor, round pits, shut doors and things) and go for players in it ---
+
+# Host: one foe in a dungeon space at a local point (its fights are run by game/sea_dungeons.gd). Returns his id.
+func dungeon_spawn(kind: String, space: Node3D, at: Vector3, region_n: int) -> int:
+	var id := _next_id
+	_next_id += 1
+	var enemy := _make(id, kind, space, at, _scaled(kind, region_n), false)
+	if enemy == null:
+		return -1
+	enemy.set("walker", _dungeon_walk.bind(enemy, space))
+	enemy.set_meta("tier", int(cfg["tier_first"]) + int(cfg["tier_per_region"]) * (region_n - 1))
+	men[id]["dungeon"] = space
+	FxKit.burst(space, enemy.global_position + Vector3(0.0, 0.6, 0.0), Color(0.6, 0.9, 0.85), 30, 0.8, 0.25, 3.0, -2.0)
+	return id
+
+
+# Host: a dungeon's foes taken away (everyone left while they fought: the fight starts again next time).
+func dungeon_clear(ids: Array) -> void:
+	for id: int in ids:
+		if men.has(id):
+			var enemy: Node3D = men[id]["enemy"]
+			men.erase(id)
+			if is_instance_valid(enemy):
+				director.call("forget", enemy)
+				enemy.queue_free()
+
+
+func _dungeon_walk(from: Vector3, by: Vector3, enemy: Node3D, space: Node3D) -> Vector3:
+	var rules: RefCounted = space.get("rules")
+	var now := float(_sea.call("seconds"))
+	for other: Node in space.get_children():
+		if other != enemy and other.has_meta("net_id") and other is Node3D:
+			var away := from - (other as Node3D).position
+			away.y = 0.0
+			var d := away.length()
+			if d < ELBOW and d > 0.001:
+				by += away / d * (ELBOW - d) * 0.25
+	for step: Vector3 in [by, Vector3(by.x, 0.0, 0.0), Vector3(0.0, 0.0, by.z)]:
+		var to := from + step
+		to.y = 0.0
+		if bool(rules.call("body_can", rules.call("cell_of", to), now)) and bool(rules.call("body_can", rules.call("cell_of", to + step.normalized() * 0.45), now)):
+			return to
+	return Vector3(from.x, 0.0, from.z)
 
 
 # A crewman's numbers out here: tougher by region.
@@ -433,9 +479,23 @@ func _choose_targets() -> void:
 			if body.global_position.x < -10000.0:  # (sea_world SIDE_X: on the sea side of the scene)
 				bodies.append(body)
 	var ship_rules: RefCounted = _fleet.get("rules")
+	var dungeons: Node = _sea.get("dungeons")
 	for id: int in men:
 		var enemy: Node3D = men[id]["enemy"]
 		if not is_instance_valid(enemy) or bool(enemy.get("puppet")) or not enemy.is_physics_processing():
+			continue
+		if men[id].has("dungeon"):  # in a dungeon: the nearest player in that same dungeon
+			var space: Node3D = men[id]["dungeon"]
+			var pick: Node3D = null
+			var pick_d := INF
+			for body: Node3D in bodies:
+				var here: Vector3 = _sea.call("local_of", body.global_position)
+				if String(dungeons.call("dungeon_at", here)) == String(space.get("rules").get("id")):
+					var dd := enemy.global_position.distance_to(body.global_position)
+					if dd < pick_d:
+						pick_d = dd
+						pick = body
+			enemy.call("set_target", pick)
 			continue
 		var ship := enemy.get_parent() as Node3D
 		var down := ship.get("spec") is Dictionary and DeckWalk.below(ship.get("spec"), enemy.position)  # below: only someone down there with him
@@ -709,7 +769,9 @@ func to_net() -> Array:
 			continue
 		var p := enemy.position
 		var hp: RefCounted = enemy.get("health")
-		out.append([id, ships.find(enemy.get_parent()), snappedf(p.x, 0.01), snappedf(p.y, 0.01), snappedf(p.z, 0.01), snappedf(enemy.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(men[id]["kind"]), men[id].has("swim")])
+		var where := -2 if men[id].has("dungeon") else ships.find(enemy.get_parent())
+		out.append([id, where, snappedf(p.x, 0.01), snappedf(p.y, 0.01), snappedf(p.z, 0.01), snappedf(enemy.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(men[id]["kind"]), men[id].has("swim"),
+			String((men[id]["dungeon"] as Node3D).get("rules").get("id")) if men[id].has("dungeon") else ""])
 	return out
 
 
@@ -735,15 +797,22 @@ func from_net(list: Array) -> void:
 		var index := int(got[1])
 		var at := Vector3(float(got[2]), float(got[3]), float(got[4]))
 		var swimming := (got as Array).size() >= 9 and bool(got[8])
-		if (not swimming and (index < 0 or index >= ships.size())) or not at.is_finite() or not is_finite(float(got[5])):
+		var space: Node3D = null
+		if index == -2 and (got as Array).size() >= 10:  # in a dungeon's space (sea step 9c)
+			space = (_sea.get("dungeons").get("spaces") as Dictionary).get(String(got[9]).left(32))
+			if space == null:
+				continue
+		elif (not swimming and (index < 0 or index >= ships.size())) or not at.is_finite() or not is_finite(float(got[5])):
 			continue
 		seen[id] = true
-		var ship: Node3D = _fleet if swimming else ships[index]
+		var ship: Node3D = space if space != null else (_fleet if swimming else ships[index])
 		var kind := String(got[7]).left(24)
 		if not men.has(id) or not is_instance_valid(men[id]["enemy"]):
 			if not _stats.has(kind) or not KINDS_SENT.any(func(p: String) -> bool: return kind.begins_with(p)):
 				continue
 			_make(id, kind, ship, at, _sea_stats((_stats[kind] as Dictionary).duplicate()), true)
+			if space != null:
+				men[id]["dungeon"] = space
 		var enemy: Node3D = men[id]["enemy"]
 		if swimming and enemy.get_parent() != ship:  # over the side: he swims (the host moves him; _strokes glides him here)
 			enemy.set_physics_process(false)

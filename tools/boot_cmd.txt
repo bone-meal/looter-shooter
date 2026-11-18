@@ -1,1 +1,1 @@
-!uncap;!wait 2;!immortal;!go sea;!wait 10;!foe pause;!ship board;!wait 3
+!uncap;!wait 2;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!beast pause;!uboat pause on;!dun reset fight_hall;!wait 1;!dun enter fight_hall;!wait 5;!dun stand 5 5 5 7;!wait 1;!dun stand 4.6 6 2 6;!dun slay;!snap g1;!wait 0.7;!snap g2;!dun status g;!wait 1.5;!snap g3

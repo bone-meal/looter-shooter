@@ -805,6 +805,32 @@
    ],
    "attack_sound": "atk_slam",
    "head_share": 0.0
+  },
+  "temple_guard": {
+   "model": "temple_guard",
+   "max_hp": 170,
+   "speed": 3.6,
+   "attack_type": "melee",
+   "damage": 17,
+   "attack_range": 2.3,
+   "attack_interval": 1.3,
+   "attack_windup": 0.45,
+   "size": [
+    1.0,
+    1.95,
+    1.0
+   ],
+   "color": [
+    0.4,
+    0.95,
+    0.8
+   ],
+   "body_color": [
+    0.25,
+    0.4,
+    0.42
+   ],
+   "attack_sound": "atk_blade"
   }
  }
 }

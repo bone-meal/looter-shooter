@@ -9,6 +9,9 @@
 # (blocks its cell until burned by the Ember Gauntlet), brazier (lit by it), basin (the Tide Pearl turns the tide),
 # doors opening by "braziers" (all lit), "tide" (high) or "whorl" (opened with the Whorl Compass); a chest may hold a
 # `tool`.
+# Sea step 9c: FIGHTS (thing kind "fight": waves of foes that come when a player is within reach_m; the host runs
+# them, game/sea_dungeons.gd + game/sea_crews.gd), doors that open when a fight is "clear"ed, and doors that SHUT WHILE
+# a fight goes on (shut_while) and are otherwise open ("free").
 # Dependencies: none (one dungeon's data from data/sea/dungeons.json is passed in).
 extends RefCounted
 
@@ -45,7 +48,7 @@ func fresh() -> Dictionary:
 		if String(things[ch]["kind"]) == "block":
 			var c: Vector2i = things[ch]["cell"]
 			blocks[ch] = [c.x, c.y]
-	return {"doors": {}, "keys": 0, "taken": {}, "levers": {}, "blocks": blocks, "pressed": {}, "burned": {}, "lit": {}, "tide": false, "reveal_until": 0.0}
+	return {"doors": {}, "keys": 0, "taken": {}, "levers": {}, "blocks": blocks, "pressed": {}, "burned": {}, "lit": {}, "tide": false, "reveal_until": 0.0, "cleared": {}, "active": {}}
 
 
 # Saved / sent form (blocks as [x, z]); a loaded state missing keys gets them fresh.
@@ -133,9 +136,15 @@ func door_open(ch: String) -> bool:
 	var t: Dictionary = things.get(ch, {})
 	if t.is_empty():
 		return false
+	if t.has("shut_while") and state["active"].has(String(t["shut_while"])):
+		return false  # shut behind the players while that fight goes on
 	if bool(state["doors"].get(ch, false)):
 		return true
 	match String(t.get("open", "key")):
+		"free":
+			return true
+		"clear":
+			return bool(state["cleared"].get(String(t.get("fight", "")), false))
 		"plates":
 			return _all_pressed(t.get("plates", []))
 		"lever":
@@ -267,6 +276,50 @@ func whorl(ch: String) -> bool:
 		return false
 	state["doors"][ch] = true
 	return true
+
+
+# Can a foe walk into this cell now (sea step 9c: they keep to the floor, round pits, shut doors and things)?
+func body_can(cell: Vector2i, now: float) -> bool:
+	if not ground_at(cell, now) or terrain(cell) == "H":
+		return false
+	var ch := char_at(cell)
+	if things.has(ch):
+		var kind := String(things[ch]["kind"])
+		if kind == "door" and not door_open(ch):
+			return false
+		if kind in ["brazier", "basin", "ring", "lever", "chest"] or (kind == "bramble" and not bool(state["burned"].get(ch, false))):
+			return false
+	for b: String in state["blocks"]:
+		if cell_of_thing(b) == cell:
+			return false
+	return true
+
+
+func start_fight(ch: String) -> bool:
+	if not things.has(ch) or String(things[ch]["kind"]) != "fight" or state["active"].has(ch) or bool(state["cleared"].get(ch, false)):
+		return false
+	state["active"][ch] = 0
+	return true
+
+
+# The next wave of a fight (true), or none left (false).
+func next_wave(ch: String) -> bool:
+	var waves: Array = things[ch].get("waves", [])
+	var n := int(state["active"].get(ch, 0)) + 1
+	if n >= waves.size():
+		return false
+	state["active"][ch] = n
+	return true
+
+
+func clear_fight(ch: String) -> void:
+	state["active"].erase(ch)
+	state["cleared"][ch] = true
+
+
+# Everyone left while it went on: it starts again from its first wave next time.
+func reset_fight(ch: String) -> void:
+	state["active"].erase(ch)
 
 
 # The Fog Bell rang: fog walkways stand until then (host clock seconds).

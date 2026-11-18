@@ -1,6 +1,8 @@
-Sea 9b: tool or gun in hand, tool moves, other players see tools
+Sea step 9c-1: fights inside dungeons + the temple guard
 
-Using a sea tool now puts the gun away and holds the tool instead (first person on the view, third person in the body's hand, the glider on the back while gliding); Left Mouse uses it again, a gun key or six seconds unused puts it away and the gun comes back. Each tool has its own moves: drawn up into the hand; grapple kicks and its hook head flies to the ring and winds back, the bell swings and its clapper strikes, the gauntlet punches and its coal flares, the anchor is wound up and thrown, the glider's wings unfold, the pearl is raised and glows, the compass is held up and its needle spins and settles. Other players see the tool in your hand and its use move (held string tool:id#uses), your glider on your back, your hook line and ember bolts.
+Dungeon fights: legend kind fight (reach, spawns, waves); doors that open when a fight is cleared and doors that shut while it goes on.
+The host runs the waves through the sea crews (online puppets, hits sent to the host, deaths and kill pay as for pirates), foes walk the dungeon map.
+New enemy temple_guard: conch helm, shell plates, scallop shield, coral trident. Test hall fight_hall, dev !dun slay and fightwait.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

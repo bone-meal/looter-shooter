@@ -722,8 +722,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						await get_tree().create_timer(0.3, true, false, true).timeout
 						var fc := Vector3(float(words[4]), 0.0, float(words[5])) * float(dm.get("cfg")["tile"]) if words.size() > 5 else at_c + Vector3(0.0, 0.0, -3.0)
 						player.call("look_at_point", sea_d.call("world_of", sp + fc + Vector3(0.0, 1.0, 0.0)))
+					"slay":  # (host / alone) every fight foe in it struck down
+						_lines.append("  slain %d" % int(dm.call("slay", did)))
+						await get_tree().create_timer(0.6, true, false, true).timeout
+					"fightwait":  # until the number of fight foes here changes (a wave comes, one falls), up to 60 s
+						var until_f := Time.get_ticks_msec() + 60000
+						var before_f := String(dm.call("status"))
+						while Time.get_ticks_msec() < until_f and String(dm.call("status")).get_slice("foes [", 1).get_slice("]", 0).count("@") == before_f.get_slice("foes [", 1).get_slice("]", 0).count("@"):
+							await get_tree().create_timer(0.25, true, false, true).timeout
 					"reset":  # (host / alone) the dungeon as new
 						var sp_r: Node3D = dm.get("spaces")[did]
+						for f_ch: String in sp_r.get("rules").call("of_kind", "fight"):
+							dm.call("drop_fight", did, f_ch)
 						sp_r.get("rules").set("state", sp_r.get("rules").call("fresh"))
 						sp_r.call("refresh", true)
 						dm.set("_dirty", true)

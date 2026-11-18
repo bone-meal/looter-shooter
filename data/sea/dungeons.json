@@ -187,6 +187,92 @@
     }
    },
    "wall_h": 9.0
+  },
+  "fight_hall": {
+   "name": "The Fight Hall",
+   "region": 1,
+   "slot": 2,
+   "_about": "Sea step 9c-1 test hall: a fight in the middle room (two waves: drowned, then a temple guard with drowned); the door behind shuts while it goes on, the door ahead opens when it is cleared.",
+   "entrance": {
+    "at": [
+     -20.0,
+     6628.0
+    ],
+    "yaw": 200.0
+   },
+   "map": [
+    "###########",
+    "#.........#",
+    "#..S...X..#",
+    "#.........#",
+    "#####g#####",
+    "#.........#",
+    "#.........#",
+    "#....F....#",
+    "#.........#",
+    "#.........#",
+    "#####h#####",
+    "###.....###",
+    "###..C..###",
+    "###.....###",
+    "###########"
+   ],
+   "legend": {
+    "S": {
+     "kind": "arrive"
+    },
+    "X": {
+     "kind": "exit"
+    },
+    "g": {
+     "kind": "door",
+     "open": "free",
+     "shut_while": "F"
+    },
+    "F": {
+     "kind": "fight",
+     "reach_m": 7.0,
+     "spawns": [
+      [
+       2,
+       6
+      ],
+      [
+       8,
+       6
+      ],
+      [
+       2,
+       8
+      ],
+      [
+       8,
+       8
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "temple_guard",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The hall falls quiet. A door grinds open"
+    },
+    "h": {
+     "kind": "door",
+     "open": "clear",
+     "fight": "F"
+    },
+    "C": {
+     "kind": "chest",
+     "loot": "dungeon_small"
+    }
+   }
   }
  }
 }

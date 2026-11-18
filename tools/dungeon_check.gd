@@ -1,6 +1,7 @@
 # Purpose: check of the dungeon puzzle rules (sea step 9a) on the test dungeon "proving_vault": push the block onto the
 # plate (latching door d), pull the lever (door c), take the key, unlock door e, open the chest, save / load.
 # Prints DUNGEON CHECK problems=n. Run: godot --headless --path . --script res://tools/dungeon_check.gd
+# Also the fight hall's fight and doors (sea step 9c).
 # Dependencies: core/sea/dungeon_rules.gd, data/sea/dungeons.json.
 extends SceneTree
 
@@ -36,5 +37,15 @@ func _init() -> void:
 	r2.from_dict(saved)
 	_ok("loaded: block on the plate, doors open", r2.cell_of_thing("B") == Vector2i(3, 8) and r2.door_open("d") and r2.door_open("e") and r2.door_open("c"))
 	_ok("blocked cell not passable", not r2.passable(Vector2i(3, 8)) and r2.passable(Vector2i(2, 2)))
+	# sea step 9c: the fight hall: door g shut while F goes on, door h opens when F is cleared; foes keep off walls / shut doors
+	var f := DungeonRules.new("fight_hall", cfg["dungeons"]["fight_hall"], float(cfg["tile"]))
+	_ok("fight hall: g open, h shut", f.door_open("g") and not f.door_open("h"))
+	_ok("fight starts once", f.start_fight("F") and not f.start_fight("F"))
+	_ok("g shut while it goes on", not f.door_open("g") and not f.body_can(Vector2i(5, 4), 0.0))
+	_ok("second wave, then none", f.next_wave("F") and not f.next_wave("F"))
+	f.clear_fight("F")
+	_ok("cleared: g and h open", f.door_open("g") and f.door_open("h") and f.body_can(Vector2i(5, 10), 0.0))
+	_ok("cleared fight does not start again", not f.start_fight("F"))
+	_ok("foes: floor yes, wall / chest no", f.body_can(Vector2i(2, 6), 0.0) and not f.body_can(Vector2i(0, 6), 0.0) and not f.body_can(Vector2i(5, 12), 0.0))
 	print("DUNGEON CHECK problems=%d" % problems)
 	quit()

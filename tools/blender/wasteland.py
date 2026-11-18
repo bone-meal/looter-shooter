@@ -25,6 +25,8 @@ PAINTS = {  # part colour name: (material, colour)
     "bone": ("gear", (0.86, 0.8, 0.66)), "flesh": ("gear", (0.74, 0.56, 0.46)), "bandage": ("gear", (0.74, 0.7, 0.6)), "gum": ("gear", (0.3, 0.1, 0.1)),
     "rust": ("metal", (0.5, 0.35, 0.27)), "iron": ("metal", (0.56, 0.56, 0.6)), "steel": ("metal", (0.82, 0.84, 0.87)),
     "sign": ("metal", (0.75, 0.16, 0.12)), "hazard": ("metal", (0.88, 0.66, 0.12)), "brass": ("metal", (0.85, 0.65, 0.3)),
+    "shell": ("gear", (0.9, 0.8, 0.68)), "shell_dark": ("gear", (0.62, 0.48, 0.38)), "coral": ("gear", (0.84, 0.4, 0.36)), "nacre": ("metal", (0.8, 0.88, 0.9)),
+    "kelp": ("cloth", (0.18, 0.36, 0.28)),
     "scarf": ("cloth", (0.8, 0.13, 0.1)), "felt": ("cloth", (0.09, 0.08, 0.08)), "linen": ("cloth", (0.86, 0.82, 0.72)), "beard": ("gear", (0.16, 0.11, 0.08)),
 }
 SPEC = {
@@ -32,6 +34,8 @@ SPEC = {
     "pirate_cutlass": {"head": "bandana", "stubble": True, "weapon": "cutlass", "sash": True, "shirt": True, "pouches": 1, "boots": True},
     "pirate_musket": {"head": "bandana", "patch": True, "beard": True, "weapon": "musket", "bandolier": True, "shirt": True, "sash": True},
     "pirate_captain": {"head": "tricorn", "beard": True, "shoulders": 0.24, "thick": 1.15, "weapon": "cutlass", "coat": True, "sash": True, "pouches": 2},
+    # region 1's sea temple (sea step 9c): a shell-armoured temple guard with a coral trident and a scallop shield
+    "temple_guard": {"head": "conch", "shoulders": 0.24, "thick": 1.2, "weapon": "trident", "shell_plates": True, "shell_shield": True, "kelp_skirt": True},
     "raider": {"head": "gasmask", "mohawk": True, "gloves": True, "pads": 1, "spikes": True, "knee_pads": True, "weapon": "machete", "sign": True, "wraps": True, "pouches": 2},
     "feral": {"bare": True, "head": "ghoul", "lean": 0.2, "thick": 0.78, "girth": 0.8, "arm_len": 1.2, "weapon": "claws", "ribs": True, "rags": True},
     "scav_gunner": {"head": "helmet", "gloves": True, "pads": 2, "weapon": "rifle", "pack": True, "knee_pads": True, "bandolier": True, "pouches": 4},
@@ -149,6 +153,23 @@ def head(m, M, b, skin, at):
                 gold.faces.new((ring[i], ring[j], ring2[j], ring2[i]))
             m._add(gold, M["brass"], "Body", 0.0)
         return
+    if kind == "conch":  # the temple guard: a great conch shell worn as a helm, its spire swept back, an open dark face with sea-green eyes
+        m.loft(M["dark"], [(x, y + dy * k, f + df * k, w * k, d * k) for dy, w, d, df in SKULL], segs=12)
+        eyes(0.15, 0.088, gap=0.036, size=0.016)
+        m.loft(M["shell"], [p(0, 0.0, -0.035) + (0.105 * k, 0.1 * k), p(0, 0.13, -0.03) + (0.122 * k, 0.112 * k), p(0, 0.23, -0.035) + (0.11 * k, 0.1 * k)], segs=14, steps=2)  # the body whorl round sides and back
+        m.loft(M["nacre"], [p(-0.1, 0.215, 0.05) + (0.014 * k, 0.012 * k), p(0, 0.235, 0.085) + (0.018 * k, 0.014 * k), p(0.1, 0.215, 0.05) + (0.014 * k, 0.012 * k)], segs=8, steps=2)  # the pearly lip over the brow
+        turns = 9
+        for i in range(turns):  # the spire: whorls winding up and back, each smaller, knobbed every other one
+            t = i / (turns - 1)
+            r = (0.12 - 0.1 * t) * k
+            cy = y + (0.25 + 0.2 * t) * k
+            cf = f - (0.05 + 0.2 * t) * k
+            m.lathe(M["shell"] if i % 2 else M["shell_dark"], [(r * 0.85, -0.022 * k), (r, 0.0), (r * 0.85, 0.022 * k)], (x, cy, cf), segs=12)
+            if i % 2 == 0 and i < turns - 1:
+                for side in (-1, 1):
+                    m.ball(M["shell_dark"], (0.018 * k, 0.022 * k, 0.018 * k), (x + side * r, cy + 0.01 * k, cf), u=6, v=4)
+        m.rod(M["shell_dark"], 0.012 * k, (x, y + 0.45 * k, f - 0.25 * k), (x, y + 0.5 * k, f - 0.3 * k), r2=0.002, segs=5)  # its tip
+        return
     if kind == "sensor":  # a machine head: armoured ball with one big lens and side vents
         m.ball(M["iron"], 0.125 * k, p(0, 0.12, 0), u=18, v=12)
         m.lathe(M["rust"], [(0.07 * k, 0.09 * k), (0.08 * k, 0.14 * k)], p(0, 0.12, 0), segs=18, axis="f")
@@ -249,6 +270,14 @@ def melee_weapon(m, M, s, x, y, f):
         m.strip(M["brass"], 0.02, 0.006, [(f - 0.02, y + 0.06), (f + 0.07, y + 0.02), (f + 0.07, y - 0.07), (f - 0.02, y - 0.075)], x=x, node=A)  # knuckle bow
         m.box(M["brass"], (0.03, 0.02, 0.1), (x, y - 0.075, f + 0.02), bevel=0.004, node=A)
         m.prof(M["steel"], 0.007, [(f - 0.025, y - 0.08), (f + 0.025, y - 0.08), (f + 0.06, y - 0.4), (f + 0.1, y - 0.62), (f + 0.07, y - 0.66), (f + 0.02, y - 0.42)], x=x, bevel=0.002, node=A)
+    elif kind == "trident":  # a long shaft levelled forward through the hand, a three-pronged coral head ahead
+        m.rod(M["wood"], 0.016, (x, y, f - 0.55), (x, y, f + 1.05), node=A, segs=8)
+        m.loft(M["kelp"], [(x, y, f - 0.06, 0.022, 0.022), (x, y, f + 0.08, 0.022, 0.022)], node=A, segs=8, steps=1)
+        tip = f + 1.05
+        m.ball(M["nacre"], (0.03, 0.03, 0.045), (x, y, tip), node=A, u=8, v=5)
+        for side in (-1, 0, 1):
+            m.rod(M["coral"], 0.013, (x, y, tip + 0.02), (x + side * 0.085, y, tip + 0.1), node=A, segs=6)
+            m.rod(M["coral"], 0.012, (x + side * 0.085, y, tip + 0.1), (x + side * 0.09, y, tip + 0.32), r2=0.002, node=A, segs=6)
     elif kind == "claws":
         for k in (-1, 0, 1):
             m.rod(M["bone"], 0.012, (x + k * 0.022, y - 0.02, f + 0.02), (x + k * 0.03, y - 0.22, f + 0.07), r2=0.002, node=A, segs=6)
@@ -470,6 +499,19 @@ def humanoid(m, M, s):
         for side in (-1, 1):
             p = b.around(1.0, side * 60, 0.02)
             m.strip(M["steel"], 0.014, 0.01, [(p[2], 0.98), (p[2] + 0.02, 0.84), (p[2] + 0.07, 0.8), (p[2] + 0.1, 0.86)], x=p[0])
+    if s.get("shell_plates"):  # overlapping shell scales over chest and back, nacre pauldrons
+        for row in range(5):
+            y = 1.42 - row * 0.085
+            for col in range(9 if row % 2 == 0 else 8):
+                ang = -150 + col * (300 / 8) + (0 if row % 2 == 0 else 300 / 16)
+                m.ball(M["shell"] if (row + col) % 3 else M["shell_dark"], (0.062 * b.ws, 0.06, 0.018), b.around(y, ang, 0.014), u=8, v=5)
+        for side in (-1, 1):
+            m.ball(M["nacre"], (0.11 * T, 0.06 * T, 0.11 * T), (side * (W + 0.03), 1.5, b.lean(1.5)), u=12, v=7)
+    if s.get("kelp_skirt"):  # strands of kelp hanging from the belt
+        for k in range(14):
+            ang = -170 + k * (340 / 13)
+            p0 = b.around(1.0, ang, 0.02)
+            m.loft(M["kelp"], [p0 + (0.022, 0.006), (p0[0] * 1.05, 0.82, p0[2] * 1.05, 0.02, 0.005), (p0[0] * 1.1, 0.66 + 0.04 * (k % 3), p0[2] * 1.1, 0.012, 0.004)], segs=5, steps=2)
     kind = s.get("weapon", "")
     if s.get("shirt"):  # a loose linen shirt open at the neck under the jacket
         m.loft(M["linen"], [(0, 1.44, b.lean(1.44), 0.075 * neck, 0.07 * neck), (0, 1.5, b.lean(1.5), 0.062 * neck, 0.06 * neck)], segs=12, steps=1, flat=True)
@@ -493,6 +535,14 @@ def humanoid(m, M, s):
             other = arm(m, M, b, "ArmL", -1, limb, skin, (-W * 0.7, 1.2, b.lean(1.4) + 0.48 * b.reach))
             for k in (-1, 0, 1):
                 m.rod(M["bone"], 0.012, (other.x + k * 0.022, other.y, other.z + 0.03), (other.x + k * 0.03, other.y - 0.07, other.z + 0.2), r2=0.002, node="ArmL", segs=6)
+        elif s.get("shell_shield"):  # the left arm holds a great scallop shell before the body
+            other = arm(m, M, b, "ArmL", -1, limb, skin, (-W * 0.55, 1.18, b.lean(1.3) + 0.28))
+            cx, cy, cf = other.x - 0.02, other.y + 0.02, other.z + 0.06
+            m.ball(M["shell"], (0.24, 0.26, 0.05), (cx, cy, cf), node="ArmL", u=14, v=8)
+            for k in range(9):
+                a = math.radians(-64 + k * 16)
+                m.rod(M["shell_dark"], 0.018, (cx, cy - 0.17, cf + 0.045), (cx + math.sin(a) * 0.22, cy - 0.17 + math.cos(a) * 0.4, cf + 0.03), r2=0.01, node="ArmL", segs=5)
+            m.ball(M["coral"], (0.06, 0.04, 0.03), (cx, cy - 0.19, cf + 0.05), node="ArmL", u=8, v=5)
         else:
             arm(m, M, b, "ArmL", -1, limb, skin)
 
