@@ -21,6 +21,10 @@
 #   sea_siren        region 6's REEF SIREN: a sea-folk singer, our own: a scaled fish tail coiled under her, a body in a
 #                    kelp-and-shell robe (fully covered), coral-pink skin, fin-ears, long kelp hair; arms "ArmL" / "ArmR".
 #   sea_siren_rock   the reef rock a siren sits on: a barnacled outcrop with weed (solid in the game).
+#   sea_kraken       region 7's WHORL KRAKEN body: a huge ridged mantle (most of it under water), two great glowing
+#                    eyes, a hooked beak; whorl markings spiral on the mantle.
+#   sea_kraken_arm   one of its arms: ~7.5 m from the root up, six chained segments "Seg1".."Seg6" (each child of the
+#                    one before, so the game curls the arm by turning each a little), suckers on its front (+f) side.
 # Model space: x right, y up, f forward (the game's -z). The shark's belly is at y = 0; the serpent's head centre
 # is the origin (it swims at the surface, segments rise and dive).
 # Run: python3 tools/blender/sea_creatures.py   (ONLY=sea_shark builds just that one)
@@ -327,10 +331,58 @@ def siren_rock(m):
         m.loft(weed, [(math.cos(a) * 1.8, 0.1, math.sin(a) * 1.4, 0.06, 0.03), (math.cos(a) * 2.1, -0.4, math.sin(a) * 1.6, 0.04, 0.02)], segs=5)
 
 
+KRAKEN = (0.42, 0.12, 0.22)
+KRAKEN_DARK = (0.22, 0.05, 0.12)
+KRAKEN_PALE = (0.86, 0.66, 0.62)
+WHORL = (0.95, 0.55, 0.3)
+
+
+def kraken(m):
+    skin, dark, pale = K("leather", KRAKEN), K("leather", KRAKEN_DARK), K("leather", KRAKEN_PALE)
+    # the mantle: a tall ridged dome leaning back, the head below it
+    m.loft(skin, [(0.0, 0.0, 0.8, 2.6, 2.2), (0.0, 1.2, 0.0, 2.8, 2.3), (0.0, 2.8, -1.2, 2.2, 1.8), (0.0, 4.2, -2.6, 1.2, 1.0), (0.0, 4.9, -3.4, 0.4, 0.35)], segs=18)
+    for k in range(5):  # ridges
+        a = -0.9 + k * 0.45
+        m.loft(dark, [(math.sin(a) * 2.4, 0.6, math.cos(a) * 2.2 - 0.6, 0.18, 0.18), (math.sin(a) * 2.0, 2.6, math.cos(a) * 1.6 - 1.6, 0.14, 0.14), (math.sin(a) * 1.0, 4.2, math.cos(a) * 0.8 - 2.8, 0.08, 0.08)], segs=8)
+    for k in range(10):  # whorl markings spiralling up the mantle (glowing)
+        t = k / 10.0
+        a = t * 4.0 * math.pi
+        r = 2.4 * (1.0 - t * 0.7)
+        m.ball((fk.GLOW, WHORL), (0.14, 0.14, 0.14), (math.sin(a) * r, 0.8 + t * 3.6, math.cos(a) * r * 0.85 - 0.4 - t * 2.2), u=8, v=6)
+    m.ball(pale, (2.0, 1.1, 1.4), (0.0, -0.6, 1.6), u=16, v=10)  # head under the mantle
+    for side in (-1, 1):
+        m.ball(K("bone", (0.9, 0.86, 0.7)), (0.75, 0.75, 0.55), (side * 1.55, 0.0, 2.3), u=14, v=10)  # eye ball
+        m.ball((fk.GLOW, (1.0, 0.75, 0.2)), (0.5, 0.55, 0.3), (side * 1.62, 0.02, 2.65), u=12, v=8)  # glowing iris
+        m.ball(K("paint", DARK), (0.12, 0.42, 0.08), (side * 1.66, 0.02, 2.92), u=8, v=6)  # slit pupil
+        m.loft(dark, [(side * 1.0, 0.85, 2.3, 0.2, 0.12), (side * 1.6, 0.85, 2.45, 0.14, 0.1), (side * 2.1, 0.7, 2.3, 0.08, 0.06)], segs=8)  # brow
+    m.loft(K("bone", (0.15, 0.1, 0.08)), [(0.0, -1.0, 2.8, 0.35, 0.3), (0.0, -1.3, 3.2, 0.2, 0.18), (0.0, -1.6, 3.35, 0.06, 0.06)], segs=10)  # beak
+    for k in range(6):  # stubs of the lower arms round the head (the big arms are separate)
+        a = -1.2 + k * 0.48
+        m.loft(skin, [(math.sin(a) * 1.8, -1.0, math.cos(a) * 1.4 + 1.2, 0.45, 0.45), (math.sin(a) * 2.6, -1.8, math.cos(a) * 2.2 + 1.4, 0.3, 0.3), (math.sin(a) * 3.0, -2.6, math.cos(a) * 2.8 + 1.2, 0.12, 0.12)], segs=10)
+
+
+def kraken_arm(m):
+    skin, pale = K("leather", KRAKEN), K("leather", KRAKEN_PALE)
+    L = 1.3
+    for i in range(6):
+        name = "Seg%d" % (i + 1)
+        y0 = i * L
+        r0 = 0.38 - i * 0.055
+        r1 = 0.38 - (i + 1) * 0.055 + 0.01
+        m.node(name, (0.0, y0, 0.0), parent=("Seg%d" % i) if i else None)
+        m.loft(skin, [(0.0, y0 - 0.12, 0.0, r0, r0), (0.0, y0 + L * 0.5, 0.0, (r0 + r1) * 0.5, (r0 + r1) * 0.5), (0.0, y0 + L + 0.12, 0.0, r1, r1)], segs=12, node=name)
+        for k in range(3):  # two rows of suckers on the front
+            y = y0 + 0.25 + k * 0.4
+            rr = r0 - k * 0.018
+            for side in (-1, 1):
+                m.ball(pale, (rr * 0.32, rr * 0.32, rr * 0.18), (side * rr * 0.42, y, rr * 0.9), u=8, v=5, node=name)
+    m.ball(skin, (0.06, 0.12, 0.06), (0.0, 6 * L + 0.1, 0.0), u=8, v=6, node="Seg6")  # the tip
+
+
 def main():
     fk.init()
     only = set(filter(None, os.environ.get("ONLY", "").split(",")))
-    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle), ("sea_orca", orca), ("sea_squallbeak", squallbeak), ("sea_siren", siren), ("sea_siren_rock", siren_rock)):
+    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle), ("sea_orca", orca), ("sea_squallbeak", squallbeak), ("sea_siren", siren), ("sea_siren_rock", siren_rock), ("sea_kraken", kraken), ("sea_kraken_arm", kraken_arm)):
         if only and name not in only:
             continue
         m = kit.Model(name, uv_scale=0.5, colored=True)

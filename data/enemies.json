@@ -753,6 +753,58 @@
    ],
    "attack_sound": "atk_claw",
    "head_share": 0.25
+  },
+  "sea_kraken": {
+   "model": "sea_kraken",
+   "max_hp": 5000,
+   "speed": 0.0,
+   "attack_type": "melee",
+   "damage": 30,
+   "attack_range": 3.0,
+   "attack_interval": 5.0,
+   "size": [
+    5.4,
+    4.6,
+    5.0
+   ],
+   "color": [
+    1.0,
+    0.75,
+    0.2
+   ],
+   "body_color": [
+    0.42,
+    0.12,
+    0.22
+   ],
+   "attack_sound": "atk_slam",
+   "head_share": 0.2
+  },
+  "sea_kraken_arm": {
+   "model": "sea_kraken_arm",
+   "max_hp": 480,
+   "speed": 0.0,
+   "attack_type": "melee",
+   "damage": 24,
+   "attack_range": 3.0,
+   "attack_interval": 5.0,
+   "size": [
+    1.0,
+    7.5,
+    1.0
+   ],
+   "color": [
+    1.0,
+    0.75,
+    0.2
+   ],
+   "body_color": [
+    0.42,
+    0.12,
+    0.22
+   ],
+   "attack_sound": "atk_slam",
+   "head_share": 0.0
   }
  }
 }

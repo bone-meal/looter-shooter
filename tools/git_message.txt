@@ -1,10 +1,10 @@
-Sea step 8e-2: Rime Orcas, Squallbeaks and Reef Sirens
+Sea step 8e-3: the Whorl Kraken
 
-Region 4 Rime Orca pods heave the ship over (players slide, those at the low
-rail go overboard) and snatch swimmers; region 5 Squallbeaks dive-bomb players
-on deck (mostly in storms); region 6 Reef Sirens sing from solid reef rocks and
-drag the ship's heading toward them until shot. Own models, loot, items.
-Two-copy tested (set beasts8e2).
+Region 7's kraken surfaces beside the ship and sends four arms up her sides:
+while any arm holds her she cannot move; each arm rears and smashes the deck
+(players knocked flat, hull damage); arms are shot off one by one and grow back;
+killing the body sinks its arms and floats its hoard. Own models (chained arm
+segments), loot, items. Two-copy tested (set kraken).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

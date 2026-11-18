@@ -21,6 +21,8 @@ const KINDS := {
 	"rime_orca": preload("res://game/beasts/rime_orca.gd"),
 	"squallbeak": preload("res://game/beasts/squallbeak.gd"),
 	"reef_siren": preload("res://game/beasts/reef_siren.gd"),
+	"whorl_kraken": preload("res://game/beasts/whorl_kraken.gd"),
+	"kraken_arm": preload("res://game/beasts/kraken_arm.gd"),
 }
 
 var cfg: Dictionary  # encounters.json "beasts"
@@ -149,22 +151,38 @@ func spawn(kind: String, x: float, z: float, region_n: int) -> void:
 	var c: Dictionary = cfg[kind]
 	var n := _rng.randi_range(int((c.get("count", [1, 1]) as Array)[0]), int((c.get("count", [1, 1]) as Array)[1]))
 	for i in n:
-		var id := _next_id
-		_next_id += 1
-		var stats: Dictionary = (_stats[String(c["enemy"])] as Dictionary).duplicate()
-		stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(region_n - 1))
-		stats["damage"] = float(stats.get("damage", 0.0)) * (1.0 + float(cfg["damage_per_region"]) * float(region_n - 1))
-		var enemy := _make(id, kind, stats, false)
-		if enemy == null:
-			continue
-		var b: Dictionary = beasts[id]
-		b["region"] = region_n
-		b["nth"] = i
-		b["mult"] = 1.0 + float(cfg["damage_per_region"]) * float(region_n - 1)
-		enemy.global_position = world_of(x + float(i) * 4.0, z)
-		(KINDS[kind] as Script).call("start", self, b)
-		came += 1
+		spawn_one(kind, world_of(x + float(i) * 4.0, z), region_n, {"nth": i})
 	_sea.emit_signal("notice", String(c["notice"]))
+
+
+# Host: one beast of a kind at a world point (behaviours make their own parts this way: a kraken's arms).
+func spawn_one(kind: String, at: Vector3, region_n: int, extra: Dictionary) -> Dictionary:
+	var c: Dictionary = cfg[kind]
+	var id := _next_id
+	_next_id += 1
+	var stats: Dictionary = (_stats[String(c["enemy"])] as Dictionary).duplicate()
+	stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(region_n - 1))
+	stats["damage"] = float(stats.get("damage", 0.0)) * (1.0 + float(cfg["damage_per_region"]) * float(region_n - 1))
+	var enemy := _make(id, kind, stats, false)
+	if enemy == null:
+		return {}
+	var b: Dictionary = beasts[id]
+	b["region"] = region_n
+	b["nth"] = 0
+	b["mult"] = 1.0 + float(cfg["damage_per_region"]) * float(region_n - 1)
+	b.merge(extra, true)
+	enemy.global_position = at
+	(KINDS[kind] as Script).call("start", self, b)
+	came += 1
+	return b
+
+
+# Host: something holds this ship where she is (a kraken's arms): no way on, her place kept.
+func hold_ship(ship: Node3D, at: Vector2) -> void:
+	var st: Dictionary = ship.get("state")
+	st["speed"] = 0.0
+	st["x"] = at.x
+	st["z"] = at.y
 
 
 func _make(id: int, kind: String, stats: Dictionary, puppet: bool) -> Node3D:
@@ -382,6 +400,10 @@ func _on_died(_enemy: Node, id: int) -> void:
 	var e: Node3D = b["enemy"]
 	var at: Vector3 = _sea.call("local_of", e.global_position) if is_instance_valid(e) else Vector3.ZERO
 	var region := "region_%d" % int(b.get("region", 1))
+	if String(b["kind"]) == "whorl_kraken":  # its arms go down with it
+		for other_id: int in beasts.keys():
+			if beasts.has(other_id) and int(beasts[other_id].get("body", -1)) == id:
+				_remove(other_id)
 	(get_parent().get("flotsam") as Node).call("spill", at.x, at.z, String(cfg[String(b["kind"])]["loot"]), region)
 	var net := _net()
 	if net != null:
@@ -399,7 +421,7 @@ func to_net() -> Array:
 			continue
 		var p: Vector3 = _sea.call("local_of", e.global_position)
 		var hp: RefCounted = e.get("health")
-		out.append([id, String(b["kind"]), snappedf(p.x, 0.01), snappedf(e.global_position.y - _fleet.global_position.y, 0.01), snappedf(p.z, 0.01), snappedf(e.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(b["mode"]), snappedf(float(b["t"]), 0.01), ships().find(b["ship"]) if is_instance_valid(b["ship"]) else -1, int(b.get("side_i", 0))])
+		out.append([id, String(b["kind"]), snappedf(p.x, 0.01), snappedf(e.global_position.y - _fleet.global_position.y, 0.01), snappedf(p.z, 0.01), snappedf(e.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(b["mode"]), snappedf(float(b["t"]), 0.01), ships().find(b["ship"]) if is_instance_valid(b["ship"]) else -1, int(b.get("side_i", 0)), snappedf(float(b.get("lz", 0.0)), 0.1)])
 	return out
 
 
@@ -449,6 +471,8 @@ func from_net(list: Array, fire_list: Array) -> void:
 			var all_ships := ships()
 			b["ship"] = all_ships[int(got[9])] if int(got[9]) >= 0 and int(got[9]) < all_ships.size() else null
 			b["side_i"] = clampi(int(got[10]), -1, 1)
+		if (got as Array).size() >= 12:
+			b["lz"] = clampf(float(got[11]), -60.0, 60.0)
 	for id: int in beasts.keys():
 		if seen.has(id):
 			_missing.erase(id)

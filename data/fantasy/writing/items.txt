@@ -92,6 +92,8 @@ rime_blubber: Rime Blubber
 storm_feather: Storm Feather
 siren_pearl: Siren Pearl
 siren_scale: Siren Scale
+kraken_beak: Kraken Beak
+kraken_ink: Kraken Ink
 ash_log: Ash Log
 oak_log: Oak Log
 palm_log: Driftpalm Log

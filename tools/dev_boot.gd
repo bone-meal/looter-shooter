@@ -635,6 +635,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						var side_r := -1.0 if words.size() > 2 and words[2] == "port" else 1.0
 						var x_r := 0.0 if words[1] == "mid" else side_r * (float(DeckWalkDev.half_width(spec_r, 0.0)) - 0.7)
 						player.call("teleport", mine_r.global_transform * Vector3(x_r, float(spec_r["deck"]) + 0.2, 0.0), 0.0)
+					"byarm":  # stand on her deck where the first kraken arm smashes
+						for b_a: Dictionary in (mgr.get("beasts") as Dictionary).values():
+							if String(b_a["kind"]) == "kraken_arm":
+								var x_a := float(b_a.get("side_i", 1)) * maxf(float(DeckWalkDev.half_width(spec_r, float(b_a.get("lz", 0.0)))) - 1.6, 0.3)
+								player.call("teleport", mine_r.global_transform * Vector3(x_a, float(spec_r["deck"]) + 0.2, float(b_a.get("lz", 0.0))), 0.0)
+								break
 					"onfire":  # stand in the first fire on her deck
 						for f_r: Array in mgr.get("fires"):
 							if f_r[0] == mine_r:
@@ -654,7 +660,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 								if hit_m:
 									break
 							await get_tree().create_timer(0.2, true, false, true).timeout
-				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f yaw %.1f tip %.1f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"]), rad_to_deg(float(ms_r["yaw"])), float(mine_r.get("tip_deg"))])
+				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f yaw %.1f tip %.1f at (%.1f, %.1f) speed %.1f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"]), rad_to_deg(float(ms_r["yaw"])), float(mine_r.get("tip_deg")), float(ms_r["x"]), float(ms_r["z"]), float(ms_r["speed"])])
 		"spook":  # sea step 8d: !spook fire (our nearest loaded gun at the newest ghost) | wait_solid | wait_faded | wait_gone | rise | wait_grab | wait_aboard | wait_risen <n> | killall | status <note>
 			var sea_g: Node = session.call("sea")
 			var fleet_g: Node = sea_g.get("ships") if sea_g != null else null

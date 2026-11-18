@@ -178,6 +178,17 @@
       "regions": 6,
       "region_only": true,
       "name": "Reef Sirens"
+    },
+    "whorl_kraken": {
+      "creature": "beast",
+      "beast": "whorl_kraken",
+      "weight": 2.5,
+      "regions": 7,
+      "region_only": true,
+      "weather_mult": {
+        "storm": 2.0
+      },
+      "name": "Whorl Kraken"
     }
   },
   "pirate": {
@@ -497,6 +508,44 @@
         ]
       },
       "gun_chance": 0.3
+    },
+    "whorl_kraken": {
+      "pieces": [
+        6,
+        8
+      ],
+      "doubloons": [
+        120,
+        260
+      ],
+      "items": {
+        "kraken_beak": [
+          1,
+          1
+        ],
+        "kraken_ink": [
+          2,
+          5
+        ]
+      },
+      "gun_chance": 0.8
+    },
+    "kraken_arm": {
+      "pieces": [
+        1,
+        1
+      ],
+      "doubloons": [
+        10,
+        25
+      ],
+      "items": {
+        "kraken_ink": [
+          1,
+          2
+        ]
+      },
+      "gun_chance": 0.05
     }
   },
   "loot_mult": {
@@ -832,6 +881,45 @@
       "pull_deg": 9.0,
       "loot": "reef_siren",
       "notice": "A song drifts over the water... the helm pulls toward the rocks!"
+    },
+    "whorl_kraken": {
+      "enemy": "sea_kraken",
+      "count": [
+        1,
+        1
+      ],
+      "scale": 1.0,
+      "body_m": 16.0,
+      "depth": 0.2,
+      "arms": 4,
+      "arm_spread": 1.5,
+      "regrow_s": 20.0,
+      "loot": "whorl_kraken",
+      "notice": "The sea turns in a slow whorl... a Whorl Kraken rises!",
+      "hold_notice": "Its arms have her! Cut them off!"
+    },
+    "kraken_arm": {
+      "enemy": "sea_kraken_arm",
+      "count": [
+        1,
+        1
+      ],
+      "scale": 1.0,
+      "out_m": 1.0,
+      "rise_s": 2.0,
+      "slam_every": [
+        6.0,
+        10.0
+      ],
+      "windup_s": 1.2,
+      "slam_s": 0.35,
+      "reach_in": 1.6,
+      "slam_m": 2.6,
+      "slam_damage": 24.0,
+      "slam_push": 8.0,
+      "slam_hull": 30.0,
+      "loot": "kraken_arm",
+      "notice": ""
     }
   }
 }

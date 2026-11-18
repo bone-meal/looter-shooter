@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 10;!foe pause;!wait 8;!ship board;!rbeast waitmode hold;!wait 3;!snap g_arms;!rbeast byarm;!immortal off;!rbeast wait hurt;!rbeast status g_slammed;!immortal;!rbeast kill kraken_arm;!wait 3;!rbeast status g_cut;!wait 6;!rbeast status g_free
