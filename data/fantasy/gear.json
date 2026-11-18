@@ -2030,6 +2030,61 @@
     0.55,
     0.22
    ]
+  },
+  "shark_hide": {
+   "kind": "material",
+   "icon": "pelt",
+   "color": [
+    0.42,
+    0.48,
+    0.55
+   ]
+  },
+  "shark_tooth": {
+   "kind": "material",
+   "icon": "bone",
+   "color": [
+    0.95,
+    0.93,
+    0.86
+   ]
+  },
+  "raw_shark": {
+   "kind": "material",
+   "icon": "meat",
+   "color": [
+    0.85,
+    0.55,
+    0.52
+   ]
+  },
+  "shark_steak": {
+   "kind": "food",
+   "heal": 220,
+   "icon": "roast",
+   "color": [
+    0.68,
+    0.42,
+    0.3
+   ]
+  },
+  "serpent_scale": {
+   "kind": "material",
+   "icon": "shell",
+   "color": [
+    0.2,
+    0.62,
+    0.6
+   ]
+  },
+  "serpent_fang": {
+   "kind": "material",
+   "icon": "sting",
+   "color": [
+    0.96,
+    0.9,
+    0.72
+   ]
   }
  }
 }

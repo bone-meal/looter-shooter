@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 8;!where g_start;!where wait_jump g_to_coords;!where wait_jump g_to_host

@@ -2374,6 +2374,20 @@
     "plot": "shipyard",
     "level": 1
    }
+  },
+  {
+   "id": "cook_shark",
+   "skill": "cooking",
+   "level": 30,
+   "xp": 85,
+   "station": "fire",
+   "in": {
+    "raw_shark": 1
+   },
+   "out": {
+    "shark_steak": 1
+   },
+   "batch": true
   }
  ],
  "gather": {
@@ -2757,7 +2771,8 @@
     "level": 30,
     "kind": "content",
     "ids": [
-     "cook_icefin"
+     "cook_icefin",
+     "cook_shark"
     ]
    },
    {

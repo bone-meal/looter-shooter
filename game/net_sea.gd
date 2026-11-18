@@ -106,6 +106,12 @@ func _send_fleet(fleet: Node) -> void:
 	var crews: Node = fleet.get("foes").get("crews")
 	if bool(crews.call("should_send")):
 		_crew_down.rpc(crews.call("to_net"))
+	var sharks: Node = fleet.get("foes").get("sharks")
+	if bool(sharks.call("should_send")):
+		_shark_down.rpc(sharks.call("to_net"))
+	var wyrm: Node = fleet.get("foes").get("serpent")
+	if bool(wyrm.call("should_send")):
+		_serpent_down.rpc(wyrm.call("to_net"))
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -787,3 +793,75 @@ func _cargo_all(list: Array) -> void:
 	for got: Variant in list.slice(0, 32):
 		if got is Array and (got as Array).size() == 2 and got[1] is Array:
 			_cargo_list(int(got[0]), got[1])
+
+
+# --- sharks and the Tide Wyrm (sea step 8c): the host runs them and sends where they are; a client's hits go to the
+# host (capped), the host says who killed them ---
+
+func _foe_part(part: String) -> Node:
+	var fleet := _fleet()
+	return fleet.get("foes").get(part) if fleet != null else null
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _shark_down(list: Array) -> void:
+	var sharks := _foe_part("sharks")
+	if sharks != null and list.size() <= 16:
+		sharks.call("from_net", list)
+
+
+func request_shark_hit(id: int, damage: float) -> void:
+	if is_client():
+		_shark_hit.rpc_id(1, id, damage)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _shark_hit(id: int, damage: float) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var sharks := _foe_part("sharks")
+	if net.is_host() and net.roster.has(from) and sharks != null:
+		sharks.call("host_hit", id, damage, from)
+
+
+func tell_shark_died(id: int, killer: int) -> void:
+	if active() and net.is_host():
+		_shark_died.rpc(id, killer)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _shark_died(id: int, killer: int) -> void:
+	var sharks := _foe_part("sharks")
+	if sharks != null:
+		sharks.call("fell", id, killer, my_id())
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _serpent_down(got: Array) -> void:
+	var wyrm := _foe_part("serpent")
+	if wyrm != null and got.size() <= 8:
+		wyrm.call("from_net", got)
+
+
+func request_serpent_hit(damage: float) -> void:
+	if is_client():
+		_serpent_hit.rpc_id(1, damage)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _serpent_hit(damage: float) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var wyrm := _foe_part("serpent")
+	if net.is_host() and net.roster.has(from) and wyrm != null:
+		wyrm.call("host_hit", damage, from)
+
+
+func tell_serpent_died(killer: int) -> void:
+	if active() and net.is_host():
+		_serpent_died.rpc(killer)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _serpent_died(killer: int) -> void:
+	var wyrm := _foe_part("serpent")
+	if wyrm != null:
+		wyrm.call("fell", killer, my_id())

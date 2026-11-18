@@ -679,6 +679,9 @@ func _ready() -> void:
 		net.chat.reply.connect(func(text: String) -> void: _chat.add_line(text, Color(0.75, 0.9, 1.0)))
 		net.chat.op_changed.connect(func(on: bool) -> void: _chat.add_line("The host %s commands." % ("lets you use" if on else "took away your"), Color(1.0, 0.85, 0.4)))
 		net.chat.world_command = _run_world_command
+		net.chat.tp_ordered.connect(func(target: Dictionary, by: String) -> void:
+			_chat.add_line("%s teleports you." % by, Color(1.0, 0.85, 0.4))
+			tp_to(target))
 		net.trade.desk.legal = _legal_thing
 		net.trade.message.connect(_on_trade_message)
 		_trade_screen.offered.connect(net.trade.offer)
@@ -1304,6 +1307,89 @@ func travel(place: String) -> String:
 		_:
 			return "Unknown place %s. Places: island, club, arena, course, sea, fantasy (inside it also: %s)." % [place, ", ".join(_fantasy.place_names()) if _fantasy != null else "its regions and towns"]
 	return "Moved to %s." % place
+
+
+# --- /tp, Minecraft style (game/admin_commands.gd): players by name or @s @p @r @a, places, x y z with ~ ---
+
+# Which world a scene position lies in: the sea's side, Aurelind's, or the gun side (island, club, arena).
+static func world_at(at: Vector3) -> String:
+	if at.x < -10000.0:
+		return "sea"
+	if at.x > 10000.0:
+		return "fantasy"
+	return "island"
+
+
+func my_world() -> String:
+	return "sea" if _in_sea else ("fantasy" if _in_fantasy else "island")
+
+
+# The world's own coordinates of this player (sea coordinates at sea, else the scene's) and back.
+func world_coords(at: Vector3) -> Vector3:
+	return _sea.local_of(at) if _in_sea and _sea != null else at
+
+
+# Player ids a name or selector means: @s me, @p the nearest other (me alone), @r a random other, @a everyone.
+func players_matching(sel: String) -> Array:
+	var me := int(net.my_id()) if net != null and net.can_send() else 1
+	var all: Array = [me]
+	if net != null and net.can_send():
+		for id: int in net.roster:
+			if id != me:
+				all.append(id)
+	match sel.to_lower():
+		"@s":
+			return [me]
+		"@a":
+			return all
+		"@p", "@r":
+			var others := all.filter(func(id: int) -> bool: return id != me and net.player_node(id) != null)
+			if others.is_empty():
+				return []
+			if sel.to_lower() == "@r":
+				return [others[_rng.randi() % others.size()]]
+			others.sort_custom(func(a: int, b: int) -> bool: return (net.player_node(a) as Node3D).global_position.distance_to(_player.global_position) < (net.player_node(b) as Node3D).global_position.distance_to(_player.global_position))
+			return [others[0]]
+	if sel.to_lower() == _profile_name.to_lower() or (net != null and net.can_send() and sel.to_lower() == String(net.local_name()).to_lower()):
+		return [me]
+	if net != null and net.can_send():
+		for id: int in net.roster:
+			if String(net.roster[id]).to_lower() == sel.to_lower():
+				return [id]
+	return []
+
+
+func player_label(id: int) -> String:
+	if net != null and net.can_send():
+		return String(net.roster.get(id, "you" if id == int(net.my_id()) else "?"))
+	return "you"
+
+
+# Moves THIS player to a target (another world first if need be): {"kind": "player", "id"} or {"kind": "pos",
+# "world": sea|fantasy|island, "at": that world's coordinates}.
+func tp_to(target: Dictionary) -> void:
+	var world := String(target.get("world", ""))
+	if String(target.get("kind", "")) == "player":
+		var body: Node3D = net.player_node(int(target["id"])) if net != null else null
+		if body == null:
+			_chat.add_line("That player is not here.", Color(1.0, 0.6, 0.5))
+			return
+		world = world_at(body.global_position)
+	if world != my_world():
+		travel("sea" if world == "sea" else ("fantasy" if world == "fantasy" else "island"))
+		for i in 20:  # the other world's positions (others' bodies, its own origin) settle a few frames after arriving
+			await get_tree().process_frame
+	var at: Vector3
+	if String(target.get("kind", "")) == "player":
+		var body2: Node3D = net.player_node(int(target["id"])) if net != null else null
+		if body2 == null:
+			return
+		at = body2.global_position + Vector3(1.2, 0.3, 0.0)  # beside him, not in him
+	else:
+		at = target["at"]
+		if world == "sea" and _sea != null:
+			at = _sea.world_of(at)
+	_player.teleport(at, _player.look_yaw())
 
 
 func director() -> Node3D:
@@ -3879,8 +3965,7 @@ func _build_sea() -> void:
 		_sea.setup(_player, _render_style)
 		_sea.notice.connect(_player_hud.notice)
 		_sea.salvage.load_book(_salvage_saved)
-		_sea.ships.foes.crews.director = _director  # pirate crews are the director's enemies (shots, kill pay, grenades)
-		_sea.ships.foes.crews.card = _score
+		_sea.ships.foes.set_game(_director, _score)  # pirate crews, sharks, the wyrm are the director's enemies (shots, kill pay, grenades)
 		_sea.chart.from_dict(_chart_saved)
 		_sea.ships.from_list(_fleet_saved)
 		_sea.town.load_world(_town_saved)

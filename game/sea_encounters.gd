@@ -16,11 +16,15 @@ const EncounterRules = preload("res://core/sea/encounter_rules.gd")
 const PirateRules = preload("res://core/sea/pirate_rules.gd")
 const SeaFlotsam = preload("res://game/sea_flotsam.gd")
 const SeaCrews = preload("res://game/sea_crews.gd")
+const SeaSharks = preload("res://game/sea_sharks.gd")
+const SeaSerpent = preload("res://game/sea_serpent.gd")
 
 var rules: EncounterRules
 var pirate: PirateRules
 var flotsam := SeaFlotsam.new()
 var crews := SeaCrews.new()
+var sharks := SeaSharks.new()  # sea step 8c
+var serpent := SeaSerpent.new()
 var paused := false  # dev: no rolls (tests spawn their own)
 var rolled := 0  # dev / checks: checks rolled, foes that came, foes sunk, volleys fired
 var came := 0
@@ -49,6 +53,19 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	crews.name = "Crews"
 	add_child(crews)
 	crews.setup(fleet, sea, player, rules.cfg)
+	sharks.name = "Sharks"
+	add_child(sharks)
+	sharks.setup(fleet, sea, player, rules.cfg)
+	serpent.name = "Serpent"
+	add_child(serpent)
+	serpent.setup(fleet, sea, player, rules.cfg)
+
+
+# Set by game/game_session.gd: the wave director that makes the crews and creatures, and the score card (kill pay).
+func set_game(director: Node, card: RefCounted) -> void:
+	for part: Node in [crews, sharks, serpent]:
+		part.set("director", director)
+		part.set("card", card)
 
 
 func _host() -> bool:
@@ -120,8 +137,14 @@ func _roll() -> void:
 	var night := _night()
 	if _rng.randf() >= rules.chance(region, String(weather.get("kind", "calm")), night, anchored):
 		return
-	var kind := rules.pick(region, night, _rng.randf())
+	var kind := rules.pick(region, night, _rng.randf(), String(weather.get("kind", "calm")))
 	if kind == "":
+		return
+	if String(rules.cfg["kinds"][kind].get("creature", "")) == "serpent":  # the Tide Wyrm (sea step 8c): out of the deep, not over the horizon
+		var a := _rng.randf() * TAU
+		var from := at + Vector2(cos(a), sin(a)) * 120.0
+		if serpent.wyrm == null and sharks.clear_of_land(from.x, from.y, 60.0):
+			serpent.spawn(from.x, from.y)
 		return
 	var heading := float(on.get("state")["yaw"]) if on != null else _rng.randf() * TAU
 	var spot := rules.spawn_point(at.x, at.y, heading, _rng.randf(), _rng.randf())
@@ -257,4 +280,4 @@ func status() -> String:
 	for ship: Node3D in foes():
 		var st: Dictionary = ship.get("state")
 		parts.append("%s hull %.0f/%.0f at (%.0f, %.0f)%s" % [String(st["foe"]), float(st["hull"]), float(st["hull_max"]), float(st["x"]), float(st["z"]), " STRUCK" if bool(st.get("struck", false)) else ""])
-	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status()]
+	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status(), sharks.status(), serpent.status()]

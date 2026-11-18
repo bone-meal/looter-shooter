@@ -419,6 +419,103 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			Input.action_press(words[1])
 		"release":
 			Input.action_release(words[1])
+		"where":  # "!where <note>": which world we are in and our place in its own coordinates (what /tp uses); "!where wait_jump <note>" first waits (up to 90 s) until we are moved 20 m+ at once (somebody's /tp)
+			if words.size() > 1 and words[1] == "wait_jump":
+				var from_j := player.global_position
+				var until_j := Time.get_ticks_msec() + 90000
+				while Time.get_ticks_msec() < until_j and player.global_position.distance_to(from_j) < 20.0:
+					await get_tree().create_timer(0.2, true, false, true).timeout
+			_lines.append("WHERE %s: %s at %s" % [" ".join(words.slice(1)), String(session.call("my_world")), str((session.call("world_coords", player.global_position) as Vector3).snapped(Vector3(0.1, 0.1, 0.1)))])
+		"beast":  # sea step 8c: !beast open | swim [m] | shark [n] | serpent [m] | aim | finish | hitwyrm <n> | killwyrm | pause on|off | wait_bite | wait_surface | wait_hull | wait_lunge | wait_harvest | status <note>
+			var sea_b2: Node = session.call("sea")
+			var fleet_b2: Node = sea_b2.get("ships") if sea_b2 != null else null
+			if fleet_b2 == null:
+				_lines.append("beast: no sea")
+			else:
+				var enc_b: Node = fleet_b2.get("foes")
+				var sharks_b: Node = enc_b.get("sharks")
+				var wyrm_b: Node = enc_b.get("serpent")
+				var ship_b: Node3D = (fleet_b2.get("ships") as Array)[clampi(_ship_i, 0, (fleet_b2.get("ships") as Array).size() - 1)]
+				var nearest_b := func() -> Node3D:
+					if sharks_b.has_meta("dev_held") and is_instance_valid(sharks_b.get_meta("dev_held")):
+						return sharks_b.get_meta("dev_held")  # the one !beast hold put by the ship
+					var best: Node3D = null
+					for id_s: int in sharks_b.get("sharks"):
+						var e_s: Node3D = sharks_b.get("sharks")[id_s]["enemy"]
+						if is_instance_valid(e_s) and (best == null or e_s.global_position.distance_to(player.global_position) < best.global_position.distance_to(player.global_position)):
+							best = e_s
+					return best
+				match words[1] if words.size() > 1 else "status":
+					"open":  # the ship in use out into open water (well clear of the home island), still, anchored
+						var st_b: Dictionary = ship_b.get("state")
+						st_b["x"] = 500.0
+						st_b["z"] = 7800.0
+						st_b["speed"] = 0.0
+						st_b["anchored"] = true
+					"swim":  # into the sea that far off the ship's starboard side
+						var off_b := float(words[2]) if words.size() > 2 else 6.0
+						player.call("teleport", ship_b.global_transform * Vector3(float(ship_b.get("spec")["outline"][3][1]) + off_b, -1.0, 0.0), 0.0)
+					"shark":
+						for _k in (int(words[2]) if words.size() > 2 else 1):
+							sharks_b.call("_spawn_near", player)
+					"serpent":
+						var at_b: Vector3 = sea_b2.call("local_of", player.global_position)
+						wyrm_b.call("spawn", at_b.x + (float(words[2]) if words.size() > 2 else 60.0), at_b.z)
+					"pause":
+						sharks_b.set("paused", words.size() < 3 or words[2] != "off")
+					"aim":  # look at the nearest shark's middle
+						var t_b: Node3D = nearest_b.call()
+						if t_b != null:
+							player.call("look_at_point", t_b.global_position + Vector3(0, 0.6, 0) - t_b.global_transform.basis.z * 0.3)
+					"hold":  # the nearest shark held still 14 m off the starboard side, its back awash, and us at that rail (to harpoon it)
+						var t_h: Node3D = nearest_b.call()
+						if t_h != null:
+							sharks_b.set_meta("dev_held", t_h)
+							var beam_h := float(ship_b.get("spec")["outline"][3][1])
+							var spot_h := ship_b.global_transform * Vector3(beam_h + 14.0, 0.0, 0.0)  # off her starboard side
+							t_h.global_position = Vector3(spot_h.x, float(sea_b2.call("water_height", spot_h)) - 0.3, spot_h.z)
+							var mine_h := ship_b.global_transform.affine_inverse() * player.global_position
+							player.call("teleport", ship_b.global_transform * Vector3(beam_h - 0.8, mine_h.y + 0.2, 0.0), 0.0)
+							for id_h: int in sharks_b.get("sharks"):
+								if sharks_b.get("sharks")[id_h]["enemy"] == t_h:
+									sharks_b.get("sharks")[id_h]["mode"] = "off"
+					"bolts":  # where our last harpoons are (in flight or stuck in something), from the nearest shark
+						var t_o: Node3D = nearest_b.call()
+						var bolts_o: Node = session.get("_bolts")
+						for shot_o: Dictionary in bolts_o.get("_shots"):
+							if float(shot_o["life"]) > 0.0:
+								_lines.append("  in flight at %s" % str((shot_o["node"] as Node3D).global_position.snapped(Vector3(0.1, 0.1, 0.1))))
+						for lie_o: Dictionary in bolts_o.get("_lying"):
+							var at_o := (lie_o["node"] as Node3D).global_position
+							_lines.append("  stuck at %s, %.1f m from the shark" % [str(at_o.snapped(Vector3(0.1, 0.1, 0.1))), at_o.distance_to(t_o.global_position) if t_o != null else -1.0])
+						if t_o != null:
+							_lines.append("  shark at %s, we at %s, water %.2f" % [str(t_o.global_position.snapped(Vector3(0.1, 0.1, 0.1))), str(player.global_position.snapped(Vector3(0.1, 0.1, 0.1))), float(sea_b2.call("water_height", t_o.global_position))])
+					"aimwyrm":  # look at the wyrm's head
+						if wyrm_b.get("wyrm") != null:
+							player.call("look_at_point", (wyrm_b.get("wyrm") as Node3D).global_position)
+					"finish":  # our blows finish the nearest shark (a harpoon in it = harvest)
+						var t_f: Node3D = nearest_b.call()
+						if t_f != null:
+							if words.size() > 2 and words[2] == "harpoon":  # as if our harpoon had just gone in
+								t_f.set_meta("harpooned_at", Time.get_ticks_msec() / 1000.0)
+							_lines.append("  finishing a shark harpooned %s" % str(t_f.has_meta("harpooned_at")))
+							session.get("_score").set("blow", "gun")
+							t_f.call("on_hit", 99999.0, t_f.global_position + Vector3(0, 0.6, 0))
+					"hitwyrm", "killwyrm":
+						if wyrm_b.get("wyrm") != null:
+							session.get("_score").set("blow", "gun")
+							(wyrm_b.get("wyrm") as Node).call("on_hit", 999999.0 if words[1] == "killwyrm" else float(words[2]), (wyrm_b.get("wyrm") as Node3D).global_position)
+					"wait_bite", "wait_dry", "wait_surface", "wait_hull", "wait_lunge", "wait_harvest", "wait_shark":  # (wait_bite online: a bite on us = our health drops)
+						var until_b := Time.get_ticks_msec() + 90000
+						var hp0_b := float(player.get("health").hp)
+						while Time.get_ticks_msec() < until_b:
+							if (words[1] == "wait_bite" and (int(sharks_b.get("bites")) > 0 or float(player.get("health").hp) < hp0_b - 0.5)) \
+								or (words[1] == "wait_dry" and (sharks_b.call("swimmers") as Dictionary).is_empty()) or (words[1] == "wait_surface" and String(wyrm_b.get("mode")) == "surface") \
+								or (words[1] == "wait_hull" and int(wyrm_b.get("hull_bites")) > 0) or (words[1] == "wait_lunge" and int(wyrm_b.get("lunges")) > 0) \
+								or (words[1] == "wait_harvest" and int(sharks_b.get("harvested")) > 0) or (words[1] == "wait_shark" and not (sharks_b.get("sharks") as Dictionary).is_empty()):
+								break
+							await get_tree().create_timer(0.3).timeout
+				_lines.append("BEAST %s: %s; %s; player hp %.0f, swimming %s; our ship hull %.0f" % [" ".join(words.slice(1)), String(sharks_b.call("status")), String(wyrm_b.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ship_b.get("state")["hull"])])
 		"cargo":  # sea step 8b-2 holds, on ship n of "!ship use n": !cargo go | climb | down | put <item> <n> | take <item> <n> | look | status <note>
 			var sea_c: Node = session.call("sea")
 			var fleet_c: Node = sea_c.get("ships") if sea_c != null else null

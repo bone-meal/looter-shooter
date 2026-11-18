@@ -219,13 +219,70 @@ func _hand_over(gun: Dictionary) -> String:
 	return "Gave %s." % GunStats.display_name(player.gun_db, gun)
 
 
+# /tp the Minecraft way (director): /tp <x> <y> <z> (~ = where you are, ~5 = 5 from it; at sea the sea's own
+# coordinates) | /tp <player> (to him, in whatever world he is) | /tp <who> <player> | /tp <who> <x> <y> <z>, who = a
+# name or @s @p @r @a; moving others needs the host or an operator (they move on their own machines) | /tp <place>.
 func _tp(args: Array) -> String:
-	if args.size() == 3 and String(args[0]).is_valid_float() and String(args[1]).is_valid_float() and String(args[2]).is_valid_float():
-		session.local_player().teleport(Vector3(String(args[0]).to_float(), String(args[1]).to_float(), String(args[2]).to_float()), session.local_player().look_yaw())
-		return "Moved."
 	if args.is_empty():
 		return String(ChatCommand.find(table, "tp")["usage"])
-	return session.travel(" ".join(PackedStringArray(args)).to_lower())
+	var here: Vector3 = session.world_coords(session.local_player().global_position)
+	if args.size() == 3 and _coords(args, here).is_finite():
+		session.tp_to({"kind": "pos", "world": session.my_world(), "at": _coords(args, here)})
+		return "Moved to %s." % _said(_coords(args, here))
+	var who: Array = session.players_matching(String(args[0]))
+	if who.is_empty() or (args.size() != 1 and args.size() != 2 and args.size() != 4):
+		return session.travel(" ".join(PackedStringArray(args)).to_lower())  # a place (names may have spaces)
+	var target := {}
+	if args.size() == 1:  # /tp <player>: me to him
+		target = {"kind": "player", "id": int(who[0])}
+		who = session.players_matching("@s")
+	elif args.size() == 2:
+		var to: Array = session.players_matching(String(args[1]))
+		if to.size() != 1:
+			return "No player called %s." % args[1]
+		target = {"kind": "player", "id": int(to[0])}
+	else:
+		var at := _coords(args.slice(1), here)
+		if not at.is_finite():
+			return String(ChatCommand.find(table, "tp")["usage"])
+		target = {"kind": "pos", "world": session.my_world(), "at": at}
+	var me: int = session.players_matching("@s")[0]
+	var moved := PackedStringArray()
+	for id: int in who:
+		if target.get("kind") == "player" and int(target["id"]) == id:
+			continue  # (not onto himself)
+		if id == me:
+			session.tp_to(target)
+		elif session.net != null and session.net.can_send():
+			session.net.chat.ask_tp(id, target)
+		moved.append(session.player_label(id))
+	if moved.is_empty():
+		return "Nobody to move."
+	var dest: String = session.player_label(int(target["id"])) if target.get("kind") == "player" else _said(target["at"])
+	return "Teleported %s to %s." % [", ".join(moved), dest]
+
+
+# x y z words with Minecraft's ~ (relative to `base`); Vector3.INF when they are not coordinates.
+static func _coords(words: Array, base: Vector3) -> Vector3:
+	if words.size() < 3:
+		return Vector3.INF
+	var out := Vector3.ZERO
+	for i in 3:
+		var w := String(words[i])
+		if w.begins_with("~"):
+			var rest := w.substr(1)
+			if rest != "" and not rest.is_valid_float():
+				return Vector3.INF
+			out[i] = base[i] + (rest.to_float() if rest != "" else 0.0)
+		elif w.is_valid_float():
+			out[i] = w.to_float()
+		else:
+			return Vector3.INF
+	return out
+
+
+static func _said(at: Vector3) -> String:
+	return "%.1f %.1f %.1f" % [at.x, at.y, at.z]
 
 
 func _level(args: Array, usage: String) -> String:

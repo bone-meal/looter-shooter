@@ -48,7 +48,7 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	_ball_mat.albedo_color = Color(0.08, 0.08, 0.09)
 	_ball_mat.metallic = 0.3
 	_ball_mat.roughness = 0.5
-	_ray.collision_mask = 1
+	_ray.collision_mask = 3  # ships, land, and creatures / crewmen (layer 2: sea step 8c)
 
 
 # A ship joined the fleet: her cannons.
@@ -308,7 +308,11 @@ func _fly(delta: float) -> void:
 		if not hit.is_empty():
 			var at: Vector3 = hit["position"]
 			var target: Object = hit["collider"]
-			if target != null and (_fleet.get("ships") as Array).has(target):
+			if target != null and not (_fleet.get("ships") as Array).has(target) and target.has_method("on_hit"):  # a creature or a crewman (sea step 8c)
+				FxKit.burst(self, at, Color(0.55, 0.1, 0.1), 18, 0.8, 0.25, 6.0, -9.0)
+				if bool(b["real"]):
+					target.call("on_hit", float(cfg.get("creature_damage", 160.0)), at, Vector3.UP)
+			elif target != null and (_fleet.get("ships") as Array).has(target):
 				hits += 1
 				FxKit.burst(self, at, Color(0.45, 0.32, 0.2), 24, 0.9, 0.25, 7.0, -9.0)  # splinters
 				FxKit.burst(self, at, Color(0.7, 0.7, 0.7, 0.8), 14, 1.2, 0.5, 2.0, 0.2)

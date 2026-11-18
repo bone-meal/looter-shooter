@@ -1,6 +1,7 @@
 # Purpose: text chat and command permissions between players. The host relays every chat line under the sender's
 # roster name (never a name the client claims), keeps the list of operators (/op) and runs world commands that
-# clients send as text.
+# clients send as text. /tp of OTHER players (Minecraft style): an operator asks the host, the host checks him and
+# tells the moved player's machine where to go (a player or a place in a world); that machine moves its own body.
 # Dependencies: game/net_session.gd (parent; `net`), core/chat_command.gd. Node name must be "Chat" on every machine.
 extends Node
 
@@ -9,6 +10,7 @@ const ChatCommand = preload("res://core/chat_command.gd")
 signal line(sender: String, text: String)  # a chat line to show (also our own, echoed)
 signal reply(text: String)  # the host's answer to a command we sent
 signal op_changed(allowed: bool)  # the host gave or took our right to use commands
+signal tp_ordered(target: Dictionary, by: String)  # an operator teleports us: {"kind": "player", "id"} or {"kind": "pos", "world", "at"}
 
 const MIN_GAP := 0.4  # host: seconds a client must leave between lines
 
@@ -102,3 +104,47 @@ func _reply(text: String) -> void:
 func _op(on: bool) -> void:
 	allowed = on
 	op_changed.emit(on)
+
+
+
+# --- /tp of other players ---
+
+# An operator (or the host) moves player `who` to `target` (see tp_ordered).
+func ask_tp(who: int, target: Dictionary) -> void:
+	if net.is_host():
+		_tp_check(1, who, target)
+	else:
+		_tp_ask.rpc_id(1, who, target)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _tp_ask(who: int, target: Dictionary) -> void:
+	if net.is_host():
+		_tp_check(multiplayer.get_remote_sender_id(), who, target)
+
+
+func _tp_check(from: int, who: int, target: Dictionary) -> void:
+	if not is_op(from):
+		if from != 1:
+			_reply.rpc_id(from, "The host has not allowed you to use commands (/op).")
+		return
+	if not net.roster.has(who) and who != 1:
+		return
+	var kind := String(target.get("kind", ""))
+	var clean := {}
+	if kind == "player" and (net.roster.has(int(target.get("id", -1))) or int(target.get("id", -1)) == 1):
+		clean = {"kind": "player", "id": int(target["id"])}
+	elif kind == "pos" and target.get("at") is Vector3 and (target["at"] as Vector3).is_finite() and String(target.get("world", "")) in ["sea", "fantasy", "island"]:
+		clean = {"kind": "pos", "world": String(target["world"]), "at": target["at"]}
+	if clean.is_empty():
+		return
+	var by := String(net.roster.get(from, "the host"))
+	if who == 1:
+		tp_ordered.emit(clean, by)
+	else:
+		_tp_go.rpc_id(who, clean, by)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _tp_go(target: Dictionary, by: String) -> void:
+	tp_ordered.emit(target, ChatCommand.clean(by))

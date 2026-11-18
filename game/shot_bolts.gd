@@ -136,6 +136,7 @@ func _land(shot: Dictionary, point: Vector3, normal: Vector3, collider: Object, 
 	match String(stats["kind"]):
 		"harpoon":
 			if enemy:
+				(collider as Node).set_meta("harpooned_at", Time.get_ticks_msec() / 1000.0)  # a shark killed soon after is ours to harvest (game/sea_sharks.gd)
 				if collider.has_method("apply_slow"):
 					collider.call("apply_slow", 0.8, float(stats["pin_seconds"]))  # pinned (the strongest slow there is)
 				var small: bool = not String(collider.get("enemy_id")).begins_with("boss") and collider.get("health") != null and float(collider.get("health").max_hp) <= float(stats["pull_max_health"])

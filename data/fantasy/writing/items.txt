@@ -48,6 +48,7 @@ ember_rod: Ember Rod
 stormoak_rod: Stormoak Rod
 
 [items food]
+shark_steak: Shark Steak
 garden_greens: Garden Greens
 garden_roots: Garden Roots
 # WHAT: the names of every food. Read a line as  item id: Name .
@@ -77,6 +78,11 @@ cinder_draught: Cinder Draught
 
 [items material]
 # WHAT: the names of every material. Read a line as  item id: Name .
+shark_hide: Shark Hide
+shark_tooth: Shark Tooth
+raw_shark: Raw Shark
+serpent_scale: Serpent Scale
+serpent_fang: Serpent Fang
 ash_log: Ash Log
 oak_log: Oak Log
 palm_log: Driftpalm Log

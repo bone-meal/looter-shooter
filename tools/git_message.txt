@@ -1,6 +1,11 @@
-Sea 8b-2: real ship holds below deck with cargo, pirates below
+Sea step 8c: sharks and the sea serpent, Minecraft-style /tp
 
-The brig, galleon and junk get a walkable hold: the main deck is cut round a hatch with a companion stair down into a lined hold with beams, cargo, a lantern and the cargo chest. The hold is solid (hull below its floor, deck round the hatch, walls, stair ramp), the sea is kept out of it (ocean shader dry boxes), its insides are drawn only near the camera, flood water rises inside. Cargo chest = goods of the bag stowed aboard, saved with the host's fleet and lost when she sinks; online a player asks the host to stow or take. A pirate brig keeps men below who come up the stair once the fight is near; deck walking for crews knows the hold and the hatch.
+Sharks circle anyone in deep water, bite (online too), blood draws more;
+a shark killed soon after our harpoon hit gives Hunting xp, hides, teeth, meat.
+The sea serpent surfaces beside the ship, bites the hull, lunges at the deck,
+dives and resurfaces; segment hit boxes, cannons hurt it, slain = cargo afloat + fang.
+/tp: x y z with ~, player, who to player or coordinates, @s @p @r @a, places;
+moving others is checked by the host. Two-copy tested (sets beasts, tp).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

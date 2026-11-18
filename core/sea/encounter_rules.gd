@@ -35,20 +35,20 @@ func chance(region_id: String, weather_kind: String, night: bool, anchored: bool
 
 
 # The kinds that may come here and now, with their weights: {kind id: weight}.
-func allowed(region_id: String, night: bool) -> Dictionary:
+func allowed(region_id: String, night: bool, weather := "") -> Dictionary:
 	var out := {}
 	var n := region_number(region_id)
 	for id: String in cfg["kinds"]:
 		var k: Dictionary = cfg["kinds"][id]
 		if n < int(k.get("regions", 1)) or (bool(k.get("night_only", false)) and not night):
 			continue
-		out[id] = float(k.get("weight", 1.0))
+		out[id] = float(k.get("weight", 1.0)) * float((k.get("weather_mult", {}) as Dictionary).get(weather, 1.0))  # (the serpent comes more in storms)
 	return out
 
 
 # Which kind comes for a roll in [0, 1); "" when none may.
-func pick(region_id: String, night: bool, roll: float) -> String:
-	var kinds := allowed(region_id, night)
+func pick(region_id: String, night: bool, roll: float, weather := "") -> String:
+	var kinds := allowed(region_id, night, weather)
 	var total := 0.0
 	for id: String in kinds:
 		total += float(kinds[id])

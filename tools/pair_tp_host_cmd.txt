@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go sea;!wait 30;!where h_before;/tp Guest 600 3 7900;!wait 15;/tp @a @s;!wait 15;!where h_end;!wait 15
