@@ -14,6 +14,7 @@ const HEAD := 1.6
 
 var cfg: Dictionary  # data/sea/salvage.json "swim"
 var stamina := 100.0
+var breath_mult := 1.0  # the Tide Pearl carried: stamina lasts this many times as long in the water (sea step 9b)
 var under := false  # head under water
 var depth := 0.0  # how deep the head is (m)
 var hud := SwimHud.new()
@@ -120,7 +121,7 @@ func _breathe(delta: float, wet: bool) -> void:
 	if moving and Input.is_action_pressed("sprint") and bool(_player.get("controls_enabled")):
 		drain *= float(cfg["sprint_drain"])
 	drain += float(cfg["storm_drain"]) * maxf(float((_sea.get("ocean") as Node3D).get("swell")) - 1.0, 0.0)
-	stamina = maxf(stamina - drain * delta, 0.0)
+	stamina = maxf(stamina - drain * delta / maxf(breath_mult, 0.1), 0.0)
 	_player.set("swim_fast_ok", stamina > 5.0)
 	if stamina <= 0.0:
 		var health: Variant = _player.get("health")

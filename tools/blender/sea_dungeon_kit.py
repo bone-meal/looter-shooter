@@ -208,8 +208,118 @@ def gate(m):
     m.empty("Door", 0.0, 0.6, -1.2)
 
 
+# --- the tools' places (sea step 9b) ---
+
+def ledge(m):
+    """A raised block of floor 3 m high (a tile), coursed sides, a lip at the top."""
+    rnd = random.Random(7)
+    blk(m, K("stone", GROUT), (T - 0.04, 3.0, T - 0.04), (0.0, 1.5, 0.0))
+    for side in range(4):
+        rad = math.radians(side * 90)
+        for c in range(2):
+            for i in range(2):
+                u = -T / 4 + (T / 2) * i + (0.3 if c % 2 else 0.0) - 0.15
+                out = T / 2
+                x, f = u * math.cos(rad) + out * math.sin(rad), -u * math.sin(rad) + out * math.cos(rad)
+                blk(m, stone(SAND, rnd.uniform(0.85, 1.0)), (T / 2 - 0.05, 1.35, 0.08), (x, 0.75 + 1.4 * c, f), yaw=side * 90.0)
+        blk(m, stone(SAND, 1.06), (T + 0.08, 0.16, 0.2), (math.sin(rad) * (T / 2 + 0.02), 2.95, math.cos(rad) * (T / 2 + 0.02)), yaw=side * 90.0)
+    for ix in range(2):
+        for iz in range(2):
+            blk(m, stone(SAND, 0.92), (T / 2 - 0.03, 0.1, T / 2 - 0.03), ((ix - 0.5) * T / 2, 3.0, (iz - 0.5) * T / 2))
+
+
+def vent(m):
+    """An updraft vent: a round bronze grate in a stone ring."""
+    m.lathe(stone(SAND_DARK), [(1.1, -0.1), (1.3, -0.1), (1.3, 0.05), (1.1, 0.05)], (0.0, 0.0, 0.0), segs=24)
+    m.lathe(K("metal", GILT), [(0.0, -0.02), (1.1, -0.02), (1.1, 0.02), (0.0, 0.02)], (0.0, -0.05, 0.0), segs=24)
+    for k in range(8):
+        a = math.radians(k * 22.5)
+        blk(m, K("metal", IRON), (2.2, 0.06, 0.08), (0.0, 0.0, 0.0), yaw=math.degrees(a))
+    m.ball(K("sandstone", CORAL), (0.18, 0.12, 0.18), (0.0, 0.04, 0.0))
+
+
+def raft(m):
+    rnd = random.Random(9)
+    for i in range(6):
+        blk(m, K("wood", (0.45 + rnd.uniform(-0.04, 0.04), 0.31, 0.18)), (0.46, 0.22, T - 0.2), (-1.18 + i * 0.47, 0.0, 0.0), bevel=0.02)
+    for f in (-1.0, 1.0):
+        blk(m, K("wood", (0.36, 0.24, 0.14)), (T - 0.1, 0.12, 0.2), (0.0, 0.16, f), bevel=0.01)
+        m.rod(K("cloth", (0.7, 0.6, 0.4)), 0.03, (-1.3, 0.18, f), (1.3, 0.18, f), segs=6)
+
+
+def fogwalk(m):
+    """A ghostly plank way (seen and solid only while the Fog Bell has rung)."""
+    for i in range(5):
+        blk(m, K("wood", (0.7, 0.85, 0.9)), (T - 0.3, 0.1, 0.5), (0.0, -0.05, -1.2 + i * 0.6), bevel=0.01)
+    for x in (-1.3, 1.3):
+        m.rod(K("cloth", (0.8, 0.9, 0.95)), 0.04, (x, 0.0, -1.5), (x, 0.0, 1.5), segs=6)
+
+
+def ring(m):
+    """A hook ring on a post: the Grapple Hook's mark."""
+    blk(m, stone(SAND_DARK), (0.9, 0.4, 0.9), (0.0, 0.2, 0.0), bevel=0.03)
+    m.lathe(stone(SAND), [(0.0, 0.0), (0.24, 0.0), (0.2, 2.8), (0.0, 2.8)], (0.0, 0.4, 0.0), segs=12)
+    m.lathe(K("metal", GILT), [(0.0, 0.0), (0.3, 0.0), (0.3, 0.15), (0.0, 0.15)], (0.0, 3.2, 0.0), segs=12)
+    m.node("Ring", (0.0, 3.75, 0.0))
+    m.lathe(K("metal", GILT), [(0.36, -0.05), (0.46, -0.05), (0.46, 0.05), (0.36, 0.05)], (0.0, 3.75, 0.0), segs=20, axis="x", node="Ring")
+
+
+def bramble(m):
+    """A thorny sea-bramble thicket filling a doorway-wide cell: dark twisting stems, thorns, a few red berries."""
+    rnd = random.Random(11)
+    stem = K("bark", (0.24, 0.2, 0.14))
+    for k in range(16):
+        x0, f0 = rnd.uniform(-1.2, 1.2), rnd.uniform(-0.6, 0.6)
+        x1, f1 = x0 + rnd.uniform(-0.8, 0.8), f0 + rnd.uniform(-0.4, 0.4)
+        top = rnd.uniform(1.8, 3.4)
+        m.rod(stem, rnd.uniform(0.05, 0.09), (x0, 0.0, f0), (x1, top, f1), r2=0.02, segs=5)
+        for t in range(3):
+            y = top * (0.3 + 0.25 * t)
+            xm, fm = x0 + (x1 - x0) * y / top, f0 + (f1 - f0) * y / top
+            m.rod(K("bark", (0.5, 0.42, 0.3)), 0.025, (xm, y, fm), (xm + rnd.uniform(-0.25, 0.25), y + 0.12, fm + rnd.uniform(-0.25, 0.25)), r2=0.003, segs=4)
+    for k in range(9):
+        fk.blob(m, K("leaf", (0.18, 0.3, 0.2)), (0.35, 0.3, 0.3), (rnd.uniform(-1.1, 1.1), rnd.uniform(0.6, 2.8), rnd.uniform(-0.5, 0.5)), seed=k, rough=0.4, cuts=1)
+    for k in range(10):
+        m.ball(K("paint", (0.7, 0.1, 0.12)), (0.05, 0.05, 0.05), (rnd.uniform(-1.1, 1.1), rnd.uniform(0.8, 2.8), rnd.uniform(-0.6, 0.6)), u=6, v=4)
+
+
+def brazier(m):
+    """A bronze fire bowl on a fluted stone pedestal; marker "Flame" where the fire burns once lit."""
+    m.lathe(stone(SAND_DARK), [(0.0, 0.0), (0.5, 0.0), (0.5, 0.15), (0.3, 0.25), (0.25, 0.9), (0.35, 1.0), (0.0, 1.0)], (0.0, 0.0, 0.0), segs=16)
+    m.lathe(K("metal", GILT), [(0.0, 0.0), (0.2, 0.0), (0.55, 0.3), (0.6, 0.38), (0.5, 0.36), (0.0, 0.2)], (0.0, 1.0, 0.0), segs=20)
+    for k in range(5):
+        a = math.radians(k * 72)
+        m.ball(K("stone", (0.12, 0.1, 0.1)), (0.14, 0.08, 0.12), (math.sin(a) * 0.2, 1.3, math.cos(a) * 0.2), u=6, v=4)
+    m.empty("Flame", 0.0, 1.38, 0.0)
+
+
+def basin(m):
+    """A tide basin: a shell-shaped stone bowl of water with a socket for the Tide Pearl; node "Water" rises and falls."""
+    m.lathe(stone(SAND), [(0.0, 0.0), (0.6, 0.0), (0.6, 0.12), (0.32, 0.25), (0.3, 0.8), (0.7, 0.95), (0.8, 1.15), (0.7, 1.15), (0.0, 1.0)], (0.0, 0.0, 0.0), segs=20)
+    m.node("Water", (0.0, 1.08, 0.0))
+    m.lathe(K("ice", (0.3, 0.65, 0.7)), [(0.0, 0.0), (0.68, 0.0), (0.68, 0.02), (0.0, 0.02)], (0.0, 1.06, 0.0), segs=20, node="Water")
+    m.lathe(K("metal", GILT), [(0.08, 0.0), (0.16, 0.0), (0.16, 0.06), (0.08, 0.06)], (0.0, 1.12, 0.0), segs=14)
+
+
+def whorl_door(m):
+    """A hidden door: from the room it reads as wall, but a spiral (a whorl) is cut in its face; node "Leaf" sinks."""
+    jambs(m)
+    m.node("Leaf", (0.0, 0.0, 0.0))
+    rnd = random.Random(13)
+    for c in range(3):
+        for i in range(2):
+            blk(m, stone(SAND, rnd.uniform(0.88, 1.02)), (1.0, 1.05, 0.5), (-0.5 + i * 1.0, 0.55 + c * 1.08, 0.0), node="Leaf")
+    for k in range(24):
+        a = k * 0.42
+        r = 0.08 + k * 0.032
+        blk(m, K("sandstone", (0.5, 0.42, 0.55)), (0.07, 0.07, 0.04), (math.cos(a) * r, 1.7 + math.sin(a) * r, -0.27), node="Leaf")
+        blk(m, K("sandstone", (0.5, 0.42, 0.55)), (0.07, 0.07, 0.04), (math.cos(a) * r, 1.7 + math.sin(a) * r, 0.27), node="Leaf")
+
+
 PIECES = {"dk_floor": floor, "dk_wall": wall, "dk_ceiling": ceiling, "dk_door": door, "dk_door_lock": door_lock, "dk_plate": plate,
-    "dk_lever": lever, "dk_block": push_block, "dk_torch": torch, "dk_key": key, "dk_chest": chest, "dk_gate": gate}
+    "dk_lever": lever, "dk_block": push_block, "dk_torch": torch, "dk_key": key, "dk_chest": chest, "dk_gate": gate,
+    "dk_ledge": ledge, "dk_vent": vent, "dk_raft": raft, "dk_fogwalk": fogwalk, "dk_ring": ring, "dk_bramble": bramble, "dk_brazier": brazier,
+    "dk_basin": basin, "dk_whorl_door": whorl_door}
 
 if __name__ == "__main__":
     fk.init()

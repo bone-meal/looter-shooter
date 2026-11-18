@@ -973,6 +973,47 @@ func _dun_loot(loot: String, region_n: int) -> void:
 		sea.get("dungeons").call("grant", loot, clampi(region_n, 1, 7))
 
 
+# --- the sea tools (sea step 9b): an ice slab told to everyone (through the host), a tool from a dungeon chest ---
+
+func tell_tool_fx(kind: String, at: Vector3) -> void:
+	if not active():
+		return
+	if net.is_host():
+		_tool_fx.rpc(kind, at)
+	else:
+		_tool_fx_up.rpc_id(1, kind, at)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _tool_fx_up(kind: String, at: Vector3) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	if not net.is_host() or not net.roster.has(from) or kind != "ice" or not at.is_finite() or at.length() > 60000.0:
+		return
+	_tool_fx(kind, at)
+	for peer: int in net.roster:
+		if peer != from and peer != my_id():
+			_tool_fx.rpc_id(peer, kind, at)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _tool_fx(kind: String, at: Vector3) -> void:
+	var sea := _sea()
+	if sea != null and kind == "ice" and at.is_finite():
+		sea.get("tools").call("add_slab", at)
+
+
+func tell_tool_gift(peer: int, tool: String) -> void:
+	if active() and net.is_host() and net.roster.has(peer):
+		_tool_gift.rpc_id(peer, tool)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _tool_gift(tool: String) -> void:
+	var sea := _sea()
+	if sea != null and tool.length() <= 16:
+		sea.get("tools").call("give", tool)
+
+
 # --- the G U-boat (sea step 8e-4): host -> everyone (the boat and its torpedoes; its deeds' notices and chart pins) ---
 
 @rpc("authority", "call_remote", "unreliable_ordered")

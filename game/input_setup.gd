@@ -43,6 +43,8 @@ const ACTIONS := [
 	["inspect", "Inspect what is in hand"],
 	["photo_mode", "Photo mode"],
 	["logbook", "Salvage logbook (at sea)"],
+	["tool_use", "Use the chosen sea tool (at sea)"],
+	["tool_next", "Next sea tool (at sea)"],
 ]
 
 
@@ -84,6 +86,8 @@ static func default_code(action: String) -> String:
 		"inspect": return "key:%d" % KEY_V
 		"photo_mode": return "key:%d" % KEY_F10
 		"logbook": return "key:%d" % KEY_J
+		"tool_use": return "key:%d" % KEY_T
+		"tool_next": return "key:%d" % KEY_Y
 		"weapon_3": return "key:%d" % KEY_4
 		"weapon_4": return "key:%d" % KEY_5
 	return ""

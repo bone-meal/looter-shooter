@@ -661,6 +661,35 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 									break
 							await get_tree().create_timer(0.2, true, false, true).timeout
 				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f yaw %.1f tip %.1f at (%.1f, %.1f) speed %.1f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"]), rad_to_deg(float(ms_r["yaw"])), float(mine_r.get("tip_deg")), float(ms_r["x"]), float(ms_r["z"]), float(ms_r["speed"])])
+		"tool":  # sea step 9b: !tool give <id|all> | choose <id> | use | aim <cx> <cz> <y> (in the dungeon this player is in) | hold <action> on|off | status <note>
+			var sea_t2: Node = session.call("sea")
+			if sea_t2 == null:
+				_lines.append("tool: no sea")
+			else:
+				var tm: Node = sea_t2.get("tools")
+				var dmt: Node = sea_t2.get("dungeons")
+				match words[1] if words.size() > 1 else "status":
+					"give":
+						for id_t: String in (tm.get("cfg")["order"] as Array) if words[2] == "all" else [words[2]]:
+							tm.call("give", id_t)
+					"choose":
+						tm.set("chosen", words[2])
+					"use":
+						tm.call("use")
+						await get_tree().create_timer(0.3, true, false, true).timeout
+					"aim":
+						var wt := String(dmt.get("where"))
+						if wt != "":
+							var sp_t: Vector3 = dmt.call("space_of", wt)
+							player.call("look_at_point", sea_t2.call("world_of", sp_t + Vector3(float(words[2]), 0.0, float(words[3])) * float(dmt.get("cfg")["tile"]) + Vector3(0.0, float(words[4]) if words.size() > 4 else 1.0, 0.0)))
+					"up":  # lifted that far into the air where he stands
+						player.call("teleport", player.global_position + Vector3(0.0, float(words[2]), 0.0), float(player.call("look_yaw")))
+					"hold":
+						if words.size() > 3 and words[3] == "on":
+							Input.action_press(words[2])
+						else:
+							Input.action_release(words[2])
+				_lines.append("TOOL %s: %s; at %s; %s" % [" ".join(words.slice(1)), String(tm.call("status")), str((sea_t2.call("local_of", player.global_position) as Vector3).snapped(Vector3(0.1, 0.1, 0.1))), String(dmt.call("status"))])
 		"dun":  # sea step 9: !dun gate [id] (stand before its island gate) | enter [id] | leave | stand <cx> <cz> [face cx cz] | use | prompt | reset | wait (state changes) | status <note>
 			var sea_d: Node = session.call("sea")
 			if sea_d == null:

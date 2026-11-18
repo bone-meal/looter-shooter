@@ -23,6 +23,7 @@ const ChartWindow = preload("res://game/sea_chart_window.gd")
 const SeaPort = preload("res://game/sea_port.gd")
 const SeaTown = preload("res://game/sea_town.gd")
 const SeaDungeons = preload("res://game/sea_dungeons.gd")
+const SeaTools = preload("res://game/sea_tools.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -44,6 +45,7 @@ var chart_window := ChartWindow.new()
 var port := SeaPort.new()  # harbour master's stalls, doubloons, ferries (sea step 6)
 var town := SeaTown.new()  # the home port town: buildings by level, signs, the town ledger (sea step 7)
 var dungeons := SeaDungeons.new()  # the dungeons behind their island gates (sea step 9)
+var tools := SeaTools.new()  # the 7 traversal tools (sea step 9b)
 var indoor := false  # this player is inside a dungeon: no sea, rain or sky drawn (sea step 9)
 var _chart_layer := CanvasLayer.new()
 var _chart_cfg: Dictionary
@@ -105,6 +107,8 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	port.setup(self, _player, _chart_layer)
 	_root.add_child(dungeons)
 	dungeons.setup(self, _player)
+	_root.add_child(tools)
+	tools.setup(self, _player, _chart_layer)
 	port.town = town
 	_read_chart_words()
 	_clock_start = Time.get_ticks_msec() / 1000.0

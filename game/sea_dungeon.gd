@@ -19,11 +19,14 @@ var _nodes := {}  # letter -> Node3D (doors, plates, levers, blocks, keys, chest
 var _solids := {}  # letter -> StaticBody3D (closed doors, blocks)
 var _anim := {}  # letter -> 0..1 shown (doors open, plates down, levers pulled, chest lids)
 var _torches: Array = []
+var wall_h := 4.5  # this dungeon's walls (its entry's "wall_h", else the kit's): tall halls stack the kit's wall
+var sea_seconds := Callable()  # the shared sea clock (the fog walkways' reveal is timed on it), set by the manager
 
 
 func setup(dungeon_id: String, entry: Dictionary, all_cfg: Dictionary) -> void:
 	cfg = all_cfg
 	rules = DungeonRules.new(dungeon_id, entry, float(cfg["tile"]))
+	wall_h = float(entry.get("wall_h", cfg["wall_h"]))
 	name = "Dungeon_" + dungeon_id
 
 
@@ -54,32 +57,135 @@ func build() -> void:
 		return
 	built = true
 	var t := rules.tile
-	var h := float(cfg["wall_h"])
-	var floors: Array = []
+	var h := wall_h
+	var floors: Array = []  # tiles at floor level
+	var tops: Array = []  # every non-wall cell (ceilings)
+	var pits: Array = []  # water pits, fog walkways, rafts (their bottoms and water)
+	var ledges: Array = []
 	var walls: Array = []
 	for z in rules.size.y:
 		for x in rules.size.x:
 			var c := Vector2i(x, z)
 			if rules.is_floor(c):
-				floors.append(c)
+				tops.append(c)
+				match rules.terrain(c):
+					"=", "%", "_":
+						pits.append(c)
+					"H":
+						ledges.append(c)
+					_:
+						floors.append(c)
 			elif rules.is_wall(c) and _beside_floor(c):
 				walls.append(c)
 	_multi("dk_floor", floors, 0.0)
-	_multi("dk_ceiling", floors, 0.0)
-	_multi("dk_wall", walls, 0.0)
-	# one body: a floor slab under the whole map, a ceiling slab over it, a box per wall cell
+	_multi("dk_ceiling", tops, wall_h - KIT_H)
+	_multi("dk_wall", walls, 0.0, wall_h / KIT_H)
+	var doors: Array = []
+	for ch: String in rules.of_kind("door"):
+		doors.append(rules.things[ch]["cell"])
+	if wall_h > KIT_H + 0.1:  # over the doors, up to a tall hall's ceiling: more wall
+		_multi("dk_wall", doors, KIT_H, (wall_h - KIT_H) / KIT_H)
+	_multi("dk_ledge", ledges, 0.0)
+	_multi("dk_floor", pits, -PIT_DEPTH)  # the pits' bottoms
+	_water(pits)
+	# one body: the floor in runs along each row (none over pits), a slab under the pits, a ceiling slab, a box per
+	# wall cell and per ledge
 	var body := StaticBody3D.new()
 	add_child(body)
+	for z in rules.size.y:
+		var run_from := -1
+		for x in rules.size.x + 1:
+			var c := Vector2i(x, z)
+			var solid := x < rules.size.x and rules.is_floor(c) and not rules.terrain(c) in ["=", "%", "_"]
+			if solid and run_from < 0:
+				run_from = x
+			elif not solid and run_from >= 0:
+				var n := x - run_from
+				_box(body, Vector3(n * t, 0.4, t), Vector3((run_from + (n - 1) * 0.5) * t, -0.2, z * t))
+				run_from = -1
 	var span := Vector3(rules.size.x * t, 0.4, rules.size.y * t)
 	var mid := Vector3((rules.size.x - 1) * t * 0.5, -0.2, (rules.size.y - 1) * t * 0.5)
-	_box(body, span, mid)
+	_box(body, span, mid + Vector3(0.0, -PIT_DEPTH, 0.0))
 	_box(body, span, mid + Vector3(0.0, h + 0.4, 0.0))
 	for c: Vector2i in walls:
 		_box(body, Vector3(t, h, t), rules.at_of(c) + Vector3(0.0, h * 0.5, 0.0))
+	if wall_h > KIT_H + 0.1:
+		for c: Vector2i in doors:
+			_box(body, Vector3(t, h - KIT_H, t), rules.at_of(c) + Vector3(0.0, (h + KIT_H) * 0.5, 0.0))
+	for c: Vector2i in ledges:
+		_box(body, Vector3(t, 3.0, t), rules.at_of(c) + Vector3(0.0, 1.5, 0.0))
+	for c: Vector2i in pits:  # the pits' sides: walls under the floor round them
+		for d: Vector2i in [Vector2i(1, 0), Vector2i(-1, 0), Vector2i(0, 1), Vector2i(0, -1)]:
+			var nb := c + d
+			if not rules.terrain(nb) in ["=", "%", "_"]:
+				_box(body, Vector3(t if d.x == 0 else 0.2, PIT_DEPTH, t if d.x != 0 else 0.2), rules.at_of(c) + Vector3(d.x * t * 0.5, -PIT_DEPTH * 0.5, d.y * t * 0.5))
+	_terrain_nodes()
 	for ch: String in rules.things:
 		_place(ch)
 	_place_torches(walls)
 	refresh(true)
+
+
+const PIT_DEPTH := 3.0
+const KIT_H := 4.5  # the room kit's wall height (tools/blender/sea_dungeon_kit.py H)
+const WATER_Y := -0.7
+var _fogwalks: Array = []  # [node, body] per fog walkway cell
+var _rafts: Array = []  # [node, cell]
+
+
+func _water(cells: Array) -> void:
+	if cells.is_empty():
+		return
+	var mm := MultiMesh.new()
+	mm.transform_format = MultiMesh.TRANSFORM_3D
+	var quad := PlaneMesh.new()
+	quad.size = Vector2(rules.tile, rules.tile)
+	mm.mesh = quad
+	mm.instance_count = cells.size()
+	for i in cells.size():
+		mm.set_instance_transform(i, Transform3D(Basis(), rules.at_of(cells[i]) + Vector3(0.0, WATER_Y, 0.0)))
+	var inst := MultiMeshInstance3D.new()
+	inst.multimesh = mm
+	var mat := StandardMaterial3D.new()
+	mat.albedo_color = Color(0.12, 0.42, 0.45, 0.82)
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.roughness = 0.08
+	mat.metallic_specular = 0.9
+	inst.material_override = mat
+	inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(inst)
+
+
+# Fog walkways, rafts, updraft vents: one node each.
+func _terrain_nodes() -> void:
+	for z in rules.size.y:
+		for x in rules.size.x:
+			var c := Vector2i(x, z)
+			match rules.terrain(c):
+				"%":
+					var walk := piece("dk_fogwalk")
+					walk.position = rules.at_of(c)
+					add_child(walk)
+					FxKit.paint(walk, FxKit.glow(Color(0.75, 0.9, 1.0, 0.55), false))
+					var b := StaticBody3D.new()
+					walk.add_child(b)
+					_box(b, Vector3(rules.tile, 0.3, rules.tile), Vector3(0.0, -0.15, 0.0))
+					_fogwalks.append([walk, b])
+				"_":
+					var raft := piece("dk_raft")
+					raft.position = rules.at_of(c)
+					add_child(raft)
+					var rb := StaticBody3D.new()
+					raft.add_child(rb)
+					_box(rb, Vector3(rules.tile - 0.1, 0.3, rules.tile - 0.1), Vector3(0.0, -0.05, 0.0))
+					_rafts.append(raft)
+				"u":
+					var vent := piece("dk_vent")
+					vent.position = rules.at_of(c) + Vector3(0.0, 0.02, 0.0)
+					add_child(vent)
+					var air := FxKit.particles(Color(0.85, 0.95, 1.0, 0.35), 24, 1.6, 0.25, 6.0, 8.0, 0.0, false, false)
+					air.position = Vector3(0.0, 0.2, 0.0)
+					vent.add_child(air)
 
 
 func _beside_floor(c: Vector2i) -> bool:
@@ -89,7 +195,7 @@ func _beside_floor(c: Vector2i) -> bool:
 	return false
 
 
-func _multi(id: String, cells: Array, yaw: float) -> void:
+func _multi(id: String, cells: Array, y: float, stretch: float = 1.0) -> void:
 	var mesh := piece_mesh(id)
 	if mesh == null or cells.is_empty():
 		return
@@ -98,7 +204,7 @@ func _multi(id: String, cells: Array, yaw: float) -> void:
 	mm.mesh = mesh
 	mm.instance_count = cells.size()
 	for i in cells.size():
-		mm.set_instance_transform(i, Transform3D(Basis(Vector3.UP, yaw), rules.at_of(cells[i])))
+		mm.set_instance_transform(i, Transform3D(Basis.from_scale(Vector3(1.0, stretch, 1.0)), rules.at_of(cells[i]) + Vector3(0.0, y, 0.0)))
 	var inst := MultiMeshInstance3D.new()
 	inst.multimesh = mm
 	inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -121,7 +227,8 @@ func _place(ch: String) -> void:
 	var node: Node3D = null
 	match String(th["kind"]):
 		"door":
-			node = piece("dk_door_lock" if String(th.get("open", "key")) == "key" else "dk_door")
+			var opens := String(th.get("open", "key"))
+			node = piece("dk_door_lock" if opens == "key" else ("dk_whorl_door" if opens == "whorl" else "dk_door"))
 			node.rotation.y = 0.0 if rules.door_along_z(ch) else PI * 0.5
 			var solid := StaticBody3D.new()
 			node.add_child(solid)
@@ -130,9 +237,34 @@ func _place(ch: String) -> void:
 			var frame := StaticBody3D.new()  # the jambs
 			node.add_child(frame)
 			for side in [-1.0, 1.0]:
-				_box(frame, Vector3(0.5, float(cfg["wall_h"]), rules.tile), Vector3(side * (rules.tile * 0.5 - 0.25), float(cfg["wall_h"]) * 0.5, 0.0))
+				_box(frame, Vector3(0.5, KIT_H, rules.tile), Vector3(side * (rules.tile * 0.5 - 0.25), KIT_H * 0.5, 0.0))
 		"plate":
 			node = piece("dk_plate")
+		"ring":
+			node = piece("dk_ring")
+		"brazier":
+			node = piece("dk_brazier")
+			var fire := FxKit.flame()
+			if fire != null:
+				fire.name = "Fire"
+				fire.scale = Vector3.ONE * 0.7
+				fire.position = Vector3(0.0, 1.38, 0.0)
+				node.add_child(fire)
+			var bb := StaticBody3D.new()
+			node.add_child(bb)
+			_box(bb, Vector3(1.0, 1.4, 1.0), Vector3(0.0, 0.7, 0.0))
+		"basin":
+			node = piece("dk_basin")
+			var bs := StaticBody3D.new()
+			node.add_child(bs)
+			_box(bs, Vector3(1.4, 1.1, 1.4), Vector3(0.0, 0.55, 0.0))
+		"bramble":
+			node = piece("dk_bramble")
+			node.rotation.y = 0.0 if rules.is_wall(th["cell"] + Vector2i(0, -1)) else PI * 0.5
+			var thorns := StaticBody3D.new()
+			node.add_child(thorns)
+			_box(thorns, Vector3(rules.tile, 3.4, rules.tile), Vector3(0.0, 1.7, 0.0))
+			_solids[ch] = thorns
 		"lever":
 			node = piece("dk_lever")
 			node.rotation.y = _face_wall(th["cell"])
@@ -235,9 +367,24 @@ func refresh(now: bool) -> void:
 					node.position = rules.at_of(rules.cell_of_thing(ch))
 			"key":
 				node.visible = not bool(rules.state["taken"].get(ch, false))
+			"bramble":
+				var burned := bool(rules.state["burned"].get(ch, false))
+				node.visible = not burned
+				_set_solid(_solids[ch], not burned)
+			"brazier":
+				var fire_n := node.find_child("Fire", true, false) as Node3D
+				if fire_n != null:
+					fire_n.visible = bool(rules.state["lit"].get(ch, false))
 			"chest":
 				if now:
 					_anim[ch] = 1.0 if bool(rules.state["taken"].get(ch, false)) else 0.0
+
+
+func _reveal_shown(now: float) -> void:
+	var on := now < float(rules.state["reveal_until"])
+	for pair: Array in _fogwalks:
+		(pair[0] as Node3D).visible = on
+		_set_solid(pair[1], on)
 
 
 func _set_solid(body: StaticBody3D, on: bool) -> void:
@@ -249,6 +396,10 @@ func _set_solid(body: StaticBody3D, on: bool) -> void:
 func _process(delta: float) -> void:
 	if not built or not visible:
 		return
+	var raft_y := 0.0 if bool(rules.state["tide"]) else WATER_Y - 1.6
+	for raft: Node3D in _rafts:
+		raft.position.y = move_toward(raft.position.y, raft_y, delta * 0.8)
+	_reveal_shown(sea_seconds.call() if sea_seconds.is_valid() else 0.0)
 	for ch: String in _nodes:
 		var th: Dictionary = rules.things[ch]
 		var node: Node3D = _nodes[ch]
@@ -266,6 +417,11 @@ func _process(delta: float) -> void:
 			"block":
 				node.position = node.position.move_toward(rules.at_of(rules.cell_of_thing(ch)), delta * 2.0)
 				continue
+			"basin":
+				var w := node.find_child("Water", true, false) as Node3D
+				if w != null:
+					w.position.y = move_toward(w.position.y, 1.08 if bool(rules.state["tide"]) else 0.85, delta * 0.3)
+				continue
 			"key":
 				node.rotation.y += delta * 1.5
 				node.position.y = 0.6 + sin(Time.get_ticks_msec() / 400.0) * 0.12
@@ -280,6 +436,8 @@ func _process(delta: float) -> void:
 				if leaf != null:
 					if String(th.get("open", "key")) == "key":
 						leaf.rotation.y = -shown * 1.75  # swings in
+					elif String(th.get("open", "")) == "whorl":
+						leaf.position.y = -shown * 3.4  # sinks into the floor
 					else:
 						leaf.position.y = shown * 3.2  # the gate slides up
 			"plate":
@@ -341,4 +499,5 @@ func status() -> String:
 	for d: String in rules.of_kind("door"):
 		if rules.door_open(d):
 			open.append(d)
-	return "%s: keys %d, doors open %s, pressed %s, levers %s, blocks %s, taken %s" % [rules.id, int(rules.state["keys"]), str(open), str(rules.state["pressed"]), str(rules.state["levers"]), str(rules.state["blocks"]), str(rules.state["taken"].keys())]
+	return "%s: keys %d, doors open %s, pressed %s, levers %s, blocks %s, taken %s, burned %s, lit %s, tide %s, reveal till %.0f" % [rules.id, int(rules.state["keys"]), str(open), str(rules.state["pressed"]), str(rules.state["levers"]), str(rules.state["blocks"]), str(rules.state["taken"].keys()),
+		str(rules.state["burned"].keys()), str(rules.state["lit"].keys()), str(rules.state["tide"]), float(rules.state["reveal_until"])]

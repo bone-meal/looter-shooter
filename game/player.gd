@@ -225,6 +225,11 @@ var _inspect_at := 0.0
 var _shot_at := {}  # host-run enemy (instance id) -> engine time our gun shot hit it (credit_kill)
 var kills_credited := 0  # online kills the host credited to our gun
 var tow_point := Vector3.INF  # Kite Flyer: while finite, the body glides there (towed on a teammate's kite string)
+var tool_pull := Vector3.INF  # sea step 9b Grapple Hook: while finite, the body is hauled there at tool_pull_speed
+var tool_pull_speed := 16.0
+var glide_fall := -1.0  # sea step 9b Gale Glider: 0+ while gliding (falls no faster than this, carried forward at glide_speed)
+var glide_speed := 0.0
+var glide_lift := 0.0  # an updraft under the glider: m/s up
 var knife_stowed := false  # fantasy world (set by the session): the hand without a gun holds the staff there, so the knife stays in its sheath
 var downed := false  # lying on the ground waiting for a revive: no moving, no shooting, nothing hurts any more
 var down_check := Callable()  # the session's: func() -> bool: true = going down here means waiting for a revive, not dying
@@ -480,6 +485,9 @@ func _move_tick(input: Vector2) -> void:
 	elif swimming:
 		velocity = _swim_step(input)
 		_fall_speed = 0.0
+	elif tool_pull.is_finite():  # the Grapple Hook hauls the body to its ring (game/sea_tools.gd sets and clears it)
+		velocity = (tool_pull - global_position).normalized() * tool_pull_speed
+		_fall_speed = 0.0
 	elif tow_point.is_finite():  # Kite Flyer: towed on a teammate's kite string (game/kite.gd sets and clears it)
 		velocity = ((tow_point - global_position) * 3.0).limit_length(14.0)
 		_fall_speed = 0.0
@@ -498,6 +506,13 @@ func _move_tick(input: Vector2) -> void:
 			_jump_until = 0.0  # Croak: a second jump in the air while the frog rides along
 			_air_jumps += 1
 			velocity.y = move.jump_speed
+		if glide_fall >= 0.0 and not grounded:  # the Gale Glider: a slow fall, steered by the move keys, lifted by updrafts
+			var flat := Vector2(velocity.x, velocity.z)
+			if wish.length() > 0.1:  # steered by the move keys, up to the glider's speed
+				flat = flat.lerp(Vector2(wish.x, wish.z) * glide_speed, minf(move.tick * 2.0, 1.0))
+			flat = flat.limit_length(glide_speed)
+			velocity = Vector3(flat.x, maxf(velocity.y, -glide_fall) + glide_lift * move.tick * 6.0, flat.y)
+			velocity.y = minf(velocity.y, glide_lift if glide_lift > 0.0 else velocity.y)
 		if not is_on_floor() or jump:
 			_fall_speed = maxf(-velocity.y, 0.0)
 	var own := Vector2(velocity.x, velocity.z).length()

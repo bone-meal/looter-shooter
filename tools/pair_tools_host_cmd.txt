@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!beast pause;!uboat pause on;!dun reset tool_hall;!wait 2;!dun gate tool_hall;!dun use;!wait 2;!dun stand 4 7 6 7;!tool status h_in;!dun wait;!tool status h_1;!wait 3;!tool status h_ice;!wait 30;!tool status h_end

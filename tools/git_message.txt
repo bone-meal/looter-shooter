@@ -1,6 +1,6 @@
-Sea 9a fix: leaving a dungeon puts you back where you went in
+Sea 9b: the 7 traversal tools
 
-Coming out of a dungeon returns the player to the spot he stood on when he entered (facing away from the gate) instead of a ray-found gate front, and holds him there until the island's solid ground is built under him, so he never drops through or lands low. Leaving the sea while inside a dungeon (painting, /tp, the session) restores the sea's look and hides the dungeon lamp.
+Grapple Hook (pulled to hook rings), Fog Bell (shows fog walkways for a while, thins sea fog), Ember Gauntlet (burns brambles, lights braziers), Rime Anchor (ice slabs on dungeon pools or the sea, seen and solid for everyone), Gale Glider (hold jump to glide, updraft vents lift), Tide Pearl (turns a dungeon tide so rafts rise; longer breath swimming), Whorl Compass (points to and opens whorl doors). T uses the chosen tool, Y picks the next; tools owned per player and given to everyone inside by a dungeon chest. Dungeon kit gains pits with water (falling in puts you back on your last ground), fog walkways, ledges, updraft vents, rafts, hook rings, brambles, braziers, tide basins, whorl doors, tall halls. Test hall The Tool Hall next to The Proving Vault. Held tool models and kit pieces from tools/blender.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

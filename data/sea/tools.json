@@ -1,0 +1,65 @@
+{
+ "version": 1,
+ "_about": "Sea step 9b the 7 traversal tools (LOCKED list; game/sea_tools.gd). Each player owns his own (profile extra sea_tools); a dungeon chest with `tool` gives it to every player inside. T uses the chosen tool, Y picks the next one. grapple: aim at a hook ring within range_m (view cone cone_deg) -> pulled there at pull_speed. bell: reveals fog walkways within range_m for reveal_s (the host's clock) and thins the sea fog for the ringer. gauntlet: an ember bolt (range_m) burns brambles, lights braziers. anchor: an ice slab (size_m) on water within range_m (dungeon pools or the sea) for life_s, at most max at once. glider: hold jump in the air: fall at most fall_speed, forward at speed; updraft vents lift at lift m/s up to lift_h over the vent. pearl: at a tide basin within range_m raises / lowers the dungeon's tide; carried, swimming breath lasts breath_mult as long. compass: shows the way to the nearest whorl door within point_m; within range_m opens it. ALL NUMBERS MINE.",
+ "order": [
+  "grapple",
+  "bell",
+  "gauntlet",
+  "anchor",
+  "glider",
+  "pearl",
+  "compass"
+ ],
+ "tools": {
+  "grapple": {
+   "name": "Grapple Hook",
+   "model": "tl_grapple",
+   "range_m": 22.0,
+   "cone_deg": 14.0,
+   "pull_speed": 16.0,
+   "hook_speed": 40.0
+  },
+  "bell": {
+   "name": "Fog Bell",
+   "model": "tl_bell",
+   "range_m": 25.0,
+   "reveal_s": 20.0,
+   "fog_mult": 0.25
+  },
+  "gauntlet": {
+   "name": "Ember Gauntlet",
+   "model": "tl_gauntlet",
+   "range_m": 15.0,
+   "bolt_speed": 24.0,
+   "cooldown_s": 0.6
+  },
+  "anchor": {
+   "name": "Rime Anchor",
+   "model": "tl_anchor",
+   "range_m": 12.0,
+   "size_m": 3.0,
+   "life_s": 25.0,
+   "max": 3
+  },
+  "glider": {
+   "name": "Gale Glider",
+   "model": "tl_glider",
+   "fall_speed": 2.2,
+   "speed": 8.5,
+   "lift": 7.0,
+   "lift_h": 6.0
+  },
+  "pearl": {
+   "name": "Tide Pearl",
+   "model": "tl_pearl",
+   "range_m": 3.0,
+   "breath_mult": 2.0
+  },
+  "compass": {
+   "name": "Whorl Compass",
+   "model": "tl_compass",
+   "range_m": 3.5,
+   "point_m": 400.0
+  }
+ }
+}

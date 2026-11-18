@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE.",
+ "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors).",
  "tile": 3.0,
  "wall_h": 4.5,
  "torch_every": 4,
@@ -108,6 +108,85 @@
      "loot": "dungeon_small"
     }
    }
+  },
+  "tool_hall": {
+   "name": "The Tool Hall",
+   "region": 1,
+   "slot": 1,
+   "_about": "Sea step 9b test hall: one lane per tool (grapple over a pit to a ring; fog walkway; bramble + two braziers opening a door; a pool for ice slabs; an updraft vent up a ledge and a glide over a pit; a tide basin with rafts and a tide door; a whorl door).",
+   "entrance": {
+    "at": [
+     -40.0,
+     6620.0
+    ],
+    "yaw": 200.0
+   },
+   "map": [
+    "##################",
+    "#S....===o.......#",
+    "#.################",
+    "#.....%%%........#",
+    "#.################",
+    "#..b..y.z.n..C...#",
+    "#.################",
+    "#.....====.......#",
+    "#.################",
+    "#..uHHH===.......#",
+    "#.################",
+    "#..p.___.t.......#",
+    "#.################",
+    "#X......w...K....#",
+    "##################"
+   ],
+   "legend": {
+    "S": {
+     "kind": "arrive"
+    },
+    "X": {
+     "kind": "exit"
+    },
+    "o": {
+     "kind": "ring"
+    },
+    "b": {
+     "kind": "bramble"
+    },
+    "y": {
+     "kind": "brazier"
+    },
+    "z": {
+     "kind": "brazier"
+    },
+    "n": {
+     "kind": "door",
+     "open": "braziers",
+     "braziers": [
+      "y",
+      "z"
+     ]
+    },
+    "C": {
+     "kind": "chest",
+     "loot": "dungeon_small"
+    },
+    "p": {
+     "kind": "basin"
+    },
+    "t": {
+     "kind": "door",
+     "open": "tide"
+    },
+    "w": {
+     "kind": "door",
+     "open": "whorl"
+    },
+    "K": {
+     "kind": "chest",
+     "loot": "dungeon_small",
+     "tool": "anchor"
+    }
+   },
+   "wall_h": 9.0
   }
  }
 }

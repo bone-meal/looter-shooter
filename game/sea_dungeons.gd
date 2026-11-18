@@ -38,6 +38,7 @@ func setup(sea: Node3D, player: CharacterBody3D) -> void:
 		var d := SeaDungeon.new()
 		d.setup(id, cfg["dungeons"][id], cfg)
 		d.position = space_of(id)
+		d.sea_seconds = Callable(sea, "seconds")
 		d.visible = false
 		add_child(d)
 		spaces[id] = d
@@ -119,6 +120,7 @@ func _process(delta: float) -> void:
 	_lamp.visible = where != ""
 	if where != "":
 		_lamp.global_position = _player.global_position + Vector3(0.0, 2.2, 0.0)
+		_watch_pits(delta)
 	# spaces: built and shown when this player is inside; the host also keeps one built while others are in it
 	var others := _others_in()
 	for id: String in spaces:
@@ -144,6 +146,30 @@ func _process(delta: float) -> void:
 			var net := _net()
 			if net != null and bool(net.call("active")):
 				net.call("tell_dungeons", world_dict())
+
+
+# A fall into a pit puts the player back on the last ground he stood on (a little hurt), as in the old adventures.
+var _safe := Vector3.INF
+var _safe_t := 0.0
+var falls := 0
+
+
+func _watch_pits(delta: float) -> void:
+	var d: SeaDungeon = spaces[where]
+	var local := _local_in(where)
+	if local.y < -1.5:
+		if _safe.is_finite():
+			_player.call("teleport", _sea.call("world_of", space_of(where) + _safe + Vector3(0.0, 0.4, 0.0)), float(_player.call("look_yaw")))
+		_player.call("take_damage", 8.0, "physical")
+		_sea.emit_signal("notice", "You climb back out of the water")
+		falls += 1
+		return
+	_safe_t -= delta
+	if _safe_t <= 0.0 and _player.is_on_floor():
+		_safe_t = 0.25
+		var c := d.rules.cell_of(local)
+		if local.y > -0.3 and local.y < 0.6 and d.rules.ground_at(c, float(_sea.call("seconds"))) and d.rules.terrain(c) != "%":
+			_safe = d.rules.at_of(c)
 
 
 # Other players' dungeons (the host keeps those spaces built and solid).
@@ -200,6 +226,7 @@ func enter(id: String) -> void:
 	d.build()
 	var arrive: Array = d.rules.of_kind("arrive")
 	var cell: Vector2i = d.rules.things[arrive[0]]["cell"] if not arrive.is_empty() else Vector2i(1, 1)
+	_safe = d.rules.at_of(cell)
 	_player.call("teleport", _sea.call("world_of", space_of(id) + d.rules.at_of(cell) + Vector3(0.0, 0.6, 0.0)), 0.0)
 	_fade()
 	_sea.emit_signal("notice", String(cfg["dungeons"][id]["name"]))
@@ -296,19 +323,26 @@ func interact() -> bool:
 		if String(d.rules.things[ch]["kind"]) == "exit":
 			leave()
 			return true
-		acts += 1
-		if _host():
-			host_act(_my_id(), where, ch, _local_in(where))
-		else:
-			var net := _net()
-			if net != null:
-				net.call("request_dungeon", where, ch, _local_in(where))
+		act(ch)
 		return true
 	var g := _gate_near()
 	if g != "":
 		enter(g)
 		return true
 	return false
+
+
+# Use a thing (or "!" = the Fog Bell rang) in the dungeon this player is in: the host decides.
+func act(ch: String) -> void:
+	if where == "":
+		return
+	acts += 1
+	if _host():
+		host_act(_my_id(), where, ch, _local_in(where))
+	else:
+		var net := _net()
+		if net != null:
+			net.call("request_dungeon", where, ch, _local_in(where))
 
 
 func _my_id() -> int:
@@ -324,10 +358,23 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 		return false
 	var d: SeaDungeon = spaces[id]
 	var r := d.rules
+	if ch == "!":  # the Fog Bell rang here (sea step 9b): the fog walkways stand for a while
+		var tcfg: Dictionary = (_sea.get("tools") as Node).get("cfg")["tools"]["bell"]
+		if r.reveal(float(_sea.call("seconds")) + float(tcfg["reveal_s"])):
+			applied += 1
+			_dirty = true
+			last = "%s fog walkways shown by %d" % [id, peer]
+		return true
 	if not r.things.has(ch):
 		return false
 	var spot := r.at_of(r.cell_of_thing(ch))
-	if Vector2(at.x - spot.x, at.z - spot.z).length() > r.tile * 1.6:
+	var kind0 := String(r.things[ch]["kind"])
+	var reach := r.tile * 1.6
+	if kind0 in ["bramble", "brazier"]:
+		reach = 16.0  # the Ember Gauntlet's bolt
+	elif kind0 == "basin" or (kind0 == "door" and String(r.things[ch].get("open", "")) == "whorl"):
+		reach = 5.0
+	if Vector2(at.x - spot.x, at.z - spot.z).length() > reach:
 		last = "refused %s %s: too far (%s)" % [id, ch, str(at.snapped(Vector3.ONE * 0.1))]
 		return false  # not where he says
 	var done := false
@@ -335,7 +382,13 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 		"key":
 			done = r.take_key(ch)
 		"door":
-			done = r.use_key(ch)
+			done = r.whorl(ch) if String(r.things[ch].get("open", "")) == "whorl" else r.use_key(ch)
+		"bramble":
+			done = r.burn(ch)
+		"brazier":
+			done = r.light(ch)
+		"basin":
+			done = r.turn_tide(ch)
 		"lever":
 			done = r.pull(ch)
 		"block":
@@ -344,7 +397,10 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 			var loot := r.open_chest(ch)
 			done = loot != ""
 			if done:
-				_give_chest(peer, loot, int(cfg["dungeons"][id].get("region", 1)))
+				if loot != "-":
+					_give_chest(peer, loot, int(cfg["dungeons"][id].get("region", 1)))
+				if r.things[ch].has("tool"):  # a tool: for every player in the dungeon
+					_give_tool_all(id, String(r.things[ch]["tool"]))
 	if done:
 		applied += 1
 		r.press(_occupied(id))
@@ -352,6 +408,18 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 		_dirty = true
 		last = "%s %s by %d" % [id, ch, peer]
 	return done
+
+
+func _give_tool_all(id: String, tool: String) -> void:
+	if where == id:
+		(_sea.get("tools") as Node).call("give", tool)
+	var net := _net()
+	if net == null or not bool(net.call("active")):
+		return
+	var all: Dictionary = (net.get("net") as Node).call("positions")
+	for peer: int in all:
+		if peer != _my_id() and dungeon_at(_sea.call("local_of", all[peer])) == id:
+			net.call("tell_tool_gift", peer, tool)
 
 
 func _give_chest(peer: int, loot: String, region_n: int) -> void:
@@ -425,4 +493,4 @@ func status() -> String:
 	for id: String in spaces:
 		parts.append((spaces[id] as SeaDungeon).status())
 	var camera := get_viewport().get_camera_3d()
-	return "dungeons: in '%s' (dark look %s, settling %s), acts %d, applied %d, last '%s'; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), acts, applied, last, "; ".join(parts)]
+	return "dungeons: in '%s' (dark look %s, settling %s, falls %d), acts %d, applied %d, last '%s'; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, acts, applied, last, "; ".join(parts)]

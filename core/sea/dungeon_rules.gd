@@ -3,6 +3,12 @@
 # many keys the party holds here, where the blocks stand, which levers are pulled, keys and chests taken. Doors open
 # by a key (for good), by plates pressed (by a player or a block; `latch` keeps it open) or by a lever. Pure: no nodes.
 # The host decides every change; clients only show the state they are sent.
+# Sea step 9b (the 7 tools) adds TERRAIN letters in the map: '=' a water pit (falling in puts you back), '%' a fog
+# walkway over a pit (solid while the Fog Bell's reveal lasts), 'H' a ledge (a 3 m raised floor), 'u' an updraft vent
+# (floor), '_' a raft in a pit (at floor level while the tide is high); and THINGS: ring (Grapple Hook), bramble
+# (blocks its cell until burned by the Ember Gauntlet), brazier (lit by it), basin (the Tide Pearl turns the tide),
+# doors opening by "braziers" (all lit), "tide" (high) or "whorl" (opened with the Whorl Compass); a chest may hold a
+# `tool`.
 # Dependencies: none (one dungeon's data from data/sea/dungeons.json is passed in).
 extends RefCounted
 
@@ -39,7 +45,7 @@ func fresh() -> Dictionary:
 		if String(things[ch]["kind"]) == "block":
 			var c: Vector2i = things[ch]["cell"]
 			blocks[ch] = [c.x, c.y]
-	return {"doors": {}, "keys": 0, "taken": {}, "levers": {}, "blocks": blocks, "pressed": {}}
+	return {"doors": {}, "keys": 0, "taken": {}, "levers": {}, "blocks": blocks, "pressed": {}, "burned": {}, "lit": {}, "tide": false, "reveal_until": 0.0}
 
 
 # Saved / sent form (blocks as [x, z]); a loaded state missing keys gets them fresh.
@@ -71,6 +77,24 @@ func is_wall(cell: Vector2i) -> bool:
 func is_floor(cell: Vector2i) -> bool:
 	var ch := char_at(cell)
 	return ch != "#" and ch != " "
+
+
+# Terrain letters (sea step 9b): a pit with water, a fog walkway, a ledge, an updraft vent, a raft.
+func terrain(cell: Vector2i) -> String:
+	var ch := char_at(cell)
+	return ch if ch in ["=", "%", "H", "u", "_"] else ""
+
+
+# Is there ground to stand on in this cell now (at floor level or a ledge's top)?
+func ground_at(cell: Vector2i, now: float) -> bool:
+	match terrain(cell):
+		"=":
+			return false
+		"%":
+			return now < float(state["reveal_until"])
+		"_":
+			return bool(state["tide"])
+	return is_floor(cell)
 
 
 # Local position (from the dungeon's origin) of a cell's middle, floor level.
@@ -116,6 +140,13 @@ func door_open(ch: String) -> bool:
 			return _all_pressed(t.get("plates", []))
 		"lever":
 			return bool(state["levers"].get(String(t.get("lever", "")), false))
+		"braziers":
+			var all_lit := not (t.get("braziers", []) as Array).is_empty()
+			for b: String in t.get("braziers", []):
+				all_lit = all_lit and bool(state["lit"].get(b, false))
+			return all_lit
+		"tide":
+			return bool(state["tide"])
 	return false
 
 
@@ -130,10 +161,12 @@ func _all_pressed(list: Array) -> bool:
 
 # Can a body stand in / a block slide into this cell now?
 func passable(cell: Vector2i) -> bool:
-	if not is_floor(cell):
+	if not is_floor(cell) or terrain(cell) in ["=", "%", "H", "_"]:
 		return false
 	var ch := char_at(cell)
 	if things.has(ch) and String(things[ch]["kind"]) == "door" and not door_open(ch):
+		return false
+	if things.has(ch) and String(things[ch]["kind"]) in ["bramble", "brazier", "basin", "ring"] and not (String(things[ch]["kind"]) == "bramble" and bool(state["burned"].get(ch, false))):
 		return false
 	for b: String in state["blocks"]:
 		if cell_of_thing(b) == cell:
@@ -208,9 +241,46 @@ func pull(lever: String) -> bool:
 	return true
 
 
+func burn(ch: String) -> bool:
+	if not things.has(ch) or String(things[ch]["kind"]) != "bramble" or bool(state["burned"].get(ch, false)):
+		return false
+	state["burned"][ch] = true
+	return true
+
+
+func light(ch: String) -> bool:
+	if not things.has(ch) or String(things[ch]["kind"]) != "brazier" or bool(state["lit"].get(ch, false)):
+		return false
+	state["lit"][ch] = true
+	return true
+
+
+func turn_tide(ch: String) -> bool:
+	if not things.has(ch) or String(things[ch]["kind"]) != "basin":
+		return false
+	state["tide"] = not bool(state["tide"])
+	return true
+
+
+func whorl(ch: String) -> bool:
+	if not things.has(ch) or String(things[ch].get("open", "")) != "whorl" or door_open(ch):
+		return false
+	state["doors"][ch] = true
+	return true
+
+
+# The Fog Bell rang: fog walkways stand until then (host clock seconds).
+func reveal(until: float) -> bool:
+	if until <= float(state["reveal_until"]):
+		return false
+	state["reveal_until"] = until
+	return true
+
+
 # A chest opened: its loot table ("" = already open / not a chest).
 func open_chest(ch: String) -> String:
 	if not things.has(ch) or String(things[ch]["kind"]) != "chest" or bool(state["taken"].get(ch, false)):
 		return ""
 	state["taken"][ch] = true
-	return String(things[ch].get("loot", ""))
+	var loot := String(things[ch].get("loot", ""))
+	return loot if loot != "" else "-"  # ("-": a chest that only holds a tool)
