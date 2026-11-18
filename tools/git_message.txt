@@ -1,6 +1,6 @@
-Sea 8f: damage tuning - right ship per region, enemies grow with level
+Sea 9a: dungeon space, room kit and puzzle kit
 
-Enemy damage and health at sea grow with the region's item level (same 1.045 per level as armour and guns; region 1 as written), island rounds and colosseum waves multiply enemy damage by their item level too. Hull damage is written for a sloop and scaled by the ship each region expects (sloop 1-2, brig 3-4, galleon 5-7). Holes flood slower (0.008 per s, 2.5 per share) and creature / pirate hull numbers retuned so the expected ship lasts about 90 s of an unrepaired fight (measured: turtle 121 s, serpent 99, fogmaw 98, orcas 117, kraken 104). core/sea/threat_rules.gd, dev !ship fresh / sinktime.
+Dungeons live in their own spaces far off the sea map above the water, entered through a gate on their island (fade, own dark environment, a lamp that walks with the player; the sea, rain and sky are not drawn inside). Drawn from a hand-made map with the new region 1 room kit (sandstone sea-temple floors, walls, ceilings as MultiMeshes; portcullis and locked doors, pressure plates, levers, push blocks, keys, chests, torches, gate). Puzzle rules are pure and host-run (doors by key, plates or lever; latching plates; blocks pushed cell by cell), saved in the host world and sent to everyone; chest loot rolled on the opener's machine. Test dungeon The Proving Vault near the home port. Fixed online sea positions: the net session refused or misplaced positions beyond 30 km / 9 km of the anchor (dungeon spaces).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

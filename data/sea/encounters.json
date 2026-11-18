@@ -571,6 +571,27 @@
         ]
       },
       "gun_chance": 0.6
+    },
+    "dungeon_small": {
+      "pieces": [
+        1,
+        1
+      ],
+      "doubloons": [
+        30,
+        60
+      ],
+      "items": {
+        "iron_bar": [
+          1,
+          2
+        ],
+        "copper_bar": [
+          0,
+          2
+        ]
+      },
+      "gun_chance": 0.5
     }
   },
   "loot_mult": {

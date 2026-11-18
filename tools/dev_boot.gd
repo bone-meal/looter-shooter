@@ -661,6 +661,46 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 									break
 							await get_tree().create_timer(0.2, true, false, true).timeout
 				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f yaw %.1f tip %.1f at (%.1f, %.1f) speed %.1f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"]), rad_to_deg(float(ms_r["yaw"])), float(mine_r.get("tip_deg")), float(ms_r["x"]), float(ms_r["z"]), float(ms_r["speed"])])
+		"dun":  # sea step 9: !dun gate [id] (stand before its island gate) | enter [id] | leave | stand <cx> <cz> [face cx cz] | use | prompt | reset | wait (state changes) | status <note>
+			var sea_d: Node = session.call("sea")
+			if sea_d == null:
+				_lines.append("dun: no sea")
+			else:
+				var dm: Node = sea_d.get("dungeons")
+				var did := words[2] if words.size() > 2 and words[1] in ["gate", "enter"] else (String(dm.get("where")) if String(dm.get("where")) != "" else "proving_vault")
+				match words[1] if words.size() > 1 else "status":
+					"gate":
+						player.call("teleport", sea_d.call("world_of", dm.call("gate_front", did) + Vector3(0.0, 1.0, 0.0)), 0.0)
+						await get_tree().create_timer(1.5, true, false, true).timeout
+						player.call("look_at_point", (dm.get("gates")[did]["node"] as Node3D).global_position + Vector3(0.0, 2.5, 0.0))
+					"enter":
+						dm.call("enter", did)
+					"leave":
+						dm.call("leave")
+					"stand":  # on that cell (its middle), looking at another cell (or the next one north)
+						var sp: Vector3 = dm.call("space_of", did)
+						var at_c := Vector3(float(words[2]), 0.0, float(words[3])) * float(dm.get("cfg")["tile"])
+						player.call("teleport", sea_d.call("world_of", sp + at_c + Vector3(0.0, 0.4, 0.0)), 0.0)
+						await get_tree().create_timer(0.3, true, false, true).timeout
+						var fc := Vector3(float(words[4]), 0.0, float(words[5])) * float(dm.get("cfg")["tile"]) if words.size() > 5 else at_c + Vector3(0.0, 0.0, -3.0)
+						player.call("look_at_point", sea_d.call("world_of", sp + fc + Vector3(0.0, 1.0, 0.0)))
+					"reset":  # (host / alone) the dungeon as new
+						var sp_r: Node3D = dm.get("spaces")[did]
+						sp_r.get("rules").set("state", sp_r.get("rules").call("fresh"))
+						sp_r.call("refresh", true)
+						dm.set("_dirty", true)
+					"wait":  # until this letter's thing has changed (door open, key / chest taken, lever pulled, block moved), up to 60 s
+						var until_d := Time.get_ticks_msec() + 60000
+						var sp_w: Node3D = dm.get("spaces")[did]
+						var before_w := JSON.stringify(sp_w.get("rules").get("state"))
+						while Time.get_ticks_msec() < until_d and JSON.stringify(sp_w.get("rules").get("state")) == before_w:
+							await get_tree().create_timer(0.25, true, false, true).timeout
+					"use":
+						_lines.append("  use: %s" % str(dm.call("interact")))
+						await get_tree().create_timer(0.6, true, false, true).timeout
+					"prompt":
+						_lines.append("  prompt: '%s'" % String(dm.call("prompt", "F")))
+				_lines.append("DUN %s: %s; prompt '%s'; indoor %s; at %s" % [" ".join(words.slice(1)), String(dm.call("status")), String(dm.call("prompt", "F")), str(sea_d.get("indoor")), str(sea_d.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
 		"uboat":  # sea step 8e-4: !uboat sight <surface|periscope> <none|torpedo_foe|torpedo_us|crate|chart> | near [m] (host: bring it close, broadside on) | cfg <key> <n> | look [torp] | pause on|off | wait <seen|gone|hit|deed> [n] | status <note>
 			var sea_u: Node = session.call("sea")
 			var fleet_u: Node = sea_u.get("ships") if sea_u != null else null

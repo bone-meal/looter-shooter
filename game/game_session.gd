@@ -164,6 +164,7 @@ var _painting_fantasy := Vector3.ZERO
 var _in_fantasy := false
 var _sea: Node3D  # game/sea_world.gd, built on the first trip (sea step 4)
 var _town_mine_saved: Variant = null  # this player's own chest and garden picking times at the home port (sea step 7b)
+var _dungeons_saved: Variant = null  # the sea dungeons' puzzle states (the host's world, sea step 9)
 var _town_saved: Variant = null  # the home port town's levels from the save (this player's own world), until the sea is built (sea step 7)
 var _fleet_saved: Variant = null  # the sea's world fleet from the save (this player's own world), until the sea is built (sea step 5c)
 var _salvage_saved: Variant = null  # the salvage logbook from the save, until the sea is built (sea step 5b)
@@ -1434,6 +1435,7 @@ func _load_profile() -> void:
 		_chart_saved = extra.get("sea_chart")
 		_fleet_saved = extra.get("sea_fleet")
 		_town_saved = extra.get("sea_town")
+		_dungeons_saved = extra.get("sea_dungeons")
 		_town_mine_saved = extra.get("town_mine")
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
@@ -1485,6 +1487,7 @@ func save_profile() -> void:
 		var guest: bool = net != null and net.is_active() and not net.is_host()  # a guest sails the host's fleet: his own world's stays as saved
 		extra["sea_fleet"] = _sea.ships.to_list() if _sea != null and not guest else _fleet_saved
 		extra["sea_town"] = _sea.town.world_dict() if _sea != null and not guest else _town_saved
+		extra["sea_dungeons"] = _sea.dungeons.world_dict() if _sea != null and not guest else _dungeons_saved
 		extra["town_mine"] = _sea.town.mine_dict() if _sea != null else _town_mine_saved
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
 
@@ -3969,6 +3972,7 @@ func _build_sea() -> void:
 		_sea.chart.from_dict(_chart_saved)
 		_sea.ships.from_list(_fleet_saved)
 		_sea.town.load_world(_town_saved)
+		_sea.dungeons.load_world(_dungeons_saved)
 		_sea.town.load_mine(_town_mine_saved)
 		_sea.set("others", func() -> Array: return net.other_positions() if net != null and net.can_send() else [])
 		_sea.visible = false

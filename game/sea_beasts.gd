@@ -113,6 +113,8 @@ func players() -> Array:
 				bodies.append(body)
 	var rules: RefCounted = _fleet.get("rules")
 	for body: Node3D in bodies:
+		if bool(_sea.call("indoor_at", _sea.call("local_of", body.global_position))):
+			continue  # in a dungeon (sea step 9)
 		var on: Node3D = null
 		for ship: Node3D in ships():
 			if not (ship.get("state") as Dictionary).has("foe") and bool(rules.call("aboard", String(ship.get("state")["ship"]), ship.global_transform.affine_inverse() * body.global_position)):

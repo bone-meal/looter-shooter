@@ -921,6 +921,58 @@ func _beast_died(id: int, killer: int) -> void:
 		beasts.call("fell", id, killer, my_id())
 
 
+# --- the dungeons (sea step 9): [F] asks to the host, the states to everyone, a chest's loot to its opener ---
+
+func request_dungeon(id: String, ch: String, at: Vector3) -> void:
+	if active() and not net.is_host():
+		_dun_act.rpc_id(1, id, ch, at)
+
+
+# A player's [F] in a dungeon: he says where he stands (local to the dungeon); the host takes it when that agrees
+# with where it sees him (within a few metres: his last position update may lag a teleport or a step).
+@rpc("any_peer", "call_remote", "reliable")
+func _dun_act(id: String, ch: String, at: Vector3) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var sea := _sea()
+	if not net.is_host() or not net.roster.has(from) or sea == null or id.length() > 32 or ch.length() != 1 or not at.is_finite():
+		return
+	var dungeons: Node = sea.get("dungeons")
+	if not (dungeons.get("spaces") as Dictionary).has(id):
+		return
+	var space: Vector3 = dungeons.call("space_of", id)
+	var seen: Variant = net.positions().get(from)
+	if seen is Vector3:
+		var local: Vector3 = (sea.call("local_of", seen) as Vector3) - space
+		if local.distance_to(at) > 6.0:
+			dungeons.set("last", "refused %s %s: seen %s, says %s" % [id, ch, str(local.snapped(Vector3.ONE * 0.1)), str(at.snapped(Vector3.ONE * 0.1))])
+			return
+	dungeons.call("host_act", from, id, ch, at)
+
+
+func tell_dungeons(states: Dictionary) -> void:
+	if active() and net.is_host():
+		_dun_states.rpc(states)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _dun_states(states: Dictionary) -> void:
+	var sea := _sea()
+	if sea != null and states.size() <= 16:
+		sea.get("dungeons").call("from_net", states)
+
+
+func tell_dungeon_loot(peer: int, loot: String, region_n: int) -> void:
+	if active() and net.is_host() and net.roster.has(peer):
+		_dun_loot.rpc_id(peer, loot, region_n)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _dun_loot(loot: String, region_n: int) -> void:
+	var sea := _sea()
+	if sea != null and loot.begins_with("dungeon") and loot.length() <= 32:
+		sea.get("dungeons").call("grant", loot, clampi(region_n, 1, 7))
+
+
 # --- the G U-boat (sea step 8e-4): host -> everyone (the boat and its torpedoes; its deeds' notices and chart pins) ---
 
 @rpc("authority", "call_remote", "unreliable_ordered")

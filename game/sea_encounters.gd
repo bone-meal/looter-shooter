@@ -126,6 +126,8 @@ func players() -> Array:
 				spots.append(at)
 	for at: Vector3 in spots:
 		var here: Vector3 = _sea.call("local_of", at)
+		if bool(_sea.call("indoor_at", here)):
+			continue  # in a dungeon (sea step 9)
 		var on: Node3D = null
 		for ship: Node3D in _fleet.get("ships"):
 			var st: Dictionary = ship.get("state")

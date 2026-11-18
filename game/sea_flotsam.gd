@@ -199,7 +199,7 @@ func grant(loot_id: String, region_id: String) -> void:
 	taken += 1
 	last_got = ", ".join(said)
 	if _sea.has_signal("notice"):
-		_sea.emit_signal("notice", "%s: %s" % ["Plunder" if loot_id.begins_with("pirate_deck") else "Floating cargo", last_got if last_got != "" else "empty"])
+		_sea.emit_signal("notice", "%s: %s" % ["Plunder" if loot_id.begins_with("pirate_deck") else ("Treasure" if loot_id.begins_with("dungeon") else "Floating cargo"), last_got if last_got != "" else "empty"])
 	if s != null and s.has_method("save_profile"):
 		s.call("save_profile")
 

@@ -1,0 +1,113 @@
+{
+ "version": 1,
+ "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE.",
+ "tile": 3.0,
+ "wall_h": 4.5,
+ "torch_every": 4,
+ "space": {
+  "first_x": -14000.0,
+  "step_x": 1500.0,
+  "y": 500.0,
+  "z": 0.0
+ },
+ "indoor_y": 300.0,
+ "reach": 2.2,
+ "env": {
+  "background": [
+   0.02,
+   0.025,
+   0.03
+  ],
+  "ambient": [
+   0.95,
+   0.8,
+   0.62
+  ],
+  "ambient_energy": 0.3,
+  "fog_color": [
+   0.08,
+   0.07,
+   0.06
+  ],
+  "fog_density": 0.03,
+  "lamp_color": [
+   1.0,
+   0.78,
+   0.5
+  ],
+  "lamp_range": 11.0,
+  "lamp_energy": 1.3
+ },
+ "dungeons": {
+  "proving_vault": {
+   "name": "The Proving Vault",
+   "region": 1,
+   "slot": 0,
+   "entrance": {
+    "at": [
+     -60.0,
+     6612.0
+    ],
+    "yaw": 200.0
+   },
+   "map": [
+    "#############",
+    "#.....#.....#",
+    "#.S...#..K..#",
+    "#.....#.....#",
+    "#X....#.....#",
+    "###.#####c###",
+    "#.....#.....#",
+    "#..B..#..L..#",
+    "#..P..d.....#",
+    "#.....#.....#",
+    "#######e#####",
+    "#####.....###",
+    "#####..C..###",
+    "#####.....###",
+    "#############"
+   ],
+   "legend": {
+    "S": {
+     "kind": "arrive"
+    },
+    "X": {
+     "kind": "exit"
+    },
+    "B": {
+     "kind": "block"
+    },
+    "P": {
+     "kind": "plate"
+    },
+    "d": {
+     "kind": "door",
+     "open": "plates",
+     "plates": [
+      "P"
+     ],
+     "latch": true
+    },
+    "L": {
+     "kind": "lever"
+    },
+    "c": {
+     "kind": "door",
+     "open": "lever",
+     "lever": "L"
+    },
+    "K": {
+     "kind": "key"
+    },
+    "e": {
+     "kind": "door",
+     "open": "key"
+    },
+    "C": {
+     "kind": "chest",
+     "loot": "dungeon_small"
+    }
+   }
+  }
+ }
+}

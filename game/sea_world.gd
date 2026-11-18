@@ -22,6 +22,7 @@ const SeaChart = preload("res://core/sea/sea_chart.gd")
 const ChartWindow = preload("res://game/sea_chart_window.gd")
 const SeaPort = preload("res://game/sea_port.gd")
 const SeaTown = preload("res://game/sea_town.gd")
+const SeaDungeons = preload("res://game/sea_dungeons.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -42,6 +43,8 @@ var chart: SeaChart  # this player's sea chart (sea step 6): fog, explored islan
 var chart_window := ChartWindow.new()
 var port := SeaPort.new()  # harbour master's stalls, doubloons, ferries (sea step 6)
 var town := SeaTown.new()  # the home port town: buildings by level, signs, the town ledger (sea step 7)
+var dungeons := SeaDungeons.new()  # the dungeons behind their island gates (sea step 9)
+var indoor := false  # this player is inside a dungeon: no sea, rain or sky drawn (sea step 9)
 var _chart_layer := CanvasLayer.new()
 var _chart_cfg: Dictionary
 var others := Callable()  # the session: other players' scene positions (the rope looks for swimmers)
@@ -100,6 +103,8 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	town.setup(self, _player, _chart_layer)
 	_root.add_child(port)
 	port.setup(self, _player, _chart_layer)
+	_root.add_child(dungeons)
+	dungeons.setup(self, _player)
 	port.town = town
 	_read_chart_words()
 	_clock_start = Time.get_ticks_msec() / 1000.0
@@ -258,6 +263,18 @@ func _tick(delta: float, now: bool) -> void:
 	look.apply(t, region, weather, 1.0 if now else delta)
 
 
+# Inside a dungeon (game/sea_dungeons.gd): the sea, its rain and the far ring are not drawn.
+func set_indoor(on: bool) -> void:
+	indoor = on
+	ocean.visible = not on
+	rain.visible = not on
+
+
+# Is a sea position inside a dungeon's space (encounters and creatures leave such players alone)?
+func indoor_at(sea_pos: Vector3) -> bool:
+	return dungeons.indoor_at(sea_pos)
+
+
 # The water's height at a scene position now (ships and swimmers ride this; it is the drawn surface).
 func water_height(at: Vector3) -> float:
 	var sea := local_of(at)
@@ -278,7 +295,7 @@ func status() -> String:
 func prompt(key: String) -> String:
 	if swim.climbing():
 		return ""
-	for part: Node in [swim, salvage, shipyard, port, town]:
+	for part: Node in [dungeons, swim, salvage, shipyard, port, town]:
 		var said := String(part.call("prompt", key))
 		if said != "":
 			return said
@@ -288,7 +305,7 @@ func prompt(key: String) -> String:
 func interact() -> bool:
 	if swim.climbing():
 		return true
-	return swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or ships.interact()
+	return dungeons.interact() or swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or ships.interact()
 
 
 func toggle_logbook() -> void:
