@@ -108,3 +108,55 @@ static func _wheat_pixel(x: int, y: int) -> Color:
 	if Vector2(fx - 222.0, fy - 30.0).length() < 13.0:
 		return Color(1.0, 0.95, 0.7)
 	return Color(0.32, 0.55, 0.9).lerp(Color(1.0, 0.88, 0.66), fy / 105.0)
+
+
+# Painting that leads to the home port (sea step 7b-4, the gallery's return paintings): a harbour of white stone houses
+# with red roofs climbing a green hill, a church dome, a ship at anchor, the sea in front.
+static func port_texture() -> ImageTexture:
+	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)
+	for y in H:
+		for x in W:
+			img.set_pixel(x, y, _port_pixel(x, y))
+	return ImageTexture.create_from_image(img)
+
+
+static func _port_pixel(x: int, y: int) -> Color:
+	var fx := float(x)
+	var fy := float(y)
+	# the ship at anchor: dark hull, two masts, pale square sails
+	if fx >= 176.0 and fx <= 226.0 and fy >= 124.0 and fy <= 132.0 and fy - 124.0 < 8.0 - absf(fx - 201.0) * 0.08:
+		return Color(0.3, 0.18, 0.1)
+	for mast: float in [192.0, 210.0]:
+		if absf(fx - mast) < 1.0 and fy >= 84.0 and fy < 124.0:
+			return Color(0.3, 0.2, 0.12)
+		if absf(fx - mast) < 9.0 - (fy - 90.0) * 0.06 and fy >= 90.0 and fy < 118.0 and int(fy) % 10 != 0:
+			return Color(0.93, 0.9, 0.8)
+	if fy >= 122.0:  # the harbour water, brighter where the sun lies on it
+		var wave := sin(fx * 0.4 + fy * 1.3) * 0.5 + 0.5
+		return Color(0.12, 0.38, 0.55).lerp(Color(0.35, 0.62, 0.72), wave * 0.4 + (fy - 122.0) / 120.0)
+	var hill := 72.0 + absf(fx - 96.0) * 0.32 + sin(fx * 0.07) * 4.0
+	# houses: white walls in rows up the hill, red roofs, dark windows
+	if fx >= 20.0 and fx <= 168.0 and fy >= hill and fy < 122.0:
+		var col := floori(fx / 14.0)
+		var row := floori((fy - hill) / 12.0)
+		var lx := fposmod(fx, 14.0)
+		var ly := fposmod(fy - hill, 12.0)
+		if (col * 7 + row * 3) % 5 == 0:
+			return Color(0.28, 0.5, 0.24)  # a garden between houses
+		if ly < 4.0 and lx > 1.0 and lx < 13.0 and ly > absf(lx - 7.0) * 0.6 - 0.5:
+			return Color(0.72, 0.3, 0.2) if (col + row) % 3 else Color(0.64, 0.26, 0.17)
+		if lx < 1.0 or lx > 13.0:
+			return Color(0.6, 0.6, 0.56)
+		if ly > 6.0 and ly < 9.0 and int(lx) % 4 == 1:
+			return Color(0.15, 0.18, 0.24)
+		return Color(0.95, 0.93, 0.86) if (col + row) % 4 else Color(0.93, 0.85, 0.66)
+	# the hall's green dome on the hilltop
+	if Vector2(fx - 96.0, fy - 64.0).length() < 10.0 and fy < 66.0:
+		return Color(0.42, 0.62, 0.55)
+	if fx >= 86.0 and fx <= 106.0 and fy >= 64.0 and fy < 74.0:
+		return Color(0.95, 0.93, 0.86)
+	if fy > hill - 2.0:
+		return Color(0.32, 0.52, 0.26).lerp(Color(0.5, 0.62, 0.3), (fy - hill) / 40.0)
+	if Vector2(fx - 40.0, fy - 26.0).length() < 12.0:
+		return Color(1.0, 0.95, 0.72)
+	return Color(0.4, 0.62, 0.92).lerp(Color(0.98, 0.86, 0.68), fy / 110.0)

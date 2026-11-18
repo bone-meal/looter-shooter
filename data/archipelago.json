@@ -44,6 +44,7 @@
  "spots": {
   "spawn": {"island": "home", "at": [0, 4]},
   "painting_fantasy": {"island": "home", "at": [-9, -6]},
+  "painting_port": {"island": "home", "at": [-10, 10], "yaw": 2.111},
   "painting_arena": {"island": "painter", "toward": "home", "from_shore": 12.0}
  }
 }

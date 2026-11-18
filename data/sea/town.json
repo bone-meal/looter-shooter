@@ -752,7 +752,23 @@
     }
    ],
    "y": 14.72,
-   "services": [],
+   "services": [
+    {
+     "level": 1,
+     "kind": "paint:arena",
+     "name": "Buy The Colosseum painting"
+    },
+    {
+     "level": 2,
+     "kind": "paint:island",
+     "name": "Buy The Island painting"
+    },
+    {
+     "level": 3,
+     "kind": "paint:aurelind",
+     "name": "Buy The Wheat Fields painting"
+    }
+   ],
    "effects": {}
   },
   {
@@ -1279,6 +1295,132 @@
     "male",
     "mohawk"
    ]
+  ]
+ },
+ "hall": {
+  "_about": "Sea step 7b-4 TROPHY HALL inside (game/town_hall.gd): collections = the 8 archaeology collections (their trophy item trophy_<id> goes into its case; model + tint stand in for the collection piece: PLACEHOLDER art), boss_plinths = one per sea region (step 10 fills them), lamps inside light while the player is within lamps_within m of the hall's middle (inside: each lit lamp draws everything near it again on Compatibility), and the cabinets' trophies are drawn only within shown_within m.",
+  "collections": [
+   {
+    "id": "amberfield",
+    "model": "trophy_statuette",
+    "tint": [
+     0.9,
+     0.72,
+     0.3
+    ]
+   },
+   {
+    "id": "greenwald",
+    "model": "trophy_crown",
+    "tint": [
+     0.4,
+     0.66,
+     0.35
+    ]
+   },
+   {
+    "id": "brinemouth",
+    "model": "trophy_cup",
+    "tint": [
+     0.35,
+     0.6,
+     0.75
+    ]
+   },
+   {
+    "id": "sunscar",
+    "model": "trophy_medal",
+    "tint": [
+     0.9,
+     0.55,
+     0.25
+    ]
+   },
+   {
+    "id": "frostmere",
+    "model": "trophy_statuette",
+    "tint": [
+     0.7,
+     0.85,
+     0.95
+    ]
+   },
+   {
+    "id": "cinderreach",
+    "model": "trophy_skull",
+    "tint": [
+     0.7,
+     0.25,
+     0.18
+    ]
+   },
+   {
+    "id": "stormcrown",
+    "model": "trophy_crown",
+    "tint": [
+     0.6,
+     0.6,
+     0.85
+    ]
+   },
+   {
+    "id": "hollow_crown",
+    "model": "trophy_plaque",
+    "tint": [
+     0.82,
+     0.82,
+     0.78
+    ]
+   }
+  ],
+  "boss_plinths": 7,
+  "region_names": [
+   "Sunlit Shallows",
+   "Fog Banks",
+   "Volcanic Archipelago",
+   "Frozen Floes",
+   "Storm Cliffs",
+   "Coral Ruins",
+   "The Maelstrom"
+  ],
+  "lamp_energy": 1.4,
+  "lamp_range": 9.0,
+  "lamps_within": 11.0,
+  "shown_within": 14.0
+ },
+ "paintings": {
+  "_about": "Sea step 7b-4 GALLERY (game/town_gallery.gd; locked: portals, EXTREMELY EXPENSIVE; players and gear pass, ore and bars do not). order = the walls (slot 0 back, 1 left, 2 right; the gallery's levels give 1 / 2 / 3); price in doubloons; to = where the trip goes (game_session gallery_travel). Return paintings of the port stand on the island (archipelago spot painting_port) and in Aurelind beside its exit painting. ALL NUMBERS PLACEHOLDERS.",
+  "order": [
+   "arena",
+   "island",
+   "aurelind"
+  ],
+  "arena": {
+   "name": "The Colosseum",
+   "doubloons": 6000,
+   "to": "arena"
+  },
+  "island": {
+   "name": "The Island",
+   "doubloons": 9000,
+   "to": "island"
+  },
+  "aurelind": {
+   "name": "The Wheat Fields of Aurelind",
+   "doubloons": 15000,
+   "to": "aurelind"
+  },
+  "blocked": [
+   "_ore",
+   "_bar"
+  ],
+  "lamp_energy": 1.5,
+  "lamp_range": 9.0,
+  "lamps_within": 8.0,
+  "size_by_level": [
+   1.0,
+   1.25,
+   1.6
   ]
  }
 }

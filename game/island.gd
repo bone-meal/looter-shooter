@@ -26,14 +26,16 @@ const KEEP_CLEAR := 5.0  # no palm, rock or plant this near a painting, the spaw
 const POST_GAP := 4.0  # metres between the posts of a plank bridge
 
 
-# Returns {"spawn", "painting", "painting_fantasy": world positions, "debris": one game/debris_pile.gd per bridge}.
+# Returns {"spawn", "painting", "painting_fantasy": world positions, "painting_port": [world position, yaw] (not built
+# here), "debris": one game/debris_pile.gd per bridge}.
 static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	if land == null:
 		land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
 	var arena: Dictionary = land.place_of("painting_arena")
 	var fantasy: Dictionary = land.place_of("painting_fantasy")
+	var port: Dictionary = land.place_of("painting_port")  # the gallery's return painting (sea step 7b-4), put up once bought
 	var spawn: Vector2 = land.place_of("spawn")["at"]
-	var clear: Array[Vector2] = [arena["at"], fantasy["at"], spawn]
+	var clear: Array[Vector2] = [arena["at"], fantasy["at"], port["at"], spawn]
 	for board: Dictionary in land.wall_buys:
 		clear.append(board["at"])
 	clear.append_array(land.keep_clear)
@@ -60,7 +62,7 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	build_painting(parent, painting, PaintingArt.texture(), float(arena["yaw"]))
 	var painting_fantasy := _world(fantasy["at"])
 	build_painting(parent, painting_fantasy, PaintingArt.wheat_texture(), float(fantasy["yaw"]))
-	return {"spawn": _world(spawn) + Vector3(0, 0.1, 0), "painting": painting, "painting_fantasy": painting_fantasy, "debris": debris}
+	return {"spawn": _world(spawn) + Vector3(0, 0.1, 0), "painting": painting, "painting_fantasy": painting_fantasy, "painting_port": [_world(port["at"]), float(port["yaw"])], "debris": debris}
 
 
 # A land spot (x, z from the spawn island's middle) as a world position on flat ground.

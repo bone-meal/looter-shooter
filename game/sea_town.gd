@@ -6,9 +6,12 @@
 # belong to the HOST's world (saved in its profile extra "sea_town"): a guest asks the host (game/net_sea.gd
 # request_town), the host raises the level and everyone sees it; the payer pays from his own bag and purse when the
 # host says yes. The harbour master's counter (the shop, money changer and ferry desk of game/sea_port.gd) is the
-# model's "Counter" marker.
+# model's "Counter" marker. The trophy hall and the gallery are walk-in (sea step 7b-4): game/town_hall.gd fills the
+# hall (cabinets, collection cases, boss plinths, legend), game/town_gallery.gd hangs the paintings (portals); what is
+# in them (cases filled, paintings bought) is the host's world too, asked for like an upgrade (net_sea request_act).
 # Dependencies: core/sea/town_rules.gd, data/sea/town.json, game/fantasy_models.gd, game/fx_kit.gd,
-# game/town_window.gd; the sea world (world_of / local_of / skills), game/game_session.gd (doubloons), net_sea.
+# game/town_window.gd, game/town_hall.gd, game/town_gallery.gd, game/hub_hud.gd (the card of what is looked at in the
+# hall); the sea world (world_of / local_of / skills), game/game_session.gd (doubloons, gallery_travel), net_sea.
 extends Node3D
 
 const TownRules = preload("res://core/sea/town_rules.gd")
@@ -21,6 +24,9 @@ const TownStore = preload("res://core/sea/town_store.gd")
 const TownPeople = preload("res://game/town_people.gd")
 const BeachTable = preload("res://game/tcg/beach_table.gd")
 const StaffCrew = preload("res://game/staff_crew.gd")
+const TownHall = preload("res://game/town_hall.gd")
+const TownGallery = preload("res://game/town_gallery.gd")
+const HubHud = preload("res://game/hub_hud.gd")
 const NEAR := 900.0  # m from the plaza: the town is built when the player comes this close
 const PLAZA := Vector2(-80.0, 6640.0)
 
@@ -31,6 +37,10 @@ var own_chest := TownStore.new()  # this player's chest at the storehouse (saved
 var crew_chest := TownStore.new()  # the crew's chest of the host's world (the storehouse's top level)
 var picked := {}  # picks id -> unix time this player last picked there (saved with him)
 var people := TownPeople.new()
+var hall := TownHall.new()
+var gallery := TownGallery.new()
+var card_hud := HubHud.new()  # the card of the trophy, case or plinth looked at in the hall
+var arrive := ""  # a painting id: put this player before that painting in the gallery once the town is up (a return trip)
 var heard_at := -1e9  # when this player last heard a rumour at the tavern (seconds, this session)
 var _cards := {}  # the tavern's card table: {card_table, card_dealer, crew} once the tavern has one
 var _beacon: Node3D = null
@@ -58,6 +68,12 @@ func setup(sea_world: Node3D, player: CharacterBody3D, layer: CanvasLayer) -> vo
 	layer.add_child(store_window)
 	people.town = self
 	add_child(people)
+	hall.town = self
+	add_child(hall)
+	gallery.town = self
+	add_child(gallery)
+	layer.add_child(card_hud)
+	card_hud.visible = false
 
 
 func session() -> Node:
@@ -88,6 +104,11 @@ func _process(delta: float) -> void:
 			changed = true
 	if changed or _paving < 0:
 		_grow_town()
+	if arrive != "":
+		_arrive()
+	var eye := get_viewport().get_camera_3d()
+	card_hud.trophy = hall.look(eye.global_position, -eye.global_basis.z) if eye != null and bool(_sea.get("inside")) and not window.visible else {}
+	card_hud.visible = not card_hud.trophy.is_empty()
 
 
 func _build_all() -> void:
@@ -158,6 +179,10 @@ func _show(id: String, rebuilt: bool) -> void:
 	for found in made.find_children("*", "MeshInstance3D", true, false):
 		(found as MeshInstance3D).create_trimesh_collision()
 	_place_sign(id)
+	if id == "trophy_hall":
+		hall.fit(made, rules.level(id), rules.cfg.get("hall", {}))
+	elif id == "gallery":
+		gallery.fit(made, rules.level(id), rules.cfg.get("paintings", {}))
 	if rebuilt:
 		var at := holder.global_position + Vector3(0, 2.0, 0)
 		for k in 3:
@@ -310,6 +335,8 @@ func _light(on: bool) -> void:
 		_beacon.position = Vector3(0.0, 8.8, -35.5)  # the harbour light's lantern room on the granite quay (dock_5)
 		var lamp := MeshInstance3D.new()  # a glowing lamp, no real light: an OmniLight doubled the town's draws at night (Compatibility)
 		var ball := SphereMesh.new()
+		ball.radial_segments = 16
+		ball.rings = 8
 		ball.radius = 0.9
 		ball.height = 1.8
 		lamp.mesh = ball
@@ -322,6 +349,8 @@ func _light(on: bool) -> void:
 		_beacon.add_child(lamp)
 		var beam := MeshInstance3D.new()
 		var cone := CylinderMesh.new()
+		cone.radial_segments = 16
+		cone.rings = 1
 		cone.top_radius = 0.4
 		cone.bottom_radius = 9.0
 		cone.height = 260.0
@@ -389,6 +418,12 @@ func spot_here() -> Array:
 		var post: Node3D = _plots[id]["sign"]
 		if post != null and post.global_position.distance_to(me) <= _reach:
 			return ["sign", id]
+	var case_id := hall.case_near(me)
+	if case_id != "":
+		return ["case", case_id]
+	var art := gallery.painting_near(me)
+	if not art.is_empty():
+		return ["painting", String(art[0])]
 	for id: String in _plots:  # a building's door: what it offers
 		var door := marker(id, "Door")
 		if door != null and door.global_position.distance_to(me) <= _reach and not rules.services(id).is_empty():
@@ -408,6 +443,16 @@ func prompt(key: String) -> String:
 	if spot[0] == "resident":
 		var r: Dictionary = rules.cfg.get("residents", {}).get(id, {})
 		return "[%s] Talk to %s (%s)" % [key, String(r.get("name", "")), String(r.get("trade", ""))]
+	if spot[0] == "case":
+		if hall.cases.has(id):
+			return ""
+		var trophy := "trophy_" + id
+		return ("[%s] Put the %s in its case" % [key, item_name(trophy)]) if have(trophy) > 0 else "%s: complete the collection, then bring its trophy here" % item_name(trophy)
+	if spot[0] == "painting":
+		var p: Dictionary = rules.cfg.get("paintings", {}).get(id, {})
+		if gallery.bought.has(id):
+			return "[%s] Step into the painting: %s" % [key, String(p.get("name", id))]
+		return "%s: buy it at the gallery's door (%d doubloons)" % [String(p.get("name", id)), int(p.get("doubloons", 0))]
 	if spot[0] == "door":
 		var open_now := 0
 		for pair: Array in rules.services(id):
@@ -422,6 +467,16 @@ func interact() -> bool:
 	var spot := spot_here()
 	if spot.is_empty():
 		return false
+	if spot[0] == "case":
+		if not hall.cases.has(String(spot[1])) and have("trophy_" + String(spot[1])) > 0:
+			_notice(place_case(String(spot[1])))
+		return true
+	if spot[0] == "painting":
+		if gallery.bought.has(String(spot[1])):
+			var s := session()
+			if s != null:
+				_notice(String(s.call("gallery_travel", String(spot[1]))))
+		return true
 	open(String(spot[1]) if spot[0] != "ledger" else "harbour_master", spot[0] == "ledger")
 	if spot[0] == "resident":
 		said = people.line_of(String(spot[1]))
@@ -588,7 +643,131 @@ func use(id: String, kind: String) -> String:
 		return rumour()
 	if kind == "cards":
 		return "The card table is outside the tavern: sit down there (F) to play the house"
+	if kind.begins_with("paint:"):
+		return buy_painting(kind.trim_prefix("paint:"))
 	return "?"
+
+
+# --- the trophy hall's cases and the gallery's paintings (sea step 7b-4): the host's world, asked for like upgrades ---
+
+func lore_of(collection: String) -> String:
+	var skills: Variant = _sea.get("skills")
+	if skills == null:
+		return ""
+	return String(((skills as Node).get("data") as Dictionary)["text"].get("lore", {}).get("collection_" + collection, {}).get("text", ""))
+
+
+func my_name() -> String:
+	var s := session()
+	return String(s.get("_profile_name")) if s != null else "Me"
+
+
+func place_case(collection: String) -> String:
+	var trophy := "trophy_" + collection
+	if hall.cases.has(collection):
+		return "That case is already filled"
+	if have(trophy) <= 0:
+		return "You have no %s" % item_name(trophy)
+	var ns := net_sea()
+	if ns != null and bool(ns.call("is_client")):
+		ns.call("request_act", "case", collection)
+		return "Asked the harbour master..."
+	act_done("case", collection, 0, my_name(), 0)
+	if ns != null and bool(ns.call("active")):
+		ns.call("tell_act", "case", collection, my_name())
+	return "The %s is on show in the trophy hall" % item_name(trophy)
+
+
+func buy_painting(id: String) -> String:
+	var p: Dictionary = rules.cfg.get("paintings", {}).get(id, {})
+	if p.is_empty():
+		return "?"
+	if gallery.bought.has(id):
+		return "%s already hangs in the gallery" % String(p.get("name", id))
+	if doubloons() < int(p.get("doubloons", 0)):
+		return "Not enough doubloons (%d)" % int(p.get("doubloons", 0))
+	var ns := net_sea()
+	if ns != null and bool(ns.call("is_client")):
+		ns.call("request_act", "paint", id)
+		return "Asked the harbour master..."
+	act_done("paint", id, 0, my_name(), 0)
+	if ns != null and bool(ns.call("active")):
+		ns.call("tell_act", "paint", id, my_name())
+	return "%s hangs in the gallery: step into it to travel" % String(p.get("name", id))
+
+
+# The host may let it happen (the case still empty, the painting not yet bought and its wall built).
+func can_act(kind: String, arg: String) -> bool:
+	if kind == "case":
+		for c: Dictionary in rules.cfg.get("hall", {}).get("collections", []):
+			if String(c["id"]) == arg:
+				return rules.level("trophy_hall") >= 2 and not hall.cases.has(arg)
+		return false
+	if kind == "paint":
+		var order: Array = rules.cfg.get("paintings", {}).get("order", [])
+		return order.has(arg) and not gallery.bought.has(arg) and rules.level("gallery") > order.find(arg)
+	return false
+
+
+# It happened (here, or the host said so): the one who did it pays (a trophy from his bag, or doubloons); everyone
+# sees it. asker / me = network ids (0 = alone or the host's own act).
+func act_done(kind: String, arg: String, asker: int, who: String, me: int) -> void:
+	var mine := asker == me
+	if kind == "case" and not hall.cases.has(arg):
+		hall.cases[arg] = who
+		if mine:
+			var b := bag()
+			if b != null:
+				b.call("take_all", {"trophy_" + arg: 1})
+		hall.show_cases()
+	elif kind == "paint" and not gallery.bought.has(arg):
+		gallery.bought.append(arg)
+		if mine:
+			_spend(int(rules.cfg.get("paintings", {}).get(arg, {}).get("doubloons", 0)))
+		gallery.show_bought()
+		_notice("%s now hangs in the gallery" % String(rules.cfg.get("paintings", {}).get(arg, {}).get("name", arg)))
+	if mine and asker != 0:
+		said = "Done"
+		window.queue_redraw()
+
+
+func extra_dict() -> Dictionary:
+	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate()}
+
+
+# The host's cases and paintings (sent now and then): a guest's town follows them.
+func load_extra(got: Variant) -> void:
+	if not got is Dictionary:
+		return
+	var cases: Variant = (got as Dictionary).get("cases", {})
+	var art: Variant = (got as Dictionary).get("paintings", [])
+	var changed := false
+	if cases is Dictionary and cases.size() <= 16 and str(cases) != str(hall.cases):
+		hall.cases.clear()
+		for k: Variant in cases:
+			hall.cases[String(k).left(24)] = String(cases[k]).left(24)
+		hall.show_cases()
+		changed = true
+	if art is Array and art.size() <= 8 and str(art) != str(gallery.bought):
+		gallery.bought.clear()
+		for a: Variant in art:
+			gallery.bought.append(String(a).left(24))
+		gallery.show_bought()
+		changed = true
+	if changed:
+		window.queue_redraw()
+
+
+# Coming home through a return painting: stand before that painting in the gallery once its model is up.
+func _arrive() -> void:
+	var spot := gallery.arrival(arrive)
+	if spot.is_empty():
+		spot = gallery.arrival(String(gallery.order()[0])) if not gallery.order().is_empty() else []
+	if spot.is_empty():
+		return
+	arrive = ""
+	_player.call("teleport", spot[0], 0.0)
+	_player.call("look_at_point", spot[1])
 
 
 func _spend(doubloons_needed: int) -> bool:
@@ -777,12 +956,14 @@ func store_done(op: String, item: String, n: int) -> void:
 func world_dict() -> Dictionary:
 	var out := rules.to_dict()
 	out["chest"] = crew_chest.to_list()
+	out.merge(extra_dict())
 	return out
 
 
 func load_world(saved: Variant) -> void:
 	rules.from_dict(saved)
 	crew_chest.from_list((saved as Dictionary).get("chest", []) if saved is Dictionary else [])
+	load_extra(saved)
 
 
 func mine_dict() -> Dictionary:

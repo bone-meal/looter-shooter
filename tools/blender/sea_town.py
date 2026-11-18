@@ -20,6 +20,7 @@ import kit
 import fantasy_kit as fk
 from fantasy_kit import K, c
 import sea_town_parts as P
+import fantasy_inside as FI
 from sea_town_parts import blk, tone, scheme, Face
 
 OUT = os.path.join(os.path.dirname(__file__), "..", "..", "assets", "models", "sea", "town")
@@ -386,78 +387,139 @@ def storage(m, lv):
         sign_post_mark(m, 7.6, 11.6)
 
 
+def cabinets(m, ihw, ihd, y):
+    """Six trophy cabinets (game/trophy_room.gd, hub style: 5 m wide, 0.5 deep, origin at the back middle): two on
+    the back wall, two up each side from the back. Markers "Cab_<yaw>_<n>" (yaw in Godot degrees: 180 = facing the
+    door, -90 / 90 = the right / left wall's)."""
+    n = 0
+    for x in (-2.55, 2.55):
+        n += 1
+        m.empty("Cab_180_%d" % n, x, y, -ihd)
+    for k in range(2):
+        f = -ihd + 0.5 + 2.55 + 5.1 * k
+        n += 1
+        m.empty("Cab_-90_%d" % n, ihw, y, f)
+        n += 1
+        m.empty("Cab_90_%d" % n, -ihw, y, f)
+
+
+def lamps(m, y, spots):
+    for k, (x, f) in enumerate(spots):
+        m.empty("Lamp_%d" % (k + 1), x, y, f)
+
+
 def trophy_hall(m, lv):
+    """Walk-in at every level (director 2026-11-17: real interiors): six cabinets inside from the first level; the
+    archaeology collections' cases from the second ("Cases"), boss plinths from the third ("Plinths"), the crew's
+    legend board at the top ("Legend"); the game puts them in (game/town_hall.gd)."""
     st = [0, 1, 2, 3, 4][lv]
     blue = (0.26, 0.34, 0.55)
     if st == 1:
         s = scheme(1, wall=blue)
-        P.cottage(m, 7.0, 9.0, s, door_u=0.0, roof_h=3.2, windows={"front": [-2.3, 2.3], "left": [-2.6, 0.0, 2.6], "right": [-2.6, 0.0, 2.6]})
-        P.steps(m, K("stone", s["stone"]), 0.0, 5.1, 1.8, P.FLOOR[1])
-        P.sign(m, (3.5, 2.5, 4.55), "cup", out=1.0)
-        door_mark(m, 0.0, 6.0, 0.0)
-        sign_post_mark(m, 4.6, 6.8)
+        ins = P.inside(wall=(0.8, 0.82, 0.86), wainscot=(0.22, 0.26, 0.36), door=(1.5, 2.4))
+        P.cottage(m, 11.0, 12.0, s, door_u=0.0, roof_h=3.6, storey=3.2, windows={"front": [-3.4, 3.4], "back": [], "left": [], "right": []}, ins=ins)
+        P.steps(m, K("stone", s["stone"]), 0.0, 6.6, 1.8, P.FLOOR[1])
+        P.sign(m, (5.5, 2.6, 6.55), "cup", out=1.0)
+        cabinets(m, 5.5 - P.WALL_T - P.LINING, 6.0 - P.WALL_T - P.LINING, P.FLOOR[1])
+        lamps(m, P.FLOOR[1] + 2.9, [(0.0, -2.5), (0.0, 2.5)])
+        door_mark(m, 0.0, 7.4, 0.0)
+        sign_post_mark(m, 6.6, 8.2)
     elif st == 2:
         s = scheme(2, trim=(0.25, 0.32, 0.55))
-        P.framed(m, 8.0, 11.0, s, floors=2, roof_h=3.6)
-        P.terrace(m, K("stone", s["stone"]), 12.0, 4.0, y=0.02, f=7.4, cap=K("stone", (0.5, 0.48, 0.45)))
-        P.sign(m, (4.0, 3.1, 5.9), "cup", out=1.1)
+        blk(m, K("stone", s["stone"]), (12.3, -P.DEEP, 13.3), (0.0, P.DEEP / 2, 0.0))
+        FI.open_house(m, s, 12.0, 13.0, wall_h=3.6, roof_h=4.0)
+        P.terrace(m, K("stone", s["stone"]), 13.0, 4.0, y=0.02, f=8.4, cap=K("stone", (0.5, 0.48, 0.45)))
+        P.sign(m, (6.0, 3.1, 6.9), "cup", out=1.1)
         for x in (-1.4, 1.4):
-            P.lantern(m, (x, 2.6, 5.95))
-        door_mark(m, 0.0, 6.5, 0.0)
-        sign_post_mark(m, 5.6, 9.0)
+            P.lantern(m, (x, 2.6, 6.95))
+        cabinets(m, 6.0 - FI.WALL_T, 6.5 - FI.WALL_T, 0.16)
+        m.empty("Cases", 0.0, 0.16, 0.6)
+        lamps(m, 3.3, [(0.0, -3.0), (0.0, 2.6)])
+        door_mark(m, 0.0, 7.4, 0.0)
+        sign_post_mark(m, 7.0, 10.0)
     elif st == 3:
         s = scheme(3, wall=(0.84, 0.86, 0.9), trim=(0.25, 0.32, 0.55))
-        P.stone_timber(m, 10.0, 12.0, s, door_u=0.0, dormers=0, gable_front=True)
-        P.steps(m, K("stone", s["stone"]), 0.0, 6.3, 2.6, P.FLOOR[3])
-        P.terrace(m, K("stone", s["stone"]), 14.0, 4.6, y=0.02, f=8.6, cap=K("stone", (0.55, 0.52, 0.47)))
-        for x in (-5.2, 5.2):  # buttresses up the long walls
-            for f in (-3.5, 0.0, 3.5):
+        ins = P.inside(wall=(0.88, 0.86, 0.8), wainscot=(0.3, 0.2, 0.13), floor=(0.62, 0.58, 0.52), flags=True, door=(1.5, 2.4))
+        P.stone_timber(m, 13.0, 14.0, s, door_u=0.0, dormers=0, gable_front=True, storey=3.5, ins=ins)
+        P.steps(m, K("stone", s["stone"]), 0.0, 7.3, 2.6, P.FLOOR[3])
+        P.terrace(m, K("stone", s["stone"]), 17.0, 4.6, y=0.02, f=9.6, cap=K("stone", (0.55, 0.52, 0.47)))
+        for x in (-6.7, 6.7):  # buttresses up the long walls
+            for f in (-4.5, 0.0, 4.5):
                 P.poly(m, K("stone", s["stone"]), [(x, 0.0, f - 0.35), (x, 0.0, f + 0.35), (x, 3.4, f + 0.35), (x, 3.4, f - 0.35),
                     (x + (1.0 if x > 0 else -1.0), 0.0, f - 0.35), (x + (1.0 if x > 0 else -1.0), 0.0, f + 0.35), (x + (0.2 if x > 0 else -0.2), 3.0, f + 0.35), (x + (0.2 if x > 0 else -0.2), 3.0, f - 0.35)],
                     [[0, 1, 2, 3], [4, 7, 6, 5], [0, 4, 5, 1], [1, 5, 6, 2], [2, 6, 7, 3], [3, 7, 4, 0]])
-        P.sign(m, (5.0, 3.0, 6.05), "cup", out=1.2)
-        door_mark(m, 0.0, 7.2, 0.0)
-        sign_post_mark(m, 6.8, 10.4)
+        P.sign(m, (6.5, 3.0, 7.05), "cup", out=1.2)
+        ih = 6.5 - P.WALL_T - P.LINING
+        cabinets(m, ih, 7.0 - P.WALL_T - P.LINING, P.FLOOR[3])
+        m.empty("Cases", 0.0, P.FLOOR[3], 1.2)
+        m.empty("Plinths", 0.0, P.FLOOR[3], -2.6)
+        lamps(m, P.FLOOR[3] + 3.2, [(0.0, -3.4), (0.0, 1.0), (0.0, 4.6)])
+        door_mark(m, 0.0, 8.2, 0.0)
+        sign_post_mark(m, 7.8, 11.4)
     else:  # a hall of honour: colonial walls, a temple front of six columns, a dome on a drum
         s = scheme(4, trim=(0.2, 0.28, 0.5))
-        P.colonial(m, 12.0, 14.0, s, floors=1, roof_h=2.6, iron_balconies=False, spots=[-3.6, 3.6])
-        top = portico(m, s, 12.0, 7.0, P.FLOOR[4], 5.0, cols=6)
-        y = P.FLOOR[4] + P.STOREY[4] + 1.6
-        m.lathe(K("plaster", s["wall"]), [(0.0, 0.0), (3.0, 0.0), (3.0, 2.0), (0.0, 2.0)], (0.0, y, -1.0), segs=20)
+        ins = P.inside(wall=(0.93, 0.9, 0.84), wainscot=(0.24, 0.18, 0.13), floor=(0.78, 0.74, 0.68), flags=True, ceiling=(0.9, 0.87, 0.8), door=(1.8, 2.6), plaster_ceiling=True)
+        P.colonial(m, 15.0, 16.0, s, floors=1, roof_h=2.8, iron_balconies=False, spots=[-4.6, 4.6], storey=4.6, ins=ins, blind=("left", "right", "back"))
+        top = portico(m, s, 14.0, 8.0, P.FLOOR[4], 6.2, cols=6)
+        y = P.FLOOR[4] + 4.6 + 1.6
+        m.lathe(K("plaster", s["wall"]), [(0.0, 0.0), (3.4, 0.0), (3.4, 2.2), (0.0, 2.2)], (0.0, y, -1.0), segs=20)
         for k in range(10):
             a = 2 * math.pi * k / 10
-            blk(m, c(P.GLASS), (0.6, 1.2, 0.1), (3.02 * math.cos(a), y + 1.0, -1.0 + 3.02 * math.sin(a)), yaw=-math.degrees(a) + 90.0)
-        m.lathe(K("metal", (0.45, 0.62, 0.55)), [(3.3, 0.0)] + [(3.3 * math.cos(math.pi / 2 * k / 8), 2.8 * math.sin(math.pi / 2 * k / 8)) for k in range(1, 9)], (0.0, y + 2.0, -1.0), segs=24)
-        m.ball(K("metal", P.GOLD), 0.25, (0.0, y + 5.0, -1.0), u=10, v=8)
-        P.steps(m, K("stone", s["stone"]), 0.0, 10.5, 9.0, P.FLOOR[4])
-        P.sign(m, (6.6, 3.4, 7.1), "cup", out=1.2)
-        door_mark(m, 0.0, 11.4, 0.0)
-        sign_post_mark(m, 8.8, 12.0)
+            blk(m, c(P.GLASS), (0.66, 1.3, 0.1), (3.42 * math.cos(a), y + 1.1, -1.0 + 3.42 * math.sin(a)), yaw=-math.degrees(a) + 90.0)
+        m.lathe(K("metal", (0.45, 0.62, 0.55)), [(3.7, 0.0)] + [(3.7 * math.cos(math.pi / 2 * k / 8), 3.1 * math.sin(math.pi / 2 * k / 8)) for k in range(1, 9)], (0.0, y + 2.2, -1.0), segs=24)
+        m.ball(K("metal", P.GOLD), 0.28, (0.0, y + 5.5, -1.0), u=10, v=8)
+        P.steps(m, K("stone", s["stone"]), 0.0, 11.5, 10.0, P.FLOOR[4])
+        P.sign(m, (7.6, 3.4, 8.1), "cup", out=1.2)
+        cabinets(m, 7.5 - P.WALL_T - P.LINING, 8.0 - P.WALL_T - P.LINING, P.FLOOR[4])
+        m.empty("Cases", 0.0, P.FLOOR[4], 1.6)
+        m.empty("Plinths", 0.0, P.FLOOR[4], -2.4)
+        m.empty("Legend", 0.0, P.FLOOR[4], 5.0)
+        lamps(m, P.FLOOR[4] + 4.2, [(0.0, -4.0), (0.0, 0.5), (0.0, 5.0)])
+        door_mark(m, 0.0, 12.9, 0.0)
+        sign_post_mark(m, 9.8, 13.0)
+
+
+def paintings(m, ihw, ihd, y, count):
+    """Where the gallery's paintings hang (game/town_gallery.gd puts them up when bought): the back wall first,
+    then the left and right walls. Markers "Paint_<slot>_<yaw>" at the picture's middle (yaw in Godot degrees)."""
+    spots = [("180", 0.0, -ihd), ("90", -ihw, 0.0), ("-90", ihw, 0.0)]
+    for k in range(count):
+        yaw, x, f = spots[k]
+        m.empty("Paint_%d_%s" % (k, yaw), x, y, f)
 
 
 def gallery(m, lv):
+    """Walk-in at every level (director 2026-11-17): a wall for one painting, then two, then three; the paintings are
+    bought and become portals (game/town_gallery.gd)."""
     st = [0, 1, 3, 4][lv]
     yellow = (0.78, 0.66, 0.36)
     if st == 1:
         s = scheme(1, wall=yellow, trim=P.WHITE)
-        P.cottage(m, 6.0, 7.0, s, door_u=0.0, roof_h=2.4, gable_front=True)
+        ins = P.inside(wall=(0.9, 0.86, 0.76), wainscot=(0.4, 0.3, 0.18), door=(1.4, 2.3))
+        P.cottage(m, 6.0, 7.0, s, door_u=0.0, roof_h=2.4, gable_front=True, storey=3.0, windows={"back": []}, ins=ins)
         for x in (-1.6, 1.6):  # skylights in the roof
-            blk(m, c(P.GLASS), (1.1, 0.06, 1.4), (x * 0.9, P.FLOOR[1] + P.STOREY[1] + 1.0, 0.0), roll=-38.0 if x < 0 else 38.0)
+            blk(m, c(P.GLASS), (1.1, 0.06, 1.4), (x * 0.9, P.FLOOR[1] + 3.0 + 1.0, 0.0), roll=-38.0 if x < 0 else 38.0)
         P.steps(m, K("stone", s["stone"]), 0.0, 3.6, 1.6, P.FLOOR[1])
         P.sign(m, (3.5, 2.5, 3.05), "frame", out=1.0)
+        paintings(m, 3.0 - P.WALL_T - P.LINING, 3.5 - P.WALL_T - P.LINING, P.FLOOR[1] + 1.6, 1)
+        lamps(m, P.FLOOR[1] + 2.7, [(0.0, 0.4)])
         door_mark(m, 0.0, 4.4, 0.0)
         sign_post_mark(m, 4.8, 5.4)
     elif st == 3:
         s = scheme(3, wall=(0.95, 0.88, 0.6), trim=(0.45, 0.35, 0.15))
-        P.stone_timber(m, 9.0, 9.0, s, door_u=0.0, gable_front=True, dormers=0)
+        ins = P.inside(wall=(0.62, 0.16, 0.14), wainscot=(0.3, 0.2, 0.12), floor=(0.4, 0.28, 0.18), door=(1.5, 2.4))
+        P.stone_timber(m, 9.0, 9.0, s, door_u=0.0, gable_front=True, dormers=0, storey=3.4, ins=ins)
         P.steps(m, K("stone", s["stone"]), 0.0, 4.8, 2.4, P.FLOOR[3])
         P.terrace(m, K("stone", s["stone"]), 14.0, 4.0, y=0.02, f=6.2, cap=K("stone", (0.55, 0.52, 0.47)))
         P.sign(m, (5.0, 3.0, 4.05), "frame", out=1.2)
+        paintings(m, 4.5 - P.WALL_T - P.LINING, 4.5 - P.WALL_T - P.LINING, P.FLOOR[3] + 1.75, 2)
+        lamps(m, P.FLOOR[3] + 3.0, [(0.0, -1.0), (0.0, 2.2)])
         door_mark(m, 0.0, 5.2, 0.0)
         sign_post_mark(m, 6.8, 7.8)
     else:
         s = scheme(4, wall=(0.95, 0.88, 0.62), trim=(0.45, 0.35, 0.15))
-        P.colonial(m, 13.0, 10.0, s, floors=2, roof_h=2.4, door_u=0.0)
+        ins = P.inside(wall=(0.2, 0.3, 0.26), wainscot=(0.28, 0.2, 0.12), floor=(0.74, 0.7, 0.62), flags=True, ceiling=(0.9, 0.86, 0.76), door=(1.8, 2.6), plaster_ceiling=True)
+        P.colonial(m, 13.0, 10.0, s, floors=2, roof_h=2.4, door_u=0.0, ins=ins, blind=("left", "right", "back"))
         y = P.FLOOR[4] + 2 * P.STOREY[4] + 1.2
         for x in (-3.0, 3.0):  # glass lanterns lighting the galleries from above
             blk(m, K("stone", s["stone"]), (2.6, 0.3, 2.6), (x, y, 0.0))
@@ -469,6 +531,8 @@ def gallery(m, lv):
         P.steps(m, K("stone", s["stone"]), 0.0, 5.0, 3.0, P.FLOOR[4])
         P.terrace(m, K("stone", s["stone"]), 17.0, 4.6, y=0.02, f=7.3, cap=K("stone", (0.58, 0.55, 0.5)))
         P.sign(m, (6.5, 3.6, 5.1), "frame", out=1.2)
+        paintings(m, 6.5 - P.WALL_T - P.LINING, 5.0 - P.WALL_T - P.LINING, P.FLOOR[4] + 2.2, 3)
+        lamps(m, P.FLOOR[4] + 5.6, [(-3.0, 0.0), (3.0, 0.0)])
         door_mark(m, 0.0, 6.4, 0.0)
         sign_post_mark(m, 8.6, 9.2)
 

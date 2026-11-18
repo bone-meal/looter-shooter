@@ -4,7 +4,8 @@
 # rest in common shapes tinted by difficulty; an unearned one is a dusty stand with ??? (its text = the hint). All
 # trophies of one model are ONE MultiMesh across all cabinets. look() tells which trophy the player looks at.
 # Dependencies: game/fantasy_models.gd (models by tools/blender/hub_trophies.py), game/jukebox.gd, data/trophies.json,
-# data/achievements.json, data/hub.json (`cfg`, set before add_child; this node sits at the hub's middle).
+# data/achievements.json, data/hub.json (`cfg`, set before add_child; this node sits at the hub's middle). The home
+# port's trophy hall (game/town_hall.gd) uses it too: cfg = {"cabinets"} only (no room, lights or jukebox of its own).
 extends Node3D
 
 const FantasyModels = preload("res://game/fantasy_models.gd")
@@ -40,15 +41,9 @@ func _ready() -> void:
 	_material.vertex_color_use_as_albedo = true
 	_material.metallic = 0.15  # (fully metallic goes black on Compatibility)
 	_material.roughness = 0.4
-	var r: Array = cfg["trophy_room_middle"]  # the room's own middle (its floor rect "trophy_room" also takes in the doorway)
-	var middle := Vector3(float(r[0]), 0.0, float(r[1]))
-	var shell := FantasyModels.scene("hub_trophy_room")
-	if shell != null:
-		shell.position = middle
-		add_child(shell)
 	_lay_out_slots()
-	for spot: Array in cfg["cabinets"]:
-		var at := Transform3D(Basis(Vector3.UP, deg_to_rad(float(spot[2]))), Vector3(float(spot[0]), 0.0, float(spot[1])))
+	for spot: Array in cfg["cabinets"]:  # [x, z, yaw degrees, (y: the home port's halls stand on a raised floor)]
+		var at := Transform3D(Basis(Vector3.UP, deg_to_rad(float(spot[2]))), Vector3(float(spot[0]), float(spot[3]) if spot.size() > 3 else 0.0, float(spot[1])))
 		var made := FantasyModels.scene("hub_cabinet")
 		if made != null:
 			made.transform = at
@@ -64,6 +59,14 @@ func _ready() -> void:
 		_cabinets.append([at, plate])
 		_solid(at, Vector3(5.0, 2.7, 0.5), Vector3(0.0, 1.35, 0.25))
 		_shown.append({})
+	if not cfg.has("trophy_room_middle"):  # the home port's trophy hall (game/town_hall.gd) is its own building
+		return
+	var r: Array = cfg["trophy_room_middle"]  # the room's own middle (its floor rect "trophy_room" also takes in the doorway)
+	var middle := Vector3(float(r[0]), 0.0, float(r[1]))
+	var shell := FantasyModels.scene("hub_trophy_room")
+	if shell != null:
+		shell.position = middle
+		add_child(shell)
 	var j: Array = cfg["jukebox"]
 	jukebox = Jukebox.new()
 	jukebox.position = Vector3(float(j[0]), 0.0, float(j[1]))

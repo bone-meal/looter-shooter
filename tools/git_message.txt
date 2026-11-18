@@ -1,8 +1,10 @@
-Sea step 7b-3: tavern, dock, residents
+Sea step 7b-4: walk-in trophy hall and gallery with portal paintings
 
-Tavern drinks, card table with the House Dealer, rumours, rooms and feasts (boons on the player, feasts online).
-Dock berths, quay mending of moored ships, harbour light at night.
-Residents at each building door to talk to and townsfolk walking the town streets.
+Real interiors (hollow storeys with doorway, lining, floor, ceiling, windows seen from inside) in the trophy hall and gallery models; the trophy hall grown so six hub cabinets fit at every level.
+Trophy hall: six trophy cabinets, the archaeology collections' cases, boss plinths, the crew's legend board, lamps only inside.
+Gallery: paintings of the colosseum, the island and Aurelind bought with doubloons become portals; return paintings of the port on the island and in Aurelind; ore and bars may not pass.
+Cases and paintings belong to the host's world online (request_act).
+Island rebuilt for the bigger footprints. Low-segment spheres and cylinders (the defaults made 32k triangles each).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

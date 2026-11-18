@@ -692,6 +692,88 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", th_t.global_position + Vector3(-6.0, 4.0, -22.0), 0.0)
 				await get_tree().create_timer(0.4).timeout
 				player.call("look_at_point", th_t.global_position + Vector3(120.0, -6.0, 10.0))
+			elif sub_t == "hall":  # !town hall: what the trophy hall holds; !town hall in: stand inside the door, looking in
+				var hall_t: Node = town_t.get("hall")
+				if words.size() > 2 and words[2] == "in":
+					var hd_t: Node3D = town_t.call("marker", "trophy_hall", "Door")
+					var hh_t: Node3D = town_t.get("_plots")["trophy_hall"]["holder"]
+					var in_t: Vector3 = hh_t.global_position.lerp(hd_t.global_position, 0.3)
+					player.call("teleport", Vector3(in_t.x, hd_t.global_position.y + 1.5, in_t.z), 0.0)
+					await get_tree().create_timer(0.6).timeout
+					player.call("look_at_point", hh_t.global_position + Vector3(0, 1.2, 0) - (hd_t.global_position - hh_t.global_position) * 0.6)
+					await get_tree().create_timer(0.4).timeout
+				var room_t: Variant = hall_t.get("room")
+				_lines.append("TOWN hall: level %d, cabinets %d, cases %d filled %s, plinths %d, legend %s, lamps %d lit %s, prompt '%s', card '%s'" % [int(town_t.get("rules").call("level", "trophy_hall")), (room_t.get("_cabinets") as Array).size() if room_t != null else 0, (hall_t.get("_case_spots") as Array).size(), str(hall_t.get("cases")), (hall_t.get("_plinths") as Array).size(), str(hall_t.get("_legend") != null), (hall_t.get("_lamps") as Array).size(), str(not (hall_t.get("_lamps") as Array).is_empty() and (hall_t.get("_lamps")[0] as Node3D).visible), String(sea_t.call("prompt", "F")), String((town_t.get("card_hud").get("trophy") as Dictionary).get("title", ""))])
+			elif sub_t == "case":  # !town case <collection>: given its trophy, stand at its case, put it in
+				sea_t.get("skills").call("give", "trophy_" + words[2], 1)
+				for spot_c: Array in town_t.get("hall").get("_case_spots"):
+					if String(spot_c[0]) == words[2]:
+						var jar_c: Node3D = spot_c[1]
+						var side_c := jar_c.get_parent_node_3d().global_basis * Vector3(0, 0, signf(jar_c.position.z) * 1.0)  # stand on that row's side of the table
+						player.call("teleport", jar_c.global_position + Vector3(0, 1.0, 0.0) + side_c.normalized() * 0.95, 0.0)
+						await get_tree().create_timer(0.4).timeout
+				var pr_c := String(sea_t.call("prompt", "F"))
+				var ok_c: bool = sea_t.call("interact")
+				_lines.append("TOWN case %s: prompt '%s', interact %s, cases %s, trophy left %d" % [words[2], pr_c, str(ok_c), str(town_t.get("hall").get("cases")), int(sea_t.get("skills").get("bag").call("count", "trophy_" + words[2]))])
+			elif sub_t == "gallery":  # !town gallery [slot]: stand before painting slot n, looking at it
+				var gal_t: Node = town_t.get("gallery")
+				var frames_t: Array = gal_t.get("_frames")
+				var k_t := int(words[2]) if words.size() > 2 else 0
+				if k_t < frames_t.size():
+					var fr_t: Node3D = frames_t[k_t][1]
+					player.call("teleport", fr_t.global_position + fr_t.global_basis.z.normalized() * 2.0 - Vector3(0, 1.2, 0), 0.0)
+					await get_tree().create_timer(0.5).timeout
+					player.call("look_at_point", fr_t.global_position)
+					await get_tree().create_timer(0.3).timeout
+				_lines.append("TOWN gallery: level %d, frames %d, bought %s, prompt '%s', doubloons %d" % [int(town_t.get("rules").call("level", "gallery")), frames_t.size(), str(gal_t.get("bought")), String(sea_t.call("prompt", "F")), int(session.call("doubloons").get("balance"))])
+			elif sub_t == "hide":  # !town hide plots|houses|people|hall_room <on|off>: what costs what in a view (measuring)
+				var on_h := words.size() < 4 or words[3] != "off"
+				match words[2]:
+					"plots":
+						for id_h: String in town_t.get("_plots"):
+							(town_t.get("_plots")[id_h]["holder"] as Node3D).visible = not on_h
+					"houses":
+						for e_h: Dictionary in town_t.get("_houses"):
+							(e_h["holder"] as Node3D).visible = not on_h
+					"people":
+						(town_t.get("people") as Node3D).visible = not on_h
+					"island":
+						for n_h in sea_t.find_children("*isle_start*", "", true, false):
+							(n_h as Node3D).visible = not on_h
+					_:  # one plot by its id
+						if (town_t.get("_plots") as Dictionary).has(words[2]):
+							(town_t.get("_plots")[words[2]]["holder"] as Node3D).visible = not on_h
+			elif sub_t == "tris":  # !town tris <plot>: the heaviest drawn pieces under that plot (measuring)
+				var rows_t: Array = []
+				for n_t in (town_t.get("_plots")[words[2]]["holder"] as Node).find_children("*", "GeometryInstance3D", true, false):
+					var g_t := n_t as GeometryInstance3D
+					var mesh_t: Mesh = null
+					var count_t := 1
+					if g_t is MeshInstance3D:
+						mesh_t = (g_t as MeshInstance3D).mesh
+					elif g_t is MultiMeshInstance3D and (g_t as MultiMeshInstance3D).multimesh != null:
+						mesh_t = (g_t as MultiMeshInstance3D).multimesh.mesh
+						count_t = (g_t as MultiMeshInstance3D).multimesh.visible_instance_count if (g_t as MultiMeshInstance3D).multimesh.visible_instance_count >= 0 else (g_t as MultiMeshInstance3D).multimesh.instance_count
+					if mesh_t == null:
+						continue
+					var tri_t := 0
+					for k_t in mesh_t.get_surface_count():
+						var arr_t: Array = mesh_t.surface_get_arrays(k_t)
+						var idx_t: Variant = arr_t[Mesh.ARRAY_INDEX]
+						tri_t += floori(float((idx_t as PackedInt32Array).size() if idx_t != null else (arr_t[Mesh.ARRAY_VERTEX] as PackedVector3Array).size()) / 3.0)
+					rows_t.append([tri_t * count_t, str(g_t.get_path()).right(70), g_t.is_visible_in_tree()])
+				rows_t.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) > int(b[0]))
+				_lines.append("TOWN tris %s: %s" % [words[2], str(rows_t.slice(0, 8))])
+			elif sub_t == "nobars":  # empty the bag of ore and bars (they may not pass a painting)
+				var bag_n: RefCounted = sea_t.get("skills").get("bag")
+				for id_n: String in bag_n.call("all_ids"):
+					if (id_n.ends_with("_ore") or id_n.ends_with("_bar")) and int(bag_n.call("count", id_n)) > 0:
+						bag_n.call("remove", id_n, int(bag_n.call("count", id_n)))
+			elif sub_t == "step":  # !town step: press interact where the player stands (a painting: the trip)
+				var pr_s := String(sea_t.call("prompt", "F"))
+				var ok_s: bool = sea_t.call("interact")
+				await get_tree().create_timer(1.5).timeout
+				_lines.append("TOWN step: prompt '%s', interact %s, in sea %s, in fantasy %s" % [pr_s, str(ok_s), str(session.get("_in_sea")), str(session.get("_in_fantasy"))])
 			elif sub_t == "stock":
 				for item_t in ["oak_plank", "palm_plank", "stormoak_plank", "iron_bar", "copper_bar", "skysteel_bar", "sailcloth", "cut_gem", "brilliant_gem"]:
 					sea_t.get("skills").call("give", item_t, 600)
@@ -703,6 +785,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("TOWN wait %s >= %s: %d" % [words[2], words[3], int(town_t.get("rules").call("level", words[2]))])
 			else:
 				_lines.append("TOWN %s: %s, doubloons %d, oak planks %d" % [" ".join(words.slice(2)), String(town_t.call("status")), int(session.call("doubloons").get("balance")), int(sea_t.get("skills").get("bag").call("count", "oak_plank"))])
+		"portart":  # sea step 7b-4: !portart go <island|aurelind> (stand before that return painting) | back (step in) | status
+			var pp: Dictionary = session.get("_port_paintings")
+			if words.size() > 2 and words[1] == "go" and pp.has(words[2]):
+				var at_pp: Vector3 = pp[words[2]]
+				player.call("teleport", at_pp + Vector3(0, 1.0, 3.0), 0.0)
+				await get_tree().create_timer(0.5).timeout
+				player.call("look_at_point", at_pp + Vector3(0, 2.0, 0))
+			elif words.size() > 1 and words[1] == "back":
+				session.call("port_travel")
+				await get_tree().create_timer(3.0).timeout
+			_lines.append("PORTART %s: hung %s, near '%s', prompt '%s', in sea %s, in fantasy %s" % [" ".join(words.slice(1)), str(pp.keys()), String(session.call("_port_painting_near")), String(session.call("_prompt")), str(session.get("_in_sea")), str(session.get("_in_fantasy"))])
 		"chart":  # sea step 6: !chart open | close | pin <x> <z> | status <note>
 			var sea_c2: Node = session.call("sea")
 			if sea_c2 == null:

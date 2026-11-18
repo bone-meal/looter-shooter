@@ -70,11 +70,31 @@ func _ready() -> void:
 		var radius := above.size.length() * 0.5
 		var away := radius / tan(deg_to_rad(camera.fov * 0.5)) * 1.05
 		var views := {"a": Vector3(0.55, 0.42, -1.0), "b": Vector3(-0.6, 0.5, 1.0)}
+		var door := made.find_child("Door", true, false) as Node3D
+		var lit: Array = []
+		if made.find_child("Lamp_1", true, false) != null and door != null:  # a walk-in building: a view from inside the door too
+			views["i"] = Vector3.ZERO
+			for k in range(1, 6):
+				var spot := made.find_child("Lamp_%d" % k, true, false) as Node3D
+				if spot != null:
+					var lamp := OmniLight3D.new()
+					lamp.position = spot.position
+					lamp.light_color = Color(1.0, 0.82, 0.58)
+					lamp.light_energy = 1.6
+					lamp.omni_range = 9.0
+					add_child(lamp)
+					lit.append(lamp)
 		for view: String in views:
 			if only_thumbs and view != "a":
 				continue
-			camera.position = middle + (views[view] as Vector3).normalized() * away
-			camera.look_at(middle)
+			camera.fov = 40.0
+			if view == "i":
+				camera.fov = 72.0
+				camera.position = door.position + Vector3(0.0, 2.3, 3.4)
+				camera.look_at(camera.position + Vector3(0.0, -0.15, 1.0))
+			else:
+				camera.position = middle + (views[view] as Vector3).normalized() * away
+				camera.look_at(middle)
 			for _i in 4:
 				await RenderingServer.frame_post_draw
 			var image := get_viewport().get_texture().get_image()
@@ -89,6 +109,8 @@ func _ready() -> void:
 				thumb.save_png("res://assets/ui/town/%s.png" % id)
 			lines.append("%s %s: draws=%d tris=%d" % [id, view, int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)), int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))])
 		made.queue_free()
+		for lamp: Node in lit:
+			lamp.queue_free()
 		await get_tree().process_frame
 	lines.append("TOWN_SHOT_DONE")
 	var f := FileAccess.open("res://tools/town_shot.log", FileAccess.WRITE)

@@ -78,6 +78,7 @@ func _process(delta: float) -> void:
 		if town != null:
 			_town_levels.rpc(town.get("rules").call("to_list"))
 			_store_list.rpc((town.get("crew_chest") as RefCounted).call("to_list"))
+			_town_extra.rpc(town.call("extra_dict"))
 	_input_t += delta
 	if _input_t >= 1.0 / INPUT_HZ and is_client() and fleet.get("helm_ship") != null:
 		_input_t = 0.0
@@ -579,3 +580,53 @@ func _feast_down() -> void:
 	var town := _town()
 	if town != null:
 		town.call("feast_here")
+
+
+# --- the trophy hall's cases and the gallery's paintings (sea step 7b-4): the host's world. A player asks; the host
+# checks (the case still empty / the painting not yet bought and its wall built, the player in the town) and tells
+# everyone; the one who asked then pays (his trophy, his doubloons) ---
+
+func request_act(kind: String, arg: String) -> void:
+	_act_up.rpc_id(1, kind, arg)
+
+
+# The host (or a lone player) did it itself: everyone else follows.
+func tell_act(kind: String, arg: String, who: String) -> void:
+	if active() and net.is_host():
+		_act_done.rpc(kind, arg, my_id(), who)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _act_up(kind: String, arg: String) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var town := _town()
+	if not net.is_host() or not net.roster.has(from) or town == null or kind.length() > 8 or arg.length() > 24:
+		return
+	if not bool(town.call("can_act", kind, arg)) or not _in_town(from):
+		_act_no.rpc_id(from, kind)
+		return
+	var who := String(net.roster[from]).left(24)
+	town.call("act_done", kind, arg, from, who, my_id())
+	_act_done.rpc(kind, arg, from, who)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _act_done(kind: String, arg: String, asker: int, who: String) -> void:
+	var town := _town()
+	if town != null:
+		town.call("act_done", kind, arg, asker, who, my_id())
+
+
+@rpc("authority", "call_remote", "reliable")
+func _act_no(_kind: String) -> void:
+	var town := _town()
+	if town != null:
+		town.set("said", "The harbour master said no")
+		(town.get("window") as CanvasItem).queue_redraw()
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _town_extra(got: Dictionary) -> void:
+	var town := _town()
+	if town != null:
+		town.call("load_extra", got)

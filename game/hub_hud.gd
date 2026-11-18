@@ -36,6 +36,7 @@ func _mine() -> Dictionary:
 
 func _draw() -> void:
 	if view.is_empty() or not bool(view.get("open", true)):
+		_trophy_card()  # (the home port's trophy hall shows only the card: game/sea_town.gd)
 		return
 	var mid := size * 0.5
 	if not bool(view.get("button", false)) and int(view.get("total", 0)) > 0:

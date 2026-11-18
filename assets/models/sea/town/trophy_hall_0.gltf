@@ -72,7 +72,7 @@
 	],
 	"meshes":[
 		{
-			"name":"Body.023",
+			"name":"Body",
 			"primitives":[
 				{
 					"attributes":{

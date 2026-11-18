@@ -172,6 +172,8 @@ var _in_sea := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
 var _fantasy_saved: Variant  # the fantasy part of the profile, until that world is built
 var _fantasy_exit := Vector3.ZERO
+var _port_spot: Array = []  # the island's spot for the gallery's return painting: [world position, yaw] (sea step 7b-4)
+var _port_paintings := {}  # "island" / "aurelind" -> world position of a return painting put up (once its painting is bought)
 var _fantasy_dirty := false  # something changed in there: saved at most every 20 s
 var _fantasy_saved_at := 0.0
 var _hud_layer: CanvasLayer
@@ -495,6 +497,7 @@ func _ready() -> void:
 	LoadClock.mark("island")
 	_painting = island["painting"]
 	_painting_fantasy = island["painting_fantasy"]
+	_port_spot = island["painting_port"]
 	_island_spawn = island["spawn"]
 	_loot_tables = DataStore.load_json("res://data/loot_tables.json")["tables"]
 	_rng.randomize()
@@ -1572,6 +1575,8 @@ func _prompt() -> String:
 		return "[%s] The colosseum: buy a ticket for the party" % key
 	if _near_fantasy_exit():
 		return "[%s] Return to the island" % key
+	if _port_painting_near() != "":
+		return "[%s] Step into the painting: the home port" % key
 	if _near_painting_fantasy():
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
 	if _in_fantasy:
@@ -1648,6 +1653,8 @@ func _interact() -> void:
 		_feed_crow()
 	elif _near(_crow_b_pos, CROW_RANGE):
 		_start_flight(_crow_b, _crow_b_pos, _crow_a_pos, _island_spawn)
+	elif _port_painting_near() != "":
+		port_travel()
 	elif _near_painting_fantasy():
 		_enter_fantasy()
 	elif _near_fantasy_exit():
@@ -3901,6 +3908,67 @@ func sea() -> Node3D:
 	return _sea
 
 
+# --- the home port's gallery (sea step 7b-4; locked: bought paintings are portals to the colosseum, the island and
+# Aurelind; players and gear pass, ore and bars do not; director: each place gets a return painting of the port) ---
+
+# The paintings this player's crew owns: the sea town's (the host's world, kept up to date online), else the saved one.
+func paintings_bought() -> Array:
+	if _sea != null:
+		return _sea.town.gallery.bought
+	var saved: Variant = _town_saved.get("paintings", []) if _town_saved is Dictionary else []
+	return saved if saved is Array else []
+
+
+# Through a gallery painting: refused with ore or bars in the bag; else to the place, behind the fade.
+func gallery_travel(id: String) -> String:
+	var cfg: Dictionary = _sea.town.rules.cfg.get("paintings", {})
+	if _fantasy != null:
+		for item: String in _fantasy.bag.all_ids():
+			for ending: String in cfg.get("blocked", []):
+				if item.ends_with(ending) and _fantasy.bag.count(item) > 0:
+					return "Ore and metal bars can't pass through a painting: leave them in the storehouse"
+	var to := String(cfg.get(id, {}).get("to", id))
+	_sea.town.close()
+	_leave_sea()
+	if to == "aurelind":
+		_enter_fantasy()
+	elif to == "arena":  # before the colosseum painting, where the party buys its runs
+		var way := Vector3(_island_spawn.x - _painting.x, 0.0, _island_spawn.z - _painting.z).normalized()
+		_player.teleport(_painting + way * 5.0 + Vector3(0.0, 0.5, 0.0), 0.0)
+		_player.look_at_point(_painting + Vector3(0.0, 2.0, 0.0))
+	save_profile()
+	return "Through the painting: %s" % String(cfg.get(id, {}).get("name", id))
+
+
+# Through a return painting of the port: to the sea, before that place's painting in the gallery.
+func port_travel() -> void:
+	var from := "aurelind" if _in_fantasy else ("island" if paintings_bought().has("island") else "arena")
+	if _in_fantasy:
+		_leave_fantasy()
+	_enter_sea()
+	_sea.town.arrive = from
+	save_profile()
+
+
+# Puts up the return paintings whose gallery paintings are bought (checked every second).
+func _hang_port_paintings() -> void:
+	var bought := paintings_bought()
+	if not _port_paintings.has("island") and (bought.has("arena") or bought.has("island")) and not _port_spot.is_empty():
+		_port_paintings["island"] = _port_spot[0]
+		Island.build_painting(self, _port_spot[0], PaintingArt.port_texture(), float(_port_spot[1]))
+	if not _port_paintings.has("aurelind") and bought.has("aurelind") and _fantasy != null:
+		var at := _fantasy_exit + Vector3(-7.0, 0.0, 0.0)
+		_port_paintings["aurelind"] = at
+		Island.build_painting(self, at, PaintingArt.port_texture())
+
+
+func _port_painting_near() -> String:
+	for where: String in _port_paintings:
+		if (where == "aurelind") == _in_fantasy and not _in_sea and not _in_arena and _near(_port_paintings[where], PAINTING_RANGE):
+			return where
+	return ""
+
+
 func _enter_fantasy() -> void:
 	LoadClock.mark("(play until the fantasy world was entered)")
 	if loading != null:
@@ -3965,6 +4033,7 @@ func _leave_fantasy() -> void:
 # Called every second and at once when the player changes world.
 func _rest_worlds() -> void:
 	_rest_in = 1.0
+	_hang_port_paintings()
 	_player.allies_close = 0  # gun trait Pack Hunter: teammates within 15 m
 	if net != null and net.can_send():
 		for spot: Vector3 in net.other_positions():

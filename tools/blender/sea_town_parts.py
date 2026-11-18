@@ -93,6 +93,78 @@ def fblk(face, mat, su, sy, sn, u, y, n=0.0, pitch=0.0):
     blk(face.m, mat, (su, sy, sn), face.at(u, y, n), yaw=FACE_YAW[face.name], pitch=pitch)
 
 
+# --- walk-in storeys (director 2026-11-17: REAL INTERIORS in the trophy hall and the gallery) ---
+
+WALL_T = 0.25  # a walk-in storey's walls
+LINING = 0.04  # the plastered inside of them
+
+
+def inside(wall=(0.86, 0.82, 0.72), wainscot=(0.34, 0.22, 0.14), floor=(0.46, 0.33, 0.21), ceiling=(0.42, 0.31, 0.2), flags=False, door=(1.6, 2.5), leaf=(0.35, 0.22, 0.14), plaster_ceiling=False):
+    """What a walk-in storey looks like inside: plaster, a dark wood wainscot, a plank (or flagstone) floor, a boarded
+    ceiling on beams, the doorway's size (width, height) and the door leaf's colour (it stands open against the wall)."""
+    return {"wall": wall, "wainscot": wainscot, "floor": floor, "ceiling": ceiling, "flags": flags, "door": door, "leaf": leaf, "windows": [], "plaster_ceiling": plaster_ceiling}
+
+
+def hollow(m, mat, w, h, d, y0, door_u, ins):
+    """A walk-in storey in place of a solid block: walls WALL_T thick with a doorway in the front, lined inside,
+    wainscot and dado rail, floor, ceiling on beams, the windows' glass seen from inside (ins["windows"] =
+    (face, u, y, ww, wh) of the windows the style drew outside) and the door leaf swung back against the wall."""
+    t, hw, hd = WALL_T, w / 2, d / 2
+    dw, dh = ins["door"]
+    blk(m, mat, (w, h, t), (0.0, y0 + h / 2, -hd + t / 2))
+    for sx in (-1, 1):
+        blk(m, mat, (t, h, d - 2 * t), (sx * (hw - t / 2), y0 + h / 2, 0.0))
+    a, b = door_u - dw / 2, door_u + dw / 2
+    blk(m, mat, (a + hw, h, t), ((a - hw) / 2, y0 + h / 2, hd - t / 2))
+    blk(m, mat, (hw - b, h, t), ((b + hw) / 2, y0 + h / 2, hd - t / 2))
+    blk(m, mat, (dw, h - dh, t), (door_u, y0 + dh + (h - dh) / 2, hd - t / 2))
+    blk(m, K("stone", (0.6, 0.57, 0.52)), (dw, 0.06, t + 0.1), (door_u, y0 + 0.01, hd - t / 2))  # threshold
+    lin, wain = K("plaster", ins["wall"]), K("wood", ins["wainscot"])
+    iw, idep = w - 2 * t, d - 2 * t
+    inner = [Face(m, "back", hd - t, hw - t), Face(m, "right", hw - t, hd - t), Face(m, "left", hw - t, hd - t), Face(m, "front", hd - t, hw - t)]
+    for face in inner:  # n < 0 = into the room
+        spans = [(-face.half, face.half)] if face.name != "front" else [(-face.half, a), (b, face.half)]
+        for u0, u1 in spans:
+            if u1 - u0 < 0.02:
+                continue
+            fblk(face, lin, u1 - u0, h, LINING, (u0 + u1) / 2, y0 + h / 2, -LINING / 2)
+            fblk(face, wain, u1 - u0, 1.0, 0.03, (u0 + u1) / 2, y0 + 0.5, -LINING - 0.015)
+            fblk(face, tone(wain, 0.8), u1 - u0, 0.07, 0.06, (u0 + u1) / 2, y0 + 1.02, -LINING - 0.03)  # dado rail
+            fblk(face, tone(wain, 0.75), u1 - u0, 0.12, 0.04, (u0 + u1) / 2, y0 + 0.06, -LINING - 0.02)  # skirting
+            fblk(face, tone(wain, 0.9), u1 - u0, 0.1, 0.08, (u0 + u1) / 2, y0 + h - 0.05, -LINING - 0.04)  # cornice
+    floor = K("stone", ins["floor"]) if ins["flags"] else K("wood", ins["floor"])
+    blk(m, floor, (iw, 0.08, idep), (0.0, y0 - 0.03, 0.0))
+    if ins["flags"]:
+        for i in range(int(iw / 0.9) + 1):
+            blk(m, tone(floor, 0.82), (0.025, 0.012, idep), (-iw / 2 + i * 0.9, y0 + 0.012, 0.0))
+        for j in range(int(idep / 0.9) + 1):
+            blk(m, tone(floor, 0.82), (iw, 0.012, 0.025), (0.0, y0 + 0.012, -idep / 2 + j * 0.9))
+    else:
+        for i in range(int(iw / 0.22)):
+            blk(m, tone(floor, 0.86 if i % 2 else 0.95), (0.012, 0.012, idep), (-iw / 2 + 0.11 + i * 0.22, y0 + 0.012, 0.0))
+    ceil = K("plaster", ins["ceiling"]) if ins["plaster_ceiling"] else K("wood", ins["ceiling"])
+    blk(m, ceil, (iw, 0.06, idep), (0.0, y0 + h - 0.03, 0.0))
+    for k in range(1, int(idep / 2.2) + 1):
+        blk(m, tone(ceil, 0.7), (iw, 0.22, 0.2), (0.0, y0 + h - 0.17, -idep / 2 + k * idep / (int(idep / 2.2) + 1)))
+    for face, u, wy, ww, wh in ins["windows"]:
+        back = Face(m, face.name, face.plane - t, face.half - t)
+        fblk(back, K("wood", ins["wainscot"]), ww + 0.16, wh + 0.16, 0.05, u, wy, -LINING - 0.02)
+        fblk(back, c(GLASS), ww, wh, 0.05, u, wy, -LINING - 0.035)
+        fblk(back, K("wood", ins["wainscot"]), 0.04, wh, 0.06, u, wy, -LINING - 0.05)
+    front = inner[3]
+    if b + dw <= front.half:  # the door leaf, swung back flat against the wall right of the doorway
+        fblk(front, K("wood", ins["leaf"]), dw - 0.1, dh - 0.06, 0.06, b + dw / 2, y0 + dh / 2, -LINING - 0.06)
+        for dy in (0.5, dh - 0.5):
+            fblk(front, K("metal", IRON), dw - 0.2, 0.06, 0.02, b + dw / 2, y0 + dy, -LINING - 0.1)
+
+
+def door_frame(face, mat, u, y0, dw, dh, depth=0.08, n=0.04, bar=0.16):
+    """The frame round an open doorway (jambs and a head), drawn on the outside wall."""
+    for side in (-1, 1):
+        fblk(face, mat, bar, dh + bar, depth, u + side * (dw / 2 + bar / 2), y0 + (dh + bar) / 2, n)
+    fblk(face, mat, dw + 2 * bar, bar, depth, u, y0 + dh + bar / 2, n)
+
+
 # --- ground: foundations, terraces, steps ---
 
 def terrace(m, mat, w, d, y=0.0, f=0.0, x=0.0, cap=None):
@@ -202,8 +274,9 @@ def nets(m, x, y, f, w, h, yaw=0.0):
 
 # --- style 1: the painted cottage ---
 
-def cottage(m, w, d, s, door_u=0.0, floors=1, roof_h=2.0, windows=None, porch=True, gable_front=False):
-    fl, h = FLOOR[1], STOREY[1] * floors
+def cottage(m, w, d, s, door_u=0.0, floors=1, roof_h=2.0, windows=None, porch=True, gable_front=False, storey=None, ins=None):
+    """`ins` (inside()): a walk-in storey (one floor) instead of a solid body."""
+    fl, h = FLOOR[1], (storey or STOREY[1]) * floors
     hw, hd = w / 2, d / 2
     stone = K("stone", s["stone"])
     blk(m, stone, (w + 0.3, fl - DEEP, d + 0.3), (0.0, (fl + DEEP) / 2, 0.0))
@@ -213,7 +286,6 @@ def cottage(m, w, d, s, door_u=0.0, floors=1, roof_h=2.0, windows=None, porch=Tr
             fblk(face, tone(stone, 0.8 + 0.35 * rnd.random()), 0.3 + 0.25 * rnd.random(), 0.16 + 0.1 * rnd.random(), 0.06, -face.half + 0.3 + k * 0.9 + 0.2 * rnd.random(), fl - 0.12 - 0.3 * (k % 2), 0.0)
     paint = K("wood", s["wall"])
     white = K("wood", s["trim"])
-    blk(m, paint, (w, h, d), (0.0, fl + h / 2, 0.0))
     windows = windows if windows is not None else {}
     for face in faces_of(m, hw, hd):
         spots = windows.get(face.name)
@@ -221,7 +293,8 @@ def cottage(m, w, d, s, door_u=0.0, floors=1, roof_h=2.0, windows=None, porch=Tr
             spots = [-face.half + 1.3, face.half - 1.3] if face.name in ("front", "back") and face.half > 2.2 else ([0.0] if face.half > 1.6 else [])
         if face.name == "front":
             spots = [u for u in spots if abs(u - door_u) > 1.3]
-        holes = [(u - 0.6, u + 0.6) for u in spots] + ([(door_u - 0.7, door_u + 0.7)] if face.name == "front" else [])
+        dhw = ins["door"][0] / 2 + 0.2 if ins is not None else 0.7
+        holes = [(u - 0.6, u + 0.6) for u in spots] + ([(door_u - dhw, door_u + dhw)] if face.name == "front" else [])
         u = -face.half + 0.2
         while u < face.half - 0.1:  # battens, broken round the windows (they run above and below them)
             if not any(a < u < b for a, b in holes):
@@ -234,13 +307,20 @@ def cottage(m, w, d, s, door_u=0.0, floors=1, roof_h=2.0, windows=None, porch=Tr
         for fl_k in range(floors):
             for u in spots:
                 glass_window(face, s, u, fl + fl_k * STOREY[1] + 1.45, 0.85, 1.05, shutters=True)
+                if ins is not None:
+                    ins["windows"].append((face, u, fl + 1.45, 0.85, 1.05))
     front = Face(m, "front", hd, hw)
-    fblk(front, white, 1.3, 2.25, 0.08, door_u, fl + 1.12, 0.04)
-    fblk(front, K("wood", (0.42, 0.22, 0.16)), 1.0, 2.05, 0.06, door_u, fl + 1.03, 0.08)
-    for k in (-1, 1):
-        fblk(front, K("wood", (0.32, 0.17, 0.12)), 0.32, 0.7, 0.03, door_u + k * 0.22, fl + 1.5, 0.11)
-        fblk(front, K("wood", (0.32, 0.17, 0.12)), 0.32, 0.6, 0.03, door_u + k * 0.22, fl + 0.55, 0.11)
-    m.ball(K("metal", GOLD), 0.04, front.at(door_u + 0.35, fl + 1.0, 0.13), u=6, v=4)
+    if ins is not None:
+        hollow(m, paint, w, h, d, fl, door_u, ins)
+        door_frame(front, white, door_u, fl, ins["door"][0], ins["door"][1])
+    else:
+        blk(m, paint, (w, h, d), (0.0, fl + h / 2, 0.0))
+        fblk(front, white, 1.3, 2.25, 0.08, door_u, fl + 1.12, 0.04)
+        fblk(front, K("wood", (0.42, 0.22, 0.16)), 1.0, 2.05, 0.06, door_u, fl + 1.03, 0.08)
+        for k in (-1, 1):
+            fblk(front, K("wood", (0.32, 0.17, 0.12)), 0.32, 0.7, 0.03, door_u + k * 0.22, fl + 1.5, 0.11)
+            fblk(front, K("wood", (0.32, 0.17, 0.12)), 0.32, 0.6, 0.03, door_u + k * 0.22, fl + 0.55, 0.11)
+        m.ball(K("metal", GOLD), 0.04, front.at(door_u + 0.35, fl + 1.0, 0.13), u=6, v=4)
     if porch:  # a little roof over the door on two posts
         top = fl + 2.55
         for side in (-1, 1):
@@ -284,9 +364,10 @@ def framed(m, w, d, s, floors=2, roof_h=2.6, door_u=0.0):
     return fk.house(m, s, w, d, floors, roof_h, chimney=True, frame=True, door_x=door_u)
 
 
-def stone_timber(m, w, d, s, door_u=0.0, roof_h=3.0, balcony=True, dormers=2, arch_door=True, gable_front=False):
-    """Ground floor of dressed stone with quoins, a framed and jettied upper floor with a balcony, a red tile roof."""
-    fl, st = FLOOR[3], STOREY[3]
+def stone_timber(m, w, d, s, door_u=0.0, roof_h=3.0, balcony=True, dormers=2, arch_door=True, gable_front=False, storey=None, ins=None):
+    """Ground floor of dressed stone with quoins, a framed and jettied upper floor with a balcony, a red tile roof.
+    `storey`: the ground floor's height; `ins` (inside()): the ground floor is walk-in."""
+    fl, st = FLOOR[3], storey or STOREY[3]
     stone = K("stone", s["stone"])
     sw = scheme(3)
     sw["kinds"]["wall"] = "stone"
@@ -295,7 +376,8 @@ def stone_timber(m, w, d, s, door_u=0.0, roof_h=3.0, balcony=True, dormers=2, ar
     blk(m, tone(stone, 0.78), (w + 0.5, 0.12, d + 0.5), (0.0, fl - 0.06, 0.0))
     hw, hd = w / 2, d / 2
     with fk.weathered(0.8):
-        blk(m, stone, (w, st, d), (0.0, fl + st / 2, 0.0))
+        if ins is None:
+            blk(m, stone, (w, st, d), (0.0, fl + st / 2, 0.0))
         for face in faces_of(m, hw, hd):
             fh.stone_face(face, sw, fl, st)
             spots = [-face.half + 1.4, face.half - 1.4] if face.half > 2.6 else [0.0]
@@ -305,6 +387,10 @@ def stone_timber(m, w, d, s, door_u=0.0, roof_h=3.0, balcony=True, dormers=2, ar
                 if face.name == "front" and abs(u - door_u) < 1.5:
                     continue
                 glass_window(face, s, u, fl + 1.45, 0.9, 1.25, shutters=True, arch=True, frame=K("stone", tone(stone, 1.12)[1]))
+                if ins is not None:
+                    ins["windows"].append((face, u, fl + 1.45, 0.9, 1.25))
+        if ins is not None:
+            hollow(m, stone, w, st, d, fl, door_u, ins)
         y1 = fl + st
         jetty = 0.3
         blk(m, K("plaster", s["wall"]), (w + 0.2, st, d + 2 * jetty), (0.0, y1 + st / 2, 0.0))
@@ -319,7 +405,13 @@ def stone_timber(m, w, d, s, door_u=0.0, roof_h=3.0, balcony=True, dormers=2, ar
                 for k in range(int(2 * face.half / 0.7) + 1):  # joist ends under the jetty
                     fblk(face, K("wood", s["timber"]), 0.14, 0.18, jetty + 0.16, -face.half + 0.15 + k * 0.7, y1 - 0.1, -jetty / 2)
         front = Face(m, "front", hd, hw)
-        if arch_door:
+        if arch_door and ins is not None:  # an open arched doorway: dressed jambs and the arch over it
+            door_frame(front, K("stone", tone(stone, 1.15)[1]), door_u, fl, ins["door"][0], ins["door"][1], depth=0.18, n=0.08, bar=0.22)
+            r = ins["door"][0] / 2 + 0.11
+            for k in range(10):
+                a0, a1 = math.pi * k / 10, math.pi * (k + 1) / 10
+                front.rod(K("stone", tone(stone, 1.2)[1]), 0.12, (door_u + r * math.cos(a0), fl + ins["door"][1] + 0.22 + r * math.sin(a0) * 0.6), (door_u + r * math.cos(a1), fl + ins["door"][1] + 0.22 + r * math.sin(a1) * 0.6), n=0.2, segs=4)
+        elif arch_door:
             fblk(front, K("stone", tone(stone, 1.15)[1]), 1.9, 2.75, 0.18, door_u, fl + 1.37, 0.08)
             fblk(front, K("wood", (0.35, 0.2, 0.13)), 1.3, 2.3, 0.1, door_u, fl + 1.15, 0.14)
             r = 0.75
@@ -340,7 +432,8 @@ def stone_timber(m, w, d, s, door_u=0.0, roof_h=3.0, balcony=True, dormers=2, ar
                 m.rod(K("wood", s["timber"]), 0.06, (side * w * 0.3, y1 - 0.8, bf), (side * w * 0.3, y1 - 0.08, bf + 1.0), segs=4)
             fblk(Face(m, "front", hd + jetty, hw), K("wood", (0.3, 0.18, 0.12)), 1.0, 2.1, 0.08, 0.0, y1 + 1.05, 0.03)
     fh.gable_roof(m, s, hw + 0.1, hd + jetty, y1 + st, roof_h, dormers=dormers, timbered=False, front=gable_front)
-    fh.chimney_stack(m, s, hw - 1.0, -hd / 2, y1 + st + roof_h * 0.62 + 1.0)
+    if ins is None:  # (a walk-in ground floor keeps its room clear)
+        fh.chimney_stack(m, s, hw - 1.0, -hd / 2, y1 + st + roof_h * 0.62 + 1.0)
     return y1 + st
 
 
@@ -392,10 +485,11 @@ def quoins(face, s, y0, height):
             fblk(face, tone(stone, 1.0 + 0.08 * (q % 3)), long, 0.36, 0.08, side * (face.half - long / 2 + 0.04), y0 + 0.21 + q * 0.42, 0.03)
 
 
-def colonial(m, w, d, s, floors=2, roof_h=3.0, door_u=0.0, arcade=False, iron_balconies=True, spots=None):
+def colonial(m, w, d, s, floors=2, roof_h=3.0, door_u=0.0, arcade=False, iron_balconies=True, spots=None, storey=None, ins=None, blind=()):
     """Whitewashed stone, tall storeys, arched ground-floor windows, a string course, cornice and a hip roof.
-    `arcade`: a row of arches before the front carrying a terrace with a balustrade. Returns the wall height."""
-    fl, st = FLOOR[4], STOREY[4]
+    `arcade`: a row of arches before the front carrying a terrace with a balustrade. Returns the wall height.
+    `storey`: each storey's height; `ins` (inside()): walk-in, ONE room the full height of the walls."""
+    fl, st = FLOOR[4], storey or STOREY[4]
     stone = K("stone", s["stone"])
     plaster = K("plaster", s["wall"])
     hw, hd = w / 2, d / 2
@@ -403,13 +497,16 @@ def colonial(m, w, d, s, floors=2, roof_h=3.0, door_u=0.0, arcade=False, iron_ba
     blk(m, tone(stone, 0.85), (w + 0.62, 0.14, d + 0.62), (0.0, fl - 0.07, 0.0))
     wall_h = fl + st * floors
     with fk.weathered(0.5):
-        blk(m, plaster, (w, st * floors, d), (0.0, fl + st * floors / 2, 0.0))
+        if ins is None:
+            blk(m, plaster, (w, st * floors, d), (0.0, fl + st * floors / 2, 0.0))
         for face in faces_of(m, hw, hd):
             quoins(face, s, fl, st * floors)
             us = spots if spots is not None and face.name in ("front", "back") else None
             if us is None:
                 n = max(1, int((2 * face.half - 1.0) / 2.3))
                 us = [-face.half + 0.5 + (2 * face.half - 1.0) * (k + 0.5) / n for k in range(n)]
+            if face.name in blind:  # a wall kept for pictures (the gallery is lit from above)
+                continue
             for i in range(floors):
                 y = fl + st * i
                 if i > 0:  # string course between the storeys
@@ -418,6 +515,8 @@ def colonial(m, w, d, s, floors=2, roof_h=3.0, door_u=0.0, arcade=False, iron_ba
                     if i == 0 and face.name == "front" and abs(u - door_u) < 1.3:
                         continue
                     glass_window(face, s, u, y + 1.6, 1.0, 1.75 if i else 1.55, shutters=True, arch=i == 0, frame=K("stone", tone(stone, 1.12)[1]))
+                    if ins is not None:
+                        ins["windows"].append((face, u, y + 1.6, 1.0, 1.75 if i else 1.55))
                     if i > 0 and iron_balconies and face.name == "front":  # a little iron balcony
                         blk(m, stone, (1.5, 0.1, 0.5), face.at(u, y + 0.62, 0.25) if face.name in ("front", "back") else face.at(u, y + 0.62, 0.25))
                         for k in range(8):
@@ -426,15 +525,20 @@ def colonial(m, w, d, s, floors=2, roof_h=3.0, door_u=0.0, arcade=False, iron_ba
                         fblk(face, K("metal", IRON), 1.5, 0.04, 0.04, u, y + 1.55, 0.48)
         front = Face(m, "front", hd, hw)
         # the door: panelled double leaves under a fanlight, pilasters and a pediment-like cap
-        fblk(front, tone(stone, 1.15), 2.3, 3.3, 0.16, door_u, fl + 1.65, 0.06)
-        fblk(front, K("wood", (0.22, 0.32, 0.26)), 1.5, 2.5, 0.08, door_u, fl + 1.25, 0.12)
+        if ins is not None:
+            hollow(m, plaster, w, st * floors, d, fl, door_u, ins)
+            door_frame(front, tone(stone, 1.15), door_u, fl, ins["door"][0], ins["door"][1], depth=0.16, n=0.06, bar=0.25)
+        else:
+            fblk(front, tone(stone, 1.15), 2.3, 3.3, 0.16, door_u, fl + 1.65, 0.06)
+            fblk(front, K("wood", (0.22, 0.32, 0.26)), 1.5, 2.5, 0.08, door_u, fl + 1.25, 0.12)
+            m.ball(K("metal", GOLD), 0.05, front.at(door_u + 0.15, fl + 1.2, 0.2), u=6, v=4)
         for side in (-1, 1):
-            for dy in (0.7, 1.75):
-                fblk(front, K("wood", (0.18, 0.27, 0.22)), 0.55, 0.75, 0.04, door_u + side * 0.37, fl + dy, 0.17)
+            if ins is None:
+                for dy in (0.7, 1.75):
+                    fblk(front, K("wood", (0.18, 0.27, 0.22)), 0.55, 0.75, 0.04, door_u + side * 0.37, fl + dy, 0.17)
             fblk(front, tone(stone, 1.2), 0.3, 3.4, 0.24, door_u + side * 1.2, fl + 1.7, 0.1)
         fblk(front, c(GLASS), 1.3, 0.55, 0.06, door_u, fl + 2.85, 0.1)
         fblk(front, tone(stone, 1.2), 2.9, 0.26, 0.36, door_u, fl + 3.45, 0.14)
-        m.ball(K("metal", GOLD), 0.05, front.at(door_u + 0.15, fl + 1.2, 0.2), u=6, v=4)
         cornice(m, s, hw, hd, wall_h)
     if arcade:
         arcade_front(m, s, w, hd, fl, st)
