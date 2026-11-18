@@ -22,6 +22,7 @@ const SeaSerpent = preload("res://game/sea_serpent.gd")
 const SeaGhosts = preload("res://game/sea_ghosts.gd")
 const SeaDrowned = preload("res://game/sea_drowned.gd")
 const SeaBeasts = preload("res://game/sea_beasts.gd")
+const SeaUboat = preload("res://game/sea_uboat.gd")
 
 var rules: EncounterRules
 var pirate: PirateRules
@@ -32,6 +33,7 @@ var serpent := SeaSerpent.new()
 var ghosts := SeaGhosts.new()  # sea step 8d
 var drowned := SeaDrowned.new()
 var beasts := SeaBeasts.new()  # sea step 8e: each region's own creature
+var uboat := SeaUboat.new()  # sea step 8e-4: the G U-boat sightings
 var paused := false  # dev: no rolls (tests spawn their own)
 var rolled := 0  # dev / checks: checks rolled, foes that came, foes sunk, volleys fired
 var came := 0
@@ -76,6 +78,9 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	beasts.name = "Beasts"
 	add_child(beasts)
 	beasts.setup(fleet, sea, player, rules.cfg)
+	uboat.name = "Uboat"
+	add_child(uboat)
+	uboat.setup(fleet, sea, self, rules.cfg)
 
 
 # Set by game/game_session.gd: the wave director that makes the crews and creatures, and the score card (kill pay).
@@ -310,4 +315,4 @@ func status() -> String:
 	for ship: Node3D in foes():
 		var st: Dictionary = ship.get("state")
 		parts.append("%s hull %.0f/%.0f at (%.0f, %.0f)%s" % [String(st["foe"]), float(st["hull"]), float(st["hull_max"]), float(st["x"]), float(st["z"]), " STRUCK" if bool(st.get("struck", false)) else ""])
-	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s; %s; %s; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status(), sharks.status(), serpent.status(), ghosts.status(), drowned.status() + "; " + beasts.status()]
+	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s; %s; %s; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status(), sharks.status(), serpent.status(), ghosts.status(), drowned.status() + "; " + beasts.status() + "; " + uboat.status()]

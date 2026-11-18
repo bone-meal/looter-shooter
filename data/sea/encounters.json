@@ -546,6 +546,31 @@
         ]
       },
       "gun_chance": 0.05
+    },
+    "uboat_crate": {
+      "pieces": [
+        1,
+        2
+      ],
+      "doubloons": [
+        40,
+        90
+      ],
+      "items": {
+        "iron_bar": [
+          1,
+          3
+        ],
+        "sailcloth": [
+          0,
+          2
+        ],
+        "oak_plank": [
+          1,
+          3
+        ]
+      },
+      "gun_chance": 0.6
     }
   },
   "loot_mult": {
@@ -921,5 +946,56 @@
       "loot": "kraken_arm",
       "notice": ""
     }
+  },
+  "uboat": {
+    "_about": "Sea step 8e-4 the G U-boat sightings (game/sea_uboat.gd; LOCKED sightings with deeds: far off, dives if you close in, never caught, never blocking). check_s / chance / min_gap_s: how rarely the host shows one; surface_share: surfaced at the horizon vs a periscope; deeds: weights (torpedo_foe only when a foe is within help_m of the player). us_damage never takes a hull below keep_hull of its max. ALL NUMBERS MINE.",
+    "check_s": 60.0,
+    "chance": 0.06,
+    "min_gap_s": 900.0,
+    "spawn_m": [
+      180.0,
+      320.0
+    ],
+    "dive_m": 120.0,
+    "speed": 4.0,
+    "surface_share": 0.45,
+    "surface_s": [
+      18.0,
+      30.0
+    ],
+    "periscope_s": [
+      25.0,
+      40.0
+    ],
+    "periscope_depth": 6.6,
+    "dive_s": 8.0,
+    "deed_at_s": 6.0,
+    "help_m": 250.0,
+    "deeds": {
+      "none": 3.0,
+      "torpedo_foe": 4.0,
+      "crate": 2.0,
+      "chart": 2.0,
+      "torpedo_us": 1.5
+    },
+    "torpedo_speed": 25.0,
+    "torpedo_life_s": 30.0,
+    "foe_damage": 260.0,
+    "us_damage": 60.0,
+    "keep_hull": 0.35,
+    "crate_ahead_m": 60.0,
+    "crate_loot": "uboat_crate",
+    "notices": {
+      "surface": "A long dark hull breaks the water far off... a checkerboard flag with a G",
+      "periscope": "A periscope cuts the water far off",
+      "dive": "The dark boat slips under and is gone",
+      "torpedo_foe": "A torpedo wake streaks toward the pirates!",
+      "torpedo_us": "A torpedo wake is heading for us!",
+      "hit_foe": "The torpedo strikes the pirate ship!",
+      "hit_us": "Torpedo hit! She is holed",
+      "crate": "Something was left afloat ahead, marked with a G",
+      "chart": "A mark appears on your chart where the dark boat was"
+    },
+    "surface_lift": 0.4
   }
 }

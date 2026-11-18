@@ -1,10 +1,6 @@
-Sea step 8e-3: the Whorl Kraken
+Sea 8e-4: the G U-boat sightings with deeds
 
-Region 7's kraken surfaces beside the ship and sends four arms up her sides:
-while any arm holds her she cannot move; each arm rears and smashes the deck
-(players knocked flat, hull damage); arms are shot off one by one and grow back;
-killing the body sinks its arms and floats its hoard. Own models (chained arm
-segments), loot, items. Two-copy tested (set kraken).
+Rare far-off sightings of an unknown submarine under a checkerboard G flag: a periscope wake or the boat surfaced at the horizon, diving away when a ship closes in, never touchable or blocking. Deeds: torpedoes a pirate fighting you, leaves a marked crate, pins a secret on every chart, or torpedoes your ship lightly (never below 35 percent hull). Host-run, sent to guests with its torpedoes and deed notices. Model tools/blender/sea_uboat.py, data encounters.json uboat, dev !uboat.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

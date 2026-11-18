@@ -115,6 +115,9 @@ func _send_fleet(fleet: Node) -> void:
 	var beasts: Node = fleet.get("foes").get("beasts")
 	if bool(beasts.call("should_send")):
 		_beast_down.rpc(beasts.call("to_net"), beasts.call("fires_to_net"))
+	var uboat: Node = fleet.get("foes").get("uboat")
+	if bool(uboat.call("should_send")):
+		_uboat_down.rpc(uboat.call("to_net"))
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -916,6 +919,27 @@ func _beast_died(id: int, killer: int) -> void:
 	var beasts := _foe_part("beasts")
 	if beasts != null:
 		beasts.call("fell", id, killer, my_id())
+
+
+# --- the G U-boat (sea step 8e-4): host -> everyone (the boat and its torpedoes; its deeds' notices and chart pins) ---
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _uboat_down(got: Array) -> void:
+	var uboat := _foe_part("uboat")
+	if uboat != null and got.size() == 2 and got[0] is Array and got[1] is Array and (got[1] as Array).size() <= 8:
+		uboat.call("from_net", got)
+
+
+func tell_uboat_event(kind: String) -> void:
+	if active() and net.is_host():
+		_uboat_event.rpc(kind)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _uboat_event(kind: String) -> void:
+	var uboat := _foe_part("uboat")
+	if uboat != null and kind.length() <= 16:
+		uboat.call("event", kind)
 
 
 func tell_player_fx(peer: int, kind: String, v: Vector3, damage: float) -> void:

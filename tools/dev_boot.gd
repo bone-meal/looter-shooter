@@ -661,6 +661,47 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 									break
 							await get_tree().create_timer(0.2, true, false, true).timeout
 				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f yaw %.1f tip %.1f at (%.1f, %.1f) speed %.1f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"]), rad_to_deg(float(ms_r["yaw"])), float(mine_r.get("tip_deg")), float(ms_r["x"]), float(ms_r["z"]), float(ms_r["speed"])])
+		"uboat":  # sea step 8e-4: !uboat sight <surface|periscope> <none|torpedo_foe|torpedo_us|crate|chart> | near [m] (host: bring it close, broadside on) | cfg <key> <n> | look [torp] | pause on|off | wait <seen|gone|hit|deed> [n] | status <note>
+			var sea_u: Node = session.call("sea")
+			var fleet_u: Node = sea_u.get("ships") if sea_u != null else null
+			if fleet_u == null:
+				_lines.append("uboat: no sea")
+			else:
+				var ub: Node = fleet_u.get("foes").get("uboat")
+				var ms_u: Dictionary = (fleet_u.get("ships") as Array)[clampi(_ship_i, 0, (fleet_u.get("ships") as Array).size() - 1)].get("state")
+				match words[1] if words.size() > 1 else "status":
+					"sight":
+						ub.call("sight", words[2] if words.size() > 2 else "surface", words[3] if words.size() > 3 else "none")
+					"near":
+						var s_u: Dictionary = ub.get("sub")
+						if not s_u.is_empty():
+							var a_u := atan2(float(s_u["z"]) - float(ms_u["z"]), float(s_u["x"]) - float(ms_u["x"]))
+							var m_u := float(words[2]) if words.size() > 2 else 90.0
+							s_u["x"] = float(ms_u["x"]) + cos(a_u) * m_u
+							s_u["z"] = float(ms_u["z"]) + sin(a_u) * m_u
+							s_u["yaw"] = -a_u  # (broadside on, for a look)
+					"cfg":  # a number of its data for this run
+						(ub.get("cfg") as Dictionary)[words[2]] = float(words[3])
+					"pause":
+						ub.set("paused", words.size() < 3 or words[2] == "on")
+					"look":  # face it (its conning tower) or its first torpedo
+						var s_l: Dictionary = ub.get("sub")
+						var t_l: Array = ub.get("torps")
+						var at_l := Vector3(float(t_l[0]["x"]), 0.0, float(t_l[0]["z"])) if not t_l.is_empty() and words.size() > 2 else (Vector3(float(s_l["x"]), 3.0, float(s_l["z"])) if not s_l.is_empty() else Vector3.INF)
+						if at_l.is_finite():
+							player.call("look_at_point", sea_u.call("world_of", at_l))
+					"wait":
+						var until_u := Time.get_ticks_msec() + 90000
+						var want_u := int(words[3]) if words.size() > 3 else 1
+						while Time.get_ticks_msec() < until_u:
+							var deeds_u := 0
+							for k_u: String in ub.get("deeds"):
+								deeds_u += int(ub.get("deeds")[k_u])
+							if (words[2] == "seen" and not (ub.get("sub") as Dictionary).is_empty() and String(ub.get("sub").get("mode", "")) != "dive") or (words[2] == "gone" and (ub.get("sub") as Dictionary).is_empty()) \
+								or (words[2] == "hit" and int(ub.get("torpedo_hits")) >= want_u) or (words[2] == "deed" and deeds_u >= want_u) or (words[2] == "torp" and not (ub.get("torps") as Array).is_empty()):
+								break
+							await get_tree().create_timer(0.2, true, false, true).timeout
+				_lines.append("UBOAT %s: %s; our hull %.0f of %.0f; flotsam %s; chart pins %d" % [" ".join(words.slice(1)), String(ub.call("status")), float(ms_u["hull"]), float(ms_u.get("hull_max", 0.0)), String(fleet_u.get("foes").get("flotsam").call("status")), (sea_u.get("chart").get("pins") as Array).size()])
 		"spook":  # sea step 8d: !spook fire (our nearest loaded gun at the newest ghost) | wait_solid | wait_faded | wait_gone | rise | wait_grab | wait_aboard | wait_risen <n> | killall | status <note>
 			var sea_g: Node = session.call("sea")
 			var fleet_g: Node = sea_g.get("ships") if sea_g != null else null
