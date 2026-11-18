@@ -1,6 +1,6 @@
-Sea 9a: dungeon space, room kit and puzzle kit
+Sea 9a fix: leaving a dungeon puts you back where you went in
 
-Dungeons live in their own spaces far off the sea map above the water, entered through a gate on their island (fade, own dark environment, a lamp that walks with the player; the sea, rain and sky are not drawn inside). Drawn from a hand-made map with the new region 1 room kit (sandstone sea-temple floors, walls, ceilings as MultiMeshes; portcullis and locked doors, pressure plates, levers, push blocks, keys, chests, torches, gate). Puzzle rules are pure and host-run (doors by key, plates or lever; latching plates; blocks pushed cell by cell), saved in the host world and sent to everyone; chest loot rolled on the opener's machine. Test dungeon The Proving Vault near the home port. Fixed online sea positions: the net session refused or misplaced positions beyond 30 km / 9 km of the anchor (dungeon spaces).
+Coming out of a dungeon returns the player to the spot he stood on when he entered (facing away from the gate) instead of a ray-found gate front, and holds him there until the island's solid ground is built under him, so he never drops through or lands low. Leaving the sea while inside a dungeon (painting, /tp, the session) restores the sea's look and hides the dungeon lamp.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -188,6 +188,7 @@ func enter(graphics: String) -> void:
 
 func leave() -> void:
 	inside = false
+	dungeons.reset_indoor()
 	ships.let_go()
 	salvage.window.visible = false
 	_player.set("swimming", false)

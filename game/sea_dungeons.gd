@@ -26,6 +26,8 @@ var _dirty := false
 var _send_t := 0.0
 var _press_t := 0.0
 var _gate_t := 0.0
+var _came_from := {}  # id -> [sea position, yaw] where this player stood when he went in (he comes back out there)
+var _settle := {}  # after coming out: {"at": sea position, "until": seconds} held until the island's ground is solid under him
 
 
 func setup(sea: Node3D, player: CharacterBody3D) -> void:
@@ -192,6 +194,8 @@ func gate_front(id: String) -> Vector3:
 
 
 func enter(id: String) -> void:
+	if where == "":
+		_came_from[id] = [_sea.call("local_of", _player.global_position), float(_player.call("look_yaw"))]
 	var d: SeaDungeon = spaces[id]
 	d.build()
 	var arrive: Array = d.rules.of_kind("arrive")
@@ -206,9 +210,45 @@ func leave() -> void:
 	if where == "":
 		return
 	var id := where
-	_player.call("teleport", _sea.call("world_of", gate_front(id)), deg_to_rad(float(cfg["dungeons"][id]["entrance"]["yaw"])))
+	var back: Vector3 = gate_front(id)
+	var yaw := deg_to_rad(float(cfg["dungeons"][id]["entrance"]["yaw"])) + PI  # facing away from the gate
+	if _came_from.has(id):  # where he went in: that ground was solid under him then
+		back = _came_from[id][0]
+		yaw = float(_came_from[id][1]) + PI
+	_player.call("teleport", _sea.call("world_of", back + Vector3(0.0, 0.3, 0.0)), yaw)
+	_settle = {"at": back + Vector3(0.0, 0.3, 0.0), "until": Time.get_ticks_msec() / 1000.0 + 4.0}
+	where = ""
+	_indoor(false)
 	_fade()
 	last = "left " + id
+
+
+# Coming out: the island's solid ground round him may take a few frames to be built (it is only kept near players):
+# till a ray finds it under him he is held where he came out, then set on it. Never falls through or drops into the sea.
+func _physics_process(_delta: float) -> void:
+	if _settle.is_empty() or _player == null:
+		return
+	var at: Vector3 = _sea.call("world_of", _settle["at"])
+	var q := PhysicsRayQueryParameters3D.create(at + Vector3(0.0, 3.0, 0.0), at + Vector3(0.0, -6.0, 0.0), 1)
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	if not hit.is_empty():
+		_player.global_position = (hit["position"] as Vector3) + Vector3(0.0, 0.1, 0.0)
+		_settle = {}
+		return
+	if Time.get_ticks_msec() / 1000.0 > float(_settle["until"]):
+		_settle = {}  # (nothing solid there after 4 s: let him be)
+		return
+	_player.global_position = at
+	_player.set("velocity", Vector3.ZERO)
+
+
+# The sea was left (a painting, /tp, the session) while inside: the look and lamp go back to the sea's.
+func reset_indoor() -> void:
+	_settle = {}
+	if where != "":
+		where = ""
+		_indoor(false)
+	_lamp.visible = false
 
 
 func _fade() -> void:
@@ -384,4 +424,5 @@ func status() -> String:
 	var parts: Array = []
 	for id: String in spaces:
 		parts.append((spaces[id] as SeaDungeon).status())
-	return "dungeons: in '%s', acts %d, applied %d, last '%s'; %s" % [where, acts, applied, last, "; ".join(parts)]
+	var camera := get_viewport().get_camera_3d()
+	return "dungeons: in '%s' (dark look %s, settling %s), acts %d, applied %d, last '%s'; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), acts, applied, last, "; ".join(parts)]
