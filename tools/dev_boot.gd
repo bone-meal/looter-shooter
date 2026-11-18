@@ -764,6 +764,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					rows_t.append([tri_t * count_t, str(g_t.get_path()).right(70), g_t.is_visible_in_tree()])
 				rows_t.sort_custom(func(a: Array, b: Array) -> bool: return int(a[0]) > int(b[0]))
 				_lines.append("TOWN tris %s: %s" % [words[2], str(rows_t.slice(0, 8))])
+			elif sub_t == "up":  # !town up <plot>: the upgrade button (a guest asks the host)
+				_lines.append("TOWN up %s: %s" % [words[2], String(town_t.call("upgrade", words[2]))])
+			elif sub_t == "crew":  # the crew chest's goods and the hall / gallery as this copy sees them
+				_lines.append("TOWN crew %s: chest %s, cases %s, paintings %s, doubloons %d, damage boon %.0f" % [" ".join(words.slice(2)), str((town_t.get("crew_chest") as RefCounted).call("to_list")), str(town_t.get("hall").get("cases")), str(town_t.get("gallery").get("bought")), int(session.call("doubloons").get("balance")), float(player.call("boon", "damage_pct"))])
+			elif sub_t == "wait":  # !town wait case|paint|boon <id>: up to 60 s until it is so here
+				var until_w := Time.get_ticks_msec() + 60000
+				while Time.get_ticks_msec() < until_w:
+					if words[2] == "case" and (town_t.get("hall").get("cases") as Dictionary).has(words[3]):
+						break
+					if words[2] == "paint" and (town_t.get("gallery").get("bought") as Array).has(words[3]):
+						break
+					if words[2] == "boon" and float(player.call("boon", words[3])) > 0.0:
+						break
+					if words[2] == "chest" and str((town_t.get("crew_chest") as RefCounted).call("to_list")).contains(words[3]):
+						break
+					await get_tree().create_timer(0.5).timeout
+				_lines.append("TOWN wait %s %s: %s" % [words[2], words[3], "yes" if Time.get_ticks_msec() < until_w else "TIMED OUT"])
 			elif sub_t == "nobars":  # empty the bag of ore and bars (they may not pass a painting)
 				var bag_n: RefCounted = sea_t.get("skills").get("bag")
 				for id_n: String in bag_n.call("all_ids"):

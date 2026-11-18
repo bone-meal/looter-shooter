@@ -1,10 +1,6 @@
-Sea step 7b-4: walk-in trophy hall and gallery with portal paintings
+Two-copy test of the home port town (set town)
 
-Real interiors (hollow storeys with doorway, lining, floor, ceiling, windows seen from inside) in the trophy hall and gallery models; the trophy hall grown so six hub cabinets fit at every level.
-Trophy hall: six trophy cabinets, the archaeology collections' cases, boss plinths, the crew's legend board, lamps only inside.
-Gallery: paintings of the colosseum, the island and Aurelind bought with doubloons become portals; return paintings of the port on the island and in Aurelind; ore and bars may not pass.
-Cases and paintings belong to the host's world online (request_act).
-Island rebuilt for the bigger footprints. Low-segment spheres and cylinders (the defaults made 32k triangles each).
+Dev steps for town upgrades, cases, paintings, crew chest and feasts between two copies; all work.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
