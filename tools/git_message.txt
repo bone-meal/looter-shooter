@@ -1,11 +1,10 @@
-Sea step 8e-1: Sunskate, Fogmaw and Cinder Turtle
+Sea step 8e-2: Rime Orcas, Squallbeaks and Reef Sirens
 
-A region creature framework (game/sea_beasts.gd + game/beasts/<kind>.gd):
-host-run, online list, hits to the host, knock / snatch done on the player's
-own machine, deck fires seen everywhere. Region 1 Sunskates leap over the deck
-knocking players flat; region 2 Fogmaw (fog only) rises over the rail and
-snatches a player into the sea; region 3 Cinder Turtle rams and sets the deck
-on fire. Own models, loot and items. Two-copy tested (set beasts8e).
+Region 4 Rime Orca pods heave the ship over (players slide, those at the low
+rail go overboard) and snatch swimmers; region 5 Squallbeaks dive-bomb players
+on deck (mostly in storms); region 6 Reef Sirens sing from solid reef rocks and
+drag the ship's heading toward them until shot. Own models, loot, items.
+Two-copy tested (set beasts8e2).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

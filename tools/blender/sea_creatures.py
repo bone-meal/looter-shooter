@@ -14,6 +14,13 @@
 #                    (the game bends them) - only the lure shows while it lurks.
 #   sea_cinder_turtle region 3's CINDER TURTLE: a ~5 m sea turtle whose basalt shell is split by glowing magma vents
 #                    (node "Vents"), a beaked head ("Head") and four flippers ("FlipFL", "FlipFR", "FlipBL", "FlipBR").
+#   sea_orca         region 4's RIME ORCA: a ~6 m orca, black with white belly / eye patch and a frost-blue saddle, tall
+#                    dorsal fin, flukes on node "Tail", lower jaw "Jaw".
+#   sea_squallbeak   region 5's SQUALLBEAK: a big storm seabird (~3 m wings), slate back, white head, hooked yellow beak,
+#                    wings "WingL" / "WingR" (two joints drawn as one bent blade), tail fan.
+#   sea_siren        region 6's REEF SIREN: a sea-folk singer, our own: a scaled fish tail coiled under her, a body in a
+#                    kelp-and-shell robe (fully covered), coral-pink skin, fin-ears, long kelp hair; arms "ArmL" / "ArmR".
+#   sea_siren_rock   the reef rock a siren sits on: a barnacled outcrop with weed (solid in the game).
 # Model space: x right, y up, f forward (the game's -z). The shark's belly is at y = 0; the serpent's head centre
 # is the origin (it swims at the surface, segments rise and dive).
 # Run: python3 tools/blender/sea_creatures.py   (ONLY=sea_shark builds just that one)
@@ -233,10 +240,97 @@ def cinder_turtle(m):
         m.loft(skin, [(side * 1.6, 0.3, f, chord, 0.12), (side * (1.6 + span * 0.5), 0.25, f - 0.35, chord * 0.75, 0.09), (side * (1.6 + span), 0.2, f - 0.8, chord * 0.3, 0.05)], segs=10, node=name)
 
 
+ORCA_BLACK = (0.05, 0.05, 0.06)
+ORCA_WHITE = (0.92, 0.94, 0.96)
+FROST = (0.6, 0.78, 0.92)
+GULL_SLATE = (0.32, 0.35, 0.4)
+GULL_WHITE = (0.94, 0.94, 0.92)
+BEAK = (0.95, 0.75, 0.2)
+SIREN_SKIN = (0.9, 0.62, 0.62)
+SIREN_SCALE = (0.2, 0.55, 0.52)
+KELP = (0.18, 0.32, 0.14)
+SHELL = (0.95, 0.88, 0.78)
+ROCK = (0.36, 0.34, 0.32)
+WEED = (0.25, 0.36, 0.14)
+
+
+def orca(m):
+    black, white, frost = K("leather", ORCA_BLACK), K("leather", ORCA_WHITE), K("leather", FROST)
+    cy = 0.7
+    body = [(-2.0, 0.12, 0.14), (-1.4, 0.38, 0.42), (-0.5, 0.62, 0.66), (0.4, 0.7, 0.72), (1.3, 0.62, 0.6), (2.1, 0.42, 0.38), (2.6, 0.18, 0.16), (2.75, 0.04, 0.04)]
+    m.loft(black, [(0.0, cy, f, rx, ry) for f, rx, ry in body], segs=16)
+    m.loft(white, [(0.0, cy - ry * 0.45, f, rx * 0.88, ry * 0.6) for f, rx, ry in body[2:-2]], segs=14)  # white belly
+    m.prof(black, 0.06, [(0.5, cy + 0.6), (-0.4, cy + 0.62), (-0.3, cy + 2.1), (-0.05, cy + 2.05)], x=0.0)  # tall dorsal
+    m.ball(frost, (0.45, 0.08, 0.7), (0.0, cy + 0.62, -0.7), u=10, v=5)  # frost saddle
+    for side in (-1, 1):
+        m.ball(white, (0.06, 0.16, 0.32), (side * 0.48, cy + 0.32, 1.6), u=8, v=6)  # eye patch
+        m.ball(K("paint", DARK), (0.04, 0.04, 0.04), (side * 0.5, cy + 0.22, 1.85), u=8, v=6)
+        side_fin(m, black, (side * 0.55, cy - 0.3, 0.8), 0.9, 0.5, 0.35, side)
+    m.node("Tail", (0.0, cy, -1.8))
+    m.loft(black, [(0.0, cy, -1.8, 0.14, 0.16), (0.0, cy, -2.3, 0.08, 0.1)], segs=10, node="Tail")
+    for side in (-1, 1):
+        m.loft(black, [(0.0, cy, -2.3, 0.1, 0.05), (side * 0.6, cy, -2.65, 0.22, 0.04), (side * 1.0, cy, -2.95, 0.08, 0.02)], segs=8, node="Tail")
+    m.node("Jaw", (0.0, cy - 0.25, 1.9))
+    m.loft(white, [(0.0, cy - 0.3, 1.9, 0.3, 0.1), (0.0, cy - 0.28, 2.5, 0.14, 0.06)], segs=10, node="Jaw")
+    for k in range(6):
+        x = -0.18 + k * 0.07
+        m.rod(K("bone", TOOTH), 0.02, (x, cy - 0.22, 2.35), (x, cy - 0.12, 2.36), r2=0.004, segs=5, node="Jaw")
+
+
+def squallbeak(m):
+    slate, white, beak = K("feather", GULL_SLATE), K("feather", GULL_WHITE), K("bone", BEAK)
+    cy = 0.0
+    m.loft(white, [(0.0, cy, -0.55, 0.1, 0.1), (0.0, cy + 0.02, -0.1, 0.22, 0.22), (0.0, cy + 0.04, 0.35, 0.2, 0.2), (0.0, cy + 0.1, 0.62, 0.13, 0.13)], segs=12)
+    m.loft(slate, [(0.0, cy + 0.12, -0.5, 0.08, 0.05), (0.0, cy + 0.16, 0.0, 0.2, 0.08), (0.0, cy + 0.14, 0.4, 0.15, 0.05)], segs=10)  # slate mantle
+    m.ball(white, (0.13, 0.13, 0.15), (0.0, cy + 0.16, 0.72), u=10, v=8)  # head
+    m.loft(beak, [(0.0, cy + 0.15, 0.82, 0.045, 0.05), (0.0, cy + 0.12, 1.0, 0.03, 0.035), (0.0, cy + 0.06, 1.08, 0.012, 0.03)], segs=8)  # hooked beak
+    for side in (-1, 1):
+        m.ball(K("paint", DARK), (0.025, 0.025, 0.025), (side * 0.1, cy + 0.2, 0.8), u=6, v=5)
+        name = "WingL" if side < 0 else "WingR"
+        m.node(name, (side * 0.15, cy + 0.12, 0.1))
+        m.loft(slate, [(side * 0.12, cy + 0.12, 0.15, 0.24, 0.04), (side * 0.7, cy + 0.2, 0.05, 0.22, 0.03), (side * 1.15, cy + 0.14, -0.1, 0.16, 0.02), (side * 1.55, cy + 0.06, -0.3, 0.06, 0.012)], segs=8, node=name)
+        m.loft(K("feather", (0.08, 0.08, 0.09)), [(side * 1.2, cy + 0.12, -0.14, 0.1, 0.015), (side * 1.58, cy + 0.05, -0.33, 0.04, 0.01)], segs=6, node=name)  # black tips
+    m.prof(white, 0.03, [(-0.45, cy + 0.05), (-0.85, cy + 0.12), (-0.88, cy - 0.02), (-0.45, cy - 0.04)], x=0.0)  # tail fan
+    for side in (-1, 1):
+        m.rod(K("leather", BEAK), 0.02, (side * 0.08, cy - 0.15, -0.1), (side * 0.08, cy - 0.3, -0.35), r2=0.012, segs=5)  # tucked feet
+
+
+def siren(m):
+    skin, scale, kelp, shell = K("leather", SIREN_SKIN), K("scale", SIREN_SCALE), K("cloth", KELP), K("bone", SHELL)
+    # the fish tail coiled under her (she sits on her rock on it), the fluke curling up at the side
+    m.loft(scale, [(0.0, 0.25, 0.1, 0.24, 0.2), (0.15, 0.15, -0.35, 0.22, 0.18), (0.45, 0.1, -0.55, 0.17, 0.13), (0.75, 0.12, -0.35, 0.12, 0.1), (0.85, 0.2, 0.0, 0.07, 0.06)], segs=12)
+    m.prof(scale, 0.03, [(0.0, 0.25), (0.1, 0.55), (-0.1, 0.62), (-0.05, 0.25)], x=0.88)  # fluke
+    # the body in a long kelp robe with a shell clasp, full sleeves
+    m.loft(kelp, [(0.0, 0.3, 0.05, 0.27, 0.22), (0.0, 0.7, 0.05, 0.22, 0.17), (0.0, 1.0, 0.05, 0.2, 0.15), (0.0, 1.22, 0.05, 0.23, 0.16)], segs=14)
+    m.ball(shell, (0.06, 0.06, 0.03), (0.0, 1.08, 0.21), u=8, v=6)
+    m.loft(skin, [(0.0, 1.3, 0.05, 0.06, 0.06), (0.0, 1.38, 0.05, 0.055, 0.055)], segs=8)  # neck
+    m.ball(skin, (0.12, 0.15, 0.13), (0.0, 1.52, 0.06), u=12, v=9)  # head
+    for side in (-1, 1):
+        m.ball((fk.GLOW, (0.5, 0.95, 0.9)), (0.022, 0.02, 0.02), (side * 0.045, 1.55, 0.18), u=6, v=5)  # pale glowing eyes
+        m.prof(scale, 0.015, [(0.0, 1.5), (-0.12, 1.62), (-0.08, 1.48)], x=side * 0.12)  # fin-ears
+        name = "ArmL" if side < 0 else "ArmR"
+        m.node(name, (side * 0.24, 1.18, 0.05))
+        m.loft(kelp, [(side * 0.24, 1.18, 0.05, 0.065, 0.065), (side * 0.3, 0.95, 0.12, 0.06, 0.06), (side * 0.3, 0.78, 0.25, 0.055, 0.055)], segs=8, node=name)  # sleeve
+        m.ball(skin, (0.04, 0.05, 0.04), (side * 0.3, 0.72, 0.3), u=8, v=6, node=name)  # hand
+    m.loft(kelp, [(0.0, 1.64, -0.02, 0.15, 0.08), (0.0, 1.4, -0.12, 0.16, 0.07), (0.0, 1.0, -0.15, 0.13, 0.05), (0.0, 0.7, -0.12, 0.08, 0.03)], segs=10)  # long kelp hair down her back
+    for k in range(5):  # shells strung in the hair
+        m.ball(shell, (0.025, 0.025, 0.02), (-0.08 + k * 0.04, 1.2 - k * 0.08, -0.2), u=6, v=4)
+
+
+def siren_rock(m):
+    rock, weed = K("rock", ROCK), K("leaf", WEED)
+    m.lathe(rock, [(0.0, 1.5), (0.8, 1.4), (1.5, 1.0), (2.0, 0.3), (2.3, -1.5), (0.0, -1.5)], (0.0, 0.0, 0.0), segs=12, squash=0.8)
+    for k in range(6):
+        a = 2 * math.pi * k / 6 + 0.3
+        m.ball(rock, (0.7, 0.5, 0.6), (math.cos(a) * 1.5, 0.3, math.sin(a) * 1.1), u=8, v=6)
+        m.ball(K("bone", (0.85, 0.82, 0.75)), (0.12, 0.08, 0.12), (math.cos(a) * 1.9, 0.0, math.sin(a) * 1.45), u=6, v=4)  # barnacles
+        m.loft(weed, [(math.cos(a) * 1.8, 0.1, math.sin(a) * 1.4, 0.06, 0.03), (math.cos(a) * 2.1, -0.4, math.sin(a) * 1.6, 0.04, 0.02)], segs=5)
+
+
 def main():
     fk.init()
     only = set(filter(None, os.environ.get("ONLY", "").split(",")))
-    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle)):
+    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle), ("sea_orca", orca), ("sea_squallbeak", squallbeak), ("sea_siren", siren), ("sea_siren_rock", siren_rock)):
         if only and name not in only:
             continue
         m = kit.Model(name, uv_scale=0.5, colored=True)

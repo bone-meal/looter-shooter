@@ -150,6 +150,34 @@
       "regions": 3,
       "region_only": true,
       "name": "Cinder Turtle"
+    },
+    "rime_orca": {
+      "creature": "beast",
+      "beast": "rime_orca",
+      "weight": 3,
+      "regions": 4,
+      "region_only": true,
+      "name": "Rime Orcas"
+    },
+    "squallbeak": {
+      "creature": "beast",
+      "beast": "squallbeak",
+      "weight": 2,
+      "regions": 5,
+      "region_only": true,
+      "weather_mult": {
+        "storm": 4.0,
+        "rain": 2.0
+      },
+      "name": "Squallbeaks"
+    },
+    "reef_siren": {
+      "creature": "beast",
+      "beast": "reef_siren",
+      "weight": 3,
+      "regions": 6,
+      "region_only": true,
+      "name": "Reef Sirens"
     }
   },
   "pirate": {
@@ -414,6 +442,61 @@
         ]
       },
       "gun_chance": 0.45
+    },
+    "rime_orca": {
+      "pieces": [
+        1,
+        2
+      ],
+      "doubloons": [
+        30,
+        60
+      ],
+      "items": {
+        "rime_blubber": [
+          1,
+          3
+        ]
+      },
+      "gun_chance": 0.2
+    },
+    "squallbeak": {
+      "pieces": [
+        1,
+        1
+      ],
+      "doubloons": [
+        12,
+        30
+      ],
+      "items": {
+        "storm_feather": [
+          1,
+          3
+        ]
+      },
+      "gun_chance": 0.1
+    },
+    "reef_siren": {
+      "pieces": [
+        1,
+        2
+      ],
+      "doubloons": [
+        40,
+        80
+      ],
+      "items": {
+        "siren_pearl": [
+          1,
+          1
+        ],
+        "siren_scale": [
+          1,
+          3
+        ]
+      },
+      "gun_chance": 0.3
     }
   },
   "loot_mult": {
@@ -668,6 +751,87 @@
       "loot": "cinder_turtle",
       "notice": "The sea steams: a Cinder Turtle surfaces!",
       "ram_notice": "The Cinder Turtle rams her! Fire on deck!"
+    },
+    "rime_orca": {
+      "enemy": "sea_orca",
+      "count": [
+        3,
+        4
+      ],
+      "scale": 1.0,
+      "ring_m": [
+        14.0,
+        22.0
+      ],
+      "depth": 0.55,
+      "speed": 5.0,
+      "rush_speed": 8.5,
+      "hunt_m": 40.0,
+      "grab_m": 2.2,
+      "drag_m": 8.0,
+      "grab_damage": 22.0,
+      "grab_every": 8.0,
+      "first_tip_s": 6.0,
+      "tip_every": [
+        14.0,
+        20.0
+      ],
+      "tip_s": 2.2,
+      "tip_deg": 13.0,
+      "tip_hull": 40.0,
+      "slide_speed": 6.0,
+      "rail_m": 1.2,
+      "over_damage": 6.0,
+      "loot": "rime_orca",
+      "notice": "Black fins cut through the ice-cold water: a pod of Rime Orcas!"
+    },
+    "squallbeak": {
+      "enemy": "sea_squallbeak",
+      "count": [
+        4,
+        6
+      ],
+      "scale": 1.0,
+      "ring_m": [
+        10.0,
+        18.0
+      ],
+      "height_m": [
+        16.0,
+        24.0
+      ],
+      "speed": 9.0,
+      "first_dive_s": 4.0,
+      "dive_every": [
+        6.0,
+        10.0
+      ],
+      "dive_s": 1.1,
+      "climb_s": 1.4,
+      "peck_m": 1.8,
+      "peck_damage": 12.0,
+      "peck_push": 4.0,
+      "loot": "squallbeak",
+      "notice": "Shrieks on the wind: Squallbeaks circle overhead!"
+    },
+    "reef_siren": {
+      "enemy": "sea_siren",
+      "count": [
+        2,
+        3
+      ],
+      "scale": 1.0,
+      "ahead_m": [
+        45.0,
+        65.0
+      ],
+      "spread_m": 14.0,
+      "seat_y": 1.4,
+      "rock_up": -0.1,
+      "sing_m": 90.0,
+      "pull_deg": 9.0,
+      "loot": "reef_siren",
+      "notice": "A song drifts over the water... the helm pulls toward the rocks!"
     }
   }
 }

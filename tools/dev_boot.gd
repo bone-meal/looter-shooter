@@ -654,7 +654,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 								if hit_m:
 									break
 							await get_tree().create_timer(0.2, true, false, true).timeout
-				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"])])
+				_lines.append("RBEAST %s: %s; player hp %.0f swimming %s; our hull %.0f yaw %.1f tip %.1f" % [" ".join(words.slice(1)), String(mgr.call("status")), float(player.get("health").hp), str(player.get("swimming")), float(ms_r["hull"]), rad_to_deg(float(ms_r["yaw"])), float(mine_r.get("tip_deg"))])
 		"spook":  # sea step 8d: !spook fire (our nearest loaded gun at the newest ghost) | wait_solid | wait_faded | wait_gone | rise | wait_grab | wait_aboard | wait_risen <n> | killall | status <note>
 			var sea_g: Node = session.call("sea")
 			var fleet_g: Node = sea_g.get("ships") if sea_g != null else null

@@ -88,6 +88,10 @@ sunskate_wing: Sunskate Wing
 fogmaw_lure: Fogmaw Lure
 eel_hide: Eel Hide
 cinder_plate: Cinder Shell Plate
+rime_blubber: Rime Blubber
+storm_feather: Storm Feather
+siren_pearl: Siren Pearl
+siren_scale: Siren Scale
 ash_log: Ash Log
 oak_log: Oak Log
 palm_log: Driftpalm Log

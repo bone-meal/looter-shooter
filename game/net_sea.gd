@@ -926,5 +926,5 @@ func tell_player_fx(peer: int, kind: String, v: Vector3, damage: float) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _player_fx(kind: String, v: Vector3, damage: float) -> void:
 	var beasts := _foe_part("beasts")
-	if beasts != null and kind in ["knock", "snatch"]:
+	if beasts != null and kind in ["knock", "snatch", "slide"]:
 		beasts.call("player_fx", kind, v, damage)

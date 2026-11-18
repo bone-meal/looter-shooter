@@ -18,6 +18,9 @@ const KINDS := {
 	"sunskate": preload("res://game/beasts/sunskate.gd"),
 	"fogmaw": preload("res://game/beasts/fogmaw.gd"),
 	"cinder_turtle": preload("res://game/beasts/cinder_turtle.gd"),
+	"rime_orca": preload("res://game/beasts/rime_orca.gd"),
+	"squallbeak": preload("res://game/beasts/squallbeak.gd"),
+	"reef_siren": preload("res://game/beasts/reef_siren.gd"),
 }
 
 var cfg: Dictionary  # encounters.json "beasts"
@@ -194,6 +197,7 @@ func set_mode(b: Dictionary, mode: String) -> void:
 func _remove(id: int) -> void:
 	var b: Dictionary = beasts.get(id, {})
 	beasts.erase(id)
+	_gone(b)
 	var enemy: Node3D = b.get("enemy")
 	if is_instance_valid(enemy):
 		if director != null:
@@ -226,6 +230,11 @@ func _process(delta: float) -> void:
 			e.rotation.y = lerp_angle(e.rotation.y, float(b.get("net_yaw", 0.0)), 0.2)
 		(KINDS[String(b["kind"])] as Script).call("pose", self, b, delta)
 	_fires_step(delta)
+	for ship: Node3D in ships():  # a heave from under her eases off
+		var tip := float(ship.get("tip_deg"))
+		if tip != 0.0 and not bool(ship.get_meta("tipping", false)):
+			ship.set("tip_deg", move_toward(tip, 0.0, 12.0 * delta))
+		ship.set_meta("tipping", false)
 	if not is_host:
 		_send_hits()
 
@@ -248,6 +257,16 @@ func knock(body: Node3D, push: Vector3, damage: float) -> void:
 	var peer := _peer_of(body)
 	if peer != 0:
 		_net().call("tell_player_fx", peer, "knock", push, damage)
+
+
+# The deck heaves: he slides along `push` (no hurt).
+func slide(body: Node3D, push: Vector3) -> void:
+	if body == _player:
+		player_fx("slide", push, 0.0)
+		return
+	var peer := _peer_of(body)
+	if peer != 0:
+		_net().call("tell_player_fx", peer, "slide", push, 0.0)
 
 
 # Snatched off the deck into the sea at `to` (sea coordinates) and hurt.
@@ -275,6 +294,9 @@ func _peer_of(body: Node3D) -> int:
 # This machine's player: what a beast did to him (the host's word, or the host's own player).
 func player_fx(kind: String, v: Vector3, damage: float) -> void:
 	if not v.is_finite() or not is_finite(damage):
+		return
+	if kind == "slide":  # the deck heaved under him: he slides (no hurt)
+		_player.call("shove", v.limit_length(10.0))
 		return
 	if kind == "knock":
 		_player.call("shove", v.limit_length(14.0))
@@ -343,9 +365,17 @@ func _fires_step(delta: float) -> void:
 
 # --- deaths ---
 
+# A beast's own extra nodes (a siren's rock) go with it.
+func _gone(b: Dictionary) -> void:
+	var extra: Node = b.get("extra")
+	if is_instance_valid(extra):
+		extra.queue_free()
+
+
 func _on_died(_enemy: Node, id: int) -> void:
 	var b: Dictionary = beasts.get(id, {})
 	beasts.erase(id)
+	_gone(b)
 	slain += 1
 	if b.is_empty() or not host():
 		return
@@ -369,7 +399,7 @@ func to_net() -> Array:
 			continue
 		var p: Vector3 = _sea.call("local_of", e.global_position)
 		var hp: RefCounted = e.get("health")
-		out.append([id, String(b["kind"]), snappedf(p.x, 0.01), snappedf(e.global_position.y - _fleet.global_position.y, 0.01), snappedf(p.z, 0.01), snappedf(e.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(b["mode"]), snappedf(float(b["t"]), 0.01)])
+		out.append([id, String(b["kind"]), snappedf(p.x, 0.01), snappedf(e.global_position.y - _fleet.global_position.y, 0.01), snappedf(p.z, 0.01), snappedf(e.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(b["mode"]), snappedf(float(b["t"]), 0.01), ships().find(b["ship"]) if is_instance_valid(b["ship"]) else -1, int(b.get("side_i", 0))])
 	return out
 
 
@@ -415,6 +445,10 @@ func from_net(list: Array, fire_list: Array) -> void:
 			b["t"] = float(got[8])
 		var hp: RefCounted = (b["enemy"] as Node).get("health")
 		hp.set("hp", clampf(float(got[6]), 0.0, 1.0) * float(hp.get("max_hp")))
+		if (got as Array).size() >= 11:  # the ship it is after and the side it works (for the poses: a tip, a song)
+			var all_ships := ships()
+			b["ship"] = all_ships[int(got[9])] if int(got[9]) >= 0 and int(got[9]) < all_ships.size() else null
+			b["side_i"] = clampi(int(got[10]), -1, 1)
 	for id: int in beasts.keys():
 		if seen.has(id):
 			_missing.erase(id)
@@ -460,6 +494,7 @@ func fell(id: int, killer: int, me: int) -> void:
 	if not beasts.has(id):
 		return
 	var e: Node3D = beasts[id]["enemy"]
+	_gone(beasts[id])
 	beasts.erase(id)
 	if not is_instance_valid(e):
 		return

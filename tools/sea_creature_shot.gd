@@ -61,13 +61,13 @@ func _ready() -> void:
 func _beasts() -> void:
 	var placed := {}
 	var x := -9.0
-	for id: String in ["sea_sunskate", "sea_fogmaw", "sea_cinder_turtle"]:
+	for id: String in ["sea_sunskate", "sea_fogmaw", "sea_cinder_turtle", "sea_orca", "sea_squallbeak", "sea_siren_rock", "sea_siren"]:
 		var own: Array[StandardMaterial3D] = []
 		var body := FantasyModels.creature(id, Color(0.9, 0.5, 0.2), own)
 		if body == null:
 			continue
 		add_child(body)
-		body.position = Vector3(x, 0.4, 0.0)
+		body.position = Vector3(x, 0.4, 0.0) if id != "sea_siren" else Vector3(x - 9.0, 1.9, 0.0)  # (the siren sits on her rock)
 		body.rotation.y = 2.3
 		placed[id] = body
 		x += 9.0
@@ -85,7 +85,7 @@ func _beasts() -> void:
 	var cam := Camera3D.new()
 	add_child(cam)
 	cam.current = true
-	for v: Array in [["beasts", Vector3(0, 7, 15), Vector3(0, 0.5, 0)], ["skate", Vector3(-5, 3, 4), Vector3(-9, 0.5, 0)], ["fogmaw", Vector3(4, 2.5, 4), Vector3(0, 0.6, -1)], ["turtle", Vector3(13, 3, 5), Vector3(9, 0.8, 0)]]:
+	for v: Array in [["beasts2", Vector3(27, 8, 18), Vector3(27, 0.5, 0)], ["orca", Vector3(22, 3, 6), Vector3(18, 0.8, 0)], ["gull", Vector3(28.5, 2, 3), Vector3(27, 0.5, 0)], ["siren", Vector3(36, 3, 4.5), Vector3(36, 2.2, 0)], ["beasts", Vector3(0, 7, 15), Vector3(0, 0.5, 0)], ["skate", Vector3(-5, 3, 4), Vector3(-9, 0.5, 0)], ["fogmaw", Vector3(4, 2.5, 4), Vector3(0, 0.6, -1)], ["turtle", Vector3(13, 3, 5), Vector3(9, 0.8, 0)]]:
 		cam.position = v[1]
 		cam.look_at(v[2], Vector3.UP)
 		for i in 8:
