@@ -12,6 +12,7 @@
 # map, notice), game/sea_flotsam.gd (spill), the wave director and score card (set by game/sea_encounters.gd).
 extends Node3D
 
+const Threat = preload("res://core/sea/threat_rules.gd")
 const DeckWalk = preload("res://core/sea/deck_walk.gd")
 const FxKit = preload("res://game/fx_kit.gd")
 const KINDS := {
@@ -26,6 +27,7 @@ const KINDS := {
 }
 
 var cfg: Dictionary  # encounters.json "beasts"
+var _threat: Dictionary  # encounters.json "threat" (sea step 8f)
 var director: Node
 var card: RefCounted
 var beasts := {}  # id -> {"kind", "enemy", "mode", "t" (s in this mode), "ship", plus the behaviour's own keys}
@@ -52,6 +54,7 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D, encounters: Dict
 	_sea = sea
 	_player = player
 	cfg = encounters["beasts"]
+	_threat = encounters["threat"]
 	_stats = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]
 	_rng.randomize()
 
@@ -161,15 +164,17 @@ func spawn_one(kind: String, at: Vector3, region_n: int, extra: Dictionary) -> D
 	var id := _next_id
 	_next_id += 1
 	var stats: Dictionary = (_stats[String(c["enemy"])] as Dictionary).duplicate()
-	stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(region_n - 1))
-	stats["damage"] = float(stats.get("damage", 0.0)) * (1.0 + float(cfg["damage_per_region"]) * float(region_n - 1))
+	var pm := Threat.player_mult(_threat, region_n)  # (sea step 8f: grows with the region's item level)
+	stats["max_hp"] = float(stats["max_hp"]) * pm
+	stats["damage"] = float(stats.get("damage", 0.0)) * pm
 	var enemy := _make(id, kind, stats, false)
 	if enemy == null:
 		return {}
 	var b: Dictionary = beasts[id]
 	b["region"] = region_n
 	b["nth"] = 0
-	b["mult"] = 1.0 + float(cfg["damage_per_region"]) * float(region_n - 1)
+	b["mult"] = pm  # what it does to players
+	b["hull_mult"] = Threat.hull_mult(_threat, _fleet.get("hull_part").get("hull").get("cfg"), region_n)  # to ships
 	b.merge(extra, true)
 	enemy.global_position = at
 	(KINDS[kind] as Script).call("start", self, b)
@@ -318,12 +323,12 @@ func player_fx(kind: String, v: Vector3, damage: float) -> void:
 		return
 	if kind == "knock":
 		_player.call("shove", v.limit_length(14.0))
-		_player.call("take_damage", clampf(damage, 0.0, 200.0), "physical")
+		_player.call("take_damage", clampf(damage, 0.0, 20000.0), "physical")  # (a sanity cap: region 7 hits are big, sea step 8f)
 		_sea.emit_signal("notice", String(cfg["knock_notice"]))
 	elif kind == "snatch":
 		var to := world_of(v.x, v.z)
 		_player.call("teleport", Vector3(to.x, water(to) - 0.6, to.z), float(_player.call("look_yaw")) if _player.has_method("look_yaw") else 0.0)
-		_player.call("take_damage", clampf(damage, 0.0, 200.0), "physical")
+		_player.call("take_damage", clampf(damage, 0.0, 20000.0), "physical")  # (a sanity cap: region 7 hits are big, sea step 8f)
 		_sea.emit_signal("notice", String(cfg["snatch_notice"]))
 
 

@@ -1,1 +1,1 @@
-!uncap;!wait 2;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!beast pause;!uboat pause on;!ship board;!wait 3;!ship board;!uboat cfg dive_m 5;!uboat sight surface none;!wait 2;!uboat near 25;!wait 8;!uboat look;!wait 0.5;!snap ub_close;!uboat near 60;!wait 1;!uboat look;!wait 0.5;!snap ub_mid;!uboat sight periscope none;!wait 1;!uboat near 30;!wait 8;!uboat look;!wait 0.5;!snap ub_scope_close;!uboat status close
+!uncap;!wait 2;!immortal;!go sea;!wait 10;!foe pause;!ship board;!wait 3

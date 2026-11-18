@@ -14,7 +14,10 @@
 # (map, water_height, skills, notice), the player.
 extends Node3D
 
+const Threat = preload("res://core/sea/threat_rules.gd")
+
 var cfg: Dictionary
+var _threat: Dictionary  # encounters.json "threat" (sea step 8f)
 var director: Node
 var card: RefCounted
 var sharks := {}  # id -> {"enemy", "mode": roam|circle|lunge|off, "target": key, "t", "angle", "radius", "bit": time}
@@ -43,6 +46,7 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D, encounters: Dict
 	_sea = sea
 	_player = player
 	cfg = encounters["sharks"]
+	_threat = encounters["threat"]
 	_stats = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]["sea_shark"]
 	_rng.randomize()
 
@@ -181,11 +185,11 @@ func _spawn_near(anchor: Node3D) -> void:
 	var region := String((_sea.get("map") as RefCounted).call("region_id_at", _sea.call("local_of", spot).x, _sea.call("local_of", spot).z))
 	var n := maxi(int(region.trim_prefix("region_")), 1)
 	var stats := _stats.duplicate()
-	stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(n - 1))
+	stats["max_hp"] = float(stats["max_hp"]) * Threat.player_mult(_threat, n)  # (sea step 8f)
 	var e := _make(_next_id, stats, false)
 	e.global_position = Vector3(spot.x, _water(spot) - float(cfg["fin_depth"]), spot.z)
 	e.set_meta("tier", 4 + 4 * (n - 1))
-	e.set_meta("bite", float(cfg["bite"]) * (1.0 + float(cfg["damage_per_region"]) * float(n - 1)))
+	e.set_meta("bite", float(cfg["bite"]) * Threat.player_mult(_threat, n))
 	sharks[_next_id] = {"enemy": e, "mode": "roam", "target": "", "t": 0.0, "angle": a, "radius": _rng.randf_range(float(cfg["circle_m"][0]), float(cfg["circle_m"][1])) * 2.0, "bit": 0.0, "anchor": anchor}
 	_next_id += 1
 	spawned += 1

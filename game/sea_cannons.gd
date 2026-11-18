@@ -13,11 +13,13 @@
 extends Node3D
 
 const FxKit = preload("res://game/fx_kit.gd")
+const Threat = preload("res://core/sea/threat_rules.gd")
 const MODEL := "res://assets/models/sea/cannon.gltf"
 const TRUNNION_UP := 0.62  # the barrel's pivot height (tools/blender/sea_cannon.py TRUNNION)
 const TRUNNION_BACK := 0.05
 
 var cfg: Dictionary
+var _threat: Dictionary  # encounters.json "threat" (sea step 8f: a foe's balls by her region)
 var seated := {}  # this player's seat: {"ship": SeaShip, "index": int}
 var dev_fire := false  # dev: fire once without the key (tests run without focus)
 var dev_target: Node3D = null  # dev: a ship aimed at (with the drop worked out) instead of the look
@@ -40,6 +42,7 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	_sea = sea
 	_player = player
 	cfg = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/cannons.json"))
+	_threat = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/encounters.json")) as Dictionary)["threat"]
 	_ball_mesh = SphereMesh.new()
 	_ball_mesh.radius = float(cfg["ball_radius"])
 	_ball_mesh.height = float(cfg["ball_radius"]) * 2.0
@@ -331,7 +334,7 @@ func _fly(delta: float) -> void:
 				FxKit.burst(self, at, Color(0.7, 0.7, 0.7, 0.8), 14, 1.2, 0.5, 2.0, 0.2)
 				if bool(b["real"]) and bool(cfg["friendly_fire"]):
 					var ship := target as Node3D
-					_fleet.get("hull_part").call("damage", ship, ship.global_transform.affine_inverse() * at, float(cfg["damage"]))
+					_fleet.get("hull_part").call("damage", ship, ship.global_transform.affine_inverse() * at, _ball_hull(b["from"]))
 			else:
 				FxKit.burst(self, at, Color(0.5, 0.42, 0.3), 20, 0.8, 0.3, 5.0, -9.0)  # earth, rock
 			_sound(at)
@@ -344,7 +347,7 @@ func _fly(delta: float) -> void:
 			# a ball (any machine's copy: they fly alike) that lands by this player hurts him (sea step 8: the pirates' fire)
 			var by := end_at.distance_to(_player.global_position + Vector3(0.0, 0.9, 0.0))
 			if by < float(cfg.get("splash_m", 3.0)) and b["from"] != _fleet.call("ship_aboard"):
-				_player.call("take_damage", float(cfg.get("splash_damage", 35.0)) * (1.0 - by / float(cfg.get("splash_m", 3.0))))
+				_player.call("take_damage", float(cfg.get("splash_damage", 35.0)) * _ball_mult(b["from"], false) * (1.0 - by / float(cfg.get("splash_m", 3.0))))
 			last_end = "%s %.0f m from the muzzle, %.1f m up, after %.1f s" % ["ship" if not hit.is_empty() and (_fleet.get("ships") as Array).has(hit["collider"]) else ("land" if not hit.is_empty() else ("sea" if float(b["life"]) > 0.0 else "time")), end_at.distance_to(b["start"]), end_at.y - (b["start"] as Vector3).y, float(cfg["life"]) - float(b["life"])]
 			ball.queue_free()
 			_balls.remove_at(i)
@@ -370,3 +373,20 @@ func status() -> String:
 		var gun: Dictionary = (_guns[seated["ship"]] as Array)[int(seated["index"])]
 		aims.append("seated at %d yaw %.0f pitch %.0f" % [int(seated["index"]), rad_to_deg(float(gun["yaw"])), rad_to_deg(float(gun["pitch"]))])
 	return "cannons fired %d hits %d balls flying %d %s, last ball: %s" % [fired, hits, _balls.size(), " ".join(aims), last_end]
+
+
+# Sea step 8f: a ball's hull damage: ours as written; a foe's = foe_damage scaled to the ship her region expects.
+func _ball_hull(from: Variant) -> float:
+	if not is_instance_valid(from) or not ((from as Node).get("state") as Dictionary).has("foe"):
+		return float(cfg["damage"])
+	return float(cfg["foe_damage"]) * _ball_mult(from, true)
+
+
+# A foe's ball by the region she is in: x hull (ships) or x player damage; ours x1.
+func _ball_mult(from: Variant, hull: bool) -> float:
+	if not is_instance_valid(from) or not ((from as Node).get("state") as Dictionary).has("foe"):
+		return 1.0
+	var st: Dictionary = (from as Node).get("state")
+	var region := String((_sea.get("map") as RefCounted).call("region_id_at", float(st["x"]), float(st["z"])))
+	var n := maxi(int(region.trim_prefix("region_")), 1)
+	return Threat.hull_mult(_threat, _fleet.get("hull_part").get("hull").get("cfg"), n) if hull else Threat.player_mult(_threat, n)

@@ -594,7 +594,7 @@
     ]
   },
   "crews": {
-    "_about": "Sea step 8b: pirate crews on deck (core/sea/deck_walk.gd, game/sea_crews.gd). Musketeers shoot at players within see_m; cutlass men and the captain fight whoever stands on their deck. A boarder (kind 'boarders' > 0) closes to board_keep_m abeam of a player's ship and, within board_m, swings that many of her crew across one after another (cutlass men and the captain first). Crew are tougher by region (hp/damage_per_region) and count as tier_first + tier_per_region * (region - 1) for kill XP. Beating off the boarders leaves deck_loot chests on the defended deck; clearing a foe's own deck leaves them on hers and she strikes (no guns, no sail). Musketeers fire at players on other ships within musket_range (balls at musket_speed, led for her speed, musket_error_deg off). A crewman pushed hard past the rail (overboard_push m/s) or on a sinking ship goes into the sea, swims (swim_speed) to the nearest ship's ladder and climbs (climb_s); with no ship to reach he drowns after drown_s (no kill pay). Ships with a hold (sea step 8b-2) keep kinds[].below men in it: once a player is within below_wake_m (or her boarding starts) one climbs the companion stair every below_up_s; a player who goes down fights them there.",
+    "_about": "Sea step 8b: pirate crews on deck (core/sea/deck_walk.gd, game/sea_crews.gd). Musketeers shoot at players within see_m; cutlass men and the captain fight whoever stands on their deck. A boarder (kind 'boarders' > 0) closes to board_keep_m abeam of a player's ship and, within board_m, swings that many of her crew across one after another (cutlass men and the captain first). Beating off the boarders leaves deck_loot chests on the defended deck; clearing a foe's own deck leaves them on hers and she strikes (no guns, no sail). Musketeers fire at players on other ships within musket_range (balls at musket_speed, led for her speed, musket_error_deg off). A crewman pushed hard past the rail (overboard_push m/s) or on a sinking ship goes into the sea, swims (swim_speed) to the nearest ship's ladder and climbs (climb_s); with no ship to reach he drowns after drown_s (no kill pay). Ships with a hold (sea step 8b-2) keep kinds[].below men in it: once a player is within below_wake_m (or her boarding starts) one climbs the companion stair every below_up_s; a player who goes down fights them there. Health / damage by region: see \"threat\" (sea step 8f).",
     "retarget_s": 0.5,
     "see_m": 90.0,
     "board_keep_m": [
@@ -606,8 +606,6 @@
     "swing_s": 1.2,
     "swing_gap_s": 0.7,
     "swing_height": 3.2,
-    "hp_per_region": 0.35,
-    "damage_per_region": 0.2,
     "tier_first": 4,
     "tier_per_region": 4,
     "max_hit": 2500.0,
@@ -653,8 +651,6 @@
     "bite": 18.0,
     "bite_every": 1.6,
     "fin_depth": 1.25,
-    "hp_per_region": 0.35,
-    "damage_per_region": 0.25,
     "harvest": {
       "window_s": 15.0,
       "xp": 90,
@@ -687,7 +683,7 @@
       5.0,
       8.0
     ],
-    "bite_hull": 110.0,
+    "bite_hull": 24.0,
     "bite_every": 3.5,
     "lunge_reach": 16.0,
     "lunge_windup": 1.1,
@@ -695,8 +691,6 @@
     "lunge_radius": 2.8,
     "lunge_every": 4.5,
     "segment_share": 0.6,
-    "hp_per_region": 0.4,
-    "damage_per_region": 0.25,
     "lose_m": 950.0,
     "loot": "serpent",
     "notice": "Something huge moves under the water...",
@@ -737,11 +731,9 @@
     "grab_notice": "A drowned hand drags you under!"
   },
   "beasts": {
-    "_about": "Sea step 8e the regions' own creatures (game/sea_beasts.gd + game/beasts/<kind>.gd; kinds with creature 'beast', region_only = only in their own region, weather_only = only in that weather). hp / damage grow per region past their own. lose_m: gone when every player is that far. Each kind: enemy (data/enemies.json), count, loot (encounters loot table), notice; its own numbers below. ALL NUMBERS MINE.",
+    "_about": "Sea step 8e the regions' own creatures (game/sea_beasts.gd + game/beasts/<kind>.gd; kinds with creature 'beast', region_only = only in their own region, weather_only = only in that weather). lose_m: gone when every player is that far. Each kind: enemy (data/enemies.json), count, loot (encounters loot table), notice; its own numbers below. ALL NUMBERS MINE. Health / damage by region: see \"threat\" (sea step 8f).",
     "lose_m": 400.0,
     "max_hit": 2500.0,
-    "hp_per_region": 0.35,
-    "damage_per_region": 0.25,
     "knock_notice": "Knocked flat!",
     "snatch_notice": "Something dragged you over the side!",
     "sunskate": {
@@ -789,7 +781,7 @@
         12.0
       ],
       "sink_s": 2.0,
-      "hull_bite": 45.0,
+      "hull_bite": 42.0,
       "hull_every": 9.0,
       "swim_bite_m": 3.0,
       "swim_bite": 18.0,
@@ -814,7 +806,7 @@
         16.0
       ],
       "back_s": 3.0,
-      "ram_damage": 130.0,
+      "ram_damage": 55.0,
       "fires_per_ram": [
         2,
         3
@@ -852,7 +844,7 @@
       ],
       "tip_s": 2.2,
       "tip_deg": 13.0,
-      "tip_hull": 40.0,
+      "tip_hull": 25.0,
       "slide_speed": 6.0,
       "rail_m": 1.2,
       "over_damage": 6.0,
@@ -942,7 +934,7 @@
       "slam_m": 2.6,
       "slam_damage": 24.0,
       "slam_push": 8.0,
-      "slam_hull": 30.0,
+      "slam_hull": 10.0,
       "loot": "kraken_arm",
       "notice": ""
     }
@@ -997,5 +989,19 @@
       "chart": "A mark appears on your chart where the dark boat was"
     },
     "surface_lift": 0.4
+  },
+  "threat": {
+    "_about": "Sea step 8f (core/sea/threat_rules.gd; LOCKED right ship per region + enemies grow with level). PLAYER side: every damage / health number written for sea enemies (crews, sharks, serpent, region creatures, foe cannon splash) is region 1's; in region n it is x damage_growth^(L(n) - L(1)) of data/item_levels.json, L(n) = the region's drop band start + area_offset (the same growth as armour defense and gun damage). SHIP side: hull damage numbers are for base_ship; in region n x hull(ship_by_region[n]) / hull(base_ship) (data/sea/hull.json), so the ship a region expects lasts the same in every region (tuned: ~90 s of an unrepaired fight) and a smaller one sinks faster. ALL NUMBERS MINE.",
+    "ship_by_region": [
+      "sloop",
+      "sloop",
+      "brig",
+      "brig",
+      "galleon",
+      "galleon",
+      "galleon"
+    ],
+    "base_ship": "sloop",
+    "area_offset": 4
   }
 }

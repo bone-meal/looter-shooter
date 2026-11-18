@@ -926,6 +926,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						st_t["z"] = at_sea.z + sin(float(st_t["yaw"])) * 6.0
 						st_t["speed"] = 0.0
 						st_t["anchored"] = true
+					"fresh":  # "!ship fresh <x> <z>": (sea step 8f tests) the ship anchored there, sound: full hull, no holes, dry
+						var st_f: Dictionary = first.get("state")
+						st_f["x"] = float(arg) if arg != "" else float(st_f["x"])
+						st_f["z"] = float(words[3]) if words.size() > 3 else float(st_f["z"])
+						st_f["speed"] = 0.0
+						st_f["anchored"] = true
+						st_f["hull"] = float(st_f["hull_max"])
+						st_f["leaks"] = [0.0, 0.0, 0.0]
+						st_f["water"] = 0.0
+						st_f["sinking"] = false
+					"sinktime":  # "!ship sinktime <cap s> <note>": how long until she goes down (no repairs), up to cap
+						var began_s := Time.get_ticks_msec()
+						var cap_s := float(arg) if arg != "" else 150.0
+						var st_s: Dictionary = first.get("state")
+						while Time.get_ticks_msec() - began_s < int(cap_s * 1000.0) and not bool(st_s.get("sinking", false)):
+							await get_tree().create_timer(0.25, true, false, true).timeout
+						_lines.append("SINKTIME %s: %s after %.1f s; hull %.0f / %.0f, leaks %s, water %.2f" % [" ".join(words.slice(3)), "SANK" if bool(st_s.get("sinking", false)) else "afloat", (Time.get_ticks_msec() - began_s) / 1000.0, float(st_s["hull"]), float(st_s["hull_max"]), str(st_s["leaks"]), float(st_s["water"])])
 					"hit":  # "!ship hit 120 bow|waist|stern": a blow to the hull at that leak zone (host / alone)
 						var zone_i := maxi(0, ["bow", "waist", "stern"].find(words[3] if words.size() > 3 else "waist"))
 						var spot: Array = load("res://core/sea/hull_rules.gd").zones(first.get("spec"))[zone_i]

@@ -45,7 +45,7 @@ static func step(m: Node, b: Dictionary, delta: float) -> void:
 			m.call("set_mode", b, "rise")
 		elif now >= float(b["next_bite"]):  # nobody to take: it gnaws her hull
 			b["next_bite"] = now + float(c["hull_every"])
-			m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, float(b["lz"]), -0.3), float(c["hull_bite"]) * float(b["mult"]))
+			m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, float(b["lz"]), -0.3), float(c["hull_bite"]) * float(b["hull_mult"]))
 			_move_along(m, b, ship)
 	elif mode == "rise":
 		var up: Vector3 = m.call("beside", ship, side, 0.6, float(b["lz"]), float((ship.get("spec") as Dictionary)["deck"]) + 0.3)

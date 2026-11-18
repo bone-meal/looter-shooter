@@ -1,9 +1,11 @@
 # Purpose: pure rules of a colosseum run: the tickets, how much tougher each wave's enemies are, which tier of gun a
 # kill leaves in which wave, what the last boss and the reward chest give, and when armour drops. No nodes; the
 # caller brings the random numbers.
-# Dependencies: none. Data: data/colosseum.json, passed to the constructor. `luck` (1 = plain) scales every chance:
+# Dependencies: core/item_level.gd (enemy hits x the wave's item level, sea step 8f). Data: data/colosseum.json, passed to the constructor. `luck` (1 = plain) scales every chance:
 # the session passes the character's luck times the modifiers' loot_mult().
 extends RefCounted
+
+const ItemLevel = preload("res://core/item_level.gd")
 
 var cfg: Dictionary
 
@@ -57,7 +59,7 @@ func wave_stats(stats: Dictionary, wave: int, fx: Dictionary = {}) -> Dictionary
 	var waves_on := float(maxi(wave - 1, 0))
 	var per: Dictionary = cfg["per_wave"]
 	grown["max_hp"] = float(stats["max_hp"]) * (1.0 + float(per["health"]) * waves_on) * float(fx.get("enemy_health", 1.0))
-	grown["damage"] = float(stats["damage"]) * (1.0 + float(per["damage"]) * waves_on) * float(fx.get("enemy_damage", 1.0))
+	grown["damage"] = float(stats["damage"]) * (1.0 + float(per["damage"]) * waves_on) * float(fx.get("enemy_damage", 1.0)) * ItemLevel.damage_mult(ItemLevel.for_wave(wave))  # (sea step 8f: x the wave's item level, like armour)
 	grown["speed"] = float(stats["speed"]) * (1.0 + float(per["speed"]) * waves_on) * float(fx.get("enemy_speed", 1.0))
 	return grown
 

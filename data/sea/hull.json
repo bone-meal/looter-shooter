@@ -9,8 +9,8 @@
   "junk": 800
  },
  "open_share": 0.05,
- "hole_per_share": 4.0,
- "flood_per_second": 0.02,
+ "hole_per_share": 2.5,
+ "flood_per_second": 0.008,
  "drain_per_second": 0.015,
  "slow_at_full_water": 0.7,
  "sit_lower": 0.6,
@@ -24,5 +24,12 @@
  "sink_seconds": 8.0,
  "refloat_hull": 0.25,
  "seaworthy": 0.4,
- "planks": ["oak_plank", "ash_plank", "palm_plank", "frostpine_plank", "ember_plank", "stormoak_plank"]
+ "planks": [
+  "oak_plank",
+  "ash_plank",
+  "palm_plank",
+  "frostpine_plank",
+  "ember_plank",
+  "stormoak_plank"
+ ]
 }

@@ -70,7 +70,7 @@ static func _ram(m: Node, b: Dictionary, c: Dictionary, ship: Node3D) -> void:
 	var side := float(b["side"])
 	var lz := float(b["lz"])
 	m.call("count", "rams")
-	m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, lz, 0.4), float(c["ram_damage"]) * float(b["mult"]))
+	m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, lz, 0.4), float(c["ram_damage"]) * float(b["hull_mult"]))
 	var r: RandomNumberGenerator = m.call("rng")
 	var hw := float(b["hw"])
 	for i in r.randi_range(int(c["fires_per_ram"][0]), int(c["fires_per_ram"][1])):

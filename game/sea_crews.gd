@@ -17,6 +17,7 @@
 # (game/sea_ships.gd: ships, rules, _net), game/sea_flotsam.gd (add_deck), the sea world (map, inside, notice).
 extends Node3D
 
+const Threat = preload("res://core/sea/threat_rules.gd")
 const DeckWalk = preload("res://core/sea/deck_walk.gd")
 const GhostLook = preload("res://game/ghost_look.gd")
 const FxKit = preload("res://game/fx_kit.gd")
@@ -24,6 +25,7 @@ const ORDER := ["pirate_captain", "ghost_captain", "pirate_cutlass", "ghost_cutl
 const KINDS_SENT := ["pirate_", "ghost_", "sea_drowned"]  # crew kinds a client may make from the host's list
 
 var cfg: Dictionary  # encounters.json "crews"
+var _threat: Dictionary  # encounters.json "threat" (sea step 8f)
 var director: Node  # game/wave_director.gd
 var drowned_part: Node  # game/sea_drowned.gd (sea step 8d: undead swimmers chase and hold swimmers)
 var card: RefCounted  # core/score_card.gd: `blow` ("other" = this death pays nobody here)
@@ -60,6 +62,7 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D, encounters: Dict
 	_sea = sea
 	_player = player
 	cfg = encounters["crews"]
+	_threat = encounters["threat"]
 	_kinds = encounters["kinds"]
 	_stats = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]
 	_rng.randomize()
@@ -108,8 +111,9 @@ func _walk(from: Vector3, by: Vector3, enemy: Node3D) -> Vector3:
 # A crewman's numbers out here: tougher by region.
 func _scaled(kind: String, region_n: int) -> Dictionary:
 	var stats: Dictionary = (_stats[kind] as Dictionary).duplicate()
-	stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(region_n - 1))
-	stats["damage"] = float(stats["damage"]) * (1.0 + float(cfg["damage_per_region"]) * float(region_n - 1))
+	var pm := Threat.player_mult(_threat, region_n)  # (sea step 8f: grows with the region's item level)
+	stats["max_hp"] = float(stats["max_hp"]) * pm
+	stats["damage"] = float(stats["damage"]) * pm
 	return _sea_stats(stats)
 
 

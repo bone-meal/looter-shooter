@@ -15,11 +15,13 @@
 # game/sea_flotsam.gd, the sea world (water_height, local_of / world_of, map, notice), the player.
 extends Node3D
 
+const Threat = preload("res://core/sea/threat_rules.gd")
 const HitProxy = preload("res://game/hit_proxy.gd")
 const SEGMENTS := 10
 const SEG_LEN := 1.8
 
 var cfg: Dictionary
+var _threat: Dictionary  # encounters.json "threat" (sea step 8f)
 var director: Node
 var card: RefCounted
 var wyrm: Node3D = null  # the enemy (head); null = none about
@@ -54,6 +56,7 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D, encounters: Dict
 	_sea = sea
 	_player = player
 	cfg = encounters["serpent"]
+	_threat = encounters["threat"]
 	_stats = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]["sea_serpent"]
 	_rng.randomize()
 
@@ -96,12 +99,13 @@ func spawn(x: float, z: float) -> void:
 	var region := String((_sea.get("map") as RefCounted).call("region_id_at", x, z))
 	var n := maxi(int(region.trim_prefix("region_")), 1)
 	var stats := _stats.duplicate()
-	stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(n - 1))
+	stats["max_hp"] = float(stats["max_hp"]) * Threat.player_mult(_threat, n)  # (sea step 8f)
 	_make(stats, false)
 	var at: Vector3 = _sea.call("world_of", Vector3(x, 0.0, z))
 	wyrm.global_position = Vector3(at.x, _water(at) - 5.0, at.z)
 	wyrm.set_meta("tier", 8 + 4 * (n - 1))
-	wyrm.set_meta("dmg", 1.0 + float(cfg["damage_per_region"]) * float(n - 1))
+	wyrm.set_meta("dmg", Threat.player_mult(_threat, n))
+	wyrm.set_meta("hull", Threat.hull_mult(_threat, _fleet.get("hull_part").get("hull").get("cfg"), n))
 	wyrm.set_meta("region", region)
 	mode = "approach"
 	_t = 40.0
@@ -231,7 +235,7 @@ func _drive(delta: float) -> void:
 				_windup = float(cfg["lunge_windup"])
 				lunges += 1
 			elif _bite_t <= 0.0 and _target_ship != null and flat.length() < 6.0:
-				_bite_hull(dmg)
+				_bite_hull()
 			else:
 				jaw = move_toward(jaw, 0.15, delta * 2.0)
 			if _t <= 0.0 and _windup <= 0.0:
@@ -250,14 +254,14 @@ func _drive(delta: float) -> void:
 		last = "%s, %.0f m to her side" % [mode, flat.length()]
 
 
-func _bite_hull(dmg: float) -> void:
+func _bite_hull() -> void:
 	_bite_t = float(cfg["bite_every"])
 	jaw = 1.0
 	hull_bites += 1
 	var ship := _target_ship
 	var local := ship.global_transform.affine_inverse() * wyrm.global_position
 	var hull_hit := Vector3(clampf(local.x, -2.0, 2.0), 0.0, clampf(local.z, -6.0, 6.0))
-	_fleet.get("hull_part").call("damage", ship, hull_hit, float(cfg["bite_hull"]) * dmg)
+	_fleet.get("hull_part").call("damage", ship, hull_hit, float(cfg["bite_hull"]) * float(wyrm.get_meta("hull", 1.0)))
 	last = "bit her hull"
 	if _fleet.call("ship_aboard") == ship:
 		_sea.emit_signal("notice", "The wyrm is biting the hull!")

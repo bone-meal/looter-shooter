@@ -74,7 +74,7 @@ static func step(m: Node, b: Dictionary, delta: float) -> void:
 static func _heave(m: Node, b: Dictionary, c: Dictionary, ship: Node3D) -> void:
 	m.call("count", "tips")
 	var side := float(b["side_i"])
-	m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, 0.0, -0.6), float(c["tip_hull"]) * float(b["mult"]))
+	m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, 0.0, -0.6), float(c["tip_hull"]) * float(b["hull_mult"]))
 	var spec: Dictionary = ship.get("spec")
 	var low := -side  # the orca lifts this side: she rolls down to the other
 	var push: Vector3 = ship.global_transform.basis.x.normalized() * low * float(c["slide_speed"])

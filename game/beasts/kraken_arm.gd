@@ -60,7 +60,7 @@ static func _smash(m: Node, b: Dictionary, c: Dictionary, ship: Node3D) -> void:
 			var away := body.global_position - spot
 			away.y = 0.0
 			m.call("knock", body, (away.normalized() if away.length() > 0.1 else ship.global_transform.basis.x * -side) * float(c["slam_push"]), float(c["slam_damage"]) * float(b["mult"]))
-	m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, lz, 0.6), float(c["slam_hull"]) * float(b["mult"]))
+	m.call("hull_bite", ship, m.call("beside", ship, side, 0.0, lz, 0.6), float(c["slam_hull"]) * float(b["hull_mult"]))
 
 
 static func pose(_m: Node, b: Dictionary, delta: float) -> void:

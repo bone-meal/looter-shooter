@@ -1,8 +1,10 @@
 # Purpose: the island's endless rounds: when a round starts, how many enemies it holds and which kinds, how much
 # tougher they are than in round 1, when a boss or a special round comes, and the pacing (first delay, the gap
 # between two spawns, the break between rounds). Pure rules: no nodes, no rendering.
-# Dependencies: none. Numbers come from data/island_rounds.json, passed to the constructor.
+# Dependencies: core/item_level.gd (enemy hits grow with the island's item level, sea step 8f). Numbers come from data/island_rounds.json, passed to the constructor.
 extends RefCounted
+
+const ItemLevel = preload("res://core/item_level.gd")
 
 signal round_started(number: int, kind: String)  # kind: "normal", "boss" or "special"
 signal round_ended(number: int, kind: String)
@@ -203,10 +205,13 @@ func damage_mult(round_number: int) -> float:
 # Bosses get tougher by how often the boss list has been gone through, not by the round.
 func stats_for(base: Dictionary, round_number: int, is_boss: bool) -> Dictionary:
 	var out := base.duplicate(true)
+	var level_mult := ItemLevel.damage_mult(ItemLevel.for_round(round_number))  # (sea step 8f: hits grow with the island's item level, like armour)
 	if is_boss:
 		out["max_hp"] = float(base["max_hp"]) * pow(float(_cfg["boss"]["health_per_cycle"]), float(boss_cycle(round_number)))
+		if base.has("damage"):
+			out["damage"] = float(base["damage"]) * level_mult
 		return out
 	out["max_hp"] = float(base["max_hp"]) * health_mult(round_number)
 	out["speed"] = float(base["speed"]) * speed_mult(round_number)
-	out["damage"] = float(base["damage"]) * damage_mult(round_number)
+	out["damage"] = float(base["damage"]) * damage_mult(round_number) * level_mult
 	return out

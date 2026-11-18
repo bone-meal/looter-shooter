@@ -1,5 +1,5 @@
 {
-  "_about": "Sea step 5d-2 cannons (game/sea_cannons.gd). A cannon stands at each ships.json cannons spot pointing outboard; a player sits seat_back m inboard of it (within seat_reach m to sit). It turns arc_deg each way from broadside and lifts pitch_min..pitch_max degrees; balls fly at speed m/s under gravity for life s; a cannon fires once per reload s. A ball that strikes another ship's hull does damage hull points (game/sea_hull.gd: hard hits hole the nearest leak zone); friendly_fire false would spare the party's own ships (true: every ship of the world fleet can be hit but the one that fired). ALL NUMBERS ARE PLACEHOLDERS. splash_m / splash_damage (sea step 8): a ball landing within splash_m of a player hurts him up to splash_damage (less further off; never by his own ship's guns).",
+  "_about": "Sea step 5d-2 cannons (game/sea_cannons.gd). A cannon stands at each ships.json cannons spot pointing outboard; a player sits seat_back m inboard of it (within seat_reach m to sit). It turns arc_deg each way from broadside and lifts pitch_min..pitch_max degrees; balls fly at speed m/s under gravity for life s; a cannon fires once per reload s. A ball that strikes another ship's hull does damage hull points (game/sea_hull.gd: hard hits hole the nearest leak zone); friendly_fire false would spare the party's own ships (true: every ship of the world fleet can be hit but the one that fired). ALL NUMBERS ARE PLACEHOLDERS. splash_m / splash_damage (sea step 8): a ball landing within splash_m of a player hurts him up to splash_damage (less further off; never by his own ship's guns). foe_damage (sea step 8f): a foe ship's ball, x the hull of the ship her region expects / a sloop's (core/sea/threat_rules.gd); her balls' splash on players x the region's enemy growth.",
   "arc_deg": 35.0,
   "pitch_min": -6.0,
   "pitch_max": 18.0,
@@ -14,5 +14,6 @@
   "ball_radius": 0.11,
   "splash_m": 3.0,
   "splash_damage": 35.0,
-  "creature_damage": 160.0
+  "creature_damage": 160.0,
+  "foe_damage": 21.0
 }
