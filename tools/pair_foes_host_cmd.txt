@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!ship tospot 0;!wait 1;!ship board;!ship anchor up;!ship helm;!ship stage 3;!wait 25;!foe spawn pirate_sloop 160 25;!foe wait_volley;!wait 12;!foe status host_fight;!snap host_fight;!foe sink;!wait 12;!foe status host_sunk;!wait 30;!foe status host_end

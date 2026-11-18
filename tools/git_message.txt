@@ -1,6 +1,8 @@
-Two-copy test of the home port town (set town)
+Sea step 8a: random encounters, pirate ships with broadsides, floating cargo
 
-Dev steps for town upgrades, cases, paintings, crew chest and feasts between two copies; all work.
+Encounter rolls by region, weather and night outside the home port's safe waters; pirate sloops and brigs sail to lay the target abeam and fire their broadsides; a sunk pirate leaves barrels, crates and a sea chest afloat with doubloons, materials and a chance of a gun.
+Pirate look: dark sails, black pennant, our own flag. Cannon balls hurt players they land near.
+Online: foes ride in the fleet states, the client fleet rebuilds only from the first ship that differs; floating cargo is decided by the host. Two-copy tested.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

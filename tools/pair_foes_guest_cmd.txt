@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!foe pause;!wait 10;!ship board;!wait 2;!foe wait_seen;!wait 3;!foe status g_seen;!third;!snap g_pirate;!foe wait_flotsam;!foe status g_cargo;!snap g_cargo;!foe swimto;!wait 3;!foe status g_end

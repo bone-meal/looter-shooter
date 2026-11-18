@@ -242,6 +242,41 @@ func fire(ship: Node3D, index: int, yaw: float, pitch: float, real: bool) -> boo
 	return true
 
 
+# A ship's cannons for the pirates (game/sea_encounters.gd): [{index, side}] .
+func guns_of(ship: Node3D) -> Array:
+	var out: Array = []
+	var list: Array = _guns.get(ship, [])
+	for i in list.size():
+		out.append({"index": i, "side": float(list[i]["side"])})
+	return out
+
+
+func loaded(ship: Node3D, index: int) -> bool:
+	var list: Array = _guns.get(ship, [])
+	return index >= 0 and index < list.size() and _now() >= float(list[index]["ready_at"])
+
+
+# The aim (yaw, pitch) that lays this cannon on a world point (lifted for the drop), or NAN yaw when the point lies
+# outside its arc or beyond its reach.
+func aim_at(ship: Node3D, index: int, point: Vector3) -> Vector2:
+	var list: Array = _guns.get(ship, [])
+	if index < 0 or index >= list.size():
+		return Vector2(NAN, NAN)
+	var gun: Dictionary = list[index]
+	var to: Vector3 = point - (gun["pivot"] as Node3D).global_position
+	var flat := Vector2(to.x, to.z).length()
+	var reach := float(cfg["gravity"]) * flat / pow(float(cfg["speed"]), 2.0)
+	if reach > 1.0:
+		return Vector2(NAN, NAN)
+	var lift := 0.5 * asin(reach) + atan2(to.y, flat)
+	var world_look := Vector3(to.x, 0.0, to.z).normalized() * cos(lift) + Vector3.UP * sin(lift)
+	var look := (gun["holder"] as Node3D).global_transform.basis.inverse() * world_look
+	var yaw := wrapf(_heading(look) - _heading(gun["m"]), -PI, PI)
+	if absf(yaw) > deg_to_rad(float(cfg["arc_deg"])):
+		return Vector2(NAN, NAN)
+	return Vector2(yaw, clampf(asin(clampf(look.normalized().y, -1.0, 1.0)), deg_to_rad(float(cfg["pitch_min"])), deg_to_rad(float(cfg["pitch_max"]))))
+
+
 # Host: a client's shot (game/net_sea.gd checked his seat). Fires when that cannon is loaded.
 func host_fire(ship: Node3D, index: int, yaw: float, pitch: float) -> bool:
 	var list: Array = _guns.get(ship, [])
@@ -289,6 +324,10 @@ func _fly(delta: float) -> void:
 			done = true
 		if done:
 			var end_at: Vector3 = hit["position"] if not hit.is_empty() else after
+			# a ball (any machine's copy: they fly alike) that lands by this player hurts him (sea step 8: the pirates' fire)
+			var by := end_at.distance_to(_player.global_position + Vector3(0.0, 0.9, 0.0))
+			if by < float(cfg.get("splash_m", 3.0)) and b["from"] != _fleet.call("ship_aboard"):
+				_player.call("take_damage", float(cfg.get("splash_damage", 35.0)) * (1.0 - by / float(cfg.get("splash_m", 3.0))))
 			last_end = "%s %.0f m from the muzzle, %.1f m up, after %.1f s" % ["ship" if not hit.is_empty() and (_fleet.get("ships") as Array).has(hit["collider"]) else ("land" if not hit.is_empty() else ("sea" if float(b["life"]) > 0.0 else "time")), end_at.distance_to(b["start"]), end_at.y - (b["start"] as Vector3).y, float(cfg["life"]) - float(b["life"])]
 			ball.queue_free()
 			_balls.remove_at(i)

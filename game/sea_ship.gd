@@ -130,6 +130,83 @@ func _build_model() -> void:
 			_parts[part] = node
 
 
+# --- a pirate's look (sea step 8): dark sails, a black pennant and a black flag at the masthead ---
+
+var _flag: MeshInstance3D = null
+static var _flag_tex: ImageTexture
+
+
+func dress_foe(sails: Color) -> void:
+	if _flag != null:
+		return
+	var cloth := StandardMaterial3D.new()
+	cloth.albedo_color = sails
+	cloth.roughness = 0.95
+	cloth.cull_mode = BaseMaterial3D.CULL_DISABLED
+	for sail: Node in _sails + _jibs:
+		for found: MeshInstance3D in _meshes(sail):
+			found.material_override = cloth
+	if _parts.has("Pennant"):
+		var black := StandardMaterial3D.new()
+		black.albedo_color = Color(0.05, 0.05, 0.05)
+		black.cull_mode = BaseMaterial3D.CULL_DISABLED
+		for found: MeshInstance3D in _meshes(_parts["Pennant"]):
+			found.material_override = black
+	var mast: Array = (spec["masts"] as Array)[0]
+	_flag = MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(1.8, 1.2)
+	quad.center_offset = Vector3(0.9, 0.0, 0.0)  # hoisted by its left edge
+	_flag.mesh = quad
+	var art := StandardMaterial3D.new()
+	art.albedo_texture = _jolly()
+	art.cull_mode = BaseMaterial3D.CULL_DISABLED
+	art.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR
+	_flag.material_override = art
+	_flag.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_flag.position = Vector3(0.0, float(spec["deck"]) + float(mast[1]) + 0.9, float(mast[0]))
+	add_child(_flag)
+
+
+static func _meshes(node: Node) -> Array:
+	var out: Array = []
+	if node is MeshInstance3D:
+		out.append(node)
+	for found in node.find_children("*", "MeshInstance3D", true, false):
+		out.append(found)
+	return out
+
+
+# Our own pirate flag, drawn once: a white skull over two crossed cutlasses on black.
+static func _jolly() -> ImageTexture:
+	if _flag_tex != null:
+		return _flag_tex
+	var w := 96
+	var h := 64
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	for y in h:
+		for x in w:
+			var c := Color(0.04, 0.04, 0.05)
+			var p := Vector2(x - 48, y - 26)
+			if Vector2(p.x, p.y * 1.1).length() < 13.0 and y < 34:
+				c = Color(0.93, 0.92, 0.86)  # the skull's dome
+			if absf(p.x) < 8.0 and y >= 30 and y < 40:
+				c = Color(0.93, 0.92, 0.86)  # the jaw
+			for eye: float in [-5.0, 5.0]:
+				if Vector2(p.x - eye, p.y - 1.0).length() < 3.2:
+					c = Color(0.04, 0.04, 0.05)
+			if y >= 36 and y < 40 and int(x) % 3 == 0 and absf(p.x) < 7.0:
+				c = Color(0.04, 0.04, 0.05)  # teeth
+			for s: float in [1.0, -1.0]:  # two cutlasses crossed under the skull, blade up
+				var along := (p.x * s + (p.y - 30.0)) / sqrt(2.0)
+				var off := (p.x * s - (p.y - 30.0)) / sqrt(2.0)
+				if along > -20.0 and along < 18.0 and absf(off) < 1.8 + (0.8 if along > 10.0 else 0.0):
+					c = Color(0.85, 0.85, 0.88) if along > -12.0 else Color(0.6, 0.45, 0.2)
+			img.set_pixel(x, y, c)
+	_flag_tex = ImageTexture.create_from_image(img)
+	return _flag_tex
+
+
 # --- each frame ---
 
 # Puts the ship where its state says, riding the waves. waves: core/sea/sea_waves.gd; t = the sea clock; swell in m.
@@ -173,6 +250,8 @@ func _animate(wind: float, wind_dir: float, delta: float) -> void:
 	var across := atan2(-to.x, -to.z)  # where the wind blows to, from the bow (0 = dead ahead)
 	for yard: Node3D in _yards:  # braced round so the wind fills the sail
 		yard.rotation.y = lerp_angle(yard.rotation.y, clampf(across * 0.45, -0.7, 0.7), delta * 1.5)
+	if _flag != null:  # a pirate's flag streams down-wind
+		_flag.rotation = Vector3(0.0, atan2(to.x, to.z) - PI * 0.5 + sin(_wind_flutter * 1.3) * 0.15, 0.0)
 	if _parts.has("Pennant"):
 		_wind_flutter += delta * (4.0 + wind * 8.0)
 		(_parts["Pennant"] as Node3D).rotation = Vector3(0.0, atan2(to.x, to.z) + sin(_wind_flutter) * 0.12 * (0.3 + wind), sin(_wind_flutter * 1.7) * 0.15)

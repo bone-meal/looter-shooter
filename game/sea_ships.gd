@@ -18,6 +18,7 @@ const SeaHull = preload("res://game/sea_hull.gd")
 const SeaCannons = preload("res://game/sea_cannons.gd")
 const SeaBoarding = preload("res://game/sea_boarding.gd")
 const SeaCrane = preload("res://game/sea_crane.gd")
+const SeaEncounters = preload("res://game/sea_encounters.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -49,6 +50,8 @@ var dev_patch := false  # dev: interact held for patching without keys
 var cannons := SeaCannons.new()  # the ships' cannons (sea step 5d-2)
 var boarding := SeaBoarding.new()  # grappling lines and boarding planks (sea step 5d-3)
 var crane := SeaCrane.new()  # the salvage crane upgrade (sea step 5e)
+var foes := SeaEncounters.new()  # pirate ships and other foes that come as random encounters, and their flotsam (sea step 8)
+var _drop: Array = []  # ships to take out of the fleet after this frame's steps (foes gone or sunk)
 
 
 func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
@@ -74,6 +77,9 @@ func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
 	crane.name = "Crane"
 	add_child(crane)
 	crane.setup(self, _sea, _player)
+	foes.name = "Foes"
+	add_child(foes)
+	foes.setup(self, _sea, _player)
 	for entry: Dictionary in rules.cfg["fleet"]:
 		spawn(String(entry["ship"]), float(entry["at"][0]), float(entry["at"][1]), float(entry["yaw"]))
 
@@ -86,6 +92,26 @@ func spawn(ship_id: String, x: float, z: float, yaw_deg: float) -> SeaShip:
 	cannons.prepare(ship)
 	ships.append(ship)
 	return ship
+
+
+# A ship leaves the fleet after this frame (a foe sailed off or sank).
+func remove_ship(ship: SeaShip) -> void:
+	if not _drop.has(ship):
+		_drop.append(ship)
+
+
+func _take_out(ship: SeaShip) -> void:
+	if not ships.has(ship):
+		return
+	if helm_ship == ship:
+		_leave_helm_here()
+	if not cannons.seated.is_empty() and cannons.seated["ship"] == ship:
+		cannons.stand_up()
+	cannons.forget(ship)
+	crane.forget(ship)
+	_helmsmen.erase(ship)
+	ships.erase(ship)
+	ship.queue_free()
 
 
 # --- every frame ---
@@ -122,6 +148,8 @@ func _process(delta: float) -> void:
 		var riding := inside and (ship == helm_ship or rules.aboard(String(ship.state["ship"]), before.affine_inverse() * here))
 		if ship == helm_ship:
 			_steer(ship, delta, client)
+		if not client and ship.state.has("foe"):
+			foes.drive(ship, delta)
 		var was := Vector2(float(ship.state["x"]), float(ship.state["z"]))
 		var moved := 0.0
 		if client:
@@ -131,7 +159,12 @@ func _process(delta: float) -> void:
 			moved = rules.step(ship.state, wind, wind_dir, hull_part.speed_pct(ship, _speed_pct(ship)), delta)
 			if hull_part.step(ship, delta):
 				hull_part.sink(ship)
-			hull_part.sunk_done(ship)
+			if ship.state.has("foe"):  # a foe is not raised again: her cargo floats, she is gone
+				if bool(ship.state.get("sinking", false)) and float(ship.state.get("sink_t", 0.0)) >= float(hull_part.hull.cfg["sink_seconds"]):
+					foes.went_down(ship)
+					remove_ship(ship)
+			else:
+				hull_part.sunk_done(ship)
 			boarding.hold(ship, delta)
 			if moved > 0.0 and _aground(ship):
 				hull_part.aground(ship, float(ship.state["speed"]))
@@ -152,6 +185,9 @@ func _process(delta: float) -> void:
 			_player.call("pin", ship.deck_spot([float(ship.spec["helm"][0]), float(ship.spec["helm"][1]) + 1.0]))
 			if float(rules.stage(ship.state)["sail"]) > 0.0:
 				_sailing_xp(ship, moved)
+	for ship: SeaShip in _drop:
+		_take_out(ship)
+	_drop.clear()
 	var deck_now := ship_aboard() if inside and helm_ship == null else null
 	working = deck_now != null and _rigging_spot(deck_now, deck_now.global_transform.affine_inverse() * here) >= 0 and bool(_player.get("controls_enabled")) and Input.is_action_pressed("interact")
 	hull_part.work(delta, deck_now != null and (dev_patch or (bool(_player.get("controls_enabled")) and Input.is_action_pressed("interact"))))
@@ -212,6 +248,12 @@ func host_states(states: Array) -> void:
 			ship.state["sinking"] = bool(got[14])
 		if got.size() >= 16:
 			ship.state["crane"] = bool(got[15])
+		if got.size() >= 17 and String(got[16]) != "" and not ship.state.has("foe"):  # a foe (sea step 8): her look
+			ship.state["foe"] = String(got[16]).left(24)
+			foes.dress(ship)
+			var k: Dictionary = foes.rules.cfg["kinds"].get(String(ship.state["foe"]), {})
+			ship.state["hull_max"] = float(ship.state["hull_max"]) * float(k.get("hull_mult", 1.0))
+			_sea.emit_signal("notice", String(foes.rules.cfg["pirate"]["notice"]) % String(k.get("name", "foe")))
 		_helmsmen[ship] = {"id": int(got[7]), "level": 0}
 		var mine := int(got[7]) == int(_net().call("my_id"))
 		if mine and helm_ship == null and _asked == ship:
@@ -223,21 +265,32 @@ func host_states(states: Array) -> void:
 
 # Client: the host's fleet decides which ships exist (its ship ids, in order): ours is rebuilt when it differs.
 func _match_fleet(states: Array) -> void:
-	var same := states.size() == ships.size()
+	# the first ship that differs (kind, or foe or not): ours is rebuilt from there on (foes come and go at the end,
+	# so the world's own ships before them keep their helm, cannons and planks)
+	var first := mini(states.size(), ships.size())
 	for i in mini(states.size(), ships.size()):
-		if (states[i] as Array).size() < 9 or String(states[i][8]) != String(ships[i].state["ship"]):
-			same = false
-	if same:
+		var got: Array = states[i]
+		var foe_now := String(got[16]) if got.size() >= 17 else ""
+		if got.size() < 9 or String(got[8]) != String(ships[i].state["ship"]) or foe_now != String(ships[i].state.get("foe", "")):
+			first = i
+			break
+	if first == ships.size() and first == states.size():
 		return
-	_leave_helm_here()
-	boarding.clear()
-	for ship: SeaShip in ships:
+	var cut := ships.slice(first)
+	if helm_ship != null and cut.has(helm_ship):
+		_leave_helm_here()
+	if not cannons.seated.is_empty() and cut.has(cannons.seated["ship"]):
+		cannons.stand_up()
+	if not cut.is_empty():
+		boarding.clear()
+	for ship: SeaShip in cut:
 		cannons.forget(ship)
 		crane.forget(ship)
+		_helmsmen.erase(ship)
+		ships.erase(ship)
 		ship.queue_free()
-	ships.clear()
-	_helmsmen.clear()
-	for got: Array in states:
+	for i in range(first, states.size()):
+		var got: Array = states[i]
 		if got.size() >= 9 and (rules.cfg["ships"] as Dictionary).has(String(got[8])):
 			spawn(String(got[8]), float(got[0]), float(got[1]), rad_to_deg(float(got[2])))
 
@@ -405,6 +458,8 @@ func prompt(key: String) -> String:
 	var hull_said := hull_part.prompt(key)
 	if hull_said != "" or bool(ship.state.get("sinking", false)):  # a going-down ship offers nothing else
 		return hull_said
+	if ship.state.has("foe"):  # a foe's deck: nothing of hers is ours to work (boarding lines and planks only)
+		return boarding.prompt(key)
 	var cannon_said := cannons.prompt(key, ship)
 	if cannon_said != "":
 		return cannon_said
@@ -437,6 +492,8 @@ func interact() -> bool:
 	var ship := ship_aboard()
 	if ship == null:
 		return false
+	if ship.state.has("foe"):
+		return boarding.interact()
 	if hull_part.prompt("F") != "":  # at a leak / damaged plank: holding the key works it (game/sea_hull.gd work)
 		return true
 	if cannons.cannon_here(ship) >= 0:
@@ -578,6 +635,8 @@ func free_lane(ship_id: String, except: Node3D) -> Vector3:
 func to_list() -> Array:
 	var out: Array = []
 	for ship: SeaShip in ships:
+		if ship.state.has("foe"):  # foes are not the world's fleet
+			continue
 		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell"),
 			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001), "crane": bool(ship.state.get("crane", false))})
 	return out

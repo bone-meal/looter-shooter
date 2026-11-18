@@ -461,6 +461,67 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", sea_world.call("world_of", Vector3(float(words[2]), float(words[4]) if words.size() > 4 else 25.0, float(words[3]))), 0.0)  # optional height: drop onto high ground
 			else:
 				_lines.append(String(sea_world.call("status")))
+		"foe":  # sea step 8: !foe spawn <kind> [metres ahead] [degrees off the bow] | roll (a check with chance 1, out of the safe waters) | pause on|off | hit <n> | sink | spill | collect | wait_volley | status <note>
+			var sea_f: Node = session.call("sea")
+			var fleet_f: Node = sea_f.get("ships") if sea_f != null else null
+			if fleet_f == null:
+				_lines.append("foe: no sea")
+			else:
+				var enc: Node = fleet_f.get("foes")
+				var mine: Node = (fleet_f.get("ships") as Array)[clampi(_ship_i, 0, (fleet_f.get("ships") as Array).size() - 1)]
+				var ms: Dictionary = mine.get("state")
+				var list_f: Array = enc.call("foes")
+				match words[1] if words.size() > 1 else "status":
+					"spawn":
+						var far_f := float(words[3]) if words.size() > 3 else 160.0
+						var off_f := deg_to_rad(float(words[4]) if words.size() > 4 else 0.0)
+						var a_f := float(ms["yaw"]) + off_f
+						var fx := float(ms["x"]) - sin(a_f) * far_f
+						var fz := float(ms["z"]) - cos(a_f) * far_f
+						enc.call("spawn_foe", words[2], fx, fz, rad_to_deg(atan2(-(float(ms["x"]) - fx), -(float(ms["z"]) - fz))))
+					"roll":
+						var keep_c := float(enc.get("rules").get("cfg")["base_chance"])
+						enc.get("rules").get("cfg")["base_chance"] = 1.0
+						enc.call("_roll")
+						enc.get("rules").get("cfg")["base_chance"] = keep_c
+					"pause":
+						enc.set("paused", words.size() < 3 or words[2] != "off")
+					"hit":  # a blow to the first foe's waist
+						if not list_f.is_empty():
+							fleet_f.get("hull_part").call("damage", list_f[0], Vector3(0.0, 0.0, 0.0), float(words[2]))
+					"sink":
+						if not list_f.is_empty():
+							fleet_f.get("hull_part").call("damage", list_f[0], Vector3(0.0, 0.0, 0.0), 99999.0)
+					"spill":  # cargo afloat 25 m ahead of the ship in use
+						enc.get("flotsam").call("spill", float(ms["x"]) - sin(float(ms["yaw"])) * 25.0, float(ms["z"]) - cos(float(ms["yaw"])) * 25.0, "pirate_big", "region_2")
+					"collect":  # the ship in use put on each floating piece in turn (as if sailed through it)
+						for id_c: int in (enc.get("flotsam").get("pieces") as Dictionary).keys():
+							if not (enc.get("flotsam").get("pieces") as Dictionary).has(id_c):
+								continue
+							var pc: Dictionary = enc.get("flotsam").get("pieces")[id_c]
+							ms["x"] = float(pc["x"])
+							ms["z"] = float(pc["z"])
+							await get_tree().create_timer(0.6).timeout
+					"wait_seen", "wait_flotsam":  # up to 90 s until a foe ship / floating cargo is here (online: the host's word)
+						var until_s := Time.get_ticks_msec() + 90000
+						while Time.get_ticks_msec() < until_s:
+							if words[1] == "wait_seen" and not (enc.call("foes") as Array).is_empty():
+								break
+							if words[1] == "wait_flotsam" and not (enc.get("flotsam").get("pieces") as Dictionary).is_empty():
+								break
+							await get_tree().create_timer(0.5).timeout
+					"swimto":  # swim to each floating piece in turn
+						for id_w: int in (enc.get("flotsam").get("pieces") as Dictionary).keys():
+							if not (enc.get("flotsam").get("pieces") as Dictionary).has(id_w):
+								continue
+							var node_w: Node3D = enc.get("flotsam").get("pieces")[id_w]["node"]
+							player.call("teleport", node_w.global_position + Vector3(0.8, -0.6, 0.0), 0.0)
+							await get_tree().create_timer(1.6).timeout
+					"wait_volley":  # up to 60 s until a foe has fired
+						var until_v := Time.get_ticks_msec() + 60000
+						while Time.get_ticks_msec() < until_v and int(enc.get("volleys")) == 0:
+							await get_tree().create_timer(0.5).timeout
+				_lines.append("FOE %s: %s; our ship %s hull %.0f/%.0f, doubloons %d" % [" ".join(words.slice(1)), String(enc.call("status")), String(ms["ship"]), float(ms["hull"]), float(ms["hull_max"]), int(session.call("doubloons").get("balance"))])
 		"ship":  # sea ships (step 5a): !ship status | hit <n> <zone> | hull | patch <zone|off> | wait_hole | board | helm | letgo | anchor up|down | stage <n> | rudder <-1..1|off> | wind <degrees off> | head <compass degrees>
 			var sea_now: Node = session.call("sea")
 			var fleet: Node = sea_now.get("ships") if sea_now != null else null

@@ -79,6 +79,9 @@ func _process(delta: float) -> void:
 			_town_levels.rpc(town.get("rules").call("to_list"))
 			_store_list.rpc((town.get("crew_chest") as RefCounted).call("to_list"))
 			_town_extra.rpc(town.call("extra_dict"))
+		var fleet_f := _fleet()
+		if fleet_f != null and not (fleet_f.get("foes").get("flotsam").get("pieces") as Dictionary).is_empty():
+			_flotsam_list.rpc(fleet_f.get("foes").get("flotsam").call("to_net"))  # (a late joiner sees what floats)
 	_input_t += delta
 	if _input_t >= 1.0 / INPUT_HZ and is_client() and fleet.get("helm_ship") != null:
 		_input_t = 0.0
@@ -94,7 +97,7 @@ func _send_fleet(fleet: Node) -> void:
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
 		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"]),
-			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false))])
+			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", ""))])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 	_board_down.rpc(fleet.get("boarding").call("to_net"))
@@ -630,3 +633,47 @@ func _town_extra(got: Dictionary) -> void:
 	var town := _town()
 	if town != null:
 		town.call("load_extra", got)
+
+
+# --- floating cargo (sea step 8): the host's pieces; a player who reaches one asks for it, the host gives it to the
+# first who asked (and is near it) and tells everyone it is gone; the taker rolls its loot himself ---
+
+func tell_flotsam(list: Array) -> void:
+	if active() and net.is_host():
+		_flotsam_list.rpc(list)
+
+
+func request_flotsam(id: int) -> void:
+	_flotsam_ask.rpc_id(1, id)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _flotsam_ask(id: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var fleet := _fleet()
+	var sea := _sea()
+	if not net.is_host() or not net.roster.has(from) or fleet == null or sea == null:
+		return
+	var at: Variant = net.positions().get(from)
+	var flot: Node = fleet.get("foes").get("flotsam")
+	var p: Dictionary = flot.get("pieces").get(id, {})
+	if p.is_empty() or not at is Vector3:
+		return
+	if not bool(flot.call("host_give", id, sea.call("local_of", at))):
+		return
+	_flotsam_yes.rpc_id(from, String(p["loot"]), String(p["region"]))
+	_flotsam_list.rpc(flot.call("to_net"))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _flotsam_yes(loot_id: String, region_id: String) -> void:
+	var fleet := _fleet()
+	if fleet != null:
+		fleet.get("foes").get("flotsam").call("grant", loot_id.left(24), region_id.left(16))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _flotsam_list(list: Array) -> void:
+	var fleet := _fleet()
+	if fleet != null and list.size() <= 64:
+		fleet.get("foes").get("flotsam").call("from_net", list)
