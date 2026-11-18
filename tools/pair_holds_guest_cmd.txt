@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!foe pause;!town stock;!cargo wait;!wait 2;!cargo go;!wait 3;!cargo status g_in;!cargo put iron_bar 10;!wait 3;!cargo status g_put;!cargo take iron_bar 3;!wait 3;!cargo status g_take;!cargo look;!snap g_hold;!cargo climb;!cargo status g_up;!foe wait_crew;!wait 20;!foe crew;!foe status g_pirates;!wait 8;!cargo status g_end

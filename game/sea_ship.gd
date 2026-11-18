@@ -48,16 +48,20 @@ func _build_solid() -> void:
 	var draft := float(spec["draft"])
 	var bul := float(spec["bulwark"])
 	var outline: Array = spec["outline"]
-	var points := PackedVector3Array()
-	for station: Array in outline:
-		var hw := maxf(float(station[1]), 0.05)
-		var z := float(station[0])
-		for side: float in [1.0, -1.0]:
-			points.append(Vector3(side * hw, deck, z))
-			points.append(Vector3(side * hw * 0.6, -draft, z))
-	var hull := ConvexPolygonShape3D.new()
-	hull.points = points
-	_add_shape(hull, Transform3D.IDENTITY)
+	var hold: Dictionary = spec.get("hold", {})
+	if hold.is_empty():
+		var points := PackedVector3Array()
+		for station: Array in outline:
+			var hw := maxf(float(station[1]), 0.05)
+			var z := float(station[0])
+			for side: float in [1.0, -1.0]:
+				points.append(Vector3(side * hw, deck, z))
+				points.append(Vector3(side * hw * 0.6, -draft, z))
+		var hull := ConvexPolygonShape3D.new()
+		hull.points = points
+		_add_shape(hull, Transform3D.IDENTITY)
+	else:
+		_hold_solid(hold, deck, draft)
 	for i in range(1, outline.size()):  # the bulwarks: a thin wall along every stretch of the rail, both sides
 		var a: Array = outline[i - 1]
 		var b: Array = outline[i]
@@ -93,6 +97,64 @@ func _build_solid() -> void:
 		_add_shape(mast, Transform3D(Basis.IDENTITY, Vector3(0.0, deck + mast.height * 0.5, float(spot[0]))))
 
 
+const HEADROOM := 1.1  # m the hatch opening runs on past the companion stair's foot (a body coming up does not hit the deck's edge)
+
+
+# A ship with a hold (sea step 8b-2): the hull below the hold's floor, solid blocks fore and aft of it up to the deck,
+# the deck over it with the hatch left open, the hold's side walls and the companion stair down from the hatch.
+func _hold_solid(hold: Dictionary, deck: float, draft: float) -> void:
+	var outline: Array = spec["outline"]
+	var hw_at := func(z: float) -> float: return maxf(float(rules.call("half_width", String(state["ship"]), z)), 0.05)
+	var floor_y := float(hold["floor"])
+	var z0 := float(hold["from"])
+	var z1 := float(hold["to"])
+	var bottom := PackedVector3Array()
+	var aft := PackedVector3Array()
+	var fore := PackedVector3Array()
+	for station: Array in outline:
+		var hw := maxf(float(station[1]), 0.05)
+		var z := float(station[0])
+		for side: float in [1.0, -1.0]:
+			bottom.append(Vector3(side * hw, floor_y, z))
+			bottom.append(Vector3(side * hw * 0.6, -draft, z))
+			if z >= z1:
+				aft.append(Vector3(side * hw, deck, z))
+				aft.append(Vector3(side * hw, floor_y, z))
+			if z <= z0:
+				fore.append(Vector3(side * hw, deck, z))
+				fore.append(Vector3(side * hw, floor_y, z))
+	for side: float in [1.0, -1.0]:
+		aft.append(Vector3(side * float(hw_at.call(z1)), deck, z1))
+		aft.append(Vector3(side * float(hw_at.call(z1)), floor_y, z1))
+		fore.append(Vector3(side * float(hw_at.call(z0)), deck, z0))
+		fore.append(Vector3(side * float(hw_at.call(z0)), floor_y, z0))
+	for pts: PackedVector3Array in [bottom, aft, fore]:
+		var shape := ConvexPolygonShape3D.new()
+		shape.points = pts
+		_add_shape(shape, Transform3D.IDENTITY)
+	var st: Dictionary = hold["stair"]
+	var wide := maxf(float(hw_at.call(z0)), float(hw_at.call(z1)))
+	var foot_aft := float(st["low"]) > float(st["high"])
+	var lo := minf(float(st["low"]), float(st["high"])) - (0.0 if foot_aft else HEADROOM)  # the hatch opens on past the stair's foot: headroom
+	var hi := maxf(float(st["low"]), float(st["high"])) + (HEADROOM if foot_aft else 0.0)
+	var hx0 := float(st["x"]) - float(st["w"]) * 0.5
+	var hx1 := float(st["x"]) + float(st["w"]) * 0.5
+	for piece: Array in [[-wide, wide, z0, lo], [-wide, wide, hi, z1], [-wide, hx0, lo, hi], [hx1, wide, lo, hi]]:  # the deck round the hatch
+		var slab := BoxShape3D.new()
+		slab.size = Vector3(float(piece[1]) - float(piece[0]), 0.16, float(piece[3]) - float(piece[2]))
+		_add_shape(slab, Transform3D(Basis.IDENTITY, Vector3((float(piece[0]) + float(piece[1])) * 0.5, deck - 0.08, (float(piece[2]) + float(piece[3])) * 0.5)))
+	for side: float in [1.0, -1.0]:  # the hold's sides
+		var wall := BoxShape3D.new()
+		wall.size = Vector3(0.2, deck - floor_y, z1 - z0)
+		_add_shape(wall, Transform3D(Basis.IDENTITY, Vector3(side * (float(hold["hw"]) + 0.1), (deck + floor_y) * 0.5, (z0 + z1) * 0.5)))
+	var run := float(st["high"]) - float(st["low"])
+	var rise := deck - floor_y
+	var ramp := BoxShape3D.new()
+	ramp.size = Vector3(float(st["w"]), 0.1, sqrt(run * run + rise * rise))
+	var slope := -atan2(rise, absf(run)) * signf(run)  # the +z end rises when the stair climbs towards +z
+	_add_shape(ramp, Transform3D(Basis(Vector3.RIGHT, slope), Vector3(float(st["x"]), (deck + floor_y) * 0.5 - 0.05, (float(st["low"]) + float(st["high"])) * 0.5)))
+
+
 func _add_shape(shape: Shape3D, at: Transform3D) -> void:
 	var holder := CollisionShape3D.new()
 	holder.shape = shape
@@ -124,7 +186,7 @@ func _build_model() -> void:
 				(_yards if part == "Yard" else _sails).append(node)
 	for jib in model.find_children("Jib*", "", true, false):  # head sails on the bowsprit set and furl with the rest
 		_jibs.append(jib)
-	for part: String in ["Yard", "Sail", "Pennant", "Wheel", "Anchor", "AnchorRope", "OarsL", "OarsR"]:
+	for part: String in ["Yard", "Sail", "Pennant", "Wheel", "Anchor", "AnchorRope", "OarsL", "OarsR", "Hold"]:
 		var node := model.find_child(part, true, false) as Node3D
 		if node != null:
 			_parts[part] = node

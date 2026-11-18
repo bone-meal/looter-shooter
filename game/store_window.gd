@@ -2,7 +2,8 @@
 # player carries in his bag (the fantasy world's goods: planks, bars, food ...), RIGHT: the chest's slots (as many as the
 # storehouse's level gives; at the top level one chest shared by the whole crew). Clicking a stack moves one, with Shift
 # all of it. Mouse wheel scrolls the bag.
-# Dependencies: game/ui_skin.gd, game/icon_art.gd, game/sea_town.gd (set as `town`: bag, chest, put, take).
+# Dependencies: game/ui_skin.gd, game/icon_art.gd, game/sea_town.gd or game/ship_hold.gd (set as `town`: bag, chest,
+# put, take; a hold also gives store_title).
 extends Control
 
 const UiSkin = preload("res://game/ui_skin.gd")
@@ -99,13 +100,14 @@ func _draw() -> void:
 	UiSkin.panel(self, r)
 	var chest: RefCounted = town.call("chest")
 	var shared := bool(town.call("chest_shared"))
-	draw_string(_font, r.position + Vector2(28, 42), "STOREHOUSE  -  %s" % ("THE CREW'S CHEST" if shared else "YOUR CHEST"), HORIZONTAL_ALIGNMENT_LEFT, -1, 24, UiSkin.TEXT)
+	var title := String(town.get("store_title")) if town.get("store_title") != null else "STOREHOUSE  -  %s" % ("THE CREW'S CHEST" if shared else "YOUR CHEST")  # (a ship's hold names itself)
+	draw_string(_font, r.position + Vector2(28, 42), title, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, UiSkin.TEXT)
 	if said != "":
 		draw_string(_font, r.position + Vector2(28, 70), said, HORIZONTAL_ALIGNMENT_LEFT, -1, 15, UiSkin.ACCENT)
 	var left := Rect2(r.position + Vector2(28, 92), Vector2(COLS * (CELL + 6.0), r.size.y - 160))
 	var right := Rect2(Vector2(r.end.x - 28.0 - COLS * (CELL + 6.0), left.position.y), left.size)
 	draw_string(_font, left.position + Vector2(0, -4), "YOUR BAG  (click: one, Shift: all)", HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.TEXT_DIM)
-	draw_string(_font, right.position + Vector2(0, -4), "CHEST  %d / %d slots" % [(chest.get("slots") as Array).size(), int(chest.get("capacity"))], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.TEXT_DIM)
+	draw_string(_font, right.position + Vector2(0, -4), ("CARGO" if town.get("store_title") != null else "CHEST") + "  %d / %d slots" % [(chest.get("slots") as Array).size(), int(chest.get("capacity"))], HORIZONTAL_ALIGNMENT_LEFT, -1, 13, UiSkin.TEXT_DIM)
 	var rows := int(left.size.y / (CELL + 6.0))
 	var mine: Array = town.call("bag_stacks")
 	_scroll = clampi(_scroll, 0, maxi(0, ceili(float(mine.size()) / COLS) - rows))

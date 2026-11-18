@@ -31,6 +31,8 @@ uniform vec4 w2;
 uniform vec4 shares;
 uniform float clarity = 6.0;
 uniform float foam_width = 0.45;
+uniform mat4 dry_boxes[4];  // ship holds (sea step 8b-2): world -> box space; no water inside |x|,|y|,|z| < 1
+uniform int dry_count = 0;
 
 varying vec2 sea_xz;
 varying float lift;
@@ -62,6 +64,16 @@ void vertex() {
 }
 
 void fragment() {
+	vec3 here = (INV_VIEW_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	for (int i = 0; i < 4; i++) {
+		if (i >= dry_count) {
+			break;
+		}
+		vec3 inside = (dry_boxes[i] * vec4(here, 1.0)).xyz;
+		if (all(lessThan(abs(inside), vec3(1.0)))) {
+			discard;
+		}
+	}
 	vec2 uv = sea_xz / 11.0;
 	vec2 drift = vec2(sea_time * 0.035);
 	vec3 n1 = texture(wave_normal, uv + drift * vec2(1.0, 0.35)).rgb;
@@ -184,6 +196,15 @@ func _ring(inner: float, outer: float, sides: int) -> ArrayMesh:
 
 
 # Are the waves drawn moving (Medium and up)? Ships ride only a small bob on the flat tiers.
+# Ship holds the sea must not show inside (sea step 8b-2): up to four boxes (scene transforms of a unit box -1..1).
+func set_dry(boxes: Array) -> void:
+	var list: Array[Projection] = []
+	for i in 4:
+		list.append(Projection((boxes[i] as Transform3D).affine_inverse()) if i < boxes.size() else Projection.IDENTITY)
+	_material.set_shader_parameter("dry_boxes", list)
+	_material.set_shader_parameter("dry_count", mini(boxes.size(), 4))
+
+
 func is_moving() -> bool:
 	return _moving
 

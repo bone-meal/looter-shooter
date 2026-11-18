@@ -419,6 +419,57 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			Input.action_press(words[1])
 		"release":
 			Input.action_release(words[1])
+		"cargo":  # sea step 8b-2 holds, on ship n of "!ship use n": !cargo go | climb | down | put <item> <n> | take <item> <n> | look | status <note>
+			var sea_c: Node = session.call("sea")
+			var fleet_c: Node = sea_c.get("ships") if sea_c != null else null
+			if fleet_c == null:
+				_lines.append("cargo: no sea")
+			else:
+				var holds_c: Node = fleet_c.get("holds")
+				if words.size() > 1 and words[1] == "wait":  # up to 90 s until a ship with a hold is in the fleet (online: the host's); the !ship / !cargo steps then use her
+					var until_h := Time.get_ticks_msec() + 90000
+					while Time.get_ticks_msec() < until_h and not (fleet_c.get("ships") as Array).any(func(sh: Node3D) -> bool: return not (sh.get("spec") as Dictionary).get("hold", {}).is_empty()):
+						await get_tree().create_timer(0.5).timeout
+					for i_h in (fleet_c.get("ships") as Array).size():
+						if not ((fleet_c.get("ships") as Array)[i_h].get("spec") as Dictionary).get("hold", {}).is_empty():
+							_ship_i = i_h
+				var ship_c: Node3D = (fleet_c.get("ships") as Array)[clampi(_ship_i, 0, (fleet_c.get("ships") as Array).size() - 1)]
+				var spec_c: Dictionary = ship_c.get("spec")
+				var hold_c: Dictionary = spec_c.get("hold", {})
+				var sub_c := words[1] if words.size() > 1 else "status"
+				if hold_c.is_empty() and sub_c != "status":
+					_lines.append("cargo: ship %d (%s) has no hold" % [_ship_i, String(ship_c.get("state")["ship"])])
+				else:
+					var st_c: Dictionary = hold_c.get("stair", {})
+					var way_c := signf(float(st_c.get("high", 1.0)) - float(st_c.get("low", 0.0)))
+					match sub_c:
+						"go":  # stand in the hold by its chest
+							var chest_c: Array = hold_c["chest"]
+							player.call("teleport", ship_c.global_transform * Vector3(float(chest_c[0]) * 0.4, float(hold_c["floor"]) + 0.3, float(chest_c[1]) + 0.8), 0.0)
+						"climb", "down":  # walk the companion stair up from its foot / down from the deck behind its head (the real move key)
+							var foot_c := Vector3(float(st_c["x"]), float(hold_c["floor"]) + 0.3, float(st_c["low"]) - way_c * 0.9)
+							var head_c := Vector3(float(st_c["x"]), float(spec_c["deck"]) + 0.3, float(st_c["high"]) + way_c * 1.4)
+							var from_c := foot_c if sub_c == "climb" else head_c
+							var to_c := head_c + Vector3(0, 0, way_c * 1.5) if sub_c == "climb" else foot_c - Vector3(0, 0, way_c * 1.5)
+							player.call("teleport", ship_c.global_transform * from_c, 0.0)
+							await get_tree().create_timer(0.4, true, false, true).timeout
+							Input.action_press("move_forward")
+							var began_c := Time.get_ticks_msec()
+							while Time.get_ticks_msec() - began_c < 4000:
+								player.call("look_at_point", ship_c.global_transform * (to_c + Vector3(0, 1.4, 0)))
+								await get_tree().process_frame
+							Input.action_release("move_forward")
+							await get_tree().create_timer(0.4, true, false, true).timeout
+							var local_c := ship_c.global_transform.affine_inverse() * player.global_position
+							_lines.append("CARGO %s: now at ship-space (%.2f, %.2f, %.2f), in hold %s, aboard %s, swimming %s" % [sub_c, local_c.x, local_c.y, local_c.z, str(holds_c.call("in_hold_of", ship_c)), str(fleet_c.call("ship_aboard") == ship_c), str(player.get("swimming"))])
+						"put", "take":
+							holds_c.set("open_ship", ship_c)
+							_lines.append("CARGO %s: %s" % [sub_c, String(holds_c.call(sub_c, words[2], int(words[3]) if words.size() > 3 else 1))])
+							holds_c.set("open_ship", null)
+						"look":  # face the cargo chest from where you stand
+							var chest_l: Array = hold_c["chest"]
+							player.call("look_at_point", ship_c.global_transform * Vector3(float(chest_l[0]), float(hold_c["floor"]) + 0.4, float(chest_l[1])))
+				_lines.append("CARGO %s: %s; prompt '%s'" % [" ".join(words.slice(1)), String(holds_c.call("status")), String(fleet_c.call("prompt", "F"))])
 		"snap":  # a picture right now (after one drawn frame), for things that are over quickly
 			await RenderingServer.frame_post_draw
 			get_viewport().get_texture().get_image().save_jpg(OUT + "boot_%s_%s.jpg" % [renderer, words[1]], 0.9)
@@ -676,8 +727,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						player.call("teleport", first.call("deck_spot", [float(rig_at[0]) * 0.92, float(rig_at[1])], 0.3), 0.0)
 					"crew":  # what the ship's speed gets from the crew at the rigging now
 						_lines.append("crew at rigging %d, working %s, speed share %.3f" % [int(fleet.call("_crew_at_rigging", first)), str(fleet.get("working")), float(fleet.call("_speed_pct", first))])
-					"use":  # "!ship use 2": the !ship steps after this act on ship n of the fleet (0 = the first)
-						_ship_i = int(arg)
+					"use":  # "!ship use 2": the !ship steps after this act on ship n of the fleet (0 = the first; "last" = the newest)
+						_ship_i = (fleet.get("ships") as Array).size() - 1 if arg == "last" else int(arg)
 					"rail":  # stand at the starboard rail, midships
 						player.call("teleport", first.call("deck_spot", [float(first.get("spec")["outline"][3][1]) - 0.6, 0.0], 0.3), 0.0)
 					"ghosts":  # online: where the other players stand on this machine (deck, swimming) and the fleet's packets

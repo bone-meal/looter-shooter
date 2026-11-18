@@ -153,9 +153,20 @@ func tallest_mast(ship_id: String) -> float:
 	return top
 
 
-# Is a ship-space point on board (over the deck, or up in the air above it)?
+# Is a ship-space point on board (over the deck, or up in the air above it, or down in her hold)?
 func aboard(ship_id: String, local: Vector3) -> bool:
 	var sp := spec(ship_id)
+	if in_hold(ship_id, local):
+		return true
 	if local.y < float(sp["deck"]) - 0.6 or local.y > float(sp["deck"]) + tallest_mast(ship_id):
 		return false
 	return absf(local.x) <= half_width(ship_id, local.z) + 0.35
+
+
+# Is a ship-space point down in her hold (sea step 8b-2: brig, galleon, junk)?
+func in_hold(ship_id: String, local: Vector3) -> bool:
+	var hold: Dictionary = spec(ship_id).get("hold", {})
+	if hold.is_empty():
+		return false
+	return local.y >= float(hold["floor"]) - 0.6 and local.y < float(spec(ship_id)["deck"]) - 0.3 and absf(local.x) <= float(hold["hw"]) + 0.3 \
+		and local.z >= float(hold["from"]) - 0.3 and local.z <= float(hold["to"]) + 0.3

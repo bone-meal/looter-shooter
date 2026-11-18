@@ -19,6 +19,7 @@ const SeaCannons = preload("res://game/sea_cannons.gd")
 const SeaBoarding = preload("res://game/sea_boarding.gd")
 const SeaCrane = preload("res://game/sea_crane.gd")
 const SeaEncounters = preload("res://game/sea_encounters.gd")
+const ShipHold = preload("res://game/ship_hold.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -50,6 +51,7 @@ var dev_patch := false  # dev: interact held for patching without keys
 var cannons := SeaCannons.new()  # the ships' cannons (sea step 5d-2)
 var boarding := SeaBoarding.new()  # grappling lines and boarding planks (sea step 5d-3)
 var crane := SeaCrane.new()  # the salvage crane upgrade (sea step 5e)
+var holds := ShipHold.new()  # holds below deck + their cargo (sea step 8b-2)
 var foes := SeaEncounters.new()  # pirate ships and other foes that come as random encounters, and their flotsam (sea step 8)
 var _drop: Array = []  # ships to take out of the fleet after this frame's steps (foes gone or sunk)
 
@@ -80,6 +82,9 @@ func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
 	foes.name = "Foes"
 	add_child(foes)
 	foes.setup(self, _sea, _player)
+	holds.name = "Holds"
+	add_child(holds)
+	holds.setup(self, _sea, _player)
 	for entry: Dictionary in rules.cfg["fleet"]:
 		spawn(String(entry["ship"]), float(entry["at"][0]), float(entry["at"][1]), float(entry["yaw"]))
 
@@ -110,6 +115,7 @@ func _take_out(ship: SeaShip) -> void:
 	cannons.forget(ship)
 	crane.forget(ship)
 	foes.crews.ship_gone(ship)
+	holds.forget(ship)
 	_helmsmen.erase(ship)
 	ships.erase(ship)
 	ship.queue_free()
@@ -291,6 +297,7 @@ func _match_fleet(states: Array) -> void:
 		cannons.forget(ship)
 		crane.forget(ship)
 		foes.crews.ship_gone(ship)
+		holds.forget(ship)
 		_helmsmen.erase(ship)
 		ships.erase(ship)
 		ship.queue_free()
@@ -460,6 +467,9 @@ func prompt(key: String) -> String:
 	if ship == null:
 		return ""
 	var ship_name := String(ship.spec["name"])
+	if holds.in_hold_of(ship):  # below deck: only what is down here (the cargo chest, a leak)
+		var below_said := hull_part.prompt(key)
+		return below_said if below_said != "" else holds.prompt(key, ship)
 	var hull_said := hull_part.prompt(key)
 	if hull_said != "" or bool(ship.state.get("sinking", false)):  # a going-down ship offers nothing else
 		return hull_said
@@ -499,6 +509,8 @@ func interact() -> bool:
 		return false
 	if ship.state.has("foe"):
 		return boarding.interact()
+	if holds.in_hold_of(ship):
+		return hull_part.prompt("F") != "" or holds.interact(ship)
 	if hull_part.prompt("F") != "":  # at a leak / damaged plank: holding the key works it (game/sea_hull.gd work)
 		return true
 	if cannons.cannon_here(ship) >= 0:
@@ -643,7 +655,7 @@ func to_list() -> Array:
 		if ship.state.has("foe"):  # foes are not the world's fleet
 			continue
 		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell"),
-			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001), "crane": bool(ship.state.get("crane", false))})
+			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001), "crane": bool(ship.state.get("crane", false)), "cargo": ship.state.get("cargo", [])})
 	return out
 
 
@@ -670,6 +682,7 @@ func from_list(saved: Variant) -> void:
 	for ship: SeaShip in ships:
 		cannons.forget(ship)
 		crane.forget(ship)
+		holds.forget(ship)
 		ship.queue_free()
 	ships.clear()
 	_helmsmen.clear()
@@ -683,6 +696,8 @@ func from_list(saved: Variant) -> void:
 		if entry.get("water") is float or entry.get("water") is int:
 			ship.state["water"] = clampf(float(entry["water"]), 0.0, 0.99)
 		ship.state["crane"] = bool(entry.get("crane", false))
+		if entry.get("cargo") is Array and ShipHold.has_hold(ship):  # her hold's goods (sea step 8b-2)
+			ship.state["cargo"] = (entry["cargo"] as Array).slice(0, 200)
 		if bool(ship.state.get("sinking", false)) or hull_part.hull.sunk(ship.state):
 			hull_part.hull.refloat(ship.state)
 

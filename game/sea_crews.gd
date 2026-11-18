@@ -7,7 +7,8 @@
 # loot as chests on the defended deck; clearing her own deck leaves it on hers and she strikes (no guns, no sail, her
 # flag comes down). Musketeers fire across at players on other ships (led for her speed). A crewman knocked hard over
 # the rail, or on a sinking ship, swims to the nearest ship's ladder and climbs aboard (or drowns with none in reach).
-# Poses: arms up on the rope and the ladder, a crawl stroke in the water.
+# Poses: arms up on the rope and the ladder, a crawl stroke in the water. A brig keeps a few men BELOW in her hold
+# (sea step 8b-2): they come up the companion stair one by one once the fight is near; a player who goes down meets them.
 # HOST-AUTHORITATIVE: the host runs the crews and tells everyone (game/net_sea.gd crews: ship index + ship-space
 # spot, 10 Hz); other machines show puppets that send their hits to the host; the host says who fell and whose
 # blow it was. Kills pay through the wave director's `killed` (XP; no gun drops at sea: the plunder is on deck).
@@ -45,6 +46,7 @@ var overboard := 0  # dev / checks: crewmen that went into the sea, climbed back
 var climbed := 0
 var drowned := 0
 var shots := 0  # musket shots fired here (host)
+var climbed_up := 0  # men come up from below
 var last_overboard := ""  # dev: who went over last and why
 
 
@@ -156,6 +158,20 @@ func man(ship: Node3D) -> void:
 				enemy.set_meta("tier", tier)
 			_next_id += 1
 			n += 1
+	var below: Dictionary = k.get("below", {})
+	if (ship.get("spec") as Dictionary).get("hold", {}).is_empty():
+		below = {}
+	var down := 0
+	var down_total := 0
+	for kind: String in below:
+		down_total += int(below[kind])
+	for kind: String in ["pirate_captain", "pirate_cutlass", "pirate_musket"]:
+		for i in int(below.get(kind, 0)):
+			var enemy := _make(_next_id, kind, ship, DeckWalk.hold_muster(ship.get("spec"), down, down_total), _scaled(kind, region_n), false)
+			if enemy != null:
+				enemy.set_meta("tier", tier)
+			_next_id += 1
+			down += 1
 
 
 # Before a ship is freed: her men are taken off the director's list (they go with her).
@@ -298,6 +314,7 @@ func _process(delta: float) -> void:
 		_choose_targets()
 	for ship: Node3D in boardings.keys():
 		_go_on(ship)
+	_below_up()
 	for ship: Node3D in _foes():
 		if not struck.has(ship) and _manned_ever(ship) and on_deck(ship) == 0 and (not boardings.has(ship) or (boardings[ship]["queue"] as Array).is_empty()):
 			_strike(ship)
@@ -313,6 +330,57 @@ func _foes() -> Array:
 
 func _manned_ever(ship: Node3D) -> bool:
 	return not (_kinds.get(String(ship.get("state").get("foe", "")), {}).get("crew", {}) as Dictionary).is_empty()
+
+
+# Host: men below in a foe's hold come up the companion stair one at a time once the fight is near.
+var _below_next := {}  # foe ship -> time the next may climb
+
+
+func _below_up() -> void:
+	var now := _now()
+	for ship: Node3D in _foes():
+		var spec: Dictionary = ship.get("spec")
+		if spec.get("hold", {}).is_empty() or now < float(_below_next.get(ship, 0.0)):
+			continue
+		var down: Array = []
+		for id: int in men:
+			var e: Node3D = men[id]["enemy"]
+			if is_instance_valid(e) and e.get_parent() == ship and e.is_physics_processing() and DeckWalk.below(spec, e.position):
+				down.append(id)
+		if down.is_empty():
+			continue
+		var awake := boardings.has(ship)
+		for who: Dictionary in get_parent().call("players"):
+			if (who["at"] as Vector2).distance_to(Vector2(float(ship.get("state")["x"]), float(ship.get("state")["z"]))) <= float(cfg["below_wake_m"]):
+				awake = true
+		var anyone_below := false
+		for id: int in down:  # a player down here: they fight him below instead
+			var t: Variant = (men[id]["enemy"] as Node).get("_target")
+			if is_instance_valid(t) and bool(_fleet.get("rules").call("in_hold", String(ship.get("state")["ship"]), ship.global_transform.affine_inverse() * (t as Node3D).global_position)):
+				anyone_below = true
+		if awake and not anyone_below:
+			_below_next[ship] = now + float(cfg["below_up_s"])
+			climb_up(int(down[0]), ship)
+
+
+# Up the companion stair: to its foot, up it (arms on the rails), a step onto the deck beyond its head.
+func climb_up(id: int, ship: Node3D) -> void:
+	var enemy: Node3D = men[id]["enemy"]
+	var spec: Dictionary = ship.get("spec")
+	var st: Dictionary = spec["hold"]["stair"]
+	var way := signf(float(st["high"]) - float(st["low"]))
+	var foot := Vector3(float(st["x"]), float(spec["hold"]["floor"]), float(st["low"]) - way * 0.3)
+	var head := Vector3(float(st["x"]) + float(climbed_up % 3 - 1) * 1.0, float(spec["deck"]), float(st["high"]) + way * (0.8 + 0.5 * float(climbed_up % 2)))  # (each a step apart: idle men do not walk off each other)
+	var start := enemy.position
+	enemy.set_physics_process(false)
+	enemy.rotation.y = atan2(0.0, -way)
+	var walk := maxf(start.distance_to(foot) / 3.0, 0.2)
+	var tween := enemy.create_tween()
+	tween.tween_method(func(t: float) -> void: enemy.position = start.lerp(foot, t), 0.0, 1.0, walk)
+	tween.tween_callback(_pose.bind(enemy, "rope"))
+	tween.tween_method(func(t: float) -> void: enemy.position = foot.lerp(head, t), 0.0, 1.0, float(cfg["climb_s"]))
+	tween.tween_callback(_landed.bind(enemy))
+	climbed_up += 1
 
 
 # Host: every crewman goes for the nearest player he can reach (his deck; a musket also within see_m), or stands.
@@ -331,12 +399,14 @@ func _choose_targets() -> void:
 		if not is_instance_valid(enemy) or bool(enemy.get("puppet")) or not enemy.is_physics_processing():
 			continue
 		var ship := enemy.get_parent() as Node3D
-		var ranged := String(enemy.get("_stats").get("attack_type", "")) == "ranged"
+		var down := ship.get("spec") is Dictionary and DeckWalk.below(ship.get("spec"), enemy.position)  # below: only someone down there with him
+		var ranged := String(enemy.get("_stats").get("attack_type", "")) == "ranged" and not down
 		var best: Node3D = null
 		var best_d := INF
 		for body: Node3D in bodies:
 			var d := enemy.global_position.distance_to(body.global_position)
-			var same := bool(ship_rules.call("aboard", String(ship.get("state")["ship"]), ship.global_transform.affine_inverse() * body.global_position))
+			var local := ship.global_transform.affine_inverse() * body.global_position if ship.get("state") is Dictionary else Vector3.INF
+			var same := local != Vector3.INF and bool(ship_rules.call("in_hold" if down else "aboard", String(ship.get("state")["ship"]), local))
 			if (same or (ranged and d <= float(cfg["see_m"]))) and d < best_d:
 				best_d = d
 				best = body
@@ -714,4 +784,4 @@ func status() -> String:
 	for id: int in men:
 		if bool(men[id]["boarder"]):
 			aboard += 1
-	return "crews %d (boarders across %d), swung %d, repelled %d, struck %d, fallen %d, boardings %d, overboard %d, climbed %d, drowned %d, musket shots %d, last over '%s'" % [men.size(), aboard, swung, repelled, strikes, fallen, boardings.size(), overboard, climbed, drowned, shots, last_overboard]
+	return "crews %d (boarders across %d), swung %d, repelled %d, struck %d, fallen %d, boardings %d, overboard %d, climbed %d, drowned %d, musket shots %d, came up %d, last over '%s'" % [men.size(), aboard, swung, repelled, strikes, fallen, boardings.size(), overboard, climbed, drowned, shots, climbed_up, last_overboard]

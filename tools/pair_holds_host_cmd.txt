@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!ship spawn brig 0 40;!wait 3;!ship use last;!ship anchor down;!wait 45;!cargo status host_after_guest;!foe spawn pirate_brig 60 90;!wait 30;!foe status host_pirates;!foe crew;!wait 10;!cargo status host_end

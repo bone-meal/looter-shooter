@@ -80,6 +80,8 @@ func _process(delta: float) -> void:
 			_store_list.rpc((town.get("crew_chest") as RefCounted).call("to_list"))
 			_town_extra.rpc(town.call("extra_dict"))
 		var fleet_f := _fleet()
+		if fleet_f != null:
+			_cargo_all.rpc(fleet_f.get("holds").call("all_cargo"))  # (holds: a late joiner sees what is aboard)
 		if fleet_f != null and not (fleet_f.get("foes").get("flotsam").get("pieces") as Dictionary).is_empty():
 			_flotsam_list.rpc(fleet_f.get("foes").get("flotsam").call("to_net"))  # (a late joiner sees what floats)
 	_input_t += delta
@@ -732,3 +734,56 @@ func _crew_hit(id: int, damage: float) -> void:
 	var crews := _crews()
 	if net.is_host() and net.roster.has(from) and crews != null:
 		crews.call("host_hit", id, damage, from)
+
+
+# --- ship's holds (sea step 8b-2): cargo is the host's world fleet; a player in that hold asks to stow or take, the host
+# does it and tells him how many (his bag follows only then) and everyone the hold ---
+
+const CARGO_REACH := 2.5
+
+
+func request_cargo(ship_index: int, op: String, item: String, n: int) -> void:
+	_cargo_up.rpc_id(1, ship_index, op, item, n)
+
+
+func tell_cargo(ship_index: int, list: Array) -> void:
+	if active() and net.is_host():
+		_cargo_list.rpc(ship_index, list)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _cargo_up(ship_index: int, op: String, item: String, n: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var ship: Node = _ship_for(from, ship_index)
+	if not net.is_host() or ship == null or not op in ["put", "take"] or item.length() > 48 or n <= 0 or n > 9999:
+		return
+	var spec: Dictionary = ship.get("spec")
+	if spec.get("hold", {}).is_empty() or (ship.get("state") as Dictionary).has("foe") or not _near(from, ship, spec["hold"]["chest"], CARGO_REACH):
+		_cargo_done.rpc_id(from, op, item, 0)
+		return
+	var did := int(_fleet().get("holds").call("host_cargo", ship, op, item, n))
+	_cargo_done.rpc_id(from, op, item, did)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _cargo_done(op: String, item: String, n: int) -> void:
+	var fleet := _fleet()
+	if fleet != null:
+		fleet.get("holds").call("cargo_done", op, item.left(48), n)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _cargo_list(ship_index: int, list: Array) -> void:
+	var fleet := _fleet()
+	if fleet == null or list.size() > 200:
+		return
+	var ships: Array = fleet.get("ships")
+	if ship_index >= 0 and ship_index < ships.size():
+		(ships[ship_index].get("state") as Dictionary)["cargo"] = list
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _cargo_all(list: Array) -> void:
+	for got: Variant in list.slice(0, 32):
+		if got is Array and (got as Array).size() == 2 and got[1] is Array:
+			_cargo_list(int(got[0]), got[1])

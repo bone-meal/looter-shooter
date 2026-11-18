@@ -1,6 +1,6 @@
-Sea 8b fixes: musket fire across, overboard + swimming + ladder climb, rope pose, struck colours
+Sea 8b-2: real ship holds below deck with cargo, pirates below
 
-Musketeers now fire at players on other ships out to 90 m (balls led for the target ship's speed). A crewman thrown hard over the rail or on a sinking ship swims to the nearest ship's ladder and climbs aboard (his ship heaves to for him; with none in reach he drowns). Arms up on the rope and the ladder, a crawl stroke in the water. A beaten pirate ship lowers her black flag, also on clients. Online: swimmers in sea coordinates, shown on every machine.
+The brig, galleon and junk get a walkable hold: the main deck is cut round a hatch with a companion stair down into a lined hold with beams, cargo, a lantern and the cargo chest. The hold is solid (hull below its floor, deck round the hatch, walls, stair ramp), the sea is kept out of it (ocean shader dry boxes), its insides are drawn only near the camera, flood water rises inside. Cargo chest = goods of the bag stowed aboard, saved with the host's fleet and lost when she sinks; online a player asks the host to stow or take. A pirate brig keeps men below who come up the stair once the fight is near; deck walking for crews knows the hold and the hatch.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

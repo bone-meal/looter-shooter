@@ -16,6 +16,9 @@
 # game/fantasy_models.gd). Moving parts are their own nodes: Yard / Sail (Yard2 / Sail2 ...) per mast, Jib* head sails,
 # Pennant, Wheel (wheel, tiller or steering oar), Anchor + AnchorRope, OarsL / OarsR. Solid parts are closed shapes so
 # their faces point the right way (a single face's up / down is a guess: the old galleon deck faced down).
+# HOLDS (sea step 8b-2, data "hold"): on the brig, galleon and junk the main deck is cut round a hatch with a coaming
+# and a companion stair down into a walkable hold (node "Hold": plank floor, lined sides, bulkheads, beams and knees
+# under the deck, stanchions, cargo crates / barrels / sacks, the cargo chest, a hanging lantern).
 # Run: python3 tools/blender/sea_ships.py   (bpy as a module; ONLY=ship_sloop builds just that one)
 # Dependencies: bpy, bmesh, tools/blender/kit.py, tools/blender/fantasy_kit.py, data/sea/ships.json. No game code.
 import json
@@ -251,14 +254,135 @@ def hull_junk(m, sp, look):
 
 # ----------------------------------------------------------------------------------------------- decks and castles
 
+HEADROOM = 1.1  # the hatch opens on past the stair's foot (same as game/sea_ship.gd HEADROOM)
+
+
+def hatch_span(st):
+    """The hatch opening along the ship (game z): the stair plus headroom past its foot."""
+    if st["low"] < st["high"]:
+        return st["low"] - HEADROOM, st["high"]
+    return st["high"], st["low"] + HEADROOM
+
+
+def inner_w(sp, z):
+    hw = max(half(sp, z), 0.08)
+    return hw - min(0.12, hw * 0.5)
+
+
+def deck_band(m, mat, sp, z0, z1, x_in, y0, y1):
+    """A piece of the deck slab between game z0 < z1, from x_in (abs) out to the rail on both sides (x_in = None: the
+    whole width). Follows the outline's stations inside the band."""
+    zs = sorted({z0, z1} | {z for z, _hw in sp["outline"] if z0 < z < z1})
+    if x_in is None:
+        right = [(inner_w(sp, z), -z) for z in zs]
+        solid_pts = right + [(-x, f) for x, f in reversed(right)]
+        slab(m, mat, solid_pts, y0, y1)
+        return
+    for side in (1, -1):
+        outer = [(side * inner_w(sp, z), -z) for z in zs]
+        pts = [(side * x_in, -zs[0])] + outer + [(side * x_in, -zs[-1])]
+        slab(m, mat, pts if side > 0 else pts[::-1], y0, y1)
+
+
+def hold(m, sp, look):
+    """The hold below the main deck: what the game walks (data hold) dressed as a ship's hold."""
+    h = sp["hold"]
+    d, fl, hw, z0, z1 = sp["deck"], h["floor"], h["hw"], h["from"], h["to"]
+    st = h["stair"]
+    wood = K("wood", tuple(c * 0.78 for c in look["deck"]))
+    dark = K("timber", (0.26, 0.18, 0.11))
+    lining = K("wood", (0.46, 0.34, 0.22))
+    N = "Hold"
+    m.box(wood, (hw * 2.0, 0.1, z1 - z0), (0.0, fl - 0.05, -(z0 + z1) * 0.5), node=N)  # floor
+    for k in range(int((z1 - z0) / 0.7)):  # floor seams
+        m.box(dark, (hw * 2.0, 0.006, 0.025), (0.0, fl + 0.003, -(z0 + 0.35 + k * 0.7)), node=N)
+    for side in (1, -1):  # lined sides with ribs
+        m.box(lining, (0.08, d - fl - 0.12, z1 - z0), (side * (hw + 0.04), (d - 0.12 + fl) * 0.5, -(z0 + z1) * 0.5), node=N)
+        z = z0 + 0.4
+        while z < z1 - 0.2:
+            m.box(dark, (0.12, d - fl - 0.12, 0.16), (side * (hw - 0.02), (d - 0.12 + fl) * 0.5, -z), node=N)
+            m.box(dark, (0.4, 0.12, 0.16), (side * (hw - 0.22), d - 0.24, -z), node=N)  # knee
+            z += 1.1
+    for zz in (z0, z1):  # bulkheads of planks
+        m.box(lining, (hw * 2.0 + 0.16, d - fl - 0.12, 0.08), (0.0, (d - 0.12 + fl) * 0.5, -zz), node=N)
+        for k in range(int((d - fl) / 0.25)):
+            m.box(dark, (hw * 2.0, 0.015, 0.09), (0.0, fl + 0.25 * (k + 1), -zz), node=N)
+    z = z0 + 0.6
+    while z < z1 - 0.3:  # deck beams under the deck
+        if not (hatch_span(st)[0] - 0.1 < z < hatch_span(st)[1] + 0.1):
+            m.box(dark, (hw * 2.0, 0.16, 0.18), (0.0, d - 0.2, -z), node=N)
+        z += 0.9
+    for sx in (-1.1, 1.1):  # stanchions beside the stair
+        m.box(dark, (0.14, d - fl - 0.12, 0.14), (st["x"] + sx, (d - 0.12 + fl) * 0.5, -(z0 + 0.6)), node=N)
+    # the companion stair: treads, two stringers, hand ropes
+    run = st["high"] - st["low"]
+    rise = d - fl
+    n = max(int(rise / 0.22), 6)
+    for k in range(n):
+        t = (k + 0.5) / n
+        m.box(K("wood", look["deck"]), (st["w"] - 0.08, 0.05, abs(run) / n + 0.06), (st["x"], fl + rise * t, -(st["low"] + run * t)), node=N)
+    for sx in (-1, 1):
+        x = st["x"] + sx * (st["w"] * 0.5 - 0.02)
+        m.rod(dark, 0.05, (x, fl, -st["low"]), (x, d, -st["high"]), segs=6, node=N)
+        m.rod(K("leather", ROPE), 0.02, (x, fl + 0.9, -st["low"]), (x, d + 0.85, -st["high"]), segs=4, node=N)
+    # cargo along the sides: crates, barrels, sacks; the cargo chest; the lantern
+    cx, cz = h["chest"]
+    m.box(dark, (0.9, 0.5, 0.55), (cx, fl + 0.25, -cz), node=N)  # the cargo chest
+    m.box(K("paint", (0.5, 0.12, 0.08)), (0.94, 0.08, 0.59), (cx, fl + 0.52, -cz), node=N)
+    for bx in (-0.38, 0.38):
+        m.box(K("metal", IRON), (0.06, 0.52, 0.6), (cx + bx, fl + 0.26, -cz), node=N)
+    m.box(K("metal", GOLD), (0.12, 0.12, 0.04), (cx, fl + 0.36, -cz + 0.28), node=N)
+    side = 1 if cx < 0 else -1  # the other side: barrels and crates
+    k = 0
+    z = z0 + 0.7
+    while z < z1 - 0.7:
+        if not (min(st["low"], st["high"]) - 0.6 < z < max(st["low"], st["high"]) + 0.6) or abs(side * (hw - 0.55) - st["x"]) > 1.2:
+            x = side * (hw - 0.5)
+            if k % 3 == 2:
+                m.box(K("wood", (0.55, 0.42, 0.26)), (0.7, 0.6, 0.7), (x, fl + 0.3, -z), node=N)
+                m.box(K("wood", (0.5, 0.38, 0.24)), (0.55, 0.45, 0.55), (x, fl + 0.82, -z), node=N)
+            else:
+                m.lathe(K("wood", (0.45, 0.3, 0.18)), [(0.26, 0.0), (0.33, 0.25), (0.34, 0.4), (0.33, 0.55), (0.26, 0.8)], (x, fl, -z), node=N)
+                for yy in (0.12, 0.68):
+                    m.lathe(K("metal", IRON), [(0.28 + 0.03 * (0.4 - abs(yy - 0.4)), 0.0), (0.3 + 0.03 * (0.4 - abs(yy - 0.4)), 0.05)], (x, fl + yy, -z), node=N)
+        z += 0.85
+        k += 1
+    for k2 in range(3):  # sacks by the chest
+        m.ball(K("cloth", (0.66, 0.58, 0.42)), (0.24, 0.18, 0.3), (cx, fl + 0.18, -(cz + 0.75 + k2 * 0.55)), node=N, u=8, v=6)
+    lx, lz = h["lamp"]
+    m.rod(K("metal", IRON), 0.012, (lx, d - 0.28, -lz), (lx, d - 0.36, -lz), segs=4, node=N)  # hung close under a beam (heads clear it)
+    m.lathe(K("metal", IRON), [(0.1, 0.0), (0.12, 0.04), (0.12, 0.22), (0.06, 0.28)], (lx, d - 0.64, -lz), node=N)
+    m.ball((fk.GLOW, GLASS), (0.08, 0.1, 0.08), (lx, d - 0.52, -lz), node=N, u=8, v=6)
+
+
 def deck(m, sp, look):
     """The main deck as a closed slab inside the rail, the hatch, the capstan at the anchor and pin rails at the rigging
-    spots (crew stations)."""
+    spots (crew stations). A ship with a hold: the slab cut round its hatch, a coaming round the opening."""
     d = sp["deck"]
     inner = [(max(hw, 0.08) - min(0.12, max(hw, 0.08) * 0.5), -z) for z, hw in sp["outline"]]
-    slab(m, K("wood", look["deck"]), [(x, f) for x, f in inner] + [(-x, f) for x, f in reversed(inner)], d - 0.12, d)
+    if "hold" in sp:
+        st = sp["hold"]["stair"]
+        lo, hi = hatch_span(st)
+        mat = K("wood", look["deck"])
+        stern, bow = sp["outline"][0][0], sp["outline"][-1][0]
+        deck_band(m, mat, sp, bow, lo, None, d - 0.12, d)
+        deck_band(m, mat, sp, hi, stern, None, d - 0.12, d)
+        hx = abs(st["x"]) + st["w"] * 0.5
+        deck_band(m, mat, sp, lo, hi, hx, d - 0.12, d)
+        coam = K("timber", look.get("rail", (0.3, 0.2, 0.12)))
+        for sx in (-1, 1):  # the hatch coaming (low enough to step over; the game's deck is flat)
+            m.box(coam, (0.1, 0.1, hi - lo + 0.2), (st["x"] + sx * (hx + 0.05), d + 0.05, -(lo + hi) * 0.5))
+        m.box(coam, (hx * 2.0 + 0.2, 0.1, 0.1), (st["x"], d + 0.05, -(lo - 0.05)))
+        m.box(K("wood", tuple(c * 0.8 for c in look["deck"])), (hx * 2.0 - 0.1, 0.06, hi - lo - 0.1), (st["x"] + hx * 2.0 + 0.15, d + 0.03, -(lo + hi) * 0.5))  # the hatch cover, off and laid beside it
+        for k in range(4):
+            m.box(K("timber", (0.24, 0.16, 0.1)), (hx * 2.0 - 0.2, 0.04, 0.08), (st["x"] + hx * 2.0 + 0.15, d + 0.07, -(lo + 0.3 + k * (hi - lo - 0.6) / 3.0)))
+        hold(m, sp, look)
+    else:
+        slab(m, K("wood", look["deck"]), [(x, f) for x, f in inner] + [(-x, f) for x, f in reversed(inner)], d - 0.12, d)
     for z in range(int(sp["outline"][-1][0]) + 1, int(sp["outline"][0][0])):  # deck seams
         hw = half(sp, z) - 0.2
+        if "hold" in sp and hatch_span(sp["hold"]["stair"])[0] - 0.1 <= z + 0.5 <= hatch_span(sp["hold"]["stair"])[1] + 0.1:
+            continue  # (no seam across the open hatch)
         if hw > 0.3:
             m.box(K("wood", tuple(c * 0.7 for c in look["deck"])), (hw * 2.0, 0.01, 0.03), (0.0, d + 0.005, -z - 0.5))
     hatch = -sp["masts"][0][0] - 2.4
