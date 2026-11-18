@@ -255,6 +255,9 @@ func host_states(states: Array) -> void:
 			var k: Dictionary = foes.rules.cfg["kinds"].get(String(ship.state["foe"]), {})
 			ship.state["hull_max"] = float(ship.state["hull_max"]) * float(k.get("hull_mult", 1.0))
 			_sea.emit_signal("notice", String(foes.rules.cfg["pirate"]["notice"]) % String(k.get("name", "foe")))
+		if got.size() >= 18 and bool(got[17]) and not bool(ship.state.get("struck", false)):  # her crew beaten (sea step 8b)
+			ship.state["struck"] = true
+			ship.strike_colours()
 		_helmsmen[ship] = {"id": int(got[7]), "level": 0}
 		var mine := int(got[7]) == int(_net().call("my_id"))
 		if mine and helm_ship == null and _asked == ship:

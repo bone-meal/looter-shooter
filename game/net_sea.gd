@@ -97,7 +97,7 @@ func _send_fleet(fleet: Node) -> void:
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
 		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"]),
-			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", ""))])
+			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", "")), bool(s.get("struck", false))])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 	_board_down.rpc(fleet.get("boarding").call("to_net"))

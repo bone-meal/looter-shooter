@@ -217,9 +217,9 @@
     ]
   },
   "crews": {
-    "_about": "Sea step 8b: pirate crews on deck (core/sea/deck_walk.gd, game/sea_crews.gd). Musketeers shoot at players within see_m; cutlass men and the captain fight whoever stands on their deck. A boarder (kind 'boarders' > 0) closes to board_keep_m abeam of a player's ship and, within board_m, swings that many of her crew across one after another (cutlass men and the captain first). Crew are tougher by region (hp/damage_per_region) and count as tier_first + tier_per_region * (region - 1) for kill XP. Beating off the boarders leaves deck_loot chests on the defended deck; clearing a foe's own deck leaves them on hers and she strikes (no guns, no sail).",
+    "_about": "Sea step 8b: pirate crews on deck (core/sea/deck_walk.gd, game/sea_crews.gd). Musketeers shoot at players within see_m; cutlass men and the captain fight whoever stands on their deck. A boarder (kind 'boarders' > 0) closes to board_keep_m abeam of a player's ship and, within board_m, swings that many of her crew across one after another (cutlass men and the captain first). Crew are tougher by region (hp/damage_per_region) and count as tier_first + tier_per_region * (region - 1) for kill XP. Beating off the boarders leaves deck_loot chests on the defended deck; clearing a foe's own deck leaves them on hers and she strikes (no guns, no sail). Musketeers fire at players on other ships within musket_range (balls at musket_speed, led for her speed, musket_error_deg off). A crewman pushed hard past the rail (overboard_push m/s) or on a sinking ship goes into the sea, swims (swim_speed) to the nearest ship's ladder and climbs (climb_s); with no ship to reach he drowns after drown_s (no kill pay).",
     "retarget_s": 0.5,
-    "see_m": 30.0,
+    "see_m": 90.0,
     "board_keep_m": [
       11.0,
       15.0
@@ -237,6 +237,13 @@
     "deck_reach": 1.8,
     "board_notice": "Boarders! The %s's crew is swinging across",
     "repelled_notice": "Boarders beaten off: they left their plunder on deck",
-    "cleared_notice": "The %s's crew is beaten: she strikes her colours. Her plunder is on deck"
+    "cleared_notice": "The %s's crew is beaten: she strikes her colours. Her plunder is on deck",
+    "musket_range": 90.0,
+    "musket_speed": 70.0,
+    "musket_error_deg": 1.5,
+    "overboard_push": 3.5,
+    "swim_speed": 1.8,
+    "climb_s": 1.6,
+    "drown_s": 45.0
   }
 }

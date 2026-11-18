@@ -38,6 +38,7 @@ var order_goal := Vector3.INF  # squad order (game/squad_command.gd): walk to th
 var order_attack := true  # squad order: it may strike now (false = it waits its turn)
 var order_until := 0.0  # engine time the order stops counting (orders are renewed a few times a second)
 var space: Node3D = null  # sea crews (sea step 8b): it walks and faces in this node's space (its ship's deck, with a deck walker)
+var aim_fix := Callable()  # sea crews: func(origin, aim, target) -> aim: leads a target on a moving ship (null = straight at him)
 var calm_until := 0.0  # engine time until which it has given up the chase (its prey is in a safe place): no special attacks (game/boss_moves.gd)
 var health: HealthState
 var _slow_until := 0.0  # gun buff: seconds (engine time) until the slow ends
@@ -623,6 +624,8 @@ func _attack() -> void:
 		return
 	var origin := global_position + Vector3(0, _size.y * 0.7, 0)
 	var aim := (_target.global_position + Vector3(0, AIM_HEIGHT, 0) - origin).normalized()
+	if aim_fix.is_valid():
+		aim = aim_fix.call(origin, aim, _target)
 	attacked.emit(origin, aim)
 	shoot_burst(origin, aim)
 

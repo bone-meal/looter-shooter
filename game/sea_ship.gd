@@ -168,6 +168,15 @@ func dress_foe(sails: Color) -> void:
 	add_child(_flag)
 
 
+# She strikes her colours (sea step 8b: her crew is beaten): the black flag comes down the mast and is gone.
+func strike_colours() -> void:
+	if _flag == null or not _flag.visible:
+		return
+	var tween := create_tween()
+	tween.tween_property(_flag, "position:y", float(spec["deck"]) + 1.2, 3.0).set_ease(Tween.EASE_IN)
+	tween.tween_callback(_flag.hide)
+
+
 static func _meshes(node: Node) -> Array:
 	var out: Array = []
 	if node is MeshInstance3D:

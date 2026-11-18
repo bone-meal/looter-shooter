@@ -4,7 +4,10 @@
 # made by the wave director (adopt: its shots, kill pay, grenades and skills reach them). Musketeers shoot at
 # players within see_m; cutlass men and the captain fight whoever stands on their deck. A boarder closes on a player's
 # ship and swings her boarders across one by one on a rope (an arc tween). Beating off the boarders leaves her deck
-# loot as chests on the defended deck; clearing her own deck leaves it on hers and she strikes (no guns, no sail).
+# loot as chests on the defended deck; clearing her own deck leaves it on hers and she strikes (no guns, no sail, her
+# flag comes down). Musketeers fire across at players on other ships (led for her speed). A crewman knocked hard over
+# the rail, or on a sinking ship, swims to the nearest ship's ladder and climbs aboard (or drowns with none in reach).
+# Poses: arms up on the rope and the ladder, a crawl stroke in the water.
 # HOST-AUTHORITATIVE: the host runs the crews and tells everyone (game/net_sea.gd crews: ship index + ship-space
 # spot, 10 Hz); other machines show puppets that send their hits to the host; the host says who fell and whose
 # blow it was. Kills pay through the wave director's `killed` (XP; no gun drops at sea: the plunder is on deck).
@@ -38,6 +41,11 @@ var _pending := {}  # client: id -> damage this frame, sent to the host as one h
 var _missing := {}  # client: id -> time it was first missing from the host's list
 var _sent_empty := true
 var _ropes: Array = []  # [rope mesh, foe ship, enemy, until]
+var overboard := 0  # dev / checks: crewmen that went into the sea, climbed back aboard, drowned
+var climbed := 0
+var drowned := 0
+var shots := 0  # musket shots fired here (host)
+var last_overboard := ""  # dev: who went over last and why
 
 
 func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D, encounters: Dictionary) -> void:
@@ -83,7 +91,11 @@ func _walk(from: Vector3, by: Vector3, enemy: Node3D) -> Vector3:
 			var d := away.length()
 			if d < ELBOW and d > 0.001:
 				by += away / d * (ELBOW - d) * 0.25
-	return DeckWalk.step(ship.get("spec"), from, by)
+	var to := DeckWalk.step(ship.get("spec"), from, by)
+	var push: Vector3 = enemy.get("_push")
+	if _host() and push.length() > float(cfg["overboard_push"]) and absf(from.x + by.x) > absf(to.x) + 0.2:
+		_overboard.call_deferred(enemy, "thrown")  # thrown hard against the rail: over it
+	return to
 
 
 # A crewman's numbers out here: tougher by region.
@@ -91,6 +103,15 @@ func _scaled(kind: String, region_n: int) -> Dictionary:
 	var stats: Dictionary = (_stats[kind] as Dictionary).duplicate()
 	stats["max_hp"] = float(stats["max_hp"]) * (1.0 + float(cfg["hp_per_region"]) * float(region_n - 1))
 	stats["damage"] = float(stats["damage"]) * (1.0 + float(cfg["damage_per_region"]) * float(region_n - 1))
+	return _sea_stats(stats)
+
+
+# A musket at sea reaches across to the next ship (the land numbers are for 30 m fights).
+func _sea_stats(stats: Dictionary) -> Dictionary:
+	if String(stats.get("attack_type", "")) == "ranged":
+		stats["attack_range"] = float(cfg["musket_range"])
+		stats["projectile_speed"] = float(cfg["musket_speed"])
+		stats["preferred_range"] = 0.0
 	return stats
 
 
@@ -112,6 +133,7 @@ func _make(id: int, kind: String, ship: Node3D, at: Vector3, stats: Dictionary, 
 		enemy.connect("puppet_hit", func(damage: float) -> void: _pending[id] = float(_pending.get(id, 0.0)) + damage)
 	else:
 		enemy.connect("attacked", _on_attacked.bind(id))
+		enemy.set("aim_fix", _lead)
 	men[id] = {"enemy": enemy, "home": ship, "kind": kind, "boarder": false}
 	return enemy
 
@@ -158,12 +180,38 @@ func _on_died(_enemy: Node, id: int) -> void:
 
 # Host: a musketeer fired: everyone sees the shot (ship space, so it lines up on every machine).
 func _on_attacked(origin: Vector3, aim: Vector3, id: int) -> void:
+	shots += 1
 	var net := _net()
 	var enemy: Node3D = men.get(id, {}).get("enemy")
 	if net == null or not is_instance_valid(enemy):
 		return
 	var ship := enemy.get_parent() as Node3D
 	net.call("tell_crew_fire", id, (_fleet.get("ships") as Array).find(ship), ship.global_transform.affine_inverse() * origin, ship.global_transform.basis.inverse() * aim)
+
+
+# Host: a musket's aim at a player on a moving ship: where he will be when the ball gets there, a little off.
+func _lead(origin: Vector3, aim: Vector3, target: Node3D) -> Vector3:
+	if not is_instance_valid(target):
+		return aim
+	var at := target.global_position + Vector3(0.0, 1.2, 0.0)
+	var on := _ship_under(target.global_position)
+	if on != null:
+		var st: Dictionary = on.get("state")
+		var vel := Vector3(-sin(float(st["yaw"])), 0.0, -cos(float(st["yaw"]))) * float(st["speed"])
+		at += vel * origin.distance_to(at) / float(cfg["musket_speed"])
+	var err := deg_to_rad(float(cfg["musket_error_deg"]))
+	var way := (at - origin).normalized()
+	var side := way.cross(Vector3.UP).normalized()
+	return (way + side * _rng.randf_range(-err, err) + Vector3.UP * _rng.randf_range(-err, err) * 0.6).normalized()
+
+
+# The ship whose deck is at this scene point (null = none).
+func _ship_under(point: Vector3) -> Node3D:
+	var ship_rules: RefCounted = _fleet.get("rules")
+	for ship: Node3D in _fleet.get("ships"):
+		if bool(ship_rules.call("aboard", String(ship.get("state")["ship"]), ship.global_transform.affine_inverse() * point)):
+			return ship
+	return null
 
 
 # How many of a foe's men still stand on her own deck.
@@ -174,6 +222,14 @@ func on_deck(ship: Node3D) -> int:
 		if is_instance_valid(enemy) and enemy.get_parent() == ship and not enemy.get("health").is_dead():
 			n += 1
 	return n
+
+
+# A man of hers is in the water swimming for her: she heaves to (sails furled) till he is back aboard.
+func picking_up(ship: Node3D) -> bool:
+	for id: int in men:
+		if men[id].has("swim") and men[id]["swim"].get("goal") == ship:
+			return true
+	return false
 
 
 func is_struck(ship: Node3D) -> bool:
@@ -223,9 +279,19 @@ func _process(delta: float) -> void:
 	if not bool(_sea.call("running")):
 		return
 	_ropes_follow()
+	_strokes()
 	if not _host():
 		_send_hits()
 		return
+	for id: int in men.keys():
+		if men.has(id) and men[id].has("swim"):
+			_swim_step(id, delta)
+	for ship: Node3D in _fleet.get("ships"):
+		if bool(ship.get("state").get("sinking", false)):
+			for id: int in men.keys():
+				var e: Node3D = men[id]["enemy"]
+				if is_instance_valid(e) and e.get_parent() == ship and e.is_physics_processing():
+					_overboard(e, "sinking")  # going down with her: into the sea
 	_retarget -= delta
 	if _retarget <= 0.0 and not men.is_empty():
 		_retarget = float(cfg["retarget_s"])
@@ -304,24 +370,152 @@ func _go_on(ship: Node3D) -> void:
 		_sea.emit_signal("notice", String(cfg["repelled_notice"]))
 
 
-# A crewman swings from his deck onto another ship (here: a rope from her mainmast top and an arc).
+# A crewman swings from his deck onto another ship (here: a rope from her mainmast top and an arc), or (from the
+# water) climbs her side by the ladder: arms up the whole way.
 func swing(id: int, target: Node3D, nth: int, land: Vector3 = Vector3.INF) -> void:
 	var enemy: Node3D = men[id]["enemy"]
 	var from_ship := enemy.get_parent() as Node3D
+	var from_sea := not (from_ship != null and from_ship.get("spec") is Dictionary)  # (a swimmer: the fleet node)
 	if land == Vector3.INF:
 		land = DeckWalk.muster(target.get("spec"), nth % 4, 4, _rng.randf())
 	enemy.set_physics_process(false)
 	enemy.reparent(target)
+	enemy.rotation = Vector3(0.0, enemy.rotation.y, 0.0)
 	enemy.set("space", target)
 	enemy.set("net_pos", land)
-	men[id]["boarder"] = true
+	men[id].erase("swim")
+	if not from_sea:
+		men[id]["boarder"] = true
+	_pose(enemy, "rope")
 	var start := enemy.position
-	var lift := float(cfg["swing_height"])
+	var lift := 0.4 if from_sea else float(cfg["swing_height"])
+	var seconds := float(cfg["climb_s"]) if from_sea else float(cfg["swing_s"])
 	var tween := enemy.create_tween()
-	tween.tween_method(func(t: float) -> void: enemy.position = start.lerp(land, t) + Vector3(0.0, sin(t * PI) * lift, 0.0), 0.0, 1.0, float(cfg["swing_s"]))
-	tween.tween_callback(enemy.set_physics_process.bind(true))
-	_rope(from_ship, enemy, float(cfg["swing_s"]))
-	swung += 1
+	tween.tween_method(func(t: float) -> void: enemy.position = start.lerp(land, t) + Vector3(0.0, sin(t * PI) * lift, 0.0), 0.0, 1.0, seconds)
+	tween.tween_callback(_landed.bind(enemy))
+	if from_sea:
+		climbed += 1
+	else:
+		_rope(from_ship, enemy, seconds)
+		swung += 1
+
+
+func _landed(enemy: Node3D) -> void:
+	if is_instance_valid(enemy):
+		_pose(enemy, "")
+		enemy.set_physics_process(true)
+
+
+# Arms up (the rope, the ladder), a crawl stroke (swimming), or back as the enemy holds them ("").
+func _pose(enemy: Node3D, kind: String) -> void:
+	if not enemy.has_meta("rest_pose"):
+		var rest := {}
+		for limb: String in ["ArmL", "ArmR", "LegL", "LegR"]:
+			var n := enemy.find_child(limb, true, false) as Node3D
+			if n != null:
+				rest[limb] = n.rotation
+		enemy.set_meta("rest_pose", rest)
+	var rest_pose: Dictionary = enemy.get_meta("rest_pose")
+	enemy.set_meta("pose", kind)
+	for limb: String in rest_pose:
+		var n := enemy.find_child(limb, true, false) as Node3D
+		if n == null:
+			continue
+		if kind == "rope":
+			n.rotation = Vector3(deg_to_rad(-165.0) if limb.begins_with("Arm") else 0.45, 0.0, 0.0)
+		else:
+			n.rotation = rest_pose[limb]
+
+
+# Swimmers' arms and legs (every machine): a slow crawl stroke.
+func _strokes() -> void:
+	var t := Time.get_ticks_msec() / 1000.0
+	for id: int in men:
+		var enemy: Node3D = men[id]["enemy"]
+		if not is_instance_valid(enemy) or String(enemy.get_meta("pose", "")) != "swim":
+			continue
+		if bool(enemy.get("puppet")):  # (a client: glide to where the host says he swims)
+			enemy.position = enemy.position.lerp(enemy.get("net_pos"), 0.15)
+			enemy.rotation.y = lerp_angle(enemy.rotation.y, float(enemy.get("net_yaw")), 0.15)
+		for limb: String in ["ArmL", "ArmR", "LegL", "LegR"]:
+			var n := enemy.find_child(limb, true, false) as Node3D
+			if n != null:
+				var phase := t * 3.2 + (PI if limb.ends_with("R") else 0.0)
+				n.rotation = Vector3((-PI * 0.5 + sin(phase) * 1.4) if limb.begins_with("Arm") else sin(phase * 2.0) * 0.35, 0.0, 0.0)
+
+
+# Host: into the sea (thrown over, or his ship is going down).
+func _overboard(enemy: Node3D, why: String = "") -> void:
+	if not is_instance_valid(enemy) or enemy.get("health").is_dead() or not enemy.has_meta("net_id"):
+		return
+	var id := int(enemy.get_meta("net_id"))
+	if not men.has(id) or men[id].has("swim"):
+		return
+	enemy.set_physics_process(false)
+	enemy.reparent(_fleet)
+	enemy.set("space", _fleet)
+	last_overboard = "%s %s (push %.1f)" % [String(men[id]["kind"]), why, (enemy.get("_push") as Vector3).length()]
+	enemy.set("_push", Vector3.ZERO)
+	men[id]["swim"] = {"t": 0.0}
+	_swim_pose(enemy, true)
+	overboard += 1
+
+
+func _swim_pose(enemy: Node3D, on: bool) -> void:
+	enemy.rotation.x = -1.25 if on else 0.0  # laid face down in the water
+	if on:
+		_pose(enemy, "")
+		enemy.set_meta("pose", "swim")
+	else:
+		_pose(enemy, "")
+
+
+# Host: a swimmer floats up to the surface and swims to the nearest afloat ship's ladder (her own side), then climbs.
+func _swim_step(id: int, delta: float) -> void:
+	var enemy: Node3D = men[id]["enemy"]
+	var sw: Dictionary = men[id]["swim"]
+	if not is_instance_valid(enemy):
+		men.erase(id)
+		return
+	sw["t"] = float(sw["t"]) + delta
+	var world := enemy.global_position
+	var water := float(_sea.call("water_height", Vector3(world.x, 0.0, world.z))) - (_fleet as Node3D).global_position.y
+	enemy.position.y = move_toward(enemy.position.y, water - 0.35, 6.0 * delta)
+	var best: Node3D = null
+	var best_d := INF
+	var foot := Vector3.ZERO
+	for ship: Node3D in _fleet.get("ships"):
+		if bool(ship.get("state").get("sinking", false)):
+			continue
+		var spec: Dictionary = ship.get("spec")
+		var lz := float(spec.get("ladder_z", 0.0))
+		var local := ship.global_transform.affine_inverse() * world
+		var side := 1.0 if local.x >= 0.0 else -1.0
+		var at := ship.global_transform * Vector3(side * (DeckWalk.half_width(spec, lz) + 0.45), 0.0, lz)
+		var d := Vector2(at.x - world.x, at.z - world.z).length()
+		if d < best_d:
+			best_d = d
+			best = ship
+			foot = at
+	if best == null or best_d > 60.0 or float(sw["t"]) > float(cfg["drown_s"]):
+		drowned += 1  # nothing to climb: he goes under (nobody is paid)
+		if director != null:
+			director.call("forget", enemy)
+		men.erase(id)
+		enemy.queue_free()
+		return
+	sw["goal"] = best
+	var way := Vector2(foot.x - world.x, foot.z - world.z)
+	if way.length() <= 1.0:
+		var spec_b: Dictionary = best.get("spec")
+		var lz_b := float(spec_b.get("ladder_z", 0.0))
+		var side_b := signf((best.global_transform.affine_inverse() * world).x)
+		var x := side_b * maxf(DeckWalk.half_width(spec_b, lz_b) - 0.8, 0.3)
+		swing(id, best, 0, Vector3(x, DeckWalk.height_at(spec_b, x, lz_b), lz_b))
+		return
+	var step := way.normalized() * minf(float(cfg["swim_speed"]) * delta, way.length())
+	enemy.position += Vector3(step.x, 0.0, step.y)
+	enemy.rotation.y = atan2(-way.x, -way.y)
 
 
 func _rope(from_ship: Node3D, enemy: Node3D, seconds: float) -> void:
@@ -367,6 +561,8 @@ func _strike(ship: Node3D) -> void:
 	var st: Dictionary = ship.get("state")
 	st["stage"] = 0
 	st["rudder"] = 0.0
+	st["struck"] = true
+	ship.call("strike_colours")
 	_deck_loot(ship, ship)
 	_sea.emit_signal("notice", String(cfg["cleared_notice"]) % String(_kinds.get(String(st["foe"]), {}).get("name", "pirate")))
 
@@ -396,7 +592,7 @@ func to_net() -> Array:
 			continue
 		var p := enemy.position
 		var hp: RefCounted = enemy.get("health")
-		out.append([id, ships.find(enemy.get_parent()), snappedf(p.x, 0.01), snappedf(p.y, 0.01), snappedf(p.z, 0.01), snappedf(enemy.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(men[id]["kind"])])
+		out.append([id, ships.find(enemy.get_parent()), snappedf(p.x, 0.01), snappedf(p.y, 0.01), snappedf(p.z, 0.01), snappedf(enemy.rotation.y, 0.01), snappedf(float(hp.get("hp")) / maxf(float(hp.get("max_hp")), 1.0), 0.01), String(men[id]["kind"]), men[id].has("swim")])
 	return out
 
 
@@ -421,19 +617,27 @@ func from_net(list: Array) -> void:
 		var id := int(got[0])
 		var index := int(got[1])
 		var at := Vector3(float(got[2]), float(got[3]), float(got[4]))
-		if index < 0 or index >= ships.size() or not at.is_finite() or not is_finite(float(got[5])):
+		var swimming := (got as Array).size() >= 9 and bool(got[8])
+		if (not swimming and (index < 0 or index >= ships.size())) or not at.is_finite() or not is_finite(float(got[5])):
 			continue
 		seen[id] = true
-		var ship: Node3D = ships[index]
+		var ship: Node3D = _fleet if swimming else ships[index]
 		var kind := String(got[7]).left(24)
 		if not men.has(id) or not is_instance_valid(men[id]["enemy"]):
 			if not kind.begins_with("pirate_"):
 				continue
-			_make(id, kind, ship, at, (_stats[kind] as Dictionary).duplicate(), true)
+			_make(id, kind, ship, at, _sea_stats((_stats[kind] as Dictionary).duplicate()), true)
 		var enemy: Node3D = men[id]["enemy"]
-		if enemy.get_parent() != ship:
+		if swimming and enemy.get_parent() != ship:  # over the side: he swims (the host moves him; _strokes glides him here)
+			enemy.set_physics_process(false)
+			enemy.reparent(_fleet)
+			enemy.set("space", _fleet)
+			enemy.set("net_pos", at)
+			men[id]["swim"] = {"t": 0.0}
+			_swim_pose(enemy, true)
+		elif not swimming and enemy.get_parent() != ship:
 			swing(id, ship, 0, at)
-		elif enemy.is_physics_processing():
+		elif enemy.is_physics_processing() or swimming:
 			enemy.set("net_pos", at)
 		enemy.set("net_yaw", float(got[5]))
 		var hp: RefCounted = enemy.get("health")
@@ -510,4 +714,4 @@ func status() -> String:
 	for id: int in men:
 		if bool(men[id]["boarder"]):
 			aboard += 1
-	return "crews %d (boarders across %d), swung %d, repelled %d, struck %d, fallen %d, boardings %d" % [men.size(), aboard, swung, repelled, strikes, fallen, boardings.size()]
+	return "crews %d (boarders across %d), swung %d, repelled %d, struck %d, fallen %d, boardings %d, overboard %d, climbed %d, drowned %d, musket shots %d, last over '%s'" % [men.size(), aboard, swung, repelled, strikes, fallen, boardings.size(), overboard, climbed, drowned, shots, last_overboard]

@@ -188,6 +188,8 @@ func drive(ship: Node3D, _delta: float) -> void:
 	crews.consider(ship, target_ship, plan)
 	st["rudder"] = float(plan["rudder"])
 	st["stage"] = _best_stage(ship, float(plan["want"]), String(plan["mode"]))
+	if crews.picking_up(ship) and String(plan["mode"]) != "flee":
+		st["stage"] = 1  # heave to for a man overboard (sails furled)
 	last = "%s d %.0f m, side %s, rudder %.2f, stage %d, speed %.1f" % [plan["mode"], float(plan["d"]), "starboard" if float(plan["side"]) > 0.0 else "port", float(plan["rudder"]), int(st["stage"]), float(st["speed"])]
 	if String(plan["mode"]) != "flee" and float(plan["d"]) <= float(rules.cfg["pirate"]["fire_range_m"]) and not crews.boarding(ship):
 		var aim_at: Vector3 = target_ship.call("deck_spot", [0.0, 0.0], -0.6) if target_ship != null else _sea.call("world_of", Vector3(target.x, 0.0, target.y))
@@ -254,5 +256,5 @@ func status() -> String:
 	var parts := PackedStringArray()
 	for ship: Node3D in foes():
 		var st: Dictionary = ship.get("state")
-		parts.append("%s hull %.0f/%.0f at (%.0f, %.0f)" % [String(st["foe"]), float(st["hull"]), float(st["hull_max"]), float(st["x"]), float(st["z"])])
+		parts.append("%s hull %.0f/%.0f at (%.0f, %.0f)%s" % [String(st["foe"]), float(st["hull"]), float(st["hull_max"]), float(st["x"]), float(st["z"]), " STRUCK" if bool(st.get("struck", false)) else ""])
 	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status()]
