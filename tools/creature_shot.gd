@@ -30,10 +30,13 @@ const VIEWS := [
 	["bosses_left", Vector3(-2.2, 2.6, 3.4), Vector3(-7.0, 2.1, 3.5)],
 	["bosses_right", Vector3(-2.2, 2.6, -3.4), Vector3(-7.0, 2.1, -3.5)],
 	["boss_mid", Vector3(-2.8, 2.4, 0.0), Vector3(-7.0, 2.0, 0.0)],
+	["pirates", Vector3(0.0, 1.55, 15.6), Vector3(0.0, 1.2, 12.0)],
+	["pirate_heads", Vector3(-0.2, 1.75, 13.6), Vector3(-0.2, 1.65, 12.0)],
 ]
 # Wasteland enemies: [id, place relative to the island centre]; the bosses face +X. The other creatures are hidden in these views.
 const WASTELAND := [["raider", Vector3(-2.7, 0, 9)], ["feral", Vector3(-1.4, 0, 9)], ["scav_gunner", Vector3(0.0, 0, 9)], ["marksman", Vector3(1.3, 0, 9)], ["brute", Vector3(3.0, 0, 9)],
-	["boss_butcher", Vector3(-7, 0, 4.6)], ["boss_tyrant", Vector3(-7, 0, 2.3)], ["boss_dome_beast", Vector3(-7, 0, 0)], ["boss_warlord", Vector3(-7, 0, -2.3)], ["boss_overseer", Vector3(-7, 0, -4.6)]]
+	["boss_butcher", Vector3(-7, 0, 4.6)], ["boss_tyrant", Vector3(-7, 0, 2.3)], ["boss_dome_beast", Vector3(-7, 0, 0)], ["boss_warlord", Vector3(-7, 0, -2.3)], ["boss_overseer", Vector3(-7, 0, -4.6)],
+	["pirate_cutlass", Vector3(-1.3, 0, 12)], ["pirate_musket", Vector3(0.0, 0, 12)], ["pirate_captain", Vector3(1.3, 0, 12)]]
 
 
 func _ready() -> void:
@@ -79,7 +82,7 @@ func _ready() -> void:
 		enemy.configure(String(entry[0]), stats, null, null, null)
 		enemy.set_physics_process(false)
 		enemy.position = C + (entry[1] as Vector3)
-		enemy.rotation.y = -PI / 2.0 if String(entry[0]).begins_with("boss_") else 0.0
+		enemy.rotation.y = -PI / 2.0 if String(entry[0]).begins_with("boss_") else (PI if String(entry[0]).begins_with("pirate_") else 0.0)  # pirates face the pirates views
 		add_child(enemy)
 		var arm := enemy.find_child("ArmR", true, false) as Node3D
 		lines.append("%s: joints %s, surfaces %d" % [entry[0], "ok" if arm != null and enemy.find_child("LegL", true, false) != null else "MISSING",
@@ -91,11 +94,17 @@ func _ready() -> void:
 	add_child(cam)
 	cam.current = true
 	style.apply("high", "realistic")
+	var only := ""  # "-- --views=pirates,pirate_heads": just those views
+	for arg: String in OS.get_cmdline_user_args():
+		if arg.begins_with("--views="):
+			only = "," + arg.trim_prefix("--views=") + ","
 	for view: Array in VIEWS:
+		if only != "" and not only.contains("," + String(view[0]) + ","):
+			continue
 		cam.position = C + (view[1] as Vector3)
 		cam.look_at(C + (view[2] as Vector3), Vector3.UP)
 		for entry: Array in cast:
-			(entry[0] as Node3D).visible = not (String(view[0]).begins_with("wasteland") or String(view[0]).begins_with("boss"))
+			(entry[0] as Node3D).visible = not (String(view[0]).begins_with("wasteland") or String(view[0]).begins_with("boss") or String(view[0]).begins_with("pirate"))
 		for i in (40 if forward else 12):
 			await RenderingServer.frame_post_draw
 		var started := Time.get_ticks_usec()

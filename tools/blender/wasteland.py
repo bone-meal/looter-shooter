@@ -25,8 +25,13 @@ PAINTS = {  # part colour name: (material, colour)
     "bone": ("gear", (0.86, 0.8, 0.66)), "flesh": ("gear", (0.74, 0.56, 0.46)), "bandage": ("gear", (0.74, 0.7, 0.6)), "gum": ("gear", (0.3, 0.1, 0.1)),
     "rust": ("metal", (0.5, 0.35, 0.27)), "iron": ("metal", (0.56, 0.56, 0.6)), "steel": ("metal", (0.82, 0.84, 0.87)),
     "sign": ("metal", (0.75, 0.16, 0.12)), "hazard": ("metal", (0.88, 0.66, 0.12)), "brass": ("metal", (0.85, 0.65, 0.3)),
+    "scarf": ("cloth", (0.8, 0.13, 0.1)), "felt": ("cloth", (0.09, 0.08, 0.08)), "linen": ("cloth", (0.86, 0.82, 0.72)), "beard": ("gear", (0.16, 0.11, 0.08)),
 }
 SPEC = {
+    # the sea's pirates (sea step 8b): their own faces, a headscarf or a three-cornered hat, cutlasses and long muskets
+    "pirate_cutlass": {"head": "bandana", "stubble": True, "weapon": "cutlass", "sash": True, "shirt": True, "pouches": 1, "boots": True},
+    "pirate_musket": {"head": "bandana", "patch": True, "beard": True, "weapon": "musket", "bandolier": True, "shirt": True, "sash": True},
+    "pirate_captain": {"head": "tricorn", "beard": True, "shoulders": 0.24, "thick": 1.15, "weapon": "cutlass", "coat": True, "sash": True, "pouches": 2},
     "raider": {"head": "gasmask", "mohawk": True, "gloves": True, "pads": 1, "spikes": True, "knee_pads": True, "weapon": "machete", "sign": True, "wraps": True, "pouches": 2},
     "feral": {"bare": True, "head": "ghoul", "lean": 0.2, "thick": 0.78, "girth": 0.8, "arm_len": 1.2, "weapon": "claws", "ribs": True, "rags": True},
     "scav_gunner": {"head": "helmet", "gloves": True, "pads": 2, "weapon": "rifle", "pack": True, "knee_pads": True, "bandolier": True, "pouches": 4},
@@ -92,6 +97,58 @@ def head(m, M, b, skin, at):
             m.ball(M["dark"], (size * 1.7 * k, size * 1.5 * k, 0.012 * k), p(side * gap, dy, df - 0.006), u=8, v=6)
             m.ball(M["eye"], (size * k, size * k, 0.008 * k), p(side * gap, dy, df + 0.004), u=8, v=5)
 
+    if kind in ("bandana", "tricorn"):  # a pirate (sea step 8b): his own weathered face under a headscarf or a hat
+        m.loft(skin, [(x, y + dy * k, f + df * k, w * k, d * k) for dy, w, d, df in SKULL], segs=14)
+        eyes(0.15, 0.085, gap=0.034, size=0.011)
+        m.loft(skin, [p(0, 0.14, 0.084) + (0.01 * k, 0.01 * k), p(0, 0.11, 0.108) + (0.014 * k, 0.013 * k), p(0, 0.1, 0.1) + (0.016 * k, 0.012 * k)], segs=8, steps=2)  # nose
+        m.loft(skin, [p(-0.06, 0.172, 0.07) + (0.016 * k, 0.012 * k), p(0, 0.176, 0.092) + (0.018 * k, 0.014 * k), p(0.06, 0.172, 0.07) + (0.016 * k, 0.012 * k)], segs=8, steps=2)  # brow
+        m.box(M["gum"], (0.04 * k, 0.008 * k, 0.01 * k), p(0, 0.07, 0.088), bevel=0.002)  # mouth
+        for side in (-1, 1):
+            m.ball(skin, (0.012 * k, 0.026 * k, 0.02 * k), p(side * 0.078, 0.14, 0.0), u=8, v=6)  # ears
+        if s.get("beard"):  # a dark beard along the jaw and chin, under the mouth, and a moustache over it
+            m.ball(M["beard"], (0.046 * k, 0.04 * k, 0.03 * k), p(0, 0.03, 0.074), u=10, v=7)
+            for side in (-1, 1):
+                m.ball(M["beard"], (0.022 * k, 0.04 * k, 0.03 * k), p(side * 0.05, 0.065, 0.05), u=8, v=6)
+                m.rod(M["beard"], 0.007 * k, p(side * 0.004, 0.083, 0.1), p(side * 0.04, 0.072, 0.09), r2=0.003 * k, segs=5)
+        elif s.get("stubble"):  # a few days' growth on the chin
+            m.ball(M["beard"], (0.044 * k, 0.034 * k, 0.022 * k), p(0, 0.035, 0.07), u=10, v=7)
+        if s.get("patch"):  # an eye patch on its cord
+            m.ball(M["dark"], (0.022 * k, 0.019 * k, 0.008 * k), p(0.034, 0.15, 0.093), u=8, v=5)
+            m.strip(M["dark"], 0.008, 0.004, [(f + 0.09 * k, y + 0.165 * k), (f + 0.03 * k, y + 0.21 * k), (f - 0.08 * k, y + 0.17 * k)], x=x + 0.05 * k)
+        if kind == "bandana":  # a red headscarf over the crown, knotted at the back, the tails hanging
+            m.loft(M["scarf"], [(x, y + dy * k, f + df * k, w * k + 0.007, d * k + 0.007) for dy, w, d, df in SKULL[4:]], segs=14)
+            m.ball(M["scarf"], (0.026 * k, 0.022 * k, 0.022 * k), p(0, 0.19, -0.1), u=8, v=6)
+            for side in (-1, 1):
+                m.loft(M["scarf"], [p(side * 0.01, 0.19, -0.11) + (0.016 * k, 0.006 * k), p(side * 0.03, 0.12, -0.13) + (0.014 * k, 0.005 * k), p(side * 0.035, 0.06, -0.12) + (0.01 * k, 0.004 * k)], segs=6, steps=2)
+        if kind == "tricorn":  # a black felt three-cornered hat with gold edging
+            hy = y + 0.19 * k
+            m.loft(M["felt"], [(x, hy, f - 0.005, 0.088 * k, 0.1 * k), (x, hy + 0.06 * k, f - 0.008, 0.084 * k, 0.094 * k), (x, hy + 0.085 * k, f - 0.01, 0.06 * k, 0.07 * k)], segs=16, steps=2)
+            import bmesh
+            bm = bmesh.new()
+            inner, outer, top = [], [], []
+            n = 36
+            for i in range(n):
+                a = 2 * math.pi * i / n
+                lobe = 0.5 + 0.5 * math.cos(3 * (a - math.pi / 3))  # 1 at the three corners (front, back left, back right)
+                r_out = (0.17 + 0.035 * lobe) * k
+                up = (0.075 - 0.07 * lobe) * k  # the brim turned up between the corners
+                inner.append(bm.verts.new((x + math.sin(a) * 0.088 * k, f + math.cos(a) * 0.1 * k - 0.005, hy)))
+                outer.append(bm.verts.new((x + math.sin(a) * r_out, f + math.cos(a) * r_out - 0.005, hy + up)))
+                top.append(bm.verts.new((x + math.sin(a) * (r_out - 0.006), f + math.cos(a) * (r_out - 0.006) - 0.005, hy + up + 0.012 * k)))
+            for i in range(n):
+                j = (i + 1) % n
+                bm.faces.new((inner[i], inner[j], outer[j], outer[i]))
+                bm.faces.new((outer[i], outer[j], top[j], top[i]))
+            edge = [tuple(v.co) for v in top]  # (before the mesh is handed over and freed)
+            m._add(bm, M["felt"], "Body", 0.0)
+            gold = bmesh.new()
+            ring = [gold.verts.new((c[0], c[1], c[2] + 0.004 * k)) for c in edge]
+            ring2 = [gold.verts.new((c[0], c[1], c[2] + 0.014 * k)) for c in edge]
+            for i in range(n):
+                j = (i + 1) % n
+                gold.faces.new((ring[i], ring[j], ring2[j], ring2[i]))
+            m._add(gold, M["brass"], "Body", 0.0)
+        return
     if kind == "sensor":  # a machine head: armoured ball with one big lens and side vents
         m.ball(M["iron"], 0.125 * k, p(0, 0.12, 0), u=18, v=12)
         m.lathe(M["rust"], [(0.07 * k, 0.09 * k), (0.08 * k, 0.14 * k)], p(0, 0.12, 0), segs=18, axis="f")
@@ -186,13 +243,30 @@ def melee_weapon(m, M, s, x, y, f):
         m.prof(M["steel"], 0.012, [(f - 0.02, y - 0.1), (f + 0.19, y - 0.1), (f + 0.21, y - 0.54), (f - 0.02, y - 0.58)], x=x, bevel=0.004, node=A)
         m.prof(M["sign"], 0.013, [(f + 0.08, y - 0.4), (f + 0.2, y - 0.36), (f + 0.208, y - 0.535), (f + 0.02, y - 0.572)], x=x, bevel=0.002, node=A)  # stained edge
         m.cylx(M["dark"], 0.014, x - 0.008, x + 0.008, f + 0.15, y - 0.17, node=A, bevel=0)
+    elif kind == "cutlass":  # a curved sea sword with a brass basket guard
+        m.rod(M["wood"], 0.016, (x, y + 0.06, f), (x, y - 0.06, f), node=A)
+        m.ball(M["brass"], 0.02, (x, y + 0.07, f), node=A, u=8, v=6)
+        m.strip(M["brass"], 0.02, 0.006, [(f - 0.02, y + 0.06), (f + 0.07, y + 0.02), (f + 0.07, y - 0.07), (f - 0.02, y - 0.075)], x=x, node=A)  # knuckle bow
+        m.box(M["brass"], (0.03, 0.02, 0.1), (x, y - 0.075, f + 0.02), bevel=0.004, node=A)
+        m.prof(M["steel"], 0.007, [(f - 0.025, y - 0.08), (f + 0.025, y - 0.08), (f + 0.06, y - 0.4), (f + 0.1, y - 0.62), (f + 0.07, y - 0.66), (f + 0.02, y - 0.42)], x=x, bevel=0.002, node=A)
     elif kind == "claws":
         for k in (-1, 0, 1):
             m.rod(M["bone"], 0.012, (x + k * 0.022, y - 0.02, f + 0.02), (x + k * 0.03, y - 0.22, f + 0.07), r2=0.002, node=A, segs=6)
 
 
 def gun(m, M, kind, x, y, f):
-    """A scrap rifle, long rifle or minigun along the forward axis; (x, y) = the bore line, f = the butt end. Returns the two grip points."""
+    """A scrap rifle, long rifle, minigun or flintlock musket along the forward axis; (x, y) = the bore line, f = the butt end. Returns the two grip points."""
+    if kind == "musket":  # a long flintlock: a curved wooden stock the length of the barrel, brass bands, the lock and its cock
+        end = f + 1.25
+        m.prof(M["wood"], 0.04, [(f, y + 0.015), (f + 0.2, y + 0.01), (f + 0.32, y - 0.02), (f + 0.32, y - 0.06), (f + 0.16, y - 0.07), (f, y - 0.13)], x=x, bevel=0.008)
+        m.cyl(M["wood"], 0.022, f + 0.3, end - 0.12, y=y - 0.02, x=x, segs=10)
+        m.cyl(M["iron"], 0.012, f + 0.25, end, y=y + 0.005, x=x, segs=8, bevel=0)
+        for at in (0.55, 0.85, 1.08):
+            m.cyl(M["brass"], 0.026, f + at, f + at + 0.025, y=y - 0.008, x=x, segs=10, bevel=0)
+        m.box(M["iron"], (0.012, 0.03, 0.09), (x + 0.025, y - 0.005, f + 0.33), bevel=0.003)  # the lock plate
+        m.strip(M["iron"], 0.01, 0.008, [(f + 0.31, y + 0.01), (f + 0.33, y + 0.05), (f + 0.36, y + 0.045)], x=x + 0.03)  # the cock
+        m.cyl(M["dark"], 0.014, end - 0.02, end, y=y + 0.005, x=x, segs=8)
+        return (x, y - 0.06, f + 0.24), (x, y - 0.03, f + 0.62)
     if kind == "minigun":
         m.box(M["iron"], (0.16, 0.18, 0.34), (x, y, f + 0.17), bevel=0.02)
         m.cyl(M["hazard"], 0.1, f + 0.02, f + 0.2, y=y, x=x - 0.14, segs=14)  # ammo drum
@@ -397,7 +471,13 @@ def humanoid(m, M, s):
             p = b.around(1.0, side * 60, 0.02)
             m.strip(M["steel"], 0.014, 0.01, [(p[2], 0.98), (p[2] + 0.02, 0.84), (p[2] + 0.07, 0.8), (p[2] + 0.1, 0.86)], x=p[0])
     kind = s.get("weapon", "")
-    if kind in ("rifle", "long_rifle"):  # held at the chest in both hands
+    if s.get("shirt"):  # a loose linen shirt open at the neck under the jacket
+        m.loft(M["linen"], [(0, 1.44, b.lean(1.44), 0.075 * neck, 0.07 * neck), (0, 1.5, b.lean(1.5), 0.062 * neck, 0.06 * neck)], segs=12, steps=1, flat=True)
+    if s.get("sash"):  # a red sash round the waist, its ends hanging at the left hip
+        b.shell(m, M["scarf"], 0.96, 1.05, 0.016)
+        p0 = b.around(0.99, -70, 0.02)
+        m.loft(M["scarf"], [p0 + (0.03, 0.012), (p0[0] - 0.02, 0.84, p0[2] - 0.01, 0.026, 0.01), (p0[0] - 0.03, 0.72, p0[2] - 0.02, 0.022, 0.008)], segs=6, steps=2)
+    if kind in ("rifle", "long_rifle", "musket"):  # held at the chest in both hands
         w, d, f = b.trunk(1.38)
         right, left = gun(m, M, kind, 0.04 * b.ws, 1.4, f + d * 0.97 - 0.01)
         arm(m, M, b, "ArmR", 1, limb, skin, right)
@@ -425,7 +505,10 @@ if __name__ == "__main__":
     M = {name: (made[material], color) for name, (material, color) in PAINTS.items()}
     M.update({name: made[name] for name in ("body", "hide", "cloth")})
     M["eye"] = kit.material("eye", None, (0.01, 0.01, 0.012))
+    only = set(sys.argv[1:])  # names to build (none = all)
     for name, spec in SPEC.items():
+        if only and name not in only:
+            continue
         model = kit.Model(name, uv_scale=2.0, colored=True)
         humanoid(model, M, spec)
         print("%s: %d triangles" % (name, model.export(OUT)))

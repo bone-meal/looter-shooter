@@ -101,6 +101,9 @@ func _send_fleet(fleet: Node) -> void:
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 	_board_down.rpc(fleet.get("boarding").call("to_net"))
+	var crews: Node = fleet.get("foes").get("crews")
+	if bool(crews.call("should_send")):
+		_crew_down.rpc(crews.call("to_net"))
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -677,3 +680,55 @@ func _flotsam_list(list: Array) -> void:
 	var fleet := _fleet()
 	if fleet != null and list.size() <= 64:
 		fleet.get("foes").get("flotsam").call("from_net", list)
+
+
+# --- pirate crews (sea step 8b): the host runs them and sends where each stands (ship + ship space); a client's hits
+# on its puppets are intents the host applies (capped); the host says who fell and whose blow it was ---
+
+func _crews() -> Node:
+	var fleet := _fleet()
+	return fleet.get("foes").get("crews") if fleet != null else null
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _crew_down(list: Array) -> void:
+	var crews := _crews()
+	if crews != null and list.size() <= 64:
+		crews.call("from_net", list)
+
+
+func tell_crew_fire(id: int, ship_index: int, origin: Vector3, aim: Vector3) -> void:
+	if active() and net.is_host():
+		_crew_fire.rpc(id, ship_index, origin, aim)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _crew_fire(id: int, ship_index: int, origin: Vector3, aim: Vector3) -> void:
+	var crews := _crews()
+	if crews != null and origin.is_finite() and aim.is_finite() and aim.length() > 0.01:
+		crews.call("show_fire", id, ship_index, origin, aim)
+
+
+func tell_crew_died(id: int, killer: int) -> void:
+	if active() and net.is_host():
+		_crew_died.rpc(id, killer)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _crew_died(id: int, killer: int) -> void:
+	var crews := _crews()
+	if crews != null:
+		crews.call("fell", id, killer, my_id())
+
+
+func request_crew_hit(id: int, damage: float) -> void:
+	if is_client():
+		_crew_hit.rpc_id(1, id, damage)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _crew_hit(id: int, damage: float) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var crews := _crews()
+	if net.is_host() and net.roster.has(from) and crews != null:
+		crews.call("host_hit", id, damage, from)

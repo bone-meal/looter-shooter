@@ -109,6 +109,7 @@ func _take_out(ship: SeaShip) -> void:
 		cannons.stand_up()
 	cannons.forget(ship)
 	crane.forget(ship)
+	foes.crews.ship_gone(ship)
 	_helmsmen.erase(ship)
 	ships.erase(ship)
 	ship.queue_free()
@@ -286,6 +287,7 @@ func _match_fleet(states: Array) -> void:
 	for ship: SeaShip in cut:
 		cannons.forget(ship)
 		crane.forget(ship)
+		foes.crews.ship_gone(ship)
 		_helmsmen.erase(ship)
 		ships.erase(ship)
 		ship.queue_free()

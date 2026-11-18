@@ -18,8 +18,9 @@ static func heading_of(v: Vector2) -> float:
 
 
 # {"mode", "want" (yaw), "rudder", "side" (+1 starboard / -1 port: the side the target lies on)}.
-# me: x, z, yaw, hull, hull_max; target: Vector2 place, its velocity.
-func plan(me: Dictionary, target: Vector2, target_vel: Vector2) -> Dictionary:
+# me: x, z, yaw, hull, hull_max; target: Vector2 place, its velocity. `keep` = [near, far] m to keep instead of
+# range_m (a boarder closing to swing her crew across, sea step 8b).
+func plan(me: Dictionary, target: Vector2, target_vel: Vector2, keep: Array = []) -> Dictionary:
 	var here := Vector2(float(me["x"]), float(me["z"]))
 	var yaw := float(me["yaw"])
 	var to := target - here
@@ -28,7 +29,7 @@ func plan(me: Dictionary, target: Vector2, target_vel: Vector2) -> Dictionary:
 	var ahead := Vector2(-sin(yaw), -cos(yaw))
 	var right := Vector2(cos(yaw), -sin(yaw))
 	var side := 1.0 if to.dot(right) >= 0.0 else -1.0
-	var near_far: Array = cfg["range_m"]
+	var near_far: Array = keep if keep.size() == 2 else cfg["range_m"]
 	var mode := "engage"
 	var want := yaw
 	if float(me["hull"]) < float(me["hull_max"]) * float(cfg["flee_hull"]):

@@ -462,6 +462,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				_lines.append(String(sea_world.call("status")))
 		"foe":  # sea step 8: !foe spawn <kind> [metres ahead] [degrees off the bow] | roll (a check with chance 1, out of the safe waters) | pause on|off | hit <n> | sink | spill | collect | wait_volley | status <note>
+			# 8b crews: alongside [m] | board | aboard | crew | kill boarders|deck|all [n] | wait_crew | wait_board | wait_fallen <n> | wait_deck | takedeck
 			var sea_f: Node = session.call("sea")
 			var fleet_f: Node = sea_f.get("ships") if sea_f != null else null
 			if fleet_f == null:
@@ -517,6 +518,64 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							var node_w: Node3D = enc.get("flotsam").get("pieces")[id_w]["node"]
 							player.call("teleport", node_w.global_position + Vector3(0.8, -0.6, 0.0), 0.0)
 							await get_tree().create_timer(1.6).timeout
+					"alongside":  # the first foe laid abeam of our ship to starboard, same heading, that far (default 13 m)
+						if not list_f.is_empty():
+							var fs_a: Dictionary = list_f[0].get("state")
+							var gap_a := float(words[2]) if words.size() > 2 else 13.0
+							fs_a["yaw"] = float(ms["yaw"])
+							fs_a["x"] = float(ms["x"]) + cos(float(ms["yaw"])) * gap_a
+							fs_a["z"] = float(ms["z"]) - sin(float(ms["yaw"])) * gap_a
+							fs_a["speed"] = float(ms["speed"])
+					"board":  # the first foe's boarders swing across to our ship now
+						if not list_f.is_empty():
+							enc.get("crews").call("board", list_f[0], mine)
+					"aboard":  # stand on the first foe's deck, by her stern
+						if not list_f.is_empty():
+							var outline_a: Array = list_f[0].get("spec")["outline"]
+							player.call("teleport", list_f[0].call("deck_spot", [0.0, float(outline_a[0][0]) - 2.0], 0.4), 0.0)
+					"crew":  # every crewman: kind, ship index, ship-space spot, health, target
+						var crews_c: Node = enc.get("crews")
+						for id_m: int in crews_c.get("men"):
+							var e_m: Node3D = crews_c.get("men")[id_m]["enemy"]
+							if is_instance_valid(e_m):
+								var t_m: Variant = e_m.get("_target")
+								_lines.append("  crew %d %s on ship %d at %s hp %.0f/%.0f target %s puppet %s" % [id_m, String(crews_c.get("men")[id_m]["kind"]), (fleet_f.get("ships") as Array).find(e_m.get_parent()), str(e_m.position.snapped(Vector3(0.1, 0.1, 0.1))), float(e_m.get("health").hp), float(e_m.get("health").max_hp), String((t_m as Node).name) if is_instance_valid(t_m) else "-", str(e_m.get("puppet"))])
+					"kill":  # "!foe kill boarders|deck|all [n]": our blows on crewmen (online a client's go to the host)
+						var crews_k: Node = enc.get("crews")
+						var left_k := int(words[3]) if words.size() > 3 else 99
+						for id_k: int in (crews_k.get("men") as Dictionary).keys():
+							if left_k <= 0 or not (crews_k.get("men") as Dictionary).has(id_k):
+								continue
+							var e_k: Node3D = crews_k.get("men")[id_k]["enemy"]
+							var on_k: Node = e_k.get_parent() if is_instance_valid(e_k) else null
+							var which := words[2] if words.size() > 2 else "all"
+							if on_k == null or (which == "boarders" and on_k != mine) or (which == "deck" and (list_f.is_empty() or on_k != list_f[0])):
+								continue
+							session.get("_score").set("blow", "gun")
+							e_k.call("on_hit", 99999.0, e_k.global_position + Vector3(0.0, 1.2, 0.0))
+							left_k -= 1
+							await get_tree().create_timer(0.3).timeout
+					"wait_crew", "wait_board", "wait_deck":  # up to 90 s until crewmen are here / one stands on our ship / a deck chest is here
+						var until_c := Time.get_ticks_msec() + 90000
+						var crews_w: Node = enc.get("crews")
+						while Time.get_ticks_msec() < until_c:
+							if words[1] == "wait_crew" and not (crews_w.get("men") as Dictionary).is_empty():
+								break
+							if words[1] == "wait_board" and (crews_w.get("men") as Dictionary).values().any(func(m: Dictionary) -> bool: return is_instance_valid(m["enemy"]) and (m["enemy"] as Node).get_parent() == mine):
+								break
+							if words[1] == "wait_deck" and (enc.get("flotsam").get("pieces") as Dictionary).values().any(func(p: Dictionary) -> bool: return p.has("ship")):
+								break
+							await get_tree().create_timer(0.5).timeout
+					"wait_fallen":  # up to 60 s until n crewmen have fallen here
+						var until_f := Time.get_ticks_msec() + 60000
+						while Time.get_ticks_msec() < until_f and int(enc.get("crews").get("fallen")) < int(words[2]):
+							await get_tree().create_timer(0.5).timeout
+					"takedeck":  # walk up to each deck chest in turn
+						for id_d: int in (enc.get("flotsam").get("pieces") as Dictionary).keys():
+							var pd: Dictionary = enc.get("flotsam").get("pieces").get(id_d, {})
+							if pd.has("ship"):
+								player.call("teleport", (pd["node"] as Node3D).global_position + Vector3(0.0, 0.4, 0.0), 0.0)
+								await get_tree().create_timer(1.6).timeout
 					"wait_volley":  # up to 60 s until a foe has fired
 						var until_v := Time.get_ticks_msec() + 60000
 						while Time.get_ticks_msec() < until_v and int(enc.get("volleys")) == 0:

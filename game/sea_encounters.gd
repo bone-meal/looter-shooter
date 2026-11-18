@@ -5,18 +5,22 @@
 # state["foe"] = kind (not saved with the world's fleet, nobody takes her helm), dark sails and a black flag. Her
 # sailing is core/sea/pirate_rules.gd (approach, lay the target abeam, veer off when too near, flee when holed); her
 # guns fire through game/sea_cannons.gd (the host's real balls, told to everyone). A foe sunk leaves flotsam
-# (game/sea_flotsam.gd); a foe nobody is near any more sails off the map (removed).
-# Dependencies: core/sea/encounter_rules.gd, core/sea/pirate_rules.gd, game/sea_flotsam.gd, data/sea/encounters.json;
+# (game/sea_flotsam.gd); a foe nobody is near any more sails off the map (removed). Her crew (8b) is
+# game/sea_crews.gd: a boarder closes to board_keep_m and swings her boarders across; a foe whose deck is cleared
+# strikes (drifts, no guns).
+# Dependencies: core/sea/encounter_rules.gd, core/sea/pirate_rules.gd, game/sea_flotsam.gd, game/sea_crews.gd, data/sea/encounters.json;
 # the fleet (game/sea_ships.gd: spawn, remove, cannons, rules), the sea world (clock, weather, local_of, others).
 extends Node3D
 
 const EncounterRules = preload("res://core/sea/encounter_rules.gd")
 const PirateRules = preload("res://core/sea/pirate_rules.gd")
 const SeaFlotsam = preload("res://game/sea_flotsam.gd")
+const SeaCrews = preload("res://game/sea_crews.gd")
 
 var rules: EncounterRules
 var pirate: PirateRules
 var flotsam := SeaFlotsam.new()
+var crews := SeaCrews.new()
 var paused := false  # dev: no rolls (tests spawn their own)
 var rolled := 0  # dev / checks: checks rolled, foes that came, foes sunk, volleys fired
 var came := 0
@@ -42,6 +46,9 @@ func setup(fleet: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	flotsam.name = "Flotsam"
 	add_child(flotsam)
 	flotsam.setup(fleet, sea, player, rules)
+	crews.name = "Crews"
+	add_child(crews)
+	crews.setup(fleet, sea, player, rules.cfg)
 
 
 func _host() -> bool:
@@ -136,6 +143,7 @@ func spawn_foe(kind: String, x: float, z: float, yaw_deg: float) -> Node3D:
 	st["anchored"] = false
 	st["stage"] = 4
 	dress(ship)
+	crews.man(ship)
 	came += 1
 	_sea.emit_signal("notice", String(rules.cfg["pirate"]["notice"]) % String(k.get("name", kind)))
 	return ship
@@ -154,6 +162,7 @@ func drive(ship: Node3D, _delta: float) -> void:
 	if bool(st.get("sinking", false)):
 		return
 	var here := Vector2(float(st["x"]), float(st["z"]))
+	var struck := crews.is_struck(ship)  # her deck cleared: she drifts, guns silent (till nobody is near)
 	var best: Dictionary = {}
 	var best_d := INF
 	for who: Dictionary in players():
@@ -171,11 +180,16 @@ func drive(ship: Node3D, _delta: float) -> void:
 		var ts: Dictionary = target_ship.get("state")
 		target = Vector2(float(ts["x"]), float(ts["z"]))
 		vel = Vector2(-sin(float(ts["yaw"])), -cos(float(ts["yaw"]))) * float(ts["speed"])
-	var plan := pirate.plan(st, target, vel)
+	if struck:
+		st["rudder"] = 0.0
+		st["stage"] = 0
+		return
+	var plan := pirate.plan(st, target, vel, crews.keep_for(ship))
+	crews.consider(ship, target_ship, plan)
 	st["rudder"] = float(plan["rudder"])
 	st["stage"] = _best_stage(ship, float(plan["want"]), String(plan["mode"]))
 	last = "%s d %.0f m, side %s, rudder %.2f, stage %d, speed %.1f" % [plan["mode"], float(plan["d"]), "starboard" if float(plan["side"]) > 0.0 else "port", float(plan["rudder"]), int(st["stage"]), float(st["speed"])]
-	if String(plan["mode"]) != "flee" and float(plan["d"]) <= float(rules.cfg["pirate"]["fire_range_m"]):
+	if String(plan["mode"]) != "flee" and float(plan["d"]) <= float(rules.cfg["pirate"]["fire_range_m"]) and not crews.boarding(ship):
 		var aim_at: Vector3 = target_ship.call("deck_spot", [0.0, 0.0], -0.6) if target_ship != null else _sea.call("world_of", Vector3(target.x, 0.0, target.y))
 		var flight := float(plan["d"]) / 85.0
 		aim_at += Vector3(vel.x, 0.0, vel.y) * flight  # lead her
@@ -241,4 +255,4 @@ func status() -> String:
 	for ship: Node3D in foes():
 		var st: Dictionary = ship.get("state")
 		parts.append("%s hull %.0f/%.0f at (%.0f, %.0f)" % [String(st["foe"]), float(st["hull"]), float(st["hull_max"]), float(st["x"]), float(st["z"])])
-	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status()]
+	return "foes [%s], rolled %d, came %d, sunk %d, volleys %d, last '%s'; %s; %s" % [", ".join(parts), rolled, came, sunk, volleys, last, flotsam.status(), crews.status()]

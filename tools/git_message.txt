@@ -1,8 +1,6 @@
-Sea step 8a: random encounters, pirate ships with broadsides, floating cargo
+Sea step 8b: pirate crews on deck, boarding parties, deck plunder
 
-Encounter rolls by region, weather and night outside the home port's safe waters; pirate sloops and brigs sail to lay the target abeam and fire their broadsides; a sunk pirate leaves barrels, crates and a sea chest afloat with doubloons, materials and a chance of a gun.
-Pirate look: dark sails, black pennant, our own flag. Cannon balls hurt players they land near.
-Online: foes ride in the fleet states, the client fleet rebuilds only from the first ship that differs; floating cargo is decided by the host. Two-copy tested.
+Every foe ship comes manned with real enemy fighters standing on her deck (new pirate models: cutlass man, musketeer, captain). A pirate brig closes on a player's ship and swings her boarders across on ropes one by one; beating them off leaves chests of plunder on the defended deck, clearing a foe's own deck makes her strike with her plunder on board. Host-run online: crews in ship space, puppets on clients, client hits as intents, kill credit to the killer. Deck walking without physics (core/sea/deck_walk.gd).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

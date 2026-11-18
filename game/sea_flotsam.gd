@@ -6,6 +6,8 @@
 # Dependencies: core/sea/encounter_rules.gd (loot), core/gun_gen.gd, core/item_level.gd, core/loot_pool.gd,
 # core/gun_stats.gd, game/fantasy_models.gd, data/sea/encounters.json "flotsam"; the fleet (game/sea_ships.gd), the
 # sea world (water_height, skills), game/net_sea.gd (request_flotsam / tell_flotsam), game/game_session.gd (doubloons).
+# DECK PIECES (sea step 8b): the plunder of a boarding fight, chests standing on a ship's deck (they ride with her);
+# a player on foot within crews.deck_reach takes one, the same way (game/sea_crews.gd puts them there).
 # Positions: this node hangs under the fleet, so its children's positions are sea coordinates.
 extends Node3D
 
@@ -16,7 +18,7 @@ const LootPool = preload("res://core/loot_pool.gd")
 const EncounterRules = preload("res://core/sea/encounter_rules.gd")
 
 var rules: EncounterRules
-var pieces := {}  # id -> {"node": Node3D, "x", "z", "model": int, "loot": String, "region": String, "until": float, "spin": float}
+var pieces := {}  # id -> {"node": Node3D, "x", "z", "model": int, "loot": String, "region": String, "until": float, "spin": float; deck pieces also "ship", "lx", "lz"}
 var taken := 0  # dev / checks: pieces this player got
 var last_got := ""  # dev / checks: what the last piece gave
 var _next_id := 1
@@ -59,7 +61,16 @@ func spill(x: float, z: float, loot_id: String, region_id: String) -> void:
 		net.call("tell_flotsam", to_net())
 
 
-func add_piece(id: int, x: float, z: float, model: int, loot_id: String, region_id: String) -> void:
+# Host / alone: a chest of plunder on a ship's deck (ship space x, z).
+func add_deck(ship: Node3D, lx: float, lz: float, loot_id: String, region_id: String) -> void:
+	add_piece(_next_id, float(ship.get("state")["x"]), float(ship.get("state")["z"]), 2, loot_id, region_id, ship, lx, lz)
+	_next_id += 1
+	var net := _net()
+	if net != null:
+		net.call("tell_flotsam", to_net())
+
+
+func add_piece(id: int, x: float, z: float, model: int, loot_id: String, region_id: String, ship: Node3D = null, lx := 0.0, lz := 0.0) -> void:
 	if pieces.has(id):
 		return
 	var models: Array = _cfg()["models"]
@@ -74,6 +85,8 @@ func add_piece(id: int, x: float, z: float, model: int, loot_id: String, region_
 	node.position = Vector3(x, 0.0, z)
 	pieces[id] = {"node": node, "x": x, "z": z, "model": model, "loot": loot_id, "region": region_id,
 		"until": _now() + float(_cfg()["last_seconds"]), "spin": _rng.randf_range(-0.3, 0.3), "phase": _rng.randf() * TAU}
+	if ship != null:
+		pieces[id].merge({"ship": ship, "lx": lx, "lz": lz})
 	_next_id = maxi(_next_id, id + 1)
 
 
@@ -99,6 +112,19 @@ func _process(delta: float) -> void:
 	for id: int in pieces:
 		var p: Dictionary = pieces[id]
 		var node: Node3D = p["node"]
+		if p.has("ship"):  # on a deck: it rides with her; taken on foot
+			if not is_instance_valid(p["ship"]):
+				gone.append(id)
+				continue
+			var ship: Node3D = p["ship"]
+			node.global_transform = Transform3D(ship.global_transform.basis.orthonormalized().rotated(ship.global_transform.basis.y.normalized(), float(p["phase"])), ship.call("deck_spot", [float(p["lx"]), float(p["lz"])]))
+			p["x"] = node.position.x
+			p["z"] = node.position.z
+			if host and _now() > float(p["until"]):
+				gone.append(id)
+			elif not bool(_player.get("swimming")) and _player.global_position.distance_to(node.global_position) <= float(rules.cfg["crews"]["deck_reach"]):
+				_take(id, host, net)
+			continue
 		var world := node.global_position
 		var water := float(_sea.call("water_height", Vector3(world.x, 0.0, world.z)))
 		node.position.y = water - _sea.call("world_of", Vector3.ZERO).y + sin(_t * 1.3 + float(p["phase"])) * 0.06 - 0.1
@@ -169,7 +195,7 @@ func grant(loot_id: String, region_id: String) -> void:
 	taken += 1
 	last_got = ", ".join(said)
 	if _sea.has_signal("notice"):
-		_sea.emit_signal("notice", "Floating cargo: %s" % (last_got if last_got != "" else "empty"))
+		_sea.emit_signal("notice", "%s: %s" % ["Plunder" if loot_id.begins_with("pirate_deck") else "Floating cargo", last_got if last_got != "" else "empty"])
 	if s != null and s.has_method("save_profile"):
 		s.call("save_profile")
 
@@ -180,7 +206,8 @@ func to_net() -> Array:
 	var out: Array = []
 	for id: int in pieces:
 		var p: Dictionary = pieces[id]
-		out.append([id, snappedf(float(p["x"]), 0.1), snappedf(float(p["z"]), 0.1), int(p["model"]), String(p["loot"]), String(p["region"])])
+		var on: int = (_fleet.get("ships") as Array).find(p["ship"]) if p.has("ship") and is_instance_valid(p["ship"]) else -1
+		out.append([id, snappedf(float(p["x"]), 0.1), snappedf(float(p["z"]), 0.1), int(p["model"]), String(p["loot"]), String(p["region"]), on, snappedf(float(p.get("lx", 0.0)), 0.01), snappedf(float(p.get("lz", 0.0)), 0.01)])
 	return out
 
 
@@ -193,7 +220,12 @@ func from_net(list: Array) -> void:
 		var id := int(got[0])
 		seen[id] = true
 		if not pieces.has(id) and is_finite(float(got[1])) and is_finite(float(got[2])):
-			add_piece(id, float(got[1]), float(got[2]), int(got[3]), String(got[4]).left(24), String(got[5]).left(16))
+			var ships: Array = _fleet.get("ships")
+			var on := int(got[6]) if (got as Array).size() >= 9 else -1
+			if on >= 0 and on < ships.size() and is_finite(float(got[7])) and is_finite(float(got[8])):
+				add_piece(id, float(got[1]), float(got[2]), int(got[3]), String(got[4]).left(24), String(got[5]).left(16), ships[on], float(got[7]), float(got[8]))
+			elif on < 0:
+				add_piece(id, float(got[1]), float(got[2]), int(got[3]), String(got[4]).left(24), String(got[5]).left(16))
 	for id: int in pieces.keys():
 		if not seen.has(id):
 			remove_piece(id)

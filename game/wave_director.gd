@@ -95,8 +95,8 @@ func reset() -> void:
 		if e == _boss and boss_handler.is_valid():
 			keep.append(e)  # the shared boss belongs to the whole party, not to our arena run
 			shared += 1
-		elif is_instance_valid(e) and (e as Node).has_meta("island"):
-			keep.append(e)  # the island's rounds go on for whoever is there (game/island_rounds.gd)
+		elif is_instance_valid(e) and ((e as Node).has_meta("island") or (e as Node).has_meta("sea")):
+			keep.append(e)  # the island's rounds go on for whoever is there (game/island_rounds.gd); pirates stay on their decks
 		elif is_instance_valid(e):
 			e.queue_free()
 	_enemies = keep
@@ -271,6 +271,20 @@ func spawn_custom(id: String, stats: Dictionary, pos: Vector3, affix: Dictionary
 	_enemies.append(enemy)
 	if id.begins_with("boss"):
 		_boss = enemy
+	return enemy
+
+
+# A sea crewman (game/sea_crews.gd, sea step 8b): made with this director's shots and blood, counted in its list
+# (grenades, skills) and paid through `killed` like any kill; the caller puts it on its deck (not a child here) and
+# calls forget() before its ship is freed.
+func adopt(id: String, stats: Dictionary) -> Enemy:
+	var enemy := Enemy.new()
+	enemy.configure(id, stats, null, _pool, _blood)
+	enemy.sounds = sounds
+	enemy.set_meta("placed", true)
+	enemy.set_meta("sea", true)
+	enemy.died.connect(_on_enemy_died)
+	_enemies.append(enemy)
 	return enemy
 
 

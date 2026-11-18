@@ -1938,13 +1938,14 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		xp_kind = "boss"
 	var island_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("island")
 	var arena_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("arena")  # one of a run's waves (ours, or the host's shown here)
+	var sea_kill: bool = is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("sea")  # a pirate crewman: his plunder is on deck (game/sea_crews.gd), no drops
 	var guns: Array = []  # the fantasy world has its own drops; the island's enemies drop no guns
 	if arena_kill or (_in_arena and not island_kill):
 		if _in_arena:  # every player in the run rolls his own loot for every death he sees (a host who is not in the run: none)
 			guns = _colosseum_drops(where, enemy_id, elite != "", wave)
-	elif not _in_fantasy and not island_kill:
+	elif not _in_fantasy and not island_kill and not sea_kill:
 		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult(), ItemLevel.for_wave(wave))
-	if not enemy_id.begins_with("boss") and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave (a weak pony: the island's level)
+	if not enemy_id.begins_with("boss") and not sea_kill and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave (a weak pony: the island's level)
 		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony", "", ItemLevel.for_round(_rounds.rules.number) if island_kill else ItemLevel.for_wave(wave)))
 	if island_kill and _quest_host():  # the main quest: its boss, or a kill by the brine jars
 		if _director.last_killed.has_meta("quest_boss") and _quest.boss_killed():
@@ -3878,6 +3879,8 @@ func _build_sea() -> void:
 		_sea.setup(_player, _render_style)
 		_sea.notice.connect(_player_hud.notice)
 		_sea.salvage.load_book(_salvage_saved)
+		_sea.ships.foes.crews.director = _director  # pirate crews are the director's enemies (shots, kill pay, grenades)
+		_sea.ships.foes.crews.card = _score
 		_sea.chart.from_dict(_chart_saved)
 		_sea.ships.from_list(_fleet_saved)
 		_sea.town.load_world(_town_saved)

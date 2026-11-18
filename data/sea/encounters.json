@@ -1,27 +1,242 @@
 {
- "version": 1,
- "_about": "Sea step 8 RANDOM ENCOUNTERS (director 2026-11-18: enemies come as random encounters while sailing, weighted by region, weather and night; pirate ships both by size: small ones fire broadsides from range, big ones also board (8b); loot both: floating debris + drops on deck after a boarding fight). The HOST rolls (core/sea/encounter_rules.gd) every check_seconds for each player at sea outside the safe waters round the home port: chance = base x region[n] x weather x night x (anchored or moving), capped by max_foes alive; a kind is picked by weight among the kinds allowed in that region / at that hour; it comes in spawn_m away within spawn_cone_deg of the player's ship's bow (or of his facing when swimming). Pirates (core/sea/pirate_rules.gd): engage between range_m, fire when the target lies within the cannon arc and fire_range_m, flee below flee_hull, give up beyond lose_m from every player. A pirate ship sunk leaves flotsam (game/sea_flotsam.gd): count pieces, each with doubloons x the region's loot_mult, a few materials, and a chance of a rolled gun at the region's item level. ALL NUMBERS PLACEHOLDERS.",
- "check_seconds": 20.0,
- "base_chance": 0.12,
- "safe_radius": 900.0,
- "safe_centre": [-80.0, 6640.0],
- "max_foes": 2,
- "spawn_m": [380.0, 460.0],
- "spawn_cone_deg": 70.0,
- "lose_m": 950.0,
- "region_mult": {"region_1": 1.0, "region_2": 1.2, "region_3": 1.35, "region_4": 1.45, "region_5": 1.6, "region_6": 1.7, "region_7": 1.9},
- "weather_mult": {"calm": 1.0, "rain": 1.2, "fog": 1.4, "storm": 1.6},
- "night_mult": 1.5,
- "anchored_mult": 0.5,
- "kinds": {
-  "pirate_sloop": {"ship": "sloop", "weight": 6, "regions": 1, "name": "Pirate sloop", "sails": [0.16, 0.13, 0.12], "hull_mult": 0.8, "aim_error_deg": 4.0, "loot": "pirate_small"},
-  "pirate_brig": {"ship": "brig", "weight": 3, "regions": 2, "name": "Pirate brig", "sails": [0.14, 0.11, 0.11], "hull_mult": 0.9, "aim_error_deg": 3.0, "boards": true, "loot": "pirate_big"}
- },
- "pirate": {"range_m": [45.0, 85.0], "fire_range_m": 120.0, "flee_hull": 0.22, "turn_gain": 1.6, "volley_gap": 0.35, "notice": "Sails on the horizon: %s!"},
- "loot": {
-  "pirate_small": {"pieces": [3, 5], "doubloons": [6, 18], "items": {"oak_plank": [2, 6], "sailcloth": [0, 1], "iron_bar": [0, 2]}, "gun_chance": 0.12},
-  "pirate_big": {"pieces": [5, 8], "doubloons": [12, 30], "items": {"oak_plank": [3, 8], "sailcloth": [0, 2], "iron_bar": [1, 3], "copper_bar": [0, 2]}, "gun_chance": 0.22}
- },
- "loot_mult": {"region_1": 1.0, "region_2": 1.4, "region_3": 1.8, "region_4": 2.3, "region_5": 2.9, "region_6": 3.6, "region_7": 4.5},
- "flotsam": {"reach_ship": 6.0, "reach_swimmer": 2.2, "spread_m": 9.0, "last_seconds": 300.0, "models": ["flotsam_barrel", "flotsam_crate", "flotsam_chest"]}
+  "version": 1,
+  "_about": "Sea step 8 RANDOM ENCOUNTERS (director 2026-11-18: enemies come as random encounters while sailing, weighted by region, weather and night; pirate ships both by size: small ones fire broadsides from range, big ones also board (8b); loot both: floating debris + drops on deck after a boarding fight). The HOST rolls (core/sea/encounter_rules.gd) every check_seconds for each player at sea outside the safe waters round the home port: chance = base x region[n] x weather x night x (anchored or moving), capped by max_foes alive; a kind is picked by weight among the kinds allowed in that region / at that hour; it comes in spawn_m away within spawn_cone_deg of the player's ship's bow (or of his facing when swimming). Pirates (core/sea/pirate_rules.gd): engage between range_m, fire when the target lies within the cannon arc and fire_range_m, flee below flee_hull, give up beyond lose_m from every player. A pirate ship sunk leaves flotsam (game/sea_flotsam.gd): count pieces, each with doubloons x the region's loot_mult, a few materials, and a chance of a rolled gun at the region's item level. ALL NUMBERS PLACEHOLDERS.",
+  "check_seconds": 20.0,
+  "base_chance": 0.12,
+  "safe_radius": 900.0,
+  "safe_centre": [
+    -80.0,
+    6640.0
+  ],
+  "max_foes": 2,
+  "spawn_m": [
+    380.0,
+    460.0
+  ],
+  "spawn_cone_deg": 70.0,
+  "lose_m": 950.0,
+  "region_mult": {
+    "region_1": 1.0,
+    "region_2": 1.2,
+    "region_3": 1.35,
+    "region_4": 1.45,
+    "region_5": 1.6,
+    "region_6": 1.7,
+    "region_7": 1.9
+  },
+  "weather_mult": {
+    "calm": 1.0,
+    "rain": 1.2,
+    "fog": 1.4,
+    "storm": 1.6
+  },
+  "night_mult": 1.5,
+  "anchored_mult": 0.5,
+  "kinds": {
+    "pirate_sloop": {
+      "ship": "sloop",
+      "weight": 6,
+      "regions": 1,
+      "name": "Pirate sloop",
+      "sails": [
+        0.16,
+        0.13,
+        0.12
+      ],
+      "hull_mult": 0.8,
+      "aim_error_deg": 4.0,
+      "loot": "pirate_small",
+      "crew": {
+        "pirate_cutlass": 2,
+        "pirate_musket": 2
+      },
+      "deck_loot": "pirate_deck_small"
+    },
+    "pirate_brig": {
+      "ship": "brig",
+      "weight": 3,
+      "regions": 2,
+      "name": "Pirate brig",
+      "sails": [
+        0.14,
+        0.11,
+        0.11
+      ],
+      "hull_mult": 0.9,
+      "aim_error_deg": 3.0,
+      "boards": true,
+      "loot": "pirate_big",
+      "crew": {
+        "pirate_captain": 1,
+        "pirate_cutlass": 4,
+        "pirate_musket": 2
+      },
+      "boarders": 4,
+      "deck_loot": "pirate_deck_big"
+    }
+  },
+  "pirate": {
+    "range_m": [
+      45.0,
+      85.0
+    ],
+    "fire_range_m": 120.0,
+    "flee_hull": 0.22,
+    "turn_gain": 1.6,
+    "volley_gap": 0.35,
+    "notice": "Sails on the horizon: %s!"
+  },
+  "loot": {
+    "pirate_small": {
+      "pieces": [
+        3,
+        5
+      ],
+      "doubloons": [
+        6,
+        18
+      ],
+      "items": {
+        "oak_plank": [
+          2,
+          6
+        ],
+        "sailcloth": [
+          0,
+          1
+        ],
+        "iron_bar": [
+          0,
+          2
+        ]
+      },
+      "gun_chance": 0.12
+    },
+    "pirate_big": {
+      "pieces": [
+        5,
+        8
+      ],
+      "doubloons": [
+        12,
+        30
+      ],
+      "items": {
+        "oak_plank": [
+          3,
+          8
+        ],
+        "sailcloth": [
+          0,
+          2
+        ],
+        "iron_bar": [
+          1,
+          3
+        ],
+        "copper_bar": [
+          0,
+          2
+        ]
+      },
+      "gun_chance": 0.22
+    },
+    "pirate_deck_small": {
+      "pieces": [
+        1,
+        1
+      ],
+      "doubloons": [
+        20,
+        45
+      ],
+      "items": {
+        "oak_plank": [
+          2,
+          5
+        ],
+        "iron_bar": [
+          1,
+          3
+        ],
+        "sailcloth": [
+          0,
+          2
+        ]
+      },
+      "gun_chance": 0.45
+    },
+    "pirate_deck_big": {
+      "pieces": [
+        2,
+        2
+      ],
+      "doubloons": [
+        35,
+        70
+      ],
+      "items": {
+        "oak_plank": [
+          3,
+          8
+        ],
+        "iron_bar": [
+          2,
+          4
+        ],
+        "copper_bar": [
+          1,
+          3
+        ],
+        "sailcloth": [
+          1,
+          2
+        ]
+      },
+      "gun_chance": 0.6
+    }
+  },
+  "loot_mult": {
+    "region_1": 1.0,
+    "region_2": 1.4,
+    "region_3": 1.8,
+    "region_4": 2.3,
+    "region_5": 2.9,
+    "region_6": 3.6,
+    "region_7": 4.5
+  },
+  "flotsam": {
+    "reach_ship": 6.0,
+    "reach_swimmer": 2.2,
+    "spread_m": 9.0,
+    "last_seconds": 300.0,
+    "models": [
+      "flotsam_barrel",
+      "flotsam_crate",
+      "flotsam_chest"
+    ]
+  },
+  "crews": {
+    "_about": "Sea step 8b: pirate crews on deck (core/sea/deck_walk.gd, game/sea_crews.gd). Musketeers shoot at players within see_m; cutlass men and the captain fight whoever stands on their deck. A boarder (kind 'boarders' > 0) closes to board_keep_m abeam of a player's ship and, within board_m, swings that many of her crew across one after another (cutlass men and the captain first). Crew are tougher by region (hp/damage_per_region) and count as tier_first + tier_per_region * (region - 1) for kill XP. Beating off the boarders leaves deck_loot chests on the defended deck; clearing a foe's own deck leaves them on hers and she strikes (no guns, no sail).",
+    "retarget_s": 0.5,
+    "see_m": 30.0,
+    "board_keep_m": [
+      11.0,
+      15.0
+    ],
+    "board_m": 17.0,
+    "board_abeam": 0.5,
+    "swing_s": 1.2,
+    "swing_gap_s": 0.7,
+    "swing_height": 3.2,
+    "hp_per_region": 0.35,
+    "damage_per_region": 0.2,
+    "tier_first": 4,
+    "tier_per_region": 4,
+    "max_hit": 2500.0,
+    "deck_reach": 1.8,
+    "board_notice": "Boarders! The %s's crew is swinging across",
+    "repelled_notice": "Boarders beaten off: they left their plunder on deck",
+    "cleared_notice": "The %s's crew is beaten: she strikes her colours. Her plunder is on deck"
+  }
 }
