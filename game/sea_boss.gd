@@ -384,8 +384,7 @@ func _make(puppet: bool) -> void:
 	arena.add_child(enemy)
 	enemy.set_physics_process(puppet)
 	enemy.position = Vector3(float(b["home"][0]), -0.8, float(b["home"][1]))
-	enemy.rotation.y = PI
-	_player.add_collision_exception_with(enemy)
+	enemy.rotation.y = PI  # (solid: players cannot walk through it; it keeps its distance and stops when it rams)
 	var model: Node3D = enemy.get("_model")
 	if model != null:
 		model.scale = Vector3.ONE * float(b.get("model_scale", 1.0))
@@ -449,11 +448,41 @@ func _shed_shell() -> void:
 		_bell_ring.set_meta("toll", boss_id)
 		clapper.add_child(_bell_ring)
 		_bell_ring.position = Vector3(0.0, -1.6, 0.0)
+	_shed_solids()
 	_burst(_shell.global_position + Vector3(0.0, 1.0, 0.0), Color(0.75, 0.85, 0.9), 50, 1.2)
 
 
 func _burst(at: Vector3, color: Color, n: int, life: float) -> void:
 	FxKit.burst(_arena(), at, color, n, life, 0.3, 5.0, -5.0)
+
+
+# Its body box once the tower is off: only the crab (data "shed_size"); the tower left in the pool is solid itself.
+func _shed_solids() -> void:
+	var b := boss_cfg(boss_id)
+	for c: Node in enemy.get_children():
+		if c is CollisionShape3D and (c as CollisionShape3D).shape is BoxShape3D:
+			var sz: Array = b.get("shed_size", [5.0, 2.6, 6.0])
+			((c as CollisionShape3D).shape as BoxShape3D).size = Vector3(float(sz[0]), float(sz[1]), float(sz[2]))
+			(c as CollisionShape3D).position.y = float(sz[1]) * 0.5
+	if _shell == null or not is_instance_valid(_shell):
+		return
+	var t: Dictionary = b.get("shell_solid", {})
+	if t.is_empty():
+		return
+	var solid := StaticBody3D.new()
+	solid.add_to_group("boss_shell")  # (the Grapple Hook sees through it to the bell's clapper: game/sea_tools.gd)
+	solid.collision_layer = 1
+	solid.collision_mask = 0
+	var shape := CollisionShape3D.new()
+	var box := BoxShape3D.new()
+	var sz2: Array = t["size"]
+	box.size = Vector3(float(sz2[0]), float(sz2[1]), float(sz2[2]))
+	shape.shape = box
+	var at: Array = t["at"]
+	shape.position = Vector3(float(at[0]), float(at[1]), float(at[2]))
+	shape.rotation_degrees = Vector3(float(t["lean_deg"]), 0.0, 0.0)
+	solid.add_child(shape)
+	_shell.add_child(solid)
 
 
 func _spawn_adds() -> void:
@@ -536,8 +565,10 @@ func ended(id: String, how: String) -> void:
 	var s := get_tree().get_first_node_in_group("game_session")
 	var here := String(_dungeons.get("where")) == arena
 	if how == "won":
-		if here:
+		if here:  # (everyone in the arena, standing, down or out: the whole team's kill)
 			_reward(id)
+			if s != null and s.has_method("boss_kill_xp"):
+				s.call("boss_kill_xp")
 		_sea.emit_signal("notice", String(b["won_notice"]))
 		if s != null and s.has_method("boss_over"):
 			s.call("boss_over", false)
@@ -784,7 +815,7 @@ func _strike_run(a: Dictionary, pos: Vector3, delta: float) -> Vector3:
 			else:
 				pos = next
 				_charge_left -= step
-			var front := pos + _charge_dir * 3.0  # (its claws: the body never runs through a player)
+			var front := pos + _charge_dir * 5.0  # (its claws: it stops before its body reaches the player)
 			for b: Array in _bodies():
 				var local: Vector3 = b[2]
 				if Vector2(local.x - front.x, local.z - front.z).length() < float(a["width"]) * 0.5 + 0.6 and absf(local.y - pos.y) < 2.5 and not _hit_set.has(b[1]):

@@ -421,6 +421,9 @@ func spot_here() -> Array:
 	var case_id := hall.case_near(me)
 	if case_id != "":
 		return ["case", case_id]
+	var plinth := hall.plinth_near(me, _player.call("view_forward"))  # (sea step 10) a boss trophy's plinth, the one he faces
+	if plinth > 0:
+		return ["plinth", str(plinth)]
 	var art := gallery.painting_near(me)
 	if not art.is_empty():
 		return ["painting", String(art[0])]
@@ -448,6 +451,11 @@ func prompt(key: String) -> String:
 			return ""
 		var trophy := "trophy_" + id
 		return ("[%s] Put the %s in its case" % [key, item_name(trophy)]) if have(trophy) > 0 else "%s: complete the collection, then bring its trophy here" % item_name(trophy)
+	if spot[0] == "plinth":
+		var trophy := hall.plinth_trophy(int(id))
+		if hall.plinths.has(id) or trophy == "":
+			return ""
+		return ("[%s] Set the %s on its plinth" % [key, item_name(trophy)]) if have(trophy) > 0 else "%s: beat %s and bring it here" % [item_name(trophy), hall.plinth_boss(int(id))]
 	if spot[0] == "painting":
 		var p: Dictionary = rules.cfg.get("paintings", {}).get(id, {})
 		if gallery.bought.has(id):
@@ -470,6 +478,11 @@ func interact() -> bool:
 	if spot[0] == "case":
 		if not hall.cases.has(String(spot[1])) and have("trophy_" + String(spot[1])) > 0:
 			_notice(place_case(String(spot[1])))
+		return true
+	if spot[0] == "plinth":
+		var t := hall.plinth_trophy(int(spot[1]))
+		if t != "" and not hall.plinths.has(String(spot[1])) and have(t) > 0:
+			_notice(place_plinth(String(spot[1])))
 		return true
 	if spot[0] == "painting":
 		if gallery.bought.has(String(spot[1])):
@@ -678,6 +691,22 @@ func place_case(collection: String) -> String:
 	return "The %s is on show in the trophy hall" % item_name(trophy)
 
 
+func place_plinth(region: String) -> String:
+	var trophy := hall.plinth_trophy(int(region))
+	if trophy == "" or hall.plinths.has(region):
+		return "That plinth is already taken"
+	if have(trophy) <= 0:
+		return "You have no %s" % item_name(trophy)
+	var ns := net_sea()
+	if ns != null and bool(ns.call("is_client")):
+		ns.call("request_act", "plinth", region)
+		return "Asked the harbour master..."
+	act_done("plinth", region, 0, my_name(), 0)
+	if ns != null and bool(ns.call("active")):
+		ns.call("tell_act", "plinth", region, my_name())
+	return "The %s stands on its plinth in the trophy hall" % item_name(trophy)
+
+
 func buy_painting(id: String) -> String:
 	var p: Dictionary = rules.cfg.get("paintings", {}).get(id, {})
 	if p.is_empty():
@@ -703,6 +732,8 @@ func can_act(kind: String, arg: String) -> bool:
 			if String(c["id"]) == arg:
 				return rules.level("trophy_hall") >= 2 and not hall.cases.has(arg)
 		return false
+	if kind == "plinth":
+		return rules.level("trophy_hall") >= 3 and hall.plinth_trophy(int(arg)) != "" and not hall.plinths.has(arg)
 	if kind == "paint":
 		var order: Array = rules.cfg.get("paintings", {}).get("order", [])
 		return order.has(arg) and not gallery.bought.has(arg) and rules.level("gallery") > order.find(arg)
@@ -720,6 +751,14 @@ func act_done(kind: String, arg: String, asker: int, who: String, me: int) -> vo
 			if b != null:
 				b.call("take_all", {"trophy_" + arg: 1})
 		hall.show_cases()
+	elif kind == "plinth" and not hall.plinths.has(arg):
+		hall.plinths[arg] = who
+		if mine:
+			var bp := bag()
+			if bp != null:
+				bp.call("take_all", {hall.plinth_trophy(int(arg)): 1})
+		hall.show_plinths()
+		_notice("%s's trophy stands in the trophy hall" % hall.plinth_boss(int(arg)))
 	elif kind == "paint" and not gallery.bought.has(arg):
 		gallery.bought.append(arg)
 		if mine:
@@ -732,7 +771,7 @@ func act_done(kind: String, arg: String, asker: int, who: String, me: int) -> vo
 
 
 func extra_dict() -> Dictionary:
-	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate()}
+	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate(), "plinths": hall.plinths.duplicate()}
 
 
 # The host's cases and paintings (sent now and then): a guest's town follows them.
@@ -747,6 +786,13 @@ func load_extra(got: Variant) -> void:
 		for k: Variant in cases:
 			hall.cases[String(k).left(24)] = String(cases[k]).left(24)
 		hall.show_cases()
+		changed = true
+	var stands: Variant = (got as Dictionary).get("plinths", {})
+	if stands is Dictionary and stands.size() <= 8 and str(stands) != str(hall.plinths):
+		hall.plinths.clear()
+		for k: Variant in stands:
+			hall.plinths[String(k).left(2)] = String(stands[k]).left(24)
+		hall.show_plinths()
 		changed = true
 	if art is Array and art.size() <= 8 and str(art) != str(gallery.bought):
 		gallery.bought.clear()

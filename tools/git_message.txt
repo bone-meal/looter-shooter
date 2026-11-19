@@ -1,11 +1,9 @@
-Sea 10a: super boss framework and Abbot Shellback
+Sea 10b: team boss XP, crab fixes, trophy hall plinths
 
-The director approved the region 1 boss design (diary/DESIGN_BOSSES.md) and chose downed players revived by teammates.
-- Pure rules core/sea/boss_rules.gd: phases by health, party scaling, armour, weak points, breakables that crack the shell, tide steps, enrage, bell stun, downs and wipe, Dread.
-- Host-run fight game/sea_boss.gd in its own arena (The Drowned Sanctum behind the Tidewater Temple's sealed door): offering (Tide Candle) opens one attempt, six attacks with floor warnings, adds, rising tide, shed shell with a hookable bell, rewards per player.
-- Downed in a boss fight: teammates revive, out stacks Dread, wipe wakes everyone at the home port. Death at sea now wakes you at the home port.
-- Boss bar HUD, Abbot Shellback model, arena map, items and recipes (Tide Candle, Bell Clapper, Shellback Plate, Shellback Prow).
-- Online: puppet boss, hits on body, weak points and barnacles to the host, downs, revives, bell toll; pair set boss tested.
+Director: team should all get xp, fix crabs, fix trophy hall.
+- Every player in the arena gets the boss kill XP and counters when it falls (not only the host).
+- Abbot Shellback is solid (no walking through him), keeps 10 m so he stays in view, claw reach grown to match, his charge stops before his body reaches you; once shed his body box shrinks and the tower left in the pool is solid; the Grapple Hook still sees the bell through it.
+- Trophy hall: each boss plinth takes its boss trophy (Set the Abbot's Bell Clapper on its plinth), shows the new trophy model with a plaque naming the boss and who set it, look card with its line; host's world, synced and saved like the cases. The plinth used is the one you face.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

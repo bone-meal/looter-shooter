@@ -23,7 +23,9 @@ var _model: Node3D
 var _level := 0
 var _cfg: Dictionary
 var _case_spots: Array = []  # [collection id, Node3D jar (its piece inside), Label3D plaque]
-var _plinths: Array = []  # [region number, Node3D plinth]
+var _plinths: Array = []  # [region number, Node3D plinth, Label3D plaque, Node3D trophy piece or null]
+var plinths := {}  # region number (as text) -> name of the player who set its boss's trophy there (the host's world, saved)
+var _bosses := {}  # region number -> its boss in data/sea/bosses.json (sea step 10)
 var _legend: Label3D
 var _lamps: Array = []
 var _wait := 0.0
@@ -35,6 +37,10 @@ var _stone: StandardMaterial3D
 
 
 func _init() -> void:
+	var all: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/bosses.json"))
+	for id: String in all["bosses"]:
+		var b: Dictionary = all["bosses"][id]
+		_bosses[int(b.get("region", 0))] = b
 	_glass = _mat(Color(0.75, 0.85, 0.9, 0.18))
 	_glass.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	_glass.roughness = 0.05
@@ -265,8 +271,18 @@ func _build_plinths(mark: Node3D) -> void:
 		_box(plinth, Vector3(0.5, 1.0, 0.5), Vector3(0, 0.62, 0), _stone)
 		_box(plinth, Vector3(0.66, 0.1, 0.66), Vector3(0, 1.17, 0), _stone)
 		_solid(plinth, Vector3(0.7, 1.2, 0.7), Vector3(0, 0.6, 0))
-		_plaque(plinth, "???\n%s" % (String(names[i]) if i < names.size() else "Region %d" % (i + 1)), Vector3(0, 0.75, 0.26), 20)
-		_plinths.append([i + 1, plinth])
+		var plaque := _plaque(plinth, "???\n%s" % (String(names[i]) if i < names.size() else "Region %d" % (i + 1)), Vector3(0, 0.75, 0.26), 20)
+		var piece: Node3D = null
+		var b: Dictionary = _bosses.get(i + 1, {})
+		if not b.is_empty():  # (sea step 10) its boss's trophy, shown once someone has set it there
+			piece = FantasyModels.scene(String(b.get("trophy_model", "trophy_statuette")))
+			if piece != null:
+				piece.position = Vector3(0, 1.22, 0)
+				piece.scale = Vector3.ONE * 1.1
+				piece.visible = false
+				plinth.add_child(piece)
+		_plinths.append([i + 1, plinth, plaque, piece])
+	show_plinths()
 
 
 # The crew's legend: a tall board on two posts by the door, facing into the hall.
@@ -289,6 +305,45 @@ func _build_legend(mark: Node3D) -> void:
 	_legend.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	_legend.position = Vector3(0, 2.45, 0.07)
 	board.add_child(_legend)
+
+
+# The boss trophies stand on their plinths once set there; the plaques name the boss and who brought it.
+func show_plinths() -> void:
+	var names: Array = _cfg.get("region_names", [])
+	for spot: Array in _plinths:
+		var n := int(spot[0])
+		var have := plinths.has(str(n))
+		if spot[3] != null:
+			(spot[3] as Node3D).visible = have
+		var region := String(names[n - 1]) if n - 1 < names.size() else "Region %d" % n
+		var b: Dictionary = _bosses.get(n, {})
+		(spot[2] as Label3D).text = ("%s\n%s" % [String(b.get("name", "?")), String(plinths[str(n)])]) if have else "???\n%s" % region
+
+
+# The boss's trophy item for a plinth's region ("" = no boss there yet).
+func plinth_trophy(n: int) -> String:
+	return String((_bosses.get(n, {}) as Dictionary).get("trophy", ""))
+
+
+func plinth_boss(n: int) -> String:
+	return String((_bosses.get(n, {}) as Dictionary).get("name", ""))
+
+
+# The plinth the player stands at and faces (they stand close together in their arc): its region number, or 0.
+func plinth_near(at: Vector3, ahead: Vector3) -> int:
+	var best := -1.0
+	var found := 0
+	for spot: Array in _plinths:
+		var to := (spot[1] as Node3D).global_position - at
+		to.y = 0.0
+		if to.length() > CASE_REACH + 1.0:
+			continue
+		var facing := Vector2(ahead.x, ahead.z).normalized().dot(Vector2(to.x, to.z).normalized()) if to.length() > 0.2 else 1.0
+		var score := facing - to.length() * 0.2
+		if facing > 0.5 and score > best:
+			best = score
+			found = int(spot[0])
+	return found
 
 
 # The case pieces stand when their trophy was put in; the plaques say what goes there and who brought it.
@@ -373,5 +428,10 @@ func look(eye: Vector3, ahead: Vector3) -> Dictionary:
 		var to := (spot[1] as Node3D).global_position + Vector3(0, 1.2, 0) - eye
 		if to.length() < LOOK_REACH and to.normalized().dot(ahead) > best:
 			best = to.normalized().dot(ahead)
-			found = {"title": "???", "line": "A plinth for the trophy of sea region %d's super boss." % int(spot[0]), "owner": "The crew", "tint": Color(0.6, 0.6, 0.58)}
+			var n := int(spot[0])
+			var b: Dictionary = _bosses.get(n, {})
+			if plinths.has(str(n)):
+				found = {"title": String(town.call("item_name", String(b["trophy"]))), "line": String(b.get("trophy_line", "")) + "  (%s)" % String(b["name"]), "owner": String(plinths[str(n)]), "tint": BRASS}
+			else:
+				found = {"title": "???", "line": ("A plinth for the trophy of %s. Beat it and set its trophy here." % String(b["name"])) if not b.is_empty() else "A plinth for the trophy of sea region %d's super boss." % n, "owner": "The crew", "tint": Color(0.6, 0.6, 0.58)}
 	return found

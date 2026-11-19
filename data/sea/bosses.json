@@ -17,7 +17,7 @@
       "offering": "tide_candle",
       "base_hp": 18000,
       "speed": 3.2,
-      "keep_m": 6.0,
+      "keep_m": 10.0,
       "home": [18.0, 18.0],
       "arena_r": 14.0,
       "start_delay": 4.0,
@@ -41,19 +41,23 @@
         {"name": "Shell Shed", "until": 0.0, "armour": 1.0, "tide": 0, "shed": true, "speed": 1.5, "damage": 1.3, "attacks": ["double_claw", "leap_slam", "bubbles"], "adds": [], "adds_every": 0.0, "notice": "It tears free of its shell! Hook the bell to stun it"}
       ],
       "attacks": {
-        "claw_sweep": {"shape": "arc", "windup": 1.1, "reach": 7.5, "deg": 120.0, "damage": 32.0, "recover": 1.0, "gap": 2.5, "rear": true},
+        "claw_sweep": {"shape": "arc", "windup": 1.1, "reach": 11.0, "deg": 120.0, "damage": 32.0, "recover": 1.0, "gap": 2.5, "rear": true},
         "bell_toll": {"shape": "ring", "windup": 1.4, "speed": 9.0, "width": 1.6, "max_r": 22.0, "damage": 24.0, "jump_h": 0.9, "recover": 0.8, "gap": 3.5},
         "scuttle": {"shape": "charge", "windup": 0.9, "speed": 14.0, "length": 16.0, "width": 3.4, "damage": 30.0, "recover": 1.2, "gap": 3.0},
         "burrow": {"shape": "under", "windup": 1.6, "radius": 3.2, "damage": 40.0, "recover": 1.4, "gap": 3.0},
         "spout": {"shape": "lob", "windup": 0.8, "count": 3, "flight": 1.3, "radius": 2.2, "damage": 22.0, "recover": 0.8, "gap": 2.5},
-        "double_claw": {"shape": "arc", "windup": 0.7, "reach": 6.5, "deg": 150.0, "damage": 30.0, "hits": 2, "recover": 0.6, "gap": 1.5, "rear": true},
+        "double_claw": {"shape": "arc", "windup": 0.7, "reach": 10.0, "deg": 150.0, "damage": 30.0, "hits": 2, "recover": 0.6, "gap": 1.5, "rear": true},
         "leap_slam": {"shape": "leap", "windup": 1.2, "flight": 0.9, "radius": 4.0, "damage": 45.0, "recover": 1.2, "gap": 2.5},
         "bubbles": {"shape": "lob", "windup": 0.6, "count": 6, "flight": 1.0, "radius": 1.5, "damage": 14.0, "recover": 0.6, "gap": 2.0}
       },
       "stun": {"seconds": 4.0, "cooldown": 20.0},
+      "shed_size": [5.0, 2.6, 6.0],
+      "shell_solid": {"at": [0.0, 1.53, 1.29], "size": [2.8, 4.0, 2.8], "lean_deg": 40.0},
       "adds_at": [[1, 4], [11, 4], [1, 8], [11, 8]],
       "loot_pool": "region_1_boss",
       "trophy": "abbot_bell_clapper",
+      "trophy_model": "trophy_bell_clapper",
+      "trophy_line": "The great bell's clapper, torn from the tower Abbot Shellback wore. It still smells of the deep.",
       "plates": {"item": "shellback_plate", "n": [4, 6]}
     }
   }

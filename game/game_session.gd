@@ -2011,6 +2011,8 @@ func _pick_up(drop: Dictionary) -> void:
 
 # An enemy died: roll its gun drops (wave luck, elite and boss floors) and drop them where it fell.
 func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int) -> void:
+	if is_instance_valid(_director.last_killed) and _director.last_killed.has_meta("boss_fight"):
+		return  # (sea step 10) a super boss: every player in its arena gets its XP and loot (game/sea_boss.gd ended -> boss_kill_xp)
 	_player.on_enemy_killed(elite, enemy_id)
 	var lucky := _rng.randf() < _perks.num("double_kill_chance", 0.0)  # Lucky Strike: this kill pays double
 	if lucky:
@@ -2432,6 +2434,11 @@ func _boss_watch_next() -> void:
 		return
 	_watched = ids[(ids.find(_watched) + 1) % ids.size()]
 	_player.watch(net.player_node(_watched))
+
+
+# A super boss we fought in its arena fell (whoever struck the last blow): its kill XP and counters for us.
+func boss_kill_xp() -> void:
+	_award("boss", ["kills", "boss_kills"])
 
 
 # The boss fight ended for us (game/sea_boss.gd ended): won = up again where we lie; wiped = everyone in the arena

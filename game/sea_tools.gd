@@ -273,6 +273,10 @@ func _grapple() -> void:
 
 func _clear(from: Vector3, to: Vector3) -> bool:
 	var q := PhysicsRayQueryParameters3D.create(from, to, 1)
+	var skip: Array[RID] = []
+	for n: Node in get_tree().get_nodes_in_group("boss_shell"):  # (sea step 10) the shed boss's tower: its bell hangs inside
+		skip.append((n as CollisionObject3D).get_rid())
+	q.exclude = skip
 	var hit := get_world_3d().direct_space_state.intersect_ray(q)
 	return hit.is_empty() or (hit["position"] as Vector3).distance_to(to) < 1.2
 

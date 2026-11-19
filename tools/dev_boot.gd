@@ -813,12 +813,14 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					"wait":
 						var until_x := Time.get_ticks_msec() + (int(float(words[4]) * 1000.0) if words.size() > 4 else 60000)
 						while Time.get_ticks_msec() < until_x:
-							var got_x := String(bx.get(words[2])) if words[2] in ["state", "mode"] else (str((bx.call("down_peers") as Array).size()) if words[2] == "down" else str(int(bx.get(words[2])) + (1 if words[2] == "phase" else 0)))
+							var got_x := String(bx.get(words[2])) if words[2] in ["state", "mode", "attack"] else (str((bx.call("down_peers") as Array).size()) if words[2] == "down" else str(int(bx.get(words[2])) + (1 if words[2] == "phase" else 0)))
 							if got_x == words[3]:
 								break
 							await get_tree().create_timer(0.2, true, false, true).timeout
 				var hpp: RefCounted = player.get("health")
-				_lines.append("BOSS %s: %s; me hp %.0f/%.0f downed %s dread %d; prompt '%s'; at %s" % [" ".join(words.slice(1)), String(bx.call("status")), float(hpp.get("hp")), float(hpp.get("max_hp")), str(player.get("downed")), int(player.get("dread")), String(dmx.call("prompt", "F")), str(sea_x.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
+				var ex2: Node3D = bx.get("enemy")
+				var gap_x := Vector2(ex2.global_position.x - player.global_position.x, ex2.global_position.z - player.global_position.z).length() if ex2 != null and is_instance_valid(ex2) else -1.0
+				_lines.append("BOSS %s: %s; me hp %.0f/%.0f downed %s dread %d xp %d boss kills %d; boss %.1f m off; prompt '%s'; at %s" % [" ".join(words.slice(1)), String(bx.call("status")), float(hpp.get("hp")), float(hpp.get("max_hp")), str(player.get("downed")), int(player.get("dread")), int(session.get("_progress").get("xp")), int((session.get("_progress").get("counters") as Dictionary).get("boss_kills", 0)), gap_x, String(dmx.call("prompt", "F")), str(sea_x.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
 		"uboat":  # sea step 8e-4: !uboat sight <surface|periscope> <none|torpedo_foe|torpedo_us|crate|chart> | near [m] (host: bring it close, broadside on) | cfg <key> <n> | look [torp] | pause on|off | wait <seen|gone|hit|deed> [n] | status <note>
 			var sea_u: Node = session.call("sea")
 			var fleet_u: Node = sea_u.get("ships") if sea_u != null else null
@@ -1338,6 +1340,25 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var pr_c := String(sea_t.call("prompt", "F"))
 				var ok_c: bool = sea_t.call("interact")
 				_lines.append("TOWN case %s: prompt '%s', interact %s, cases %s, trophy left %d" % [words[2], pr_c, str(ok_c), str(town_t.get("hall").get("cases")), int(sea_t.get("skills").get("bag").call("count", "trophy_" + words[2]))])
+			elif sub_t == "plinth":  # !town plinth <region n> [give]: stand before that boss plinth, looking at it, and set its trophy (give = put the trophy in the bag first)
+				var hall_p: Node = town_t.get("hall")
+				var tro_p := String(hall_p.call("plinth_trophy", int(words[2])))
+				if words.size() > 3 and tro_p != "":
+					sea_t.get("skills").call("give", tro_p, 1)
+				for spot_p: Array in hall_p.get("_plinths"):
+					if int(spot_p[0]) == int(words[2]):
+						var pl_p: Node3D = spot_p[1]
+						player.call("teleport", pl_p.global_position + pl_p.global_basis.z.normalized() * 1.0 + Vector3(0, 1.0, 0), 0.0)
+						await get_tree().create_timer(0.4).timeout
+						player.call("look_at_point", pl_p.global_position + Vector3(0, 1.3, 0))
+				await get_tree().create_timer(1.0, true, false, true).timeout
+				var spot_p: Array = town_t.call("spot_here")
+				var near_p := int(hall_p.call("plinth_near", player.global_position, player.call("view_forward")))
+				_lines.append("  plinth spot %s, near %d, window %s, climbing %s, town prompt '%s', dungeon prompt '%s'" % [str(spot_p), near_p, str((town_t.get("window") as CanvasItem).visible), str(sea_t.get("swim").call("climbing")), String(town_t.call("prompt", "F")), String(sea_t.get("dungeons").call("prompt", "F"))])
+				var pr_p := String(sea_t.call("prompt", "F"))
+				var ok_p: bool = sea_t.call("interact")
+				await get_tree().create_timer(0.4).timeout
+				_lines.append("TOWN plinth %s: prompt '%s', interact %s, plinths %s, trophy left %d, card '%s'" % [words[2], pr_p, str(ok_p), str(hall_p.get("plinths")), int(sea_t.get("skills").get("bag").call("count", tro_p)) if tro_p != "" else -1, String((town_t.get("card_hud").get("trophy") as Dictionary).get("title", ""))])
 			elif sub_t == "gallery":  # !town gallery [slot]: stand before painting slot n, looking at it
 				var gal_t: Node = town_t.get("gallery")
 				var frames_t: Array = gal_t.get("_frames")

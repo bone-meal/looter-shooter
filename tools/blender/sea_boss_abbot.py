@@ -192,11 +192,39 @@ def abbot(m):
     barnacles(m, "Barnacle4", 1.2, 0.0, -1.62, K("rock", BARN_CRUST), K("bone", BARN), 14)
 
 
+def bell_clapper_trophy(m):
+    """The trophy hall's piece for Abbot Shellback (assets/models/fantasy/trophy_bell_clapper.gltf, ~0.55 m): the
+    great bell's iron clapper hung in a little bronze bell under a brass yoke on a dark wood stand, a barnacle crust
+    and the tip of his claw laid at its foot."""
+    wood, brass, bronze = K("wood", (0.24, 0.15, 0.09)), K("metal", (0.8, 0.62, 0.3)), K("metal", BRONZE)
+    iron, verdi = K("metal", (0.25, 0.23, 0.22)), K("metal", VERDI)
+    m.box(wood, (0.42, 0.06, 0.3), (0.0, 0.03, 0.0), bevel=0.01)
+    m.box(wood, (0.36, 0.03, 0.24), (0.0, 0.075, 0.0), bevel=0.008)
+    for x in (-0.15, 0.15):
+        m.rod(brass, 0.014, (x, 0.08, 0.0), (x, 0.5, 0.0), segs=10)
+        m.ball(brass, 0.024, (x, 0.51, 0.0), u=10, v=6)
+    m.rod(brass, 0.016, (-0.16, 0.48, 0.0), (0.16, 0.48, 0.0), segs=10)
+    m.lathe(bronze, [(0.0, 0.47), (0.04, 0.465), (0.07, 0.43), (0.08, 0.37), (0.1, 0.32), (0.115, 0.3), (0.1, 0.305), (0.07, 0.34), (0.0, 0.35)], (0.0, 0.0, 0.0), segs=20)
+    m.lathe(verdi, [(0.096, 0.318), (0.104, 0.31), (0.1, 0.302)], (0.0, 0.0, 0.0), segs=20)
+    m.rod(iron, 0.008, (0.0, 0.44, 0.0), (0.0, 0.2, 0.0), segs=8)
+    m.ball(iron, (0.03, 0.035, 0.03), (0.0, 0.19, 0.0), u=10, v=8)
+    m.lathe(brass, [(0.0, 0.15), (0.025, 0.152), (0.03, 0.16), (0.025, 0.168), (0.0, 0.17)], (0.0, 0.0, 0.0), segs=12)
+    fk.blob(m, K("rock", BARN_CRUST), (0.06, 0.04, 0.05), (-0.13, 0.11, 0.07), seed=3, rough=0.25, cuts=1)
+    for k in range(4):
+        m.rod(K("bone", BARN), 0.012, (-0.15 + 0.02 * k, 0.13, 0.06 + 0.01 * k), (-0.15 + 0.02 * k, 0.16, 0.065 + 0.01 * k), r2=0.005, segs=6)
+    red = K("scale", SHELL_RED)
+    m.loft(red, [(0.12, 0.1, -0.08, 0.035, 0.03), (0.16, 0.1, 0.0, 0.03, 0.025), (0.14, 0.095, 0.08, 0.012, 0.01)], segs=8)
+    m.loft(K("scale", SHELL_DARK), [(0.1, 0.1, -0.06, 0.02, 0.018), (0.08, 0.1, 0.03, 0.008, 0.008)], segs=8)
+
+
 def main():
     fk.init()
     m = kit.Model("sea_abbot", uv_scale=0.5, colored=True)
     abbot(m)
     print("sea_abbot", m.export(OUT))
+    t = kit.Model("trophy_bell_clapper", uv_scale=4.0, colored=True)
+    bell_clapper_trophy(t)
+    print("trophy_bell_clapper", t.export(os.path.join(os.path.dirname(__file__), "..", "..", "assets", "models", "fantasy")))
 
 
 if __name__ == "__main__":
