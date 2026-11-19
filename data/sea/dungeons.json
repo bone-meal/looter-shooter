@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors). Sea step 9c: a fight (kind fight: reach_m, spawns [[x, z]], waves [[enemy ids]], notice) may raise a TIDE (tide = water level per wave over its flood cells [[x0, z0], [x1, z1]]; standing deeper than tide_hurt.from_m hurts dps_per_m per metre); doors 'clear' (fight) / 'free' (+ shut_while = shut while that fight goes on) / 'bigkey' (the Great Key, kind bigkey) / 'sealed' (never; says); a thing on a ledge says on: 'H'; `name` is only for reading. Foes climb ledges at foe_climb_speed m/s. torch_seen_m: torches farther than this from the camera are not drawn (0 = always). dress (sea step 9c-3 art pass): shares of the kit's variant floors (floor_worn, floor_mosaic) and walls (wall_crusted, wall_relief) mixed in by a steady roll per cell, clutter = share of wall-side floor cells given rubble / urns / coral (no collision; kept off doors, blocks' and plates' surroundings).",
+ "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors). Sea step 9c: a fight (kind fight: reach_m, spawns [[x, z]], waves [[enemy ids]], notice) may raise a TIDE (tide = water level per wave over its flood cells [[x0, z0], [x1, z1]]; standing deeper than tide_hurt.from_m hurts dps_per_m per metre); doors 'clear' (fight) / 'free' (+ shut_while = shut while that fight goes on) / 'bigkey' (the Great Key, kind bigkey) / 'sealed' (never; says); a thing on a ledge says on: 'H'; `name` is only for reading. Foes climb ledges at foe_climb_speed m/s. torch_seen_m: torches farther than this from the camera are not drawn (0 = always). dress (sea step 9c-3 art pass): shares of the kit's variant floors (floor_worn, floor_mosaic) and walls (wall_crusted, wall_relief) mixed in by a steady roll per cell, clutter = share of wall-side floor cells given rubble / urns / coral (no collision; kept off doors, blocks' and plates' surroundings). Sea step 9d: outdoor = a puzzle court on its island (at = sea x, z of cell (0, 0), y = its floor), no gate; a lever with tide raises the tide (rafts, tide doors); a chest's piece goes to every player there; pieces: a chart's pieces, joined in the bag when all are in.",
  "tile": 3.0,
  "wall_h": 4.5,
  "torch_every": 4,
@@ -949,6 +949,274 @@
     "clutter": 0.22,
     "seed": 5
    }
+  },
+  "stackwater_court": {
+   "name": "The Stackwater Court",
+   "region": 1,
+   "slot": 6,
+   "_about": "Sea step 9d: region 1's OUTDOOR puzzle (Stackwater Rocks, tools/blender/sea_isle_puzzles.py): the sluice lever raises the tide so the raft bridges the channel; the block onto the plate opens the gate; the hook up onto the low stack, the hook across to the chest stack.",
+   "outdoor": {
+    "at": [
+     -1521.0,
+     8176.0
+    ],
+    "y": 4.0
+   },
+   "wall_h": 4.5,
+   "torch_every": 0,
+   "map": [
+    "###############",
+    "#=====RK======#",
+    "#=====HH======#",
+    "#=============#",
+    "#.GH..........#",
+    "#.HH..........#",
+    "#######D#######",
+    "#.............#",
+    "#...B.....P...#",
+    "#======_======#",
+    "#======_======#",
+    "...L...........",
+    "..............."
+   ],
+   "legend": {
+    "L": {
+     "kind": "lever",
+     "name": "sluice_lever",
+     "tide": true
+    },
+    "B": {
+     "kind": "block",
+     "name": "court_block"
+    },
+    "P": {
+     "kind": "plate",
+     "name": "court_plate"
+    },
+    "D": {
+     "kind": "door",
+     "name": "court_gate",
+     "open": "plates",
+     "plates": [
+      "P"
+     ],
+     "latch": true
+    },
+    "G": {
+     "kind": "ring",
+     "name": "ring_low_stack",
+     "on": "H"
+    },
+    "R": {
+     "kind": "ring",
+     "name": "ring_chest_stack",
+     "on": "H"
+    },
+    "K": {
+     "kind": "chest",
+     "name": "court_chest",
+     "loot": "puzzle_chest",
+     "piece": "chart_piece_1",
+     "on": "H"
+    }
+   },
+   "dress": {
+    "floor_worn": 0.2,
+    "floor_mosaic": 0.04,
+    "wall_crusted": 0.35,
+    "wall_relief": 0.05,
+    "clutter": 0.12,
+    "seed": 23
+   }
+  },
+  "bellrock_vault": {
+   "name": "The Bellrock Vault",
+   "region": 1,
+   "slot": 4,
+   "_about": "Sea step 9d: a small vault (Bellrock, tools/blender/sea_isle_puzzles.py): two blocks onto two plates (order matters), then the sluice lever raises the rafts across the channel to the chest.",
+   "entrance": {
+    "at": [
+     700.0,
+     8480.0
+    ],
+    "yaw": 0.0
+   },
+   "wall_h": 4.5,
+   "torch_every": 4,
+   "dress": {
+    "floor_worn": 0.18,
+    "floor_mosaic": 0.06,
+    "wall_crusted": 0.25,
+    "wall_relief": 0.08,
+    "clutter": 0.25,
+    "seed": 11
+   },
+   "map": [
+    "#########################",
+    "#...#...P.....#L====#...#",
+    "#.S.#.........#.====#...#",
+    "#...d..B...C..e.___.f.K.#",
+    "#...#.........#.====#...#",
+    "#.X.#...Q.....#.====#...#",
+    "#########################"
+   ],
+   "legend": {
+    "S": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "d": {
+     "kind": "door",
+     "name": "door_in",
+     "open": "free"
+    },
+    "B": {
+     "kind": "block",
+     "name": "block_west"
+    },
+    "C": {
+     "kind": "block",
+     "name": "block_east"
+    },
+    "P": {
+     "kind": "plate",
+     "name": "plate_north"
+    },
+    "Q": {
+     "kind": "plate",
+     "name": "plate_south"
+    },
+    "e": {
+     "kind": "door",
+     "name": "door_plates",
+     "open": "plates",
+     "plates": [
+      "P",
+      "Q"
+     ],
+     "latch": true
+    },
+    "L": {
+     "kind": "lever",
+     "name": "sluice_lever",
+     "tide": true
+    },
+    "f": {
+     "kind": "door",
+     "name": "door_chest",
+     "open": "free"
+    },
+    "K": {
+     "kind": "chest",
+     "name": "vault_chest",
+     "loot": "puzzle_chest",
+     "piece": "chart_piece_2"
+    }
+   }
+  },
+  "gullhook_vault": {
+   "name": "The Gullhook Vault",
+   "region": 1,
+   "slot": 5,
+   "_about": "Sea step 9d: a small vault (Gullhook Cay, tools/blender/sea_isle_puzzles.py): push the block through the gap for the key, unlock the door, hook across the chasm, hook up onto the ledge for the lever, down to the chest.",
+   "entrance": {
+    "at": [
+     2400.0,
+     4285.0
+    ],
+    "yaw": 0.0
+   },
+   "wall_h": 8.0,
+   "torch_every": 4,
+   "dress": {
+    "floor_worn": 0.15,
+    "floor_mosaic": 0.05,
+    "wall_crusted": 0.3,
+    "wall_relief": 0.06,
+    "clutter": 0.2,
+    "seed": 17
+   },
+   "map": [
+    "###########################",
+    "#...#...#...#.====.#....HL#",
+    "#.S.#...#.k.#.====.#....HH#",
+    "#...d...B...e.====Rf....GH#",
+    "#...#...#...#.====.#......#",
+    "#.X.#...#...#Z====.#......#",
+    "######################g####",
+    "######################.####",
+    "####################.....##",
+    "####################..K..##",
+    "####################.....##",
+    "###########################"
+   ],
+   "legend": {
+    "S": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "d": {
+     "kind": "door",
+     "name": "door_in",
+     "open": "free"
+    },
+    "B": {
+     "kind": "block",
+     "name": "gap_block"
+    },
+    "k": {
+     "kind": "key",
+     "name": "key"
+    },
+    "e": {
+     "kind": "door",
+     "name": "door_key",
+     "open": "key"
+    },
+    "R": {
+     "kind": "ring",
+     "name": "ring_far"
+    },
+    "Z": {
+     "kind": "ring",
+     "name": "ring_back"
+    },
+    "f": {
+     "kind": "door",
+     "name": "door_ledge",
+     "open": "free"
+    },
+    "G": {
+     "kind": "ring",
+     "name": "ring_ledge",
+     "on": "H"
+    },
+    "L": {
+     "kind": "lever",
+     "name": "ledge_lever",
+     "on": "H"
+    },
+    "g": {
+     "kind": "door",
+     "name": "door_chest",
+     "open": "lever",
+     "lever": "L"
+    },
+    "K": {
+     "kind": "chest",
+     "name": "vault_chest",
+     "loot": "puzzle_chest",
+     "piece": "chart_piece_3"
+    }
+   }
   }
  },
  "tide_hurt": {
@@ -956,5 +1224,12 @@
   "dps_per_m": 8.0
  },
  "foe_climb_speed": 2.0,
- "torch_seen_m": 36.0
+ "torch_seen_m": 36.0,
+ "pieces": {
+  "chart_shallows_hoard": [
+   "chart_piece_1",
+   "chart_piece_2",
+   "chart_piece_3"
+  ]
+ }
 }

@@ -8,6 +8,7 @@
 # game/fx_kit.gd. Placed under the sea root at its space (sea coordinates) by the manager.
 # Sea step 9c-2: things on ledges stand on the ledge's top; the Great Key and its door, the sealed door; a fight's
 # rising tide is a water sheet over its flood cells, eased to the level the rules give.
+# Sea step 9d: an OUTDOOR court (entry "outdoor") stands on its island: no ceiling, its own torches setting (0 = none).
 extends Node3D
 
 const DungeonRules = preload("res://core/sea/dungeon_rules.gd")
@@ -22,6 +23,7 @@ var _solids := {}  # letter -> StaticBody3D (closed doors, blocks)
 var _anim := {}  # letter -> 0..1 shown (doors open, plates down, levers pulled, chest lids)
 var _torches: Array = []
 var _floods := {}  # fight letter -> MeshInstance3D (its tide's water sheet)
+var outdoor := false  # (sea step 9d) a puzzle court out on an island: no ceiling, the island's own light
 var wall_h := 4.5  # this dungeon's walls (its entry's "wall_h", else the kit's): tall halls stack the kit's wall
 var sea_seconds := Callable()  # the shared sea clock (the fog walkways' reveal is timed on it), set by the manager
 
@@ -30,6 +32,7 @@ func setup(dungeon_id: String, entry: Dictionary, all_cfg: Dictionary) -> void:
 	cfg = all_cfg
 	rules = DungeonRules.new(dungeon_id, entry, float(cfg["tile"]))
 	wall_h = float(entry.get("wall_h", cfg["wall_h"]))
+	outdoor = entry.has("outdoor")
 	name = "Dungeon_" + dungeon_id
 
 
@@ -83,7 +86,8 @@ func build() -> void:
 	var dress: Dictionary = rules.cfg.get("dress", {})
 	for pair: Array in _mix(floors, dress, ["dk_floor", "dk_floor_worn", "dk_floor_mosaic"], ["floor_worn", "floor_mosaic"], 1):
 		_multi(String(pair[0]), pair[1], 0.0)
-	_multi("dk_ceiling", tops, wall_h - KIT_H)
+	if not outdoor:
+		_multi("dk_ceiling", tops, wall_h - KIT_H)
 	for pair: Array in _mix(walls, dress, ["dk_wall", "dk_wall_crusted", "dk_wall_relief"], ["wall_crusted", "wall_relief"], 2):
 		_multi(String(pair[0]), pair[1], 0.0, wall_h / KIT_H)
 	if not dress.is_empty():
@@ -114,7 +118,8 @@ func build() -> void:
 	var span := Vector3(rules.size.x * t, 0.4, rules.size.y * t)
 	var mid := Vector3((rules.size.x - 1) * t * 0.5, -0.2, (rules.size.y - 1) * t * 0.5)
 	_box(body, span, mid + Vector3(0.0, -PIT_DEPTH, 0.0))
-	_box(body, span, mid + Vector3(0.0, h + 0.4, 0.0))
+	if not outdoor:
+		_box(body, span, mid + Vector3(0.0, h + 0.4, 0.0))  # (the ceiling)
 	for c: Vector2i in walls:
 		_box(body, Vector3(t, h, t), rules.at_of(c) + Vector3(0.0, h * 0.5, 0.0))
 	if wall_h > KIT_H + 0.1:
@@ -438,7 +443,9 @@ func _face_wall(c: Vector2i) -> float:
 
 
 func _place_torches(walls: Array) -> void:
-	var every := maxi(int(cfg.get("torch_every", 4)), 1)
+	var every := int(rules.cfg.get("torch_every", cfg.get("torch_every", 4)))
+	if every <= 0:
+		return  # (none: an outdoor court)
 	var n := 0
 	for c: Vector2i in walls:
 		for pair: Array in [[Vector2i(0, 1), 0.0], [Vector2i(0, -1), PI], [Vector2i(1, 0), PI * 0.5], [Vector2i(-1, 0), -PI * 0.5]]:

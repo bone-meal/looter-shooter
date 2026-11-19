@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!beast pause;!uboat pause on;!dun go stackwater_court 12 12;!wait 3;!dun status h_in;!wait 40;!dun status h_mid;!snap h_mid;!wait 65;!dun status h_end;!snap h_end;!tier low;!wait 3;!snap h_low;!wait 10

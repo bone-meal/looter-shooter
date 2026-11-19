@@ -1003,6 +1003,18 @@ func _tool_fx(kind: String, a: Vector3, b: Vector3, who: int) -> void:
 		sea.get("tools").call("fx_from_net", kind, a, b, who)
 
 
+func tell_dungeon_gift(peer: int, piece: String) -> void:  # (sea step 9d) a chart piece from a puzzle chest
+	if active() and net.is_host() and net.roster.has(peer):
+		_dungeon_gift.rpc_id(peer, piece)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _dungeon_gift(piece: String) -> void:
+	var sea := _sea()
+	if sea != null and piece.length() <= 32:
+		sea.get("dungeons").call("receive_piece", piece)
+
+
 func tell_tool_gift(peer: int, tool: String) -> void:
 	if active() and net.is_host() and net.roster.has(peer):
 		_tool_gift.rpc_id(peer, tool)

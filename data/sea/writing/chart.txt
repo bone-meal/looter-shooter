@@ -8,8 +8,12 @@ test_tiny: Lone Palm
 test_medium: Turtleback
 test_large: Greywater Bluff
 reef: Coralback Reef
+stackwater: Stackwater Rocks
+bellrock: Bellrock
+gullhook: Gullhook Cay
 
 [secrets]
+chart_shallows_hoard: The Shallows Hoard | Three torn pieces of one chart: whoever hid this wanted it found by someone patient.
 chart_captains_log: The Captain's Last Anchorage | A ring of ink on open water and one word: "here".
 chart_silver_compass: A Compass Points Down | Somebody drew the needle pointing at the sea floor.
 chart_longboat_plan: Northman's Grave | A longship went down where the ice meets the shallows. Her builder's plans went with her.

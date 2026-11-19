@@ -1,16 +1,49 @@
 {
- "_about": "Sea step 6 sea chart (core/sea/sea_chart.gd, game/sea_chart_window.gd; director \"c\": fog of war AND squares completed by exploring their islands, charts reveal secrets). square: metres a chart square is a side (the sea's 18 km = 9 x 9 squares, A1..I9; a region = 3 x 3 squares). fog_cell: metres a fog cell is a side; reveal: metres round the player the fog clears. An island is explored within explore_share x its radius + explore_extra m of its middle. A square with no island is complete when open_sea_share of its fog is cleared. pins: how many marks a player may set (pin_reach m to remove one). secrets: charts that show a hidden place while their item (data/fantasy/gear.json kind sea_chart) is in the bag: at = sea position, kind salvage / place; their names and lines in data/sea/writing/chart.txt. ALL NUMBERS ARE PLACEHOLDERS.",
- "square": 2000,
- "fog_cell": 100,
- "reveal": 450,
- "explore_share": 0.8,
- "explore_extra": 30,
- "open_sea_share": 0.6,
- "pins": 12,
- "pin_reach": 300,
- "secrets": [
-  {"id": "chart_captains_log", "item": "chart_captains_log", "at": [262.2, 6286.8], "kind": "salvage"},
-  {"id": "chart_silver_compass", "item": "chart_silver_compass", "at": [300.0, 5950.0], "kind": "salvage"},
-  {"id": "chart_longboat_plan", "item": "chart_longboat_plan", "at": [-6100.0, -5900.0], "kind": "salvage"}
- ]
+  "_about": "Sea step 6 sea chart (core/sea/sea_chart.gd, game/sea_chart_window.gd; director \"c\": fog of war AND squares completed by exploring their islands, charts reveal secrets). square: metres a chart square is a side (the sea's 18 km = 9 x 9 squares, A1..I9; a region = 3 x 3 squares). fog_cell: metres a fog cell is a side; reveal: metres round the player the fog clears. An island is explored within explore_share x its radius + explore_extra m of its middle. A square with no island is complete when open_sea_share of its fog is cleared. pins: how many marks a player may set (pin_reach m to remove one). secrets: charts that show a hidden place while their item (data/fantasy/gear.json kind sea_chart) is in the bag: at = sea position, kind salvage / place; their names and lines in data/sea/writing/chart.txt. ALL NUMBERS ARE PLACEHOLDERS.",
+  "square": 2000,
+  "fog_cell": 100,
+  "reveal": 450,
+  "explore_share": 0.8,
+  "explore_extra": 30,
+  "open_sea_share": 0.6,
+  "pins": 12,
+  "pin_reach": 300,
+  "secrets": [
+    {
+      "id": "chart_captains_log",
+      "item": "chart_captains_log",
+      "at": [
+        262.2,
+        6286.8
+      ],
+      "kind": "salvage"
+    },
+    {
+      "id": "chart_silver_compass",
+      "item": "chart_silver_compass",
+      "at": [
+        300.0,
+        5950.0
+      ],
+      "kind": "salvage"
+    },
+    {
+      "id": "chart_longboat_plan",
+      "item": "chart_longboat_plan",
+      "at": [
+        -6100.0,
+        -5900.0
+      ],
+      "kind": "salvage"
+    },
+    {
+      "id": "chart_shallows_hoard",
+      "item": "chart_shallows_hoard",
+      "at": [
+        980.0,
+        3620.0
+      ],
+      "kind": "salvage"
+    }
+  ]
 }

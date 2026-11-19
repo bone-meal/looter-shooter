@@ -723,6 +723,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						await get_tree().create_timer(0.3, true, false, true).timeout
 						var fc := Vector3(float(words[4]), 0.0, float(words[5])) * float(dm.get("cfg")["tile"]) if words.size() > 5 else at_c + Vector3(0.0, 0.0, -3.0)
 						player.call("look_at_point", sea_d.call("world_of", sp + fc + Vector3(0.0, 1.0, 0.0)))
+					"go":  # !dun go <id> <cx> <cz>: stand on that cell of that dungeon / outdoor court (sea step 9d)
+						var sp_g: Vector3 = dm.call("space_of", words[2])
+						var cg := Vector2i(roundi(float(words[3])), roundi(float(words[4])))
+						var h_g := float(dm.get("spaces")[words[2]].get("rules").call("height_of", cg))
+						player.call("teleport", sea_d.call("world_of", sp_g + Vector3(float(words[3]) * float(dm.get("cfg")["tile"]), h_g + 0.4, float(words[4]) * float(dm.get("cfg")["tile"]))), 0.0)
+						await get_tree().create_timer(0.6, true, false, true).timeout
 					"slay":  # (host / alone) every fight foe in it struck down
 						_lines.append("  slain %d" % int(dm.call("slay", did)))
 						await get_tree().create_timer(0.6, true, false, true).timeout

@@ -617,6 +617,56 @@
         ]
       },
       "gun_chance": 1.0
+    },
+    "puzzle_chest": {
+      "pieces": [
+        2,
+        2
+      ],
+      "doubloons": [
+        60,
+        110
+      ],
+      "items": {
+        "iron_bar": [
+          1,
+          3
+        ],
+        "copper_bar": [
+          1,
+          2
+        ],
+        "sailcloth": [
+          0,
+          1
+        ]
+      },
+      "gun_chance": 0.75
+    },
+    "hoard_r1": {
+      "pieces": [
+        3,
+        3
+      ],
+      "doubloons": [
+        220,
+        380
+      ],
+      "items": {
+        "iron_bar": [
+          3,
+          5
+        ],
+        "copper_bar": [
+          2,
+          4
+        ],
+        "sailcloth": [
+          1,
+          2
+        ]
+      },
+      "gun_chance": 1.0
     }
   },
   "loot_mult": {

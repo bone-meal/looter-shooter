@@ -3,7 +3,7 @@
 # "places") and made solid as it is (game/sea_isle_props.gd). A sea arch, a walk-in cave with glowing mushrooms, a
 # lighthouse with the keeper's cottage, a beached wreck, a castaway camp, a wooden jetty, temple ruins on a stepped
 # platform, a tide pool, a footbridge (where generated paths cross a river); the reef island's ruined SEA TEMPLE round the
-# Tidewater Temple's gate and a broken lookout tower (sea step 9c-3). Materials are named after what they are made of (fantasy_kit kinds); "glow" is drawn unshaded,
+# Tidewater Temple's gate and a broken lookout tower (sea step 9c-3); a small shrine round a puzzle vault's gate (9d). Materials are named after what they are made of (fantasy_kit kinds); "glow" is drawn unshaded,
 # "water" gets the game's water shader (game/isle_water.gd).
 # Run: python3 tools/blender/sea_isle_places.py   (ONLY=lighthouse builds just that one)
 # Dependencies: bpy, bmesh, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
@@ -482,7 +482,53 @@ def sea_lookout(m):
         fk.blob(m, K("leaf", LEAF), (0.9, 0.3, 0.7), (2.3 * math.cos(a), rnd.uniform(4.5, 6.0), 2.3 * math.sin(a)), seed=67 + k, rough=0.3, cuts=1)
 
 
+def sea_shrine(m):
+    """A small ruined sea shrine round a puzzle vault's gate (sea step 9d): the temple's arch with a scallop crown in a
+    short broken wall, a paved apron 14 x 12 m, two columns, a conch statue, coral and weed. Gate at the origin facing
+    +forward, as at the temple."""
+    rnd = random.Random(68)
+    stone = lambda k=1.0: K("sandstone", tuple(c * k for c in SAND))  # noqa: E731
+    for i in range(-3, 4):
+        for j in range(0, 6):
+            if rnd.random() < 0.15:
+                continue
+            m.box(stone(rnd.uniform(0.82, 1.0)), (1.9, 0.18, 1.9), (i * 2.0, -0.07, 1.0 + j * 2.0), tilt=rnd.uniform(-1.5, 1.5), bevel=0.0)
+    for side in (-1, 1):
+        for k in range(3):
+            x = side * (5.4 + k * 1.3)
+            top = 6.0 - k * 1.1 - rnd.uniform(0.0, 0.8)
+            y = 0.0
+            row = 0
+            while y < top:
+                h = rnd.uniform(0.7, 0.95)
+                m.box(stone(rnd.uniform(0.85, 1.0)), (1.25, h, 1.4), (x, y + h / 2, -1.6), bevel=0.0)
+                y += h
+                row += 1
+        m.box(stone(0.9), (1.6, 8.0, 1.8), (side * 4.2, 4.0, -1.5), bevel=0.06)
+        for j in range(5):  # a column each side of the apron
+            m.lathe(stone(rnd.uniform(0.88, 1.0)), [(0.5, 0.0), (0.46, 0.88)], (side * 6.0, 0.1 + j * 0.9, 6.0), segs=10)
+        m.box(stone(0.92), (1.3, 0.4, 1.3), (side * 6.0, 4.7, 6.0), bevel=0.04)
+    for k in range(9):
+        a = math.pi * k / 8
+        m.box(stone(rnd.uniform(0.88, 1.0)), (1.3, 1.1, 1.8), (-4.2 * math.cos(a), 8.0 + 3.0 * math.sin(a), -1.5), tilt=0.0, bevel=0.05)
+    for k in range(11):
+        a = math.radians(-75 + k * 15)
+        m.rod(K("stone", SHELL), 0.22, (0.0, 8.6, -0.5), (math.sin(a) * 2.4, 8.6 + math.cos(a) * 2.4, -0.45), r2=0.12, segs=6)
+    m.ball(K("stone", (0.92, 0.82, 0.7)), (0.6, 0.45, 0.35), (0.0, 8.6, -0.5), u=10, v=6)
+    m.box(stone(0.86), (2.0, 1.4, 2.0), (-5.0, 0.7, 11.0), bevel=0.06)
+    _conch(m, (-5.0, 1.4, 11.0), 1.1, 69)
+    for k in range(14):
+        x, f = rnd.uniform(-8, 8), rnd.uniform(-2, 12)
+        if abs(x) < 4.5 and f > -1:
+            continue
+        fk.blob(m, K("paint", CORAL if k % 3 else (0.95, 0.9, 0.82)), (rnd.uniform(0.3, 0.6), rnd.uniform(0.2, 0.4), rnd.uniform(0.3, 0.6)), (x, rnd.uniform(0.1, 2.5), f), seed=90 + k, rough=0.4, cuts=1)
+    for k in range(6):
+        x = rnd.choice((-1, 1)) * rnd.uniform(5.0, 8.0)
+        m.loft(K("leaf", (0.24, 0.42, 0.3)), [(x, 5.0 - rnd.uniform(0, 1.0), -0.8, 0.25, 0.05), (x, 3.0, -0.75, 0.15, 0.04), (x, rnd.uniform(1.0, 2.0), -0.72, 0.06, 0.03)], segs=4, steps=2)
+
+
 PLACES = {
+    "sea_shrine": sea_shrine,
     "sea_temple": sea_temple,
     "sea_lookout": sea_lookout,
     "sea_arch": sea_arch,

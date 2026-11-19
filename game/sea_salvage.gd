@@ -101,7 +101,7 @@ func load_book(saved: Variant) -> void:
 
 # A spot's find id, or the plan it holds.
 func _id(spot_cfg: Dictionary) -> String:
-	return String(spot_cfg.get("find", spot_cfg.get("plan", "")))
+	return String(spot_cfg.get("find", spot_cfg.get("plan", spot_cfg.get("hoard", ""))))
 
 
 # Has this player already taken what a spot holds (a logged find, or a plan in the bag)?
@@ -109,6 +109,8 @@ func _taken(spot_cfg: Dictionary) -> bool:
 	if spot_cfg.has("plan"):
 		var skills: Variant = _sea.get("skills")
 		return skills != null and int((skills as Node).get("bag").call("count", String(spot_cfg["plan"]))) > 0
+	if spot_cfg.has("hoard"):  # (sea step 9d) a hoard a secret chart leads to: taken once per player
+		return book.found.has("hoard:" + String(spot_cfg["hoard"]))
 	return book.found.has(String(spot_cfg["find"]))
 
 
@@ -174,6 +176,8 @@ func spot_name(spot: Dictionary) -> String:
 	var cfg_spot: Dictionary = spot["cfg"]
 	if cfg_spot.has("plan"):
 		return String((_sea.get("skills") as Node).get("bag").call("item_name", String(cfg_spot["plan"])))
+	if cfg_spot.has("hoard"):
+		return String(cfg_spot.get("name", "a sunken hoard"))
 	return book.name_of(String(cfg_spot["find"]))
 
 
@@ -206,6 +210,11 @@ func take(spot: Dictionary, dived: bool) -> bool:
 		var skills: Node = _sea.get("skills")
 		skills.call("give", plan, 1)
 		_sea.emit_signal("notice", "Found the %s: build it at the shipyard" % String(skills.get("bag").call("item_name", plan)))
+	elif (spot["cfg"] as Dictionary).has("hoard"):  # rolled on this player's machine like a chest (game/sea_flotsam.gd)
+		book.found["hoard:" + String(spot["cfg"]["hoard"])] = true
+		var flotsam: Node = _sea.get("ships").get("foes").get("flotsam")
+		flotsam.call("grant", String(spot["cfg"]["loot"]), String(spot["cfg"].get("region", "region_1")))
+		_sea.emit_signal("notice", "You raise %s" % String(spot["cfg"].get("name", "a sunken hoard")))
 	else:
 		var id := String(spot["cfg"]["find"])
 		_logged(id, book.record(id))

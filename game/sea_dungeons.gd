@@ -5,6 +5,9 @@
 # the host's world (saved in its profile, sent to everyone on every change and every 3 s), changed only by the host:
 # the plates by where the players stand, everything else by [F] asks (net_sea request_dungeon), checked against where
 # the asker really is. A chest's loot is rolled on the opener's own machine (game/sea_flotsam.gd grant).
+# CHART PIECES (sea step 9d): a chest with a `piece` gives it to every player there; a chart's pieces (data "pieces")
+# join into the chart in the bag. OUTDOOR courts (entry "outdoor": sea at + y) stand on their islands, built while
+# anyone is near, with no gate and the island's own light.
 # FIGHTS (sea step 9c): a fight thing starts when a player comes within its reach; the host sends its waves one after
 # another (game/sea_crews.gd dungeon_spawn: host-run foes, puppets online); all of the last wave down = cleared (its
 # doors open); everyone gone from the dungeon while it goes on = its foes go and it starts again next time.
@@ -47,6 +50,8 @@ func setup(sea: Node3D, player: CharacterBody3D) -> void:
 		d.visible = false
 		add_child(d)
 		spaces[id] = d
+		if not cfg["dungeons"][id].has("entrance"):
+			continue  # (an outdoor court has no gate)
 		var gate := SeaDungeon.piece("dk_gate")
 		gate.visible = false
 		var e: Dictionary = cfg["dungeons"][id]["entrance"]
@@ -79,6 +84,9 @@ static func _col(a: Array) -> Color:
 
 # A dungeon's space in sea coordinates (its map's cell 0, 0).
 func space_of(id: String) -> Vector3:
+	var out: Dictionary = cfg["dungeons"][id].get("outdoor", {})
+	if not out.is_empty():  # (sea step 9d) an outdoor court: its cell (0, 0) stands at these sea coordinates on its island
+		return Vector3(float(out["at"][0]), float(out["y"]), float(out["at"][1]))
 	var s: Dictionary = cfg["space"]
 	return Vector3(float(s["first_x"]) + float(s["step_x"]) * float(cfg["dungeons"][id].get("slot", 0)), float(s["y"]), float(s["z"]))
 
@@ -88,8 +96,19 @@ func indoor_at(sea_pos: Vector3) -> bool:
 	return sea_pos.y > float(cfg["indoor_y"])
 
 
+func outdoor(id: String) -> bool:
+	return cfg["dungeons"][id].has("outdoor")
+
+
 func dungeon_at(sea_pos: Vector3) -> String:
 	if not indoor_at(sea_pos):
+		for id: String in spaces:  # an outdoor court: on its map's cells, about its height
+			if outdoor(id):
+				var local := sea_pos - space_of(id)
+				var r := (spaces[id] as SeaDungeon).rules
+				var c := r.cell_of(local)
+				if c.x >= 0 and c.y >= 0 and c.x < r.size.x and c.y < r.size.y and r.char_at(c) != " " and local.y > -4.0 and local.y < 6.0:
+					return id
 		return ""
 	var best := ""
 	var best_d := INF
@@ -121,8 +140,8 @@ func _process(delta: float) -> void:
 	var now_in := dungeon_at(here) if bool(_sea.get("inside")) else ""
 	if now_in != where:
 		where = now_in
-		_indoor(where != "")
-	_lamp.visible = where != ""
+		_indoor(where != "" and not outdoor(where))
+	_lamp.visible = where != "" and not outdoor(where)
 	if where != "":
 		_lamp.global_position = _player.global_position + Vector3(0.0, 2.2, 0.0)
 		_watch_pits(delta)
@@ -132,9 +151,11 @@ func _process(delta: float) -> void:
 	for id: String in spaces:
 		var d: SeaDungeon = spaces[id]
 		var wanted: bool = id == where or others.has(id)
+		if outdoor(id):  # an outdoor court is built and shown while anyone is near its island
+			wanted = wanted or _near_court(id, here)
 		if wanted and not d.built:
 			d.build()
-		d.visible = id == where
+		d.visible = id == where or (outdoor(id) and wanted)
 		d.process_mode = Node.PROCESS_MODE_INHERIT if wanted else Node.PROCESS_MODE_DISABLED
 	_gate_t -= delta
 	if _gate_t <= 0.0:
@@ -164,10 +185,24 @@ var _safe_t := 0.0
 var falls := 0
 
 
+# Is this player (or, on the host, another player) within 260 m of an outdoor court?
+func _near_court(id: String, here: Vector3) -> bool:
+	var at := space_of(id)
+	if Vector2(here.x - at.x, here.z - at.z).length() < 260.0:
+		return true
+	var others: Callable = _sea.get("others")
+	if others.is_valid() and _host():
+		for o: Vector3 in others.call():
+			var sea_o: Vector3 = _sea.call("local_of", o)
+			if Vector2(sea_o.x - at.x, sea_o.z - at.z).length() < 260.0:
+				return true
+	return false
+
+
 func _watch_pits(delta: float) -> void:
 	var d: SeaDungeon = spaces[where]
 	var local := _local_in(where)
-	if local.y < -1.5:
+	if local.y < -1.5 and d.rules.terrain(d.rules.cell_of(local)) in ["=", "%", "_"]:
 		if _safe.is_finite():
 			_player.call("teleport", _sea.call("world_of", space_of(where) + _safe + Vector3(0.0, 0.4, 0.0)), float(_player.call("look_yaw")))
 		_player.call("take_damage", 8.0, "physical")
@@ -441,6 +476,8 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 					_give_chest(peer, loot, int(cfg["dungeons"][id].get("region", 1)))
 				if r.things[ch].has("tool"):  # a tool: for every player in the dungeon
 					_give_tool_all(id, String(r.things[ch]["tool"]))
+				if r.things[ch].has("piece"):  # a chart piece (sea step 9d): for every player there
+					_give_piece_all(id, String(r.things[ch]["piece"]))
 	if done and kind0 == "bigkey":
 		_sea.emit_signal("notice", "The Great Key!")
 	if done:
@@ -462,6 +499,43 @@ func _give_tool_all(id: String, tool: String) -> void:
 	for peer: int in all:
 		if peer != _my_id() and dungeon_at(_sea.call("local_of", all[peer])) == id:
 			net.call("tell_tool_gift", peer, tool)
+
+
+func _give_piece_all(id: String, piece: String) -> void:
+	if where == id:
+		receive_piece(piece)
+	var net := _net()
+	if net == null or not bool(net.call("active")):
+		return
+	var all: Dictionary = (net.get("net") as Node).call("positions")
+	for peer: int in all:
+		if peer != _my_id() and dungeon_at(_sea.call("local_of", all[peer])) == id:
+			net.call("tell_dungeon_gift", peer, piece)
+
+
+# This player got a chart piece: into the bag; all the pieces of a chart (data "pieces") join into that chart.
+func receive_piece(piece: String) -> void:
+	var skills: Node = _sea.get("skills")
+	if skills == null:
+		return
+	var bag: RefCounted = skills.get("bag")
+	if not bool(bag.call("has_item", piece)):
+		return
+	if int(bag.call("count", piece)) == 0:
+		skills.call("give", piece, 1)
+	_sea.emit_signal("notice", "Found %s" % String(bag.call("item_name", piece)))
+	for chart: String in cfg.get("pieces", {}):
+		var need: Array = cfg["pieces"][chart]
+		if not need.has(piece) or int(bag.call("count", chart)) > 0:
+			continue
+		var all_in := true
+		for p: String in need:
+			all_in = all_in and int(bag.call("count", p)) > 0
+		if all_in:
+			for p: String in need:
+				bag.call("remove", p, 1)
+			skills.call("give", chart, 1)
+			_sea.emit_signal("notice", "The pieces fit together: %s. It is marked on your sea chart (M)" % String(bag.call("item_name", chart)))
 
 
 func _give_chest(peer: int, loot: String, region_n: int) -> void:
@@ -637,4 +711,11 @@ func status() -> String:
 			var e: Node3D = men[m]["enemy"]
 			if is_instance_valid(e):
 				foes.append("%s@%s hp%d%s" % [String(men[m]["kind"]).left(8), str(e.position.snapped(Vector3(0.1, 0.1, 0.1))), int(float(e.get("health").get("hp"))), " P" if bool(e.get("puppet")) else ""])
-	return "dungeons: in '%s' (dark look %s, settling %s, falls %d, tide hurt %.0f), acts %d, applied %d, last '%s'; foes [%s]; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, tide_hurt, acts, applied, last, ", ".join(foes), "; ".join(parts)]
+	var held: Array = []  # chart pieces / joined charts in this player's bag (sea step 9d)
+	var skills: Node = _sea.get("skills")
+	if skills != null:
+		for chart: String in cfg.get("pieces", {}):
+			for item: String in [chart] + Array(cfg["pieces"][chart]):
+				if int(skills.get("bag").call("count", item)) > 0:
+					held.append(item)
+	return "dungeons: pieces %s; in '%s' (dark look %s, settling %s, falls %d, tide hurt %.0f), acts %d, applied %d, last '%s'; foes [%s]; %s" % [str(held), where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, tide_hurt, acts, applied, last, ", ".join(foes), "; ".join(parts)]

@@ -120,6 +120,18 @@
    ],
    "depth": 14.0,
    "model": "wreck_small"
+  },
+  {
+   "hoard": "shallows_hoard",
+   "name": "the Shallows Hoard",
+   "loot": "hoard_r1",
+   "region": "region_1",
+   "at": [
+    980.0,
+    3620.0
+   ],
+   "depth": 10.0,
+   "model": "wreck_small"
   }
  ],
  "trinkets": {

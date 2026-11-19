@@ -1,7 +1,7 @@
 # Purpose: check of the dungeon puzzle rules (sea step 9a) on the test dungeon "proving_vault": push the block onto the
 # plate (latching door d), pull the lever (door c), take the key, unlock door e, open the chest, save / load.
 # Prints DUNGEON CHECK problems=n. Run: godot --headless --path . --script res://tools/dungeon_check.gd
-# Also the fight hall's fight and doors (sea step 9c) and The Tidewater Temple's plan (9c-2).
+# Also the fight hall's fight and doors (sea step 9c), The Tidewater Temple's plan (9c-2) and region 1's three puzzles (9d).
 # Dependencies: core/sea/dungeon_rules.gd, data/sea/dungeons.json.
 extends SceneTree
 
@@ -48,6 +48,7 @@ func _init() -> void:
 	_ok("cleared fight does not start again", not f.start_fight("F"))
 	_ok("foes: floor yes, wall / chest no", f.body_can(Vector2i(2, 6), 0.0) and not f.body_can(Vector2i(0, 6), 0.0) and not f.body_can(Vector2i(5, 12), 0.0))
 	_temple(cfg)
+	_puzzles(cfg)
 	print("DUNGEON CHECK problems=%d" % problems)
 	quit()
 
@@ -129,3 +130,34 @@ func _named(t: RefCounted, name: String) -> String:
 
 func _cell(t: RefCounted, name: String) -> Vector2i:
 	return t.call("cell_of_thing", _named(t, name))
+
+
+# Sea step 9d: region 1's three puzzles solve in order with the moves a player makes (grapple crossings stand in as
+# reaching the cell beyond).
+func _puzzles(cfg: Dictionary) -> void:
+	var c := DungeonRules.new("stackwater_court", cfg["dungeons"]["stackwater_court"], float(cfg["tile"]))
+	var raft := Vector2i(7, 9)
+	_ok("court: raft under water before the sluice", not c.ground_at(raft, 0.0))
+	_ok("court: sluice lever raises the tide, rafts up", c.pull(_named(c, "sluice_lever")) and bool(c.state["tide"]) and c.ground_at(raft, 0.0))
+	var blk := _named(c, "court_block")
+	var pushed := true
+	for x in range(3, 9):
+		pushed = pushed and c.push(blk, Vector2i(x, 8))
+	c.press([])
+	_ok("court: block pushed onto the plate opens the gate", pushed and c.door_open(_named(c, "court_gate")))
+	_ok("court: chest on its stack, rings on both stacks", is_equal_approx(c.height_of(_cell(c, "court_chest")), 3.0) and is_equal_approx(c.height_of(_cell(c, "ring_low_stack")), 3.0) and is_equal_approx(c.height_of(_cell(c, "ring_chest_stack")), 3.0))
+	_ok("court: chest opens with its piece", c.open_chest(_named(c, "court_chest")) == "puzzle_chest" and String(c.things[_named(c, "court_chest")]["piece"]) == "chart_piece_1")
+	var b := DungeonRules.new("bellrock_vault", cfg["dungeons"]["bellrock_vault"], float(cfg["tile"]))
+	var w := _named(b, "block_west")
+	var e := _named(b, "block_east")
+	var okb := b.push(w, Vector2i(6, 3)) and b.push(w, Vector2i(8, 4)) and b.push(w, Vector2i(8, 3))
+	okb = okb and b.push(e, Vector2i(12, 3)) and b.push(e, Vector2i(11, 3)) and b.push(e, Vector2i(10, 3)) and b.push(e, Vector2i(8, 2)) and b.push(e, Vector2i(8, 3))
+	b.press([])
+	_ok("bellrock: both blocks on both plates open the door", okb and b.door_open(_named(b, "door_plates")))
+	_ok("bellrock: sluice raises the raft bridge", b.pull(_named(b, "sluice_lever")) and b.ground_at(Vector2i(17, 3), 0.0))
+	_ok("bellrock: chest gives its piece", b.open_chest(_named(b, "vault_chest")) != "" and String(b.things[_named(b, "vault_chest")]["piece"]) == "chart_piece_2")
+	var g := DungeonRules.new("gullhook_vault", cfg["dungeons"]["gullhook_vault"], float(cfg["tile"]))
+	_ok("gullhook: block pushed through the gap, key taken, door unlocked", g.push(_named(g, "gap_block"), Vector2i(7, 3)) and g.passable(Vector2i(8, 3)) and g.take_key(_named(g, "key")) and g.use_key(_named(g, "door_key")))
+	_ok("gullhook: the lever on the ledge opens the chest door", is_equal_approx(g.height_of(_cell(g, "ledge_lever")), 3.0) and g.pull(_named(g, "ledge_lever")) and g.door_open(_named(g, "door_chest")))
+	_ok("gullhook: chest gives its piece", g.open_chest(_named(g, "vault_chest")) != "" and String(g.things[_named(g, "vault_chest")]["piece"]) == "chart_piece_3")
+	_ok("pieces: one chart from the three", (cfg["pieces"]["chart_shallows_hoard"] as Array).size() == 3)

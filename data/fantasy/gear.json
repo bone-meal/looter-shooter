@@ -2196,6 +2196,42 @@
     0.05,
     0.18
    ]
+  },
+  "chart_piece_1": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.78,
+    0.7,
+    0.52
+   ]
+  },
+  "chart_piece_2": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.78,
+    0.7,
+    0.52
+   ]
+  },
+  "chart_piece_3": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.78,
+    0.7,
+    0.52
+   ]
+  },
+  "chart_shallows_hoard": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.86,
+    0.78,
+    0.58
+   ]
   }
  }
 }

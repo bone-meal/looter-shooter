@@ -1,8 +1,12 @@
-Sea step 9c-3: Coralback Reef and the temple art pass
+Sea 9d: region 1 puzzle islands and the Shallows Hoard chart
 
-New region 1 island Coralback Reef (about 300 m on a wide reef flat): white beaches, a jungle-grown rocky spine, the ruined sea temple on a terrace round the Tidewater Temple gate, a broken lookout tower, a beached wreck, tide pools, a jetty to land at, a sea arch and stacks. Paths generated from the jetty to every place and walked by the real player.
-Set pieces sea_temple and sea_lookout. The temple gate now stands on the reef.
-Dungeon art pass: worn and mosaic floors, coral-crusted and carved relief walls, rubble, urns and coral along the walls, mixed in by a dungeon's dress data.
+Three puzzle islands, each with a good chest and a chart piece. All three pieces join into a secret chart that leads to a hidden salvage hoard.
+- Stackwater: an open-air puzzle court on the island (no ceiling). Sluice lever raises the tide, block onto a plate, grapple up two stacks to the chest.
+- Bellrock vault: two blocks on two plates, tide lever floats the raft, chest beyond.
+- Gullhook vault: key door, grapple over the chasm, grapple onto a ledge, lever opens the chest room.
+- Outdoor court support in sea_dungeon / sea_dungeons, tide levers in dungeon_rules, chart pieces given to every player online, hoard spots in sea_salvage.
+- Islands built by tools/blender/sea_isle_puzzles.py with route checks, new shrine gate model.
+- Pair set puzzle: guest solves the court, host applies all 8 acts, both get the piece.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

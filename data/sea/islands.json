@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island (~1.6 km, the home-port town island, director 2026-11-16) replaces test_small; the shipyard (data/sea/ships.json) sits on its east harbour's west bank, new arrivals land on the town plaza. Big islands carry \"chunks\" in their isles json and are streamed (game/sea_isle_stream.gd). Coralback Reef (sea step 9c-3, tools/blender/sea_isle_reef.py): region 1's reef island with the ruined sea temple and the Tidewater Temple's gate.",
+ "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island (~1.6 km, the home-port town island, director 2026-11-16) replaces test_small; the shipyard (data/sea/ships.json) sits on its east harbour's west bank, new arrivals land on the town plaza. Big islands carry \"chunks\" in their isles json and are streamed (game/sea_isle_stream.gd). Coralback Reef (sea step 9c-3, tools/blender/sea_isle_reef.py): region 1's reef island with the ruined sea temple and the Tidewater Temple's gate. Region 1's three puzzle islands (sea step 9d, tools/blender/sea_isle_puzzles.py): Stackwater Rocks (the outdoor court), Bellrock and Gullhook Cay (vault shrines).",
  "near": 1200,
  "far": 5500,
  "islands": [
@@ -66,6 +66,60 @@
     "grass": "#6c9e48",
     "rock": "#a89a86",
     "wet": "#bba57c",
+    "path": "#9a8060",
+    "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "stackwater",
+   "pos": [
+    -1500.0,
+    8200.0
+   ],
+   "radius": 110,
+   "model": "isle_stackwater",
+   "props": "isle_stackwater",
+   "ground": {
+    "sand": "#eadcb4",
+    "grass": "#6a9446",
+    "rock": "#8f8780",
+    "wet": "#a89470",
+    "path": "#8e7656",
+    "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "bellrock",
+   "pos": [
+    700.0,
+    8500.0
+   ],
+   "radius": 130,
+   "model": "isle_bellrock",
+   "props": "isle_bellrock",
+   "ground": {
+    "sand": "#efe0b8",
+    "grass": "#6fa24a",
+    "rock": "#9a8f84",
+    "wet": "#b09b74",
+    "path": "#937a58",
+    "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "gullhook",
+   "pos": [
+    2400.0,
+    4300.0
+   ],
+   "radius": 110,
+   "model": "isle_gullhook",
+   "props": "isle_gullhook",
+   "ground": {
+    "sand": "#f2e4bc",
+    "grass": "#73a04c",
+    "rock": "#a0968a",
+    "wet": "#b8a27a",
     "path": "#9a8060",
     "forest": "#5d6e36"
    }

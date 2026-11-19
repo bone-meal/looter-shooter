@@ -14,7 +14,8 @@
 # a fight goes on (shut_while) and are otherwise open ("free"). A fight may RAISE THE TIDE (`tide`: water level per
 # wave over its `flood` cells [[x0, z0], [x1, z1]]; drains when it is cleared or reset). A thing standing on a ledge
 # says "on": "H" (its cell stays a ledge). The GREAT KEY (kind "bigkey") opens doors "bigkey"; doors "sealed" never
-# open (the boss's door until sea step 10).
+# open (the boss's door until sea step 10). Sea step 9d: a lever with "tide": true raises / lowers the tide (rafts,
+# doors "tide") as it is pulled; a chest may hold a chart `piece`.
 # Dependencies: none (one dungeon's data from data/sea/dungeons.json is passed in).
 extends RefCounted
 
@@ -276,6 +277,8 @@ func pull(lever: String) -> bool:
 	if not things.has(lever) or String(things[lever]["kind"]) != "lever":
 		return false
 	state["levers"][lever] = not bool(state["levers"].get(lever, false))
+	if bool(things[lever].get("tide", false)):  # (sea step 9d) a sluice lever: the tide follows it, no Tide Pearl needed
+		state["tide"] = bool(state["levers"][lever])
 	return true
 
 
