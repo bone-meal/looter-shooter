@@ -1999,6 +1999,421 @@
     "###############...M...T...#",
     "###########################"
    ]
+  },
+  "hollow_mangrove": {
+   "name": "The Hollow Mangrove",
+   "region": 2,
+   "slot": 12,
+   "_about": "Sea step 13 R2c (diary/DESIGN_REGION2.md): region 2's main dungeon, 20 rooms inside the giant mangrove's roots (way in = the doorway at the foot of the trunk, island (-7900, 7900) + (0, 6); gate none). West: a bramble (Ember Gauntlet), the fog crossing (Fog Bell), the key, a hook room. East: a block onto the plate, the ghost hall fight, the key door to the GALE GLIDER, the updraft chasm (vent, ledges, glide over the pit). Then the braziers, the drowning-roots arena (rising black water, hook rings on the corner ledges), the GREAT KEY, the great door and the beacon hall with the sealed root door (the Lantern Queen's Root Crown, R2d). Layout mine.",
+   "entrance": {
+    "at": [
+     -7900.0,
+     7906.0
+    ],
+    "yaw": 0.0,
+    "gate": "none",
+    "ground": 2.4
+   },
+   "wall_h": 6.0,
+   "torch_every": 4,
+   "dress": {
+    "floor_worn": 0.4,
+    "floor_mosaic": 0.0,
+    "wall_crusted": 0.45,
+    "wall_relief": 0.0,
+    "clutter": 0.35,
+    "seed": 35
+   },
+   "legend": {
+    "A": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "B": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "a": {
+     "kind": "door",
+     "name": "door_entry_hall",
+     "open": "free",
+     "shut_while": "F"
+    },
+    "F": {
+     "kind": "fight",
+     "name": "fight_root_hall",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       14,
+       19
+      ],
+      [
+       16,
+       19
+      ],
+      [
+       15,
+       22
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The root hall falls still. Roots draw back from both doors"
+    },
+    "b": {
+     "kind": "door",
+     "name": "door_hall_west",
+     "open": "clear",
+     "fight": "F"
+    },
+    "C": {
+     "kind": "door",
+     "name": "door_hall_east",
+     "open": "clear",
+     "fight": "F"
+    },
+    "r": {
+     "kind": "bramble",
+     "name": "bramble_west"
+    },
+    "c": {
+     "kind": "chest",
+     "name": "chest_west",
+     "loot": "dungeon_small"
+    },
+    "D": {
+     "kind": "door",
+     "name": "door_west_fog",
+     "open": "free"
+    },
+    "E": {
+     "kind": "door",
+     "name": "door_fog_key",
+     "open": "free"
+    },
+    "k": {
+     "kind": "key",
+     "name": "key_glider"
+    },
+    "d": {
+     "kind": "chest",
+     "name": "chest_key_room",
+     "loot": "dungeon_small"
+    },
+    "I": {
+     "kind": "door",
+     "name": "door_key_hook",
+     "open": "free"
+    },
+    "o": {
+     "kind": "ring",
+     "name": "ring_hook_room"
+    },
+    "e": {
+     "kind": "chest",
+     "name": "chest_hook_room",
+     "loot": "dungeon_small"
+    },
+    "P": {
+     "kind": "plate",
+     "name": "plate_roots"
+    },
+    "Q": {
+     "kind": "block",
+     "name": "block_roots"
+    },
+    "J": {
+     "kind": "door",
+     "name": "door_block_ghosts",
+     "open": "plates",
+     "plates": [
+      "P"
+     ],
+     "latch": true,
+     "shut_while": "G"
+    },
+    "G": {
+     "kind": "fight",
+     "name": "fight_ghost_hall",
+     "reach_m": 5.5,
+     "spawns": [
+      [
+       26,
+       19
+      ],
+      [
+       28,
+       19
+      ],
+      [
+       27,
+       22
+      ]
+     ],
+     "waves": [
+      [
+       "ghost_cutlass",
+       "ghost_cutlass"
+      ],
+      [
+       "ghost_cutlass",
+       "ghost_musket",
+       "sea_drowned_brute"
+      ]
+     ],
+     "notice": "The pale crew fade. A way north smells of wind"
+    },
+    "K": {
+     "kind": "door",
+     "name": "door_ghosts_east",
+     "open": "clear",
+     "fight": "G"
+    },
+    "f": {
+     "kind": "chest",
+     "name": "chest_east",
+     "loot": "dungeon_small"
+    },
+    "N": {
+     "kind": "door",
+     "name": "door_glider",
+     "open": "key"
+    },
+    "g": {
+     "kind": "chest",
+     "name": "chest_glider",
+     "loot": "dungeon_small",
+     "tool": "glider"
+    },
+    "O": {
+     "kind": "door",
+     "name": "door_glider_east",
+     "open": "free"
+    },
+    "j": {
+     "kind": "chest",
+     "name": "chest_glider_east",
+     "loot": "dungeon_small"
+    },
+    "R": {
+     "kind": "door",
+     "name": "door_chasm_east",
+     "open": "free"
+    },
+    "S": {
+     "kind": "door",
+     "name": "door_chasm_west",
+     "open": "free"
+    },
+    "y": {
+     "kind": "brazier",
+     "name": "brazier_a"
+    },
+    "z": {
+     "kind": "brazier",
+     "name": "brazier_b"
+    },
+    "T": {
+     "kind": "door",
+     "name": "door_braziers",
+     "open": "braziers",
+     "braziers": [
+      "y",
+      "z"
+     ]
+    },
+    "W": {
+     "kind": "door",
+     "name": "door_side_chest",
+     "open": "free"
+    },
+    "n": {
+     "kind": "chest",
+     "name": "chest_side",
+     "loot": "dungeon_small"
+    },
+    "+": {
+     "kind": "fight",
+     "name": "fight_drowning_roots",
+     "reach_m": 6.0,
+     "flood": [
+      [
+       13,
+       7
+      ],
+      [
+       17,
+       11
+      ]
+     ],
+     "tide": [
+      0.5,
+      1.2,
+      1.9,
+      2.5
+     ],
+     "spawns": [
+      [
+       14,
+       8
+      ],
+      [
+       16,
+       8
+      ],
+      [
+       14,
+       10
+      ],
+      [
+       16,
+       10
+      ],
+      [
+       15,
+       7
+      ],
+      [
+       15,
+       11
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "ghost_cutlass",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned_brute",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned_brute",
+       "ghost_musket",
+       "ghost_cutlass",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The black water drains between the roots. A door stands open"
+    },
+    "v": {
+     "kind": "ring",
+     "name": "ring_arena_0",
+     "on": "H"
+    },
+    "w": {
+     "kind": "ring",
+     "name": "ring_arena_1",
+     "on": "H"
+    },
+    "x": {
+     "kind": "ring",
+     "name": "ring_arena_2",
+     "on": "H"
+    },
+    "q": {
+     "kind": "ring",
+     "name": "ring_arena_3",
+     "on": "H"
+    },
+    "U": {
+     "kind": "door",
+     "name": "door_arena_out",
+     "open": "clear",
+     "fight": "+"
+    },
+    "Z": {
+     "kind": "door",
+     "name": "door_arena_fog",
+     "open": "free",
+     "shut_while": "+"
+    },
+    "m": {
+     "kind": "chest",
+     "name": "chest_fog_island",
+     "loot": "dungeon_small"
+    },
+    ":": {
+     "kind": "bigkey",
+     "name": "bigkey"
+    },
+    "h": {
+     "kind": "chest",
+     "name": "chest_great_key_room",
+     "loot": "dungeon_small"
+    },
+    "M": {
+     "kind": "door",
+     "name": "door_great",
+     "open": "bigkey"
+    },
+    ")": {
+     "kind": "door",
+     "name": "door_root_sealed",
+     "open": "sealed",
+     "says": "Sealed. The roots knot across it; something glows far below"
+    },
+    "Y": {
+     "kind": "door",
+     "name": "door_entry_side",
+     "open": "free"
+    },
+    "l": {
+     "kind": "chest",
+     "name": "chest_entry_side",
+     "loot": "dungeon_small"
+    }
+   },
+   "map": [
+    "#####################################",
+    "#############.....#.....#############",
+    "#############..:..#.....#############",
+    "#############.....M.....)############",
+    "#############....h#.....#############",
+    "#############.....#.....#############",
+    "###############U#####################",
+    "#.....#..==.#v...w#%%%%%#############",
+    "#.k...#..==o#.....#%...%#############",
+    "#.....I..==.#..+..Z%.m.%#############",
+    "#...d.#..==.#.....#%...%#############",
+    "#.....#..==e#x...q#%%%%%#############",
+    "###E###########T#####################",
+    "#.....#.....#.....#.....#.....#.....#",
+    "#==%==#.....#.y.z.#..==H#.....#.j...#",
+    "#==%==#..n..W.....S..==uR..g..O.....#",
+    "#==%==#.....#.....#..==H#.....#.....#",
+    "#.....#.....#.....#.....#.....#.....#",
+    "###D#######################N#########",
+    "#.....#.....#.....#.....#.....#.....#",
+    "#.c...#.....#.....#.P...#.....#.....#",
+    "#.....r.....b..F..C.....J..G..K...f.#",
+    "#.....#.....#.....#..Q..#.....#.....#",
+    "#.....#.....#.....#.....#.....#.....#",
+    "###############a#####################",
+    "#######.....#.....###################",
+    "#######...l.#..A..###################",
+    "#######.....Y.....###################",
+    "#######.....#.B...###################",
+    "#######.....#.....###################",
+    "#####################################"
+   ]
   }
  },
  "tide_hurt": {
