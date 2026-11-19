@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 12;!foe pause;!net to_other;!gunfire wait 3 60;!snap g_fire;!gunfire g_ak;!gunfire wait 21 30;!wait 1;!snap g_rocket;!gunfire g_end;!wait 3

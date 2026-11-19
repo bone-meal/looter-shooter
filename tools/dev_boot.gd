@@ -2918,6 +2918,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var thr: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/encounters.json")) as Dictionary)["threat"]
 					_lines.append("NG %s: NG+ %d, vault %s, enemy mult region 1 %.2f region 2 %.2f, sea loot level 20 -> %d, 70 -> %d, luck %.2f | prompt '%s'" % [" ".join(words.slice(2)), Threat.ng, str(session.get("_vault_beaten")),
 						Threat.player_mult(thr, 1), Threat.player_mult(thr, 2), Threat.loot_level(20), Threat.loot_level(70), Threat.ng_luck(), String(session.call("_prompt"))])
+		"gunfire":  # sea step 12b: !gunfire <note> = bursts sent / heard here and what the copies showed; !gunfire wait <n> [s] = wait until n shots of others were shown
+			var nf: Node = get_tree().get_first_node_in_group("net_fire")
+			if nf == null:
+				_lines.append("GUNFIRE: no net")
+			elif words.size() > 2 and words[1] == "wait":
+				var began_f := Time.get_ticks_msec()
+				while int((nf.get("copies") as Node).get("shown")) + int((nf.get("copies") as Node).get("slow_shown")) < int(words[2]) and Time.get_ticks_msec() - began_f < (int(words[3]) if words.size() > 3 else 40) * 1000:
+					await get_tree().create_timer(0.25, true, false, true).timeout
+			else:
+				_lines.append("GUNFIRE %s: sent %d, heard %d, %s" % [" ".join(words.slice(1)), int(nf.get("sent")), int(nf.get("heard")), String((nf.get("copies") as Node).call("status"))])
 		"squad":  # fantasy world: every creature's order, how far it is and where it stands round the player (0 = dead ahead, 180 = behind)
 			var command: Node = session.call("fantasy").get("squads")
 			var ahead: Vector3 = player.call("view_forward")

@@ -1,10 +1,9 @@
-Sea 12a: host migration at sea (carry on and save a copy)
+Sea 12b: other players' gunfire seen and heard online
 
-Director: when the host leaves, the new host carries the sea world on and keeps it in his own save.
-- The sea stands still while the session finds its new host.
-- The new host takes over: ships sail on from where they were, pirate crews become real and fight on, struck ships stay struck, floating cargo is handed out by him; creatures in sight slip away; dungeon fights restart when a player comes near; a boss fight begins again at full strength with the offering kept and downed players up.
-- The new host saves that world as his own from then on.
-- Dev !net leave / wait_host / mig, pair set migrate: tested on the GTX 1080 (host left mid-boarding, the guest fought the boarders off and got the plunder).
+Director: bursts of fire events.
+- Each shot's sound and where its pellets ended go out with the slow shots (rockets, grenades, harpoons, flares, bolts) in one small message five times a second; the host checks and relays it.
+- Other machines replay it from the shooter's gun: muzzle flash, tracers, the gun sound, harmless copies of slow shots that fly and burst or lie a moment. No damage anywhere: hits stay the shooter's own.
+- Dev !gunfire, pair set gunfire: the guest saw all 20 rifle shots and the rockets of the host.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

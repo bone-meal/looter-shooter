@@ -1424,6 +1424,23 @@ func _gun_sound(id: String) -> void:
 		sounds.call("play", id)
 
 
+# Online (sea step 12b): this shot goes to the other players as part of a burst (game/net_fire.gd).
+const FIRE_TRACER_M := 80.0
+var _fire_ends := PackedVector3Array()
+
+
+func _tell_fire(sound: String) -> void:
+	var link := get_tree().get_first_node_in_group("net_fire")
+	if link != null:
+		link.call("shot", sound, _fire_ends)
+
+
+func _tell_fire_slow(aim: Vector3) -> void:
+	var link := get_tree().get_first_node_in_group("net_fire")
+	if link != null:
+		link.call("projectile", String(weapon.projectile["kind"]), _head.global_position + aim * 0.6, aim * float(weapon.projectile["speed"]), float(weapon.projectile.get("gravity", 0.0)), float(weapon.projectile.get("splash_radius", 0.0)))
+
+
 func _shoot() -> void:
 	_gun_sound(String(_weapon_data().get("sound", "")))
 	var origin := _camera.global_position
@@ -1452,8 +1469,10 @@ func _shoot() -> void:
 		elif bolts != null and ["harpoon", "flare", "bolt"].has(String(weapon.projectile["kind"])):  # they hit with the gun's own damage
 			bolts.call("fire", _head.global_position + aim * 0.6, aim, weapon.projectile, self)
 			shots_fired += 1
+			_tell_fire_slow(aim)
 		else:
 			explosives.fire(_head.global_position + aim * 0.6, aim, weapon.projectile)
+			_tell_fire_slow(aim)
 		return
 
 	var balls := get_tree().get_first_node_in_group("beach_balls")  # a beach ball in the line of fire pops (game/beach_balls.gd)
@@ -1464,11 +1483,13 @@ func _shoot() -> void:
 	var spots := {}
 	var reach := float(data.get("range", SHOT_RANGE))  # the flamethrower's cone ends at its range
 	var falloff: Dictionary = data.get("falloff", {})
+	_fire_ends.clear()
 	for pellet in weapon.pellets:
 		var dir := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
 		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * reach)
 		query.exclude = [get_rid()]
 		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		_fire_ends.append(hit.position if not hit.is_empty() else origin + dir * minf(reach, FIRE_TRACER_M))
 		if not hit.is_empty() and hit.collider.has_method("on_hit"):
 			var near := 1.0
 			if not falloff.is_empty():  # SMG / blunderbuss: weaker far away
@@ -1486,6 +1507,7 @@ func _shoot() -> void:
 		for collider in totals:
 			if collider.has_method("head_hit") and not collider.health.is_dead() and not collider.has_meta("host_pays"):
 				score.hit()  # one hit per enemy per shot, however many pellets landed; the killing shot is paid as the kill
+	_tell_fire(String(data.get("sound", "")))
 	shots_fired += 1  # the record (core/stat_book.gd via the session): a shotgun blast is one shot, a hit if any pellet landed
 	if not totals.is_empty():
 		shots_hit += 1

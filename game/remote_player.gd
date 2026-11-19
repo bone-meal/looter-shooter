@@ -255,6 +255,14 @@ func set_held(shown: String) -> void:
 	_place_held()
 
 
+# Where his gun's muzzle is now (sea step 12b: his shots' flash and tracers start here): the held model's front end,
+# else his chest.
+func muzzle_point() -> Vector3:
+	if _held_model != null and is_instance_valid(_held_model) and _held_model.is_inside_tree():
+		return _held_model.global_transform * Vector3(0.0, 0.03, -0.6)
+	return global_position + Vector3(0.0, 1.35, 0.0)
+
+
 # A Mixtape's song from this player (`stream` from `pos` seconds), as 3D sound: as loud and as far as the holder's own.
 func play_song(stream: AudioStream, pos: float) -> void:
 	if _speaker == null:
