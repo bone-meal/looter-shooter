@@ -3,6 +3,10 @@
  "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island (~1.6 km, the home-port town island, director 2026-11-16) replaces test_small; the shipyard (data/sea/ships.json) sits on its east harbour's west bank, new arrivals land on the town plaza. Big islands carry \"chunks\" in their isles json and are streamed (game/sea_isle_stream.gd). Coralback Reef (sea step 9c-3, tools/blender/sea_isle_reef.py): region 1's reef island with the ruined sea temple and the Tidewater Temple's gate. Region 1's three puzzle islands (sea step 9d, tools/blender/sea_isle_puzzles.py): Stackwater Rocks (the outdoor court), Bellrock and Gullhook Cay (vault shrines).",
  "near": 1200,
  "far": 5500,
+ "_prefetch_about": "Sea step 13g (director: load in background): from near + prefetch metres an island is loaded and sorted on background threads; inside near it is put together build_ms_per_frame milliseconds a frame; a player within close metres of it gets it at once.",
+ "prefetch": 600,
+ "close": 150,
+ "build_ms_per_frame": 3,
  "islands": [
   {
    "id": "start",

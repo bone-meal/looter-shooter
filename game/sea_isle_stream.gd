@@ -5,7 +5,8 @@
 # run aground everywhere); trees, rocks and set pieces stand for the whole island, small clutter (grass, ferns,
 # flowers, shells, coral ...) and the props' colliders only in chunks near the player.
 # Dependencies: game/sea_isle_props.gd (drawing props, colliders, set pieces), data/sea/islands.json "props".
-# Made by game/sea_islands.gd, which calls follow() with the players' island-local positions.
+# Made by game/sea_islands.gd, which runs setup()'s steps a few a frame (sea step 13g) and calls follow() with the
+# players' island-local positions.
 extends Node3D
 
 const IsleProps = preload("res://game/sea_isle_props.gd")
@@ -23,8 +24,10 @@ var _graphics := ""
 var _solid_list := {}
 
 
-# model = the island's instantiated ground model (this node's child), list = its data/sea/isles json.
-func setup(model: Node3D, ground: Material, list: Dictionary, cfg: Dictionary, graphics: String) -> void:
+# model = the island's instantiated ground model (this node's child), list = its data/sea/isles json, sorted =
+# bucket(list, cfg, graphics) (worked out off the main thread; {} = work it out here). Maps the chunks now and returns
+# the rest of the setup as small steps (Callables) for game/sea_islands.gd to run a few at a time (sea step 13g).
+func setup(model: Node3D, ground: Material, list: Dictionary, cfg: Dictionary, graphics: String, sorted: Dictionary = {}) -> Array:
 	_cfg = cfg
 	_graphics = graphics
 	_solid_list = list.get("solid", {})
@@ -51,33 +54,52 @@ func setup(model: Node3D, ground: Material, list: Dictionary, cfg: Dictionary, g
 		else:
 			mesh.visibility_range_end = NEAR_SHOWN
 			mesh.visibility_range_end_margin = 20.0
+	if sorted.is_empty():
+		sorted = bucket(list, cfg, graphics)
+	for key: String in sorted["small"]:
+		if _chunks.has(key):
+			_chunks[key]["props"] = sorted["small"][key]
+	for key: String in sorted["solid_big"]:  # the big props' colliders go with their chunk
+		if _chunks.has(key):
+			_chunks[key]["solid_props"] = sorted["solid_big"][key]
+	var steps: Array = []
+	for g: Dictionary in sorted["big"]:
+		steps.append(func() -> void: _big_drawn += IsleProps.add_group(self, g))
+	for p: Array in list.get("places", []):
+		steps.append(func() -> void:
+			if IsleProps.place(self, p):
+				_big_drawn += 1)
+	for key: String in _chunks:  # every chunk starts solid in its coarse shape (unless a player stands on it by then)
+		var chunk_f: Dictionary = _chunks[key]
+		steps.append(func() -> void:
+			if chunk_f["near_body"] == null:
+				_far_solid(chunk_f, true))
+	return steps
+
+
+# The list's props sorted by chunk "i_j": plain data, safe off the main thread (sea step 13g). small = clutter drawn
+# per chunk near the player, big = the rest as IsleProps.groups_of() patches, solid_big = the big props with colliders.
+static func bucket(list: Dictionary, cfg: Dictionary, graphics: String) -> Dictionary:
+	var size := float(list["chunks"]["size"])
+	var reach := float(list["chunks"]["reach"])
 	var ranges: Dictionary = cfg["range"]
+	var solid: Dictionary = list.get("solid", {})
+	var small := {}
+	var solid_big := {}
 	var big: Array = []
 	for p: Array in list["props"]:
+		var key := "%d_%d" % [floori((float(p[1]) + reach) / size), floori((float(p[3]) + reach) / size)]
 		if float(ranges.get(String(p[0]), ranges["default"])) <= SMALL_RANGE:
-			var key := "%d_%d" % [floori((float(p[1]) + reach) / size), floori((float(p[3]) + reach) / size)]
-			if _chunks.has(key):
-				(_chunks[key]["props"] as Array).append(p)
+			if not small.has(key):
+				small[key] = []
+			(small[key] as Array).append(p)
 		else:
 			big.append(p)
-	_big_drawn = IsleProps.draw(self, big, cfg, graphics)
-	_big_by_chunk(big, size, reach)  # the big props' colliders go with their chunk
-	for p: Array in list.get("places", []):
-		if IsleProps.place(self, p):
-			_big_drawn += 1
-	for key: String in _chunks:  # every chunk starts solid in its coarse shape
-		_far_solid(_chunks[key], true)
-
-
-func _big_by_chunk(big: Array, size: float, reach: float) -> void:
-	for p: Array in big:
-		if not _solid_list.has(String(p[0])):
-			continue
-		var key := "%d_%d" % [floori((float(p[1]) + reach) / size), floori((float(p[3]) + reach) / size)]
-		if _chunks.has(key):
-			if not _chunks[key].has("solid_props"):
-				_chunks[key]["solid_props"] = []
-			(_chunks[key]["solid_props"] as Array).append(p)
+			if solid.has(String(p[0])):
+				if not solid_big.has(key):
+					solid_big[key] = []
+				(solid_big[key] as Array).append(p)
+	return {"small": small, "solid_big": solid_big, "big": IsleProps.groups_of(big, cfg, graphics)}
 
 
 # Call every half second or so with island-local positions (x, z): points[0] is this machine's own player when own
@@ -136,6 +158,15 @@ func _far_solid(chunk: Dictionary, on: bool) -> void:
 	elif not on and chunk["far_body"] != null:
 		(chunk["far_body"] as Node).queue_free()
 		chunk["far_body"] = null
+
+
+# Taking the island down (game/sea_islands.gd, sea step 13g): lets go of up to n chunks' prop lists at a time, so the
+# big lists are not all freed in one frame (~40 ms). Returns false once none are left.
+func shed(n: int) -> bool:
+	var keys := _chunks.keys()
+	for i in mini(n, keys.size()):
+		_chunks.erase(keys[i])
+	return not _chunks.is_empty()
 
 
 func drawn() -> int:  # copies of props standing now (checks)

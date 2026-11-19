@@ -1,10 +1,12 @@
-Sea step 13g: region 1 check (sail-round, walks, gate online, look pictures, frames)
+Sea step 13g: islands load in the background (no frame hitch when one comes near)
 
-- sail-round: the sloop sailed a 12 km loop round region 1 (home port, Turtleback, Palm Ring, Saltpan Key, Smugglers Hook, back) on 8 legs, never aground, hull kept
-- every island route checked, all four mid islands walked; fixed: the Turtleback path from the landing ran into the middle stilt hut (data/sea/isles/isle_turtleback.json, avoid ring wider in tools/blender/sea_isle_region1.py)
-- two-copy test of the region 2 gate: the guest sees the fog, the hull ground down and the push back; once the Shellback Prow is fitted the hazard is gone on both
-- found: a frame hitch when an island is built as the ship comes within 1.2 km (home port 0.77 s, mid islands 0.2-0.35 s) and when a quest person is built (about 0.1 s); game/sea_islands.gd keeps the build times for the dev log
-- dev: !timescale, !ship course, !isle view / scan / builds, !probe, !gate part; the island walker waits for the body to land first
+- director: load in background. game/sea_islands.gd: from near + prefetch metres an island's model and its baked collision load on the resource loader's thread and its prop list is read and sorted on a worker thread; inside near it is put together a few milliseconds a frame; within close of a player (arrival, teleport) it is built at once
+- island collision baked into small pieces by tools/bake_isle_shapes.tscn (assets/models/sea/shapes/); rerun it after an island model changes (a stale bake is noticed and the old way used)
+- game/sea_isle_props.gd groups_of / solid_specs (plain data, ready MultiMesh buffers), game/sea_isle_stream.gd bucket + setup steps + shed
+- an island let go is taken down a few pieces a frame (bodies out of the physics space first); no reload on the way out
+- quest people are built hidden while the sea loads (game/sea_quests.gd)
+- on the GTX 1080: home port 0.77 s freeze gone (39 frames, worst 12 ms), mid islands 0.2-0.35 s gone (worst 6-12 ms, the Coralback ruins 30 ms), quest person 0.1 s gone; sailing legs past every main island now worst 36-44 ms
+- two-copy island test (set isle) still works
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

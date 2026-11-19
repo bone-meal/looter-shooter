@@ -8,7 +8,8 @@
 # and are solid as modelled; their "water" parts get still pool water (game/isle_water.gd).
 # Dependencies: assets/models/sea/props/<model>.gltf, assets/models/sea/places/<model>.gltf, game/fantasy_models.gd
 # (materials by kind), game/isle_water.gd, data/sea/islands.json "props", data/sea/isles/<props>.json. Built under the
-# island's node by game/sea_islands.gd.
+# island's node by game/sea_islands.gd, which works out groups_of() / solid_specs() off the main thread and adds the
+# patches a few at a time (sea step 13g: no frame hitch when an island comes near).
 extends RefCounted
 
 const FantasyModels = preload("res://game/fantasy_models.gd")
@@ -38,6 +39,15 @@ static func build(holder: Node3D, island: Dictionary, cfg: Dictionary, graphics:
 # One MultiMesh per model and patch for these props ([model, x, y, z, yaw, scale], island-local) under `holder`;
 # small clutter thinned on lower tiers. Returns how many copies are drawn.
 static func draw(holder: Node3D, props: Array, cfg: Dictionary, graphics: String) -> int:
+	var drawn := 0
+	for g: Dictionary in groups_of(props, cfg, graphics):
+		drawn += add_group(holder, g)
+	return drawn
+
+
+# The props grouped into patches, each with its MultiMesh buffer ready: plain data, so it can be worked out off the
+# main thread before the island is needed (sea step 13g). [{"model", "name", "buffer", "count", "range", "shadow"}].
+static func groups_of(props: Array, cfg: Dictionary, graphics: String) -> Array:
 	var tier: Dictionary = cfg["tiers"].get(graphics, cfg["tiers"]["medium"])
 	var ranges: Dictionary = cfg["range"]
 	var thin: Array = cfg["thin"]
@@ -56,30 +66,52 @@ static func draw(holder: Node3D, props: Array, cfg: Dictionary, graphics: String
 		if not groups.has(key):
 			groups[key] = []
 		(groups[key] as Array).append(Transform3D(turn, at))
-	var drawn := 0
+	var out: Array = []
 	for key: String in groups:
 		var model := key.get_slice("|", 0)
-		var mesh := _mesh(model)
-		if mesh == null:
-			continue
 		var at: Array = groups[key]
-		var many := MultiMesh.new()
-		many.transform_format = MultiMesh.TRANSFORM_3D
-		many.mesh = mesh
-		many.instance_count = at.size()
-		for i in at.size():
-			many.set_instance_transform(i, at[i])
-		var shown := MultiMeshInstance3D.new()
-		shown.multimesh = many
-		shown.name = key.replace("|", "_").replace("-", "m")
-		shown.visibility_range_end = float(ranges.get(model, ranges["default"])) * float(tier["range"])
-		shown.visibility_range_end_margin = 10.0
-		shown.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
-		if not (cfg["shadows"] as Array).has(model):
-			shown.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
-		holder.add_child(shown)
-		drawn += at.size()
-	return drawn
+		var buffer := PackedFloat32Array()
+		buffer.resize(at.size() * 12)
+		for i in at.size():  # the MultiMesh layout: the 3 x 4 matrix row by row
+			var t: Transform3D = at[i]
+			var j := i * 12
+			buffer[j] = t.basis.x.x
+			buffer[j + 1] = t.basis.y.x
+			buffer[j + 2] = t.basis.z.x
+			buffer[j + 3] = t.origin.x
+			buffer[j + 4] = t.basis.x.y
+			buffer[j + 5] = t.basis.y.y
+			buffer[j + 6] = t.basis.z.y
+			buffer[j + 7] = t.origin.y
+			buffer[j + 8] = t.basis.x.z
+			buffer[j + 9] = t.basis.y.z
+			buffer[j + 10] = t.basis.z.z
+			buffer[j + 11] = t.origin.z
+		out.append({"model": model, "name": key.replace("|", "_").replace("-", "m"), "buffer": buffer, "count": at.size(),
+			"range": float(ranges.get(model, ranges["default"])) * float(tier["range"]), "shadow": (cfg["shadows"] as Array).has(model)})
+	return out
+
+
+# One patch of groups_of() as a MultiMesh under `holder` (main thread). Returns how many copies it draws.
+static func add_group(holder: Node3D, g: Dictionary) -> int:
+	var mesh := _mesh(String(g["model"]))
+	if mesh == null:
+		return 0
+	var many := MultiMesh.new()
+	many.transform_format = MultiMesh.TRANSFORM_3D
+	many.mesh = mesh
+	many.instance_count = int(g["count"])
+	many.buffer = g["buffer"]
+	var shown := MultiMeshInstance3D.new()
+	shown.multimesh = many
+	shown.name = String(g["name"])
+	shown.visibility_range_end = float(g["range"])
+	shown.visibility_range_end_margin = 10.0
+	shown.visibility_range_fade_mode = GeometryInstance3D.VISIBILITY_RANGE_FADE_DISABLED
+	if not bool(g["shadow"]):
+		shown.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	holder.add_child(shown)
+	return int(g["count"])
 
 
 # A set piece: the model as it is, dressed, solid as modelled.
@@ -128,28 +160,43 @@ static func solids(holder: Node3D, props: Array, solid: Dictionary) -> StaticBod
 	var body := StaticBody3D.new()
 	body.name = "PropSolids"
 	holder.add_child(body)
+	add_solids(body, solid_specs(props, solid))
+	return body
+
+
+# The colliders of solids() as plain data (off the main thread, sea step 13g): [kind "box" | "cyl", size, transform].
+static func solid_specs(props: Array, solid: Dictionary) -> Array:
+	var out: Array = []
 	for p: Array in props:
 		var model := String(p[0])
 		if not solid.has(model):
 			continue
 		var scale := float(p[5])
 		var at := Vector3(float(p[1]), float(p[2]), float(p[3]))
-		var holder_shape := CollisionShape3D.new()
 		var r := float(solid[model]) * scale
 		if r <= 0.0:  # a wall: a box along its own x
+			out.append(["box", Vector3(4.0, 2.0, 0.6) * scale, Transform3D(Basis(Vector3.UP, deg_to_rad(float(p[4]))), at + Vector3(0.0, 1.0 * scale, 0.0))])
+		else:
+			var height := maxf(r * 2.0, 3.0 * scale)
+			var lift := height * 0.5 - 0.3
+			if model == "sea_stack":  # from the sea floor (20 m down) to its top (16 m up)
+				height = 36.0 * scale
+				lift = -2.0 * scale
+			out.append(["cyl", Vector2(r, height), Transform3D(Basis(), at + Vector3(0.0, lift, 0.0))])
+	return out
+
+
+static func add_solids(body: StaticBody3D, specs: Array) -> void:
+	for spec: Array in specs:
+		var holder_shape := CollisionShape3D.new()
+		if String(spec[0]) == "box":
 			var box := BoxShape3D.new()
-			box.size = Vector3(4.0, 2.0, 0.6) * scale
+			box.size = spec[1]
 			holder_shape.shape = box
-			holder_shape.transform = Transform3D(Basis(Vector3.UP, deg_to_rad(float(p[4]))), at + Vector3(0.0, 1.0 * scale, 0.0))
 		else:
 			var cyl := CylinderShape3D.new()
-			cyl.radius = r
-			cyl.height = maxf(r * 2.0, 3.0 * scale)
-			var lift := cyl.height * 0.5 - 0.3
-			if model == "sea_stack":  # from the sea floor (20 m down) to its top (16 m up)
-				cyl.height = 36.0 * scale
-				lift = -2.0 * scale
+			cyl.radius = (spec[1] as Vector2).x
+			cyl.height = (spec[1] as Vector2).y
 			holder_shape.shape = cyl
-			holder_shape.position = at + Vector3(0.0, lift, 0.0)
+		holder_shape.transform = spec[2]
 		body.add_child(holder_shape)
-	return body

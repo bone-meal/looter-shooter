@@ -1409,7 +1409,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							var now_c := Time.get_ticks_usec()
 							worst_c = maxf(worst_c, float(now_c - last_c) / 1000.0)
 							if float(now_c - last_c) / 1000.0 > 40.0 and spikes_c.size() < 12:  # where the long frames fell
-								spikes_c.append("%.0f ms at (%.0f, %.0f)" % [float(now_c - last_c) / 1000.0, float(st_c["x"]), float(st_c["z"])])
+								spikes_c.append("%.0f ms at (%.0f, %.0f) t %d" % [float(now_c - last_c) / 1000.0, float(st_c["x"]), float(st_c["z"]), Time.get_ticks_msec()])
 							last_c = now_c
 							var dt_c := get_process_delta_time()
 							game_c += dt_c
@@ -1909,7 +1909,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							_lines.append("SCAN z %6.1f |%s" % [z_s, "".join(row)])
 							z_s += step_s
 			elif words.size() > 1 and words[1] == "builds":  # "!isle builds": ms of each island's last full build, cumulative: model load, instance, list read, ground + props, water (sea step 13g)
-				_lines.append("ISLE BUILDS %s" % str(sea_isle.get("islands").get("build_ms")))
+				_lines.append("ISLE BUILDS %s | retired %s | events %s" % [str(sea_isle.get("islands").get("build_ms")), str(sea_isle.get("islands").get("retired")), str(sea_isle.get("islands").get("events"))])
 			elif words.size() > 3 and words[1] == "view":  # "!isle view <island> <place n> [m] [compass deg]": (sea step 13g look pictures) on the ground that far from that set piece (default 18 m, toward the landing), facing it
 				for island_v: Dictionary in sea_isle.get("islands").get("_cfg")["islands"]:
 					if String(island_v["id"]) == words[2] and island_v.has("props"):

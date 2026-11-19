@@ -94,15 +94,12 @@ func _place_people(delta: float) -> void:
 		var at := Vector2(float(q["at"][0]), float(q["at"][1]))
 		var want := not rules.done(id) and at.distance_to(Vector2(me.x, me.z)) < float(rules.cfg["show_m"])
 		var p: Dictionary = _people.get(id, {})
-		if not want:
-			if not p.is_empty():
-				(p["node"] as Node3D).visible = false
-			continue
-		if p.is_empty():
+		if p.is_empty() and not rules.done(id):  # (sea step 13g) everyone is built on the first call, while the sea loads, and kept hidden till near: no hitch on the way
 			var look: Array = q["look"]
 			var node := NpcBody.build({"gender": String(look[1]), "height": 1.0, "weight": 1.0, "bust": 0.3, "glutes": 0.3, "skin": hash(id) % 6, "hair": String(look[2]),
 				"hair_color": ["#2b1d14", "#553322", "#8a5a2b", "#c9a26b", "#1a1a1a"][hash(id + "h") % 5], "face": "gentle_smile", "outfit": String(look[0])})
 			add_child(node)
+			node.visible = false
 			var plate := Label3D.new()
 			plate.text = "%s\n(quest)" % rules.word(id, "person")
 			plate.font_size = 30
@@ -113,6 +110,10 @@ func _place_people(delta: float) -> void:
 			node.add_child(plate)
 			p = {"node": node, "y": 0.0, "ray_t": 0.0}
 			_people[id] = p
+		if not want:
+			if not p.is_empty():
+				(p["node"] as Node3D).visible = false
+			continue
 		var body: Node3D = p["node"]
 		body.visible = true
 		p["ray_t"] = float(p["ray_t"]) - delta
