@@ -56,9 +56,9 @@ func setup(sea: Node3D, player: CharacterBody3D) -> void:
 		spaces[id] = d
 		if not cfg["dungeons"][id].has("entrance"):
 			continue  # (an outdoor court has no gate)
-		var gate := SeaDungeon.piece("dk_gate")
-		gate.visible = false
 		var e: Dictionary = cfg["dungeons"][id]["entrance"]
+		var gate: Node3D = Node3D.new() if String(e.get("gate", "")) == "none" else SeaDungeon.piece("dk_gate")  # (sea step 13c: a way in through a set piece of the island, no gate of its own)
+		gate.visible = false
 		gate.rotation.y = deg_to_rad(float(e["yaw"]))
 		add_child(gate)
 		gates[id] = {"node": gate, "ground": NAN}
@@ -280,6 +280,8 @@ func _place_gates(here: Vector3) -> void:
 		var e: Dictionary = cfg["dungeons"][id]["entrance"]
 		var node: Node3D = g["node"]
 		var near := Vector2(here.x, here.z).distance_to(Vector2(float(e["at"][0]), float(e["at"][1]))) < 250.0
+		if e.has("ground") and is_nan(float(g["ground"])):  # (sea step 13c) a way in under a set piece's roof (a cave): its floor height is given
+			g["ground"] = float(e["ground"])
 		if near and is_nan(float(g["ground"])):
 			var from: Vector3 = _sea.call("world_of", Vector3(float(e["at"][0]), 300.0, float(e["at"][1])))
 			var q := PhysicsRayQueryParameters3D.create(from, from + Vector3(0.0, -400.0, 0.0), 1)

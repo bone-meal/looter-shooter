@@ -1313,6 +1313,336 @@
      "on": "H"
     }
    }
+  },
+  "salt_cellars": {
+   "name": "The Salt Cellars",
+   "region": 1,
+   "slot": 8,
+   "_about": "Sea step 13c (diary/DESIGN_REGION1.md): Saltpan Key's mini-dungeon under the ruined salt works (its cellar stair; gate none). The drowned in the brine hall, a salt block onto a plate, the brine lever floats the raft over the vat channel to the key, the key opens the boiling vault (a fight) and the strongroom behind it. Layout mine.",
+   "entrance": {
+    "at": [
+     -2147.4,
+     4337.6
+    ],
+    "yaw": 0.0,
+    "gate": "none"
+   },
+   "wall_h": 4.5,
+   "torch_every": 4,
+   "dress": {
+    "floor_worn": 0.3,
+    "floor_mosaic": 0.0,
+    "wall_crusted": 0.3,
+    "wall_relief": 0.0,
+    "clutter": 0.3,
+    "seed": 21
+   },
+   "legend": {
+    "S": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "a": {
+     "kind": "door",
+     "name": "door_stair",
+     "open": "free"
+    },
+    "F": {
+     "kind": "fight",
+     "name": "fight_brine_hall",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       13,
+       2
+      ],
+      [
+       13,
+       5
+      ],
+      [
+       14,
+       4
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The brine settles. Something gives way to the east"
+    },
+    "b": {
+     "kind": "door",
+     "name": "door_brine_hall",
+     "open": "clear",
+     "fight": "F"
+    },
+    "B": {
+     "kind": "block",
+     "name": "salt_block"
+    },
+    "P": {
+     "kind": "plate",
+     "name": "plate_salt"
+    },
+    "c": {
+     "kind": "door",
+     "name": "door_vats",
+     "open": "plates",
+     "plates": [
+      "P"
+     ],
+     "latch": true
+    },
+    "K": {
+     "kind": "chest",
+     "name": "chest_blocks",
+     "loot": "dungeon_small"
+    },
+    "L": {
+     "kind": "lever",
+     "name": "brine_lever",
+     "tide": true
+    },
+    "k": {
+     "kind": "key",
+     "name": "key_vats"
+    },
+    "d": {
+     "kind": "door",
+     "name": "door_boiling",
+     "open": "key"
+    },
+    "G": {
+     "kind": "fight",
+     "name": "fight_boiling",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       13,
+       9
+      ],
+      [
+       13,
+       12
+      ],
+      [
+       9,
+       12
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "temple_guard"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "temple_guard"
+      ]
+     ],
+     "notice": "The vault falls quiet. The strongroom door swings loose"
+    },
+    "e": {
+     "kind": "door",
+     "name": "door_strongroom",
+     "open": "clear",
+     "fight": "G"
+    },
+    "M": {
+     "kind": "chest",
+     "name": "chest_strongroom",
+     "loot": "dungeon_big"
+    }
+   },
+   "map": [
+    "#############################",
+    "#.....#.........#.......#...#",
+    "#..S..#.........#..P....#...#",
+    "#.....a....F....b.......c...#",
+    "#.X...#.........#..B....#L..#",
+    "#######.........#....K..#...#",
+    "#######.........#.......#=_=#",
+    "###########d#############=_=#",
+    "#######.........#########=_=#",
+    "#.....#.........#########...#",
+    "#.....#....G....#########...#",
+    "#..M..e.........#########...#",
+    "#.....#.........#########.k.#",
+    "#.....#.........#########...#",
+    "#############################"
+   ]
+  },
+  "smugglers_grotto": {
+   "name": "Smuggler's Grotto",
+   "region": 1,
+   "slot": 9,
+   "_about": "Sea step 13c (diary/DESIGN_REGION1.md): Smuggler's Hook's mini-dungeon behind the sea cave (gate none). The smugglers hold the landing by their boat channel, a ledge chest for the Grapple Hook, the sluice-room lever opens the lookout with the stash key, the captain guards the stash. Layout mine. entrance ground = the cave floor (a ray from above would find the cave roof).",
+   "entrance": {
+    "at": [
+     -2366.2,
+     7573.8
+    ],
+    "yaw": 45.0,
+    "gate": "none",
+    "ground": 1.4
+   },
+   "wall_h": 4.5,
+   "torch_every": 3,
+   "dress": {
+    "floor_worn": 0.3,
+    "floor_mosaic": 0.0,
+    "wall_crusted": 0.3,
+    "wall_relief": 0.0,
+    "clutter": 0.3,
+    "seed": 23
+   },
+   "legend": {
+    "S": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "a": {
+     "kind": "door",
+     "name": "door_crack",
+     "open": "free"
+    },
+    "F": {
+     "kind": "fight",
+     "name": "fight_landing",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       11,
+       5
+      ],
+      [
+       12,
+       10
+      ],
+      [
+       10,
+       11
+      ]
+     ],
+     "waves": [
+      [
+       "pirate_cutlass",
+       "pirate_cutlass"
+      ],
+      [
+       "pirate_musket",
+       "pirate_cutlass"
+      ]
+     ],
+     "notice": "The landing is yours. Their sluice room lies beyond"
+    },
+    "R": {
+     "kind": "ring",
+     "name": "ring_ledge",
+     "on": "H"
+    },
+    "N": {
+     "kind": "chest",
+     "name": "chest_ledge",
+     "loot": "dungeon_small",
+     "on": "H"
+    },
+    "b": {
+     "kind": "door",
+     "name": "door_landing",
+     "open": "clear",
+     "fight": "F"
+    },
+    "L": {
+     "kind": "lever",
+     "name": "sluice_lever"
+    },
+    "c": {
+     "kind": "door",
+     "name": "door_lookout",
+     "open": "lever",
+     "lever": "L"
+    },
+    "k": {
+     "kind": "key",
+     "name": "key_stash"
+    },
+    "d": {
+     "kind": "door",
+     "name": "door_stash",
+     "open": "key"
+    },
+    "G": {
+     "kind": "fight",
+     "name": "fight_stash",
+     "reach_m": 9.0,
+     "spawns": [
+      [
+       22,
+       4
+      ],
+      [
+       25,
+       6
+      ],
+      [
+       22,
+       10
+      ]
+     ],
+     "waves": [
+      [
+       "pirate_captain",
+       "pirate_cutlass",
+       "pirate_cutlass"
+      ]
+     ],
+     "notice": "The captain falls. The stash is yours"
+    },
+    "K": {
+     "kind": "chest",
+     "name": "chest_stash",
+     "loot": "dungeon_big"
+    },
+    "T": {
+     "kind": "chest",
+     "name": "chest_captain",
+     "loot": "dungeon_small"
+    }
+   },
+   "map": [
+    "###########################",
+    "###############.....#######",
+    "#######==...HN#..k..#######",
+    "#######==...RH#.....#.....#",
+    "#######==.....###c###.....#",
+    "#.....#==.....#.....#..G..#",
+    "#.....#==.....#.....#.....#",
+    "#..S..a.......b..L..d...K.#",
+    "#.....#==..F..#.....#.....#",
+    "#.X...#==.....#.....#.....#",
+    "#######==.....#######...T.#",
+    "#######==.....#######.....#",
+    "#######==.....#############",
+    "###########################"
+   ]
   }
  },
  "tide_hurt": {

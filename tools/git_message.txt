@@ -1,8 +1,9 @@
-Sea 13b: region 1's new islands
+Sea step 13c: region 1 mini-dungeons, the Salt Cellars and Smuggler's Grotto
 
-- Turtleback (a domed island with a fishing hamlet of stilt huts and drying racks, a path up to its crown), Saltpan Key (salt pans and the ruined salt works on a rise), Smuggler's Hook (a limestone ridge round a hidden cove with a beached wreck and a sea cave), Palm Ring Atoll (a palm ring round a lagoon, one gap to sail in by, a castaway's camp), and ten islets (rocks, sandbars, bird rocks, a small arch, a mast shoal).
-- New set pieces: stilt hut, drying rack, salt pans, salt works. Each island has its own ground colours and chart name; paths generated and route-checked; the three test islands are retired (moved to _to_delete).
-- Walked on the GTX 1080: every path to every place on the four islands reached its end; 6-8 ms frames.
+- data/sea/dungeons.json: salt_cellars (block and plate, tide lever, key door, vault fight) and smugglers_grotto (landing fight, ledge chest, sluice lever, key, captain's stash fight), entered from the salt works stair and the sea cave
+- game/sea_dungeons.gd: entrance gate none (no gate model) and entrance ground height for the prompt
+- tools/boot_cmd.txt: walkthrough of both, every door, chest, lever, key and exit checked on the PC
+- ARCHITECTURE.md line
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
