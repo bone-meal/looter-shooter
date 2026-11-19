@@ -388,6 +388,16 @@ func from_net(list: Array) -> void:
 			_missing[id] = _now()
 
 
+# The old host left (sea step 12): the sharks it showed slip away (new ones come for swimmers as ever).
+func adopt_as_host() -> int:
+	var n := sharks.size()
+	for id: int in sharks.keys():
+		_remove(id)
+	_pending.clear()
+	_missing.clear()
+	return n
+
+
 func _send_hits() -> void:
 	if _pending.is_empty():
 		return

@@ -230,6 +230,14 @@ func _remove(id: int) -> void:
 		enemy.queue_free()
 
 
+# The old host left (sea step 12): the creatures it showed slip away (their fires burn out).
+func adopt_as_host() -> int:
+	var n := beasts.size()
+	for id: int in beasts.keys():
+		_remove(id)
+	return n
+
+
 # --- every frame ---
 
 func _process(delta: float) -> void:

@@ -1,11 +1,10 @@
-Sea 11: the crossing to the sea, sailing back, NEW GAME+
+Sea 12a: host migration at sea (carry on and save a copy)
 
-Director picked the fog-bank handoff, every winning run, sailing back starts a fresh run, NG+ built now and locked till the Vault.
-- Island quest done: a flagged U-boat surfaces beyond Gull Rock and dives into a fog bank; the boat that follows it in crosses.
-- Everyone's run is won; those aboard come out on the fleet's first ship in sea region 1, thick fog thinning, the island painted behind and fading.
-- The hub's sea painting opens after the first crossing; the home fog at region 1's south edge sails you back to Wreck Cay for a fresh run.
-- NEW GAME+ lectern in the hub (opens after the Vault): each level adds 10 item levels to sea enemies and sea loot (loot capped) and luck on sea gun rolls; host's world, sent to guests.
-- Dev !cross and !ng, pair set cross. Tested solo and paired on the GTX 1080.
+Director: when the host leaves, the new host carries the sea world on and keeps it in his own save.
+- The sea stands still while the session finds its new host.
+- The new host takes over: ships sail on from where they were, pirate crews become real and fight on, struck ships stay struck, floating cargo is handed out by him; creatures in sight slip away; dungeon fights restart when a player comes near; a boss fight begins again at full strength with the offering kept and downed players up.
+- The new host saves that world as his own from then on.
+- Dev !net leave / wait_host / mig, pair set migrate: tested on the GTX 1080 (host left mid-boarding, the guest fought the boarders off and got the plunder).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -168,7 +168,7 @@ func _process(delta: float) -> void:
 	if _gate_t <= 0.0:
 		_gate_t = 1.0
 		_place_gates(here)
-	if _host():
+	if _host() and not bool(_sea.get("frozen")):  # (sea step 12: not while a new host is found)
 		_press_t -= delta
 		if _press_t <= 0.0:
 			_press_t = 0.25
@@ -674,6 +674,22 @@ func _spawn_wave(id: String, ch: String) -> void:
 
 
 # Host: a fight's foes taken away and it set back (everyone left, or the dungeon reset).
+# The old host left (sea step 12): fights going on start again when a player comes near (their foes went with the host).
+func adopt_as_host() -> int:
+	var n := 0
+	for id: String in spaces:
+		var d: SeaDungeon = spaces[id]
+		var r := d.rules
+		for ch: String in (r.state["active"] as Dictionary).keys():
+			if bool(r.things[ch].get("boss", false)):
+				continue
+			r.reset_fight(ch)
+			n += 1
+	_fights.clear()
+	_dirty = true
+	return n
+
+
 func drop_fight(id: String, ch: String) -> void:
 	_crews().call("dungeon_clear", _fights.get(id + ":" + ch, []))
 	_fights.erase(id + ":" + ch)

@@ -417,6 +417,13 @@ func from_net(got: Array) -> void:
 			torps.append({"x": float(t[0]), "z": float(t[1]), "yaw": float(t[2])})
 
 
+# The old host left (sea step 12): a U-boat in sight is simply gone (it never stays long).
+func adopt_as_host() -> void:
+	sub = {}
+	torps.clear()
+	_last_seen = _now()
+
+
 func status() -> String:
 	var where := ""
 	if not sub.is_empty():

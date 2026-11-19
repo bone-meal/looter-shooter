@@ -329,6 +329,22 @@ func _follow_host(ship: SeaShip, delta: float) -> void:
 	ship.state["yaw"] = lerp_angle(yaw, float(h["yaw"]), k)
 
 
+# The old host left and this machine hosts now (sea step 12, LOCKED: carry on): each ship goes on from where the host
+# last put her; the helms are the new session's (ours kept, the others take the wheel again).
+func adopt_as_host() -> void:
+	for ship: SeaShip in ships:
+		if ship.has_meta("host"):
+			var h: Dictionary = ship.get_meta("host")
+			ship.state["x"] = float(h["x"])
+			ship.state["z"] = float(h["z"])
+			ship.state["yaw"] = float(h["yaw"])
+			ship.remove_meta("host")
+	_helmsmen.clear()
+	_asked = null
+	if helm_ship != null:
+		_helmsmen[helm_ship] = {"id": _my_id(), "level": sailing_level()}
+
+
 # Host: who steers which ship (0 = nobody).
 func helmsman_of(ship: SeaShip) -> int:
 	return int((_helmsmen.get(ship, {}) as Dictionary).get("id", 0))

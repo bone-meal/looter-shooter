@@ -556,6 +556,23 @@ func _clear_boss() -> void:
 	downs.clear()
 
 
+# The old host left mid-fight and this machine hosts now (sea step 12): the boss pulls back to full strength and comes
+# again for whoever is in the arena; the offering is NOT spent (the door stays open); the downs are forgiven.
+func adopt_as_host() -> bool:
+	if state != "wait" and state != "fight":
+		return false
+	var id := boss_id
+	_crews().call("dungeon_clear", _adds)
+	_adds.clear()
+	_set_tide(-1)
+	_clear_boss()
+	rules.downs.clear()
+	open[id] = true
+	(_dungeons as Node).set("_dirty", true)
+	last = "%s: host changed, fight begins again" % id
+	return true
+
+
 # On every machine: the fight ended for the players in that arena.
 func ended(id: String, how: String) -> void:
 	var b := boss_cfg(id)

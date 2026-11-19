@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!immortal;!go sea;!wait 10;!sea time 0.42;!sea weather calm;!foe pause;!town set tavern 3;!ship tospot 0;!wait 1;!ship board;!ship anchor up;!ship helm;!ship stage 2;!wait 20;!foe spawn pirate_brig 60 90;!wait 2;!foe alongside 13;!wait 1;!foe board;!foe wait_board;!wait 4;!net mig h_before;!foe status h_before;!net leave;!wait 40

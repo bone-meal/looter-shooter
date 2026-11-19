@@ -160,9 +160,13 @@ func sync_clock(host_seconds: float) -> void:
 		_clock_extra += off
 
 
-# Does the sea run on this machine: the player is in it, or (the host) another player is.
+# Does the sea run on this machine: the player is in it, or (the host) another player is. Never while the session
+# looks for a new host (sea step 12: nobody's copy runs the world on its own meanwhile; the new host carries it on).
+var frozen := false
+
+
 func running() -> bool:
-	return inside or someone_else_here
+	return (inside or someone_else_here) and not frozen
 
 
 # --- going in and out ---

@@ -786,6 +786,35 @@ func to_net() -> Array:
 	return out
 
 
+# The old host left and this machine hosts now (sea step 12): the crews it showed fight on as real men where they stand
+# (a struck ship stays struck); men in dungeon fights go (those fights start again when a player comes near).
+func adopt_as_host() -> void:
+	for id: int in men.keys():
+		var enemy: Node3D = men[id]["enemy"]
+		if not is_instance_valid(enemy):
+			men.erase(id)
+			continue
+		if men[id].has("dungeon"):
+			director.call("forget", enemy)
+			enemy.queue_free()
+			men.erase(id)
+			continue
+		enemy.set("puppet", false)
+		if enemy.has_meta("host_pays"):
+			enemy.remove_meta("host_pays")
+		if not enemy.is_connected("attacked", _on_attacked.bind(id)):
+			enemy.connect("attacked", _on_attacked.bind(id))
+		enemy.set("aim_fix", _lead)
+		if not men[id].has("swim"):
+			enemy.set_physics_process(true)
+		_next_id = maxi(_next_id, id + 1)
+	_pending.clear()
+	_missing.clear()
+	for ship: Node3D in _foes():
+		if bool(ship.get("state").get("struck", false)):
+			struck[ship] = true
+
+
 # Host: send this tick? (the crews, and one empty list after the last is gone)
 func should_send() -> bool:
 	if not men.is_empty():

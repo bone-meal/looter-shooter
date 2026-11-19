@@ -148,6 +148,13 @@ func _remove() -> void:
 	mode = ""
 
 
+# The old host left (sea step 12): the wyrm it showed sinks away.
+func adopt_as_host() -> int:
+	var had := 1 if is_instance_valid(wyrm) else 0
+	_remove()
+	return had
+
+
 # --- the host's wyrm ---
 
 func _process(delta: float) -> void:

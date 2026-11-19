@@ -422,6 +422,7 @@ func _migrate() -> void:
 	if _client == null or _migrating:
 		return
 	_migrating = true
+	_freeze_sea(true)
 	var old_session := session_id
 	var me := _my_peer
 	var charset := String(_client.context.get("session_id_characters_set"))
@@ -450,10 +451,20 @@ func _migrate() -> void:
 			_migrating = false
 			session_id = wanted
 			_boss.after_migration()
+			sea.after_migration()
+			_freeze_sea(false)
 			return
 		_drop_client()
+	_freeze_sea(false)
 	failed.emit("The host left and the session could not be recovered.")
 	leave("The host left.")
+
+
+# The sea world stands still while a new host is found (sea step 12).
+func _freeze_sea(on: bool) -> void:
+	var sea_node := get_tree().get_first_node_in_group("sea_world")
+	if sea_node != null:
+		sea_node.set("frozen", on)
 
 
 func _next_session_id(old: String, attempt: int, charset: String) -> String:
@@ -483,6 +494,7 @@ func _become_host(wanted: String) -> bool:
 		_boss.adopt_as_host()
 		fantasy.adopt_as_host()
 		rounds.adopt_as_host()
+		sea.adopt_as_host()
 	return _mig_ok
 
 

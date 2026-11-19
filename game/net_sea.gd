@@ -19,6 +19,7 @@ const MAX_SHIPS := 24  # the world fleet's cap (a client cannot flood the host w
 const TOWN_EVERY := 2.0  # s between the host's town levels (a joiner's town catches up within this)
 const TOWN_REACH := 40.0  # m: how near the town a player must be for the host to take his upgrade
 
+const SeaGhosts = preload("res://game/sea_ghosts.gd")
 var net: Node3D
 var heard := 0  # fleet packets received (dev)
 var sent := 0
@@ -27,6 +28,9 @@ var _send_t := 0.0
 var _town_t := 0.0
 var _input_t := 0.0
 var _rope_n := 0
+
+
+var adopted := 0  # dev / checks: times this machine took the sea over from a host who left
 
 
 func _ready() -> void:
@@ -57,6 +61,48 @@ func _town() -> Node:
 func _fleet() -> Node:
 	var sea := _sea()
 	return sea.get("ships") if sea != null else null
+
+
+# --- host migration (sea step 12, LOCKED: carry on and save a copy) ---
+
+# This machine is the new host: the sea it was shown goes on as its own world (game_session saves it from now on, as a
+# host's): ships from where they were, pirate crews fight on, flotsam is handed out here; creatures in sight slip away,
+# dungeon fights and a boss fight begin again (the offering kept).
+func adopt_as_host() -> void:
+	var sea := _sea()
+	if sea == null:
+		return
+	var fleet: Node = sea.get("ships")
+	fleet.call("adopt_as_host")
+	var foes: Node = fleet.get("foes")
+	(foes.get("crews") as Node).call("adopt_as_host")
+	for ship: Node3D in fleet.get("ships"):
+		var st: Dictionary = ship.get("state")
+		if st.has("foe") and SeaGhosts.is_ghost(ship, (foes.get("rules") as RefCounted).get("cfg")["kinds"]):
+			(foes.get("ghosts") as Node).call("begin", ship)
+	var gone := int((foes.get("sharks") as Node).call("adopt_as_host")) + int((foes.get("serpent") as Node).call("adopt_as_host")) + int((foes.get("beasts") as Node).call("adopt_as_host"))
+	(foes.get("uboat") as Node).call("adopt_as_host")
+	(foes.get("flotsam") as Node).call("adopt_as_host")
+	var dungeons: Node = sea.get("dungeons")
+	dungeons.call("adopt_as_host")
+	var boss_again: bool = (dungeons.get("boss") as Node).call("adopt_as_host")
+	adopted += 1
+	if gone > 0:
+		sea.emit_signal("notice", "The host is gone: you hold the sea now. The creatures about slip away in the confusion.")
+	else:
+		sea.emit_signal("notice", "The host is gone: you hold the sea now (it is kept in your save from here on).")
+	if boss_again:
+		sea.emit_signal("notice", "The boss pulls back: it comes again at full strength (your offering is not spent).")
+	var session := get_tree().get_first_node_in_group("game_session")
+	if session != null:
+		session.call("save_profile")  # the copy of the world is ours from now on (LOCKED)
+
+
+# Every machine, once the session is back: a player lying downed in a boss fight that began again gets up.
+func after_migration() -> void:
+	var session := get_tree().get_first_node_in_group("game_session")
+	if session != null and session.has_method("boss_reset_after_migration"):
+		session.call("boss_reset_after_migration")
 
 
 func _process(delta: float) -> void:

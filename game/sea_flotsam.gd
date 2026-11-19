@@ -236,6 +236,13 @@ func from_net(list: Array) -> void:
 			remove_piece(id)
 
 
+# The old host left (sea step 12): the pieces it showed are ours to hand out now.
+func adopt_as_host() -> void:
+	for id: int in pieces:
+		_next_id = maxi(_next_id, id + 1)
+	_asked.clear()
+
+
 # Host: may this player have that piece (it is still here, he is near it)? Takes it away.
 func host_give(id: int, at: Vector3) -> bool:
 	if not pieces.has(id):

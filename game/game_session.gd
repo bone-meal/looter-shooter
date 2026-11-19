@@ -2442,6 +2442,14 @@ func _on_player_died() -> void:
 			_watch_next()
 
 
+# --- sea step 12: a new host after the old one left ---
+
+# A boss fight that began again after the host left: whoever lay downed or out in it is up again.
+func boss_reset_after_migration() -> void:
+	if _boss_down or _out:
+		boss_over(false)
+
+
 # --- sea step 11: THE CROSSING (LOCKED: fog-bank handoff, every winning run, sailing back starts a fresh run, NG+) ---
 
 func _run_crossing(delta: float) -> void:

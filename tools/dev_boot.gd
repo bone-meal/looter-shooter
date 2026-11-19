@@ -2119,6 +2119,34 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					if id != int(link.call("my_id")) and body != null:
 						player.call("teleport", body.global_position + Vector3(0, 0.2, 1.0), 0.0)
 						break
+			if words.size() > 1 and words[1] == "leave":  # "!net leave": this player quits the session (a host leaving: the others migrate)
+				link.call("leave", "")
+				return
+			if words.size() > 1 and words[1] == "wait_host":  # "!net wait_host [s]": wait until this machine hosts (after a migration)
+				var began_h := Time.get_ticks_msec()
+				while not (bool(link.call("is_host")) and bool(link.call("can_send")) and not bool(link.call("is_migrating"))) and Time.get_ticks_msec() - began_h < (int(words[2]) if words.size() > 2 else 60) * 1000:
+					await get_tree().create_timer(0.5, true, false, true).timeout
+			if words.size() > 1 and words[1] == "mig":  # "!net mig <note>": the sea as this machine holds it (sea step 12 migration checks)
+				var sea_m: Node = session.call("sea")
+				var fleet_m: Node = sea_m.get("ships") if sea_m != null else null
+				var line_m := "no sea"
+				if fleet_m != null:
+					var foes_m: Node = fleet_m.get("foes")
+					var men_m: Dictionary = (foes_m.get("crews") as Node).get("men")
+					var puppets := 0
+					for mid: int in men_m:
+						if is_instance_valid(men_m[mid]["enemy"]) and bool((men_m[mid]["enemy"] as Node).get("puppet")):
+							puppets += 1
+					var ships_m: Array = fleet_m.get("ships")
+					var foe_n := 0
+					for sh: Node3D in ships_m:
+						if (sh.get("state") as Dictionary).has("foe"):
+							foe_n += 1
+					var s0: Dictionary = (ships_m[0] as Node3D).get("state") if not ships_m.is_empty() else {}
+					line_m = "ships %d (foes %d), ship 0 at %.0f %.0f speed %.1f hull %.0f, crews %d (puppets %d), flotsam %d, adopted %d, frozen %s, town %s" % [ships_m.size(), foe_n, float(s0.get("x", 0.0)), float(s0.get("z", 0.0)), float(s0.get("speed", 0.0)), float(s0.get("hull", 0.0)),
+						men_m.size(), puppets, ((foes_m.get("flotsam") as Node).get("pieces") as Dictionary).size(), int(link.get("sea").get("adopted")), str(sea_m.get("frozen")), str((sea_m.get("town") as Node).call("world_dict").get("levels", "?"))]
+				_lines.append("MIG %s: host %s, migrating %s, my id %d, roster %s | %s" % [" ".join(words.slice(2)), str(link.call("is_host")), str(link.call("is_migrating")), int(link.call("my_id")), str((link.get("roster") as Dictionary).keys()), line_m])
+				return
 			if words.size() > 1 and words[1] == "wait_guest":
 				var began := Time.get_ticks_msec()
 				while (link.get("roster") as Dictionary).size() < 2 and Time.get_ticks_msec() - began < 120000:

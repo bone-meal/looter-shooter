@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 18;!go sea;!wait 10;!foe pause;!wait 10;!ship board;!wait 2;!foe wait_board;!wait 4;!net mig g_before;!net wait_host 60;!wait 2;!net mig g_after;!foe status g_after;!snap g_after;!wait 10;!net mig g_10s;!foe status g_10s;!foe crew;!foe kill boarders;!wait 4;!foe status g_repelled;!net mig g_end
