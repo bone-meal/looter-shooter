@@ -17,6 +17,7 @@ extends Node3D
 
 const SeaDungeon = preload("res://game/sea_dungeon.gd")
 const SeaBoss = preload("res://game/sea_boss.gd")
+const Threat = preload("res://core/sea/threat_rules.gd")
 
 var cfg: Dictionary
 var spaces := {}  # id -> SeaDungeon
@@ -709,6 +710,7 @@ func world_dict() -> Dictionary:
 	for id: String in spaces:
 		out[id] = (spaces[id] as SeaDungeon).rules.to_dict()
 	out["_boss"] = boss.world_dict()  # (sea step 10) offerings laid, bosses beaten
+	out["_ng"] = Threat.ng  # (sea step 11) the host's world's NEW GAME+ count
 	return out
 
 
@@ -734,6 +736,7 @@ func load_world(saved: Variant) -> void:
 			(spaces[id] as SeaDungeon).rules.state["active"] = {}  # (nobody is in it now: a fight left going starts again)
 			(spaces[id] as SeaDungeon).refresh(true)
 	boss.load_world((saved as Dictionary).get("_boss"))
+	Threat.ng = clampi(int((saved as Dictionary).get("_ng", 0)), 0, 99) if ((saved as Dictionary).get("_ng") is int or (saved as Dictionary).get("_ng") is float) else 0
 
 
 # Client: the host's states.
@@ -744,6 +747,8 @@ func from_net(states: Dictionary) -> void:
 			(spaces[id] as SeaDungeon).refresh(false)
 	if states.get("_boss") is Dictionary:  # (the doors' offerings: what [F] at a sealed door says)
 		boss.load_world(states["_boss"])
+	if states.get("_ng") is int or states.get("_ng") is float:  # (the host's NG+: our own loot rolls follow it)
+		Threat.ng = clampi(int(states["_ng"]), 0, 99)
 
 
 func status() -> String:

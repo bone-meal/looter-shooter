@@ -169,6 +169,11 @@ func running() -> bool:
 
 # Where a new arrival stands (the home-port town): a scene position. slot = the player's place in the party (0 = the
 # centre), so players arriving together stand apart on a ring of "spawn_spread" metres instead of inside each other.
+# (sea step 11) Something placed in sea coordinates (the crossing's backdrop, the home fog bank): it rides the floating origin.
+func add_to_sea(node: Node3D) -> void:
+	_root.add_child(node)
+
+
 func spawn_world(slot: int = 0) -> Vector3:
 	var at: Array = _island_cfg["spawn"]
 	var spot := Vector3(float(at[0]), 30.0, float(at[1]))

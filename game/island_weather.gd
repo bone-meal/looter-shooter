@@ -53,6 +53,8 @@ var _photo := false  # the look has the photo sky: the weather tints it; a plain
 # The look's own values, remembered each time the look is applied.
 var _base_fog_on := false
 var _clear := 1.0  # share of the weather's fog left (Keeper's Lantern near the camera: less)
+var _bank := 0.0  # (sea step 11) how deep in the crossing's fog bank the camera is (game/crossing.gd): 0..1
+const BANK_DENSITY := 0.09  # fog added deep in the bank
 var _weather_density := 0.0  # the weather's own fog last written
 var _base_density := 0.0
 var _base_fog_color := Color.WHITE
@@ -199,8 +201,8 @@ func _apply(last_step: bool) -> void:
 	var density := float(_shown["density"])
 	var cover := float(_shown["sky_cover"])
 	var dim := float(_shown["sun"])
-	_env.fog_enabled = _base_fog_on or density > 0.0
-	_env.fog_density = _base_density + density * _clear
+	_env.fog_enabled = _base_fog_on or density > 0.0 or _bank > 0.0
+	_env.fog_density = _base_density + density * _clear + _bank * _bank * BANK_DENSITY
 	_weather_density = density
 	_env.fog_light_color = _base_fog_color.lerp(_shown["fog_color"], weight)
 	_env.fog_sky_affect = lerpf(_base_sky_affect, 1.0, cover)
@@ -265,7 +267,16 @@ func set_clear(left: float) -> void:
 	if is_equal_approx(left, _clear) or _env == null:
 		return
 	_clear = left
-	_env.fog_density = _base_density + _weather_density * _clear
+	_env.fog_density = _base_density + _weather_density * _clear + _bank * _bank * BANK_DENSITY
+
+
+# The crossing's fog bank (sea step 11): 0 = far from it .. 1 = in it.
+func set_bank(amount: float) -> void:
+	if is_equal_approx(amount, _bank) or _env == null:
+		return
+	_bank = amount
+	_env.fog_enabled = _base_fog_on or _weather_density > 0.0 or _bank > 0.0
+	_env.fog_density = _base_density + _weather_density * _clear + _bank * _bank * BANK_DENSITY
 
 
 # The wind now, 0..1 (Weathervane, Kite Flyer): the stage's "wind" in data/island_weather.json (wind_off_islands

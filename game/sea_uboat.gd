@@ -340,13 +340,21 @@ func _draw(delta: float) -> void:
 
 
 func _make_model() -> void:
-	if ResourceLoader.exists(MODEL):
-		_model = (load(MODEL) as PackedScene).instantiate() as Node3D
-	else:
-		_model = MeshInstance3D.new()
-		(_model as MeshInstance3D).mesh = CapsuleMesh.new()
+	_model = model_with_flag()
 	add_child(_model)
-	var panel := _model.find_child("Flag", true, false) as Node3D
+	_wake = FxKit.particles(Color(0.95, 0.98, 1.0, 0.9), 40, 2.2, 0.8, 1.6, 25.0, -2.0, false, false)  # (not additive: white on bright water)
+	add_child(_wake)
+
+
+# The U-boat model with its checkerboard G flag flying (also the crossing's, game/crossing.gd).
+static func model_with_flag() -> Node3D:
+	var model: Node3D
+	if ResourceLoader.exists(MODEL):
+		model = (load(MODEL) as PackedScene).instantiate() as Node3D
+	else:
+		model = MeshInstance3D.new()
+		(model as MeshInstance3D).mesh = CapsuleMesh.new()
+	var panel := model.find_child("Flag", true, false) as Node3D
 	if panel != null:  # the checkerboard G on its flag
 		if panel is MeshInstance3D:  # (the white panel only marks the spot)
 			(panel as MeshInstance3D).mesh = null
@@ -361,8 +369,7 @@ func _make_model() -> void:
 		flag.material_override = mat
 		flag.rotation.y = PI * 0.5  # (flies aft of the staff: +z)
 		panel.add_child(flag)
-	_wake = FxKit.particles(Color(0.95, 0.98, 1.0, 0.9), 40, 2.2, 0.8, 1.6, 25.0, -2.0, false, false)  # (not additive: white on bright water)
-	add_child(_wake)
+	return model
 
 
 # --- online ---

@@ -16,9 +16,37 @@ static func region_level(threat: Dictionary, region_n: int) -> int:
 	return ItemLevel.region_band(clampi(region_n, 1, 7)).x + int(threat["area_offset"])
 
 
-# Enemy damage (and health) at sea, x region 1's.
+# NEW GAME+ (sea step 11, LOCKED: built now, opened after the Vault): the host's world's NG+ count, and what each adds
+# (data/crossing.json "ng": item levels on every sea enemy and sea loot, luck on sea loot's gun tiers).
+static var ng := 0
+static var _ng_cfg := {}
+
+
+static func ng_cfg() -> Dictionary:
+	if _ng_cfg.is_empty():
+		_ng_cfg = (JSON.parse_string(FileAccess.get_file_as_string("res://data/crossing.json")) as Dictionary)["ng"]
+	return _ng_cfg
+
+
+# Item levels NG+ adds now.
+static func ng_levels() -> int:
+	return ng * int(ng_cfg()["item_levels"])
+
+
+# Luck NG+ adds to sea loot's gun tier rolls (core/gun_gen.gd generate's luck; core/loot_pool.gd x (1 + this)).
+static func ng_luck() -> float:
+	return float(ng) * float(ng_cfg()["luck_per"])
+
+
+# A sea loot level with NG+ on top (never above the game's highest item level).
+static func loot_level(lvl: int) -> int:
+	return mini(lvl + ng_levels(), ItemLevel.max_level())
+
+
+# Enemy damage (and health) at sea, x region 1's. NG+ levels count past the game's highest item level here (enemies only).
 static func player_mult(threat: Dictionary, region_n: int) -> float:
-	return ItemLevel.damage_mult(region_level(threat, region_n)) / ItemLevel.damage_mult(region_level(threat, 1))
+	var growth := float(ItemLevel.cfg()["damage_growth"])
+	return pow(growth, float(region_level(threat, region_n) + ng_levels() - 1)) / pow(growth, float(region_level(threat, 1) - 1))
 
 
 # Hull damage at sea, x the base ship's.

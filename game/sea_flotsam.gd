@@ -17,6 +17,7 @@ const GunGen = preload("res://core/gun_gen.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const ItemLevel = preload("res://core/item_level.gd")
 const LootPool = preload("res://core/loot_pool.gd")
+const Threat = preload("res://core/sea/threat_rules.gd")
 const EncounterRules = preload("res://core/sea/encounter_rules.gd")
 
 var rules: EncounterRules
@@ -189,9 +190,9 @@ func grant(loot_id: String, region_id: String) -> void:
 	if bool(got["gun"]):
 		var db: RefCounted = _player.get("gun_db")
 		var band := ItemLevel.region_band(EncounterRules.region_number(region_id))
-		var lvl := ItemLevel.roll(_rng, band.x, band.y)
-		var guns: Array = [GunGen.generate(db, _rng, 0.0, "", "", "", lvl)]
-		guns.append_array(LootPool.roll(db, _rng, "sea_world", lvl))  # the rare sea-world uniques
+		var lvl := Threat.loot_level(ItemLevel.roll(_rng, band.x, band.y))  # (sea step 11: NG+ adds levels and luck)
+		var guns: Array = [GunGen.generate(db, _rng, Threat.ng_luck(), "", "", "", lvl)]
+		guns.append_array(LootPool.roll(db, _rng, "sea_world", lvl, 1.0 + Threat.ng_luck()))  # the rare sea-world uniques
 		for gun: Dictionary in guns:
 			if (_player.get("inventory") as RefCounted).call("add_gun", gun):
 				said.append(GunStats.display_name(db, gun))

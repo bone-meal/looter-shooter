@@ -5,6 +5,7 @@
 # Dependencies: the running game (finds the player by its set_third_person method).
 extends Node
 
+const Threat = preload("res://core/sea/threat_rules.gd")
 const DeckWalkDev = preload("res://core/sea/deck_walk.gd")
 
 const ShortcutSpots = preload("res://core/shortcut_spots.gd")
@@ -2804,6 +2805,91 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_used.append("%s:%s" % [String(who.get("enemy_id")), String(((who.get("_stats") as Dictionary)["moves"] as Array)[index]["id"])]))
 			_lines.append("moves %s: %s" % [" ".join(words.slice(1)), ", ".join(_used)])
 			_used.clear()
+		"cross":  # sea step 11: !cross start | quest (host: the quest's last step done) | near (host: the boat 45 m short of the bank) | ready (boat built, me in its seat or asking for one) | sail (host: the boat into the fog bank) | painting | lectern (stand at the hub's sea painting / NG+ lectern) | back (host: our ship into the home fog) | wait_sea [s] | wait_island [s] | status <note>
+			var cr: Node = session.get("_crossing")
+			var ccfg_d: Dictionary = cr.get("cfg")
+			match words[1] if words.size() > 1 else "status":
+				"start":
+					cr.call("start")
+				"quest":  # (host) the island quest's last step finished the real way: everyone hears, the crossing starts
+					var qs: RefCounted = session.get("_quest")
+					qs.call("from_dict", {"step": (qs.call("steps") as Array).size() - 1})
+					session.call("_quest_advance")
+				"near":  # (host) the boat 45 m short of the fog bank, its bow toward it
+					var fog_n := Vector2(float(ccfg_d["fog_at"][0]), float(ccfg_d["fog_at"][1]))
+					var from_n := Vector2(float(ccfg_d["uboat_from"][0]), float(ccfg_d["uboat_from"][1]))
+					var dir_n := (fog_n - from_n).normalized()
+					var at_n := fog_n - dir_n * 45.0
+					(session.get("_boat") as RefCounted).call("place", at_n, atan2(-dir_n.x, -dir_n.y))
+				"ready":
+					var bs: RefCounted = session.get("_builds")
+					var bt := int(session.get("_boat_thing"))
+					if not bool(bs.call("built", bt)):
+						for part_n in int(bs.call("part_count", bt)):
+							bs.call("take", bt, part_n)
+						bs.call("build", bt)
+						session.call("_show_builds")
+						var link_b: Node = session.get("net")
+						if link_b != null and bool(link_b.call("can_send")):
+							(link_b.get("rounds") as Node).call("tell_build_state", int(bs.call("to_bits")))
+					player.call("teleport", session.call("boat_shore"), 0.0)
+					await get_tree().create_timer(0.5, true, false, true).timeout
+					session.call("_board_boat")
+					await get_tree().create_timer(1.0, true, false, true).timeout
+				"sail":
+					var boat_r: RefCounted = session.get("_boat")
+					var fog_at := Vector2(float(ccfg_d["fog_at"][0]), float(ccfg_d["fog_at"][1]))
+					boat_r.call("place", fog_at, 0.0)
+				"painting", "lectern":
+					var spot_c: Vector3 = session.get("_sea_painting" if words[1] == "painting" else "_ng_lectern")
+					player.call("teleport", spot_c + Vector3(1.6, 0.15, 0.0), 0.0)
+					await get_tree().create_timer(0.3, true, false, true).timeout
+					player.call("look_at_point", spot_c + Vector3(0, 1.2, 0))
+				"back":
+					var sea_c: Node = session.call("sea")
+					var ship_c: Node3D = (sea_c.get("ships") as Node).call("ship_aboard")
+					if ship_c == null:
+						_lines.append("CROSS back: not aboard a ship")
+					else:
+						var st_c: Dictionary = ship_c.get("state")
+						st_c["x"] = float(ccfg_d["back"]["at"][0])
+						st_c["z"] = float(ccfg_d["back"]["at"][1]) - float(ccfg_d["back"]["radius"]) * 0.5
+						st_c["speed"] = 0.0
+						await get_tree().create_timer(0.5, true, false, true).timeout
+						if bool(session.get("_in_sea")):  # (not already sailed back by the ship carrying us in)
+							player.call("teleport", ship_c.call("deck_spot", [0.0, -1.0], 0.4), float(st_c["yaw"]))
+				"wait_sea", "wait_island":
+					var want_sea := words[1] == "wait_sea"
+					var began_c := Time.get_ticks_msec()
+					while bool(session.get("_in_sea")) != want_sea and Time.get_ticks_msec() - began_c < (int(words[2]) if words.size() > 2 else 30) * 1000:
+						await get_tree().create_timer(0.25, true, false, true).timeout
+				_:
+					var sea_s: Node = session.call("sea")
+					var where_s := ""
+					if sea_s != null and bool(session.get("_in_sea")):
+						var loc: Vector3 = sea_s.call("local_of", player.global_position)
+						var ship_s: Node3D = (sea_s.get("ships") as Node).call("ship_aboard")
+						var bd: MeshInstance3D = session.get("_backdrop")
+						where_s = "sea at %.0f %.0f, aboard %s, fog x%.2f, backdrop %s" % [loc.x, loc.z, "ship" if ship_s != null else "nothing", float((sea_s.get("look") as RefCounted).get("crossing_fog")),
+							("alpha %.2f" % (bd.material_override as StandardMaterial3D).albedo_color.a) if bd != null and is_instance_valid(bd) else "none"]
+					else:
+						var me_c: Vector3 = player.global_position - Vector3(500, 0, 0)
+						where_s = "island at %.1f %.1f, weather fog %.3f" % [me_c.x, me_c.z, float(((session.get("_weather") as Node).get("_bank")))]
+					_lines.append("CROSS %s: %s | crossed %s, in sea %s, %s | quest step %d, boat built %s seats %s | NG+ %d" % [" ".join(words.slice(2)), String(cr.call("status")), str(session.get("_crossed")), str(session.get("_in_sea")), where_s,
+						int((session.get("_quest") as RefCounted).get("step")), str((session.get("_builds") as RefCounted).call("built", int(session.get("_boat_thing")))), str((session.get("_boat") as RefCounted).get("seats")), int(Threat.ng)] + " | island wins %d" % int((session.get("_stats") as RefCounted).call("total", "island_wins")))
+		"ng":  # sea step 11: !ng vault (the Vault counts as beaten here) | use (two [F]s at the lectern, wherever we stand) | set <n> | status <note>
+			match words[1] if words.size() > 1 else "status":
+				"vault":
+					session.set("_vault_beaten", true)
+				"use":
+					session.call("_ng_use")
+					session.call("_ng_use")
+				"set":
+					Threat.ng = int(words[2])
+				_:
+					var thr: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/encounters.json")) as Dictionary)["threat"]
+					_lines.append("NG %s: NG+ %d, vault %s, enemy mult region 1 %.2f region 2 %.2f, sea loot level 20 -> %d, 70 -> %d, luck %.2f | prompt '%s'" % [" ".join(words.slice(2)), Threat.ng, str(session.get("_vault_beaten")),
+						Threat.player_mult(thr, 1), Threat.player_mult(thr, 2), Threat.loot_level(20), Threat.loot_level(70), Threat.ng_luck(), String(session.call("_prompt"))])
 		"squad":  # fantasy world: every creature's order, how far it is and where it stands round the player (0 = dead ahead, 180 = behind)
 			var command: Node = session.call("fantasy").get("squads")
 			var ahead: Vector3 = player.call("view_forward")

@@ -66,6 +66,9 @@ const AdminCommands = preload("res://game/admin_commands.gd")
 const FantasyWorld = preload("res://game/fantasy_world.gd")
 const SeaWorld = preload("res://game/sea_world.gd")
 const BossBar = preload("res://game/boss_bar.gd")
+const Crossing = preload("res://game/crossing.gd")
+const FogBank = preload("res://game/fog_bank.gd")
+const Threat = preload("res://core/sea/threat_rules.gd")
 const TradeScreen = preload("res://game/trade_screen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
@@ -238,6 +241,16 @@ var _traps: TrapState
 var _trap_cfg: Dictionary  # data/traps.json
 var _trap_nodes := Traps.new()
 var _weather := IslandWeather.new()  # fog, storm and red sky by round (data/island_weather.json)
+var _crossing := Crossing.new()  # (sea step 11) the U-boat and the fog bank beyond Gull Rock once the island quest is done
+var _crossed := false  # this player has crossed to the sea once (saved): the hub's sea painting works
+var _vault_beaten := false  # the Vault (sea step 13) beaten in this player's world (saved): NEW GAME+ opens
+var _cross_fog := 0.0  # seconds of the crossing's thick sea fog left
+var _backdrop: MeshInstance3D = null  # the island painted behind us as we come out of the fog
+var _backdrop_t := 0.0
+var _home_bank: Node3D = null  # the home fog at region 1's south edge (sail back to the islands)
+var _sea_painting := Vector3.INF  # the hub's sea painting
+var _ng_lectern := Vector3.INF
+var _ng_armed := 0.0  # a first [F] at the lectern arms NG+ for a few seconds; a second one begins it
 var _builds: BuildState  # the shield and the boat: parts found, things built (data/buildables.json)
 var _build_cfg: Dictionary
 var _build_site := BuildSite.new()
@@ -498,6 +511,9 @@ func _ready() -> void:
 		stand.rotation.y = float(board["yaw"])
 		add_child(stand)
 	LoadClock.mark("island")
+	add_child(_crossing)
+	_crossing.setup(Island.CENTER, _land.sea_level)
+	_crossing.cross.connect(_on_cross)
 	_painting = island["painting"]
 	_painting_fantasy = island["painting_fantasy"]
 	_port_spot = island["painting_port"]
@@ -511,6 +527,11 @@ func _ready() -> void:
 		var hung: Array = _hub_room.painting_spot()
 		_hub_painting = hung[0]
 		Island.build_painting(self, _hub_painting, PaintingArt.wheat_texture(), float(hung[1]))
+		var ccfg: Dictionary = _crossing.cfg  # (sea step 11) the sea painting and the NEW GAME+ lectern
+		_sea_painting = _hub_room.position + Vector3(float(ccfg["hub_painting"]["at"][0]), 0.0, float(ccfg["hub_painting"]["at"][1]))
+		Island.build_painting(self, _sea_painting, PaintingArt.port_texture(), deg_to_rad(float(ccfg["hub_painting"]["yaw"])))
+		_ng_lectern = _hub_room.position + Vector3(float(ccfg["ng_lectern"]["at"][0]), 0.0, float(ccfg["ng_lectern"]["at"][1]))
+		_build_ng_lectern(_ng_lectern, deg_to_rad(float(ccfg["ng_lectern"]["yaw"])))
 		LoadClock.mark("hub")
 	ClubIsland.build_shell(self)  # only what is seen from afar; the inside and the casino wait for the first trip (_build_club)
 	LoadClock.mark("club island shell")
@@ -732,6 +753,7 @@ func _ready() -> void:
 			if _boat.helm() == peer:
 				_helm_keys = Vector2(throttle, rudder))
 		net.rounds.boat_state.connect(_on_boat_state)
+		net.rounds.crossed.connect(_cross_now)
 		net.rounds.box_near = func(at: Vector3) -> bool: return _box.state != "moving" and Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z).distance_to(_box_spots[_box.spot]) <= float(_box.cfg["reach"]) + 1.0
 		net.rounds.box_asked.connect(_on_box_asked)
 		net.rounds.box_state.connect(_on_box_state)
@@ -1444,6 +1466,8 @@ func _load_profile() -> void:
 		_dungeons_saved = extra.get("sea_dungeons")
 		_tools_saved = extra.get("sea_tools")
 		_town_mine_saved = extra.get("town_mine")
+		_crossed = bool(extra.get("crossed", false))
+		_vault_beaten = bool(extra.get("vault_beaten", false))
 		_player.dread = clampi(int(extra.get("dread", 0)), 0, 9) if (extra.get("dread") is int or extra.get("dread") is float) else 0  # (sea step 10) until a port rest
 		_player.refresh_equipment()
 	if player_name != "":
@@ -1500,6 +1524,8 @@ func save_profile() -> void:
 		extra["sea_tools"] = _sea.tools.owned.duplicate() if _sea != null else _tools_saved
 		extra["town_mine"] = _sea.town.mine_dict() if _sea != null else _town_mine_saved
 		extra["dread"] = _player.dread
+		extra["crossed"] = _crossed
+		extra["vault_beaten"] = _vault_beaten
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
 
 
@@ -1680,6 +1706,10 @@ func _prompt() -> String:
 		return "[%s] Step into the painting: the home port" % key
 	if _near_painting_fantasy():
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
+	if _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
+		return ("[%s] Step into the painting: the open sea" % key) if _crossed else "The open sea. Follow the U-boat from Gull Rock once to open it."
+	if _ng_lectern.is_finite() and _near(_ng_lectern, 2.5):
+		return _ng_prompt(key)
 	if _in_fantasy:
 		return _fantasy.prompt(key)
 	if _in_sea:
@@ -1758,6 +1788,11 @@ func _interact() -> void:
 		port_travel()
 	elif _near_painting_fantasy():
 		_enter_fantasy()
+	elif _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
+		if _crossed:
+			_enter_sea()
+	elif _ng_lectern.is_finite() and _near(_ng_lectern, 2.5):
+		_ng_use()
 	elif _near_fantasy_exit():
 		_leave_fantasy()
 	elif _in_fantasy:
@@ -2405,6 +2440,201 @@ func _on_player_died() -> void:
 		_player.downed = _out  # out = untouchable and unseen until the next round starts, watching the others
 		if _out:
 			_watch_next()
+
+
+# --- sea step 11: THE CROSSING (LOCKED: fog-bank handoff, every winning run, sailing back starts a fresh run, NG+) ---
+
+func _run_crossing(delta: float) -> void:
+	var cam := get_viewport().get_camera_3d()
+	var deciding: bool = not (net != null and net.rounds.is_client())
+	if _quest.done() and not _crossing.active:  # (the quest done while we were elsewhere, or loaded done: the U-boat waits)
+		_crossing.start()
+	_crossing.step(delta, Vector2(_boat.x, _boat.z), deciding and _builds.built(_boat_thing), cam.global_position if cam != null else _player.global_position, _weather)
+	if _ng_armed > 0.0:
+		_ng_armed -= delta
+	if not _in_sea or _sea == null:
+		return
+	var ccfg: Dictionary = _crossing.cfg
+	var back: Dictionary = ccfg["back"]
+	var here: Vector3 = _sea.local_of(_player.global_position)
+	var to_bank := Vector2(here.x - float(back["at"][0]), here.z - float(back["at"][1])).length()
+	var near_bank := clampf(1.0 - (to_bank - float(back["radius"])) / 160.0, 0.0, 1.0)
+	_cross_fog = maxf(_cross_fog - delta, 0.0)
+	var arrive := _cross_fog / maxf(float(ccfg["sea_fog_s"]), 0.1)
+	_sea.look.crossing_fog = 1.0 + (float(ccfg["sea_fog_mult"]) - 1.0) * maxf(arrive, near_bank * near_bank)
+	if _backdrop != null and is_instance_valid(_backdrop):
+		_backdrop_t -= delta
+		var fade := clampf(_backdrop_t / float(ccfg["backdrop"]["fade_s"]), 0.0, 1.0)
+		(_backdrop.material_override as StandardMaterial3D).albedo_color.a = fade * 0.85
+		if _backdrop_t <= 0.0:
+			_backdrop.queue_free()
+			_backdrop = null
+	if _sea.ships.ship_aboard() != null and to_bank <= float(back["radius"]) and _sea.dungeons.where == "":
+		_sail_back()
+
+
+# The host (or a lone player) saw the boat stay in the fog bank: everyone's run is won, those aboard cross.
+func _on_cross() -> void:
+	var seats := PackedInt32Array(_boat.seats)
+	if net != null and net.can_send():
+		net.rounds.tell_crossing(seats)
+	_cross_now(seats)
+
+
+func _cross_now(aboard: PackedInt32Array) -> void:
+	var me_aboard := aboard.has(_my_id())
+	_crossing.stop()
+	_player_hud.callout("RUN WON", Color(1.0, 0.85, 0.45))
+	_player_hud.notice(String(_crossing.cfg["notice_won"]))
+	_stats.add("island_wins")
+	if _rounds.active:
+		_rounds.stop()
+	_clear_powers()
+	_close_debris()  # the run's island state is set back (boat, quest, builds): the next run starts fresh
+	if not me_aboard:
+		save_profile()
+		return
+	_crossed = true
+	_player_hud.notice(String(_crossing.cfg["notice_cross"]))
+	_cross_to_sea()
+
+
+# Out of the fog in the sea world: on the deck of the fleet's first ship, laid at the crossing's arrival (the host
+# lays her; a client waits for her to be there), the sea thick with fog that thins, the island painted behind.
+func _cross_to_sea() -> void:
+	_enter_sea()
+	var ccfg: Dictionary = _crossing.cfg
+	var arr: Dictionary = ccfg["arrive"]
+	var at := Vector2(float(arr["at"][0]), float(arr["at"][1]))
+	var toward := Vector2(float(arr["toward"][0]), float(arr["toward"][1])) - at
+	var ships: Array = _sea.ships.ships
+	if ships.is_empty():
+		_player_hud.notice("No ship in the fleet to come out on: you are at the home port.")
+		save_profile()
+		return
+	var ship: Node3D = ships[clampi(int(arr["ship"]), 0, ships.size() - 1)]
+	if not (net != null and net.rounds.is_client()):
+		var st: Dictionary = ship.get("state")
+		st["x"] = at.x
+		st["z"] = at.y
+		st["yaw"] = atan2(-toward.x, -toward.y)
+		st["speed"] = 0.0
+		st["anchored"] = true
+	_cross_fog = float(ccfg["sea_fog_s"])
+	_show_backdrop(ccfg["backdrop"], at)
+	await get_tree().create_timer(0.6 if not (net != null and net.rounds.is_client()) else 2.0).timeout  # (a client: the host's ship states first)
+	if not _in_sea:
+		return
+	var slot := _party_slot()
+	_player.teleport(ship.call("deck_spot", [-1.2 + 0.8 * float(slot % 4), -1.0 - 1.2 * float(floori(float(slot) / 4.0))], 0.4), float(ship.get("state")["yaw"]))
+	_player_hud.play_fade()
+	save_profile()
+
+
+func _show_backdrop(b: Dictionary, arrive: Vector2) -> void:
+	if _backdrop != null and is_instance_valid(_backdrop):
+		_backdrop.queue_free()
+	_backdrop = MeshInstance3D.new()
+	var quad := QuadMesh.new()
+	quad.size = Vector2(float(b["size"][0]), float(b["size"][1]))
+	_backdrop.mesh = quad
+	var mat := StandardMaterial3D.new()
+	mat.albedo_texture = PaintingArt.island_texture()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+	mat.albedo_color = Color(1, 1, 1, 0.85)
+	mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+	mat.disable_fog = false
+	_backdrop.material_override = mat
+	_backdrop.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	_sea.add_to_sea(_backdrop)
+	var spot := Vector3(float(b["at"][0]), float(b["y"]), float(b["at"][1]))
+	_backdrop.position = spot
+	var face := Vector2(arrive.x - spot.x, arrive.y - spot.z)
+	_backdrop.rotation.y = atan2(face.x, face.y)  # (a quad faces +z: turned toward where we come out)
+	_backdrop_t = float(b["fade_s"])
+
+
+# The home fog at region 1's south edge: built with the sea (seen from afar).
+func _build_home_bank() -> void:
+	if _home_bank != null or _sea == null:
+		return
+	var back: Dictionary = _crossing.cfg["back"]
+	_home_bank = FogBank.new()
+	_sea.add_to_sea(_home_bank)
+	_home_bank.call("build", float(back["radius"]) * 1.4, 12, 40.0, Color(0.86, 0.9, 0.93, 1.0))
+	_home_bank.position = Vector3(float(back["at"][0]), 0.0, float(back["at"][1]))
+
+
+# Sailed into the home fog: out on Wreck Cay's shore, where a fresh island run begins (LOCKED). The ship stays at sea.
+func _sail_back() -> void:
+	var back: Dictionary = _crossing.cfg["back"]
+	_leave_sea()
+	var cay: Vector2 = _land.islands[_land.index_of("wreck")]["at"]
+	var spot := cay + Vector2(float(back["land_at"][0]), float(back["land_at"][1]))
+	_player.teleport(Island.CENTER + Vector3(spot.x, _land.height_at(spot.x, spot.y) + 1.0, spot.y), 0.0)
+	_player_hud.notice(String(back["notice"]))
+
+
+# NEW GAME+ at the hub's lectern (LOCKED: opens after the Vault; the host's world; each NG+ adds item levels to sea
+# enemies and loot and luck to sea loot; everything is kept).
+func _ng_prompt(key: String) -> String:
+	if not _vault_beaten:
+		return "NEW GAME+ %d: opens once the Vault is beaten" % (Threat.ng + 1)
+	if net != null and net.can_send() and not net.is_host():
+		return "NEW GAME+ belongs to the host's world (now NG+ %d)" % Threat.ng
+	if _ng_armed > 0.0:
+		return "[%s] Again to begin NEW GAME+ %d" % [key, Threat.ng + 1]
+	return "[%s] NEW GAME+ %d: sea enemies and loot +%d levels, better loot; you keep everything" % [key, Threat.ng + 1, int(Threat.ng_cfg()["item_levels"])]
+
+
+func _ng_use() -> void:
+	if not _vault_beaten or (net != null and net.can_send() and not net.is_host()):
+		return
+	if _ng_armed <= 0.0:
+		_ng_armed = 4.0
+		return
+	_ng_armed = 0.0
+	Threat.ng += 1
+	if _sea == null:  # (the sea not built this session: its saved world carries the count)
+		var saved: Dictionary = _dungeons_saved if _dungeons_saved is Dictionary else {}
+		saved["_ng"] = Threat.ng
+		_dungeons_saved = saved
+	_player_hud.callout("NEW GAME+ %d" % Threat.ng, Color(1.0, 0.6, 0.3))
+	save_profile()
+
+
+func _build_ng_lectern(at: Vector3, yaw: float) -> void:
+	var stand := Node3D.new()
+	stand.position = at
+	stand.rotation.y = yaw
+	add_child(stand)
+	var post := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.6, 1.1, 0.5)
+	post.mesh = box
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.3, 0.2, 0.12)
+	post.material_override = wood
+	post.position = Vector3(0, 0.55, 0)
+	stand.add_child(post)
+	var top := MeshInstance3D.new()
+	var slab := BoxMesh.new()
+	slab.size = Vector3(0.8, 0.06, 0.6)
+	top.mesh = slab
+	top.material_override = wood
+	top.position = Vector3(0, 1.15, 0)
+	top.rotation.x = -0.3
+	stand.add_child(top)
+	var word := Label3D.new()
+	word.text = "NEW GAME+"
+	word.font_size = 40
+	word.pixel_size = 0.006
+	word.modulate = Color(1.0, 0.7, 0.35)
+	word.outline_size = 8
+	word.position = Vector3(0, 1.6, 0)
+	word.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	stand.add_child(word)
 
 
 # --- sea step 10: downed in a super boss fight (game/sea_boss.gd keeps the fight's downs on the host) ---
@@ -3703,6 +3933,8 @@ func _quest_reward() -> void:
 	var reward: Dictionary = _quest.cfg.get("reward", {})
 	_chat.add_line(_quest.quest_line("finished"), Color(1.0, 0.85, 0.45))
 	_player_hud.callout(_quest.quest_line("name"), Color(1.0, 0.85, 0.45))
+	_crossing.start()  # (sea step 11) the U-boat surfaces beyond Gull Rock: follow it in the boat
+	_chat.add_line(String(_crossing.cfg["notice_start"]), Color(0.6, 0.85, 1.0))
 	_score.give(int(reward.get("points", 0)))
 	_stats.add("main_quests")
 	var which := String(reward.get("unique", ""))
@@ -4065,6 +4297,7 @@ func _build_sea() -> void:
 		_sea.ships.foes.set_game(_director, _score)  # pirate crews, sharks, the wyrm are the director's enemies (shots, kill pay, grenades)
 		_sea.dungeons.boss.director = _director  # (sea step 10) the super bosses too
 		_sea.dungeons.boss.card = _score
+		_build_home_bank()  # (sea step 11) the home fog at region 1's south edge: sail into it to go back to the islands
 		var boss_bar := BossBar.new()
 		boss_bar.fight = _sea.dungeons.boss
 		boss_bar.player = _player
@@ -4091,6 +4324,9 @@ func _build_sea() -> void:
 func _leave_sea() -> void:
 	_sea.leave()
 	_in_sea = false
+	if _backdrop != null and is_instance_valid(_backdrop):  # (sea step 11: the crossing's painted island goes with us)
+		_backdrop.queue_free()
+		_backdrop = null
 	_rest_worlds()
 	apply_settings()
 	_player.teleport(_island_spawn, 0.0)
@@ -4370,6 +4606,7 @@ func _process(delta: float) -> void:
 	_run_hub()
 	_run_weather(delta)
 	_run_boat(delta)
+	_run_crossing(delta)
 	_run_cigarette(delta)
 	_run_course(delta)
 	_run_stats(delta)

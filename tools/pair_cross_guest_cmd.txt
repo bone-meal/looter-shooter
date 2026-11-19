@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go island;!wait 22;!cross status g_quest;!boat goto;!wait 1;!key interact;!wait 2;!cross status g_seat;!cross wait_sea 45;!cross status g_crossed;!wait 5;!snap g_arrive;!cross status g_arrive;!wait 10;!ng status g_ng;!wait 5

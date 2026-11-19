@@ -732,3 +732,18 @@ func adopt_as_host() -> void:
 		director.call("start", int(run["count"]))
 		director.set("shared_run", true)
 		director.call("skip_to", maxi(int(run["wave"]), 1))
+
+
+# --- the crossing (sea step 11): the host saw the boat stay in the fog bank; everyone's run is won, those aboard cross ---
+
+signal crossed(aboard: PackedInt32Array)  # on a client: the crossing happened; `aboard` = the boat's seats then
+
+func tell_crossing(aboard: PackedInt32Array) -> void:
+	if net.can_send() and net.is_host():
+		_crossing.rpc(aboard)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _crossing(aboard: PackedInt32Array) -> void:
+	if aboard.size() <= 8:
+		crossed.emit(aboard)

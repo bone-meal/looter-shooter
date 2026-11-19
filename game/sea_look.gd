@@ -24,6 +24,7 @@ var _fog_c := Color.WHITE
 var _fog_far := 2600.0
 var _first := true
 var fog_mult := 1.0  # the Fog Bell thins the fog for its ringer (sea step 9b, game/sea_tools.gd)
+var crossing_fog := 1.0  # (sea step 11) coming out of the crossing's fog bank, or sailing into the home fog: thicker
 var under_water := false  # the player's head is under (game/sea_swim.gd)
 var _was_under := false
 
@@ -78,7 +79,7 @@ func apply(seconds: float, region: Dictionary, weather: Dictionary, delta: float
 	_colors.ground_horizon_color = _colors.sky_horizon_color
 	_colors.ground_bottom_color = _colors.sky_horizon_color.darkened(0.4)
 	_env.fog_light_color = _fog_c
-	_env.fog_density = 1.6 / maxf(_fog_far, 50.0) * fog_mult  # exponential fog: about four fifths of the view gone at `far` metres
+	_env.fog_density = 1.6 / maxf(_fog_far, 50.0) * fog_mult * crossing_fog  # exponential fog: about four fifths of the view gone at `far` metres
 	_env.ambient_light_color = _sky_c.lerp(Color.WHITE, 0.35) * lerpf(0.18, 0.62, day) * lerpf(0.75, 1.0, light)
 	var sun := clock.sun(part)
 	var height := maxf(sun.x, 6.0) if day > 0.0 else 35.0  # at night the light is the moon's, high and pale

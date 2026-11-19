@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go island;!wait 8;!cross quest;!wait 2;!cross ready;!boat wait_other;!cross status h_ready;!cross near;!wait 3;!cross sail;!cross wait_sea 25;!cross status h_crossed;!wait 4;!snap h_arrive;!cross status h_arrive;!ng set 2;!wait 8;!ng status h_ng;!wait 12

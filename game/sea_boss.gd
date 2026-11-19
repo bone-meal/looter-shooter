@@ -585,7 +585,7 @@ func _reward(id: String) -> void:
 	var said := PackedStringArray()
 	var db: RefCounted = _player.get("gun_db")
 	var band := ItemLevel.region_band(int(b.get("region", 1)))
-	for gun: Dictionary in LootPool.roll(db, _rng, String(b["loot_pool"]), band.y):
+	for gun: Dictionary in LootPool.roll(db, _rng, String(b["loot_pool"]), Threat.loot_level(band.y), 1.0 + Threat.ng_luck()):  # (NG+: levels, luck)
 		if (_player.get("inventory") as RefCounted).call("add_gun", gun):
 			said.append(GunStats.display_name(db, gun))
 	_player.call("refresh_held")

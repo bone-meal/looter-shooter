@@ -1,0 +1,21 @@
+{
+  "version": 1,
+  "_about": "Sea step 11 THE CROSSING (LOCKED in diary/DECISIONS_SEA.md: fog-bank handoff, every winning run, sailing back starts a fresh island run, NG+ built now and locked till the Vault). ISLAND SIDE (metres from the archipelago's middle, data/archipelago.json): when the island quest is done (the Warden beaten, the boat built) the G U-boat surfaces at uboat_from and sails slowly to the fog bank at fog_at, where it dives; the fog thickens round the bank within fog_reach m; the boat's middle within fog_radius m of fog_at for cross_after_s = the crossing (the host decides): the run is won for everyone, whoever is aboard comes out of the fog in the sea world. SEA SIDE (sea coordinates): arrive = where the fleet's first ship is laid (bow toward toward), the party on her deck; the sea's fog is x sea_fog_mult for sea_fog_s, easing out; a painted backdrop of the island (game/painting_art.gd island) stands backdrop.at, size m, fading out over fade_s. back = the home fog bank at region 1's south edge: a ship whose deck we stand on within radius m of it takes us back to the islands (Wreck Cay, land_at = metres from its middle), where a fresh run starts. hub_painting = the sea painting in the hub (metres from the hub's middle, yaw degrees), it works once this player has crossed. NG+ (ng): each level adds item_levels to every sea enemy and sea loot (capped at the game's max item level) and luck_per to the gun tier rolls of sea loot; it opens only after the Vault (the hub lectern ng_lectern). ALL NUMBERS MINE.",
+  "uboat_from": [105.7, 210.9],
+  "fog_at": [113.4, 229.3],
+  "fog_radius": 16.0,
+  "fog_reach": 90.0,
+  "cross_after_s": 2.0,
+  "uboat_speed": 1.6,
+  "notice_start": "A U-boat surfaces beyond Gull Rock, its checkered G flag snapping. Take the boat and follow it into the fog.",
+  "notice_cross": "The fog closes round the boat ...",
+  "notice_won": "The run is won: the U-boat led the way out to sea.",
+  "arrive": {"at": [0.0, 8740.0], "toward": [-520.0, 6570.0], "ship": 0},
+  "sea_fog_s": 25.0,
+  "sea_fog_mult": 7.0,
+  "backdrop": {"at": [0.0, 9000.0], "size": [300.0, 150.0], "y": 40.0, "fade_s": 90.0},
+  "back": {"at": [0.0, 8880.0], "radius": 80.0, "land_at": [-6.0, 30.0], "notice": "The fog thins on a familiar shore: the islands. A new run begins."},
+  "hub_painting": {"at": [-24.6, -6.0], "yaw": 90.0},
+  "ng_lectern": {"at": [-21.0, -11.0], "yaw": 90.0},
+  "ng": {"item_levels": 10, "luck_per": 0.25}
+}
