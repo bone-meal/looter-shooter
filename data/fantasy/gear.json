@@ -2342,6 +2342,33 @@
     0.5,
     0.3
    ]
+  },
+  "chart_bog_half": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.62,
+    0.6,
+    0.46
+   ]
+  },
+  "chart_pitch_half": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.3,
+    0.26,
+    0.2
+   ]
+  },
+  "chart_drowned_tithe": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.42,
+    0.5,
+    0.34
+   ]
   }
  }
 }

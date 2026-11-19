@@ -22,9 +22,26 @@ islet_cormorant: Cormorant Rock
 islet_sandbar_north: Northbar
 islet_gannet_stack: Gannet Stack
 islet_mast_shoal: Mast Shoal
+lanternwick: Lanternwick
+greywater_bog: Greywater Bog
+the_knots: The Knots
+herons_reach: Heron's Reach
+drowned_orchard: The Drowned Orchard
+hollow_mangrove: The Hollow Mangrove
+islet_lantern_east: The Unwatched Wick
+islet_root_knot_a: Lone Fist
+islet_barge: The Dry Barge
+islet_bell: Bell Buoy
+islet_reeds_a: Far Reeds
+islet_root_knot_b: Western Fist
+islet_fog_sand: Fog Bank
+islet_lantern_west: The Last Wick
+islet_reeds_b: Heron Reeds
+islet_hermit: Hermit's Root
 
 [secrets]
 chart_shallows_hoard: The Shallows Hoard | Three torn pieces of one chart: whoever hid this wanted it found by someone patient.
+chart_drowned_tithe: The Drowned Tithe | Two halves of one chart, a monk's and a pitchmonger's: what the chapel was owed, and where the works hid it.
 chart_smugglers_cache: The Smugglers' Cache | The captain's own hand: "Deep water, halfway home. Nobody dives that deep for nothing."
 chart_captains_log: The Captain's Last Anchorage | A ring of ink on open water and one word: "here".
 chart_silver_compass: A Compass Points Down | Somebody drew the needle pointing at the sea floor.

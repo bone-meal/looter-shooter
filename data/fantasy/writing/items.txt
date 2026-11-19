@@ -291,4 +291,7 @@ chart_piece_1: Torn Chart (Stackwater piece)
 chart_piece_2: Torn Chart (Bellrock piece)
 chart_piece_3: Torn Chart (Gullhook piece)
 chart_shallows_hoard: Chart: The Shallows Hoard
+chart_bog_half: Torn Chart (the chapel's half)
+chart_pitch_half: Torn Chart (the works' half)
+chart_drowned_tithe: Chart: The Drowned Tithe
 chart_smugglers_cache: The Smugglers' Cache

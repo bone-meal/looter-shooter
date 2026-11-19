@@ -51,6 +51,25 @@
     "xp": 600,
     "doubloons": 150
    }
+  },
+  "region_2": {
+   "finds": [
+    "lamp_glass",
+    "peat_spade",
+    "tar_ladle",
+    "heron_decoy",
+    "cider_jug",
+    "root_crown_ring",
+    "bargemaster_whistle",
+    "buoy_key",
+    "hermit_pipe",
+    "fog_compass"
+   ],
+   "reward": {
+    "chips": 2000,
+    "xp": 800,
+    "doubloons": 200
+   }
   }
  },
  "spots": [
@@ -477,6 +496,108 @@
     4890.0
    ],
    "depth": 3.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "drowned_tithe",
+   "loot": "hoard_tithe",
+   "region": "region_2",
+   "name": "the drowned tithe",
+   "at": [
+    -5800.0,
+    6000.0
+   ],
+   "depth": 12.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "lamp_glass",
+   "at": [
+    -3640.0,
+    6260.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "peat_spade",
+   "at": [
+    -5000.0,
+    4150.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "tar_ladle",
+   "at": [
+    -6560.0,
+    7080.0
+   ],
+   "depth": 8.0,
+   "model": "wreck_small"
+  },
+  {
+   "find": "heron_decoy",
+   "at": [
+    -5160.0,
+    7880.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "cider_jug",
+   "at": [
+    -7900.0,
+    4800.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "root_crown_ring",
+   "at": [
+    -7700.0,
+    8050.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "bargemaster_whistle",
+   "at": [
+    -6040.0,
+    5460.0
+   ],
+   "depth": 8.0,
+   "model": "wreck_small"
+  },
+  {
+   "find": "buoy_key",
+   "at": [
+    -5650.0,
+    7340.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "hermit_pipe",
+   "at": [
+    -3430.0,
+    8640.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "fog_compass",
+   "at": [
+    -6700.0,
+    8700.0
+   ],
+   "depth": 8.0,
    "model": "salvage_chest"
   }
  ],

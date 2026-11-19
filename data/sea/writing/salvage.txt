@@ -5,6 +5,10 @@
 title: Sunlit Shallows
 done: Every wreck in the shallows has given up what it had. The water is clear enough to see the bottom; now you know what was down there.
 
+[set region_2]
+title: The Fog Banks
+done: Every lamp, spade and lost key the fog swallowed is back in the light. The marsh keeps fewer secrets now.
+
 [set trinkets]
 title: Odds and Ends
 done: A pocketful of things the sea did not want. Somebody, somewhere, misses every one of them.
@@ -20,6 +24,16 @@ salt_seal: Salt Merchant's Seal | A brass stamp with a pan and three crystals. E
 smugglers_lantern: Smuggler's Lantern | Shuttered on three sides. It was only ever meant to be seen from the sea.
 coral_idol: Coral Idol | A small figure grown over with coral until it is hard to say who carved it, or what it was.
 atoll_bell: Atoll Bell | A little brass bell, green with age. It still rings, quietly, as if it would rather not.
+lamp_glass: Lamp Glass | The chimney of a harbour lantern, sooty on the inside. It must have lit the way once.
+peat_spade: Peat Spade | Worn to a sliver on one side by a cutter who always dug left-handed.
+tar_ladle: Tar Ladle | Black to the handle. It will never be clean again, and it knows it.
+heron_decoy: Heron Decoy | A wooden heron with glass eyes. The real ones were never fooled.
+cider_jug: Cider Jug | Stoppered with wax. The orchard's last pressing sloshes inside.
+root_crown_ring: Root-Crown Ring | A ring of braided mangrove root, hard as horn. It fits no human finger.
+bargemaster_whistle: Bargemaster's Whistle | One blast for stop, two for go, three for the fog's got us.
+buoy_key: Buoy Keeper's Key | It winds the bell buoy's clockwork. Nobody has wound it for years, and it rings anyway.
+hermit_pipe: Hermit's Pipe | Carved from a heron bone. It smells of peat and patience.
+fog_compass: Fog Compass | Its needle swings slowly in clear air and points true only in thick fog.
 sea_glass: Sea Glass | Green, worn smooth, once a bottle of something strong.
 old_coin: Old Coin | Nobody's face you recognise.
 cowrie_shell: Cowrie Shell | Small, glossy, and once worth more than it looks.

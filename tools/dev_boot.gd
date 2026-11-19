@@ -865,7 +865,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var ex2: Node3D = bx.get("enemy")
 				var gap_x := Vector2(ex2.global_position.x - player.global_position.x, ex2.global_position.z - player.global_position.z).length() if ex2 != null and is_instance_valid(ex2) else -1.0
 				_lines.append("BOSS %s: %s; me hp %.0f/%.0f downed %s dread %d xp %d boss kills %d; boss %.1f m off; prompt '%s'; at %s" % [" ".join(words.slice(1)), String(bx.call("status")), float(hpp.get("hp")), float(hpp.get("max_hp")), str(player.get("downed")), int(player.get("dread")), int(session.get("_progress").get("xp")), int((session.get("_progress").get("counters") as Dictionary).get("boss_kills", 0)), gap_x, String(dmx.call("prompt", "F")), str(sea_x.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
-		"squest":  # sea step 13e: !squest go <quest> (stand 2 m from its person) | talk <quest> | close | dive <quest> (swim at its dive spot) | take (salvage there) | clear <dungeon> <fight> (host: mark that fight cleared) | log | wait <quest> <step> [s] | status <note>
+		"pitch":  # sea step 13 R2g: !pitch go <pot id> (stand 1.5 m from it) | tap | status <note>
+			var sea_p: Node = session.call("sea")
+			var pp: Node = sea_p.get("pitch") if sea_p != null else null
+			if pp == null:
+				_lines.append("pitch: no sea")
+			else:
+				match words[1] if words.size() > 1 else "status":
+					"go":
+						for pot_p: Dictionary in pp.get("cfg")["pots"]:
+							if String(pot_p["id"]) == words[2]:
+								player.call("teleport", sea_p.call("world_of", Vector3(float(pot_p["at"][0]) + 1.5, 40.0, float(pot_p["at"][1]))), 0.0)
+								await get_tree().create_timer(5.0, true, false, true).timeout
+								player.call("look_at_point", sea_p.call("world_of", Vector3(float(pot_p["at"][0]), (sea_p.call("local_of", player.global_position) as Vector3).y, float(pot_p["at"][1]))))
+					"tap":
+						_lines.append("  prompt '%s' -> %s" % [String(sea_p.call("prompt", "F")), str(sea_p.call("interact"))])
+				_lines.append("PITCH %s: %s; pitch in bag %d; me at %s; prompt '%s'" % [" ".join(words.slice(1)), String(pp.call("status")), int((sea_p.get("skills").get("bag") as RefCounted).call("count", "mangrove_pitch")), str((sea_p.call("local_of", player.global_position) as Vector3).snapped(Vector3.ONE * 0.1)), String(sea_p.call("prompt", "F"))])
+		"squest":  # sea step 13e: !squest go <quest> (stand 2 m from its person) | talk <quest> | close | dive <quest> (swim at its dive spot) | diveat <x> <z> [depth] | take (salvage there) | clear <dungeon> <fight> (host: mark that fight cleared) | log | wait <quest> <step> [s] | status <note>
 			var sea_q: Node = session.call("sea")
 			if sea_q == null:
 				_lines.append("squest: no sea")
@@ -894,8 +910,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						var st_d: Dictionary = (qr.call("quest", words[2])["steps"] as Array).filter(func(s: Dictionary) -> bool: return String(s["kind"]) == "dive")[0]
 						player.call("teleport", sea_q.call("world_of", Vector3(float(st_d["at"][0]), -1.0, float(st_d["at"][1]))), 0.0)
 						await get_tree().create_timer(1.0, true, false, true).timeout
+					"diveat":  # "!squest diveat <x> <z> [depth]" (sea step 13 R2g): under water there (a logbook find, a hoard)
+						player.call("teleport", sea_q.call("world_of", Vector3(float(words[2]), -(float(words[4]) if words.size() > 4 else 1.0), float(words[3]))), 0.0)
+						await get_tree().create_timer(1.0, true, false, true).timeout
 					"take":
 						_lines.append("  prompt '%s' -> %s" % [String(sea_q.call("prompt", "F")), str(sea_q.get("salvage").call("interact"))])
+						_lines.append("  %s" % String(sea_q.get("salvage").call("status")))
 					"clear":
 						var sp_c: Node = sea_q.get("dungeons").get("spaces")[words[2]]
 						(sp_c.get("rules").get("state")["cleared"] as Dictionary)[words[3]] = true

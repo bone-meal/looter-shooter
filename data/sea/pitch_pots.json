@@ -1,0 +1,18 @@
+{
+  "_about": "Sea step 13 R2g: region 2's PITCH POTS (game/sea_pitch_pots.gd): clay pots under spouts in mangrove roots on the islands (sea x, z; the ground under them found by a ray). [F] at a full pot (within reach_m) gives give = [min, max] of item; the pot fills again regrow_s later. Each player taps his own pots (no host, nothing saved: a pot is full again after a restart). Drawn within show_m. ALL PLACES AND NUMBERS ARE MY PLACEHOLDERS.",
+  "item": "mangrove_pitch",
+  "give": [1, 2],
+  "regrow_s": 600.0,
+  "reach_m": 2.6,
+  "show_m": 150.0,
+  "pots": [
+    {"id": "knots_tapper", "at": [-6331.0, 6872.0], "yaw": 40.0},
+    {"id": "knots_landing", "at": [-6306.0, 6956.0], "yaw": 180.0},
+    {"id": "bog_cuttings", "at": [-5252.0, 4353.0], "yaw": 120.0},
+    {"id": "bog_landing", "at": [-5306.0, 4520.0], "yaw": 200.0},
+    {"id": "hollow_door", "at": [-7895.0, 7932.0], "yaw": 90.0},
+    {"id": "lone_fist", "at": [-4494.0, 5207.0], "yaw": 0.0},
+    {"id": "western_fist", "at": [-8588.0, 6212.0], "yaw": 270.0},
+    {"id": "herons_spine", "at": [-4921.0, 8086.0], "yaw": 60.0}
+  ]
+}

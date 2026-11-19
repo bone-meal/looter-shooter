@@ -53,6 +53,15 @@
         5600.0
       ],
       "kind": "salvage"
+    },
+    {
+      "id": "chart_drowned_tithe",
+      "item": "chart_drowned_tithe",
+      "at": [
+        -5800.0,
+        6000.0
+      ],
+      "kind": "salvage"
     }
   ]
 }

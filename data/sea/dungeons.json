@@ -1801,7 +1801,8 @@
     "T": {
      "kind": "chest",
      "name": "chest_vault_small",
-     "loot": "dungeon_small"
+     "loot": "dungeon_small",
+     "piece": "chart_bog_half"
     }
    },
    "map": [
@@ -1978,7 +1979,8 @@
     "T": {
      "kind": "chest",
      "name": "chest_ledger",
-     "loot": "dungeon_small"
+     "loot": "dungeon_small",
+     "piece": "chart_pitch_half"
     }
    },
    "map": [
@@ -2647,6 +2649,10 @@
    "chart_piece_1",
    "chart_piece_2",
    "chart_piece_3"
+  ],
+  "chart_drowned_tithe": [
+   "chart_bog_half",
+   "chart_pitch_half"
   ]
  }
 }
