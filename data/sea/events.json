@@ -69,7 +69,7 @@
     "seat_at": [0.0, 0.23, 0.12],
     "lost_s": 600.0,
     "by_region": {
-      "region_2": {"who": ["ivo", "senna", "mott", "lark"], "port": "lanternwick", "stand": [[-3812.0, 6188.0], [-3820.0, 6173.0], [-3831.0, 6230.0], [-3843.0, 6230.0]], "looks": {"ivo": ["fisher", "male", "curly"], "senna": ["sailor", "female", "long"], "mott": ["farmer", "male", "crop"], "lark": ["chef", "female", "bun"]}}
+      "region_2": {"who": ["ivo", "senna", "mott", "lark"], "port": "lanternwick", "stand": [[-3811.0, 6188.0], [-3822.0, 6174.0], [-3831.0, 6227.0], [-3843.0, 6227.0]], "looks": {"ivo": ["fisher", "male", "curly"], "senna": ["sailor", "female", "long"], "mott": ["farmer", "male", "crop"], "lark": ["chef", "female", "bun"]}}
     }
   },
   "bottle": {

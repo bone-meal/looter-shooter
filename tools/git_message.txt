@@ -1,9 +1,8 @@
-Sea step 13 R2g: region 2 charts and collectibles
+Sea step 13 R2h: region 2 check
 
-- Pitch pots: 8 tapped-root pots on region 2 isles give mangrove pitch, dry for 10 min (data/sea/pitch_pots.json, game/sea_pitch_pots.gd, pitch_pot model); the port stall stopgap for pitch is gone
-- Secret chart of the drowned tithe in two halves (sunken chapel and pitch works chests), hoard at sea
-- Region 2 logbook: 10 finds and the set reward; region 2 island names on the chart
-- Dev: !pitch go|tap|status, !squest diveat
+- Walks: all 6 region 2 islands with paths, every place reached after one fix: the Lanternwick stall stood on the landing to marsh path (moved to -3814, 6213); Wren, Tansy and the 4 castaway stands moved off the paths
+- Sail-round 18.8 km in 13 legs, never aground, hull kept; island builds spread over frames
+- Two-copy sets gate3 (region 3 gate, Gloomscale Sheathing) and squest2 (Wren and Hob) both work
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

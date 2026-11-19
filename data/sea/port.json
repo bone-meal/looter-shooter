@@ -108,7 +108,7 @@
    "id": "lanternwick",
    "name": "Lanternwick",
    "island": "lanternwick",
-   "stall": [-3810.0, 6218.0],
+   "stall": [-3814.0, 6213.0],
    "yaw": 0.0,
    "dock": [-3801.0, 6214.0],
    "rest": {"name": "the Lantern Hall", "at": [-3818.0, 6200.0, 3.57], "reach": 4.0, "doubloons": 5}

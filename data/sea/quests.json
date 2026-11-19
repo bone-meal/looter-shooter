@@ -12,11 +12,11 @@
      "steps": [{"kind": "talk"}, {"kind": "dungeon", "dungeon": "salt_cellars", "fight": "G", "at": [-2147.4, 4337.6]}, {"kind": "talk"}]},
     {"id": "vesna", "region": "region_1", "at": [-2320.0, 7566.0], "look": ["pirate_captain", "female", "sidepart"], "takes_over": "gallery",
      "steps": [{"kind": "talk"}, {"kind": "dungeon", "dungeon": "smugglers_grotto", "fight": "G", "at": [-2366.2, 7573.8]}, {"kind": "talk"}]},
-    {"id": "wren", "region": "region_2", "at": [-4840.0, 8127.0], "look": ["fisher", "female", "braids"], "runs": {"port": "lanternwick", "at": [-3803.0, 6208.0]},
+    {"id": "wren", "region": "region_2", "at": [-4840.0, 8127.0], "look": ["fisher", "female", "braids"], "runs": {"port": "lanternwick", "at": [-3805.0, 6210.0]},
      "steps": [{"kind": "talk"}, {"kind": "bring", "items": {"fogmaw_lure": 1}}]},
     {"id": "hob", "region": "region_2", "at": [-5245.0, 4346.0], "look": ["farmer", "male", "buzz"], "runs": {"port": "lanternwick", "at": [-3814.0, 6203.0, 3.57]},
      "steps": [{"kind": "talk"}, {"kind": "dungeon", "dungeon": "sunken_chapel", "fight": "G", "at": [-5310.0, 4257.4]}, {"kind": "talk"}]},
-    {"id": "tansy", "region": "region_2", "at": [-6326.0, 6878.0], "look": ["chef", "female", "bun"], "runs": {"port": "lanternwick", "at": [-3806.0, 6224.0]},
+    {"id": "tansy", "region": "region_2", "at": [-6326.0, 6878.0], "look": ["chef", "female", "bun"], "runs": {"port": "lanternwick", "at": [-3811.0, 6209.0]},
      "steps": [{"kind": "talk"}, {"kind": "dungeon", "dungeon": "pitch_works", "fight": "G", "at": [-6302.5, 6893.4]}, {"kind": "talk"}]},
     {"id": "pim", "region": "region_2", "at": [-7578.0, 4595.0], "look": ["farmer", "male", "curly"], "runs": {"port": "lanternwick", "at": [-3826.0, 6186.0]},
      "steps": [{"kind": "talk"}, {"kind": "dive", "at": [-7586.0, 4890.0]}, {"kind": "bring", "items": {"pim_seed_tin": 1}}]}
