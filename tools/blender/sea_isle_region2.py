@@ -175,7 +175,7 @@ MID = {
                     "zone": "swamp", "lanterns": 24.0},
     "greywater_bog": {"land": greywater, "reach": 330.0, "cells": 210, "seed": 83, "pos": (-5300.0, 4300.0),
                       "landing": None, "landing_ang": 90.0, "pois": {"chapel": (-10.0, -30.0), "cuttings": (55.0, 46.0)},
-                      "places": [["chapel_ruin", -10.0, 0.6, -40.0, -90.0, 1.0]],
+                      "places": [["chapel_ruin", -10.0, 0.95, -40.0, -90.0, 1.0]],
                       "keep": [(-10.0, -40.0, 9.0)], "avoid": [(-10.0, -40.0, 7.0)], "zone": "swamp", "lanterns": 40.0},
     "the_knots": {"land": knots, "reach": 230.0, "cells": 200, "seed": 85, "pos": (-6300.0, 6900.0),
                   "landing": None, "landing_ang": 90.0, "pois": {"works": (-3.0, 4.0), "tapper": (-26.0, -22.0)},

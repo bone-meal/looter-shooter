@@ -1,9 +1,9 @@
-Sea step 13 R2a part 2: Lanternwick outpost services
+Sea step 13 R2b: region 2 mini-dungeons (Sunken Chapel, Pitch Works)
 
-- data/sea/port.json: Lanternwick is a port: the harbour master's stall by its jetties (buy, sell, change chips, ferry), its dock for the ferry, and its REST HOUSE (the Lantern Hall: full health and Dread cleared for 5 doubloons)
-- game/sea_port.gd: an outpost port's rest (rest_here / take_rest; the home port's rest stays the tavern)
-- tested on the compatibility renderer: the stall's prompt and window at Lanternwick, the ferry from the home port lists Lanternwick, resting inside the hall took Dread 3 to 0 and health to full for 5 doubloons
-- dev: !port go <id>, stall <id>, rest <id> [dread]
+- data/sea/dungeons.json THE SUNKEN CHAPEL (Greywater Bog, down the chapel's crypt stair): the drowned hold the nave where the FOG BELL lies; a peat block onto the ossuary plate opens the crypt; the bell shows the fog walkway over the flooded crypt; the sluice lever floats the rafts to the key; the key opens the reliquary (drowned and a brute) and the vault
+- THE PITCH WORKS (The Knots, down the yard hatch): the EMBER GAUNTLET in the tar store burns the bramble in its door; pitch smugglers hold the kettle hall; the Rime Anchor freezes three slabs over the hot pitch; the gauntlet lights the two braziers that open the foreman's office (a fight) and his stash
+- the chapel sits level with the bog now so its crypt stair shows (island re-generated, imported, collision re-baked)
+- walked through solo on the compatibility renderer: every fight, door, block, plate, bell, walkway, lever, raft, key, key door, bramble, slab, brazier and chest worked
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

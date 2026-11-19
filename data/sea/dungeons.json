@@ -1644,6 +1644,361 @@
     "#######==.....#############",
     "###########################"
    ]
+  },
+  "sunken_chapel": {
+   "name": "The Sunken Chapel",
+   "region": 2,
+   "slot": 10,
+   "_about": "Sea step 13 R2b (diary/DESIGN_REGION2.md): Greywater Bog's mini-dungeon down the crypt stair of the sunken chapel (gate none). The drowned hold the nave, where the FOG BELL lies (chest C); a peat block onto the ossuary plate opens the crypt; the Fog Bell shows the fog walkway over the flooded crypt; the bog sluice lever floats the rafts over the channel to the key; the key opens the reliquary (a fight) and the vault behind it (T = the region's treasure chart, R2g). Layout mine.",
+   "entrance": {
+    "at": [
+     -5310.0,
+     4257.4
+    ],
+    "yaw": 0.0,
+    "gate": "none"
+   },
+   "wall_h": 4.5,
+   "torch_every": 4,
+   "dress": {
+    "floor_worn": 0.45,
+    "floor_mosaic": 0.0,
+    "wall_crusted": 0.4,
+    "wall_relief": 0.0,
+    "clutter": 0.35,
+    "seed": 31
+   },
+   "legend": {
+    "S": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "a": {
+     "kind": "door",
+     "name": "door_crypt_stair",
+     "open": "free"
+    },
+    "F": {
+     "kind": "fight",
+     "name": "fight_nave",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       9,
+       2
+      ],
+      [
+       13,
+       2
+      ],
+      [
+       11,
+       5
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The nave is still. The ossuary door gives"
+    },
+    "C": {
+     "kind": "chest",
+     "name": "chest_bell",
+     "loot": "dungeon_small",
+     "tool": "bell"
+    },
+    "b": {
+     "kind": "door",
+     "name": "door_ossuary",
+     "open": "clear",
+     "fight": "F"
+    },
+    "B": {
+     "kind": "block",
+     "name": "peat_block"
+    },
+    "P": {
+     "kind": "plate",
+     "name": "plate_ossuary"
+    },
+    "c": {
+     "kind": "door",
+     "name": "door_crypt",
+     "open": "plates",
+     "plates": [
+      "P"
+     ],
+     "latch": true
+    },
+    "L": {
+     "kind": "lever",
+     "name": "sluice_lever",
+     "tide": true
+    },
+    "k": {
+     "kind": "key",
+     "name": "key_reliquary"
+    },
+    "d": {
+     "kind": "door",
+     "name": "door_reliquary",
+     "open": "key"
+    },
+    "G": {
+     "kind": "fight",
+     "name": "fight_reliquary",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       9,
+       10
+      ],
+      [
+       13,
+       10
+      ],
+      [
+       11,
+       13
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned_brute"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned_brute"
+      ]
+     ],
+     "notice": "The reliquary falls quiet. The vault door swings loose"
+    },
+    "e": {
+     "kind": "door",
+     "name": "door_vault",
+     "open": "clear",
+     "fight": "G"
+    },
+    "M": {
+     "kind": "chest",
+     "name": "chest_vault",
+     "loot": "dungeon_big"
+    },
+    "T": {
+     "kind": "chest",
+     "name": "chest_vault_small",
+     "loot": "dungeon_small"
+    }
+   },
+   "map": [
+    "#############################",
+    "#.....#.........#.......#####",
+    "#..S..a.........#..P....#####",
+    "#.....#....F....b.......#####",
+    "#.X...#.........#...B...#####",
+    "#######.........#.......#####",
+    "#######...C.....####c########",
+    "#################...........#",
+    "#################...........#",
+    "#######.........#====%%=====#",
+    "#######.........#====%%=====#",
+    "#######....G....#......__...#",
+    "#######.........d.L....__.k.#",
+    "#######.........#......__...#",
+    "###########e#################",
+    "########.......##############",
+    "########...M.T.##############",
+    "########.......##############",
+    "#############################"
+   ]
+  },
+  "pitch_works": {
+   "name": "The Pitch Works",
+   "region": 2,
+   "slot": 11,
+   "_about": "Sea step 13 R2b (diary/DESIGN_REGION2.md): The Knots' mini-dungeon down the hatch of the ruined pitch works (gate none). The EMBER GAUNTLET lies in the tar store (chest C) and burns the bramble in its doorway; pitch smugglers hold the kettle hall; the Rime Anchor (chest A) freezes slabs over the hot pitch; the gauntlet lights the two braziers that open the foreman's office, where his guards fight over the stash (T = a small chest for R2g). Layout mine.",
+   "entrance": {
+    "at": [
+     -6302.5,
+     6893.4
+    ],
+    "yaw": 180.0,
+    "gate": "none"
+   },
+   "wall_h": 4.5,
+   "torch_every": 3,
+   "dress": {
+    "floor_worn": 0.45,
+    "floor_mosaic": 0.0,
+    "wall_crusted": 0.4,
+    "wall_relief": 0.0,
+    "clutter": 0.35,
+    "seed": 33
+   },
+   "legend": {
+    "S": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "a": {
+     "kind": "door",
+     "name": "door_hatch",
+     "open": "free"
+    },
+    "C": {
+     "kind": "chest",
+     "name": "chest_gauntlet",
+     "loot": "dungeon_small",
+     "tool": "gauntlet"
+    },
+    "r": {
+     "kind": "bramble",
+     "name": "bramble_door"
+    },
+    "s": {
+     "kind": "bramble",
+     "name": "bramble_store"
+    },
+    "F": {
+     "kind": "fight",
+     "name": "fight_kettle_hall",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       17,
+       2
+      ],
+      [
+       23,
+       2
+      ],
+      [
+       20,
+       6
+      ]
+     ],
+     "waves": [
+      [
+       "pirate_cutlass",
+       "pirate_cutlass"
+      ],
+      [
+       "pirate_musket",
+       "pirate_cutlass",
+       "pirate_cutlass"
+      ]
+     ],
+     "notice": "The kettle hall is yours. A stair goes down to the pitch"
+    },
+    "b": {
+     "kind": "door",
+     "name": "door_pitch_stair",
+     "open": "clear",
+     "fight": "F"
+    },
+    "A": {
+     "kind": "chest",
+     "name": "chest_anchor",
+     "loot": "dungeon_small",
+     "tool": "anchor"
+    },
+    "y": {
+     "kind": "brazier",
+     "name": "brazier_west"
+    },
+    "z": {
+     "kind": "brazier",
+     "name": "brazier_east"
+    },
+    "c": {
+     "kind": "door",
+     "name": "door_office",
+     "open": "braziers",
+     "braziers": [
+      "y",
+      "z"
+     ]
+    },
+    "G": {
+     "kind": "fight",
+     "name": "fight_office",
+     "reach_m": 6.0,
+     "spawns": [
+      [
+       16,
+       18
+      ],
+      [
+       24,
+       18
+      ],
+      [
+       20,
+       19
+      ]
+     ],
+     "waves": [
+      [
+       "pirate_musket",
+       "pirate_musket",
+       "sea_drowned_brute"
+      ]
+     ],
+     "notice": "The foreman's guards are down. His stash is yours"
+    },
+    "M": {
+     "kind": "chest",
+     "name": "chest_stash",
+     "loot": "dungeon_big"
+    },
+    "T": {
+     "kind": "chest",
+     "name": "chest_ledger",
+     "loot": "dungeon_small"
+    }
+   },
+   "map": [
+    "###########################",
+    "#.....#.......#...........#",
+    "#..S..a...s...r...........#",
+    "#.....#.......#...........#",
+    "#.X...#.C.....#.....F.....#",
+    "###############...........#",
+    "###############...........#",
+    "###############...........#",
+    "####################b######",
+    "###############.........A.#",
+    "###############...........#",
+    "###############===========#",
+    "###############===========#",
+    "###############===========#",
+    "###############...........#",
+    "###############.y.......z.#",
+    "####################c######",
+    "###############...........#",
+    "###############.....G.....#",
+    "###############...........#",
+    "###############...M...T...#",
+    "###########################"
+   ]
   }
  },
  "tide_hurt": {
