@@ -466,6 +466,18 @@
    ],
    "depth": 8.0,
    "model": "salvage_chest"
+  },
+  {
+   "quest_item": "pim_seed_tin",
+   "quest": "pim",
+   "step": 1,
+   "name": "Pim's seed tin",
+   "at": [
+    -7586.0,
+    4890.0
+   ],
+   "depth": 3.0,
+   "model": "salvage_chest"
   }
  ],
  "trinkets": {

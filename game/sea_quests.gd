@@ -3,11 +3,12 @@
 # (data/sea/quests.json "at"); [F] by one = they speak (game/bottle_note.gd) and a talk / bring step is asked of the
 # host (a bring takes the things from the asker's bag once the host says yes). A dive step's thing lies at a salvage
 # spot with "quest_item" (game/sea_salvage.gd shows it only at that step), a dungeon step ends when the host sees that
-# fight cleared. Once done the person leaves the island and runs the building (game/town_people.gd resident_info).
+# fight cleared. Once done the person leaves the island and runs the building (game/town_people.gd resident_info), or
+# (sea step 13 R2f, a quest with "runs") stands at an outpost's service spot (Lanternwick) and says their town lines.
 # The quest log (key L at sea, game/sea_quest_window.gd) and marks on the chart (chart_marks) say where to go. The
 # progress travels and is saved with the town's extra (game/sea_town.gd extra_dict "quests"); online the asks go
 # through game/net_sea.gd request_quest / _quest_done.
-# Dependencies: core/sea/sea_quest_rules.gd, data/sea/quests.json, data/sea/writing/quests_r1.txt, game/npc_body.gd,
+# Dependencies: core/sea/sea_quest_rules.gd, data/sea/quests.json, data/sea/writing/quests_r1.txt + quests_r2.txt, game/npc_body.gd,
 # game/body_motion.gd, game/bottle_note.gd, game/sea_quest_window.gd; the sea world (ships._net, town, dungeons,
 # salvage, skills (the bag), local_of, world_of, notice).
 extends Node3D
@@ -35,7 +36,7 @@ var _tick := 0.0
 func setup(sea_world: Node3D, player: CharacterBody3D, layer: CanvasLayer) -> void:
 	_sea = sea_world
 	_player = player
-	rules = QuestRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/quests.json")), FileAccess.get_file_as_string("res://data/sea/writing/quests_r1.txt"))
+	rules = QuestRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/quests.json")), FileAccess.get_file_as_string("res://data/sea/writing/quests_r1.txt") + "\n" + FileAccess.get_file_as_string("res://data/sea/writing/quests_r2.txt"))
 	note.events = self
 	layer.add_child(note)
 	log_window.quests = self
@@ -91,10 +92,13 @@ func _place_people(delta: float) -> void:
 	var me: Vector3 = _sea.call("local_of", _player.global_position)
 	for q: Dictionary in rules.quests():
 		var id := String(q["id"])
-		var at := Vector2(float(q["at"][0]), float(q["at"][1]))
-		var want := not rules.done(id) and at.distance_to(Vector2(me.x, me.z)) < float(rules.cfg["show_m"])
+		var runs: Dictionary = q.get("runs", {})
+		var moved := rules.done(id) and not runs.is_empty()  # (sea step 13 R2f) done: at the outpost's service spot
+		var spot: Array = runs["at"] if moved else q["at"]
+		var at := Vector2(float(spot[0]), float(spot[1]))
+		var want := (not rules.done(id) or moved) and at.distance_to(Vector2(me.x, me.z)) < float(rules.cfg["show_m"])
 		var p: Dictionary = _people.get(id, {})
-		if p.is_empty() and not rules.done(id):  # (sea step 13g) everyone is built on the first call, while the sea loads, and kept hidden till near: no hitch on the way
+		if p.is_empty() and (not rules.done(id) or moved):  # (sea step 13g) everyone is built on the first call, while the sea loads, and kept hidden till near: no hitch on the way
 			var look: Array = q["look"]
 			var node := NpcBody.build({"gender": String(look[1]), "height": 1.0, "weight": 1.0, "bust": 0.3, "glutes": 0.3, "skin": hash(id) % 6, "hair": String(look[2]),
 				"hair_color": ["#2b1d14", "#553322", "#8a5a2b", "#c9a26b", "#1a1a1a"][hash(id + "h") % 5], "face": "gentle_smile", "outfit": String(look[0])})
@@ -108,7 +112,7 @@ func _place_people(delta: float) -> void:
 			plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 			plate.position.y = 2.05
 			node.add_child(plate)
-			p = {"node": node, "y": 0.0, "ray_t": 0.0}
+			p = {"node": node, "y": 0.0, "ray_t": 0.0, "plate": plate}
 			_people[id] = p
 		if not want:
 			if not p.is_empty():
@@ -116,8 +120,12 @@ func _place_people(delta: float) -> void:
 			continue
 		var body: Node3D = p["node"]
 		body.visible = true
+		if moved:
+			(p["plate"] as Label3D).text = "%s\n%s" % [rules.word(id, "person"), rules.word(id, "trade")]
 		p["ray_t"] = float(p["ray_t"]) - delta
-		if float(p["ray_t"]) <= 0.0:  # the island's ground under them (it is solid only near players)
+		if moved and spot.size() > 2:  # indoors: the floor given (a ray from above would find the roof)
+			p["y"] = float(spot[2])
+		elif float(p["ray_t"]) <= 0.0:  # the island's ground under them (it is solid only near players)
 			p["ray_t"] = 1.0
 			var top: Vector3 = _sea.call("world_of", Vector3(at.x, 120.0, at.y))
 			var ray := PhysicsRayQueryParameters3D.create(top, top + Vector3(0.0, -200.0, 0.0))
@@ -157,8 +165,14 @@ func interact() -> bool:
 	return true
 
 
-# Talking to quest `id`'s person: they speak; a talk step ends, a bring step ends if the things are in the bag.
+# Talking to quest `id`'s person: they speak; a talk step ends, a bring step ends if the things are in the bag. Done
+# (and moved to an outpost): one of their town lines.
 func talk(id: String) -> void:
+	if rules.done(id):
+		var lines := rules.word(id, "town").split("|")
+		var line := lines[randi() % lines.size()].strip_edges() if not lines.is_empty() else ""
+		_show(rules.word(id, "person"), "%s: \"%s\"" % [rules.word(id, "person"), line], rules.word(id, "trade"))
+		return
 	var k := rules.step_of(id)
 	var st := rules.current(id)
 	var kind := String(st.get("kind", ""))
@@ -266,7 +280,9 @@ func step_done(id: String, k: int, asker: int, me: int) -> void:
 			(bag as RefCounted).call("take_all", st["items"])
 	if rules.done(id):
 		_notice("%s: \"%s\"" % [rules.word(id, "person"), rules.word(id, "done")])
-		_notice("Quest done: %s. %s now runs the %s at the home port." % [rules.word(id, "title"), rules.word(id, "person"), rules.word(id, "trade").to_lower()])
+		var runs_at: Dictionary = rules.quest(id).get("runs", {})
+		var place := "the home port" if runs_at.is_empty() else String(runs_at.get("port", "the outpost")).capitalize()
+		_notice("Quest done: %s. %s is now the %s at %s." % [rules.word(id, "title"), rules.word(id, "person"), rules.word(id, "trade").to_lower(), place])
 		var town: Node = _sea.get("town")
 		if town != null:
 			(town.get("people") as Node).call("refresh")

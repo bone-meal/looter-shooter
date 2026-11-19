@@ -1,7 +1,7 @@
 # Purpose: pure rules of the sea quests (sea step 13e; LOCKED: progress is the HOST'S WORLD, shared by the party; each
 # quest ends with its person taking over a building of the home port). The quests and their steps (data/sea/
 # quests.json), which step each stands at, whether a step may be finished now, who runs which building once done,
-# where to go (for the chart), and the writing file's words (data/sea/writing/quests_r1.txt). No nodes.
+# where to go (for the chart), and the writing files' words (data/sea/writing/quests_r1.txt + quests_r2.txt). No nodes.
 # Dependencies: the config and the writing text given to _init.
 extends RefCounted
 

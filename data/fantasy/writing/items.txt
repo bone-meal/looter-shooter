@@ -98,6 +98,7 @@ marsh_beacon: Marsh Beacon
 queen_lure_lamp: The Queen's Lure Lamp
 gloomscale: Gloomscale
 gloomscale_sheathing: Gloomscale Sheathing
+pim_seed_tin: Pim's Seed Tin
 rime_blubber: Rime Blubber
 storm_feather: Storm Feather
 siren_pearl: Siren Pearl

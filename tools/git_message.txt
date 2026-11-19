@@ -1,6 +1,6 @@
-Marsh lights keep to open water
+Sea step 13 R2f: region 2 people and quests
 
-Director: fix wisps going through stuff. Their way is laid round the islands now (each leg kept 45 m clear of every island, wider turns or a shorter leg when blocked, the start moved round the player if it lies over land); 400 random ways across region 2 = 1592 legs, none crossing an island. Wisps drawn bigger.
+Four region 2 quests (data/sea/writing/quests_r2.txt): Wren Calloway on Heron's Reach (a Fogmaw Lure), Hob Turfmoor on Greywater Bog (the Sunken Chapel's reliquary), Tansy Pitchworth on the Knots (the Pitch Works' office), Old Pim on the Drowned Orchard (dive off the jetty for his seed tin). Each ends at Lanternwick running a service (ferry keeper, keeper of the Lantern Hall, harbour master, lamplighter), standing there with their trade over their head and town lines. All four walked through on his PC.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

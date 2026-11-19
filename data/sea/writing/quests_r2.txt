@@ -1,0 +1,53 @@
+# Region 2's sea quests, the Fog Banks (sea step 13 R2f). Edit freely: all of it is my placeholder text.
+# Same keys as quests_r1.txt. Region 2's people end up at LANTERNWICK, each running one of its services
+# (data/sea/quests.json "runs"): trade = what they do there; town = what they say there (lines split by | ).
+
+[quest wren]
+title: Decoys in the Fog
+person: Wren Calloway
+trade: Ferry keeper
+say0: Every decoy I carve, the fog eats. The herons don't come, the eels don't come, and something big comes instead. If I'd a real lure, a Fogmaw's own, I could make decoys that light the way instead of losing it.
+goal0: Talk to the decoy-maker in her stilt hut on Heron's Reach
+say1: A Fogmaw Lure. They lurk off a ship's side in the fog, lights hanging over the rail. Cut one free, or find a raft that sells them.
+goal1: Bring Wren a Fogmaw Lure (from a Fogmaw, or a merchant raft)
+done: Oh, it's still warm. With this on a pole, every boat at Lanternwick will find its way home. I'm going there. Somebody has to keep the ferry lit.
+town: The ferry runs while the lure glows. It hasn't gone out yet. | Mind the little lights over the water. Mine's the only one that wants you home. | I still carve decoys. Now they glow.
+
+[quest hob]
+title: The Bells Under the Bog
+person: Hob Turfmoor
+trade: Keeper of the Lantern Hall
+say0: The chapel's bells ring under the peat at night. No bell's hung there for a hundred years. Something down there wants company, and it's taken two of my cutters already. Put it to rest.
+goal0: Talk to the peat cutter at the cuttings on Greywater Bog
+say1: The crypt stair is inside the chapel ruin. Go down past the flooded nave to the reliquary. Whatever rings those bells, it's there.
+goal1: Clear the reliquary at the bottom of the Sunken Chapel
+say2: Quiet. First quiet night in a month. You did that?
+goal2: Tell Hob the chapel is quiet
+done: Then I'm done with peat. The Lantern Hall needs a keeper who's not afraid of the dark. That's me now, apparently.
+town: Rest as long as you like. The lamps stay lit. | I hear bells sometimes still. Just the hall's wind chimes. Probably. | Wipe your boots. Bog peat stains for ever.
+
+[quest tansy]
+title: The Foreman's Ledger
+person: Tansy Pitchworth
+trade: Harbour master of Lanternwick
+say0: The pitch works was ours till pirates took it. They shut themselves in the foreman's office with our ledger and every debt the town owes is written in it. Get it back, and we'll call it square.
+goal0: Talk to the pitch tapper on the Knots
+say1: The works' yard hatch, then down. You'll need fire for the brambles and ice for the hot pitch. The office is at the far end.
+goal1: Clear the foreman's office at the bottom of the Pitch Works
+say2: They're gone? The ledger's safe? Let me see it.
+goal2: Tell Tansy the Pitch Works is clear
+done: Every debt in Lanternwick, and I hold the book. I suppose that makes me the harbour master. Somebody has to collect.
+town: Buying, selling, ferrying. I keep the books, you keep your nose clean. | Pitch is up two doubloons. Don't look at me like that, I didn't start the fog. | The ledger says you owe nothing. I wrote that in myself.
+
+[quest pim]
+title: A Tin of Seeds
+person: Old Pim
+trade: Lamplighter of Lanternwick
+say0: The orchard drowned, but the trees were apples once, good ones. My seed tin went off the jetty the night the water came. Find it and I'll plant apples somewhere dry.
+goal0: Talk to the old farmer at the ruined farmhouse on the Drowned Orchard
+say1: Off the end of the jetty, where the dyke meets the deep. A little tin with a red lid. Dive for it.
+goal1: Dive off the Drowned Orchard's jetty for Pim's seed tin
+say2: Is that it? The red lid?
+goal2: Bring the seed tin back to Old Pim at the farmhouse
+done: Still dry inside! I'll plant them on the hill at Lanternwick, by the lamps. And while I'm there I'll keep the lamps. An old man needs a job.
+town: Every lamp from the hall to the jetty, every night. Someone has to. | The apples are coming up. Small. Stubborn. Like me. | If a lamp goes out, it's the fog's fault, not mine.

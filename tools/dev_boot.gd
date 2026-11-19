@@ -875,7 +875,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				match words[1] if words.size() > 1 else "status":
 					"go":
 						var q_g: Dictionary = qr.call("quest", words[2])
-						player.call("teleport", sea_q.call("world_of", Vector3(float(q_g["at"][0]) + 2.0, 40.0, float(q_g["at"][1]))), 0.0)
+						var at_g: Array = q_g["runs"]["at"] if bool(qr.call("done", words[2])) and q_g.has("runs") else q_g["at"]  # (sea step 13 R2f) done: at the outpost
+						player.call("teleport", sea_q.call("world_of", Vector3(float(at_g[0]) + 2.0, 40.0, float(at_g[1]))), 0.0)
 						await get_tree().create_timer(5.0, true, false, true).timeout  # (falls to the island's ground; the person's ground ray runs)
 						var pq: Dictionary = (qs.get("_people") as Dictionary).get(words[2], {})
 						if not pq.is_empty():
