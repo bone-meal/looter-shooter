@@ -80,6 +80,27 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			await get_tree().create_timer(float(words[1]), true, false, true).timeout
 		"shot":
 			await _stage(renderer, words[1], 0.2)
+		"probe":  # "!probe <note>": (sea step 13g) what holds the player: on floor / wall, speed, what a ray straight down hits and what touches a 0.8 m ball round him
+			var space_p := (player as Node3D).get_world_3d().direct_space_state
+			var ray_p := PhysicsRayQueryParameters3D.create(player.global_position + Vector3(0, 0.5, 0), player.global_position + Vector3(0, -300.0, 0))
+			ray_p.exclude = [player.get_rid()]
+			var hit_p := space_p.intersect_ray(ray_p)
+			var ball_p := PhysicsShapeQueryParameters3D.new()
+			var sphere_p := SphereShape3D.new()
+			sphere_p.radius = 0.8
+			ball_p.shape = sphere_p
+			ball_p.transform = Transform3D(Basis(), player.global_position + Vector3(0, 0.9, 0))
+			ball_p.exclude = [player.get_rid()]
+			var touching := PackedStringArray()
+			for t_p: Dictionary in space_p.intersect_shape(ball_p, 8):
+				touching.append("%s (layer %d)" % [(t_p["collider"] as Node).get_path(), int((t_p["collider"] as CollisionObject3D).collision_layer) if t_p["collider"] is CollisionObject3D else -1])
+			_lines.append("PROBE %s: frame %d at %.1f s, carried %s at_helm %s, at %s, floor %s wall %s ceiling %s, velocity %s, physics %s, below %s, touching [%s]" % [" ".join(words.slice(1)), Engine.get_frames_drawn(), Time.get_ticks_msec() / 1000.0, str(player.get("carried")), str(player.get("at_helm")), str(player.global_position.snapped(Vector3(0.1, 0.1, 0.1))), str(player.is_on_floor()), str(player.is_on_wall()), str(player.is_on_ceiling()),
+				str(player.velocity.snapped(Vector3(0.01, 0.01, 0.01))), str(player.is_physics_processing()), "nothing" if hit_p.is_empty() else "%s at y %.1f" % [(hit_p["collider"] as Node).get_path(), (hit_p["position"] as Vector3).y], ", ".join(touching)])
+		"timescale":  # "!timescale 4": (sea step 13g sail-round) the game runs n times as fast, physics in steps of the same size; "!timescale 1" back
+			var scale_t := maxf(float(words[1]) if words.size() > 1 else 1.0, 0.1)
+			Engine.time_scale = scale_t
+			Engine.physics_ticks_per_second = roundi(60.0 * scale_t)
+			Engine.max_physics_steps_per_frame = roundi(8.0 * scale_t)
 		"look":
 			var yaw := deg_to_rad(float(words[1]))
 			var pitch := deg_to_rad(float(words[2]))
@@ -1367,6 +1388,45 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						fleet.call("dev_face_wind", first, float(arg))
 					"head":  # compass heading: 0 north, 90 east
 						first.get("state")["yaw"] = -deg_to_rad(float(arg))
+					"course":  # "!ship course <x> <z> [cap s]": (sea step 13g sail-round) she sails to that sea spot (anchor up, turned toward it 10 deg a game second), until 60 m off it or stuck 5 game s; logs the leg
+						var goal_c := Vector2(float(arg), float(words[3]) if words.size() > 3 else 0.0)
+						var st_c: Dictionary = first.get("state")
+						if bool(st_c["anchored"]):
+							fleet.call("toggle_anchor", first)
+						var began_c := Time.get_ticks_msec()
+						var from_c := Vector2(float(st_c["x"]), float(st_c["z"]))
+						var hull_c := float(st_c["hull"])
+						var game_c := 0.0
+						var still_c := 0.0
+						var worst_c := 0.0
+						var last_c := Time.get_ticks_usec()
+						var sailed_c := 0.0
+						var prev_c := from_c
+						var why_c := "cap"
+						var spikes_c := PackedStringArray()
+						while Time.get_ticks_msec() - began_c < int((float(words[4]) if words.size() > 4 else 240.0) * 1000.0):
+							await get_tree().process_frame
+							var now_c := Time.get_ticks_usec()
+							worst_c = maxf(worst_c, float(now_c - last_c) / 1000.0)
+							if float(now_c - last_c) / 1000.0 > 40.0 and spikes_c.size() < 12:  # where the long frames fell
+								spikes_c.append("%.0f ms at (%.0f, %.0f)" % [float(now_c - last_c) / 1000.0, float(st_c["x"]), float(st_c["z"])])
+							last_c = now_c
+							var dt_c := get_process_delta_time()
+							game_c += dt_c
+							var at_c := Vector2(float(st_c["x"]), float(st_c["z"]))
+							sailed_c += at_c.distance_to(prev_c)
+							still_c = still_c + dt_c if at_c.distance_to(prev_c) < 0.001 and game_c > 5.0 else 0.0
+							prev_c = at_c
+							if at_c.distance_to(goal_c) < 60.0:
+								why_c = "arrived"
+								break
+							if still_c > 5.0:
+								why_c = "STUCK (last ground %s)" % String(fleet.get("last_ground"))
+								break
+							var to_c := goal_c - at_c
+							st_c["yaw"] = rotate_toward(float(st_c["yaw"]), atan2(-to_c.x, -to_c.y), deg_to_rad(10.0) * dt_c)
+						_lines.append("COURSE to (%.0f, %.0f): %s after %.1f s (%.0f game s), %.0f m sailed from (%.0f, %.0f) to (%.0f, %.0f), hull %.0f -> %.0f, worst frame %.1f ms, frames over 40 ms [%s]" % [goal_c.x, goal_c.y, why_c,
+							(Time.get_ticks_msec() - began_c) / 1000.0, game_c, sailed_c, from_c.x, from_c.y, float(st_c["x"]), float(st_c["z"]), hull_c, float(st_c["hull"]), worst_c, ", ".join(spikes_c)])
 					_:
 						_lines.append(String(fleet.call("status")))
 		"port":  # sea step 6: !port go | open | close | tab <n> | press <button text> | money <chips> <doubloons> | status <note>
@@ -1818,6 +1878,59 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("ISLE GHOSTS " + "; ".join(notes))
 				if words[1] == "lookghost" and nearest != null:
 					player.call("look_at_point", nearest.global_position + Vector3(0, 1.2, 0))
+			elif words.size() > 7 and words[1] == "scan":  # "!isle scan <island> x0 z0 x1 z1 step": (sea step 13g) island-local grid: ground height and '#' where a standing body would not fit
+				for island_s: Dictionary in sea_isle.get("islands").get("_cfg")["islands"]:
+					if String(island_s["id"]) == words[2]:
+						var space_s := (player as Node3D).get_world_3d().direct_space_state
+						var body_s := CapsuleShape3D.new()
+						body_s.radius = 0.4
+						body_s.height = 1.7
+						var fit_s := PhysicsShapeQueryParameters3D.new()
+						fit_s.shape = body_s
+						fit_s.exclude = [player.get_rid()]
+						fit_s.collision_mask = 1
+						var step_s := float(words[7])
+						var z_s := float(words[4])
+						while z_s <= float(words[6]) + 0.01:
+							var row := PackedStringArray()
+							var x_s := float(words[3])
+							while x_s <= float(words[5]) + 0.01:
+								var top: Vector3 = sea_isle.call("world_of", Vector3(float(island_s["pos"][0]) + x_s, 30.0, float(island_s["pos"][1]) + z_s))
+								var down_s := PhysicsRayQueryParameters3D.create(top, top + Vector3(0, -40.0, 0), 1)
+								down_s.exclude = [player.get_rid()]
+								var hit_s := space_s.intersect_ray(down_s)
+								if hit_s.is_empty():
+									row.append("  -  ")
+								else:
+									var y_s := float((sea_isle.call("local_of", hit_s["position"]) as Vector3).y)
+									fit_s.transform = Transform3D(Basis(), (hit_s["position"] as Vector3) + Vector3(0, 0.45 + 0.85 + 0.05, 0))
+									row.append("%5.1f%s" % [y_s, "#" if not space_s.intersect_shape(fit_s, 1).is_empty() else " "])
+								x_s += step_s
+							_lines.append("SCAN z %6.1f |%s" % [z_s, "".join(row)])
+							z_s += step_s
+			elif words.size() > 1 and words[1] == "builds":  # "!isle builds": ms of each island's last full build, cumulative: model load, instance, list read, ground + props, water (sea step 13g)
+				_lines.append("ISLE BUILDS %s" % str(sea_isle.get("islands").get("build_ms")))
+			elif words.size() > 3 and words[1] == "view":  # "!isle view <island> <place n> [m] [compass deg]": (sea step 13g look pictures) on the ground that far from that set piece (default 18 m, toward the landing), facing it
+				for island_v: Dictionary in sea_isle.get("islands").get("_cfg")["islands"]:
+					if String(island_v["id"]) == words[2] and island_v.has("props"):
+						var data_v: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/isles/%s.json" % String(island_v["props"])))
+						var piece_v: Array = data_v["places"][clampi(int(words[3]), 0, (data_v["places"] as Array).size() - 1)]
+						var origin_v := Vector2(float(island_v["pos"][0]), float(island_v["pos"][1]))
+						var at_v := Vector2(float(piece_v[1]), float(piece_v[3]))
+						var land_v: Array = data_v["pois"][String(data_v["start"])]
+						var dir_v := (Vector2(float(land_v[0]), float(land_v[1])) - at_v).normalized()
+						if words.size() > 5:
+							dir_v = Vector2(sin(deg_to_rad(float(words[5]))), -cos(deg_to_rad(float(words[5]))))
+						var stand_v := at_v + dir_v * (float(words[4]) if words.size() > 4 else 18.0)
+						player.call("teleport", sea_isle.call("world_of", Vector3(origin_v.x + stand_v.x, 140.0, origin_v.y + stand_v.y)), 0.0)
+						var waited_v := 0.0
+						await get_tree().create_timer(0.5, true, false, true).timeout  # (the floor flag is the old spot's until he has moved)
+						while waited_v < 20.0 and not player.is_on_floor():
+							await get_tree().create_timer(0.25, true, false, true).timeout
+							waited_v += 0.25
+						await get_tree().create_timer(1.0, true, false, true).timeout
+						player.call("look_at_point", sea_isle.call("world_of", Vector3(origin_v.x + at_v.x, float(piece_v[2]) + 2.0, origin_v.y + at_v.y)))
+						_lines.append("ISLE VIEW %s %s (%s): stand at island (%.0f, %.0f), %.1f m up, on floor %s" % [words[2], words[3], String(piece_v[0]), stand_v.x, stand_v.y, (sea_isle.call("local_of", player.global_position) as Vector3).y, str(player.is_on_floor())])
 			elif words.size() > 1 and words[1] == "walk":
 				var walker := IsleWalker.new()
 				add_child(walker)
@@ -3142,6 +3255,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", ship_g.call("deck_spot", [0.0, -1.0], 0.4), float(st_g["yaw"]))
 			elif words.size() > 2 and words[1] == "wait":
 				await get_tree().create_timer(float(words[2]), true, false, true).timeout
+			elif words.size() > 2 and words[1] == "part":  # "!gate part <id>": (host / alone, sea step 13g two-copy test) that gate part fitted to the ship at once (the real way: the shipyard)
+				var parts_g: Array = ship_g.get("state").get("parts", [])
+				if not parts_g.has(words[2]):
+					parts_g.append(words[2])
+				ship_g.get("state")["parts"] = parts_g
 			else:
 				var st_s: Dictionary = ship_g.get("state")
 				var dg: Dictionary = (fl_g.get("gates") as RefCounted).call("danger", float(st_s["x"]), float(st_s["z"]), st_s.get("parts", []))

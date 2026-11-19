@@ -205,6 +205,7 @@ func _release() -> void:
 
 func _settle(player: CharacterBody3D) -> void:
 	var waited := 0.0
+	await get_tree().create_timer(0.5, true, false, true).timeout  # (sea step 13g: the floor flag is the old spot's until the body has moved)
 	while waited < 20.0 and not player.is_on_floor():
 		await get_tree().create_timer(0.25, true, false, true).timeout
 		waited += 0.25

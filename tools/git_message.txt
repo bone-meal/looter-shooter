@@ -1,10 +1,10 @@
-Sea step 13f: second treasure chart, five more salvage finds, castaway poses
+Sea step 13g: region 1 check (sail-round, walks, gate online, look pictures, frames)
 
-- data/sea/dungeons.json: the Smugglers Grotto captain chest gives a whole chart, The Smugglers' Cache (gear.json chart_smugglers_cache, chart.json secret X)
-- data/sea/salvage.json: hoard smugglers_cache at the X, loot hoard_smugglers (encounters.json)
-- five new region 1 finds on the newer islands (turtle figurehead, salt seal, smugglers lantern, coral idol, atoll bell); Sunlit Shallows logbook set is now 10 finds, reward 1500 chips, 600 xp, 150 doubloons
-- director: castaway waves from the water when a ship is near and sits on a box aboard (game/sea_events.gd, game/dance_poses.gd)
-- tested solo on the compatibility renderer: chart received and marked, hoard taken, set paid
+- sail-round: the sloop sailed a 12 km loop round region 1 (home port, Turtleback, Palm Ring, Saltpan Key, Smugglers Hook, back) on 8 legs, never aground, hull kept
+- every island route checked, all four mid islands walked; fixed: the Turtleback path from the landing ran into the middle stilt hut (data/sea/isles/isle_turtleback.json, avoid ring wider in tools/blender/sea_isle_region1.py)
+- two-copy test of the region 2 gate: the guest sees the fog, the hull ground down and the push back; once the Shellback Prow is fitted the hazard is gone on both
+- found: a frame hitch when an island is built as the ship comes within 1.2 km (home port 0.77 s, mid islands 0.2-0.35 s) and when a quest person is built (about 0.1 s); game/sea_islands.gd keeps the build times for the dev log
+- dev: !timescale, !ship course, !isle view / scan / builds, !probe, !gate part; the island walker waits for the body to land first
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

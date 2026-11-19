@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 10;!foe pause;!beast pause;!uboat pause on;!sevent pause on;!ship board;!wait 30;!ship board;!wait 3;!gate status g_in;!snap g_fog;!wait 8;!gate status g_in2;!wait 20;!ship board;!wait 4;!gate status g_fitted;!snap g_fitted;!wait 10;!gate status g_end

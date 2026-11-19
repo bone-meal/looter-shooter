@@ -20,6 +20,7 @@ const MODELS := "res://assets/models/sea/"
 var graphics := "medium"  # the graphics tier (game/sea_world.gd enter): how thick and far the props are drawn
 var _cfg: Dictionary
 var _shown := {}  # island id -> {"full": Node3D or null, "far": MeshInstance3D}
+var build_ms := {}  # island id -> ms of its last full build: [model load, instance, list read, ground + props, water] (sea step 13g, dev)
 
 
 func setup(cfg: Dictionary) -> void:
@@ -67,8 +68,13 @@ func _full(island: Dictionary) -> Node3D:
 	var path := MODELS + String(island["model"]) + ".glb"
 	if not ResourceLoader.exists(path):
 		return null
-	var made: Node3D = (load(path) as PackedScene).instantiate()
+	var began := Time.get_ticks_usec()
+	var times: Array = []
+	var scene := load(path) as PackedScene
+	times.append(_ms_since(began))
+	var made: Node3D = scene.instantiate()
 	add_child(made)
+	times.append(_ms_since(began))
 	made.position = Vector3(float(island["pos"][0]), 0.0, float(island["pos"][1]))
 	var ground: Material = _ground()
 	if island.has("props"):
@@ -76,6 +82,7 @@ func _full(island: Dictionary) -> Node3D:
 	var list: Dictionary = {}
 	if island.has("props") and FileAccess.file_exists(IsleProps.LISTS + String(island["props"]) + ".json"):
 		list = JSON.parse_string(FileAccess.get_file_as_string(IsleProps.LISTS + String(island["props"]) + ".json"))
+	times.append(_ms_since(began))
 	if list.has("chunks"):  # a big island: ground, collision and clutter streamed by chunk (game/sea_isle_stream.gd)
 		var stream := IsleStream.new()
 		stream.name = "Stream"
@@ -85,6 +92,7 @@ func _full(island: Dictionary) -> Node3D:
 		_solid(made, ground)
 		if island.has("props"):
 			made.set_meta("props", IsleProps.build(made, island, _cfg["props"], graphics))
+	times.append(_ms_since(began))
 	var water_path := MODELS + String(island["model"]) + "_water.glb"
 	if ResourceLoader.exists(water_path):  # rivers and waterfalls: seen, not solid
 		var water := (load(water_path) as PackedScene).instantiate() as Node3D
@@ -93,7 +101,13 @@ func _full(island: Dictionary) -> Node3D:
 			var surface := found as MeshInstance3D
 			surface.material_override = IsleWater.material("waterfall" if String(surface.name).begins_with("waterfall") else "water")
 			surface.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	times.append(_ms_since(began))
+	build_ms[String(island["id"])] = times
 	return made
+
+
+static func _ms_since(began: int) -> float:
+	return snappedf(float(Time.get_ticks_usec() - began) / 1000.0, 0.1)
 
 
 # Every mesh of an island model gets a trimesh collider (the islands are walked on and sailed into).
