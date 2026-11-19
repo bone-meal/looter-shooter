@@ -4,13 +4,24 @@
 
 [islands]
 start: Home Port Isle
-test_tiny: Lone Palm
-test_medium: Turtleback
-test_large: Greywater Bluff
 reef: Coralback Reef
 stackwater: Stackwater Rocks
 bellrock: Bellrock
 gullhook: Gullhook Cay
+turtleback: Turtleback
+saltpan: Saltpan Key
+smugglers_hook: Smuggler's Hook
+palm_ring: Palm Ring Atoll
+islet_lone_rock: Lone Rock
+islet_bird_rock: Bird Rock
+islet_one_palm: Lone Palm
+islet_sandbar_west: Westbar
+islet_one_tree: One Tree Isle
+islet_little_arch: Little Arch
+islet_cormorant: Cormorant Rock
+islet_sandbar_north: Northbar
+islet_gannet_stack: Gannet Stack
+islet_mast_shoal: Mast Shoal
 
 [secrets]
 chart_shallows_hoard: The Shallows Hoard | Three torn pieces of one chart: whoever hid this wanted it found by someone patient.

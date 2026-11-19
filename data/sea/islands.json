@@ -23,36 +23,6 @@
    }
   },
   {
-   "id": "test_tiny",
-   "pos": [
-    1300,
-    6200
-   ],
-   "radius": 14,
-   "model": "isle_tiny",
-   "props": "isle_tiny"
-  },
-  {
-   "id": "test_medium",
-   "pos": [
-    1650,
-    5000
-   ],
-   "radius": 160,
-   "model": "isle_medium",
-   "props": "isle_medium"
-  },
-  {
-   "id": "test_large",
-   "pos": [
-    -1900,
-    4500
-   ],
-   "radius": 420,
-   "model": "isle_large",
-   "props": "isle_large"
-  },
-  {
    "id": "reef",
    "pos": [
     1900.0,
@@ -122,6 +92,258 @@
     "wet": "#b8a27a",
     "path": "#9a8060",
     "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "turtleback",
+   "pos": [
+    1500.0,
+    5600.0
+   ],
+   "radius": 186,
+   "model": "isle_turtleback",
+   "props": "isle_turtleback",
+   "ground": {
+    "sand": "#ead7a0",
+    "grass": "#5f9a3e",
+    "rock": "#8f8a78",
+    "wet": "#a08a62",
+    "path": "#8c7250",
+    "forest": "#4f6a30"
+   }
+  },
+  {
+   "id": "saltpan",
+   "pos": [
+    -2100.0,
+    4400.0
+   ],
+   "radius": 167,
+   "model": "isle_saltpan",
+   "props": "isle_saltpan",
+   "ground": {
+    "sand": "#f4efe0",
+    "grass": "#a4b06a",
+    "rock": "#c4bcaa",
+    "wet": "#c8bca0",
+    "path": "#b0a080",
+    "forest": "#7a8048"
+   }
+  },
+  {
+   "id": "smugglers_hook",
+   "pos": [
+    -2350.0,
+    7600.0
+   ],
+   "radius": 155,
+   "model": "isle_smugglers_hook",
+   "props": "isle_smugglers_hook",
+   "ground": {
+    "sand": "#e2d4b0",
+    "grass": "#5c8a44",
+    "rock": "#b8b4a8",
+    "wet": "#9e9278",
+    "path": "#8a7a60",
+    "forest": "#4e6234"
+   }
+  },
+  {
+   "id": "palm_ring",
+   "pos": [
+    500.0,
+    3900.0
+   ],
+   "radius": 198,
+   "model": "isle_palm_ring",
+   "props": "isle_palm_ring",
+   "ground": {
+    "sand": "#f6e4d8",
+    "grass": "#7aa850",
+    "rock": "#c8b8a8",
+    "wet": "#d0b8a4",
+    "path": "#b09884",
+    "forest": "#5e7a3a"
+   }
+  },
+  {
+   "id": "islet_lone_rock",
+   "pos": [
+    2600.0,
+    6400.0
+   ],
+   "radius": 26,
+   "model": "isle_islet_lone_rock",
+   "props": "isle_islet_lone_rock",
+   "ground": {
+    "sand": "#e8d8b0",
+    "grass": "#6a9a48",
+    "rock": "#8a8478",
+    "wet": "#a08a66",
+    "path": "#8c7656",
+    "forest": "#56683a"
+   }
+  },
+  {
+   "id": "islet_bird_rock",
+   "pos": [
+    2200.0,
+    8600.0
+   ],
+   "radius": 22,
+   "model": "isle_islet_bird_rock",
+   "props": "isle_islet_bird_rock",
+   "ground": {
+    "sand": "#e4d6b4",
+    "grass": "#7a9a5a",
+    "rock": "#d0ccc0",
+    "wet": "#a89878",
+    "path": "#8c7656",
+    "forest": "#56683a"
+   }
+  },
+  {
+   "id": "islet_one_palm",
+   "pos": [
+    -2600.0,
+    5800.0
+   ],
+   "radius": 16,
+   "model": "isle_islet_one_palm",
+   "props": "isle_islet_one_palm",
+   "ground": {
+    "sand": "#f2e2b8",
+    "grass": "#6fa04a",
+    "rock": "#988e80",
+    "wet": "#b09a74",
+    "path": "#9a8060",
+    "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "islet_sandbar_west",
+   "pos": [
+    -700.0,
+    4300.0
+   ],
+   "radius": 42,
+   "model": "isle_islet_sandbar_west",
+   "props": "isle_islet_sandbar_west",
+   "ground": {
+    "sand": "#f6ead0",
+    "grass": "#8aa860",
+    "rock": "#a89e90",
+    "wet": "#d4c4a0",
+    "path": "#a89070",
+    "forest": "#6a7a44"
+   }
+  },
+  {
+   "id": "islet_one_tree",
+   "pos": [
+    1100.0,
+    7000.0
+   ],
+   "radius": 14,
+   "model": "isle_islet_one_tree",
+   "props": "isle_islet_one_tree",
+   "ground": {
+    "sand": "#eedcb2",
+    "grass": "#6ea248",
+    "rock": "#968c80",
+    "wet": "#ad9772",
+    "path": "#9a8060",
+    "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "islet_little_arch",
+   "pos": [
+    -2700.0,
+    3400.0
+   ],
+   "radius": 19,
+   "model": "isle_islet_little_arch",
+   "props": "isle_islet_little_arch",
+   "ground": {
+    "sand": "#e6d6b0",
+    "grass": "#6c9a48",
+    "rock": "#a49a8a",
+    "wet": "#a89272",
+    "path": "#9a8060",
+    "forest": "#5d6e36"
+   }
+  },
+  {
+   "id": "islet_cormorant",
+   "pos": [
+    2700.0,
+    3300.0
+   ],
+   "radius": 29,
+   "model": "isle_islet_cormorant",
+   "props": "isle_islet_cormorant",
+   "ground": {
+    "sand": "#dccca8",
+    "grass": "#628e42",
+    "rock": "#7e7a72",
+    "wet": "#9a8462",
+    "path": "#8c7656",
+    "forest": "#4e6234"
+   }
+  },
+  {
+   "id": "islet_sandbar_north",
+   "pos": [
+    -200.0,
+    8000.0
+   ],
+   "radius": 35,
+   "model": "isle_islet_sandbar_north",
+   "props": "isle_islet_sandbar_north",
+   "ground": {
+    "sand": "#f8eed8",
+    "grass": "#8aa860",
+    "rock": "#aaa092",
+    "wet": "#d6c6a2",
+    "path": "#a89070",
+    "forest": "#6a7a44"
+   }
+  },
+  {
+   "id": "islet_gannet_stack",
+   "pos": [
+    2700.0,
+    5100.0
+   ],
+   "radius": 19,
+   "model": "isle_islet_gannet_stack",
+   "props": "isle_islet_gannet_stack",
+   "ground": {
+    "sand": "#e0d2b0",
+    "grass": "#748e56",
+    "rock": "#c8c4ba",
+    "wet": "#a49474",
+    "path": "#8c7656",
+    "forest": "#56683a"
+   }
+  },
+  {
+   "id": "islet_mast_shoal",
+   "pos": [
+    -1700.0,
+    3200.0
+   ],
+   "radius": 32,
+   "model": "isle_islet_mast_shoal",
+   "props": "isle_islet_mast_shoal",
+   "ground": {
+    "sand": "#e8d8b4",
+    "grass": "#6c9a48",
+    "rock": "#7a766e",
+    "wet": "#9a8664",
+    "path": "#8c7656",
+    "forest": "#56683a"
    }
   }
  ],

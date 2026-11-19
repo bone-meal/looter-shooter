@@ -1,3 +1,10 @@
-# island kit: the small test island gave way to the showcase start island (tools/blender/sea_isle_start.py)
-assets/models/sea/isle_small.glb
-assets/models/sea/isle_small.glb.import
+# sea step 13b: region 1's three TEST islands gave way to Turtleback, Saltpan Key, Smuggler's Hook, Palm Ring Atoll and ten islets (tools/blender/sea_isle_region1.py)
+assets/models/sea/isle_tiny.glb
+assets/models/sea/isle_tiny.glb.import
+assets/models/sea/isle_medium.glb
+assets/models/sea/isle_medium.glb.import
+assets/models/sea/isle_large.glb
+assets/models/sea/isle_large.glb.import
+data/sea/isles/isle_tiny.json
+data/sea/isles/isle_medium.json
+data/sea/isles/isle_large.json

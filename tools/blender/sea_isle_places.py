@@ -527,7 +527,128 @@ def sea_shrine(m):
         m.loft(K("leaf", (0.24, 0.42, 0.3)), [(x, 5.0 - rnd.uniform(0, 1.0), -0.8, 0.25, 0.05), (x, 3.0, -0.75, 0.15, 0.04), (x, rnd.uniform(1.0, 2.0), -0.72, 0.06, 0.03)], segs=4, steps=2)
 
 
+def stilt_hut(m):
+    """A fisherman's hut on stilts (sea step 13b, Turtleback's hamlet): a plank floor 1.8 m up on eight posts, woven
+    walls with a door toward +forward and a shuttered window, a steep palm-thatch roof with a ridge pole, a ladder down
+    to the sand, a porch with a bench, nets hung on the rail, a clay pot and a fish basket."""
+    rnd = random.Random(61)
+    fl = 1.8
+    for x in (-2.0, -0.7, 0.7, 2.0):
+        for z in (-1.8, 1.8):
+            m.rod(K("wood", (0.42, 0.32, 0.22)), 0.09, (x, -1.0, z), (x, fl, z), segs=6)
+    m.box(K("wood", OLD_WOOD), (4.6, 0.12, 4.2), (0.0, fl, 0.3), bevel=0.02)  # floor + porch
+    wall = K("thatch", (0.66, 0.56, 0.36))
+    m.box(wall, (4.0, 2.0, 0.1), (0.0, fl + 1.0, -1.8), bevel=0.01)
+    m.box(wall, (0.1, 2.0, 3.6), (-2.0, fl + 1.0, 0.0), bevel=0.01)
+    m.box(wall, (0.1, 2.0, 3.6), (2.0, fl + 1.0, 0.0), bevel=0.01)
+    m.box(wall, (1.4, 2.0, 0.1), (-1.3, fl + 1.0, 1.8), bevel=0.01)  # front wall with the door gap in the middle
+    m.box(wall, (1.4, 2.0, 0.1), (1.3, fl + 1.0, 1.8), bevel=0.01)
+    m.box(wall, (1.2, 0.3, 0.1), (0.0, fl + 1.85, 1.8), bevel=0.01)
+    m.box(K("wood", (0.35, 0.26, 0.18)), (0.7, 0.6, 0.06), (2.04, fl + 1.2, 0.0), tilt=0.0, bevel=0.01)  # shutter
+    roof = K("thatch", (0.6, 0.5, 0.28))
+    for side in (-1.0, 1.0):
+        m.box(roof, (5.0, 0.18, 3.0), (0.0, fl + 2.85, side * 1.15), tilt=side * 48.0, bevel=0.03)
+    m.rod(K("wood", WOOD), 0.07, (-2.5, fl + 3.95, 0.0), (2.5, fl + 3.95, 0.0), segs=6)
+    for k in range(7):  # ladder
+        y = k * fl / 6.0 - 0.3
+        m.rod(K("wood", WOOD), 0.03, (-0.35, y, 2.6 + (fl - y) * 0.3), (0.35, y, 2.6 + (fl - y) * 0.3), segs=3)
+    for x in (-0.35, 0.35):
+        m.rod(K("wood", WOOD), 0.04, (x, -0.4, 3.2), (x, fl, 2.45), segs=4)
+    for x in (-2.2, 2.2):  # porch rail with nets
+        m.rod(K("wood", WOOD), 0.05, (x, fl, 2.35), (x, fl + 1.0, 2.35), segs=4)
+    m.rod(K("wood", WOOD), 0.04, (-2.2, fl + 1.0, 2.35), (-0.6, fl + 1.0, 2.35), segs=4)
+    m.rod(K("wood", WOOD), 0.04, (0.6, fl + 1.0, 2.35), (2.2, fl + 1.0, 2.35), segs=4)
+    net = K("cloth", (0.55, 0.5, 0.38))
+    for k in range(6):
+        x = -2.1 + 0.25 * k
+        m.rod(net, 0.012, (x, fl + 1.0, 2.38), (x + 0.1, fl + 0.25, 2.42), segs=3)
+    m.box(K("wood", WOOD), (1.2, 0.08, 0.35), (1.3, fl + 0.45, 2.0), bevel=0.01)  # bench
+    m.lathe(K("adobe", (0.62, 0.36, 0.22)), [(0.0, 0.0), (0.22, 0.05), (0.26, 0.3), (0.12, 0.5), (0.14, 0.55)], (-1.6, fl + 0.06, 2.0), segs=10)
+    m.lathe(K("thatch", (0.55, 0.45, 0.25)), [(0.0, 0.0), (0.3, 0.02), (0.36, 0.35)], (rnd.uniform(-0.6, -0.2), 0.0, 3.6), segs=10)
+
+
+def drying_rack(m):
+    """A fish-drying rack: two A-frames, three poles, split fish hanging in a row, a basket below."""
+    for x in (-2.0, 2.0):
+        for f in (-0.6, 0.6):
+            m.rod(K("wood", WOOD), 0.05, (x, 0.0, f), (x, 2.0, 0.0), segs=4)
+    for y in (1.9, 1.5):
+        m.rod(K("wood", OLD_WOOD), 0.035, (-2.1, y, 0.0), (2.1, y, 0.0), segs=6)
+    fish = K("cloth", (0.72, 0.6, 0.45))
+    for k in range(10):
+        x = -1.8 + 0.4 * k
+        m.box(fish, (0.18, 0.45, 0.03), (x, 1.62 if k % 2 else 1.22, 0.0), bevel=0.01)
+    m.lathe(K("thatch", (0.55, 0.45, 0.25)), [(0.0, 0.0), (0.35, 0.02), (0.42, 0.4)], (0.8, 0.0, 0.9), segs=10)
+
+
+def salt_pans(m):
+    """Salt pans (Saltpan Key): a grid of 4 x 3 shallow pans, 5 x 4 m each, between low clay walls 0.3 m high and
+    0.5 m wide; most pans crusted white with salt, two with brine (water), a few heaps of raked salt and wooden rakes.
+    y 0 = the ground the pans are dug into (their walls stand on it)."""
+    rnd = random.Random(63)
+    wall = K("adobe", (0.66, 0.58, 0.48))
+    for i in range(5):
+        m.box(wall, (0.5, 0.3, 12.5), (-10.0 + 5.0 * i, 0.15, 0.0), bevel=0.04)
+    for j in range(4):
+        m.box(wall, (20.5, 0.3, 0.5), (0.0, 0.15, -6.0 + 4.0 * j), bevel=0.04)
+    for i in range(4):
+        for j in range(3):
+            cx, cz = -7.5 + 5.0 * i, -4.0 + 4.0 * j
+            if (i, j) in ((1, 2), (3, 0)):
+                m.box(WATER, (4.5, 0.02, 3.5), (cx, 0.08, cz), bevel=0.0)
+            else:
+                m.box(K("plaster", (0.95, 0.94, 0.9)), (4.5, 0.04, 3.5), (cx, 0.04, cz), bevel=0.0)
+                if rnd.random() < 0.5:
+                    fk.blob(m, K("plaster", (0.97, 0.96, 0.93)), (0.6, 0.45, 0.6), (cx + rnd.uniform(-1, 1), 0.2, cz + rnd.uniform(-0.8, 0.8)), seed=200 + i * 3 + j, rough=0.15, cuts=1)
+    for k in range(3):
+        x, z = rnd.uniform(-9, 9), rnd.uniform(-5, 5)
+        m.rod(K("wood", WOOD), 0.03, (x, 0.05, z), (x + 1.4, 0.05, z + 0.4), segs=4)
+        m.box(K("wood", WOOD), (0.08, 0.1, 0.5), (x + 1.4, 0.08, z + 0.4), bevel=0.01)
+
+
+def salt_works(m):
+    """The ruined SALT WORKS (Saltpan Key): a brick boiling house 12 x 8 m with its roof fallen in (a few rafters
+    left), arched windows, a tall square brick chimney (14 m) at the back, two rusted iron boiling pans on their
+    hearths, a wooden door frame toward +forward with the CELLAR STAIR going down beside it (dark), salt sacks, a
+    broken cart. y 0 = its floor."""
+    rnd = random.Random(67)
+    brick = K("adobe", (0.62, 0.36, 0.28))
+    w, d, h = 12.0, 8.0, 4.2
+    m.box(K("stone", (0.6, 0.58, 0.54)), (w + 0.6, 0.3, d + 0.6), (0.0, 0.0, 0.0), bevel=0.05)  # plinth / floor
+    for side in (-1.0, 1.0):  # long walls with three arched window gaps each
+        for k in range(4):
+            m.box(brick, (1.6, h, 0.45), (-5.2 + k * 3.47, h / 2, side * d / 2), bevel=0.02)
+        m.box(brick, (w, 0.9, 0.45), (0.0, h - 0.45, side * d / 2), bevel=0.02)
+        m.box(brick, (w, 1.0, 0.45), (0.0, 0.5, side * d / 2), bevel=0.02)
+    m.box(brick, (0.45, h, d), (-w / 2, h / 2, 0.0), bevel=0.02)  # back wall (the chimney side)
+    for f in (-1.0, 1.0):  # front wall either side of the doorway
+        m.box(brick, (0.45, h, 2.8), (w / 2, h / 2, f * 2.6), bevel=0.02)
+    m.box(brick, (0.45, 1.0, 2.4), (w / 2, h - 0.5, 0.0), bevel=0.02)
+    for k in range(4):  # broken top course: jagged
+        m.box(brick, (rnd.uniform(1.0, 2.5), rnd.uniform(0.3, 1.0), 0.45), (rnd.uniform(-5, 5), h + 0.3, (-1) ** k * d / 2), bevel=0.02)
+    m.box(brick, (1.8, 14.0, 1.8), (-w / 2 - 0.9, 7.0, -2.0), bevel=0.03)  # chimney
+    m.box(K("stone", (0.5, 0.48, 0.45)), (2.1, 0.4, 2.1), (-w / 2 - 0.9, 14.0, -2.0), bevel=0.03)
+    for k in range(3):  # rafters left
+        x = -3.0 + k * 3.0
+        m.box(K("wood", (0.3, 0.24, 0.18)), (0.2, 0.25, d + 0.4), (x, h + 0.7, 0.0), tilt=rnd.uniform(-12, 12), bevel=0.02)
+    for x in (-3.0, 1.5):  # hearths with iron pans
+        m.box(brick, (3.0, 0.8, 2.6), (x, 0.55, -1.0), bevel=0.04)
+        m.lathe(K("metal", (0.36, 0.22, 0.14)), [(0.0, 0.0), (1.3, 0.02), (1.4, 0.35)], (x, 0.95, -1.0), segs=14)
+    m.box(K("stone", (0.12, 0.12, 0.12)), (1.6, 0.05, 2.2), (w / 2 - 1.6, 0.17, 2.4), bevel=0.0)  # the dark stairwell (cellar)
+    for k in range(4):
+        m.box(K("stone", (0.4, 0.38, 0.36)), (1.6, 0.2, 0.4), (w / 2 - 1.6, 0.05 - 0.25 * k, 1.5 + 0.45 * k), bevel=0.02)
+    for k in range(5):  # salt sacks
+        m.box(K("cloth", (0.82, 0.78, 0.68)), (0.6, 0.45, 0.4), (rnd.uniform(-4.5, 4.5), 0.45, rnd.uniform(1.6, 3.2)), tilt=rnd.uniform(-20, 20), bevel=0.12)
+    for k in range(2):  # cart wheels (broken cart)
+        m.lathe(K("wood", WOOD), [(0.0, -0.05), (0.55, -0.05), (0.55, 0.05), (0.0, 0.05)], (w / 2 + 2.5, 0.55, -2.5 + k * 1.4), segs=12, axis="x")
+    m.box(K("wood", OLD_WOOD), (2.4, 0.12, 1.2), (w / 2 + 3.2, 0.7, -1.8), tilt=14.0, bevel=0.02)
+
+
 PLACES = {
+    "stilt_hut": stilt_hut,
+    "drying_rack": drying_rack,
+    "salt_pans": salt_pans,
+    "salt_works": salt_works,
     "sea_shrine": sea_shrine,
     "sea_temple": sea_temple,
     "sea_lookout": sea_lookout,

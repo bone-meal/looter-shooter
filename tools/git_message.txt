@@ -1,9 +1,8 @@
-Sea 13a: region gates (the hazard hurts, the part protects)
+Sea 13b: region 1's new islands
 
-Director: build the regions one by one, region 1 finished first as the template; a region's hazard batters a ship without its part; boss pages come with each region.
-- data/sea/gates.json + core/sea/gate_rules.gd: each region is open or needs a ship part; inside a closed region the hazard grows over 150 m from open water: hull damage, a push back, thick fog for those aboard, a notice naming the part.
-- Region 2 (Fog Banks) opens with the Shellback Prow from Abbot Shellback's plates: built at the shipyard it is fitted to the nearest ship there; fitted parts are saved with the fleet and sent online. Later regions stay closed until they are built.
-- Dev !gate: tested on the GTX 1080 (the sloop ground down and pushed back without the prow, sailed 2 km into region 2 with it).
+- Turtleback (a domed island with a fishing hamlet of stilt huts and drying racks, a path up to its crown), Saltpan Key (salt pans and the ruined salt works on a rise), Smuggler's Hook (a limestone ridge round a hidden cove with a beached wreck and a sea cave), Palm Ring Atoll (a palm ring round a lagoon, one gap to sail in by, a castaway's camp), and ten islets (rocks, sandbars, bird rocks, a small arch, a mast shoal).
+- New set pieces: stilt hut, drying rack, salt pans, salt works. Each island has its own ground colours and chart name; paths generated and route-checked; the three test islands are retired (moved to _to_delete).
+- Walked on the GTX 1080: every path to every place on the four islands reached its end; 6-8 ms frames.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -3,13 +3,13 @@
 importer="scene"
 importer_version=1
 type="PackedScene"
-uid="uid://dpdt54n21y703"
-path="res://.godot/imported/isle_tiny.glb-789b43f45dfadee2f6f07d73270fbc7d.scn"
+uid="uid://cdg4unj53lgn0"
+path="res://.godot/imported/isle_islet_sandbar_west.glb-1a0cc4cbd4288c5cab98ce6f67515154.scn"
 
 [deps]
 
-source_file="res://assets/models/sea/isle_tiny.glb"
-dest_files=["res://.godot/imported/isle_tiny.glb-789b43f45dfadee2f6f07d73270fbc7d.scn"]
+source_file="res://assets/models/sea/isle_islet_sandbar_west.glb"
+dest_files=["res://.godot/imported/isle_islet_sandbar_west.glb-1a0cc4cbd4288c5cab98ce6f67515154.scn"]
 
 [params]
 
