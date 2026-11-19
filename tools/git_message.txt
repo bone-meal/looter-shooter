@@ -1,8 +1,8 @@
-Sea step 9c-2: The Tidewater Temple (region 1 main dungeon)
+Sea step 9c-3: Coralback Reef and the temple art pass
 
-23 hand-made rooms: key doors, block and plate puzzles, lever shortcuts, 7 fights with temple guards and drowned, the Grapple Hook mid-way (chasm, ledge, lake rooms need it), the rising-tide arena (the hall floods by wave, foes climb ledges, deep water hurts), the Great Key and its door, the sealed boss door for step 10.
-Rules: things on ledges, bigkey and sealed doors, fight tide levels; foes climb ledges and only hit targets at their height in dungeons; grapple lands on the ledge and stops there; far torches not drawn in big dungeons.
-Gate stands near the home port until its reef island is built (9c-3).
+New region 1 island Coralback Reef (about 300 m on a wide reef flat): white beaches, a jungle-grown rocky spine, the ruined sea temple on a terrace round the Tidewater Temple gate, a broken lookout tower, a beached wreck, tide pools, a jetty to land at, a sea arch and stacks. Paths generated from the jetty to every place and walked by the real player.
+Set pieces sea_temple and sea_lookout. The temple gate now stands on the reef.
+Dungeon art pass: worn and mosaic floors, coral-crusted and carved relief walls, rubble, urns and coral along the walls, mixed in by a dungeon's dress data.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

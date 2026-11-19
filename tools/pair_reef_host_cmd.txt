@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go sea;!wait 10;!foe pause;!beast pause;!uboat pause on;!dun gate tidewater_temple;!wait 3;!dun status h_gate;!snap h_gate;!dun fightwait;!dun status h_fight;!wait 3;!dun slay;!wait 2;!dun slay;!wait 3;!dun status h_end;!wait 12;!isle ghosts

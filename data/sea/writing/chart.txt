@@ -7,6 +7,7 @@ start: Home Port Isle
 test_tiny: Lone Palm
 test_medium: Turtleback
 test_large: Greywater Bluff
+reef: Coralback Reef
 
 [secrets]
 chart_captains_log: The Captain's Last Anchorage | A ring of ink on open water and one word: "here".

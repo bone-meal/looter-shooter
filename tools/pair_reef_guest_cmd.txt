@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 12;!foe pause;!dun gate tidewater_temple;!wait 6;!dun use;!wait 6;!dun status g_in;!dun stand 15 22 15 20;!dun fightwait;!dun status g_fight;!wait 10;!dun status g_clear;!dun stand 15 28.45 15 29;!dun use;!wait 6;!dun status g_out;!snap g_out

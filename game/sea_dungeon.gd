@@ -80,9 +80,14 @@ func build() -> void:
 						floors.append(c)
 			elif rules.is_wall(c) and _beside_floor(c):
 				walls.append(c)
-	_multi("dk_floor", floors, 0.0)
+	var dress: Dictionary = rules.cfg.get("dress", {})
+	for pair: Array in _mix(floors, dress, ["dk_floor", "dk_floor_worn", "dk_floor_mosaic"], ["floor_worn", "floor_mosaic"], 1):
+		_multi(String(pair[0]), pair[1], 0.0)
 	_multi("dk_ceiling", tops, wall_h - KIT_H)
-	_multi("dk_wall", walls, 0.0, wall_h / KIT_H)
+	for pair: Array in _mix(walls, dress, ["dk_wall", "dk_wall_crusted", "dk_wall_relief"], ["wall_crusted", "wall_relief"], 2):
+		_multi(String(pair[0]), pair[1], 0.0, wall_h / KIT_H)
+	if not dress.is_empty():
+		_clutter(floors, float(dress.get("clutter", 0.0)), int(dress.get("seed", 1)))
 	var doors: Array = []
 	for ch: String in rules.of_kind("door"):
 		doors.append(rules.things[ch]["cell"])
@@ -197,6 +202,81 @@ func _beside_floor(c: Vector2i) -> bool:
 		if rules.is_floor(c + d):
 			return true
 	return false
+
+
+# --- the art pass (sea step 9c-3): a dungeon whose entry has "dress" mixes in the kit's variant floors and walls by
+# their shares and lays clutter (rubble, urns, coral; drawn only, no collision) against its walls ---
+
+# A cell's own steady roll 0..1 (the same on every machine).
+static func _roll(c: Vector2i, salt: int) -> float:
+	return fposmod(sin(float(c.x) * 12.9898 + float(c.y) * 78.233 + float(salt) * 37.719) * 43758.5453, 1.0)
+
+
+# [[piece, cells], ...]: the plain piece for most cells, a variant where the cell's roll falls in its share.
+func _mix(cells: Array, dress: Dictionary, pieces: Array, keys: Array, salt: int) -> Array:
+	var out: Array = [[pieces[0], []]]
+	for k in keys.size():
+		out.append([pieces[k + 1], []])
+	for c: Vector2i in cells:
+		var r := _roll(c, salt + int(dress.get("seed", 1)))
+		var pick := 0
+		var edge := 0.0
+		for k in keys.size():
+			edge += float(dress.get(String(keys[k]), 0.0))
+			if r < edge:
+				pick = k + 1
+				break
+		(out[pick][1] as Array).append(c)
+	return out
+
+
+func _clutter(floors: Array, share: float, salt: int) -> void:
+	if share <= 0.0:
+		return
+	var keep_off: Array = []  # [cell, cells round it kept clear]: 3 round blocks and plates (a block slides there), 1 round doors and the rest
+	for ch: String in rules.things:
+		var kind := String(rules.things[ch]["kind"])
+		if kind in ["block", "plate"]:
+			keep_off.append([rules.things[ch]["cell"], 3])
+		elif kind in ["door", "exit", "arrive", "chest", "lever", "key", "bigkey", "ring"]:
+			keep_off.append([rules.things[ch]["cell"], 1])
+	var kinds := ["dk_rubble", "dk_urns", "dk_coral"]
+	var placed := {}
+	for k: String in kinds:
+		placed[k] = []
+	for c: Vector2i in floors:
+		if rules.things.has(rules.char_at(c)) or _roll(c, salt + 7) >= share:
+			continue
+		var near := false
+		for pair: Array in keep_off:
+			var o: Vector2i = pair[0]
+			if absi(o.x - c.x) <= int(pair[1]) and absi(o.y - c.y) <= int(pair[1]):
+				near = true
+				break
+		if near:
+			continue
+		for d: Vector2i in [Vector2i(0, -1), Vector2i(1, 0), Vector2i(0, 1), Vector2i(-1, 0)]:
+			if rules.is_wall(c + d):
+				var face := atan2(float(-d.x), float(-d.y))  # its front away from the wall
+				var at := rules.at_of(c) + Vector3(float(d.x), 0.0, float(d.y)) * rules.tile * 0.3
+				var kind_c: String = kinds[int(_roll(c, salt + 11) * kinds.size()) % kinds.size()]
+				(placed[kind_c] as Array).append(Transform3D(Basis(Vector3.UP, face + (_roll(c, salt + 13) - 0.5) * 0.6), at))
+				break
+	for k: String in kinds:
+		var list: Array = placed[k]
+		var mesh := piece_mesh(k)
+		if mesh == null or list.is_empty():
+			continue
+		var mm := MultiMesh.new()
+		mm.transform_format = MultiMesh.TRANSFORM_3D
+		mm.mesh = mesh
+		mm.instance_count = list.size()
+		for i in list.size():
+			mm.set_instance_transform(i, list[i])
+		var inst := MultiMeshInstance3D.new()
+		inst.multimesh = mm
+		inst.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		add_child(inst)
 
 
 func _multi(id: String, cells: Array, y: float, stretch: float = 1.0) -> void:

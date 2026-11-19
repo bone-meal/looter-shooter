@@ -5,6 +5,8 @@
 #   dk_door (portcullis gate, node "Leaf" slides up), dk_door_lock (banded door + node "Lock" padlock, "Leaf" swings),
 #   dk_plate (pressure plate, node "Plate" sinks), dk_lever (node "Handle" pivots at its foot), dk_block (push block),
 #   dk_torch (wall sconce, marker "Flame"), dk_key, dk_chest (node "Lid"), dk_gate (entrance / exit arch, marker "Door").
+# Sea step 9c-3 art pass: dk_floor_worn, dk_floor_mosaic, dk_wall_crusted, dk_wall_relief (mixed in by a dungeon's
+# "dress"), dk_rubble, dk_urns, dk_coral (clutter along its walls).
 # Pieces face -z (kit "f" forward is -z in Godot); a cell piece is centred on its cell, floor top at y 0.
 # -> assets/models/sea/dungeon/<name>.gltf.  Run: python3 tools/blender/sea_dungeon_kit.py  (ONLY=a,b to build some)
 # Dependencies: bpy, tools/blender/kit.py, fantasy_kit.py, sea_town_parts.py (blk). No game code.
@@ -316,10 +318,116 @@ def whorl_door(m):
         blk(m, K("sandstone", (0.5, 0.42, 0.55)), (0.07, 0.07, 0.04), (math.cos(a) * r, 1.7 + math.sin(a) * r, 0.27), node="Leaf")
 
 
+# --- sea step 9c-3, the art pass: variants mixed into a dungeon that asks for them ("dress"), and clutter along its walls ---
+
+def floor_worn(m):
+    """A worn tile: two flagstones cracked and sunk, sand drifted over the rest, a few shells."""
+    rnd = random.Random(31)
+    blk(m, K("stone", GROUT), (T, 0.2, T), (0.0, -0.12, 0.0))
+    for ix in range(2):
+        for iz in range(2):
+            if (ix, iz) == (1, 0):
+                for k in range(3):  # this one broken into pieces, a little sunk and tilted
+                    blk(m, stone(SAND, rnd.uniform(0.78, 0.9)), (0.62, 0.1, 0.55), (0.75 + rnd.uniform(-0.35, 0.35), -0.09, -0.75 + rnd.uniform(-0.35, 0.35)), yaw=rnd.uniform(0, 90), pitch=rnd.uniform(-4, 4))
+                continue
+            blk(m, stone(SAND, rnd.uniform(0.84, 0.96)), (T / 2 - 0.03, 0.12, T / 2 - 0.03), ((ix - 0.5) * T / 2, -0.06, (iz - 0.5) * T / 2), bevel=0.02)
+    fk.blob(m, K("sandstone", (0.9, 0.8, 0.6)), (1.1, 0.1, 0.8), (-0.4, 0.0, 0.6), seed=33, rough=0.25, cuts=1)  # drifted sand
+    for k in range(4):
+        x, f = rnd.uniform(-1.2, 1.2), rnd.uniform(-1.2, 1.2)
+        m.ball(K("sandstone", (0.96, 0.86, 0.76)), (0.07, 0.03, 0.06), (x, 0.01, f), u=6, v=3)
+
+
+def floor_mosaic(m):
+    """A carved tile: a ring of waves round a shell in the middle, set in darker stone."""
+    rnd = random.Random(34)
+    blk(m, K("stone", GROUT), (T, 0.2, T), (0.0, -0.12, 0.0))
+    blk(m, stone(SAND_DARK, 1.05), (T - 0.06, 0.12, T - 0.06), (0.0, -0.06, 0.0), bevel=0.02)
+    for k in range(16):  # the wave ring: little curled tiles
+        a = 2 * math.pi * k / 16
+        blk(m, stone((0.3, 0.55, 0.55) if k % 2 else SAND, 1.0), (0.32, 0.03, 0.18), (math.cos(a) * 1.05, 0.0, math.sin(a) * 1.05), yaw=-math.degrees(a) + 90)
+    for k in range(9):  # the shell, flat in the floor
+        r = math.radians(-64 + k * 16)
+        blk(m, K("sandstone", CORAL if k % 2 else (0.95, 0.75, 0.62)), (0.1, 0.03, 0.55), (math.sin(r) * 0.25, 0.005, -math.cos(r) * 0.25 + 0.15), yaw=math.degrees(r))
+    blk(m, K("sandstone", CORAL), (0.4, 0.035, 0.14), (0.0, 0.006, 0.35))
+
+
+def wall_crusted(m):
+    """A wall cell grown over: barnacles and coral along the foot of every face, weed hanging from the cornice."""
+    wall(m)
+    rnd = random.Random(35)
+    for side in range(4):
+        rad = math.radians(side * 90.0)
+        out = T / 2 + 0.08
+        for k in range(4):
+            u = rnd.uniform(-1.3, 1.3)
+            x, f = u * math.cos(rad) + out * math.sin(rad), -u * math.sin(rad) + out * math.cos(rad)
+            fk.blob(m, K("sandstone", CORAL if k % 3 else (0.92, 0.88, 0.8)), (rnd.uniform(0.12, 0.28), rnd.uniform(0.1, 0.3), rnd.uniform(0.12, 0.22)), (x, rnd.uniform(0.15, 0.7), f), seed=36 + side * 10 + k, rough=0.4, cuts=1)
+        for k in range(3):
+            u = rnd.uniform(-1.2, 1.2)
+            x, f = u * math.cos(rad) + out * math.sin(rad), -u * math.sin(rad) + out * math.cos(rad)
+            m.loft(K("leaf", WEED), [(x, H - 0.2, f, 0.18, 0.04), (x, H - 1.0 - rnd.uniform(0, 0.6), f, 0.12, 0.03), (x, H - 2.0 - rnd.uniform(0, 0.8), f, 0.04, 0.02)], segs=4, steps=2)
+
+
+def wall_relief(m):
+    """A wall cell with a carved relief on every face: a framed panel, a great shell and two leaping fish."""
+    wall(m)
+    for side in range(4):
+        yaw = side * 90.0
+        rad = math.radians(yaw)
+        def at(u, y, out):
+            return (u * math.cos(rad) + out * math.sin(rad), y, -u * math.sin(rad) + out * math.cos(rad))
+        out = T / 2 + 0.06
+        for u, y, w, h in ((0.0, 3.35, 2.2, 0.12), (0.0, 1.05, 2.2, 0.12), (-1.05, 2.2, 0.12, 2.4), (1.05, 2.2, 0.12, 2.4)):  # the frame
+            blk(m, stone(SAND_DARK, 1.15), (w, h, 0.1), at(u, y, out), yaw=yaw)
+        blk(m, stone(SAND_DARK, 0.9), (2.0, 2.2, 0.04), at(0.0, 2.2, out - 0.03), yaw=yaw)
+        for k in range(9):
+            a = -64 + k * 16
+            r = math.radians(a)
+            blk(m, stone(SAND, 1.08), (0.12, 0.8, 0.08), at(math.sin(r) * 0.38, 2.35 + math.cos(r) * 0.38, out + 0.02), yaw=yaw, roll=-a)
+        for s in (-1, 1):  # two fish arching toward the shell
+            for j in range(4):
+                t = j / 3.0
+                blk(m, stone(SAND, 1.05), (0.2 - 0.04 * j, 0.14, 0.07), at(s * (0.85 - 0.25 * t), 1.5 + 0.5 * math.sin(t * math.pi), out + 0.02), yaw=yaw, roll=s * (40 - 60 * t))
+
+
+def rubble(m):
+    """A heap of broken blocks and a fallen drum against a wall (decoration, no collision)."""
+    rnd = random.Random(37)
+    for k in range(6):
+        blk(m, stone(SAND, rnd.uniform(0.8, 0.98)), (rnd.uniform(0.35, 0.7), rnd.uniform(0.25, 0.45), rnd.uniform(0.3, 0.6)), (rnd.uniform(-0.6, 0.6), 0.15 + 0.2 * (k > 3), rnd.uniform(-0.3, 0.4)), yaw=rnd.uniform(0, 90), pitch=rnd.uniform(-15, 15), bevel=0.02)
+    m.lathe(stone(SAND, 0.95), [(0.4, -0.4), (0.38, 0.4)], (0.3, 0.38, -0.1), segs=10, axis="x")
+
+
+def urns(m):
+    """Two clay amphorae, one upright, one broken on its side, with a few shards."""
+    clay = K("sandstone", (0.7, 0.42, 0.28))
+    m.lathe(clay, [(0.0, 0.0), (0.16, 0.02), (0.3, 0.35), (0.28, 0.7), (0.12, 0.9), (0.1, 1.05), (0.14, 1.1)], (-0.3, 0.0, 0.0), segs=12)
+    for s in (-1, 1):
+        m.rod(clay, 0.03, (-0.3 + s * 0.12, 1.0, 0.0), (-0.3 + s * 0.26, 0.82, 0.0), segs=5)
+    m.lathe(clay, [(0.0, -0.9), (0.15, -0.88), (0.28, -0.55), (0.26, -0.2), (0.1, 0.0)], (0.45, 0.28, 0.1), segs=12, axis="x")
+    rnd = random.Random(38)
+    for k in range(4):
+        blk(m, clay, (0.14, 0.03, 0.1), (rnd.uniform(0.0, 0.9), 0.015, rnd.uniform(-0.4, 0.4)), yaw=rnd.uniform(0, 90))
+
+
+def coral_clump(m):
+    """A clump of coral grown up from the floor: branching fingers and a brain coral."""
+    rnd = random.Random(39)
+    for k in range(9):
+        x, f = rnd.uniform(-0.4, 0.4), rnd.uniform(-0.3, 0.3)
+        h = rnd.uniform(0.4, 0.9)
+        col = CORAL if k % 3 else (0.95, 0.62, 0.3)
+        m.rod(K("sandstone", col), 0.06, (x, 0.0, f), (x + rnd.uniform(-0.15, 0.15), h, f + rnd.uniform(-0.15, 0.15)), r2=0.035, segs=5)
+    m.ball(K("sandstone", (0.85, 0.7, 0.5)), (0.32, 0.22, 0.3), (0.35, 0.12, 0.25), u=10, v=6)
+
+
+DRESS = {"dk_floor_worn": floor_worn, "dk_floor_mosaic": floor_mosaic, "dk_wall_crusted": wall_crusted, "dk_wall_relief": wall_relief,
+    "dk_rubble": rubble, "dk_urns": urns, "dk_coral": coral_clump}
+
 PIECES = {"dk_floor": floor, "dk_wall": wall, "dk_ceiling": ceiling, "dk_door": door, "dk_door_lock": door_lock, "dk_plate": plate,
     "dk_lever": lever, "dk_block": push_block, "dk_torch": torch, "dk_key": key, "dk_chest": chest, "dk_gate": gate,
     "dk_ledge": ledge, "dk_vent": vent, "dk_raft": raft, "dk_fogwalk": fogwalk, "dk_ring": ring, "dk_bramble": bramble, "dk_brazier": brazier,
-    "dk_basin": basin, "dk_whorl_door": whorl_door}
+    "dk_basin": basin, "dk_whorl_door": whorl_door, **DRESS}
 
 if __name__ == "__main__":
     fk.init()

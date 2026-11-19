@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island (~1.6 km, the home-port town island, director 2026-11-16) replaces test_small; the shipyard (data/sea/ships.json) sits on its east harbour's west bank, new arrivals land on the town plaza. Big islands carry \"chunks\" in their isles json and are streamed (game/sea_isle_stream.gd).",
+ "_about": "Test islands for sea step 4's streaming (the real hand-made islands come with the regions, step 13): sea coordinates, radius (m), model (assets/models/sea/<model>.glb), far = the plain silhouette shown beyond `near` metres; within `near` the full model stands, beyond `far` nothing (fog). Island kit (director: kit + a showcase start island, textured blend ground + plenty of props): an island with props = data/sea/isles/<props>.json draws them (game/sea_isle_props.gd) and gets the blended ground (game/isle_ground.gd) in its ground tints (sand, grass, rock, wet, path; missing = the defaults). props: range = metres a model is drawn to (default for the rest), thin = small clutter dropped on lower tiers, tiers = share of thinned clutter kept and range multiplier per graphics tier, shadows = models that cast shadows. The start island (~1.6 km, the home-port town island, director 2026-11-16) replaces test_small; the shipyard (data/sea/ships.json) sits on its east harbour's west bank, new arrivals land on the town plaza. Big islands carry \"chunks\" in their isles json and are streamed (game/sea_isle_stream.gd). Coralback Reef (sea step 9c-3, tools/blender/sea_isle_reef.py): region 1's reef island with the ruined sea temple and the Tidewater Temple's gate.",
  "near": 1200,
  "far": 5500,
  "islands": [
@@ -51,6 +51,24 @@
    "radius": 420,
    "model": "isle_large",
    "props": "isle_large"
+  },
+  {
+   "id": "reef",
+   "pos": [
+    1900.0,
+    7600.0
+   ],
+   "radius": 190,
+   "model": "isle_reef",
+   "props": "isle_reef",
+   "ground": {
+    "sand": "#f2e6c4",
+    "grass": "#6c9e48",
+    "rock": "#a89a86",
+    "wet": "#bba57c",
+    "path": "#9a8060",
+    "forest": "#5d6e36"
+   }
   }
  ],
  "spawn": [

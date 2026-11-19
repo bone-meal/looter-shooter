@@ -2,7 +2,8 @@
 # make): assets/models/sea/places/<id>.gltf, each placed once by an island's data (data/sea/isles/<island>.json
 # "places") and made solid as it is (game/sea_isle_props.gd). A sea arch, a walk-in cave with glowing mushrooms, a
 # lighthouse with the keeper's cottage, a beached wreck, a castaway camp, a wooden jetty, temple ruins on a stepped
-# platform, a tide pool, a footbridge (where generated paths cross a river). Materials are named after what they are made of (fantasy_kit kinds); "glow" is drawn unshaded,
+# platform, a tide pool, a footbridge (where generated paths cross a river); the reef island's ruined SEA TEMPLE round the
+# Tidewater Temple's gate and a broken lookout tower (sea step 9c-3). Materials are named after what they are made of (fantasy_kit kinds); "glow" is drawn unshaded,
 # "water" gets the game's water shader (game/isle_water.gd).
 # Run: python3 tools/blender/sea_isle_places.py   (ONLY=lighthouse builds just that one)
 # Dependencies: bpy, bmesh, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
@@ -368,7 +369,122 @@ def bridge(m):
         m.box(K("wood", (0.38, 0.28, 0.2)), (2.8, 0.18, 0.2), (0.0, y_at(f) - 0.3, f), bevel=0.0)
 
 
+SAND = (0.66, 0.52, 0.36)  # (reads warm sandstone in the noon sun; lighter values went white)
+CORAL = (0.88, 0.45, 0.42)
+SHELL = (0.94, 0.86, 0.74)
+
+
+def _conch(m, at, size, seed):
+    """A great conch shell statue: a spire of whorls winding up, knobbed, its lip turned out."""
+    rnd = random.Random(seed)
+    x, y, f = at
+    for i in range(10):
+        t = i / 9
+        r = (0.9 - 0.75 * t) * size
+        m.lathe(K("stone", SHELL if i % 2 else tuple(c * 0.86 for c in SHELL)), [(r * 0.85, -0.16 * size), (r, 0.0), (r * 0.85, 0.16 * size)], (x + math.sin(t * 5) * 0.05 * size, y + (0.3 + 2.3 * t) * size, f), segs=12)
+        if i % 2 == 0 and i < 8:
+            for k in range(5):
+                a = 2 * math.pi * k / 5 + i
+                m.ball(K("stone", tuple(c * 0.82 for c in SHELL)), (0.12 * size, 0.16 * size, 0.12 * size), (x + math.cos(a) * r, y + (0.32 + 2.3 * t) * size, f + math.sin(a) * r), u=6, v=4)
+    m.loft(K("stone", (0.95, 0.78, 0.7)), [(x, y + 0.2 * size, f + 0.4 * size, 0.6 * size, 0.2 * size), (x, y + 0.9 * size, f + 0.75 * size, 0.85 * size, 0.25 * size), (x, y + 1.5 * size, f + 0.55 * size, 0.5 * size, 0.2 * size)], segs=10, steps=2)
+    fk.blob(m, K("leaf", (0.3, 0.45, 0.32)), (0.5 * size, 0.2, 0.4 * size), (x + rnd.uniform(-0.3, 0.3), y + 0.4 * size, f), seed=seed + 1, rough=0.3, cuts=1)
+
+
+def sea_temple(m):
+    """The ruined SEA TEMPLE round the Tidewater Temple's gate (sea step 9c-3). y 0 = the paved court, the gate (the
+    dungeon kit's dk_gate, put up by the game, 6 m wide) stands at the origin facing +forward. A broken back wall 26 m wide with a
+    great shell arch over the gate, two colonnades down the court (some columns fallen), cracked flagstones with sand in
+    the joints, a dry basin, two conch statues on plinths at the way in, coral and weed grown over it all."""
+    rnd = random.Random(61)
+    stone = lambda k=1.0: K("sandstone", tuple(c * k for c in SAND))  # noqa: E731
+    for i in range(-5, 6):  # the court: flagstones 2 m, some missing (sand), each a little tilted
+        for j in range(0, 10):
+            if rnd.random() < 0.12:
+                continue
+            m.box(stone(rnd.uniform(0.82, 1.0)), (1.9, 0.18, 1.9), (i * 2.0, -0.07 + rnd.uniform(-0.03, 0.03), 1.0 + j * 2.0), tilt=rnd.uniform(-1.5, 1.5), bevel=0.0)
+    for side in (-1, 1):  # the back wall: courses of blocks, broken off higher toward the arch
+        for k in range(7):
+            x = side * (5.4 + k * 1.3)
+            top = 7.5 - k * 0.55 - rnd.uniform(0.0, 1.6) * (k > 3)
+            y = 0.0
+            row = 0
+            while y < top:
+                h = rnd.uniform(0.7, 0.95)
+                m.box(stone(rnd.uniform(0.85, 1.0)), (1.25 + (0.25 if row % 2 else 0.0), h, 1.4), (x + (0.1 if row % 2 else -0.1), y + h / 2, -1.6), bevel=0.0)
+                y += h
+                row += 1
+        m.box(stone(0.9), (1.6, 8.0, 1.8), (side * 4.2, 4.0, -1.5), bevel=0.06)  # the arch's piers (the gate is 6 m wide)
+    for k in range(9):  # the arch: a ring of voussoirs over the gate, a great scallop shell in its crown
+        a = math.pi * k / 8
+        m.box(stone(rnd.uniform(0.88, 1.0)), (1.3, 1.1, 1.8), (-4.2 * math.cos(a), 8.0 + 3.0 * math.sin(a), -1.5), tilt=0.0, bevel=0.05)
+    for k in range(11):
+        a = math.radians(-75 + k * 15)
+        m.rod(K("stone", SHELL), 0.22, (0.0, 8.6, -0.5), (math.sin(a) * 2.4, 8.6 + math.cos(a) * 2.4, -0.45), r2=0.12, segs=6)
+    m.ball(K("stone", (0.92, 0.82, 0.7)), (0.6, 0.45, 0.35), (0.0, 8.6, -0.5), u=10, v=6)
+    for side in (-1, 1):  # colonnades down both sides of the court
+        for k in range(5):
+            f = 2.5 + k * 4.0
+            x = side * 9.0
+            fallen = (side, k) in ((-1, 2), (1, 3), (1, 0))
+            m.box(stone(0.85), (1.6, 0.5, 1.6), (x, 0.25, f), bevel=0.05)
+            h = rnd.uniform(1.0, 2.6) if fallen else rnd.uniform(4.5, 6.2)
+            for j in range(max(1, int(h / 0.9))):
+                m.lathe(stone(rnd.uniform(0.88, 1.0)), [(0.55, 0.0), (0.5, 0.88)], (x + rnd.uniform(-0.04, 0.04), 0.5 + j * 0.9, f), segs=10)
+            if fallen:  # its drums in the sand beside it
+                for j in range(3):
+                    m.lathe(stone(0.9), [(0.52, -0.44), (0.5, 0.44)], (x - side * (2.0 + j * 0.95), 0.5, f + rnd.uniform(-0.6, 0.6)), segs=10, axis="x")
+            elif rnd.random() < 0.6:
+                m.box(stone(0.92), (1.5, 0.45, 1.5), (x, 0.5 + int(h / 0.9) * 0.9 + 0.22, f), bevel=0.04)
+        m.box(stone(0.9), (1.4, 0.7, 5.5), (side * 9.0, 6.6, 4.5), tilt=side * 4.0, bevel=0.05)  # a surviving architrave
+    # the dry basin in the court, a ring of kerb stones and a weed-grown bottom
+    m.lathe(stone(0.88), [(2.6, 0.0), (2.7, 0.55), (2.3, 0.6), (2.2, 0.1)], (0.0, 0.0, 10.0), segs=20)
+    fk.blob(m, K("leaf", (0.32, 0.42, 0.26)), (2.0, 0.15, 2.0), (0.0, 0.05, 10.0), seed=63, rough=0.3, cuts=1)
+    for side in (-1, 1):  # conch statues on plinths at the way in
+        m.box(stone(0.86), (2.4, 1.6, 2.4), (side * 5.5, 0.8, 19.5), bevel=0.06)
+        _conch(m, (side * 5.5, 1.6, 19.5), 1.3, 64 + side)
+    for k in range(26):  # coral and barnacle crusts, weed hanging off the wall tops
+        x, f = rnd.uniform(-11, 11), rnd.uniform(-2, 20)
+        if abs(x) < 6.5 and f > -1:
+            continue
+        fk.blob(m, K("paint", CORAL if k % 3 else (0.95, 0.9, 0.82)), (rnd.uniform(0.3, 0.7), rnd.uniform(0.2, 0.5), rnd.uniform(0.3, 0.7)), (x, rnd.uniform(0.1, 3.0), f), seed=70 + k, rough=0.4, cuts=1)
+    for k in range(12):
+        x = rnd.choice((-1, 1)) * rnd.uniform(3.8, 11.0)
+        m.loft(K("leaf", (0.24, 0.42, 0.3)), [(x, 6.0 - rnd.uniform(0, 1.5), -0.8, 0.25, 0.05), (x + rnd.uniform(-0.2, 0.2), 3.5, -0.75, 0.15, 0.04), (x, rnd.uniform(1.0, 2.5), -0.72, 0.06, 0.03)], segs=4, steps=2)
+    for k in range(10):  # fallen blocks in the sand round the ruin
+        a = rnd.uniform(0, 2 * math.pi)
+        d = rnd.uniform(13.0, 17.0)
+        m.box(stone(rnd.uniform(0.8, 0.95)), (rnd.uniform(1.0, 1.8), rnd.uniform(0.6, 1.0), rnd.uniform(1.0, 1.6)), (math.cos(a) * d, 0.3, 9.0 + math.sin(a) * d * 0.8), tilt=rnd.uniform(-15, 15), bevel=0.05)
+
+
+def sea_lookout(m):
+    """A broken round watchtower of the same sandstone on the reef island's knoll: 5 m across, broken off at 5-9 m, a
+    doorway facing +forward, rubble round its foot, a weed-grown top."""
+    rnd = random.Random(66)
+    for k in range(18):  # the wall: 18 staves of courses, the doorway left open, broken off unevenly
+        a = 2 * math.pi * k / 18
+        if abs(math.atan2(math.sin(a - math.pi / 2), math.cos(a - math.pi / 2))) < 0.3:
+            continue  # (the doorway, toward +forward)
+        top = 9.0 - 3.5 * (0.5 + 0.5 * math.sin(a * 2 + 1.0)) + rnd.uniform(-0.6, 0.6)
+        y = 0.0
+        while y < top:
+            h = rnd.uniform(0.6, 0.85)
+            m.box(K("sandstone", tuple(c * rnd.uniform(0.82, 1.0) for c in SAND)), (0.95, h, 0.8), (2.4 * math.cos(a), y + h / 2, 2.4 * math.sin(a)), tilt=0.0, bevel=0.0)
+            y += h
+    m.box(K("sandstone", SAND), (1.8, 0.6, 0.9), (0.0, 3.0, 2.4), bevel=0.04)  # the lintel over the door
+    for k in range(9):
+        a = rnd.uniform(0, 2 * math.pi)
+        d = rnd.uniform(3.2, 5.5)
+        if abs(math.atan2(math.sin(a - math.pi / 2), math.cos(a - math.pi / 2))) < 0.5:
+            continue
+        m.box(K("sandstone", tuple(c * 0.88 for c in SAND)), (rnd.uniform(0.7, 1.2), 0.6, rnd.uniform(0.6, 1.0)), (d * math.cos(a), 0.3, d * math.sin(a)), tilt=rnd.uniform(-20, 20), bevel=0.04)
+    for k in range(5):
+        a = rnd.uniform(0, 2 * math.pi)
+        fk.blob(m, K("leaf", LEAF), (0.9, 0.3, 0.7), (2.3 * math.cos(a), rnd.uniform(4.5, 6.0), 2.3 * math.sin(a)), seed=67 + k, rough=0.3, cuts=1)
+
+
 PLACES = {
+    "sea_temple": sea_temple,
+    "sea_lookout": sea_lookout,
     "sea_arch": sea_arch,
     "cave": cave,
     "lighthouse": lighthouse,
