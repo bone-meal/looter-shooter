@@ -1,6 +1,6 @@
-Sea step 13 R2d part 3: the Lantern Queen's Lights Out phase, two-copy tested
+Sea step 13 R2e: region 2 sea events and marsh lights; boss wipe tested online
 
-Phase 3 as approved: she drinks the light (the hall goes dark, braziers go out, lamps dim), hunts whoever makes the most light (muzzle flashes, the Keeper's Lantern, a flare gun, the Ember Gauntlet in hand), root cages that hold a player until the others shoot or burn them free (or they crumble), the flare burst that blinds whoever looks at her crown, and the enrage that turns the fog total and sinks the walkways. Two copies on his PC (set queen): false lures and their bursts, exposure, swallows, the dark hunt, a guest's cage and its freeing, flare blinds and the guest's loot all agree.
+Region 2 merchant goods (Marsh Beacon, pitch, Fogmaw Lure ...), four castaways who sail to Lanternwick and live there, ten region 2 bottle riddles with caches round the islets (pitch in the caches), and the new MARSH LIGHTS event at night or in fog: wisps lead a ship along a wandering way to a floating cache or into a Fogmaw. The writing files merge (events_r2.txt). Two-copy wipe test (set wipe): everyone down wakes at the home port with Dread, offering spent, door sealed.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

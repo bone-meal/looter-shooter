@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_about": "Sea step 13d: FRIENDLY / ODD SEA EVENTS (game/sea_events.gd, core/sea/event_rules.gd; plan diary/DESIGN_REGION1.md 13d). The HOST rolls every check_s for a player at sea outside the home port's safe waters (encounters.json safe_radius) at chance, at least min_gap_s after the last event; kinds by weight from their regions. merchant: a trader's raft comes alongside and stays stay_s (her goods: each raft offers `offers` entries of the region's stock, each a few per player). castaway: a man on a broken spar; haul him aboard from a ship within haul_m (or swim to him), sail him home within deliver_m of the home port dock: he moves into the town (data/sea/writing/events_r1.txt) and everyone aboard gets reward_doubloons. bottle: a message in a bottle afloat ahead (game/sea_flotsam.gd, loot \"bottle\"); whoever takes it reads the next unread riddle of the region: its cache (a hidden salvage spot, data/sea/salvage.json \"riddle\") is pinned on his chart and starts bubbling for him. whales: a pod passes calm_m round each player near it: the sea calms there (swell x calm_swell), and diving within wake_m of them for wake_s brings up random finds every random_every_mult x as often at wake_chance; the host leaves their wake's flotsam (loot whale_wake) where they passed closest. ALL NUMBERS, NAMES AND WORDS ARE MY PLACEHOLDERS.",
+  "_about": "Sea step 13d: FRIENDLY / ODD SEA EVENTS (game/sea_events.gd, core/sea/event_rules.gd; plan diary/DESIGN_REGION1.md 13d). The HOST rolls every check_s for a player at sea outside the home port's safe waters (encounters.json safe_radius) at chance, at least min_gap_s after the last event; kinds by weight from their regions. merchant: a trader's raft comes alongside and stays stay_s (her goods: each raft offers `offers` entries of the region's stock, each a few per player). castaway: a man on a broken spar; haul him aboard from a ship within haul_m (or swim to him), sail him home within deliver_m of the home port dock: he moves into the town (data/sea/writing/events_r1.txt) and everyone aboard gets reward_doubloons. bottle: a message in a bottle afloat ahead (game/sea_flotsam.gd, loot \"bottle\"); whoever takes it reads the next unread riddle of the region: its cache (a hidden salvage spot, data/sea/salvage.json \"riddle\") is pinned on his chart and starts bubbling for him. whales: a pod passes calm_m round each player near it: the sea calms there (swell x calm_swell), and diving within wake_m of them for wake_s brings up random finds every random_every_mult x as often at wake_chance; the host leaves their wake's flotsam (loot whale_wake) where they passed closest. Sea step 13 R2e (region 2): merchant stock per region (stock.region_N, else region_stock); castaway.by_region.region_N = that region's castaways (who, the port they sail to and stand at, stand spots, looks); bottles carry each region's own riddles; marsh_lights (game/sea_marsh_lights.gd, dark_only: at night or in fog): count wisps appear ahead_m before a player and lead a wandering way (legs legs of lead_m in all, turning up to turn_deg) at speed while someone keeps within follow_m; nobody within lose_m for lose_s and they wink out; at the end cache_chance a floating cache (loot cache_loot), else they gather into the region beast `beast`. ALL NUMBERS, NAMES AND WORDS ARE MY PLACEHOLDERS.",
   "check_s": 40.0,
   "chance": 0.22,
   "min_gap_s": 180.0,
@@ -8,9 +8,10 @@
   "notice_m": 700.0,
   "kinds": {
     "merchant": {"weight": 3.0, "regions": [1, 2, 3, 4, 5, 6, 7]},
-    "castaway": {"weight": 2.0, "regions": [1]},
-    "bottle": {"weight": 3.0, "regions": [1]},
-    "whales": {"weight": 2.0, "regions": [1, 2, 3, 5, 6], "not_weather": ["storm"]}
+    "castaway": {"weight": 2.0, "regions": [1, 2]},
+    "bottle": {"weight": 3.0, "regions": [1, 2]},
+    "whales": {"weight": 2.0, "regions": [1, 2, 3, 5, 6], "not_weather": ["storm"]},
+    "marsh_lights": {"weight": 3.0, "regions": [2], "dark_only": true}
   },
   "merchant": {
     "spawn_m": [150.0, 220.0],
@@ -36,6 +37,18 @@
         {"item": "stormoak_plank", "doubloons": 12, "count": 5, "limit": 3},
         {"gun": "purple", "doubloons": 150, "limit": 1},
         {"gun": "gold", "doubloons": 260, "limit": 1}
+      ],
+      "region_2": [
+        {"item": "marsh_beacon", "doubloons": 95, "count": 1, "limit": 1},
+        {"item": "mangrove_pitch", "doubloons": 5, "count": 2, "limit": 4},
+        {"item": "fogmaw_lure", "doubloons": 70, "count": 1, "limit": 1},
+        {"item": "storm_tonic", "doubloons": 40, "count": 2, "limit": 2},
+        {"item": "flawless_gem", "doubloons": 45, "count": 1, "limit": 2},
+        {"item": "brilliant_gem", "doubloons": 90, "count": 1, "limit": 1},
+        {"item": "sailcloth", "doubloons": 18, "count": 3, "limit": 3},
+        {"item": "iron_bar", "doubloons": 6, "count": 4, "limit": 3},
+        {"gun": "purple", "doubloons": 170, "limit": 1},
+        {"gun": "gold", "doubloons": 290, "limit": 1}
       ]
     },
     "region_stock": "region_1"
@@ -54,7 +67,10 @@
     "wave_m": 150.0,
     "seat_size": [0.55, 0.46, 0.42],
     "seat_at": [0.0, 0.23, 0.12],
-    "lost_s": 600.0
+    "lost_s": 600.0,
+    "by_region": {
+      "region_2": {"who": ["ivo", "senna", "mott", "lark"], "port": "lanternwick", "stand": [[-3812.0, 6188.0], [-3820.0, 6173.0], [-3831.0, 6230.0], [-3843.0, 6230.0]], "looks": {"ivo": ["fisher", "male", "curly"], "senna": ["sailor", "female", "long"], "mott": ["farmer", "male", "crop"], "lark": ["chef", "female", "bun"]}}
+    }
   },
   "bottle": {
     "ahead_m": [80.0, 140.0],
@@ -69,7 +85,17 @@
       {"id": "westbar", "region": "region_1", "hoard": "riddle_westbar"},
       {"id": "one_tree", "region": "region_1", "hoard": "riddle_one_tree"},
       {"id": "cormorant", "region": "region_1", "hoard": "riddle_cormorant"},
-      {"id": "northbar", "region": "region_1", "hoard": "riddle_northbar"}
+      {"id": "northbar", "region": "region_1", "hoard": "riddle_northbar"},
+      {"id": "unwatched_wick", "region": "region_2", "hoard": "riddle_unwatched_wick"},
+      {"id": "lone_fist", "region": "region_2", "hoard": "riddle_lone_fist"},
+      {"id": "dry_barge", "region": "region_2", "hoard": "riddle_dry_barge"},
+      {"id": "handless_bell", "region": "region_2", "hoard": "riddle_handless_bell"},
+      {"id": "far_reeds", "region": "region_2", "hoard": "riddle_far_reeds"},
+      {"id": "western_fist", "region": "region_2", "hoard": "riddle_western_fist"},
+      {"id": "fog_bank", "region": "region_2", "hoard": "riddle_fog_bank"},
+      {"id": "last_wick", "region": "region_2", "hoard": "riddle_last_wick"},
+      {"id": "heron_reeds", "region": "region_2", "hoard": "riddle_heron_reeds"},
+      {"id": "hermit", "region": "region_2", "hoard": "riddle_hermit"}
     ]
   },
   "whales": {
@@ -88,5 +114,20 @@
     "wake_chance": 0.85,
     "random_every_mult": 0.5,
     "wake_loot": "whale_wake"
+  },
+  "marsh_lights": {
+    "count": [3, 5],
+    "ahead_m": 140.0,
+    "lead_m": [550.0, 800.0],
+    "turn_deg": 50.0,
+    "legs": 4,
+    "speed": 6.0,
+    "follow_m": 110.0,
+    "lose_m": 300.0,
+    "lose_s": 45.0,
+    "cache_chance": 0.6,
+    "cache_loot": "marsh_lights_cache",
+    "beast": "fogmaw",
+    "color": [0.72, 1.0, 0.55]
   }
 }

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 12;!foe pause;!boss pick lantern_queen;!dun enter hollow_mangrove;!wait 2;!boss door;!wait 10;!boss in;!wait 3;!boss wait state fight 25;!wait 3;!boss status g_fight;!immortal off;!hurt 5000;!wait 1;!boss status g_down;!wait 12;!boss status g_after;!snap g_after;!wait 8

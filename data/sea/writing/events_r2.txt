@@ -1,0 +1,32 @@
+# The sea events' words for REGION 2, the Fog Banks (sea step 13 R2e). Edit freely. All of it is my placeholder text.
+# Same sections and rules as events_r1.txt (the game reads both files; an id may stand in either).
+# [castaways] id: Name | said when hauled aboard | said when set ashore at Lanternwick | at Lanternwick, line 1 | line 2
+#             (region 2's castaways live at Lanternwick: data/sea/events.json castaway.by_region.region_2 "stand")
+# [riddles]   (north = up on the chart) their caches are the hidden salvage spots with that "riddle" in data/sea/salvage.json (region_2)
+# [notices]   key: text   (%s = a name)
+
+[castaways]
+ivo: Ivo Brack | The fog took the boat and left me the oar. Generous of it. | Lanternwick! Lights in every window. I'll never complain about lamp oil again. | I row the night ferry now. Only as far as the lanterns reach, mind. | Don't follow the little lights over the water. Trust me on that.
+senna: Senna Moorhen | I could hear your bell before I could see you. Ring it again, it's lovely. | They say the Lantern Hall never goes dark. I intend to test that. | I keep the hall's lamps trimmed. Somebody has to, and the Queen won't. | Mangrove pitch on the hull, a lantern at the bow, and keep singing. That's the whole secret.
+mott: Mott Peat | I was cutting peat on the bog and the bog cut back. | Solid planks under my feet. I could weep. I won't. I'll have a drink. | I cut pitch now, on the Knots. It's like peat but it fights harder. | The orchard used to give apples. Now it gives eels. Still fruit, if you squint.
+lark: Lark Reedley | You found me by the reeds! I'd started teaching the herons to talk. | A kitchen! Give me a pot and a fish and stand well back. | I cook eel nine ways at the hall. The tenth way is a secret. | Bring me a heron's egg and I'll show you the tenth way. Kidding. Mostly.
+
+[riddles]
+unwatched_wick: A lamp on a mound burns with no hand to trim it, / north and east of the town where every window glows. / Sail with the morning a long throw past it, a little south, and look down where the lamplight cannot reach.
+lone_fist: A single mangrove makes a fist of its roots in open water, / north and west of the town where every window glows. / On its northern side, a short swim out, the roots let go of what they held.
+dry_barge: A barge that ran aground and never ran again, / between the bog and the knotted roots. / Behind her stern, toward the setting sun, she dropped her last cargo for you.
+handless_bell: A bell rings out there with no hand on its rope, / south and east of the knotted roots, on a buoy no one ties to. / Wait till it rings, then swim south of it. The sea floor answers.
+far_reeds: Reeds stand in the water far to the north, / north of where the orchard drowned its feet. / Leave them toward the morning, a little north, and you will not leave empty-handed.
+western_fist: The mangrove at the western edge of the fog grips the sea alone. / Go south and east of it, as the tide goes out. / What the roots would not keep, the sand did.
+fog_bank: A bank of sand that the fog wears like a coat, / east of the hollow giant, at the fog's southern edge. / Just north of where it ends, the coat has a pocket.
+last_wick: The last lantern burns at the far north-west of the Fog Banks. / North and east of it, a short swim, before its light gives out. / Someone hid a light of their own down there.
+heron_reeds: Reeds stand south of Lanternwick where the herons fish. / Swim west of them as far as a heron would fly without tiring. / The herons know. They will not tell.
+hermit: Far in the south-east a hermit keeps his camp under one mangrove. / He never swims south. You should, a little way. / He thinks no one knows. Now you do.
+
+[notices]
+castaway_home_lanternwick: %s steps ashore at Lanternwick and stays
+castaway_aboard_lanternwick: The castaway is aboard: sail them to Lanternwick
+marsh_lights_come: Little lights dance over the water ahead... they drift away as if to lead you
+marsh_lights_lost: The marsh lights wink out one by one
+marsh_lights_cache: The lights settle over something floating, and go out
+marsh_lights_beast: The lights gather into one... it is a lure, and something huge behind it!

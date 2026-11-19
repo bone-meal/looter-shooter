@@ -117,7 +117,7 @@ func _refresh_castaways() -> void:
 	for id: String in town.get("castaways"):
 		if _castaways.has(id):
 			continue
-		var look: Array = er.get("cfg")["castaway"]["looks"].get(id, ["sailor", "male", "crop"])
+		var look: Array = er.call("castaway_look", id)
 		var node := NpcBody.build(_look({"outfit": look[0], "gender": look[1], "hair": look[2]}))
 		add_child(node)
 		BodyMotion.animate(node, 0.0, 0.0, 0.0, false)

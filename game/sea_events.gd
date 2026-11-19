@@ -10,6 +10,8 @@
 #   BOTTLE         a message in a bottle afloat ahead (game/sea_flotsam.gd piece, loot "bottle"): whoever takes it
 #                  reads the next riddle of the region he has not read (read_bottle, on his own machine): its cache, a
 #                  hidden salvage spot, is pinned on his chart and starts bubbling for him (game/sea_salvage.gd).
+#   (sea step 13 R2e) each region has its own raft goods and castaways: region 2's sail to LANTERNWICK and live
+#   there; MARSH LIGHTS (region 2, at night or in fog: game/sea_marsh_lights.gd) lead a ship to a cache or a Fogmaw.
 #   WHALE POD      3-4 whales pass close by along a line: round them the sea calms on every machine (sea_world.calm),
 #                  diving near them brings up finds quicker for a while (sea_salvage.wake_until), and the host leaves
 #                  their wake's flotsam where they passed closest.
@@ -18,7 +20,8 @@
 # solid only while near the surface.
 # Online: the host sends the events at 10 Hz with the fleet (game/net_sea.gd _events_down), its notices as events
 # (tell_sea_event, shown near them), a client's haul asks the host (request_sea_event).
-# Dependencies: core/sea/event_rules.gd, data/sea/events.json, data/sea/writing/events_r1.txt, game/merchant_window.gd,
+# Dependencies: core/sea/event_rules.gd, data/sea/events.json, data/sea/writing/events_r1.txt + events_r2.txt,
+# game/sea_marsh_lights.gd, game/merchant_window.gd,
 # game/bottle_note.gd, game/npc_body.gd, game/body_motion.gd, game/fantasy_models.gd, game/fx_kit.gd, core/gun_gen.gd,
 # core/gun_stats.gd, core/item_level.gd, core/sea/threat_rules.gd; the sea world (ships + foes: players, flotsam,
 # rules; town, salvage, chart, port, map, weather, world_of, local_of, water_height, notice).
@@ -36,6 +39,7 @@ const ItemLevel = preload("res://core/item_level.gd")
 const Threat = preload("res://core/sea/threat_rules.gd")
 const MerchantWindow = preload("res://game/merchant_window.gd")
 const BottleNote = preload("res://game/bottle_note.gd")
+const MarshLights = preload("res://game/sea_marsh_lights.gd")
 const MODELS := "res://assets/models/sea/"
 
 var rules: EventRules
@@ -46,6 +50,7 @@ var counts := {}  # dev / checks: kind -> how many came; "bought", "hauled", "ho
 var last := ""
 var window := MerchantWindow.new()
 var note := BottleNote.new()
+var lights := MarshLights.new()  # (sea step 13 R2e) the marsh lights' wisps, steps and drawing
 var _sea: Node3D
 var _player: CharacterBody3D
 var _rng := RandomNumberGenerator.new()
@@ -64,7 +69,10 @@ var _sent_empty := true
 func setup(sea_world: Node3D, player: CharacterBody3D, layer: CanvasLayer) -> void:
 	_sea = sea_world
 	_player = player
-	rules = EventRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/events.json")), FileAccess.get_file_as_string("res://data/sea/writing/events_r1.txt"))
+	var writing := FileAccess.get_file_as_string("res://data/sea/writing/events_r1.txt") + "\n" + FileAccess.get_file_as_string("res://data/sea/writing/events_r2.txt")
+	rules = EventRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/events.json")), writing)
+	lights.events = self
+	add_child(lights)
 	_rng.randomize()
 	_check = float(rules.cfg["check_s"])
 	window.events = self
@@ -126,6 +134,8 @@ func _host_step(delta: float) -> void:
 				_castaway_step(id, e, delta)
 			"whales":
 				_whales_step(id, e, delta)
+			"marsh_lights":
+				lights.host_step(id, e, delta)
 
 
 # Host / dev: an event for a random player at sea (kind "" = rolled). Returns what came ("" = nothing).
@@ -140,7 +150,7 @@ func roll(kind: String) -> String:
 	var region := String((_sea.get("map") as RefCounted).call("region_id_at", at.x, at.y))
 	var weather: Dictionary = _sea.call("weather_at", Vector3(at.x, 0.0, at.y))
 	if kind == "":
-		kind = rules.pick(region, String(weather.get("kind", "calm")), _castaway_free() != "", _rng.randf())
+		kind = rules.pick(region, String(weather.get("kind", "calm")), _castaway_free(region) != "", _rng.randf(), _dark(weather))
 	for e: Dictionary in events.values():
 		if String(e["kind"]) == kind:
 			return ""  # (one of each at a time)
@@ -155,14 +165,15 @@ func roll(kind: String) -> String:
 			var c: Dictionary = rules.cfg["merchant"]
 			var p := at + ahead * _rng.randf_range(float(c["spawn_m"][0]), float(c["spawn_m"][1]))
 			var names: Array = c["names"]
-			_add({"kind": "merchant", "x": p.x, "z": p.y, "yaw": 0.0, "t": 0.0, "mode": "come", "name": String(names[_rng.randi() % names.size()]), "offers": rules.offers(_rng)})
+			var key := rules.stock_key(region)
+			_add({"kind": "merchant", "x": p.x, "z": p.y, "yaw": 0.0, "t": 0.0, "mode": "come", "name": String(names[_rng.randi() % names.size()]), "offers": rules.offers(_rng, key), "stock": key})
 		"castaway":
-			var who_id := _castaway_free()
+			var who_id := _castaway_free(region)
 			if who_id == "":
 				return ""
 			var c2: Dictionary = rules.cfg["castaway"]
 			var p2 := at + ahead * _rng.randf_range(float(c2["spawn_m"][0]), float(c2["spawn_m"][1]))
-			_add({"kind": "castaway", "x": p2.x, "z": p2.y, "yaw": _rng.randf() * TAU, "t": 0.0, "who": who_id, "ship": -1})
+			_add({"kind": "castaway", "x": p2.x, "z": p2.y, "yaw": _rng.randf() * TAU, "t": 0.0, "who": who_id, "ship": -1, "port": rules.castaway_port(who_id)})
 		"bottle":
 			var c3: Dictionary = rules.cfg["bottle"]
 			var p3 := at + ahead * _rng.randf_range(float(c3["ahead_m"][0]), float(c3["ahead_m"][1]))
@@ -175,6 +186,10 @@ func roll(kind: String) -> String:
 			var line: Array = rules.pod_line(at + ahead * 60.0, pass_way, side * (1.0 if _rng.randf() < 0.5 else -1.0))
 			var start: Vector2 = line[0]
 			_add({"kind": "whales", "x": start.x, "z": start.y, "yaw": atan2(-pass_way.x, -pass_way.y), "t": 0.0, "n": _rng.randi_range(int(c4["count"][0]), int(c4["count"][1])), "spilled": false, "region": region})
+		"marsh_lights":
+			var ml: Dictionary = lights.make(at, ahead, region, _rng)
+			_add(ml)
+			tell("marsh_lights_come", float(ml["x"]), float(ml["z"]), "", -1)
 		_:
 			return ""
 	counts[kind] = int(counts.get(kind, 0)) + 1
@@ -188,13 +203,21 @@ func _add(e: Dictionary) -> void:
 	_next_id += 1
 
 
-func _castaway_free() -> String:
+func _castaway_free(region := "") -> String:
 	var out_now: Array = []
 	for e: Dictionary in events.values():
 		if String(e["kind"]) == "castaway":
 			out_now.append(String(e["who"]))
 	var town: Node = _sea.get("town")
-	return rules.next_castaway(town.get("castaways") if town != null else [], out_now)
+	return rules.next_castaway(town.get("castaways") if town != null else [], out_now, region)
+
+
+# Night or fog (the marsh lights come only then).
+func _dark(weather: Dictionary) -> bool:
+	if String(weather.get("kind", "")) in ["fog", "mist"]:
+		return true
+	var clock: RefCounted = (_sea.get("look") as RefCounted).get("clock")
+	return clock != null and float(clock.call("daylight", clock.call("day_part", float(_sea.call("seconds"))))) < 0.25
 
 
 func _nearest(at: Vector2) -> Array:  # [distance, player at] of the nearest player at sea
@@ -256,7 +279,7 @@ func _castaway_step(id: int, e: Dictionary, delta: float) -> void:
 		e["x"] = float(st["x"])
 		e["z"] = float(st["z"])
 		e["ship"] = (_fleet().get("ships") as Array).find(ship)
-		var dock: Array = (_sea.get("port") as Node).get("rules").cfg["ports"][0]["dock"]
+		var dock: Array = _dock_of(String(e.get("port", "home")))
 		if Vector2(float(st["x"]), float(st["z"])).distance_to(Vector2(float(dock[0]), float(dock[1]))) < float(c["deliver_m"]):
 			var town: Node = _sea.get("town")
 			if town != null:
@@ -270,6 +293,15 @@ func _castaway_step(id: int, e: Dictionary, delta: float) -> void:
 	e["z"] = float(e["z"]) - cos(wind_dir) * float(c["drift_mps"]) * delta
 	if float(e["t"]) > float(c["lost_s"]) and float(_nearest(Vector2(float(e["x"]), float(e["z"])))[0]) > 600.0:
 		events.erase(id)  # (nobody came: he drifts out of sight; he is still out there for another day)
+
+
+# The dock a castaway sails to (data/sea/port.json port by id; the home port if unknown).
+func _dock_of(port_id: String) -> Array:
+	var ports: Array = (_sea.get("port") as Node).get("rules").cfg["ports"]
+	for p: Dictionary in ports:
+		if String(p["id"]) == port_id:
+			return p["dock"]
+	return ports[0]["dock"]
 
 
 func _whales_step(id: int, e: Dictionary, delta: float) -> void:
@@ -322,7 +354,7 @@ func heard(key: String, x: float, z: float, arg: String, ship_i: int) -> void:
 		var ships: Array = _fleet().get("ships")
 		var mine: Node3D = _fleet().get("helm_ship") if _fleet().get("helm_ship") != null else _fleet().call("ship_aboard")
 		var aboard: bool = mine != null and ship_i >= 0 and ship_i < ships.size() and ships[ship_i] == mine
-		_notice(rules.notice(key) % rules.name_of("castaways", arg))
+		_notice(rules.notice_at(key, rules.castaway_port(arg)) % rules.name_of("castaways", arg))
 		if aboard or near:
 			var pay := int(rules.cfg["castaway"]["reward_doubloons"])
 			var s := session()
@@ -334,6 +366,8 @@ func heard(key: String, x: float, z: float, arg: String, ship_i: int) -> void:
 		return
 	if key == "castaway_aboard":
 		_notice("%s: \"%s\"" % [rules.name_of("castaways", arg), rules.line_of("castaways", arg, 1)])
+		_notice(rules.notice_at(key, rules.castaway_port(arg)))
+		return
 	elif key == "merchant_goes":
 		_notice("%s: \"%s\"" % [rules.name_of("merchants", arg), rules.line_of("merchants", arg, 2)])
 		if window.visible and window.event_id >= 0 and not events.has(window.event_id):
@@ -501,7 +535,7 @@ func goods(id: int) -> Array:
 	if e.is_empty():
 		return out
 	for idx: Variant in e["offers"]:
-		var entry: Dictionary = rules.stock_entry(int(idx))
+		var entry: Dictionary = rules.stock_entry(int(idx), _stock_of(e))
 		if entry.is_empty():
 			continue
 		var label := ""
@@ -517,11 +551,19 @@ func goods(id: int) -> Array:
 	return out
 
 
+# A raft's stock list: the host's own, a client's from where the raft is (its region).
+func _stock_of(e: Dictionary) -> String:
+	if e.has("stock"):
+		return String(e["stock"])
+	e["stock"] = rules.stock_key(String((_sea.get("map") as RefCounted).call("region_id_at", float(e["x"]), float(e["z"]))))
+	return String(e["stock"])
+
+
 func buy(id: int, idx: int) -> String:
 	var e: Dictionary = events.get(id, {})
 	if e.is_empty() or not (e["offers"] as Array).has(idx) and not (e["offers"] as Array).has(float(idx)):
 		return "She has gone"
-	var entry := rules.stock_entry(idx)
+	var entry := rules.stock_entry(idx, _stock_of(e))
 	var key := "%d:%d" % [id, idx]
 	if int(_bought.get(key, 0)) >= int(entry.get("limit", 1)):
 		return "\"That's all I have of that, dear\""
@@ -612,6 +654,8 @@ func _draw(delta: float) -> void:
 				_place_castaway(n, e, delta)
 			"whales":
 				_place_whales(n, e, delta)
+			"marsh_lights":
+				lights.place(n, e, delta, _clock)
 
 
 func _model(name_id: String) -> Node3D:
@@ -674,6 +718,8 @@ func _build(e: Dictionary) -> Dictionary:
 	add_child(root)
 	var out := {"root": root}
 	match String(e["kind"]):
+		"marsh_lights":
+			lights.build(root, e, out)
 		"merchant":
 			var raft := _model("merchant_raft")
 			root.add_child(raft)
@@ -690,8 +736,7 @@ func _build(e: Dictionary) -> Dictionary:
 			var spar := _model("castaway_spar")
 			root.add_child(spar)
 			out["spar_body"] = _solid(root, [["capsule", 0.26, 6.6, [0.0, 0.05, -0.1]], ["box", [0.25, 0.25, 3.0], [-1.15, 0.1, 0.1]]])  # the mast, the yard stump
-			var looks2: Dictionary = rules.cfg["castaway"]["looks"]
-			var body2 := _person(looks2.get(String(e["who"]), ["sailor", "male", "crop"]))
+			var body2 := _person(rules.castaway_look(String(e["who"])))
 			root.add_child(body2)
 			_plate(body2, rules.name_of("castaways", String(e["who"])))
 			out["spar"] = spar
@@ -838,6 +883,9 @@ func to_net() -> Array:
 				b = str(int(e["ship"]))
 			"whales":
 				a = str(int(e["n"]))
+			"marsh_lights":
+				a = str(int(e["n"]))
+				b = String(e.get("mode", "lead"))
 		out.append([id, String(e["kind"]), snappedf(float(e["x"]), 0.1), snappedf(float(e["z"]), 0.1), snappedf(float(e["yaw"]), 0.01), a, b])
 	return out
 
@@ -860,7 +908,7 @@ func from_net(list: Array) -> void:
 		var g: Array = got
 		var id := int(g[0])
 		var kind := String(g[1]).left(12)
-		if not ["merchant", "castaway", "whales"].has(kind) or not is_finite(float(g[2])) or not is_finite(float(g[3])):
+		if not ["merchant", "castaway", "whales", "marsh_lights"].has(kind) or not is_finite(float(g[2])) or not is_finite(float(g[3])):
 			continue
 		seen[id] = true
 		var e: Dictionary = events.get(id, {"kind": kind, "t": 0.0})
@@ -879,6 +927,9 @@ func from_net(list: Array) -> void:
 				e["ship"] = int(g[6])
 			"whales":
 				e["n"] = clampi(int(g[5]), 1, 6)
+			"marsh_lights":
+				e["n"] = clampi(int(g[5]), 1, 8)
+				e["mode"] = String(g[6]).left(8)
 		events[id] = e
 	for id: int in events.keys():
 		if not seen.has(id):

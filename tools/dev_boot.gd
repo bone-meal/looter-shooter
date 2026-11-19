@@ -908,7 +908,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var bag_q: RefCounted = sea_q.get("skills").get("bag")
 				_lines.append("SQUEST %s: %s; strongbox %d, shark teeth %d; tavern runner '%s', dock '%s', storage '%s', gallery '%s'; prompt '%s'; swimming %s" % [" ".join(words.slice(1)), String(qs.call("status")), int(bag_q.call("count", "joss_strongbox")), int(bag_q.call("count", "shark_tooth")),
 					String(qs.call("resident_info", "tavern").get("name", "")), String(qs.call("resident_info", "dock").get("name", "")), String(qs.call("resident_info", "storage").get("name", "")), String(qs.call("resident_info", "gallery").get("name", "")), String(sea_q.call("prompt", "F")), str(player.get("swimming"))])
-		"sevent":  # sea step 13d: !sevent roll <merchant|castaway|bottle|whales> | near [m] (the newest event close to our ship) | trade | buy <stock index> | close | haul | takebottle | dive <m> | totown <castaway> | pause on|off | wait <aboard|home|read|wake|gone> [s] | status <note>
+		"sevent":  # sea step 13d: !sevent roll <merchant|castaway|bottle|whales|marsh_lights> | follow <s> [m] | cache on|off | near [m] (the newest event close to our ship) | trade | buy <stock index> | close | haul | takebottle | dive <m> | totown <castaway> | pause on|off | wait <aboard|home|read|wake|gone> [s] | status <note>
 			var sea_e: Node = session.call("sea")
 			if sea_e == null:
 				_lines.append("sevent: no sea")
@@ -924,6 +924,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						_lines.append("  rolled: '%s'" % String(ev.call("roll", words[2] if words.size() > 2 else "")))
 					"pause":
 						ev.set("paused", words.size() < 3 or words[2] == "on")
+					"follow":  # "!sevent follow <s> [m]" (sea step 13 R2e): keep swimming m (30) behind the newest event (the marsh lights) for s seconds
+						var until_f := Time.get_ticks_msec() + int(float(words[2]) * 1000.0)
+						while Time.get_ticks_msec() < until_f and newest_e >= 0 and (ev.get("events") as Dictionary).has(newest_e):
+							var e_f: Dictionary = ev.get("events")[newest_e]
+							var to_f := Vector2(float(e_f["x"]), float(e_f["z"]))
+							var back_f := Vector2(-sin(float(e_f["yaw"])), -cos(float(e_f["yaw"]))) * -(float(words[3]) if words.size() > 3 else 30.0)
+							var at_f := Vector3(to_f.x + back_f.x, 0.0, to_f.y + back_f.y)
+							player.call("teleport", sea_e.call("world_of", Vector3(at_f.x, float(sea_e.call("water_height", sea_e.call("world_of", at_f))) - 0.6, at_f.z)), 0.0)
+							await get_tree().create_timer(0.5, true, false, true).timeout
+					"cache":  # "!sevent cache on|off" (host): the newest marsh lights end in a cache (on) or a beast (off)
+						if newest_e >= 0:
+							ev.get("events")[newest_e]["cache"] = words.size() < 3 or words[2] == "on"
 					"near":
 						if newest_e >= 0:
 							var e_n: Dictionary = ev.get("events")[newest_e]

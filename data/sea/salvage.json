@@ -336,6 +336,136 @@
    ],
    "depth": 9.0,
    "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_unwatched_wick",
+   "riddle": "unwatched_wick",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache east of the lantern mound",
+   "at": [
+    -3330.0,
+    4320.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_lone_fist",
+   "riddle": "lone_fist",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache north of the lone mangrove",
+   "at": [
+    -4500.0,
+    5135.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_dry_barge",
+   "riddle": "dry_barge",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache off the barge's stern",
+   "at": [
+    -6180.0,
+    5400.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_handless_bell",
+   "riddle": "handless_bell",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache south of the bell buoy",
+   "at": [
+    -5600.0,
+    7455.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_far_reeds",
+   "riddle": "far_reeds",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache east of the far reeds",
+   "at": [
+    -6915.0,
+    3480.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_western_fist",
+   "riddle": "western_fist",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache south-east of the western mangrove",
+   "at": [
+    -8550.0,
+    6260.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_fog_bank",
+   "riddle": "fog_bank",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache north of the fog sandbank",
+   "at": [
+    -6800.0,
+    8520.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_last_wick",
+   "riddle": "last_wick",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache by the westmost lantern",
+   "at": [
+    -8350.0,
+    3450.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_heron_reeds",
+   "riddle": "heron_reeds",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache west of the heron reeds",
+   "at": [
+    -4180.0,
+    7300.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "hoard": "riddle_hermit",
+   "riddle": "hermit",
+   "loot": "marsh_cache",
+   "region": "region_2",
+   "name": "the cache south of the hermit's islet",
+   "at": [
+    -3500.0,
+    8765.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
   }
  ],
  "trinkets": {
