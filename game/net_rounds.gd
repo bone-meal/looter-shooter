@@ -14,7 +14,7 @@ extends Node
 
 const BLOWS := ["", "headshot", "melee"]
 const PAYS := ["hit", "kill", "headshot", "melee"]
-const EFFECTS := ["slow", "burn", "freeze", "weaken", "push", "taunt"]
+const EFFECTS := ["slow", "burn", "freeze", "weaken", "push", "taunt", "soothe"]
 const SWITCH := 99  # ask_power: build the switch and throw it
 const ORIGIN := Vector3(500, 0, 0)  # game/island.gd CENTER: the land's positions are counted from here
 
@@ -692,6 +692,8 @@ func _effect(id: int, kind: String, amount: float, seconds: float) -> void:
 		"push":
 			if not is_boss:
 				enemy.call("push", Vector3(amount, 0.0, seconds).limit_length(20.0))  # push sends its x and z here
+		"soothe":  # (sea step 12d) Soft Wing: its blows land softer for a while
+			enemy.call("rally", 1.0, clampf(amount, 0.5, 1.0), clampf(seconds, 0.0, 10.0))
 		"taunt":  # Key Ring's jingle, Golden Goose's honk: it comes for the player who asked
 			var body: Node3D = net.player_node(multiplayer.get_remote_sender_id())
 			if not is_boss and body != null:

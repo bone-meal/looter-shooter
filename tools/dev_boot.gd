@@ -2930,6 +2930,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var thr: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/encounters.json")) as Dictionary)["threat"]
 					_lines.append("NG %s: NG+ %d, vault %s, enemy mult region 1 %.2f region 2 %.2f, sea loot level 20 -> %d, 70 -> %d, luck %.2f | prompt '%s'" % [" ".join(words.slice(2)), Threat.ng, str(session.get("_vault_beaten")),
 						Threat.player_mult(thr, 1), Threat.player_mult(thr, 2), Threat.loot_level(20), Threat.loot_level(70), Threat.ng_luck(), String(session.call("_prompt"))])
+		"party":  # sea step 12d: !party send rally|banner|hearth|bloom (test values) | prompt (what [F] says here) | status <note>
+			var np: Node = get_tree().get_first_node_in_group("net_party")
+			var vals := {"rally": [Vector3(10, 25, 2), Vector3.ZERO], "banner": [Vector3(10, 20, 15), Vector3(8, 0, 0)], "hearth": [Vector3(30, 0, 0), Vector3.ZERO], "bloom": [Vector3(4, 10, 5), Vector3.ZERO]}
+			if words.size() > 2 and words[1] == "send" and vals.has(words[2]):
+				player.call("tell_party", words[2], player.global_position, vals[words[2]][0], vals[words[2]][1])
+			elif words.size() > 1 and words[1] == "prompt":
+				_lines.append("PARTY prompt: '%s'" % String(session.call("_prompt")))
+			else:
+				var hp_p: RefCounted = player.get("health")
+				_lines.append("PARTY %s: sent %d, heard %d, applied %s | health %.0f / %.0f, rally %.1f s left (+%.0f%%), banner damage x%.2f" % [" ".join(words.slice(1)), int(np.get("sent")) if np != null else -1, int(np.get("heard")) if np != null else -1, str(np.get("applied")) if np != null else "{}",
+					float(hp_p.get("hp")), float(hp_p.get("max_hp")), maxf(float(player.get("_rally_until")) - Time.get_ticks_msec() / 1000.0, 0.0), float(player.get("_rally_dmg")), float((player.get("self_fx") as RefCounted).call("damage_mult", Time.get_ticks_msec() / 1000.0, bool(player.call("_near_banner"))))])
 		"gunfire":  # sea step 12b: !gunfire <note> = bursts sent / heard here and what the copies showed; !gunfire wait <n> [s] = wait until n shots of others were shown
 			var nf: Node = get_tree().get_first_node_in_group("net_fire")
 			if nf == null:

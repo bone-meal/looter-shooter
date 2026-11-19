@@ -23,6 +23,7 @@ const NetMixtape = preload("res://game/net_mixtape.gd")
 const NetBeachBalls = preload("res://game/net_beachballs.gd")
 const NetChase = preload("res://game/net_chase.gd")
 const NetFire = preload("res://game/net_fire.gd")
+const NetParty = preload("res://game/net_party.gd")
 const GuestClaims = preload("res://core/guest_claims.gd")
 const NetHub = preload("res://game/net_hub.gd")
 const NetDrops = preload("res://game/net_drops.gd")
@@ -76,6 +77,7 @@ var mixtape: Node  # the Mixtape chase gun's songs online (game/net_mixtape.gd)
 var beach_balls: Node  # Beach Ball Bombardier's balls online (game/net_beachballs.gd)
 var chase: Node  # the other chase guns' effects online (game/net_chase.gd)
 var fire: Node  # other players' gunfire seen and heard (game/net_fire.gd, sea step 12b)
+var party: Node  # party effects that reach teammates (game/net_party.gd, sea step 12d)
 var hub: Node  # the safe hub's countdown and ready-up (game/net_hub.gd; also alone)
 var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
@@ -137,6 +139,10 @@ func _ready() -> void:
 	beach_balls.name = "BeachBalls"
 	beach_balls.net = self
 	add_child(beach_balls)
+	party = NetParty.new()
+	party.name = "Party"
+	party.net = self
+	add_child(party)
 	fire = NetFire.new()
 	fire.name = "Fire"
 	fire.net = self

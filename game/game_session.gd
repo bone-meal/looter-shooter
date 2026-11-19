@@ -1707,7 +1707,7 @@ func _prompt() -> String:
 	if _near_painting_fantasy():
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
 	if _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
-		return ("[%s] Step into the painting: the open sea" % key) if _crossed else "The open sea. Follow the U-boat from Gull Rock once to open it."
+		return ("[%s] Step into the painting: the open sea" % key) if _sea_open() else "The open sea. Follow the U-boat from Gull Rock once to open it."
 	if _ng_lectern.is_finite() and _near(_ng_lectern, 2.5):
 		return _ng_prompt(key)
 	if _in_fantasy:
@@ -1789,7 +1789,7 @@ func _interact() -> void:
 	elif _near_painting_fantasy():
 		_enter_fantasy()
 	elif _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
-		if _crossed:
+		if _sea_open():
 			_enter_sea()
 	elif _ng_lectern.is_finite() and _near(_ng_lectern, 2.5):
 		_ng_use()
@@ -2479,6 +2479,12 @@ func _run_crossing(delta: float) -> void:
 			_backdrop = null
 	if _sea.ships.ship_aboard() != null and to_bank <= float(back["radius"]) and _sea.dungeons.where == "":
 		_sail_back()
+
+
+# The hub's sea painting opens for a player who crossed once, and for any guest (LOCKED batch 4: joiners who have not
+# crossed can join the host's sea world; sea step 12d).
+func _sea_open() -> bool:
+	return _crossed or (net != null and net.can_send() and not net.is_host())
 
 
 # The host (or a lone player) saw the boat stay in the fog bank: everyone's run is won, those aboard cross.

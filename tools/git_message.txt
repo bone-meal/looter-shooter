@@ -1,9 +1,8 @@
-Sea 12c: the host checks guests' claims for plausibility
+Sea 12d: party effects reach teammates, guests open the sea painting
 
-Director: plausibility checks, no ledger.
-- A joining guest sends his skills' experience with his profile; the host keeps what it says and the time he joined.
-- A Sailing level at the helm, a ship or crane his Carpentry could not have built, or a skill level past what that experience plus play time can reach are refused; a backpack with more bags than his Crafting level makes refuses the join; puts into the crew chest or a ship's hold must name a real item and stay under a cap.
-- Numbers in data/guest_claims.json. Check tools/claims_check.gd, dev !net claims / askbuild, pair set claims: a faked Sailing 50 and a galleon at Carpentry 1 refused, the fair helm and a raft allowed.
+- Rally Cry, War Banner and the pony traits Hearthfire and Bloom now help teammates: Rally Cry and Hearthfire within 15 m of the caster, the War Banner while you stand in it, a Bloom flower heals whoever stands by it. Soft Wing softens the blows of host-run enemies too.
+- The hub's sea painting opens for any guest, crossed or not (locked: joiners who have not crossed can join the host's sea world).
+- Dev !party, pair set party: the guest got the rally, the banner bonus, the hearth heal and the bloom healing, and the painting opened for him.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

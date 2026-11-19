@@ -85,6 +85,7 @@ func on_kill(traits: Dictionary, point: Vector3, now: float) -> void:
 		player.skills.reduce_all(off, now)
 	if traits.has("hearthfire"):
 		player.health.heal(float(player.health.max_hp) * float(traits["hearthfire"]) / 100.0)
+		player.call("tell_party", "hearth", player.global_position, Vector3(float(traits["hearthfire"]), 0.0, 0.0))  # (sea step 12d: teammates near warm too)
 	if traits.has("skystreak"):
 		_sky_until = now + SKY_SECONDS
 		_sky_speed = float(traits["skystreak"])
@@ -95,6 +96,7 @@ func on_kill(traits: Dictionary, point: Vector3, now: float) -> void:
 				w.ammo = mini(int(w.ammo) + ceili(float(w.mag_size) * float(traits["generous_spirit"]) / 100.0), int(w.mag_size))
 	if traits.has("bloom") and player.get("skill_fx") != null:
 		player.skill_fx.zones.bloom(point, BLOOM_RADIUS, BLOOM_SECONDS, float(player.health.max_hp) * float(traits["bloom"]) / 100.0)
+		player.call("tell_party", "bloom", point, Vector3(BLOOM_RADIUS, BLOOM_SECONDS, float(traits["bloom"])))  # (sea step 12d: its flower heals teammates too)
 	if traits.has("party_popper"):
 		var blasts: Node = player.get("explosives")
 		if blasts != null:

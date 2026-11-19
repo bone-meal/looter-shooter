@@ -674,6 +674,9 @@ func guard(taken: float, seconds: float) -> void:
 
 # A war cry reached it: faster and harder for `seconds`.
 func rally(speed_mult: float, damage_mult: float, seconds: float) -> void:
+	if puppet and speed_mult == 1.0 and damage_mult < 1.0:  # (sea step 12d) Soft Wing on a host-run enemy: the host softens its blows
+		puppet_effect.emit("soothe", damage_mult, seconds)
+		return
 	_rally_until = Time.get_ticks_msec() / 1000.0 + seconds
 	_rally_speed = speed_mult
 	_rally_damage = damage_mult

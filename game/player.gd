@@ -1424,6 +1424,44 @@ func _gun_sound(id: String) -> void:
 		sounds.call("play", id)
 
 
+# Online (sea step 12d): a party effect of ours reaches teammates (game/net_party.gd).
+func tell_party(kind: String, at: Vector3, a: Vector3, b: Vector3 = Vector3.ZERO) -> void:
+	var link := get_tree().get_first_node_in_group("net_party")
+	if link != null:
+		link.call("send", kind, at, a, b)
+
+
+var _ally_banner_until := 0.0  # standing in a teammate's War Banner until this engine time (sea step 12d)
+
+
+# A teammate's party effect (game/net_party.gd): applied when we are near enough. True = it reached us.
+# rally a = seconds, damage %, regen %; banner a = seconds, damage %, guard % (we stand in it); hearth a.x = heal % of
+# our max health; bloom a = radius, seconds, heal % a second of our max health while we stand by the flower.
+func party_effect(kind: String, at: Vector3, a: Vector3, reach: float) -> bool:
+	var now := _now()
+	match kind:
+		"rally":
+			if global_position.distance_to(at) > reach:
+				return false
+			_rally_until = now + clampf(a.x, 0.0, 60.0)
+			_rally_dmg = clampf(a.y, 0.0, 200.0)
+			_rally_regen = clampf(a.z, 0.0, 50.0)
+		"banner":  # (game/net_party.gd refreshes this while we stand in it)
+			self_fx.start_banner(now, clampf(a.x, 0.0, 60.0), a.y, a.z)
+			_ally_banner_until = now + clampf(a.x, 0.0, 60.0)
+		"hearth":
+			if global_position.distance_to(at) > reach or health.is_dead():
+				return false
+			health.heal(float(health.max_hp) * clampf(a.x, 0.0, 100.0) / 100.0)
+		"bloom":
+			if skill_fx == null:
+				return false
+			skill_fx.zones.bloom(at, clampf(a.x, 0.0, 20.0), clampf(a.y, 0.0, 60.0), float(health.max_hp) * clampf(a.z, 0.0, 100.0) / 100.0)
+		_:
+			return false
+	return true
+
+
 # Online (sea step 12b): this shot goes to the other players as part of a burst (game/net_fire.gd).
 const FIRE_TRACER_M := 80.0
 var _fire_ends := PackedVector3Array()
@@ -1905,6 +1943,7 @@ func use_skill(index: int) -> void:
 		_rally_until = now + SkillState.value(gun_db, entry, "seconds")
 		_rally_dmg = SkillState.value(gun_db, entry, "damage")
 		_rally_regen = SkillState.value(gun_db, entry, "regen")
+		tell_party("rally", global_position, Vector3(SkillState.value(gun_db, entry, "seconds"), _rally_dmg, _rally_regen))  # (sea step 12d: teammates near share it)
 	var feet := global_position
 	_self_skill(entry, forward, now)
 	skill_fx.cast(gun_db, entry, weapon.damage, feet, eye, forward, aim)
@@ -1933,6 +1972,7 @@ func _self_skill(entry: Dictionary, forward: Vector3, now: float) -> void:
 			self_fx.start_shield(now, v.call("seconds"), health.max_hp * float(v.call("shield")) / 100.0)
 		"war_banner":
 			self_fx.start_banner(now, v.call("seconds"), v.call("damage"), v.call("guard"))
+			tell_party("banner", global_position, Vector3(v.call("seconds"), v.call("damage"), v.call("guard")), Vector3(v.call("radius"), 0.0, 0.0))
 		"fire_trail_dash":  # a shove that dies away over exactly the dash distance
 			_shove = flat * sqrt(2.0 * SHOVE_FADE * float(v.call("distance")))
 		"phase_step":
@@ -1974,6 +2014,8 @@ func aim_flat() -> Vector3:
 
 # We stand by our own War Banner (game/skill_zones.gd).
 func _near_banner() -> bool:
+	if _now() < _ally_banner_until and self_fx.banner_active(_now()):  # (sea step 12d) standing in a teammate's banner
+		return true
 	return skill_fx != null and self_fx.banner_active(_now()) and skill_fx.near_banner(global_position)
 
 
