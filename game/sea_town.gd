@@ -42,6 +42,7 @@ var gallery := TownGallery.new()
 var card_hud := HubHud.new()  # the card of the trophy, case or plinth looked at in the hall
 var arrive := ""  # a painting id: put this player before that painting in the gallery once the town is up (a return trip)
 var heard_at := -1e9  # when this player last heard a rumour at the tavern (seconds, this session)
+var castaways: Array = []  # (sea step 13d) castaways sailed home: they live in the town now (the host's world)
 var _cards := {}  # the tavern's card table: {card_table, card_dealer, crew} once the tavern has one
 var _beacon: Node3D = null
 var built := false
@@ -411,6 +412,9 @@ func spot_here() -> Array:
 	var who := people.resident_near(me)  # a resident first: they stand by their sign and door
 	if who != "":
 		return ["resident", who]
+	var saved := people.castaway_near(me)  # (sea step 13d) a castaway who moved in
+	if saved != "":
+		return ["castaway", saved]
 	var ledger := marker("harbour_master", "Ledger")
 	if ledger != null and ledger.global_position.distance_to(me) <= _reach:
 		return ["ledger", ""]
@@ -446,6 +450,8 @@ func prompt(key: String) -> String:
 	if spot[0] == "resident":
 		var r: Dictionary = rules.cfg.get("residents", {}).get(id, {})
 		return "[%s] Talk to %s (%s)" % [key, String(r.get("name", "")), String(r.get("trade", ""))]
+	if spot[0] == "castaway":
+		return "[%s] Talk to %s" % [key, people.castaway_name(id)]
 	if spot[0] == "case":
 		if hall.cases.has(id):
 			return ""
@@ -483,6 +489,9 @@ func interact() -> bool:
 		var t := hall.plinth_trophy(int(spot[1]))
 		if t != "" and not hall.plinths.has(String(spot[1])) and have(t) > 0:
 			_notice(place_plinth(String(spot[1])))
+		return true
+	if spot[0] == "castaway":
+		_notice(people.castaway_line(String(spot[1])))
 		return true
 	if spot[0] == "painting":
 		if gallery.bought.has(String(spot[1])):
@@ -771,7 +780,14 @@ func act_done(kind: String, arg: String, asker: int, who: String, me: int) -> vo
 
 
 func extra_dict() -> Dictionary:
-	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate(), "plinths": hall.plinths.duplicate()}
+	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate(), "plinths": hall.plinths.duplicate(), "castaways": castaways.duplicate()}
+
+
+# (sea step 13d, the host) a castaway sailed home moves into the town.
+func add_castaway(id: String) -> void:
+	if not castaways.has(id):
+		castaways.append(id)
+		people.refresh()
 
 
 # The host's cases and paintings (sent now and then): a guest's town follows them.
@@ -794,6 +810,12 @@ func load_extra(got: Variant) -> void:
 			hall.plinths[String(k).left(2)] = String(stands[k]).left(24)
 		hall.show_plinths()
 		changed = true
+	var saved: Variant = (got as Dictionary).get("castaways", [])
+	if saved is Array and saved.size() <= 16 and str(saved) != str(castaways):
+		castaways.clear()
+		for c: Variant in saved:
+			castaways.append(String(c).left(16))
+		people.refresh()
 	if art is Array and art.size() <= 8 and str(art) != str(gallery.bought):
 		gallery.bought.clear()
 		for a: Variant in art:

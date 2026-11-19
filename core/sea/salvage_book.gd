@@ -145,7 +145,7 @@ func from_dict(saved: Variant) -> void:
 		return
 	if saved.get("found") is Array:
 		for id: Variant in saved["found"]:
-			if _set_of.has(str(id)):
+			if _set_of.has(str(id)) or ((str(id).begins_with("hoard:") or str(id).begins_with("riddle:")) and str(id).length() <= 40):  # (hoards taken, riddles read: sea steps 9d / 13d)
 				found[str(id)] = true
 	if saved.get("trinkets") is Dictionary:
 		for id: Variant in saved["trinkets"]:

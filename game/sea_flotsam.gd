@@ -52,13 +52,21 @@ func _net() -> Node:
 # Host / alone: a sunk foe's cargo spread round where she went down.
 func spill(x: float, z: float, loot_id: String, region_id: String) -> void:
 	var n := rules.pieces(loot_id, _rng)
-	var models: Array = _cfg()["models"]
 	for i in n:
 		var a := _rng.randf() * TAU
 		var r := sqrt(_rng.randf()) * float(_cfg()["spread_m"])
-		var model := 2 if i == 0 else _rng.randi_range(0, models.size() - 2)  # one sea chest, the rest barrels and crates
+		var model := 2 if i == 0 else _rng.randi_range(0, 1)  # one sea chest, the rest barrels and crates
 		add_piece(_next_id, x + cos(a) * r, z + sin(a) * r, model, loot_id, region_id)
 		_next_id += 1
+	var net := _net()
+	if net != null:
+		net.call("tell_flotsam", to_net())
+
+
+# Host / alone: one piece of a named model (data flotsam.models) afloat there, e.g. a message in a bottle (sea step 13d).
+func add_one(x: float, z: float, model_name: String, loot_id: String, region_id: String) -> void:
+	add_piece(_next_id, x, z, maxi((_cfg()["models"] as Array).find(model_name), 0), loot_id, region_id)
+	_next_id += 1
 	var net := _net()
 	if net != null:
 		net.call("tell_flotsam", to_net())
@@ -175,6 +183,10 @@ func _take(id: int, host: bool, net: Node) -> void:
 
 # This player got a piece: roll its loot here (his doubloons, his bag, his gun).
 func grant(loot_id: String, region_id: String) -> void:
+	if loot_id == "bottle":  # a message in a bottle (sea step 13d): its riddle, read on this machine
+		taken += 1
+		(_sea.get("events") as Node).call("read_bottle", region_id)
+		return
 	var got := rules.loot(loot_id, region_id, _rng)
 	var said := PackedStringArray()
 	var s := get_tree().get_first_node_in_group("game_session")

@@ -24,6 +24,7 @@ const SeaPort = preload("res://game/sea_port.gd")
 const SeaTown = preload("res://game/sea_town.gd")
 const SeaDungeons = preload("res://game/sea_dungeons.gd")
 const SeaTools = preload("res://game/sea_tools.gd")
+const SeaEvents = preload("res://game/sea_events.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -46,6 +47,7 @@ var port := SeaPort.new()  # harbour master's stalls, doubloons, ferries (sea st
 var town := SeaTown.new()  # the home port town: buildings by level, signs, the town ledger (sea step 7)
 var dungeons := SeaDungeons.new()  # the dungeons behind their island gates (sea step 9)
 var tools := SeaTools.new()  # the 7 traversal tools (sea step 9b)
+var events := SeaEvents.new()  # merchant rafts, castaways, bottles, whale pods (sea step 13d)
 var indoor := false  # this player is inside a dungeon: no sea, rain or sky drawn (sea step 9)
 var _chart_layer := CanvasLayer.new()
 var _chart_cfg: Dictionary
@@ -109,6 +111,8 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	dungeons.setup(self, _player)
 	_root.add_child(tools)
 	tools.setup(self, _player, _chart_layer)
+	_root.add_child(events)
+	events.setup(self, _player, _chart_layer)
 	port.town = town
 	_read_chart_words()
 	_clock_start = Time.get_ticks_msec() / 1000.0
@@ -267,7 +271,7 @@ func _tick(delta: float, now: bool) -> void:
 		islands.follow(_kept_for(), true)
 		rain.show_rain(float(weather.get("rain", 0.0)), float(weather.get("wind", 0.0)), float(weather.get("wind_dir", 0.0)))
 	var region: Dictionary = map.region_at(here.x, here.z)
-	ocean.swell = lerpf(ocean.swell, float(weather.get("swell", 0.5)), 1.0 if now else 1.0 - exp(-0.5 * delta))
+	ocean.swell = lerpf(ocean.swell, float(weather.get("swell", 0.5)) * events.calm, 1.0 if now else 1.0 - exp(-0.5 * delta))  # (a whale pod near calms the sea: sea step 13d)
 	var gloom := clampf((1.0 - float(weather.get("light", 1.0))) / 0.55, 0.0, 1.0)
 	ocean.gloom = lerpf(ocean.gloom, gloom, 1.0 if now else 1.0 - exp(-0.5 * delta))
 	var camera := get_viewport().get_camera_3d()
@@ -309,7 +313,7 @@ func status() -> String:
 func prompt(key: String) -> String:
 	if swim.climbing():
 		return ""
-	for part: Node in [dungeons, swim, salvage, shipyard, port, town]:
+	for part: Node in [dungeons, swim, salvage, shipyard, port, town, events]:
 		var said := String(part.call("prompt", key))
 		if said != "":
 			return said
@@ -319,7 +323,7 @@ func prompt(key: String) -> String:
 func interact() -> bool:
 	if swim.climbing():
 		return true
-	return dungeons.interact() or swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or ships.interact()
+	return dungeons.interact() or swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or events.interact() or ships.interact()
 
 
 func toggle_logbook() -> void:

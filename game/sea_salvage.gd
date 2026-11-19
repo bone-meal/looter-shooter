@@ -6,6 +6,9 @@
 # Dependencies: core/sea/salvage_book.gd, game/salvage_log_window.gd, game/fantasy_models.gd, data/sea/salvage.json,
 # data/sea/writing/salvage.txt, assets/models/sea/{seabed_patch,salvage_chest,wreck_small}.gltf; the sea world
 # (skills, notice), game/sea_swim.gd (under, depth), the session (group "game_session": wallet for chips).
+# Sea step 13d: a spot with "riddle" is a HIDDEN cache until this player has read that riddle from a message in a
+# bottle (game/sea_events.gd read_bottle): counted as taken until then (no bubbles, no taking, no rumours / pins);
+# diving in a whale pod's wake (wake_until) brings up random finds quicker.
 extends Node3D
 
 const SalvageBook = preload("res://core/sea/salvage_book.gd")
@@ -26,6 +29,7 @@ var _deep_time := 0.0
 var _under_time := 0.0
 var _slow := 0.0
 var _layer := CanvasLayer.new()
+var wake_until := -1.0  # (sea step 13d) seconds: until then random finds come quicker (a whale pod's wake)
 
 
 func setup(sea_world: Node3D, player: CharacterBody3D, swim: Node3D) -> void:
@@ -106,6 +110,8 @@ func _id(spot_cfg: Dictionary) -> String:
 
 # Has this player already taken what a spot holds (a logged find, or a plan in the bag)?
 func _taken(spot_cfg: Dictionary) -> bool:
+	if spot_cfg.has("riddle") and not book.found.has("riddle:" + String(spot_cfg["riddle"])):
+		return true  # a riddle's cache nobody has told this player about yet (sea step 13d): as good as not there
 	if spot_cfg.has("plan"):
 		var skills: Variant = _sea.get("skills")
 		return skills != null and int((skills as Node).get("bag").call("count", String(spot_cfg["plan"]))) > 0
@@ -145,9 +151,11 @@ func _process(delta: float) -> void:
 	if float(_swim.get("depth")) < float(dive["min_depth"]):
 		return
 	_deep_time += delta
-	if _deep_time >= float(dive["random_every"]):
+	var waked := Time.get_ticks_msec() / 1000.0 < wake_until
+	var whales: Dictionary = (_sea.get("events").get("rules") as RefCounted).get("cfg")["whales"]
+	if _deep_time >= float(dive["random_every"]) * (float(whales["random_every_mult"]) if waked else 1.0):
 		_deep_time = 0.0
-		if _rng.randf() < float(dive["random_chance"]):
+		if _rng.randf() < (float(whales["wake_chance"]) if waked else float(dive["random_chance"])):
 			var id := book.roll_trinket(_rng)
 			_logged(id, book.add_trinket(id))
 			_xp(int(dive["xp_random"]))
@@ -222,6 +230,19 @@ func take(spot: Dictionary, dived: bool) -> bool:
 		_xp(int(cfg["dive"]["xp_spot"]))
 	_show_found(spot)
 	return true
+
+
+# (sea step 13d) The spot holding hoard `id` ({} = none), and the bubbles shown again by what this player knows now.
+func spot_of_hoard(id: String) -> Dictionary:
+	for spot: Dictionary in cfg["spots"]:
+		if String(spot.get("hoard", "")) == id:
+			return spot
+	return {}
+
+
+func refresh_found() -> void:
+	for spot: Dictionary in _spots:
+		_show_found(spot)
 
 
 func _logged(id: String, result: Dictionary) -> void:

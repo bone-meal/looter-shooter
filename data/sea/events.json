@@ -1,0 +1,82 @@
+{
+  "version": 1,
+  "_about": "Sea step 13d: FRIENDLY / ODD SEA EVENTS (game/sea_events.gd, core/sea/event_rules.gd; plan diary/DESIGN_REGION1.md 13d). The HOST rolls every check_s for a player at sea outside the home port's safe waters (encounters.json safe_radius) at chance, at least min_gap_s after the last event; kinds by weight from their regions. merchant: a trader's raft comes alongside and stays stay_s (her goods: each raft offers `offers` entries of the region's stock, each a few per player). castaway: a man on a broken spar; haul him aboard from a ship within haul_m (or swim to him), sail him home within deliver_m of the home port dock: he moves into the town (data/sea/writing/events_r1.txt) and everyone aboard gets reward_doubloons. bottle: a message in a bottle afloat ahead (game/sea_flotsam.gd, loot \"bottle\"); whoever takes it reads the next unread riddle of the region: its cache (a hidden salvage spot, data/sea/salvage.json \"riddle\") is pinned on his chart and starts bubbling for him. whales: a pod passes calm_m round each player near it: the sea calms there (swell x calm_swell), and diving within wake_m of them for wake_s brings up random finds every random_every_mult x as often at wake_chance; the host leaves their wake's flotsam (loot whale_wake) where they passed closest. ALL NUMBERS, NAMES AND WORDS ARE MY PLACEHOLDERS.",
+  "check_s": 40.0,
+  "chance": 0.22,
+  "min_gap_s": 180.0,
+  "max_active": 2,
+  "notice_m": 700.0,
+  "kinds": {
+    "merchant": {"weight": 3.0, "regions": [1, 2, 3, 4, 5, 6, 7]},
+    "castaway": {"weight": 2.0, "regions": [1]},
+    "bottle": {"weight": 3.0, "regions": [1]},
+    "whales": {"weight": 2.0, "regions": [1, 2, 3, 5, 6], "not_weather": ["storm"]}
+  },
+  "merchant": {
+    "spawn_m": [150.0, 220.0],
+    "speed": 3.0,
+    "keep_m": 10.0,
+    "stay_s": 240.0,
+    "leave_m": 500.0,
+    "go_s": 30.0,
+    "talk_m": 12.0,
+    "swim_talk_m": 4.0,
+    "offers": 5,
+    "names": ["gull", "pell", "marrow"],
+    "looks": {"gull": ["sailor", "female", "bun"], "pell": ["fisher", "male", "curly"], "marrow": ["farmer", "male", "buzz"]},
+    "stock": {
+      "region_1": [
+        {"item": "tide_candle", "doubloons": 60, "count": 1, "limit": 1},
+        {"item": "storm_tonic", "doubloons": 40, "count": 2, "limit": 2},
+        {"item": "flawless_gem", "doubloons": 45, "count": 1, "limit": 2},
+        {"item": "brilliant_gem", "doubloons": 90, "count": 1, "limit": 1},
+        {"item": "sailcloth", "doubloons": 18, "count": 3, "limit": 3},
+        {"item": "shark_tooth", "doubloons": 20, "count": 3, "limit": 2},
+        {"item": "sunskate_wing", "doubloons": 30, "count": 1, "limit": 2},
+        {"item": "stormoak_plank", "doubloons": 12, "count": 5, "limit": 3},
+        {"gun": "purple", "doubloons": 150, "limit": 1},
+        {"gun": "gold", "doubloons": 260, "limit": 1}
+      ]
+    },
+    "region_stock": "region_1"
+  },
+  "castaway": {
+    "spawn_m": [120.0, 200.0],
+    "drift_mps": 0.25,
+    "haul_m": 14.0,
+    "swim_m": 3.0,
+    "deliver_m": 320.0,
+    "reward_doubloons": 40,
+    "who": ["tam", "orla", "bede", "wynn"],
+    "looks": {"tam": ["sailor", "male", "crop"], "orla": ["fisher", "female", "long"], "bede": ["farmer", "male", "buzz"], "wynn": ["chef", "female", "braids"]},
+    "stand": [[-74.0, 6650.0], [-90.0, 6648.0], [-68.0, 6630.0], [-94.0, 6630.0]],
+    "deck_spot": [-1.0, 0.55],
+    "lost_s": 600.0
+  },
+  "bottle": {
+    "ahead_m": [80.0, 140.0],
+    "faded_doubloons": 15,
+    "riddles": [
+      {"id": "arch", "region": "region_1", "hoard": "riddle_arch"},
+      {"id": "gannet", "region": "region_1", "hoard": "riddle_gannet"},
+      {"id": "mast", "region": "region_1", "hoard": "riddle_mast"}
+    ]
+  },
+  "whales": {
+    "count": [3, 4],
+    "speed": 3.5,
+    "pass_m": [55.0, 80.0],
+    "start_back_m": 320.0,
+    "life_s": 190.0,
+    "spacing_m": 20.0,
+    "surface_every_s": 13.0,
+    "surface_share": 0.35,
+    "calm_m": 260.0,
+    "calm_swell": 0.3,
+    "wake_m": 180.0,
+    "wake_s": 180.0,
+    "wake_chance": 0.85,
+    "random_every_mult": 0.5,
+    "wake_loot": "whale_wake"
+  }
+}

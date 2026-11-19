@@ -1,7 +1,9 @@
 # Purpose: the people of the home port (sea step 7b-3; locked: residents run the port's services). Each building that
 # stands (level 1+) has its resident at the door (data/sea/town.json "residents": name, trade, clothes, lines); talking
 # to one opens that building's page of the town window with one of their lines. Townsfolk walk the town's streets
-# (data "townsfolk"), more of them as the town grows; far from the player they stand still and hidden.
+# (data "townsfolk"), more of them as the town grows; far from the player they stand still and hidden. Castaways sailed
+# home (sea step 13d, sea_town castaways) stand at their spots near the plaza (data/sea/events.json "stand") with a
+# name plate; talking to one tells one of his lines (data/sea/writing/events_r1.txt).
 # Dependencies: game/npc_body.gd, game/body_motion.gd, data/sea/town.json, data/sea/isles/isle_start.json (the streets);
 # game/sea_town.gd (parent: plots, markers, rules, the sea world).
 extends Node3D
@@ -15,6 +17,7 @@ var town: Node3D  # game/sea_town.gd
 var _residents := {}  # plot id -> {"node": Node3D, "shown_for": String (the model it stands at)}
 var _folk: Array = []  # [{"node", "path", "i", "dir", "pos" (sea xz), "y", "ray_t"}]
 var _streets: Array = []  # the town's street lines (sea coordinates)
+var _castaways := {}  # id -> {"node": Node3D, "pos": Vector2 (sea xz), "y": float, "ray_t": float}
 var _rng := RandomNumberGenerator.new()
 var _clock := 0.0
 
@@ -84,9 +87,51 @@ func refresh() -> void:
 			node.global_position = holder.global_position + holder.global_basis * Vector3(2.5, 1.9, 1.5)
 		node.look_at(node.global_position + (out.normalized() if out.length() > 0.1 else Vector3.FORWARD) + Vector3(0.001, 0, 0), Vector3.UP)  # bodies face -z: out into the street
 		_residents[id] = {"node": node, "shown_for": model}
+	_refresh_castaways()
 	var want := int(rules.get("cfg").get("townsfolk", {}).get("start", 2)) + floori(float(rules.call("growth")) * float(rules.get("cfg").get("townsfolk", {}).get("per_growth", 10)))
 	while _folk.size() < want and not _streets.is_empty():
 		_add_walker()
+
+
+func _events_rules() -> RefCounted:
+	var events: Node = (town.get("_sea") as Node3D).get("events")
+	return events.get("rules") if events != null else null
+
+
+func _refresh_castaways() -> void:
+	var er := _events_rules()
+	if er == null:
+		return
+	for id: String in town.get("castaways"):
+		if _castaways.has(id):
+			continue
+		var look: Array = er.get("cfg")["castaway"]["looks"].get(id, ["sailor", "male", "crop"])
+		var node := NpcBody.build(_look({"outfit": look[0], "gender": look[1], "hair": look[2]}))
+		add_child(node)
+		BodyMotion.animate(node, 0.0, 0.0, 0.0, false)
+		_plate(node, String(er.call("name_of", "castaways", id)))
+		node.rotation.y = _rng.randf() * TAU
+		_castaways[id] = {"node": node, "pos": er.call("stand_of", id), "y": 0.0, "ray_t": 0.0}
+
+
+func castaway_near(at: Vector3) -> String:
+	for id: String in _castaways:
+		var node: Node3D = _castaways[id]["node"]
+		if node.visible and node.global_position.distance_to(at) <= TALK:
+			return id
+	return ""
+
+
+func castaway_name(id: String) -> String:
+	var er := _events_rules()
+	return String(er.call("name_of", "castaways", id)) if er != null else id
+
+
+func castaway_line(id: String) -> String:
+	var er := _events_rules()
+	if er == null:
+		return ""
+	return "%s: \"%s\"" % [castaway_name(id), String(er.call("line_of", "castaways", id, 3 + _rng.randi_range(0, 1)))]
 
 
 func _add_walker() -> void:
@@ -107,6 +152,23 @@ func _process(delta: float) -> void:
 	var cfg: Dictionary = town.get("rules").get("cfg").get("townsfolk", {})
 	var speed := float(cfg.get("walk_speed", 1.25))
 	var seen_within := float(cfg.get("show_within", 160.0))
+	for id: String in _castaways:  # (sea step 13d) castaways stand at their spots, the ground under them now and then
+		var cw: Dictionary = _castaways[id]
+		var cnode: Node3D = cw["node"]
+		cnode.visible = Vector2(me.x, me.z).distance_to(cw["pos"]) < seen_within
+		if not cnode.visible:
+			continue
+		cw["ray_t"] = float(cw["ray_t"]) - delta
+		if float(cw["ray_t"]) <= 0.0:
+			cw["ray_t"] = 1.0
+			var top_c: Vector3 = sea.call("world_of", Vector3(cw["pos"].x, 120.0, cw["pos"].y))
+			var ray_c := PhysicsRayQueryParameters3D.create(top_c, top_c + Vector3(0, -200.0, 0))
+			ray_c.collision_mask = 1
+			var hit_c := get_world_3d().direct_space_state.intersect_ray(ray_c)
+			if not hit_c.is_empty():
+				cw["y"] = (sea.call("local_of", hit_c["position"]) as Vector3).y
+		cnode.global_position = sea.call("world_of", Vector3(cw["pos"].x, float(cw["y"]), cw["pos"].y))
+		BodyMotion.animate(cnode, 0.0, 0.0, _clock + 3.0, false)
 	for k in _folk.size():
 		var f: Dictionary = _folk[k]
 		var node: Node3D = f["node"]

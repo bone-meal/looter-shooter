@@ -1,0 +1,37 @@
+# The sea events' words (sea step 13d: merchant rafts, castaways, messages in bottles, whale pods). Edit freely.
+# All of it is my placeholder text.
+# [merchants] id: Name | greeting when you trade | line when she leaves
+# [castaways] id: Name | said when hauled aboard | said when set ashore at the home port | in town, line 1 | in town, line 2
+#             (the castaway then lives in the home port; data/sea/events.json "stand" says where each one stands)
+# [riddles]   id: the riddle (a / starts a new line). Its cache is the hidden salvage spot with that "riddle" in
+#             data/sea/salvage.json, near the place the riddle describes.
+# [notices]   key: text   (%s = a name)
+
+[merchants]
+gull: Mother Gull | Fresh off the trade winds, dear. Have a look, but mind the raft, it bites. | Fair winds! I'll find you again, I always do.
+pell: Pell the Peddler | Everything you need and a few things you don't. Doubloons only. | Off I go. Don't sink before I see you next.
+marrow: Old Marrow | Don't haggle. My knees are too old for haggling. | The current's turning. So am I.
+
+[castaways]
+tam: Tam Rookwell | Oh thank the tides. Three days on that spar, and the gulls were getting ideas. | Solid ground! I'll never leave it again. Well. Not this week. | Every morning I walk to the end of the pier and wave at the spar. It's somewhere out there. | If you see a red hat floating about, that's mine. Keep it.
+orla: Orla Fenn | You came back for me! Well, you came. Close enough. | A town! With chairs! I'm going to sit in every one of them. | I mend nets now. I've had enough of being in the water, I'll keep the water out of the nets. | The tavern's grog tastes of ship's bilge. I love it.
+bede: Brother Bede | I prayed for a boat. I was rather specific about the boat having grog. | I shall build a small shrine here. To dry land. | Have you ever floated for a day and a night? It's very good for the thinking. Very bad for the skin. | Mind the Abbot in his temple. He never answered my letters either.
+wynn: Wynn Saltgrave | A ship! I'd given up and started naming the fish. | Take me to the tavern. No - take me to the tavern twice. | I was a cook on a merchant brig. Pirates took everything but the soup. | Bring me a Garden Root and I'll tell you how I survived on seaweed. Actually, don't.
+
+[riddles]
+arch: Where the stone bends its back to let the waves walk through, / sail east of it four ship-lengths, then a little north. / Down where the light goes green, my keeping waits for you.
+gannet: The white birds stand on a stone that stands alone, / east of the old turtle's back and its tumbled stair. / Swim to their morning side, a little south; the sea floor keeps my own.
+mast: A mast with no ship under it still points at the sky. / Where it leans into the shallows, go south and a touch east, / and dive before the gulls have counted to one hundred.
+
+[notices]
+merchant_comes: A raft with a striped awning makes for you: a merchant!
+merchant_goes: The merchant raft paddles off
+castaway_seen: Someone is clinging to a broken spar out there!
+castaway_aboard: The castaway is aboard: sail them to the home port
+castaway_lost: The castaway slipped back into the sea!
+castaway_home: %s steps ashore at the home port and moves into town
+bottle_seen: Something glints on the water ahead: a bottle?
+bottle_faded: The note is too faded to read. A few coins rattle in the bottle.
+riddle_pinned: The riddle's place is marked on your chart (M)
+whales_come: Whales! A pod passes close by and the sea goes quiet round them
+whales_wake: Their wake stirs the sea bed: dive here, finds come up quicker

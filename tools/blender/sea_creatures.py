@@ -23,6 +23,9 @@
 #   sea_siren_rock   the reef rock a siren sits on: a barnacled outcrop with weed (solid in the game).
 #   sea_kraken       region 7's WHORL KRAKEN body: a huge ridged mantle (most of it under water), two great glowing
 #                    eyes, a hooked beak; whorl markings spiral on the mantle.
+#   sea_whale        a passing WHALE (sea step 13d, the friendly whale pod): ~12 m, our own: slate-blue back, pale
+#                    grooved throat, knobs along the head, very long pale pectoral fins, a low dorsal hump, broad
+#                    flukes with a ragged trailing edge on node "Tail" (they rise when it dives).
 #   sea_kraken_arm   one of its arms: ~7.5 m from the root up, six chained segments "Seg1".."Seg6" (each child of the
 #                    one before, so the game curls the arm by turning each a little), suckers on its front (+f) side.
 # Model space: x right, y up, f forward (the game's -z). The shark's belly is at y = 0; the serpent's head centre
@@ -379,10 +382,44 @@ def kraken_arm(m):
     m.ball(skin, (0.06, 0.12, 0.06), (0.0, 6 * L + 0.1, 0.0), u=8, v=6, node="Seg6")  # the tip
 
 
+WHALE = (0.2, 0.25, 0.31)
+WHALE_PALE = (0.82, 0.84, 0.82)
+
+
+def whale(m):
+    back, pale = K("leather", WHALE), K("leather", WHALE_PALE)
+    cy = 1.1
+    body = [(-4.2, 0.32, 0.34), (-3.2, 0.62, 0.66), (-1.6, 1.08, 1.06), (0.2, 1.3, 1.24), (2.0, 1.28, 1.18), (3.6, 1.08, 0.98), (4.9, 0.78, 0.66), (5.8, 0.42, 0.34), (6.15, 0.12, 0.1)]
+    m.loft(back, [(0.0, cy, f, rx, ry) for f, rx, ry in body], segs=18)
+    m.loft(pale, [(0.0, cy - ry * 0.5, f, rx * 0.86, ry * 0.58) for f, rx, ry in body[3:-1]], segs=16)  # the pale throat
+    for k in range(7):  # throat grooves
+        x = -0.6 + k * 0.2
+        m.loft(K("leather", (0.62, 0.64, 0.63)), [(x, cy - 1.2 + abs(x) * 0.2, 1.0, 0.03, 0.02), (x * 0.9, cy - 1.12 + abs(x) * 0.18, 3.0, 0.03, 0.02), (x * 0.75, cy - 0.95 + abs(x) * 0.15, 4.3, 0.025, 0.015)], segs=5)
+    for k in range(9):  # knobs along the head
+        f = 3.2 + k * 0.32
+        for side in (-1, 1):
+            if k % 2 == 0 or side > 0:
+                m.ball(back, (0.1, 0.07, 0.1), (side * (0.28 - k * 0.02), cy + 0.98 - k * 0.05, f), u=6, v=4)
+    m.prof(back, 0.12, [(-1.6, cy + 1.0), (-2.6, cy + 0.92), (-2.3, cy + 1.32), (-2.0, cy + 1.3)], x=0.0)  # low dorsal hump
+    for side in (-1, 1):
+        m.ball(K("paint", DARK), (0.06, 0.06, 0.06), (side * 0.98, cy - 0.05, 4.4), u=8, v=6)
+        m.loft(pale, [(side * 0.95, cy - 0.45, 2.6, 0.45, 0.12), (side * 2.0, cy - 0.75, 2.1, 0.42, 0.09), (side * 3.2, cy - 1.05, 1.4, 0.3, 0.06), (side * 4.1, cy - 1.25, 0.8, 0.1, 0.03)], segs=10)  # very long pectoral fins
+        for k in range(4):
+            m.ball(pale, (0.12, 0.06, 0.12), (side * (1.6 + k * 0.7), cy - 0.55 - k * 0.2, 2.62 - k * 0.42), u=6, v=4)  # knobbed leading edge
+    m.loft(back, [(0.0, cy + 0.85, 4.6, 0.12, 0.05), (0.0, cy + 0.9, 4.8, 0.1, 0.04)], segs=8)  # the blowholes' ridge
+    m.node("Tail", (0.0, cy, -4.0))
+    m.loft(back, [(0.0, cy, -4.0, 0.34, 0.36), (0.0, cy, -5.0, 0.18, 0.24), (0.0, cy, -5.5, 0.12, 0.16)], segs=12, node="Tail")
+    for side in (-1, 1):
+        m.loft(back, [(0.0, cy, -5.4, 0.2, 0.09), (side * 1.2, cy, -5.9, 0.42, 0.07), (side * 2.1, cy, -6.4, 0.22, 0.04), (side * 2.4, cy, -6.6, 0.06, 0.02)], segs=10, node="Tail")
+        m.loft(pale, [(side * 0.6, cy - 0.06, -5.7, 0.28, 0.03), (side * 1.6, cy - 0.06, -6.2, 0.28, 0.025)], segs=8, node="Tail")  # pale under the flukes
+        for k in range(4):  # the ragged trailing edge
+            m.ball(back, (0.14, 0.04, 0.1), (side * (0.6 + k * 0.45), cy, -6.0 - k * 0.14), u=6, v=4, node="Tail")
+
+
 def main():
     fk.init()
     only = set(filter(None, os.environ.get("ONLY", "").split(",")))
-    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle), ("sea_orca", orca), ("sea_squallbeak", squallbeak), ("sea_siren", siren), ("sea_siren_rock", siren_rock), ("sea_kraken", kraken), ("sea_kraken_arm", kraken_arm)):
+    for name, maker in (("sea_shark", shark), ("sea_serpent", serpent), ("sea_sunskate", sunskate), ("sea_fogmaw", fogmaw), ("sea_cinder_turtle", cinder_turtle), ("sea_orca", orca), ("sea_squallbeak", squallbeak), ("sea_siren", siren), ("sea_siren_rock", siren_rock), ("sea_kraken", kraken), ("sea_kraken_arm", kraken_arm), ("sea_whale", whale)):
         if only and name not in only:
             continue
         m = kit.Model(name, uv_scale=0.5, colored=True)

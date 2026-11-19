@@ -82,6 +82,7 @@ func adopt_as_host() -> void:
 			(foes.get("ghosts") as Node).call("begin", ship)
 	var gone := int((foes.get("sharks") as Node).call("adopt_as_host")) + int((foes.get("serpent") as Node).call("adopt_as_host")) + int((foes.get("beasts") as Node).call("adopt_as_host"))
 	(foes.get("uboat") as Node).call("adopt_as_host")
+	(sea.get("events") as Node).call("adopt_as_host")
 	(foes.get("flotsam") as Node).call("adopt_as_host")
 	var dungeons: Node = sea.get("dungeons")
 	dungeons.call("adopt_as_host")
@@ -164,6 +165,9 @@ func _send_fleet(fleet: Node) -> void:
 	var uboat: Node = fleet.get("foes").get("uboat")
 	if bool(uboat.call("should_send")):
 		_uboat_down.rpc(uboat.call("to_net"))
+	var events: Node = sea.get("events")
+	if bool(events.call("should_send")):
+		_events_down.rpc(events.call("to_net"))
 
 
 @rpc("authority", "call_remote", "unreliable_ordered")
@@ -1094,6 +1098,46 @@ func _uboat_event(kind: String) -> void:
 	var uboat := _foe_part("uboat")
 	if uboat != null and kind.length() <= 16:
 		uboat.call("event", kind)
+
+
+# --- the friendly sea events (sea step 13d): host -> everyone (where they are, their notices); a client's haul of a
+# castaway asks the host ---
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _events_down(list: Array) -> void:
+	var sea := _sea()
+	if sea != null and list.size() <= 8:
+		sea.get("events").call("from_net", list)
+
+
+func tell_sea_event(key: String, x: float, z: float, arg: String, ship_i: int) -> void:
+	if active() and net.is_host():
+		_sea_event.rpc(key, x, z, arg, ship_i)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _sea_event(key: String, x: float, z: float, arg: String, ship_i: int) -> void:
+	var sea := _sea()
+	if sea != null and key.length() <= 24 and arg.length() <= 16 and is_finite(x) and is_finite(z):
+		sea.get("events").call("heard", key, x, z, arg, ship_i)
+
+
+func request_sea_event(kind: String, id: int, ship_i: int) -> void:
+	if is_client():
+		_sea_event_ask.rpc_id(1, kind, id, ship_i)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _sea_event_ask(kind: String, id: int, ship_i: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var sea := _sea()
+	if not net.is_host() or not net.roster.has(from) or sea == null or kind != "haul":
+		return
+	var at: Variant = net.positions().get(from)
+	if not at is Vector3:
+		return
+	var here: Vector3 = sea.call("local_of", at)
+	sea.get("events").call("host_haul", id, ship_i, Vector2(here.x, here.z))
 
 
 func tell_player_fx(peer: int, kind: String, v: Vector3, damage: float) -> void:

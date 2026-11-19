@@ -822,6 +822,132 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var ex2: Node3D = bx.get("enemy")
 				var gap_x := Vector2(ex2.global_position.x - player.global_position.x, ex2.global_position.z - player.global_position.z).length() if ex2 != null and is_instance_valid(ex2) else -1.0
 				_lines.append("BOSS %s: %s; me hp %.0f/%.0f downed %s dread %d xp %d boss kills %d; boss %.1f m off; prompt '%s'; at %s" % [" ".join(words.slice(1)), String(bx.call("status")), float(hpp.get("hp")), float(hpp.get("max_hp")), str(player.get("downed")), int(player.get("dread")), int(session.get("_progress").get("xp")), int((session.get("_progress").get("counters") as Dictionary).get("boss_kills", 0)), gap_x, String(dmx.call("prompt", "F")), str(sea_x.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
+		"sevent":  # sea step 13d: !sevent roll <merchant|castaway|bottle|whales> | near [m] (the newest event close to our ship) | trade | buy <stock index> | close | haul | takebottle | dive <m> | totown <castaway> | pause on|off | wait <aboard|home|read|wake|gone> [s] | status <note>
+			var sea_e: Node = session.call("sea")
+			if sea_e == null:
+				_lines.append("sevent: no sea")
+			else:
+				var ev: Node = sea_e.get("events")
+				var fleet_e: Node = sea_e.get("ships")
+				var mine_e: Node3D = (fleet_e.get("ships") as Array)[clampi(_ship_i, 0, (fleet_e.get("ships") as Array).size() - 1)]
+				var ms_e: Dictionary = mine_e.get("state")
+				var ids_e: Array = (ev.get("events") as Dictionary).keys()
+				var newest_e: int = ids_e.max() if not ids_e.is_empty() else -1
+				match words[1] if words.size() > 1 else "status":
+					"roll":
+						_lines.append("  rolled: '%s'" % String(ev.call("roll", words[2] if words.size() > 2 else "")))
+					"pause":
+						ev.set("paused", words.size() < 3 or words[2] == "on")
+					"near":
+						if newest_e >= 0:
+							var e_n: Dictionary = ev.get("events")[newest_e]
+							var m_n := float(words[2]) if words.size() > 2 else 18.0
+							var yaw_s := float(ms_e["yaw"])
+							var fwd := Vector2(-sin(yaw_s), -cos(yaw_s))
+							var side := Vector2(cos(yaw_s), -sin(yaw_s))
+							var at_s := Vector2(float(ms_e["x"]), float(ms_e["z"]))
+							if String(e_n["kind"]) == "whales":  # the pod 140 m back along our side, m off, swimming forward past us
+								var p_w := at_s - fwd * 140.0 + side * m_n
+								e_n["x"] = p_w.x
+								e_n["z"] = p_w.y
+								e_n["yaw"] = yaw_s
+								e_n["t"] = 0.0
+							else:
+								var p_n := at_s + side * m_n
+								e_n["x"] = p_n.x
+								e_n["z"] = p_n.y
+					"trade":
+						var id_t := -1
+						for id_k: int in ev.get("events"):
+							if String(ev.get("events")[id_k]["kind"]) == "merchant":
+								id_t = id_k
+						if id_t >= 0:
+							_lines.append("  prompt '%s'" % String(sea_e.call("prompt", "F")))
+							ev.call("open_window", id_t)
+							await get_tree().process_frame
+							await get_tree().process_frame
+							_lines.append("  goods: %s" % str((ev.call("goods", id_t) as Array).map(func(g: Array) -> String: return "%d %s %d db %d left" % [int(g[0]), String(g[2]), int(g[3]), int(g[4])])))
+					"buy":
+						var win_b: Control = ev.get("window")
+						var ok_b: bool = win_b.call("press", ("Buy %s" % words[2]) if words.size() > 2 else "Buy")
+						await get_tree().process_frame
+						_lines.append("  buy %s: %s -> '%s'" % [words[2] if words.size() > 2 else "first", str(ok_b), String(win_b.get("said"))])
+					"close":
+						ev.call("close_window")
+					"view":  # "!sevent view <name> [height] [back m]": a picture (no HUD) of the newest event from above our side
+						if newest_e >= 0:
+							var e_v: Dictionary = ev.get("events")[newest_e]
+							var was_v := get_viewport().get_camera_3d()
+							var cam_v := Camera3D.new()
+							get_tree().root.add_child(cam_v)
+							var target_v: Vector3 = sea_e.call("world_of", Vector3(float(e_v["x"]), 0.0, float(e_v["z"])))
+							var flat_v := Vector3(target_v.x - player.global_position.x, 0.0, target_v.z - player.global_position.z)
+							cam_v.global_position = player.global_position - flat_v.normalized() * (float(words[4]) if words.size() > 4 else 6.0) + Vector3(0.0, float(words[3]) if words.size() > 3 else 8.0, 0.0)
+							cam_v.look_at(target_v, Vector3.UP)
+							cam_v.fov = 55.0
+							cam_v.far = was_v.far
+							cam_v.current = true
+							var layers_v: Array = []
+							for found_v in get_tree().root.find_children("*", "CanvasLayer", true, false):
+								if (found_v as CanvasLayer).visible:
+									(found_v as CanvasLayer).visible = false
+									layers_v.append(found_v)
+							for i_v in 4:
+								await RenderingServer.frame_post_draw
+							get_viewport().get_texture().get_image().save_jpg(OUT + "boot_compatibility_%s.jpg" % words[2], 0.9)
+							for layer_v: CanvasLayer in layers_v:
+								layer_v.visible = true
+							was_v.current = true
+							cam_v.queue_free()
+					"surface":  # the newest whale pod's whales come up now (for a picture)
+						var n_s: Dictionary = (ev.get("_nodes") as Dictionary).get(newest_e, {})
+						var wc: Dictionary = ev.get("rules").get("cfg")["whales"]
+						for pair_s: Array in n_s.get("whales", []):
+							pair_s[2] = -fposmod(float(ev.get("_clock")) / float(wc["surface_every_s"]), 1.0) + float(wc["surface_share"]) * 0.15
+					"look":  # face the newest event (a whale pod: its leader)
+						if newest_e >= 0:
+							var e_l: Dictionary = ev.get("events")[newest_e]
+							player.call("look_at_point", sea_e.call("world_of", Vector3(float(e_l["x"]), 0.5, float(e_l["z"]))))
+					"haul":
+						_lines.append("  prompt '%s' -> %s" % [String(sea_e.call("prompt", "F")), str(sea_e.call("interact"))])
+					"takebottle":  # swim onto the first floating bottle
+						var flot_b: Node = fleet_e.get("foes").get("flotsam")
+						for id_p: int in flot_b.get("pieces"):
+							var p_b: Dictionary = flot_b.get("pieces")[id_p]
+							if String(p_b["loot"]) == "bottle":
+								player.call("teleport", sea_e.call("world_of", Vector3(float(p_b["x"]) + 0.5, -1.0, float(p_b["z"]))), 0.0)
+								break
+					"dive":  # under water this deep, 8 m off our ship's side
+						var off_d: Vector3 = mine_e.global_transform * Vector3(float(mine_e.get("spec")["outline"][3][1]) + 8.0, 0.0, 0.0)
+						player.call("teleport", Vector3(off_d.x, float(sea_e.call("water_height", off_d)) - float(words[2]), off_d.z), 0.0)
+					"totown":  # stand 2.2 m before that castaway in the town, facing him
+						var at_c: Vector2 = ev.get("rules").call("stand_of", words[2])
+						player.call("teleport", sea_e.call("world_of", Vector3(at_c.x + 2.2, 40.0, at_c.y)), 0.0)
+						await get_tree().create_timer(4.0, true, false, true).timeout  # (he falls to the ground; the castaway's ground ray runs)
+						var cw_t: Dictionary = (sea_e.get("town").get("people").get("_castaways") as Dictionary).get(words[2], {})
+						if not cw_t.is_empty():
+							player.call("look_at_point", (cw_t["node"] as Node3D).global_position + Vector3(0.0, 1.5, 0.0))
+					"wait":
+						var until_e := Time.get_ticks_msec() + int((float(words[3]) if words.size() > 3 else 60.0) * 1000.0)
+						var c0: Dictionary = (ev.get("counts") as Dictionary).duplicate()
+						while Time.get_ticks_msec() < until_e:
+							var cnt: Dictionary = ev.get("counts")
+							var aboard_e := false
+							for e_w: Dictionary in (ev.get("events") as Dictionary).values():
+								aboard_e = aboard_e or (String(e_w["kind"]) == "castaway" and int(e_w["ship"]) >= 0)
+							var kinds_e: Array = (ev.get("events") as Dictionary).values().map(func(x: Dictionary) -> String: return String(x["kind"]))
+							if (words[2] == "aboard" and aboard_e) or (words[2] == "gone" and (ev.get("events") as Dictionary).is_empty()) or (words[2] in ["merchant", "castaway", "whales"] and kinds_e.has(words[2])) \
+								or (words[2] == "town" and not (sea_e.get("town").get("castaways") as Array).is_empty()) \
+								or (words[2] in ["home", "read", "wake"] and int(cnt.get(words[2], 0)) > int(c0.get(words[2], 0))):
+								break
+							await get_tree().create_timer(0.25, true, false, true).timeout
+				var book_e: RefCounted = sea_e.get("salvage").get("book")
+				var tr_e := 0
+				for k_e: String in book_e.get("trinkets"):
+					tr_e += int(book_e.get("trinkets")[k_e])
+				_lines.append("SEVENT %s: %s; town castaways %s; doubloons %d; trinkets %d; swell %.2f; wake %s; pins %d; riddles read %s; prompt '%s'; me swimming %s depth %.1f" % [" ".join(words.slice(1)), String(ev.call("status")), str(sea_e.get("town").get("castaways")),
+					int(session.call("doubloons").get("balance")), tr_e, float(sea_e.get("ocean").get("swell")), str(Time.get_ticks_msec() / 1000.0 < float(sea_e.get("salvage").get("wake_until"))), (sea_e.get("chart").get("pins") as Array).size(),
+					str((book_e.get("found") as Dictionary).keys().filter(func(k: String) -> bool: return k.begins_with("riddle:"))), String(sea_e.call("prompt", "F")), str(player.get("swimming")), float(sea_e.get("swim").get("depth"))])
 		"uboat":  # sea step 8e-4: !uboat sight <surface|periscope> <none|torpedo_foe|torpedo_us|crate|chart> | near [m] (host: bring it close, broadside on) | cfg <key> <n> | look [torp] | pause on|off | wait <seen|gone|hit|deed> [n] | status <note>
 			var sea_u: Node = session.call("sea")
 			var fleet_u: Node = sea_u.get("ships") if sea_u != null else null

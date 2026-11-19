@@ -1,9 +1,13 @@
-Sea step 13c: region 1 mini-dungeons, the Salt Cellars and Smuggler's Grotto
+Sea step 13d: friendly sea events - merchant rafts, castaways, messages in bottles, whale pods
 
-- data/sea/dungeons.json: salt_cellars (block and plate, tide lever, key door, vault fight) and smugglers_grotto (landing fight, ledge chest, sluice lever, key, captain's stash fight), entered from the salt works stair and the sea cave
-- game/sea_dungeons.gd: entrance gate none (no gate model) and entrance ground height for the prompt
-- tools/boot_cmd.txt: walkthrough of both, every door, chest, lever, key and exit checked on the PC
-- ARCHITECTURE.md line
+- data/sea/events.json, data/sea/writing/events_r1.txt, core/sea/event_rules.gd, game/sea_events.gd: host-run events for players at sea outside the home port
+- merchant raft comes alongside, game/merchant_window.gd sells her goods for each player's own doubloons
+- castaway on a spar hauled aboard, sailed home he moves into the town (sea_town castaways, town_people), everyone aboard paid
+- message in a bottle (flotsam piece): game/bottle_note.gd shows the next unread riddle, its hidden salvage cache is pinned and starts bubbling
+- whale pod calms the sea near it, speeds dive finds in its wake, leaves wake flotsam
+- online: net_sea _events_down, tell_sea_event, request_sea_event (haul); two-copy tested
+- fix: the salvage logbook kept hoard and riddle marks only until reload (salvage_book from_dict)
+- models: merchant_raft, castaway_spar, flotsam_bottle, sea_whale; dev !sevent
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
