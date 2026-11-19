@@ -1100,6 +1100,46 @@ func _uboat_event(kind: String) -> void:
 		uboat.call("event", kind)
 
 
+# --- the sea quests (sea step 13e, the host's world): a client asks to finish a step, the host says it is done ---
+
+func request_quest(id: String, k: int) -> void:
+	if is_client():
+		_quest_up.rpc_id(1, id, k)
+
+
+func tell_quest(id: String, k: int, asker: int) -> void:
+	if active() and net.is_host():
+		_quest_done.rpc(id, k, asker)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _quest_up(id: String, k: int) -> void:
+	var from := multiplayer.get_remote_sender_id()
+	var sea := _sea()
+	if not net.is_host() or not net.roster.has(from) or sea == null or id.length() > 24:
+		return
+	var at: Variant = net.positions().get(from)
+	if not at is Vector3:
+		return
+	var here: Vector3 = sea.call("local_of", at)
+	if not bool(sea.get("quests").call("host_ask", id, k, Vector2(here.x, here.z), from)):
+		_quest_no.rpc_id(from, id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _quest_done(id: String, k: int, asker: int) -> void:
+	var sea := _sea()
+	if sea != null and id.length() <= 24:
+		sea.get("quests").call("step_done", id, k, asker, my_id())
+
+
+@rpc("authority", "call_remote", "reliable")
+func _quest_no(_id: String) -> void:
+	var sea := _sea()
+	if sea != null:
+		sea.get("quests").set("refused", int(sea.get("quests").get("refused")) + 1)
+
+
 # --- the friendly sea events (sea step 13d): host -> everyone (where they are, their notices); a client's haul of a
 # castaway asks the host ---
 

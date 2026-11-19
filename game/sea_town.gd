@@ -448,7 +448,7 @@ func prompt(key: String) -> String:
 		return "[%s] Town ledger: repair and grow the port" % key
 	var id := String(spot[1])
 	if spot[0] == "resident":
-		var r: Dictionary = rules.cfg.get("residents", {}).get(id, {})
+		var r: Dictionary = people.resident_info(id)
 		return "[%s] Talk to %s (%s)" % [key, String(r.get("name", "")), String(r.get("trade", ""))]
 	if spot[0] == "castaway":
 		return "[%s] Talk to %s" % [key, people.castaway_name(id)]
@@ -780,7 +780,7 @@ func act_done(kind: String, arg: String, asker: int, who: String, me: int) -> vo
 
 
 func extra_dict() -> Dictionary:
-	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate(), "plinths": hall.plinths.duplicate(), "castaways": castaways.duplicate()}
+	return {"cases": hall.cases.duplicate(), "paintings": gallery.bought.duplicate(), "plinths": hall.plinths.duplicate(), "castaways": castaways.duplicate(), "quests": (_sea.get("quests") as Node).call("to_dict")}
 
 
 # (sea step 13d, the host) a castaway sailed home moves into the town.
@@ -810,6 +810,8 @@ func load_extra(got: Variant) -> void:
 			hall.plinths[String(k).left(2)] = String(stands[k]).left(24)
 		hall.show_plinths()
 		changed = true
+	if (got as Dictionary).has("quests"):  # (sea step 13e) the sea quests' progress: the host's world
+		(_sea.get("quests") as Node).call("load_dict", (got as Dictionary)["quests"])
 	var saved: Variant = (got as Dictionary).get("castaways", [])
 	if saved is Array and saved.size() <= 16 and str(saved) != str(castaways):
 		castaways.clear()

@@ -152,6 +152,10 @@ func _draw() -> void:
 		draw_line(at + Vector2(-6, -6), at + Vector2(6, 6), UiSkin.BAD, 3.0)
 		draw_line(at + Vector2(-6, 6), at + Vector2(6, -6), UiSkin.BAD, 3.0)
 		draw_string(_font, at + Vector2(9.0, -6.0), String((secret_words.get(mark["id"], [mark["id"]]) as Array)[0]), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, UiSkin.BAD)
+	for mark: Array in sea.get("quests").call("chart_marks"):  # (sea step 13e) where each sea quest's step happens: a gold diamond
+		var at_q := _to_chart(mark[0])
+		draw_colored_polygon(PackedVector2Array([at_q + Vector2(0, -7), at_q + Vector2(6, 0), at_q + Vector2(0, 7), at_q + Vector2(-6, 0)]), UiSkin.ACCENT)
+		draw_string(_font, at_q + Vector2(9.0, 4.0), String(mark[1]), HORIZONTAL_ALIGNMENT_LEFT, -1, 11, UiSkin.ACCENT)
 	for ship: Node3D in sea.get("ships").get("ships"):  # the fleet where its water is charted
 		var s: Dictionary = ship.get("state")
 		if bool(chart.call("cleared_at", float(s["x"]), float(s["z"]))):

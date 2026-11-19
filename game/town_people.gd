@@ -3,7 +3,8 @@
 # to one opens that building's page of the town window with one of their lines. Townsfolk walk the town's streets
 # (data "townsfolk"), more of them as the town grows; far from the player they stand still and hidden. Castaways sailed
 # home (sea step 13d, sea_town castaways) stand at their spots near the plaza (data/sea/events.json "stand") with a
-# name plate; talking to one tells one of his lines (data/sea/writing/events_r1.txt).
+# name plate; talking to one tells one of his lines (data/sea/writing/events_r1.txt). Sea step 13e: a building whose
+# quest is done is run by that quest's person instead of its own resident (game/sea_quests.gd resident_info).
 # Dependencies: game/npc_body.gd, game/body_motion.gd, data/sea/town.json, data/sea/isles/isle_start.json (the streets);
 # game/sea_town.gd (parent: plots, markers, rules, the sea world).
 extends Node3D
@@ -54,12 +55,21 @@ func _plate(body: Node3D, words: String) -> void:
 	body.add_child(plate)
 
 
+# Who runs plot `id` now: its own resident (data/sea/town.json), or the person of a done sea quest (sea step 13e).
+func resident_info(id: String) -> Dictionary:
+	var quests: Node = (town.get("_sea") as Node3D).get("quests")
+	var over: Dictionary = quests.call("resident_info", id) if quests != null else {}
+	return over if not over.is_empty() else town.get("rules").get("cfg").get("residents", {}).get(id, {})
+
+
 # Called by the town when anything changed (a level, the growth).
 func refresh() -> void:
 	var rules: RefCounted = town.get("rules")
-	var who: Dictionary = rules.get("cfg").get("residents", {})
+	var who: Dictionary = {}
+	for id0: String in rules.get("cfg").get("residents", {}):
+		who[id0] = resident_info(id0)
 	for id: String in who:
-		var model := String(rules.call("model", id))
+		var model := String(rules.call("model", id)) + "|" + String(who[id].get("name", ""))  # (a new runner = a new body)
 		var up := int(rules.call("level", id)) > 0
 		var have: Dictionary = _residents.get(id, {})
 		if not up:
@@ -72,7 +82,9 @@ func refresh() -> void:
 		var door: Node3D = town.call("marker", id, "Door")
 		if door == null:
 			continue
-		var node: Node3D = have["node"] if not have.is_empty() else null
+		var node: Node3D = have["node"] if not have.is_empty() and String(have.get("who", "")) == String(who[id].get("name", "")) else null
+		if node == null and not have.is_empty():
+			(have["node"] as Node).queue_free()
 		if node == null:
 			node = NpcBody.build(_look(who[id]))
 			add_child(node)
@@ -86,7 +98,7 @@ func refresh() -> void:
 		if bool(rules.call("plot", id).get("sea_level", false)):
 			node.global_position = holder.global_position + holder.global_basis * Vector3(2.5, 1.9, 1.5)
 		node.look_at(node.global_position + (out.normalized() if out.length() > 0.1 else Vector3.FORWARD) + Vector3(0.001, 0, 0), Vector3.UP)  # bodies face -z: out into the street
-		_residents[id] = {"node": node, "shown_for": model}
+		_residents[id] = {"node": node, "shown_for": model, "who": String(who[id].get("name", ""))}
 	_refresh_castaways()
 	var want := int(rules.get("cfg").get("townsfolk", {}).get("start", 2)) + floori(float(rules.call("growth")) * float(rules.get("cfg").get("townsfolk", {}).get("per_growth", 10)))
 	while _folk.size() < want and not _streets.is_empty():
@@ -218,7 +230,7 @@ func resident_near(at: Vector3) -> String:
 
 
 func line_of(id: String) -> String:
-	var who: Dictionary = town.get("rules").get("cfg").get("residents", {}).get(id, {})
+	var who: Dictionary = resident_info(id)
 	var lines: Array = who.get("say", [""])
 	return "%s: %s" % [String(who.get("name", "")), String(lines[_rng.randi_range(0, lines.size() - 1)])]
 

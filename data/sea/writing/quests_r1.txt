@@ -1,0 +1,58 @@
+# Region 1's sea quests (sea step 13e). Edit freely: all of it is my placeholder text.
+# One section per quest:  [quest <id>]  (the ids are in data/sea/quests.json)
+#   title:    the quest's name in the sea quest log
+#   person:   the name over the person's head     trade: what they do once they run their building at the home port
+#   say0, say1 ...:   what the person says when you talk to them while the quest is at that step (0 = the first)
+#   goal0, goal1 ...: the quest log's line for that step (what to do now)
+#   done:     what they say when the quest is done (they leave for the home port)
+#   town:     what they say at the home port afterwards (lines split by | )
+
+[quest joss]
+title: A Fire on Palm Ring
+person: Joss Harrow
+trade: Tavern keeper
+say0: Visitors! Real ones! I was a ship's cook till the Gullwing went down in this lagoon. My strongbox is still down there, in the middle where the water goes dark. Fetch it and I'll cook for you for the rest of my days.
+goal0: Talk to the castaway at the camp on Palm Ring Atoll
+say1: The middle of the lagoon, where it goes dark. It's a small iron box, you'll know it by the anchor on the lid.
+goal1: Dive in the middle of Palm Ring's lagoon for Joss's strongbox
+say2: Have you got it? My whole life's in that box. Well. My recipes are.
+goal2: Bring the strongbox back to Joss at his camp
+done: My recipes! My knives! I'm going to the port and I'm never eating another coconut. Find me at the tavern.
+town: Grog's on the house for the one who found my box. Once. Don't tell the others. | I tried coconut stew again. Never again. | The secret's in the salt. Saltpan salt, mind, not that grey stuff.
+
+[quest nell]
+title: Nets of Turtleback
+person: Nell Brindle
+trade: Dock master
+say0: Sharks took my nets again. Bit right through them. I need their teeth to sew new hooks, three good ones. Harpoon a shark and bring me its teeth.
+goal0: Talk to the fisher in the stilt-hut hamlet on Turtleback
+say1: Three shark teeth. A harpoon gun does it cleanest. Or buy them off a merchant raft if you're squeamish.
+goal1: Bring Nell three Shark Teeth (harpoon sharks, or buy them)
+done: That'll mend a net or three. You know what, the hamlet's too quiet for me now. I'm off to your port: someone has to keep that dock in order.
+town: Tie up properly or I'll tie you up properly. | Three teeth, and I've a dock to run. Funny how things go.
+
+[quest abe]
+title: Salt and Silence
+person: Abe Salter
+trade: Storekeeper
+say0: My lads won't go down to the cellars any more. Something moved in under the salt works. Clear it out and I'll keep your goods dry for nothing.
+goal0: Talk to the salt-works foreman on Saltpan Key
+say1: The way down is the stair inside the old works. Whatever's at the bottom, end it.
+goal1: Clear the vault at the bottom of the Salt Cellars (Saltpan Key)
+say2: It's quiet down there? Truly? Then come here and shake my hand.
+goal2: Tell Abe the Salt Cellars are clear
+done: Quiet as a salt pan. My lads can mind the works now: I'm going to the port to mind your storehouse. Salt keeps, and so do I.
+town: Everything dry, everything counted. | Salt in the corners keeps the damp out. Old trick.
+
+[quest vesna]
+title: The Captain's Ledger
+person: Vesna Crow
+trade: Gallery keeper
+say0: Don't look at me like that, I'm retired. My old captain still runs the grotto behind this cove, and he keeps a ledger with my name in it. Put him down and I'll go straight. Mostly straight.
+goal0: Talk to the woman by the wreck on Smuggler's Hook
+say1: The sea cave in the cove. His stash is at the back, behind a locked door. He won't come quietly.
+goal1: Beat the captain in his stash at the back of Smuggler's Grotto
+say2: Is he done? Then my name's clean. Well. Cleaner.
+goal2: Tell Vesna the captain is beaten
+done: I used to move paintings that weren't mine. I'd like to hang some that are. Your gallery, then: I'll be there.
+town: Every one of these was bought fair. I checked. Twice. | Want something hung? I've a good eye and better hooks.

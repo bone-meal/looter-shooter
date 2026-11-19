@@ -89,6 +89,7 @@ fogmaw_lure: Fogmaw Lure
 eel_hide: Eel Hide
 cinder_plate: Cinder Shell Plate
 tide_candle: Tide Candle
+joss_strongbox: Joss's Strongbox
 abbot_bell_clapper: Abbot's Bell Clapper
 shellback_plate: Shellback Plate
 shellback_prow: Shellback Prow

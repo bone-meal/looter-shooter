@@ -831,6 +831,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif event.is_action_pressed("logbook") and _in_sea and not _inventory_screen.visible:
 		_sea.toggle_logbook()
+	elif event.is_action_pressed("quests") and _in_sea and not _inventory_screen.visible:  # (sea step 13e) the sea quest log
+		_sea.quests.toggle_log()
 	elif event.is_action_pressed("tool_use") and _in_sea and not _inventory_screen.visible:
 		_sea.tools.use()
 	elif event.is_action_pressed("tool_next") and _in_sea and not _inventory_screen.visible:

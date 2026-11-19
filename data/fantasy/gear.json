@@ -2233,6 +2233,15 @@
     0.58
    ]
   },
+  "joss_strongbox": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.4,
+    0.4,
+    0.44
+   ]
+  },
   "tide_candle": {
    "kind": "material",
    "icon": "potion",

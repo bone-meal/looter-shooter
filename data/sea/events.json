@@ -59,7 +59,14 @@
     "riddles": [
       {"id": "arch", "region": "region_1", "hoard": "riddle_arch"},
       {"id": "gannet", "region": "region_1", "hoard": "riddle_gannet"},
-      {"id": "mast", "region": "region_1", "hoard": "riddle_mast"}
+      {"id": "mast", "region": "region_1", "hoard": "riddle_mast"},
+      {"id": "lone_rock", "region": "region_1", "hoard": "riddle_lone_rock"},
+      {"id": "bird_rock", "region": "region_1", "hoard": "riddle_bird_rock"},
+      {"id": "one_palm", "region": "region_1", "hoard": "riddle_one_palm"},
+      {"id": "westbar", "region": "region_1", "hoard": "riddle_westbar"},
+      {"id": "one_tree", "region": "region_1", "hoard": "riddle_one_tree"},
+      {"id": "cormorant", "region": "region_1", "hoard": "riddle_cormorant"},
+      {"id": "northbar", "region": "region_1", "hoard": "riddle_northbar"}
     ]
   },
   "whales": {

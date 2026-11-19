@@ -12,6 +12,9 @@
 #   WHALE POD      3-4 whales pass close by along a line: round them the sea calms on every machine (sea_world.calm),
 #                  diving near them brings up finds quicker for a while (sea_salvage.wake_until), and the host leaves
 #                  their wake's flotsam where they passed closest.
+# SOLID (director): the raft, the castaway's spar and each whale carry an AnimatableBody3D on the world layer
+# (group "sea_soft": a ship's bow probe stops her against one without hull damage, game/sea_ships.gd); a whale is
+# solid only while near the surface.
 # Online: the host sends the events at 10 Hz with the fleet (game/net_sea.gd _events_down), its notices as events
 # (tell_sea_event, shown near them), a client's haul asks the host (request_sea_event).
 # Dependencies: core/sea/event_rules.gd, data/sea/events.json, data/sea/writing/events_r1.txt, game/merchant_window.gd,
@@ -639,6 +642,31 @@ func _plate(body: Node3D, words: String) -> void:
 	body.add_child(plate)
 
 
+# A solid body of boxes / a capsule (model space x, y, f; the game's -z is f) that players stand on and ships stop at.
+func _solid(parent: Node3D, shapes: Array) -> AnimatableBody3D:
+	var body := AnimatableBody3D.new()
+	body.sync_to_physics = false
+	body.collision_layer = 1
+	body.collision_mask = 0
+	body.add_to_group("sea_soft")
+	for s: Array in shapes:
+		var col := CollisionShape3D.new()
+		if String(s[0]) == "box":
+			var box := BoxShape3D.new()
+			box.size = Vector3(float(s[1][0]), float(s[1][1]), float(s[1][2]))
+			col.shape = box
+		else:  # ["capsule", radius, length]: lying along f
+			var cap := CapsuleShape3D.new()
+			cap.radius = float(s[1])
+			cap.height = float(s[2])
+			col.shape = cap
+			col.rotation.x = PI * 0.5
+		col.position = Vector3(float(s[-1][0]), float(s[-1][1]), -float(s[-1][2]))
+		body.add_child(col)
+	parent.add_child(body)
+	return body
+
+
 func _build(e: Dictionary) -> Dictionary:
 	var root := Node3D.new()
 	add_child(root)
@@ -647,6 +675,7 @@ func _build(e: Dictionary) -> Dictionary:
 		"merchant":
 			var raft := _model("merchant_raft")
 			root.add_child(raft)
+			_solid(root, [["box", [4.4, 0.55, 6.3], [0.0, 0.02, 0.0]], ["box", [3.0, 0.9, 0.75], [0.0, 0.75, 1.35]], ["box", [0.3, 4.6, 0.3], [0.0, 2.6, -1.2]]])  # logs and deck, the counter, the mast
 			var looks: Dictionary = rules.cfg["merchant"]["looks"]
 			var body := _person(looks.get(String(e["name"]), ["sailor", "female", "bun"]))
 			raft.add_child(body)
@@ -658,6 +687,7 @@ func _build(e: Dictionary) -> Dictionary:
 		"castaway":
 			var spar := _model("castaway_spar")
 			root.add_child(spar)
+			out["spar_body"] = _solid(root, [["capsule", 0.26, 6.6, [0.0, 0.05, -0.1]], ["box", [0.25, 0.25, 3.0], [-1.15, 0.1, 0.1]]])  # the mast, the yard stump
 			var looks2: Dictionary = rules.cfg["castaway"]["looks"]
 			var body2 := _person(looks2.get(String(e["who"]), ["sailor", "male", "crop"]))
 			root.add_child(body2)
@@ -671,6 +701,7 @@ func _build(e: Dictionary) -> Dictionary:
 				var whale: Node3D = FantasyModels.creature("sea_whale", Color(0.1, 0.1, 0.1), own) if FantasyModels.has_creature("sea_whale") else _model("missing")
 				whale.scale = Vector3.ONE * (1.0 - 0.12 * float(k % 3))
 				root.add_child(whale)
+				_solid(whale, [["capsule", 1.15, 9.6, [0.0, 1.1, 0.9]], ["box", [3.6, 0.5, 1.6], [0.0, 0.9, -5.9]]])  # the body, the flukes
 				var spout := FxKit.particles(Color(0.95, 0.98, 1.0, 0.85), 40, 1.4, 0.6, 7.0, 25.0, -3.0, false, false)
 				spout.emitting = false
 				root.add_child(spout)
@@ -699,6 +730,8 @@ func _place_castaway(n: Dictionary, e: Dictionary, delta: float) -> void:
 	var body: Node3D = n["body"]
 	var ships: Array = _fleet().get("ships")
 	var ship_i := int(e["ship"])
+	var spar_body: AnimatableBody3D = n["spar_body"]
+	spar_body.collision_layer = 0 if ship_i >= 0 else 1  # (aboard: the spar is left behind, not solid)
 	if ship_i >= 0 and ship_i < ships.size():  # aboard: stands on her deck toward the stern
 		spar.visible = false
 		var ship: Node3D = ships[ship_i]
@@ -740,6 +773,9 @@ func _place_whales(n: Dictionary, e: Dictionary, delta: float) -> void:
 		whale.position = goal if whale.position.distance_to(goal) > 30.0 else whale.position.lerp(goal, minf(1.0, delta * 2.0))
 		whale.rotation = Vector3(pitch, yaw, 0.0)
 		whale.visible = lift > -5.0 or u > 0.92
+		var solid_w := whale.get_child(whale.get_child_count() - 1) as AnimatableBody3D
+		if solid_w != null:
+			solid_w.collision_layer = 1 if lift > -4.0 else 0  # (solid near the surface only)
 		var tail := whale.find_child("Tail", true, false) as Node3D
 		if tail != null:
 			tail.rotation.x = sin(_clock * 1.3 + float(k)) * 0.18 + (0.6 * smoothstep(0.75, 1.0, u / share) if u < share else 0.0)

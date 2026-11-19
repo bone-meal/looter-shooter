@@ -822,6 +822,49 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var ex2: Node3D = bx.get("enemy")
 				var gap_x := Vector2(ex2.global_position.x - player.global_position.x, ex2.global_position.z - player.global_position.z).length() if ex2 != null and is_instance_valid(ex2) else -1.0
 				_lines.append("BOSS %s: %s; me hp %.0f/%.0f downed %s dread %d xp %d boss kills %d; boss %.1f m off; prompt '%s'; at %s" % [" ".join(words.slice(1)), String(bx.call("status")), float(hpp.get("hp")), float(hpp.get("max_hp")), str(player.get("downed")), int(player.get("dread")), int(session.get("_progress").get("xp")), int((session.get("_progress").get("counters") as Dictionary).get("boss_kills", 0)), gap_x, String(dmx.call("prompt", "F")), str(sea_x.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
+		"squest":  # sea step 13e: !squest go <quest> (stand 2 m from its person) | talk <quest> | close | dive <quest> (swim at its dive spot) | take (salvage there) | clear <dungeon> <fight> (host: mark that fight cleared) | log | wait <quest> <step> [s] | status <note>
+			var sea_q: Node = session.call("sea")
+			if sea_q == null:
+				_lines.append("squest: no sea")
+			else:
+				var qs: Node = sea_q.get("quests")
+				var qr: RefCounted = qs.get("rules")
+				match words[1] if words.size() > 1 else "status":
+					"go":
+						var q_g: Dictionary = qr.call("quest", words[2])
+						player.call("teleport", sea_q.call("world_of", Vector3(float(q_g["at"][0]) + 2.0, 40.0, float(q_g["at"][1]))), 0.0)
+						await get_tree().create_timer(5.0, true, false, true).timeout  # (falls to the island's ground; the person's ground ray runs)
+						var pq: Dictionary = (qs.get("_people") as Dictionary).get(words[2], {})
+						if not pq.is_empty():
+							player.call("teleport", (pq["node"] as Node3D).global_position + Vector3(1.8, 0.4, 0.0), 0.0)
+							await get_tree().create_timer(1.0, true, false, true).timeout
+							player.call("look_at_point", (pq["node"] as Node3D).global_position + Vector3(0.0, 1.5, 0.0))
+					"talk":
+						_lines.append("  prompt '%s'" % String(sea_q.call("prompt", "F")))
+						qs.call("talk", words[2])
+						await get_tree().process_frame
+						_lines.append("  note: %s | %s" % [String(qs.get("note").get("text")).replace("\n", " "), String(qs.get("note").get("footer"))])
+					"close":
+						qs.call("close_window")
+					"dive":
+						var st_d: Dictionary = (qr.call("quest", words[2])["steps"] as Array).filter(func(s: Dictionary) -> bool: return String(s["kind"]) == "dive")[0]
+						player.call("teleport", sea_q.call("world_of", Vector3(float(st_d["at"][0]), -1.0, float(st_d["at"][1]))), 0.0)
+						await get_tree().create_timer(1.0, true, false, true).timeout
+					"take":
+						_lines.append("  prompt '%s' -> %s" % [String(sea_q.call("prompt", "F")), str(sea_q.get("salvage").call("interact"))])
+					"clear":
+						var sp_c: Node = sea_q.get("dungeons").get("spaces")[words[2]]
+						(sp_c.get("rules").get("state")["cleared"] as Dictionary)[words[3]] = true
+					"log":
+						qs.call("toggle_log")
+						await get_tree().process_frame
+					"wait":
+						var until_q := Time.get_ticks_msec() + int((float(words[4]) if words.size() > 4 else 30.0) * 1000.0)
+						while Time.get_ticks_msec() < until_q and int(qr.call("step_of", words[2])) < int(words[3]):
+							await get_tree().create_timer(0.25, true, false, true).timeout
+				var bag_q: RefCounted = sea_q.get("skills").get("bag")
+				_lines.append("SQUEST %s: %s; strongbox %d, shark teeth %d; tavern runner '%s', dock '%s', storage '%s', gallery '%s'; prompt '%s'; swimming %s" % [" ".join(words.slice(1)), String(qs.call("status")), int(bag_q.call("count", "joss_strongbox")), int(bag_q.call("count", "shark_tooth")),
+					String(qs.call("resident_info", "tavern").get("name", "")), String(qs.call("resident_info", "dock").get("name", "")), String(qs.call("resident_info", "storage").get("name", "")), String(qs.call("resident_info", "gallery").get("name", "")), String(sea_q.call("prompt", "F")), str(player.get("swimming"))])
 		"sevent":  # sea step 13d: !sevent roll <merchant|castaway|bottle|whales> | near [m] (the newest event close to our ship) | trade | buy <stock index> | close | haul | takebottle | dive <m> | totown <castaway> | pause on|off | wait <aboard|home|read|wake|gone> [s] | status <note>
 			var sea_e: Node = session.call("sea")
 			if sea_e == null:
@@ -899,6 +942,26 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 								layer_v.visible = true
 							was_v.current = true
 							cam_v.queue_free()
+					"ahead":  # "!sevent ahead <m>": the newest event that far ahead of our ship's bow (whales: the pod's leader, crossing)
+						if newest_e >= 0:
+							var e_a: Dictionary = ev.get("events")[newest_e]
+							var yaw_a := float(ms_e["yaw"])
+							var p_a := Vector2(float(ms_e["x"]), float(ms_e["z"])) + Vector2(-sin(yaw_a), -cos(yaw_a)) * float(words[2])
+							e_a["x"] = p_a.x
+							e_a["z"] = p_a.y
+							if String(e_a["kind"]) == "whales":
+								e_a["yaw"] = yaw_a + PI * 0.5
+					"standon":  # drop onto the newest event's solid body (the raft / the first whale) from 2.5 m above it
+						if newest_e >= 0:
+							var n_o: Dictionary = (ev.get("_nodes") as Dictionary).get(newest_e, {})
+							var top_o: Vector3 = (n_o["root"] as Node3D).global_position
+							if n_o.has("whales"):
+								top_o = ((n_o["whales"] as Array)[0][0] as Node3D).global_position + Vector3(0.0, 2.2, 0.0)
+							player.call("teleport", top_o + Vector3(0.0, 1.2, 0.0), 0.0)
+							await get_tree().create_timer(0.7, true, false, true).timeout
+							_lines.append("  after 0.7 s: y %.2f, on floor %s, swimming %s" % [player.global_position.y, str((player as CharacterBody3D).is_on_floor()), str(player.get("swimming"))])
+							await get_tree().create_timer(1.3, true, false, true).timeout
+							_lines.append("  stood on it: y %.2f over its root %.2f, swimming %s, on floor %s" % [player.global_position.y, top_o.y, str(player.get("swimming")), str((player as CharacterBody3D).is_on_floor())])
 					"surface":  # the newest whale pod's whales come up now (for a picture)
 						var n_s: Dictionary = (ev.get("_nodes") as Dictionary).get(newest_e, {})
 						var wc: Dictionary = ev.get("rules").get("cfg")["whales"]
@@ -945,6 +1008,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var tr_e := 0
 				for k_e: String in book_e.get("trinkets"):
 					tr_e += int(book_e.get("trinkets")[k_e])
+				_lines.append("  our ship: speed %.2f hull %.0f, last ground '%s'" % [float(ms_e["speed"]), float(ms_e["hull"]), String(fleet_e.get("last_ground")).left(80)])
 				_lines.append("SEVENT %s: %s; town castaways %s; doubloons %d; trinkets %d; swell %.2f; wake %s; pins %d; riddles read %s; prompt '%s'; me swimming %s depth %.1f" % [" ".join(words.slice(1)), String(ev.call("status")), str(sea_e.get("town").get("castaways")),
 					int(session.call("doubloons").get("balance")), tr_e, float(sea_e.get("ocean").get("swell")), str(Time.get_ticks_msec() / 1000.0 < float(sea_e.get("salvage").get("wake_until"))), (sea_e.get("chart").get("pins") as Array).size(),
 					str((book_e.get("found") as Dictionary).keys().filter(func(k: String) -> bool: return k.begins_with("riddle:"))), String(sea_e.call("prompt", "F")), str(player.get("swimming")), float(sea_e.get("swim").get("depth"))])

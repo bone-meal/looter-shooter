@@ -22,6 +22,13 @@ wynn: Wynn Saltgrave | A ship! I'd given up and started naming the fish. | Take 
 arch: Where the stone bends its back to let the waves walk through, / sail east of it four ship-lengths, then a little north. / Down where the light goes green, my keeping waits for you.
 gannet: The white birds stand on a stone that stands alone, / east of the old turtle's back and its tumbled stair. / Swim to their morning side, a little south; the sea floor keeps my own.
 mast: A mast with no ship under it still points at the sky. / Where it leans into the shallows, go south and a touch east, / and dive before the gulls have counted to one hundred.
+lone_rock: One stone stands where no stone should, with nothing at all for company. / Row toward the morning sun a long throw from it, then lean a little north. / Its only friend is down below, and it has kept my secret.
+bird_rock: The gulls have whitened a rock to the south of the old temple's reef. / From their roost go west a little and south a little, as a bird drops a fish. / What it drops is mine, and now it is yours.
+one_palm: A single palm on a single dune, too stubborn to blow away. / Stand under it and look north, and swim that way a hundred strokes. / Before the hundredth stroke, look down.
+westbar: When the light is low a bar of sand shows its back north and west of the home port's waters. / From its western tip go west a little more, and just a touch south. / The sand there is hiding more than sand.
+one_tree: An isle so small it has room for one tree and one thought. / Leave it heading south and east, where the morning and noon meet. / A short swim and a long breath will finish my sentence.
+cormorant: Black birds dry their wings on a rock in the far north-east. / Swim west from them as far as a cannon would care to reach, then north a little. / They have watched over it all this time, and asked nothing.
+northbar: South of the home port a bar of sand shows itself to anyone patient. / Go straight south from its middle a long stone's throw, no more. / What the tide put there, the tide has not taken back.
 
 [notices]
 merchant_comes: A raft with a striped awning makes for you: a merchant!

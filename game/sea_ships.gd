@@ -39,6 +39,7 @@ var _xp_metres := 0.0
 var _aground_told := false
 var _layer := CanvasLayer.new()
 var last_ground := ""  # dev: what the last aground probe hit
+var _soft := false  # the last aground probe hit a whale / raft / spar (sea step 13d): she stops, no hull damage
 var wanted_rudder := 0.0  # the helm's keys: the rudder and sail stage this player asks for (sent to the host online)
 var wanted_stage := 1
 var _helmsmen := {}  # SeaShip -> {"id": peer, "level": claimed Sailing level} (the host's word online)
@@ -180,14 +181,15 @@ func _process(delta: float) -> void:
 				hull_part.sunk_done(ship)
 			boarding.hold(ship, delta)
 			if moved > 0.0 and _aground(ship):
-				hull_part.aground(ship, float(ship.state["speed"]))
+				if not _soft:
+					hull_part.aground(ship, float(ship.state["speed"]))
 				ship.state["x"] = was.x
 				ship.state["z"] = was.y
 				ship.state["speed"] = 0.0
 				moved = 0.0
 				if ship == helm_ship and not _aground_told:
 					_aground_told = true
-					_sea.emit_signal("notice", "Run aground: back her off with the oars (S)")
+					_sea.emit_signal("notice", "Something big is in her way: back her off with the oars (S)" if _soft else "Run aground: back her off with the oars (S)")
 			elif moved > 0.0:
 				_aground_told = false
 		hull_part.display(ship, delta)
@@ -410,8 +412,10 @@ func _aground(ship: SeaShip) -> bool:
 		skip.append(other.get_rid())  # (a pirate closing to board stopped dead 16 m off, bow-on, under our sails)
 	_ray.exclude = skip
 	var hit := get_world_3d().direct_space_state.intersect_ray(_ray)
+	_soft = false
 	if not hit.is_empty():
 		last_ground = "%s at %s" % [str(hit["collider"]), str(hit["position"])]
+		_soft = (hit["collider"] as Node).is_in_group("sea_soft")
 	return not hit.is_empty()
 
 

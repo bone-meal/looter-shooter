@@ -25,6 +25,7 @@ const SeaTown = preload("res://game/sea_town.gd")
 const SeaDungeons = preload("res://game/sea_dungeons.gd")
 const SeaTools = preload("res://game/sea_tools.gd")
 const SeaEvents = preload("res://game/sea_events.gd")
+const SeaQuests = preload("res://game/sea_quests.gd")
 
 signal origin_shifted(delta: Vector3)  # the scene moved by -delta under everything at sea (ships, enemies: move with it)
 signal notice(text: String)
@@ -48,6 +49,7 @@ var town := SeaTown.new()  # the home port town: buildings by level, signs, the 
 var dungeons := SeaDungeons.new()  # the dungeons behind their island gates (sea step 9)
 var tools := SeaTools.new()  # the 7 traversal tools (sea step 9b)
 var events := SeaEvents.new()  # merchant rafts, castaways, bottles, whale pods (sea step 13d)
+var quests := SeaQuests.new()  # the sea quests, their people and log (sea step 13e)
 var indoor := false  # this player is inside a dungeon: no sea, rain or sky drawn (sea step 9)
 var _chart_layer := CanvasLayer.new()
 var _chart_cfg: Dictionary
@@ -113,6 +115,8 @@ func setup(player: CharacterBody3D, style: Node) -> void:
 	tools.setup(self, _player, _chart_layer)
 	_root.add_child(events)
 	events.setup(self, _player, _chart_layer)
+	_root.add_child(quests)
+	quests.setup(self, _player, _chart_layer)
 	port.town = town
 	_read_chart_words()
 	_clock_start = Time.get_ticks_msec() / 1000.0
@@ -313,7 +317,7 @@ func status() -> String:
 func prompt(key: String) -> String:
 	if swim.climbing():
 		return ""
-	for part: Node in [dungeons, swim, salvage, shipyard, port, town, events]:
+	for part: Node in [dungeons, swim, salvage, shipyard, port, town, quests, events]:
 		var said := String(part.call("prompt", key))
 		if said != "":
 			return said
@@ -323,7 +327,7 @@ func prompt(key: String) -> String:
 func interact() -> bool:
 	if swim.climbing():
 		return true
-	return dungeons.interact() or swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or events.interact() or ships.interact()
+	return dungeons.interact() or swim.interact() or salvage.interact() or shipyard.interact() or port.interact() or town.interact() or quests.interact() or events.interact() or ships.interact()
 
 
 func toggle_logbook() -> void:

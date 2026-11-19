@@ -1,13 +1,13 @@
-Sea step 13d: friendly sea events - merchant rafts, castaways, messages in bottles, whale pods
+Sea step 13e: region 1 people and quests, plus solid sea events and more riddles
 
-- data/sea/events.json, data/sea/writing/events_r1.txt, core/sea/event_rules.gd, game/sea_events.gd: host-run events for players at sea outside the home port
-- merchant raft comes alongside, game/merchant_window.gd sells her goods for each player's own doubloons
-- castaway on a spar hauled aboard, sailed home he moves into the town (sea_town castaways, town_people), everyone aboard paid
-- message in a bottle (flotsam piece): game/bottle_note.gd shows the next unread riddle, its hidden salvage cache is pinned and starts bubbling
-- whale pod calms the sea near it, speeds dive finds in its wake, leaves wake flotsam
-- online: net_sea _events_down, tell_sea_event, request_sea_event (haul); two-copy tested
-- fix: the salvage logbook kept hoard and riddle marks only until reload (salvage_book from_dict)
-- models: merchant_raft, castaway_spar, flotsam_bottle, sea_whale; dev !sevent
+- core/sea/sea_quest_rules.gd, game/sea_quests.gd, data/sea/quests.json, data/sea/writing/quests_r1.txt: four quests (Joss on Palm Ring, Nell on Turtleback, Abe on Saltpan Key, Vesna on Smugglers Hook); steps talk, bring, dive, dungeon; progress is the host world, shared
+- each finished quest moves its person to the home port to run a building (tavern, dock, storehouse, gallery) via game/town_people.gd
+- game/sea_quest_window.gd: own sea quest log on L at sea; quest marks on the sea chart
+- dive step items are salvage spots shown only at their step (joss_strongbox)
+- online: net_sea request_quest / tell_quest; two-copy tested
+- director: merchant raft, castaway spar and whales are solid (players stand on them, a ship stops against them without hull damage)
+- director: seven more bottle riddles and caches in region 1 (ten in all)
+- dev !squest, !sevent ahead / standon
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
