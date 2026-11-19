@@ -164,3 +164,39 @@ func notice_at(key: String, port: String) -> String:
 func pod_line(at: Vector2, way: Vector2, side: float) -> Array:
 	var across := Vector2(-way.y, way.x)
 	return [at - way * float(cfg["whales"]["start_back_m"]) + across * side, way]
+
+
+# (sea step 13 R2e) Does the straight line a -> b keep `margin` metres clear of every circle ([centre Vector2, r])?
+static func segment_clear(a: Vector2, b: Vector2, circles: Array, margin: float) -> bool:
+	var ab := b - a
+	for c: Array in circles:
+		var centre: Vector2 = c[0]
+		var k := clampf((centre - a).dot(ab) / maxf(ab.length_squared(), 0.0001), 0.0, 1.0)
+		if centre.distance_to(a + ab * k) < float(c[1]) + margin:
+			return false
+	return true
+
+
+# A wandering way over open water (the marsh lights): `legs` legs of total / legs metres from `start`, each turned up
+# to turn_deg from the last; a leg that would pass within margin of an island tries other turns, then a shorter
+# leg, else the way ends where it is. Returns the points after the start ([] = no clear way at all).
+static func clear_way(start: Vector2, ahead: Vector2, total: float, legs: int, turn_deg: float, circles: Array, margin: float, rng: RandomNumberGenerator) -> Array:
+	var out: Array = []
+	var dir := ahead.normalized()
+	var p := start
+	var step := total / float(maxi(legs, 1))
+	for i in maxi(legs, 1):
+		var found := false
+		for tries in 12:
+			var spread := turn_deg * (1.0 + float(tries) * 0.35)  # wider and wider turns if the near ones are blocked
+			var d := dir.rotated(deg_to_rad(rng.randf_range(-spread, spread)))
+			var length := step * (1.0 if tries < 8 else 0.5)
+			if segment_clear(p, p + d * length, circles, margin):
+				dir = d
+				p += d * length
+				out.append(p)
+				found = true
+				break
+		if not found:
+			break
+	return out

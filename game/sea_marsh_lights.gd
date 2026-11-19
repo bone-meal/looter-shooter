@@ -1,16 +1,28 @@
 # Purpose: MARSH LIGHTS (sea step 13 R2e, plan diary/DESIGN_REGION2.md): region 2's own sea event, only at night or in
-# fog. A few will-o'-wisps appear ahead of a player and drift away along a wandering way (legs of a few hundred
-# metres), moving on only while someone keeps within follow_m of them, as if leading him; left behind (nobody within
+# fog. A few will-o'-wisps appear ahead of a player and drift away along a wandering way over open water (legs of a
+# few hundred metres that keep island_margin_m clear of every island: core/sea/event_rules.gd clear_way), moving on only while someone keeps within follow_m of them, as if leading him; left behind (nobody within
 # lose_m for lose_s) they wink out. At the end of their way they settle: cache_chance a floating cache (game/
 # sea_flotsam.gd spill, loot cache_loot), else they gather into one light that is a lure: the region's beast (a
 # Fogmaw: game/sea_beasts.gd) rises there. The HOST runs them (game/sea_events.gd hands it the event and sends it
 # with the others); every machine draws them (glowing balls bobbing round the event's point, one light for all).
-# Dependencies: data/sea/events.json marsh_lights, game/sea_events.gd (parent `events`: rules, tell, _nearest, _water,
+# Dependencies: data/sea/events.json marsh_lights, data/sea/islands.json, game/sea_events.gd (parent `events`: rules, tell, _nearest, _water,
 # _foes, counts), game/sea_flotsam.gd, game/sea_beasts.gd, core/sea/event_rules.gd (region_number).
 extends Node
 
+const RulesScript = preload("res://core/sea/event_rules.gd")
+
 var events: Node  # game/sea_events.gd
 var _mat: StandardMaterial3D
+var _circles: Array = []  # the islands as [centre (sea x, z), radius] (data/sea/islands.json), read once
+
+
+# The islands the wisps' way keeps clear of.
+func _islands() -> Array:
+	if _circles.is_empty():
+		var d: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/islands.json"))
+		for i: Dictionary in d["islands"]:
+			_circles.append([Vector2(float(i["pos"][0]), float(i["pos"][1])), float(i["radius"])])
+	return _circles
 
 
 func cfg() -> Dictionary:
@@ -20,15 +32,17 @@ func cfg() -> Dictionary:
 # Host: a new marsh lights event `ahead_m` before a player at sea point `at` heading `ahead` (unit), its way laid now.
 func make(at: Vector2, ahead: Vector2, region: String, rng: RandomNumberGenerator) -> Dictionary:
 	var c := cfg()
+	var circles := _islands()
+	var margin := float(c.get("island_margin_m", 45.0))
 	var start := at + ahead * float(c["ahead_m"])
+	for k in 8:  # (they show up over open water: turn the start round him till it is clear)
+		var tried := at + ahead.rotated(deg_to_rad(45.0 * float(k))) * float(c["ahead_m"])
+		if RulesScript.segment_clear(tried, tried, circles, margin):
+			start = tried
+			break
 	var total := rng.randf_range(float(c["lead_m"][0]), float(c["lead_m"][1]))
-	var legs := maxi(int(c["legs"]), 1)
 	var path: Array = []
-	var dir := ahead
-	var p := start
-	for i in legs:
-		dir = dir.rotated(deg_to_rad(rng.randf_range(-float(c["turn_deg"]), float(c["turn_deg"]))))
-		p += dir * total / float(legs)
+	for p: Vector2 in RulesScript.clear_way(start, start - at, total, int(c["legs"]), float(c["turn_deg"]), circles, margin, rng):
 		path.append([p.x, p.y])
 	return {"kind": "marsh_lights", "x": start.x, "z": start.y, "yaw": 0.0, "t": 0.0, "n": rng.randi_range(int(c["count"][0]), int(c["count"][1])),
 		"path": path, "leg": 0, "mode": "lead", "lost_t": 0.0, "region": region, "cache": rng.randf() < float(c["cache_chance"]), "led_m": 0.0}

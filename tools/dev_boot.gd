@@ -908,7 +908,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var bag_q: RefCounted = sea_q.get("skills").get("bag")
 				_lines.append("SQUEST %s: %s; strongbox %d, shark teeth %d; tavern runner '%s', dock '%s', storage '%s', gallery '%s'; prompt '%s'; swimming %s" % [" ".join(words.slice(1)), String(qs.call("status")), int(bag_q.call("count", "joss_strongbox")), int(bag_q.call("count", "shark_tooth")),
 					String(qs.call("resident_info", "tavern").get("name", "")), String(qs.call("resident_info", "dock").get("name", "")), String(qs.call("resident_info", "storage").get("name", "")), String(qs.call("resident_info", "gallery").get("name", "")), String(sea_q.call("prompt", "F")), str(player.get("swimming"))])
-		"sevent":  # sea step 13d: !sevent roll <merchant|castaway|bottle|whales|marsh_lights> | follow <s> [m] | cache on|off | near [m] (the newest event close to our ship) | trade | buy <stock index> | close | haul | takebottle | dive <m> | totown <castaway> | pause on|off | wait <aboard|home|read|wake|gone> [s] | status <note>
+		"sevent":  # sea step 13d: !sevent roll <merchant|castaway|bottle|whales|marsh_lights> | follow <s> [m] | cache on|off | ways <n> | near [m] (the newest event close to our ship) | trade | buy <stock index> | close | haul | takebottle | dive <m> | totown <castaway> | pause on|off | wait <aboard|home|read|wake|gone> [s] | status <note>
 			var sea_e: Node = session.call("sea")
 			if sea_e == null:
 				_lines.append("sevent: no sea")
@@ -933,6 +933,26 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							var at_f := Vector3(to_f.x + back_f.x, 0.0, to_f.y + back_f.y)
 							player.call("teleport", sea_e.call("world_of", Vector3(at_f.x, float(sea_e.call("water_height", sea_e.call("world_of", at_f))) - 0.6, at_f.z)), 0.0)
 							await get_tree().create_timer(0.5, true, false, true).timeout
+					"ways":  # "!sevent ways <n>" (sea step 13 R2e): lay n marsh lights ways from random points of region 2 and count legs that cross an island
+						var ml: Node = ev.get("lights")
+						var rng_w := RandomNumberGenerator.new()
+						rng_w.seed = 7
+						var circles_w: Array = ml.call("_islands")
+						var bad_w := 0
+						var legs_w := 0
+						var len_w := 0.0
+						for i_w in int(words[2]):
+							var from_w := Vector2(rng_w.randf_range(-8800.0, -3200.0), rng_w.randf_range(3200.0, 8800.0))
+							var e_w: Dictionary = ml.call("make", from_w, Vector2.from_angle(rng_w.randf() * TAU), "region_2", rng_w)
+							var prev_w := Vector2(float(e_w["x"]), float(e_w["z"]))
+							for pt_w: Array in e_w["path"]:
+								var p_w := Vector2(float(pt_w[0]), float(pt_w[1]))
+								legs_w += 1
+								len_w += prev_w.distance_to(p_w)
+								if not bool(ev.get("rules").call("segment_clear", prev_w, p_w, circles_w, 0.0)):
+									bad_w += 1
+								prev_w = p_w
+						_lines.append("  ways %d: legs %d (%.0f m in all), legs crossing an island %d" % [int(words[2]), legs_w, len_w, bad_w])
 					"cache":  # "!sevent cache on|off" (host): the newest marsh lights end in a cache (on) or a beast (off)
 						if newest_e >= 0:
 							ev.get("events")[newest_e]["cache"] = words.size() < 3 or words[2] == "on"

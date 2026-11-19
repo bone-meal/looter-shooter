@@ -1,6 +1,6 @@
-Sea step 13 R2e: region 2 sea events and marsh lights; boss wipe tested online
+Marsh lights keep to open water
 
-Region 2 merchant goods (Marsh Beacon, pitch, Fogmaw Lure ...), four castaways who sail to Lanternwick and live there, ten region 2 bottle riddles with caches round the islets (pitch in the caches), and the new MARSH LIGHTS event at night or in fog: wisps lead a ship along a wandering way to a floating cache or into a Fogmaw. The writing files merge (events_r2.txt). Two-copy wipe test (set wipe): everyone down wakes at the home port with Dread, offering spent, door sealed.
+Director: fix wisps going through stuff. Their way is laid round the islands now (each leg kept 45 m clear of every island, wider turns or a shorter leg when blocked, the start moved round the player if it lies over land); 400 random ways across region 2 = 1592 legs, none crossing an island. Wisps drawn bigger.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
