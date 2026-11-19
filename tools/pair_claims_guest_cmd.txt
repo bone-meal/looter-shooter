@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 12;!foe pause;!ship board;!wait 2;!flevel sailing 50;!ship helm;!ship status g_cheat_helm;!ship letgo;!flevel sailing 1;!wait 2;!ship helm;!ship status g_fair_helm;!ship letgo;!wait 2;!flevel carpentry 45;!net askbuild galleon;!wait 3;!net askbuild raft;!wait 3;!net claims g_end;!wait 20

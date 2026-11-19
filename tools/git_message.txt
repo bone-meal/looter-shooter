@@ -1,9 +1,9 @@
-Sea 12b: other players' gunfire seen and heard online
+Sea 12c: the host checks guests' claims for plausibility
 
-Director: bursts of fire events.
-- Each shot's sound and where its pellets ended go out with the slow shots (rockets, grenades, harpoons, flares, bolts) in one small message five times a second; the host checks and relays it.
-- Other machines replay it from the shooter's gun: muzzle flash, tracers, the gun sound, harmless copies of slow shots that fly and burst or lie a moment. No damage anywhere: hits stay the shooter's own.
-- Dev !gunfire, pair set gunfire: the guest saw all 20 rifle shots and the rockets of the host.
+Director: plausibility checks, no ledger.
+- A joining guest sends his skills' experience with his profile; the host keeps what it says and the time he joined.
+- A Sailing level at the helm, a ship or crane his Carpentry could not have built, or a skill level past what that experience plus play time can reach are refused; a backpack with more bags than his Crafting level makes refuses the join; puts into the crew chest or a ship's hold must name a real item and stay under a cap.
+- Numbers in data/guest_claims.json. Check tools/claims_check.gd, dev !net claims / askbuild, pair set claims: a faked Sailing 50 and a galleon at Carpentry 1 refused, the fair helm and a raft allowed.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

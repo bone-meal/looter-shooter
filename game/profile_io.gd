@@ -76,6 +76,7 @@ static func current(player_name: String) -> Dictionary:
 	var saved := load_profile(player_name)
 	var look: Dictionary = {}
 	var progress: Dictionary = {}
+	var skills: Dictionary = {}
 	if saved.is_empty():
 		for entry in DataStore.load_json("res://data/player.json")["starting_items"]:
 			inv.add(String(entry[0]), int(entry[1]))
@@ -84,8 +85,11 @@ static func current(player_name: String) -> Dictionary:
 		look = saved["look"]
 		if (saved["extra"] as Dictionary).get("progress") is Dictionary:
 			progress = (saved["extra"] as Dictionary)["progress"]
+		var fantasy: Variant = (saved["extra"] as Dictionary).get("fantasy")
+		if fantasy is Dictionary and (fantasy as Dictionary).get("skills") is Dictionary:
+			skills = (fantasy as Dictionary)["skills"]  # (sea step 12c: the host judges his later claims from these)
 		if player_name == "":
 			player_name = String(saved["name"])
 	if player_name == "":
 		player_name = "Player%d" % randi_range(1000, 9999)
-	return {"name": player_name.strip_edges().substr(0, 20), "inv": inv.to_dict(), "look": AppearanceData.db().sanitize(look), "progress": progress}
+	return {"name": player_name.strip_edges().substr(0, 20), "inv": inv.to_dict(), "look": AppearanceData.db().sanitize(look), "progress": progress, "skills": skills}

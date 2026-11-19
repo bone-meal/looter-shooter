@@ -2126,6 +2126,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var began_h := Time.get_ticks_msec()
 				while not (bool(link.call("is_host")) and bool(link.call("can_send")) and not bool(link.call("is_migrating"))) and Time.get_ticks_msec() - began_h < (int(words[2]) if words.size() > 2 else 60) * 1000:
 					await get_tree().create_timer(0.5, true, false, true).timeout
+			if words.size() > 1 and words[1] == "askbuild":  # "!net askbuild <ship>": ask the host to launch that ship (as the shipyard does after building it)
+				(link.get("sea") as Node).call("request_build", words[2])
+				return
+			if words.size() > 1 and words[1] == "claims":  # "!net claims <note>": the host's guest-claim records (sea step 12c)
+				var parts_c := PackedStringArray()
+				var now_c := Time.get_ticks_msec() / 1000.0
+				for pid: int in (link.get("claims") as Dictionary):
+					var cl: RefCounted = link.get("claims")[pid]
+					parts_c.append("%d: sailing %d (now up to %d), carpentry %d (now up to %d)" % [pid, int(cl.call("level_at_join", "sailing")), int(cl.call("allowed_level", "sailing", now_c)), int(cl.call("level_at_join", "carpentry")), int(cl.call("allowed_level", "carpentry", now_c))])
+				var fl_c: Node = (session.call("sea") as Node).get("ships") if session.call("sea") != null else null
+				_lines.append("CLAIMS %s: refused %d, ships %d | %s" % [" ".join(words.slice(2)), int(link.get("claims_refused")), (fl_c.get("ships") as Array).size() if fl_c != null else -1, "; ".join(parts_c)])
+				return
 			if words.size() > 1 and words[1] == "mig":  # "!net mig <note>": the sea as this machine holds it (sea step 12 migration checks)
 				var sea_m: Node = session.call("sea")
 				var fleet_m: Node = sea_m.get("ships") if sea_m != null else null

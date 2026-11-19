@@ -1,0 +1,6 @@
+{
+  "_about": "Sea step 12c (LOCKED: plausibility checks, no ledger). What the host lets a guest claim, judged against the profile the guest joined with (core/guest_claims.gd). A skill level claimed now may be at most what the experience at join plus xp_per_minute for every minute since the join (plus xp_spare) reaches. A backpack may have at most as many bags as the Crafting level at join can make. One put into a chest or a hold moves at most max_put of an item, and the item must exist. All numbers are placeholders for the director.",
+  "xp_per_minute": 4000,
+  "xp_spare": 2000,
+  "max_put": 500
+}

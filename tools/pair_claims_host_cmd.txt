@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go sea;!wait 10;!foe pause;!beast pause;!uboat pause on;!net claims h_start;!wait 40;!net claims h_after_helm;!wait 25;!net claims h_end;!wait 5

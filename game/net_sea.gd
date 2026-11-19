@@ -224,7 +224,7 @@ func _how_far(from: int, ship: Node, spot: Array) -> String:
 func _helm_take(ship_index: int, level: int) -> void:
 	var from := multiplayer.get_remote_sender_id()
 	var ship := _ship_for(from, ship_index)
-	if ship == null or level < 1 or level > MAX_LEVEL:
+	if ship == null or level < 1 or level > MAX_LEVEL or not net.claim_level_ok(from, "sailing", level):  # (12c: an impossible Sailing level is refused)
 		return
 	var spec: Dictionary = ship.get("spec")
 	if not _near(from, ship, [float(spec["helm"][0]), float(spec["helm"][1]) + 1.0], HELM_REACH):
@@ -246,7 +246,7 @@ func _helm_input(ship_index: int, rudder: float, stage: int, level: int) -> void
 	var ship := _ship_for(from, ship_index)
 	if ship == null or int(_fleet().call("helmsman_of", ship)) != from or not is_finite(rudder):
 		return
-	_fleet().call("helmsman_level", ship, clampi(level, 1, MAX_LEVEL))  # his Sailing level as it grows while he steers
+	_fleet().call("helmsman_level", ship, net.claim_level_cap(from, "sailing", clampi(level, 1, MAX_LEVEL)))  # his Sailing level as it grows while he steers (12c: never past what he can have reached)
 	var s: Dictionary = ship.get("state")
 	s["rudder"] = clampf(rudder, -1.0, 1.0)
 	s["stage"] = clampi(stage, 0, int(_fleet().call("top_stage_of", ship)))  # the swift sail only at its Sailing level
@@ -395,7 +395,7 @@ func request_part(part: String) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _part_up(part: String) -> void:
 	var from := multiplayer.get_remote_sender_id()
-	if net.is_host() and net.roster.has(from) and part in ["crane"] and _fleet() != null:
+	if net.is_host() and net.roster.has(from) and part in ["crane"] and _fleet() != null and net.claim_can_make(from, "ship_" + part):
 		_fleet().call("fit_part", part)
 
 
@@ -411,6 +411,8 @@ func _build(ship_id: String) -> void:
 	var from := multiplayer.get_remote_sender_id()
 	var fleet := _fleet()
 	if not net.is_host() or not net.roster.has(from) or fleet == null or ship_id.length() > 24 or (fleet.get("ships") as Array).size() >= MAX_SHIPS:
+		return
+	if not net.claim_can_make(from, "ship_" + ship_id):  # (12c: a ship his Carpentry cannot have built yet)
 		return
 	fleet.call("launch", ship_id)
 
@@ -599,7 +601,7 @@ func _store_up(op: String, item: String, n: int) -> void:
 	var town := _town()
 	if not net.is_host() or not net.roster.has(from) or town == null or not op in ["put", "take"] or item.length() > 48 or n <= 0 or n > 9999:
 		return
-	if not bool(town.call("chest_shared")) or not _in_town(from):
+	if not bool(town.call("chest_shared")) or not _in_town(from) or (op == "put" and not net.claim_put_ok(from, item, n)):
 		_store_done.rpc_id(from, op, item, 0)
 		return
 	var chest: RefCounted = town.call("chest")
@@ -816,7 +818,7 @@ func _cargo_up(ship_index: int, op: String, item: String, n: int) -> void:
 	if not net.is_host() or ship == null or not op in ["put", "take"] or item.length() > 48 or n <= 0 or n > 9999:
 		return
 	var spec: Dictionary = ship.get("spec")
-	if spec.get("hold", {}).is_empty() or (ship.get("state") as Dictionary).has("foe") or not _near(from, ship, spec["hold"]["chest"], CARGO_REACH):
+	if spec.get("hold", {}).is_empty() or (ship.get("state") as Dictionary).has("foe") or not _near(from, ship, spec["hold"]["chest"], CARGO_REACH) or (op == "put" and not net.claim_put_ok(from, item, n)):
 		_cargo_done.rpc_id(from, op, item, 0)
 		return
 	var did := int(_fleet().get("holds").call("host_cargo", ship, op, item, n))

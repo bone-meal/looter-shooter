@@ -23,6 +23,7 @@ const NetMixtape = preload("res://game/net_mixtape.gd")
 const NetBeachBalls = preload("res://game/net_beachballs.gd")
 const NetChase = preload("res://game/net_chase.gd")
 const NetFire = preload("res://game/net_fire.gd")
+const GuestClaims = preload("res://core/guest_claims.gd")
 const NetHub = preload("res://game/net_hub.gd")
 const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
@@ -46,6 +47,12 @@ var session_id := ""
 var _client: Node
 var _config: Dictionary
 var _items: ItemDb
+var claims := {}  # host: peer -> core/guest_claims.gd made from the profile he joined with (sea step 12c)
+var claims_refused := 0  # dev / checks: guest claims the host refused as impossible
+var _claim_cfg: Dictionary
+var _skilling: Dictionary
+var _fantasy_items: Dictionary  # data/fantasy/gear.json items (what may be put in a chest or a hold)
+var _bag_items: Array = []
 var _local_name := ""
 var _joined_signalled := false
 var _migrating := false
@@ -82,6 +89,12 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS  # keeps syncing while the pause menu is open
 	_config = DataStore.load_json("res://data/net.json")
 	_items = ItemDb.new(DataStore.load_json("res://data/items.json"))
+	_claim_cfg = DataStore.load_json("res://data/guest_claims.json")
+	_skilling = DataStore.load_json("res://data/fantasy/skilling.json")
+	_fantasy_items = DataStore.load_json("res://data/fantasy/gear.json").get("items", {})
+	for item: String in _fantasy_items:
+		if String((_fantasy_items[item] as Dictionary).get("kind", "")) == "backpack":
+			_bag_items.append(item)
 	# child nodes with fixed names, so their RPC paths match on every machine
 	_boss = NetBoss.new()
 	_boss.name = "Boss"
@@ -411,6 +424,7 @@ func _on_peer_connected(id: int) -> void:
 
 func _on_peer_disconnected(id: int) -> void:
 	_pending.erase(id)
+	claims.erase(id)
 	if is_host() and roster.has(id):
 		roster.erase(id)
 		looks.erase(id)
@@ -471,6 +485,53 @@ func _freeze_sea(on: bool) -> void:
 	var sea_node := get_tree().get_first_node_in_group("sea_world")
 	if sea_node != null:
 		sea_node.set("frozen", on)
+
+
+# --- guest claims (sea step 12c, LOCKED: plausibility checks) ---
+
+func _clock() -> float:
+	return Time.get_ticks_msec() / 1000.0
+
+
+# Host: may peer `id` really have `skill` at `level` now? (The host's own word is not checked; a guest without a
+# record (joined before this host took over and not re-checked) passes.)
+func claim_level_ok(id: int, skill: String, level: int) -> bool:
+	if id == my_id() or not claims.has(id):
+		return true
+	var ok: bool = (claims[id] as GuestClaims).level_ok(skill, level, _clock())
+	if not ok:
+		claims_refused += 1
+	return ok
+
+
+# Host: the highest of `level` he may plausibly claim in `skill` now.
+func claim_level_cap(id: int, skill: String, level: int) -> int:
+	if id == my_id() or not claims.has(id):
+		return level
+	var cap: int = (claims[id] as GuestClaims).allowed_level(skill, _clock())
+	if level > cap:
+		claims_refused += 1
+	return mini(level, cap)
+
+
+# Host: could peer `id` have made `item` (the recipe's skill level within reach)?
+func claim_can_make(id: int, item: String) -> bool:
+	if id == my_id() or not claims.has(id):
+		return true
+	var need: Array = (claims[id] as GuestClaims).recipe_need(item)
+	if need.is_empty():
+		return true
+	return claim_level_ok(id, String(need[0]), int(need[1]))
+
+
+# Host: a put of `n` of `item` into a chest or a hold is believable.
+func claim_put_ok(id: int, item: String, n: int) -> bool:
+	if id == my_id():
+		return true
+	var ok := _fantasy_items.has(item) and n >= 1 and n <= int(_claim_cfg["max_put"])
+	if not ok:
+		claims_refused += 1
+	return ok
 
 
 func _next_session_id(old: String, attempt: int, charset: String) -> String:
@@ -542,6 +603,13 @@ func _submit_profile(profile: Dictionary) -> void:
 		reason = JoinCheck.check(profile, _items)
 		if reason == "":
 			reason = _check_progress(profile.get("progress", {}))
+		if reason == "":
+			var made := GuestClaims.new(_claim_cfg, _skilling, profile.get("skills", {}), _clock())
+			var bags := int((profile.get("inv", {}) as Dictionary).get("bags", 0))
+			if bags > made.bags_allowed(_bag_items):
+				reason = "your backpack has more bags than your Crafting level can make"
+			else:
+				claims[id] = made
 	if reason != "":
 		_reject.rpc_id(id, reason)
 		get_tree().create_timer(0.5).timeout.connect(_kick.bind(id))
