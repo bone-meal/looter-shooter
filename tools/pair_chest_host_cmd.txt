@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!immortal;!go sea;!wait 10;!foe pause;!beast pause;!uboat pause on;!town set storage 4;!wait 40

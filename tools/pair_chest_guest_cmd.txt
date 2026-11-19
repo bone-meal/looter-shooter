@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go sea;!wait 12;!foe pause;!town stock;!wait 6;!town store put iron_bar 5;!wait 3;!town store put iron_bar 1;!wait 3;!town store take iron_bar 1;!wait 2

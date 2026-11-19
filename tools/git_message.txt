@@ -1,8 +1,7 @@
-Sea 12d: party effects reach teammates, guests open the sea painting
+Sea 12e: two-copy tests of the untried online paths, put-all fix
 
-- Rally Cry, War Banner and the pony traits Hearthfire and Bloom now help teammates: Rally Cry and Hearthfire within 15 m of the caster, the War Banner while you stand in it, a Bloom flower heals whoever stands by it. Soft Wing softens the blows of host-run enemies too.
-- The hub's sea painting opens for any guest, crossed or not (locked: joiners who have not crossed can join the host's sea world).
-- Dev !party, pair set party: the guest got the rally, the banner bonus, the hearth heal and the bloom healing, and the painting opened for him.
+- Tested with two copies on the GTX 1080 (pair sets e12 and chest): a boss wipe online (the guest went down, the host saw it, both woke at the home port with Dread 1), a guest's team XP from the boss (300 XP, boss kill counted), a guest setting the trophy on its hall plinth, a guest's feast giving the host its boons, the crew chest taking a guest's stack.
+- Fix found by the test: the 12c put cap (500) refused putting a whole stack into the crew chest or a hold; it is now 9999 (the chest code's own cap), so only the item's existence is checked.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
