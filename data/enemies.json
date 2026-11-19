@@ -852,6 +852,54 @@
    ],
    "attack_sound": "atk_slam",
    "head_share": 0.0
+  },
+  "sea_queen": {
+   "model": "sea_queen",
+   "max_hp": 30000,
+   "speed": 0.0,
+   "attack_type": "melee",
+   "damage": 30,
+   "attack_range": 3.0,
+   "attack_interval": 5.0,
+   "size": [
+    5.8,
+    4.6,
+    11.0
+   ],
+   "color": [
+    0.78,
+    1.0,
+    0.58
+   ],
+   "attack_sound": "atk_slam",
+   "head_share": 0.0
+  },
+  "sea_lanternfry": {
+   "model": "sea_lanternfry",
+   "max_hp": 70,
+   "speed": 5.0,
+   "attack_type": "melee",
+   "damage": 11,
+   "attack_range": 1.4,
+   "attack_interval": 0.9,
+   "attack_windup": 0.25,
+   "size": [
+    0.6,
+    0.9,
+    0.8
+   ],
+   "color": [
+    0.78,
+    1.0,
+    0.58
+   ],
+   "body_color": [
+    0.33,
+    0.23,
+    0.15
+   ],
+   "attack_sound": "atk_claw",
+   "head_share": 0.0
   }
  }
 }

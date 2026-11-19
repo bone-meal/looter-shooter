@@ -296,6 +296,14 @@ func light(ch: String) -> bool:
 	return true
 
 
+# A lit brazier goes out (sea step 13 R2d: the Root Crown's braziers burn out after their burn_s).
+func put_out(ch: String) -> bool:
+	if not bool(state["lit"].get(ch, false)):
+		return false
+	state["lit"].erase(ch)
+	return true
+
+
 func turn_tide(ch: String) -> bool:
 	if not things.has(ch) or String(things[ch]["kind"]) != "basin":
 		return false

@@ -22,7 +22,7 @@ const DeckWalk = preload("res://core/sea/deck_walk.gd")
 const GhostLook = preload("res://game/ghost_look.gd")
 const FxKit = preload("res://game/fx_kit.gd")
 const ORDER := ["pirate_captain", "ghost_captain", "pirate_cutlass", "ghost_cutlass", "pirate_musket", "ghost_musket"]  # who goes first (mustering, boarding)
-const KINDS_SENT := ["pirate_", "ghost_", "sea_drowned", "temple_"]  # crew kinds a client may make from the host's list
+const KINDS_SENT := ["pirate_", "ghost_", "sea_drowned", "temple_", "sea_lanternfry"]  # crew kinds a client may make from the host's list
 
 var cfg: Dictionary  # encounters.json "crews"
 var _threat: Dictionary  # encounters.json "threat" (sea step 8f)

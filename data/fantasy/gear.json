@@ -2287,6 +2287,52 @@
     0.36
    ],
    "part": "shellback_prow"
+  },
+  "mangrove_pitch": {
+   "kind": "material",
+   "icon": "pigment",
+   "color": [
+    0.12,
+    0.09,
+    0.06
+   ]
+  },
+  "marsh_beacon": {
+   "kind": "material",
+   "icon": "potion",
+   "color": [
+    0.78,
+    1.0,
+    0.58
+   ]
+  },
+  "queen_lure_lamp": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.78,
+    1.0,
+    0.58
+   ]
+  },
+  "gloomscale": {
+   "kind": "material",
+   "icon": "shell",
+   "color": [
+    0.3,
+    0.36,
+    0.26
+   ]
+  },
+  "gloomscale_sheathing": {
+   "kind": "ship_part",
+   "icon": "sail",
+   "color": [
+    0.3,
+    0.36,
+    0.26
+   ],
+   "part": "gloomscale_sheathing"
   }
  }
 }

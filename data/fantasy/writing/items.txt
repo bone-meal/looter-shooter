@@ -93,6 +93,11 @@ joss_strongbox: Joss's Strongbox
 abbot_bell_clapper: Abbot's Bell Clapper
 shellback_plate: Shellback Plate
 shellback_prow: Shellback Prow
+mangrove_pitch: Mangrove Pitch
+marsh_beacon: Marsh Beacon
+queen_lure_lamp: The Queen's Lure Lamp
+gloomscale: Gloomscale
+gloomscale_sheathing: Gloomscale Sheathing
 rime_blubber: Rime Blubber
 storm_feather: Storm Feather
 siren_pearl: Siren Pearl

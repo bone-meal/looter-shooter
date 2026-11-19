@@ -26,6 +26,7 @@ var boss_words := Callable()  # (sea step 10) what [F] at a boss's sealed door s
 var _floods := {}  # fight letter -> MeshInstance3D (its tide's water sheet)
 var outdoor := false  # (sea step 9d) a puzzle court out on an island: no ceiling, the island's own light
 var wall_h := 4.5  # this dungeon's walls (its entry's "wall_h", else the kit's): tall halls stack the kit's wall
+var water_color := Color(0.12, 0.42, 0.45, 0.82)  # its pits' water (the entry's "water_color": black pitch, a dark pool)
 var sea_seconds := Callable()  # the shared sea clock (the fog walkways' reveal is timed on it), set by the manager
 
 
@@ -33,6 +34,9 @@ func setup(dungeon_id: String, entry: Dictionary, all_cfg: Dictionary) -> void:
 	cfg = all_cfg
 	rules = DungeonRules.new(dungeon_id, entry, float(cfg["tile"]))
 	wall_h = float(entry.get("wall_h", cfg["wall_h"]))
+	var wc: Array = entry.get("water_color", [])
+	if wc.size() >= 4:
+		water_color = Color(float(wc[0]), float(wc[1]), float(wc[2]), float(wc[3]))
 	outdoor = entry.has("outdoor")
 	name = "Dungeon_" + dungeon_id
 
@@ -162,7 +166,7 @@ func _water(cells: Array) -> void:
 	var inst := MultiMeshInstance3D.new()
 	inst.multimesh = mm
 	var mat := StandardMaterial3D.new()
-	mat.albedo_color = Color(0.12, 0.42, 0.45, 0.82)
+	mat.albedo_color = water_color
 	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	mat.roughness = 0.08
 	mat.metallic_specular = 0.9
@@ -422,7 +426,7 @@ func _flood_sheets() -> void:
 		sheet.mesh = plane
 		sheet.position = (a + b) * 0.5
 		var mat := StandardMaterial3D.new()
-		mat.albedo_color = Color(0.1, 0.38, 0.42, 0.78)
+		mat.albedo_color = Color(water_color.r * 0.9, water_color.g * 0.9, water_color.b * 0.93, water_color.a * 0.95)
 		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 		mat.cull_mode = BaseMaterial3D.CULL_DISABLED  # (seen from under it too)
 		mat.roughness = 0.08

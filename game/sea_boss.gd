@@ -26,6 +26,7 @@ const BossPart = preload("res://game/boss_part.gd")
 const BossStrikes = preload("res://game/boss_strikes.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const FxKit = preload("res://game/fx_kit.gd")
+const SeaBossLantern = preload("res://game/sea_boss_lantern.gd")
 
 var cfg: Dictionary  # data/sea/bosses.json
 var director: Node
@@ -58,6 +59,7 @@ var tolls := 0
 var broke := 0
 var last := ""
 var rewarded := ""  # what the last win gave this player
+var lantern: Node = null  # game/sea_boss_lantern.gd: the Lantern Queen's fog, braziers, lure pull, spore clouds (sea step 13 R2d)
 var _dungeons: Node3D
 var _sea: Node3D
 var _player: CharacterBody3D
@@ -96,6 +98,10 @@ func setup(dungeons: Node3D, sea: Node3D, player: CharacterBody3D) -> void:
 	cfg = JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/bosses.json"))
 	_stats = (JSON.parse_string(FileAccess.get_file_as_string("res://data/enemies.json")) as Dictionary)["enemies"]
 	_rng.randomize()
+	lantern = SeaBossLantern.new()
+	lantern.name = "Lantern"
+	add_child(lantern)
+	lantern.call("setup", self, dungeons, sea, player)
 
 
 func boss_cfg(id: String) -> Dictionary:
@@ -151,8 +157,8 @@ func door_words(id: String) -> String:
 	if bool(open.get(id, false)):
 		return "Go into %s" % arena_name
 	if _carries_offering(id):
-		return "Lay the %s at the sealed door" % offering_name(id)
-	return "Sealed. Something vast turns over behind it (it needs a %s)" % offering_name(id)
+		return String(boss_cfg(id).get("offer_words", "Lay the %s at the sealed door")) % offering_name(id)
+	return String(boss_cfg(id).get("sealed_words", "Sealed. Something vast turns over behind it (it needs a %s)")) % offering_name(id)
 
 
 # [F] at the sealed door: go in (open), or lay the offering (the host opens the door; we give it up on its yes).
@@ -190,7 +196,7 @@ func offered() -> void:
 	for id: String in cfg["bosses"]:
 		if skills != null and _carries_offering(id):
 			((skills as Node).get("bag") as RefCounted).call("remove", String(boss_cfg(id)["offering"]), 1)
-			_sea.emit_signal("notice", "The %s burns down on the altar" % offering_name(id))
+			_sea.emit_signal("notice", String(boss_cfg(id).get("offered_words", "The %s burns down on the altar")) % offering_name(id))
 			return
 
 
@@ -285,11 +291,9 @@ func _host_run(delta: float) -> void:
 	shed = rules.shed()
 	cracked = rules.cracked()
 	stunned = rules.stunned()
-	enemy.call("guard", rules.body_share(), 0.5)  # the armoured shell (an open shell, the shed phase, a stun: all of it)
-	for id: String in _parts:  # the barnacles: on the shell till broken (or shed), hittable only in their phase
-		var p: Dictionary = rules.part_cfg(id)
-		if String(p.get("kind", "")) == "breakable":
-			_show_part(id, not rules.shed() and not rules.broken(id), id in rules.breakables() and not rules.broken(id))
+	lantern.call("host_tick", delta)  # (the Lantern Queen: braziers burn out, is she exposed in a lit circle)
+	enemy.call("guard", rules.body_share(), 0.5)  # the armoured shell (an open shell, the shed phase, a stun, exposed: all of it)
+	_show_parts()
 	_adds_t -= delta
 	var every := float(rules.phase_cfg().get("adds_every", 0.0))
 	if every > 0.0 and _adds_t <= 0.0:
@@ -414,7 +418,10 @@ func _make(puppet: bool) -> void:
 		if _strikes.get_parent() != null:
 			_strikes.get_parent().remove_child(_strikes)
 		arena.add_child(_strikes)
+	if not _strikes.landed.is_connected(_on_landed):
+		_strikes.landed.connect(_on_landed)
 	shed = false
+	lantern.call("begin")
 
 
 func _new_phase() -> void:
@@ -548,6 +555,8 @@ func _clear_boss() -> void:
 	_parts.clear()
 	if _strikes != null and is_instance_valid(_strikes):
 		_strikes.clear()
+	if lantern != null:
+		lantern.call("clear")
 	state = ""
 	mode = "idle"
 	attack = ""
@@ -666,6 +675,8 @@ func _drive(delta: float) -> void:
 	var home := Vector3(float(b["home"][0]), 0.0, float(b["home"][1]))
 	var speed := float(b["speed"]) * rules.speed_mult()
 	var in_pool := bool(rules.phase_cfg().get("in_pool", false))
+	var anchor := bool(rules.phase_cfg().get("anchor", false))  # (stays at home and only turns: the Queen on her island)
+	var goal := _swim_point(home)
 	var target := _nearest_up(pos, false)
 	var a := rules.attack_cfg(attack)
 	if rules.stunned():
@@ -686,8 +697,8 @@ func _drive(delta: float) -> void:
 				var to: Vector3 = (target[2] as Vector3) - pos
 				to.y = 0.0
 				_face(to, delta, 2.5)
-				if in_pool:
-					pos = pos.move_toward(Vector3(home.x, pos.y, home.z), speed * delta)
+				if in_pool or anchor:
+					pos = pos.move_toward(Vector3(goal.x, pos.y, goal.z), speed * delta)
 				elif to.length() > float(b["keep_m"]):
 					pos += to.normalized() * minf(speed * delta, to.length() - float(b["keep_m"]))
 			_gap -= delta
@@ -720,6 +731,16 @@ func _drive(delta: float) -> void:
 		flat = flat.normalized() * float(b["arena_r"])
 		pos = Vector3(home.x + flat.x, pos.y, home.z + flat.z)
 	enemy.position = pos
+
+
+# Where she swims to in the pool: home, or round it on the phase's circle (circle m, once round in circle_s).
+func _swim_point(home: Vector3) -> Vector3:
+	var pc := rules.phase_cfg()
+	var r := float(pc.get("circle", 0.0))
+	if r <= 0.0:
+		return home
+	var ang := rules.fight_t * TAU / maxf(float(pc.get("circle_s", 30.0)), 1.0)
+	return home + Vector3(cos(ang) * r, 0.0, sin(ang) * r)
 
 
 func _in_pit(local: Vector3) -> bool:
@@ -763,6 +784,14 @@ func _begin(id: String, target: Array) -> void:
 		"leap":
 			var spot2: Vector3 = target[2]
 			targets = [Vector3(spot2.x, _ground(spot2), spot2.z)]
+		"line":  # (the Queen's root lash) along the walkway the target stands on: across the line from home to him
+			var spot3: Vector3 = target[2]
+			var c := Vector3(float(boss_cfg(boss_id)["home"][0]), 0.0, float(boss_cfg(boss_id)["home"][1]))
+			var out := Vector3(spot3.x - c.x, 0.0, spot3.z - c.z)
+			var along := Vector3(-out.z, 0.0, out.x).normalized() if out.length() > 0.1 else Vector3.RIGHT
+			var mid := Vector3(spot3.x, _ground(spot3), spot3.z)
+			var half := float(a["length"]) * 0.5
+			targets = [mid - along * half, mid + along * half]
 	attack = id
 	mode = "windup"
 	_t = float(a["windup"])
@@ -800,8 +829,12 @@ func _strike(a: Dictionary, pos: Vector3) -> Vector3:
 			_landings = []
 			for t: Vector3 in targets:
 				_landings.append([t, float(a["flight"])])
-			_strikes.lob(pos + Vector3(0.0, 3.0, 0.0), targets, float(a["flight"]), float(a["radius"]))
+			_strikes.lob(pos + Vector3(0.0, 3.0, 0.0), targets, float(a["flight"]), float(a["radius"]), _lob_color(a), _lob_cloud(a))
 			mode = "strike"
+		"line":
+			if targets.size() >= 2:
+				_hit_line(targets[0], targets[1], float(a["width"]), dmg)
+			_recover(a)
 		"leap":
 			_leap_from = pos
 			_leap_t = 0.0
@@ -878,6 +911,32 @@ func _hit_arc(pos: Vector3, reach: float, deg: float, dmg: float) -> void:
 			_hit_body(b, dmg)
 
 
+func _hit_line(from: Vector3, to: Vector3, width: float, dmg: float) -> void:
+	var seg := Vector2(to.x - from.x, to.z - from.z)
+	for b: Array in _bodies():
+		var local: Vector3 = b[2]
+		var rel := Vector2(local.x - from.x, local.z - from.z)
+		var k := clampf(rel.dot(seg) / maxf(seg.length_squared(), 0.01), 0.0, 1.0)
+		if (rel - seg * k).length() <= width * 0.5 + 0.4 and absf(local.y - from.y) < 2.2:
+			_hit_body(b, dmg)
+
+
+# A lobbed ball's colour (the attack's "color", else water) and the spore cloud it leaves ({} = none).
+func _lob_color(a: Dictionary) -> Color:
+	var c: Array = a.get("color", [])
+	return Color(float(c[0]), float(c[1]), float(c[2]), 0.8) if c.size() >= 3 else Color(0.55, 0.85, 1.0, 0.75)
+
+
+func _lob_cloud(a: Dictionary) -> Dictionary:
+	if not a.has("cloud_s"):
+		return {}
+	return {"radius": float(a["radius"]), "cloud_s": float(a["cloud_s"]), "blind_s": float(a.get("blind_s", 3.0))}
+
+
+func _on_landed(at: Vector3, cloud: Dictionary) -> void:
+	lantern.call("add_cloud", at, cloud)
+
+
 func _hit_circle(at: Vector3, radius: float, dmg: float, any_height: bool) -> void:
 	for b: Array in _bodies():
 		var local: Vector3 = b[2]
@@ -921,7 +980,7 @@ func host_part(id: String, damage: float) -> void:
 		broke += 1
 		_show_part(id, false, false)
 	if got == "crack":
-		_tell_notice("The shell cracks open! Hit it now!")
+		_tell_notice(String(rules.phase_cfg().get("crack_notice", "The shell cracks open! Hit it now!")))
 
 
 func _body_share_now() -> float:
@@ -931,6 +990,23 @@ func _body_share_now() -> float:
 		return 1.0
 	var ph: Array = boss_cfg(boss_id)["phases"]
 	return float(ph[clampi(phase, 0, ph.size() - 1)].get("armour", 1.0))
+
+
+# The parts' looks and hit boxes: a breakable stays on till broken (or the shell is shed) and is hittable only in its
+# phase (where two phases' breakables share a node, this phase's decides); a "lit" weak point is live only while she
+# is exposed (core/sea/boss_rules.gd weak_live). `broken` = the broken breakables (the host's own, or from its message).
+func _show_parts(broken: Array = []) -> void:
+	var now := rules.breakables()
+	var host := _host()
+	for id: String in _parts:
+		var p: Dictionary = rules.part_cfg(id)
+		if String(p.get("kind", "")) == "weak":
+			(_parts[id] as BossPart).set_live(rules.weak_live(id))
+		elif not (id in now):
+			_show_part(id, not rules.shed() and not (rules.broken(id) if host else id in broken), false)
+	for id: String in now:
+		var gone := rules.broken(id) if host else id in broken
+		_show_part(id, not gone, not gone and rules.regrow_at < 0.0)
 
 
 func _show_part(id: String, shown: bool, live: bool) -> void:
@@ -1035,6 +1111,9 @@ func _pose(delta: float) -> void:
 		return
 	model.rotation.x = lerpf(model.rotation.x, rear * 0.35, 1.0 - exp(-8.0 * delta))
 	var t := Time.get_ticks_msec() / 1000.0
+	if String(boss_cfg(boss_id).get("pose", "crab")) == "angler":
+		_pose_angler(model, delta, t)
+		return
 	var moving := mode == "idle" or (mode == "strike" and attack == "scuttle")
 	for i in 3:
 		for side: String in ["L", "R"]:
@@ -1053,12 +1132,35 @@ func _pose(delta: float) -> void:
 		model.rotation.z = sin(t * 12.0) * 0.06
 
 
+# The Lantern Queen: the jaw gapes while she winds up and strikes, the fin-legs paddle, the tail sways, the lure bobs.
+func _pose_angler(model: Node3D, delta: float, t: float) -> void:
+	var k := 1.0 - exp(-6.0 * delta)
+	var jaw := model.find_child("Jaw", true, false) as Node3D
+	if jaw != null:
+		var gape := 0.5 if mode in ["windup", "strike"] else (0.25 if stunned or mode == "stunned" else 0.06 + sin(t * 0.7) * 0.04)
+		jaw.rotation.x = lerpf(jaw.rotation.x, -gape, k)
+	var moving := mode == "idle" or mode == "strike"
+	for i in 2:
+		for side: String in ["L", "R"]:
+			var f := model.find_child("Fin%s%d" % [side, i + 1], true, false) as Node3D
+			if f != null:
+				f.rotation.x = sin(t * (4.0 if moving else 1.2) + float(i) * 1.9 + (PI if side == "R" else 0.0)) * (0.3 if moving else 0.06)
+	var tail := model.find_child("Tail", true, false) as Node3D
+	if tail != null:
+		tail.rotation.y = sin(t * (2.6 if moving else 0.9)) * (0.35 if moving else 0.12)
+	var stalk := model.find_child("LureStalk", true, false) as Node3D
+	if stalk != null:
+		stalk.rotation.x = sin(t * 0.9) * 0.07 + (0.12 if mode == "windup" else 0.0)
+	if stunned or mode == "stunned":
+		model.rotation.z = sin(t * 9.0) * 0.05
+
+
 func _show_marks() -> void:
 	if _strikes == null or not is_instance_valid(_strikes) or enemy == null or not is_instance_valid(enemy) or boss_id == "":
 		return
 	if _was_mode != mode and mode == "strike" and not _host() and String(rules.attack_cfg(attack).get("shape", "")) == "lob":
 		var a := rules.attack_cfg(attack)
-		_strikes.lob(enemy.position + Vector3(0.0, 3.0, 0.0), targets, float(a["flight"]), float(a["radius"]))
+		_strikes.lob(enemy.position + Vector3(0.0, 3.0, 0.0), targets, float(a["flight"]), float(a["radius"]), _lob_color(a), _lob_cloud(a))
 	_was_mode = mode
 	var progress := 0.0
 	if mode == "windup":
@@ -1084,7 +1186,7 @@ func to_net() -> Array:
 	for peer: int in rules.downs:
 		dn.append_array([peer, String(rules.downs[peer])])
 	var progress := clampf(1.0 - _t / maxf(_t_total, 0.01), 0.0, 1.0) if mode == "windup" else 0.0
-	return [boss_id, state, snappedf(p.x, 0.01), snappedf(p.y, 0.01), snappedf(p.z, 0.01), snappedf(enemy.rotation.y, 0.01), snappedf(hp_share, 0.001), phase, mode, attack, snappedf(progress, 0.01), pts, snappedf(ring_r, 0.01), shed, cracked, stunned, broken, dn, snappedf(rear, 0.01), snappedf(toll, 0.01), rules.enraged]
+	return [boss_id, state, snappedf(p.x, 0.01), snappedf(p.y, 0.01), snappedf(p.z, 0.01), snappedf(enemy.rotation.y, 0.01), snappedf(hp_share, 0.001), phase, mode, attack, snappedf(progress, 0.01), pts, snappedf(ring_r, 0.01), shed, cracked, stunned, broken, dn, snappedf(rear, 0.01), snappedf(toll, 0.01), rules.enraged, lantern.call("to_net")]
 
 
 # Client: the host's boss.
@@ -1133,11 +1235,9 @@ func from_net(got: Array) -> void:
 		_shed_shell()
 	cracked = bool(got[14])
 	stunned = bool(got[15])
-	for pid: String in _parts:
-		var p := rules.part_cfg(pid)
-		if String(p.get("kind", "")) == "breakable":
-			var whole := not shed and not (pid in (got[16] as Array))
-			_show_part(pid, whole, whole and int(p.get("phase", 0)) == phase)
+	if got.size() > 21 and got[21] is Array:  # (the Lantern Queen: exposed in a lit circle)
+		lantern.call("from_net", got[21])
+	_show_parts(got[16] as Array)
 	downs.clear()
 	var dn: Array = got[17]
 	for i in range(0, mini(dn.size(), 24) - 1, 2):
@@ -1181,4 +1281,4 @@ func status() -> String:
 	if enemy != null and is_instance_valid(enemy):
 		var h: RefCounted = enemy.get("health")
 		hp = "%.0f/%.0f" % [float(h.get("hp")), float(h.get("max_hp"))]
-	return "boss '%s' %s hp %s phase %d mode %s attack '%s' tide %d shed %s cracked %s stunned %s enraged %s; open %s beaten %s; downs %s; fights %d wins %d wipes %d blows %d tolls %d broke %d; last '%s'; got '%s'" % [boss_id, state, hp, phase + 1, mode, attack, tide, str(shed), str(cracked), str(stunned), str(rules.enraged), str(open), str(beaten), str(rules.downs if _host() else downs), fights, wins, wipes, blows, tolls, broke, last, rewarded]
+	return "boss '%s' %s hp %s phase %d mode %s attack '%s' tide %d shed %s cracked %s stunned %s enraged %s; open %s beaten %s; downs %s; fights %d wins %d wipes %d blows %d tolls %d broke %d; last '%s'; got '%s'" % [boss_id, state, hp, phase + 1, mode, attack, tide, str(shed), str(cracked), str(stunned), str(rules.enraged), str(open), str(beaten), str(rules.downs if _host() else downs), fights, wins, wipes, blows, tolls, broke, last, rewarded] + (("; " + String(lantern.call("status"))) if lantern != null and bool(lantern.call("active")) else "")

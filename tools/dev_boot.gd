@@ -17,6 +17,7 @@ const IsleRoutes = preload("res://core/sea/isle_routes.gd")
 const OUT := "res://tools/userdata/"
 
 var _ship_i := 0  # !ship use: which ship of the fleet the !ship steps act on
+var _boss_id := "abbot_shellback"  # !boss pick: which super boss the !boss steps act on
 var _lines := PackedStringArray()
 var _counting := false  # !fight has hooked the ward's signal
 var _listening := false  # !moves has hooked the special attacks' signal
@@ -778,14 +779,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					"prompt":
 						_lines.append("  prompt: '%s'" % String(dm.call("prompt", "F")))
 				_lines.append("DUN %s: %s; prompt '%s'; indoor %s; at %s" % [" ".join(words.slice(1)), String(dm.call("status")), String(dm.call("prompt", "F")), str(sea_d.get("indoor")), str(sea_d.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
-		"boss":  # sea step 10: !boss give (the offering) | door (stand at the temple's sealed door) | in (go through, once open) | hp <share> (host) | part <id> <damage> | face | hook (Grapple Hook at the shed bell) | kill (host) | wait <state|phase|mode|tide> <value> [s] | status <note>
+		"boss":  # sea step 10: !boss pick <boss id> | give (the offering) | door (stand at the temple's sealed door) | in (go through, once open) | hp <share> (host) | part <id> <damage> | face | lure (look at the Lantern Queen's lure) | hook (Grapple Hook at the shed bell) | kill (host) | wait <state|phase|mode|tide> <value> [s] | status <note>
 			var sea_x: Node = session.call("sea")
 			if sea_x == null:
 				_lines.append("boss: no sea")
 			else:
 				var dmx: Node = sea_x.get("dungeons")
 				var bx: Node = dmx.get("boss")
-				var bid := "abbot_shellback"
+				if words.size() > 2 and words[1] == "pick":
+					_boss_id = words[2]
+				var bid := _boss_id
 				var bcfg: Dictionary = bx.call("boss_cfg", bid)
 				match words[1] if words.size() > 1 else "status":
 					"give":
@@ -813,6 +816,13 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							hx.set("hp", float(hx.get("max_hp")) * float(words[2]))
 					"part":
 						bx.call("part_hit", words[2], float(words[3]))
+					"lure":  # (sea step 13 R2d) look straight at the Lantern Queen's lure bulb
+						var el: Node3D = bx.get("enemy")
+						var bulb_l: Node3D = (el.get("_model") as Node3D).find_child("LureBulb", true, false) as Node3D if el != null and el.get("_model") != null else null
+						if bulb_l != null:
+							player.call("look_at_point", bulb_l.global_position)
+						else:
+							_lines.append("  no lure")
 					"face":
 						var ef: Node3D = bx.get("enemy")
 						if ef != null:

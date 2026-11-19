@@ -1,6 +1,6 @@
-Sea step 13 R2c: The Hollow Mangrove mini-dungeon (slot 12)
+Sea step 13 R2d part 1: The Lantern Queen, her arena and the light rules
 
-Region 2's third mini-dungeon: root hall fight, bramble and chest, fog crossing with the bell, key, hook ring, block onto plate, ghost hall fight, key door, Gale Glider chest, vent glide over the pits, two braziers, four-wave arena, great key, great door to the beacon hall, sealed door to the Lantern Queen. Walked through on his PC.
+Region 2 super boss (approved page): anglerfish model, lanternfry and the Lure Lamp trophy; the Root Crown arena behind the Hollow Mangrove's root door (island, black pool, root walkways, four pitch braziers that burn out after 40 s, six root knots with hook rings); the Marsh Beacon offering (Crafting 30, Mangrove Pitch at the stall until R2g); phases with circling in the pool, the fog, exposed in a lit brazier's circle (gills live, full damage), the lure pull, root lash lanes, spore clouds that blind, a breakable lure that blinds her (phase 2) or stuns her (phase 3), Gloomscales and Gloomscale Sheathing (region 3 gate part). Dungeon water colours. Walked on his PC.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

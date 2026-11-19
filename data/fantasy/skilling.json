@@ -2432,6 +2432,36 @@
    "out": {
     "shellback_prow": 1
    }
+  },
+  {
+   "id": "craft_marsh_beacon",
+   "skill": "crafting",
+   "level": 30,
+   "xp": 260,
+   "station": "crafting_table",
+   "in": {
+    "fogmaw_lure": 1,
+    "mangrove_pitch": 4,
+    "sailcloth": 2
+   },
+   "out": {
+    "marsh_beacon": 1
+   }
+  },
+  {
+   "id": "build_gloomscale_sheathing",
+   "skill": "carpentry",
+   "level": 35,
+   "xp": 600,
+   "station": "shipyard",
+   "in": {
+    "gloomscale": 4,
+    "iron_bar": 4,
+    "mangrove_pitch": 4
+   },
+   "out": {
+    "gloomscale_sheathing": 1
+   }
   }
  ],
  "gather": {
@@ -3365,7 +3395,8 @@
     "kind": "content",
     "ids": [
      "saw_emberwood",
-     "make_ember_rod"
+     "make_ember_rod",
+     "build_gloomscale_sheathing"
     ]
    },
    {
@@ -3442,7 +3473,8 @@
     "ids": [
      "craft_sea_boots",
      "craft_diving_helm",
-     "craft_ghost_charm"
+     "craft_ghost_charm",
+     "craft_marsh_beacon"
     ]
    },
    {

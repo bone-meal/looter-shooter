@@ -1,6 +1,7 @@
 # Purpose: what a sea super boss's attacks LOOK like on every machine (sea step 10): the warning marks on the floor
 # while it winds up (a claw arc, a charge lane, the circle where it will burst up or land, the spots its spouts will
-# hit) that fill as the blow comes, the bell toll's ring wave rolling out along the floor, and the water balls it lobs.
+# hit, a lane along two points for a line strike) that fill as the blow comes, the bell toll's ring wave rolling out
+# along the floor, and the balls it lobs (water, or tinted spore pods that say where they `landed`).
 # One flat quad per mark drawn by a small shader (circle / ring / arc / lane), pooled; nothing is made per frame.
 # Only drawing: damage is decided by game/sea_boss.gd on the host.
 # Dependencies: game/fx_kit.gd (splashes). Lives under the arena's game/sea_dungeon.gd node (arena-local positions).
@@ -49,8 +50,10 @@ void fragment() {
 }
 """
 
+signal landed(at: Vector3, cloud: Dictionary)  # a lobbed ball came down (cloud = the attack's spore cloud, or {})
+
 var _marks: Array = []  # MeshInstance3D (PlaneMesh + own ShaderMaterial)
-var _balls: Array = []  # [MeshInstance3D, from, to, t, flight, splash radius]
+var _balls: Array = []  # [MeshInstance3D, from, to, t, flight, splash radius, colour, cloud]
 var _shader: Shader
 var _ball_mat: StandardMaterial3D
 
@@ -86,7 +89,7 @@ func _ready() -> void:
 		b.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		b.visible = false
 		add_child(b)
-		_balls.append([b, Vector3.ZERO, Vector3.ZERO, 0.0, 1.0, 1.0])
+		_balls.append([b, Vector3.ZERO, Vector3.ZERO, 0.0, 1.0, 1.0, Color(0.6, 0.88, 1.0), {}])
 
 
 func clear() -> void:
@@ -135,6 +138,12 @@ func show_move(attack: Dictionary, mode: String, progress: float, boss_at: Vecto
 				_mark(0, 3, here, yaw, float(attack["length"]), float(attack["length"]), float(attack["width"]), progress, warn)
 			"ring":
 				_mark(0, 0, here, 0.0, 2.5, 2.5, 0.0, progress, Color(0.4, 0.85, 1.0, 0.85))  # the bell swings: a glow round it
+			"line":  # a lane along the two target points (the Lantern Queen's root lash: the glow runs along it)
+				if targets.size() >= 2:
+					var a0: Vector3 = targets[0]
+					var b0: Vector3 = targets[1]
+					var along := Vector3(b0.x - a0.x, 0.0, b0.z - a0.z)
+					_mark(0, 3, Vector3(a0.x, maxf(a0.y, floor_y) + 0.06, a0.z), atan2(-along.x, -along.z), along.length(), along.length(), float(attack["width"]), progress, Color(0.75, 1.0, 0.45, 0.85))
 			"under", "leap", "lob":
 				var col := Color(0.4, 0.85, 1.0, 0.85) if shape == "under" else warn
 				for i in mini(targets.size(), MARKS):
@@ -145,7 +154,7 @@ func show_move(attack: Dictionary, mode: String, progress: float, boss_at: Vecto
 
 
 # The boss lobs water balls (spouts, bubbles): each flies to its spot in `flight` seconds and splashes there.
-func lob(from: Vector3, targets: Array, flight: float, radius: float) -> void:
+func lob(from: Vector3, targets: Array, flight: float, radius: float, color := Color(0.55, 0.85, 1.0, 0.75), cloud := {}) -> void:
 	for t: Vector3 in targets:
 		for b: Array in _balls:
 			var mi: MeshInstance3D = b[0]
@@ -156,6 +165,9 @@ func lob(from: Vector3, targets: Array, flight: float, radius: float) -> void:
 			b[3] = 0.0
 			b[4] = maxf(flight, 0.2)
 			b[5] = radius
+			b[6] = color
+			b[7] = cloud
+			mi.material_override = null if color.is_equal_approx(Color(0.55, 0.85, 1.0, 0.75)) else _tinted(color)
 			mi.position = from
 			mi.visible = true
 			break
@@ -173,4 +185,17 @@ func _process(delta: float) -> void:
 		mi.position = from.lerp(to, k) + Vector3(0.0, sin(k * PI) * (4.0 + from.distance_to(to) * 0.25), 0.0)
 		if k >= 1.0:
 			mi.visible = false
-			FxKit.burst(self, to_global(to + Vector3(0.0, 0.3, 0.0)), Color(0.6, 0.88, 1.0), 26, 0.9, 0.2, 2.0 + float(b[5]), -6.0)
+			var splash: Color = b[6]
+			FxKit.burst(self, to_global(to + Vector3(0.0, 0.3, 0.0)), Color(splash.r, splash.g, splash.b), 26, 0.9, 0.2, 2.0 + float(b[5]), -6.0)
+			landed.emit(to, b[7])
+
+
+var _tints := {}  # colour -> material for tinted balls (spore pods)
+
+
+func _tinted(color: Color) -> StandardMaterial3D:
+	if not _tints.has(color):
+		var m := _ball_mat.duplicate() as StandardMaterial3D
+		m.albedo_color = color
+		_tints[color] = m
+	return _tints[color]

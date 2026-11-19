@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors). Sea step 9c: a fight (kind fight: reach_m, spawns [[x, z]], waves [[enemy ids]], notice) may raise a TIDE (tide = water level per wave over its flood cells [[x0, z0], [x1, z1]]; standing deeper than tide_hurt.from_m hurts dps_per_m per metre); doors 'clear' (fight) / 'free' (+ shut_while = shut while that fight goes on) / 'bigkey' (the Great Key, kind bigkey) / 'sealed' (never; says); a thing on a ledge says on: 'H'; `name` is only for reading. Foes climb ledges at foe_climb_speed m/s. torch_seen_m: torches farther than this from the camera are not drawn (0 = always). dress (sea step 9c-3 art pass): shares of the kit's variant floors (floor_worn, floor_mosaic) and walls (wall_crusted, wall_relief) mixed in by a steady roll per cell, clutter = share of wall-side floor cells given rubble / urns / coral (no collision; kept off doors, blocks' and plates' surroundings). Sea step 9d: outdoor = a puzzle court on its island (at = sea x, z of cell (0, 0), y = its floor), no gate; a lever with tide raises the tide (rafts, tide doors); a chest's piece goes to every player there; pieces: a chart's pieces, joined in the bag when all are in.",
+ "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors). Sea step 9c: a fight (kind fight: reach_m, spawns [[x, z]], waves [[enemy ids]], notice) may raise a TIDE (tide = water level per wave over its flood cells [[x0, z0], [x1, z1]]; standing deeper than tide_hurt.from_m hurts dps_per_m per metre); doors 'clear' (fight) / 'free' (+ shut_while = shut while that fight goes on) / 'bigkey' (the Great Key, kind bigkey) / 'sealed' (never; says); a thing on a ledge says on: 'H'; `name` is only for reading. Foes climb ledges at foe_climb_speed m/s. torch_seen_m: torches farther than this from the camera are not drawn (0 = always). dress (sea step 9c-3 art pass): shares of the kit's variant floors (floor_worn, floor_mosaic) and walls (wall_crusted, wall_relief) mixed in by a steady roll per cell, clutter = share of wall-side floor cells given rubble / urns / coral (no collision; kept off doors, blocks' and plates' surroundings). Sea step 9d: outdoor = a puzzle court on its island (at = sea x, z of cell (0, 0), y = its floor), no gate; a lever with tide raises the tide (rafts, tide doors); a chest's piece goes to every player there; pieces: a chart's pieces, joined in the bag when all are in. A dungeon may set \"water_color\" [r, g, b, alpha] for its pits' water (sea step 13 R2d: black pitch, the Queen's dark pool, swamp water).",
  "tile": 3.0,
  "wall_h": 4.5,
  "torch_every": 4,
@@ -1824,6 +1824,12 @@
     "########...M.T.##############",
     "########.......##############",
     "#############################"
+   ],
+   "water_color": [
+    0.1,
+    0.16,
+    0.13,
+    0.85
    ]
   },
   "pitch_works": {
@@ -1998,6 +2004,12 @@
     "###############...........#",
     "###############...M...T...#",
     "###########################"
+   ],
+   "water_color": [
+    0.04,
+    0.03,
+    0.02,
+    0.95
    ]
   },
   "hollow_mangrove": {
@@ -2368,7 +2380,8 @@
      "kind": "door",
      "name": "door_root_sealed",
      "open": "sealed",
-     "says": "Sealed. The roots knot across it; something glows far below"
+     "says": "Sealed. The roots knot across it; something glows far below",
+     "boss": "lantern_queen"
     },
     "Y": {
      "kind": "door",
@@ -2413,6 +2426,137 @@
     "#######.....#.B...###################",
     "#######.....#.....###################",
     "#####################################"
+   ],
+   "water_color": [
+    0.1,
+    0.14,
+    0.08,
+    0.88
+   ]
+  },
+  "root_crown": {
+   "name": "The Root Crown",
+   "region": 2,
+   "slot": 13,
+   "_about": "Sea step 13 R2d: the Lantern Queen's arena (data/sea/bosses.json lantern_queen), behind The Hollow Mangrove's root door: the hollow inside of one giant mangrove, 19 x 19 cells: a root island in the middle, the black pool round it (hers), a ring of root walkways with three gaps, four pitch braziers on it (lit by the Ember Gauntlet; in this arena they burn out after burn_s), six root knots with hook rings in the outer water, the boss tide T (driven by game/sea_boss.gd: the enrage sinks the walkways). No island gate: you come in through the root door and the exit takes you back to it. Layout mine (/home/claude/scratch/r2_crown.py).",
+   "boss_arena": "lantern_queen",
+   "wall_h": 12.0,
+   "torch_every": 0,
+   "dress": {
+    "floor_worn": 0.5,
+    "floor_mosaic": 0.0,
+    "wall_crusted": 0.55,
+    "wall_relief": 0.0,
+    "clutter": 0.2,
+    "seed": 41
+   },
+   "legend": {
+    "A": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "back to the root door"
+    },
+    "T": {
+     "kind": "fight",
+     "name": "boss_tide",
+     "boss": true,
+     "flood": [
+      [
+       1,
+       1
+      ],
+      [
+       17,
+       17
+      ]
+     ],
+     "tide": [
+      0.5,
+      1.2,
+      1.9
+     ],
+     "waves": []
+    },
+    "w": {
+     "kind": "brazier",
+     "name": "pitch_brazier_nw",
+     "burn_s": 40.0
+    },
+    "x": {
+     "kind": "brazier",
+     "name": "pitch_brazier_ne",
+     "burn_s": 40.0
+    },
+    "y": {
+     "kind": "brazier",
+     "name": "pitch_brazier_sw",
+     "burn_s": 40.0
+    },
+    "z": {
+     "kind": "brazier",
+     "name": "pitch_brazier_se",
+     "burn_s": 40.0
+    },
+    "a": {
+     "kind": "ring",
+     "name": "knot_w_north",
+     "on": "H"
+    },
+    "b": {
+     "kind": "ring",
+     "name": "knot_e_north",
+     "on": "H"
+    },
+    "c": {
+     "kind": "ring",
+     "name": "knot_w_south",
+     "on": "H"
+    },
+    "d": {
+     "kind": "ring",
+     "name": "knot_e_south",
+     "on": "H"
+    },
+    "e": {
+     "kind": "ring",
+     "name": "knot_n_west",
+     "on": "H"
+    },
+    "f": {
+     "kind": "ring",
+     "name": "knot_n_east",
+     "on": "H"
+    }
+   },
+   "map": [
+    "###################",
+    "#######e===f#######",
+    "#####=========#####",
+    "####====.=.====####",
+    "###===...=...===###",
+    "##===w...=...x===##",
+    "##a=...=====...=b##",
+    "#===..=======..===#",
+    "#==...==...==...==#",
+    "#=======...=======#",
+    "#==...==...==...==#",
+    "#===..=======..===#",
+    "##c=...=====...=d##",
+    "##===y.......z===##",
+    "###===.T.....===###",
+    "####====...====####",
+    "#####====.====#####",
+    "#######==A==#######",
+    "#########X#########"
+   ],
+   "water_color": [
+    0.03,
+    0.04,
+    0.035,
+    0.92
    ]
   }
  },

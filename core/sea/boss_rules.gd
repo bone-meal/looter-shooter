@@ -15,6 +15,8 @@ var fight_t := 0.0  # seconds since the fight began
 var enraged := false
 var parts := {}  # breakable part id -> hp left
 var crack_until := -1.0  # fight time the cracked shell closes again
+var regrow_at := -1.0  # fight time broken parts grow back after a crack (a phase's regrow_s; -1 = at once)
+var exposed := false  # (the Lantern Queen) in a lit brazier's circle: the body takes all of a hit, "lit" weak parts are live
 var stun_until := -1.0
 var stun_ready := 0.0  # fight time the next stun may land
 var tide_step := -1
@@ -32,6 +34,8 @@ func setup(boss: Dictionary, whole: Dictionary, party: int, region_mult: float) 
 	fight_t = 0.0
 	enraged = false
 	crack_until = -1.0
+	regrow_at = -1.0
+	exposed = false
 	stun_until = -1.0
 	stun_ready = 0.0
 	downs.clear()
@@ -72,6 +76,7 @@ func advance(share: float) -> bool:
 	tide_step = int(pc.get("tide", -1))
 	rise_t = 0.0
 	crack_until = -1.0
+	regrow_at = -1.0
 	_grow_parts()
 	return true
 
@@ -91,8 +96,14 @@ func tick(delta: float) -> bool:
 			if rise_t >= float(pc.get("rise_s", 30.0)):
 				rise_t = 0.0
 				tide_step += 1
-	if crack_until >= 0.0 and fight_t >= crack_until:  # the shell closes: the barnacles grow back
+	if crack_until >= 0.0 and fight_t >= crack_until:  # the shell closes: the barnacles grow back (after regrow_s)
 		crack_until = -1.0
+		if float(phase_cfg().get("regrow_s", 0.0)) > 0.0:
+			regrow_at = fight_t + float(phase_cfg()["regrow_s"])
+		else:
+			_grow_parts()
+	if regrow_at >= 0.0 and fight_t >= regrow_at:
+		regrow_at = -1.0
 		_grow_parts()
 	return tide_step != before
 
@@ -106,12 +117,12 @@ func cracked() -> bool:
 
 
 func stunned() -> bool:
-	return stun_until >= 0.0 and fight_t < stun_until
+	return (stun_until >= 0.0 and fight_t < stun_until) or (cracked() and bool(phase_cfg().get("crack_stuns", false)))
 
 
 # Share of a hit on the body itself that gets through now.
 func body_share() -> float:
-	if shed() or cracked() or stunned():
+	if shed() or cracked() or stunned() or exposed:
 		return 1.0
 	return float(phase_cfg().get("armour", 1.0))
 
@@ -129,6 +140,12 @@ func weak_share(id: String) -> float:
 	if p.is_empty() or String(p["kind"]) != "weak":
 		return body_share()
 	return float(p.get("share", 1.0))
+
+
+# A weak part that can be hit now (one marked "lit" only while she is exposed).
+func weak_live(id: String) -> bool:
+	var p := part_cfg(id)
+	return not p.is_empty() and String(p["kind"]) == "weak" and (not bool(p.get("lit", false)) or exposed)
 
 
 # Breakable parts that count in this phase.
@@ -154,7 +171,7 @@ func broken(id: String) -> bool:
 # Damage to a breakable part. Returns "" (nothing), "broke" (this part went) or "crack" (the last of the phase's
 # went: the shell is open for crack_s).
 func hit_part(id: String, damage: float) -> String:
-	if not (id in breakables()) or cracked() or not is_finite(damage) or damage <= 0.0 or broken(id):
+	if not (id in breakables()) or cracked() or regrow_at >= 0.0 or not is_finite(damage) or damage <= 0.0 or broken(id):
 		return ""
 	parts[id] = float(parts[id]) - damage
 	if float(parts[id]) > 0.0:
