@@ -146,8 +146,8 @@ func show_move(attack: Dictionary, mode: String, progress: float, boss_at: Vecto
 					var b0: Vector3 = targets[1]
 					var along := Vector3(b0.x - a0.x, 0.0, b0.z - a0.z)
 					_mark(0, 3, Vector3(a0.x, maxf(a0.y, floor_y) + 0.06, a0.z), atan2(-along.x, -along.z), along.length(), along.length(), float(attack["width"]), progress, Color(0.75, 1.0, 0.45, 0.85))
-			"under", "leap", "lob":
-				var col := Color(0.4, 0.85, 1.0, 0.85) if shape == "under" else warn
+			"under", "leap", "lob", "cage":
+				var col := Color(0.4, 0.85, 1.0, 0.85) if shape == "under" else (Color(0.55, 0.38, 0.2, 0.9) if shape == "cage" else warn)
 				for i in mini(targets.size(), MARKS):
 					var t: Vector3 = targets[i]
 					_mark(i, 0, Vector3(t.x, maxf(t.y, floor_y) + 0.06, t.z), 0.0, float(attack["radius"]), float(attack["radius"]), 0.0, progress, col)

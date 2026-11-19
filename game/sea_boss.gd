@@ -677,7 +677,7 @@ func _drive(delta: float) -> void:
 	var in_pool := bool(rules.phase_cfg().get("in_pool", false))
 	var anchor := bool(rules.phase_cfg().get("anchor", false))  # (stays at home and only turns: the Queen on her island)
 	var goal := _swim_point(home)
-	var target := _nearest_up(pos, false)
+	var target := _quarry(pos)
 	var a := rules.attack_cfg(attack)
 	if rules.stunned():
 		if mode != "stunned":
@@ -759,6 +759,25 @@ func _swim_point(home: Vector3) -> Vector3:
 	return home + Vector3(cos(ang) * r, 0.0, sin(ang) * r)
 
 
+# Whom she goes for: in the Lantern Queen's dark phase whoever makes the most light, else the nearest who is up.
+func _quarry(from: Vector3) -> Array:
+	var lit: Array = lantern.call("brightest")
+	return lit if not lit.is_empty() else _nearest_up(from, false)
+
+
+# Dev / checks (host): she starts this attack now on her quarry (other: on a player who is not the host).
+func dev_attack(id: String, other := false) -> void:
+	if not _host() or state != "fight" or enemy == null or rules.attack_cfg(id).is_empty():
+		return
+	var target := _quarry(enemy.position)
+	if other:
+		for b: Array in _bodies():
+			if int(b[0]) != _my_id():
+				target = b
+	if not target.is_empty():
+		_begin(id, target)
+
+
 func _in_pit(local: Vector3) -> bool:
 	var r: RefCounted = _arena().get("rules")
 	return String(r.call("char_at", r.call("cell_of", local))) == "="
@@ -800,6 +819,9 @@ func _begin(id: String, target: Array) -> void:
 		"leap":
 			var spot2: Vector3 = target[2]
 			targets = [Vector3(spot2.x, _ground(spot2), spot2.z)]
+		"cage":  # (the Queen's root cage) under her quarry
+			var spot4: Vector3 = target[2]
+			targets = [Vector3(spot4.x, _ground(spot4), spot4.z)]
 		"line":  # (the Queen's root lash) along the walkway the target stands on: across the line from home to him
 			var spot3: Vector3 = target[2]
 			var c := Vector3(float(boss_cfg(boss_id)["home"][0]), 0.0, float(boss_cfg(boss_id)["home"][1]))
@@ -850,6 +872,15 @@ func _strike(a: Dictionary, pos: Vector3) -> Vector3:
 		"line":
 			if targets.size() >= 2:
 				_hit_line(targets[0], targets[1], float(a["width"]), dmg)
+			_recover(a)
+		"cage":  # whoever still stands in the circle is caged (game/queen_root_cages.gd)
+			for b: Array in _bodies():
+				var local: Vector3 = b[2]
+				if rules.state_of(int(b[0])) == "up" and not bool(lantern.call("is_swallowed", int(b[0]))) and Vector2(local.x - (targets[0] as Vector3).x, local.z - (targets[0] as Vector3).z).length() <= float(a["radius"]) and absf(local.y - (targets[0] as Vector3).y) < 2.2:
+					_hit_body(b, dmg)
+					lantern.call("cage", int(b[0]), Vector3(local.x, (targets[0] as Vector3).y, local.z))
+			_recover(a)
+		"flare":  # her crown flares: each machine blinds its own player if he looks (game/sea_boss_lantern.gd)
 			_recover(a)
 		"gulp":  # (the Lantern Queen) a whirlpool: each machine pulls its own player toward her (game/sea_boss_lantern.gd)
 			_charge_left = float(a.get("pull_s", 4.0))
@@ -990,6 +1021,9 @@ func part_hit(id: String, damage: float) -> void:
 	if id.begins_with("false_"):  # (the Lantern Queen's false lures: game/queen_false_lures.gd)
 		lantern.call("false_hit", id, damage)
 		return
+	if id.begins_with("cage_"):  # (her root cages: game/queen_root_cages.gd)
+		lantern.call("cage_hit", id, damage)
+		return
 	var p := rules.part_cfg(id) if boss_id != "" else {}
 	if p.is_empty():
 		return
@@ -1009,6 +1043,9 @@ func host_part(id: String, damage: float) -> void:
 		return
 	if id.begins_with("false_"):
 		lantern.call("false_hit", id, damage)
+		return
+	if id.begins_with("cage_"):
+		lantern.call("cage_hit", id, damage)
 		return
 	var got := rules.hit_part(id, minf(damage, 5000.0))
 	if got != "":
@@ -1183,6 +1220,11 @@ func _pose_angler(model: Node3D, delta: float, t: float) -> void:
 	var tail := model.find_child("Tail", true, false) as Node3D
 	if tail != null:
 		tail.rotation.y = sin(t * (2.6 if moving else 0.9)) * (0.35 if moving else 0.12)
+	var crown := model.find_child("Crown", true, false) as Node3D
+	if crown != null:  # (her flare burst: the crown swells as it winds up)
+		var flaring := mode == "windup" and String(rules.attack_cfg(attack).get("shape", "")) == "flare"
+		var grow := 1.0 + 0.7 * clampf(1.0 - _t / maxf(_t_total, 0.01), 0.0, 1.0) if flaring else 1.0
+		crown.scale = crown.scale.lerp(Vector3.ONE * grow, k * 2.0)
 	var stalk := model.find_child("LureStalk", true, false) as Node3D
 	if stalk != null:
 		stalk.rotation.x = sin(t * 0.9) * 0.07 + (0.12 if mode == "windup" else 0.0)

@@ -779,7 +779,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					"prompt":
 						_lines.append("  prompt: '%s'" % String(dm.call("prompt", "F")))
 				_lines.append("DUN %s: %s; prompt '%s'; indoor %s; at %s" % [" ".join(words.slice(1)), String(dm.call("status")), String(dm.call("prompt", "F")), str(sea_d.get("indoor")), str(sea_d.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
-		"boss":  # sea step 10: !boss pick <boss id> | give (the offering) | door (stand at the temple's sealed door) | in (go through, once open) | hp <share> (host) | part <id> <damage> | face | lure (look at the Lantern Queen's lure) | hook (Grapple Hook at the shed bell) | kill (host) | wait <state|phase|mode|tide> <value> [s] | status <note>
+		"boss":  # sea step 10: !boss pick <boss id> | give (the offering) | door (stand at the temple's sealed door) | in (go through, once open) | hp <share> (host) | part <id> <damage> | face | lure (look at the Lantern Queen's lure) | do <attack> [other] (host: start it now, on a player not the host) | cage (host: break the first root cage) | enrage (host: the clock jumps to it) | present <n> [s] (host: wait for n players in the arena) | hook (Grapple Hook at the shed bell) | kill (host) | wait <state|phase|mode|tide> <value> [s] | status <note>
 			var sea_x: Node = session.call("sea")
 			if sea_x == null:
 				_lines.append("boss: no sea")
@@ -816,6 +816,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							hx.set("hp", float(hx.get("max_hp")) * float(words[2]))
 					"part":
 						bx.call("part_hit", words[2], float(words[3]))
+					"do":  # (sea step 13 R2d, host) she starts this attack now on her quarry
+						bx.call("dev_attack", words[2], words.size() > 3 and words[3] == "other")
+					"present":  # "!boss present <n> [s]" (host): wait until n players stand in the arena
+						var until_p := Time.get_ticks_msec() + (int(float(words[3]) * 1000.0) if words.size() > 3 else 60000)
+						while Time.get_ticks_msec() < until_p and (bx.call("_present", bid) as Array).size() < int(words[2]):
+							await get_tree().create_timer(0.2, true, false, true).timeout
+					"enrage":  # (host) the fight clock jumps to the enrage
+						(bx.get("rules") as RefCounted).set("fight_t", float(bcfg["enrage_s"]))
+					"cage":  # (host) hit the first root cage hard (as the others shooting it)
+						var cg: Dictionary = (bx.get("lantern") as Node).get("cages").get("cages")
+						if not cg.is_empty():
+							bx.call("part_hit", "cage_%d" % int(cg.keys()[0]), 5000.0)
 					"lure":  # (sea step 13 R2d) look straight at the Lantern Queen's lure bulb
 						var el: Node3D = bx.get("enemy")
 						var bulb_l: Node3D = (el.get("_model") as Node3D).find_child("LureBulb", true, false) as Node3D if el != null and el.get("_model") != null else null

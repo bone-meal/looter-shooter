@@ -323,6 +323,10 @@ func _ember() -> void:
 	last = "ember at %s" % (aimed if aimed != "" else "nothing")
 	if aimed != "":
 		_dungeons().call("act", aimed)
+	for n: Node in get_tree().get_nodes_in_group("burnable"):  # (sea step 13 R2d) the Lantern Queen's root cages burn
+		if n is Node3D and (n as Node3D).global_position.distance_to(end) < 2.6:
+			n.call("on_hit", 5000.0)
+			last = "ember burned a root cage"
 
 
 func _bolt(from: Vector3, to: Vector3) -> void:

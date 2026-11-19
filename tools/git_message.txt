@@ -1,6 +1,6 @@
-Sea step 13 R2d part 2: the Lantern Queen's False Lights phase
+Sea step 13 R2d part 3: the Lantern Queen's Lights Out phase, two-copy tested
 
-Phase 2 as approved: rolling fog (25 s thick, 15 s thin), false lures round the pool by party size that pulse together while her real lure pulses out of step (shot ones burst into spores and rise again), walkway quarters sinking one after another, she lies low in the black water unless exposed or striking, and the whirlpool gulp: she comes to the pool edge, pulls everyone toward her and swallows whoever reaches her mouth (held inside her for 4 s or until the others hurt her enough, then spat onto the walkway with heavy damage). Walked on his PC.
+Phase 3 as approved: she drinks the light (the hall goes dark, braziers go out, lamps dim), hunts whoever makes the most light (muzzle flashes, the Keeper's Lantern, a flare gun, the Ember Gauntlet in hand), root cages that hold a player until the others shoot or burn them free (or they crumble), the flare burst that blinds whoever looks at her crown, and the enrage that turns the fog total and sinks the walkways. Two copies on his PC (set queen): false lures and their bursts, exposure, swallows, the dark hunt, a guest's cage and its freeing, flare blinds and the guest's loot all agree.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

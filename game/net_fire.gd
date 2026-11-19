@@ -24,6 +24,7 @@ var _shots: Array = []  # this burst: [t, sound, PackedVector3Array of shared en
 var _proj: Array = []  # this burst: [t, kind, shared from, velocity, gravity, splash radius]
 var _burst_t := 0.0  # engine time the burst began
 var _send_t := 0.0
+var last_shot := {}  # peer -> engine seconds of his last shot (host: every player's; the Lantern Queen hunts muzzle flashes)
 
 
 func _ready() -> void:
@@ -51,6 +52,7 @@ func _age() -> float:
 
 # From our player's shot: its sound and where each pellet ended (scene positions).
 func shot(sound: String, ends: PackedVector3Array) -> void:
+	last_shot[my_id()] = _now()
 	if not active() or _shots.size() >= MAX_SHOTS:
 		return
 	var out := PackedVector3Array()
@@ -113,6 +115,7 @@ func _sane(shots: Array, proj: Array) -> bool:
 
 
 func _pass_on(from: int, shots: Array, proj: Array) -> void:
+	last_shot[from] = _now()
 	_down.rpc(from, shots, proj)
 	_down(from, shots, proj)  # (the host sees a guest's shots too; its own return at once)
 
