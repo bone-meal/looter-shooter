@@ -51,6 +51,9 @@
     "looks": {"tam": ["sailor", "male", "crop"], "orla": ["fisher", "female", "long"], "bede": ["farmer", "male", "buzz"], "wynn": ["chef", "female", "braids"]},
     "stand": [[-74.0, 6650.0], [-90.0, 6648.0], [-68.0, 6630.0], [-94.0, 6630.0]],
     "deck_spot": [-1.0, 0.55],
+    "wave_m": 150.0,
+    "seat_size": [0.55, 0.46, 0.42],
+    "seat_at": [0.0, 0.23, 0.12],
     "lost_s": 600.0
   },
   "bottle": {

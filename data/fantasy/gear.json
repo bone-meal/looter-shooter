@@ -2224,6 +2224,15 @@
     0.52
    ]
   },
+  "chart_smugglers_cache": {
+   "kind": "sea_chart",
+   "icon": "map",
+   "color": [
+    0.6,
+    0.42,
+    0.3
+   ]
+  },
   "chart_shallows_hoard": {
    "kind": "sea_chart",
    "icon": "map",

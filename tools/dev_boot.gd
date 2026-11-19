@@ -962,6 +962,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							_lines.append("  after 0.7 s: y %.2f, on floor %s, swimming %s" % [player.global_position.y, str((player as CharacterBody3D).is_on_floor()), str(player.get("swimming"))])
 							await get_tree().create_timer(1.3, true, false, true).timeout
 							_lines.append("  stood on it: y %.2f over its root %.2f, swimming %s, on floor %s" % [player.global_position.y, top_o.y, str(player.get("swimming")), str((player as CharacterBody3D).is_on_floor())])
+					"lookbody":  # face the newest event's person (the merchant / the castaway), wherever he is
+						var n_b: Dictionary = (ev.get("_nodes") as Dictionary).get(newest_e, {})
+						if n_b.has("body"):
+							player.call("look_at_point", (n_b["body"] as Node3D).global_position + Vector3(0.0, 0.9, 0.0))
+							_lines.append("  his pose '%s', %.1f m off" % [String(n_b.get("pose", "")), (n_b["body"] as Node3D).global_position.distance_to(player.global_position)])
 					"surface":  # the newest whale pod's whales come up now (for a picture)
 						var n_s: Dictionary = (ev.get("_nodes") as Dictionary).get(newest_e, {})
 						var wc: Dictionary = ev.get("rules").get("cfg")["whales"]

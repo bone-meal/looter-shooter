@@ -285,3 +285,4 @@ chart_piece_1: Torn Chart (Stackwater piece)
 chart_piece_2: Torn Chart (Bellrock piece)
 chart_piece_3: Torn Chart (Gullhook piece)
 chart_shallows_hoard: Chart: The Shallows Hoard
+chart_smugglers_cache: The Smugglers' Cache

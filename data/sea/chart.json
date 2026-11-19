@@ -44,6 +44,15 @@
         3620.0
       ],
       "kind": "salvage"
+    },
+    {
+      "id": "chart_smugglers_cache",
+      "item": "chart_smugglers_cache",
+      "at": [
+        -1600.0,
+        5600.0
+      ],
+      "kind": "salvage"
     }
   ]
 }

@@ -15,6 +15,11 @@ captains_log: Captain's Log | Most pages are pulp. The last legible line: "Wind 
 ships_bell: Ship's Bell | The clapper is gone. Someone took it on purpose.
 silver_compass: Silver Compass | It points north. It also points, now and then, somewhere else.
 pearl_box: Pearl Box | Lined with velvet that is now mostly seaweed. One pearl left, rattling.
+turtle_figurehead: Turtle Figurehead | Carved from one piece of oak. Whoever sailed behind it believed in slow and steady.
+salt_seal: Salt Merchant's Seal | A brass stamp with a pan and three crystals. Every sack of Saltpan salt once wore it.
+smugglers_lantern: Smuggler's Lantern | Shuttered on three sides. It was only ever meant to be seen from the sea.
+coral_idol: Coral Idol | A small figure grown over with coral until it is hard to say who carved it, or what it was.
+atoll_bell: Atoll Bell | A little brass bell, green with age. It still rings, quietly, as if it would rather not.
 sea_glass: Sea Glass | Green, worn smooth, once a bottle of something strong.
 old_coin: Old Coin | Nobody's face you recognise.
 cowrie_shell: Cowrie Shell | Small, glossy, and once worth more than it looks.

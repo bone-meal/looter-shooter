@@ -39,12 +39,17 @@
     "captains_log",
     "ships_bell",
     "silver_compass",
-    "pearl_box"
+    "pearl_box",
+    "turtle_figurehead",
+    "salt_seal",
+    "smugglers_lantern",
+    "coral_idol",
+    "atoll_bell"
    ],
    "reward": {
-    "chips": 750,
-    "xp": 300,
-    "doubloons": 60
+    "chips": 1500,
+    "xp": 600,
+    "doubloons": 150
    }
   }
  },
@@ -274,6 +279,63 @@
    ],
    "depth": 8.0,
    "model": "salvage_chest"
+  },
+  {
+   "hoard": "smugglers_cache",
+   "loot": "hoard_smugglers",
+   "region": "region_1",
+   "name": "the smugglers' cache",
+   "at": [
+    -1600.0,
+    5600.0
+   ],
+   "depth": 12.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "turtle_figurehead",
+   "at": [
+    1750.0,
+    5600.0
+   ],
+   "depth": 9.0,
+   "model": "wreck_small"
+  },
+  {
+   "find": "salt_seal",
+   "at": [
+    -2100.0,
+    4630.0
+   ],
+   "depth": 9.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "smugglers_lantern",
+   "at": [
+    -2220.0,
+    7730.0
+   ],
+   "depth": 8.0,
+   "model": "salvage_chest"
+  },
+  {
+   "find": "coral_idol",
+   "at": [
+    1900.0,
+    7320.0
+   ],
+   "depth": 10.0,
+   "model": "wreck_small"
+  },
+  {
+   "find": "atoll_bell",
+   "at": [
+    780.0,
+    3900.0
+   ],
+   "depth": 9.0,
+   "model": "salvage_chest"
   }
  ],
  "trinkets": {
@@ -330,6 +392,11 @@
   "captains_log": "book",
   "ships_bell": "relic",
   "silver_compass": "clock",
-  "pearl_box": "gem"
+  "pearl_box": "gem",
+  "turtle_figurehead": "relic",
+  "salt_seal": "coin",
+  "smugglers_lantern": "potion",
+  "coral_idol": "gem",
+  "atoll_bell": "relic"
  }
 }

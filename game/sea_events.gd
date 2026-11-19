@@ -3,7 +3,8 @@
 #   MERCHANT RAFT  a trader's raft comes alongside (keep_m off the nearest player) and stays a while: [F] near her opens
 #                  her goods (game/merchant_window.gd); each player pays his own doubloons, a few of each per player.
 #   CASTAWAY       a man on a broken spar: [F] from a ship within haul_m (or swim to him) and the host puts him on
-#                  that ship's deck; sail him within deliver_m of the home port and he moves into the town (game/
+#                  that ship's deck (he SITS on a sea chest there; in the water he WAVES both arms while a player is
+#                  within wave_m); sail him within deliver_m of the home port and he moves into the town (game/
 #                  sea_town.gd castaways, game/town_people.gd shows him there), everyone aboard gets a reward. A ship
 #                  that sinks under him puts him back on the water.
 #   BOTTLE         a message in a bottle afloat ahead (game/sea_flotsam.gd piece, loot "bottle"): whoever takes it
@@ -26,6 +27,7 @@ extends Node3D
 const EventRules = preload("res://core/sea/event_rules.gd")
 const NpcBody = preload("res://game/npc_body.gd")
 const BodyMotion = preload("res://game/body_motion.gd")
+const DancePoses = preload("res://game/dance_poses.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
 const FxKit = preload("res://game/fx_kit.gd")
 const GunGen = preload("res://core/gun_gen.gd")
@@ -732,24 +734,60 @@ func _place_castaway(n: Dictionary, e: Dictionary, delta: float) -> void:
 	var ship_i := int(e["ship"])
 	var spar_body: AnimatableBody3D = n["spar_body"]
 	spar_body.collision_layer = 0 if ship_i >= 0 else 1  # (aboard: the spar is left behind, not solid)
-	if ship_i >= 0 and ship_i < ships.size():  # aboard: stands on her deck toward the stern
+	if ship_i >= 0 and ship_i < ships.size():  # aboard: he sits on a sea chest on her deck toward the stern
 		spar.visible = false
 		var ship: Node3D = ships[ship_i]
 		var half := absf(float((ship.get("spec")["outline"] as Array)[0][0]))
 		var spot: Array = rules.cfg["castaway"]["deck_spot"]
+		if String(n.get("pose", "")) != "sit":
+			n["pose"] = "sit"
+			DancePoses.reset(body)
+			if body.has_method("hold"):
+				body.call("hold", "Sitting_Idle", 0.4)
+			_seat(n).visible = true
 		body.global_position = ship.call("deck_spot", [float(spot[0]), half * float(spot[1])])
-		body.global_rotation = Vector3(0.0, ship.global_rotation.y, 0.0)
-		BodyMotion.animate(body, 0.0, 0.0, _clock, false)
+		body.global_rotation = Vector3(0.0, ship.global_rotation.y + PI * 0.5, 0.0)  # (sideways on the deck, looking out over the rail)
 		return
+	if String(n.get("pose", "")) == "sit":
+		n["pose"] = ""
+		_seat(n).visible = false
 	spar.visible = true
 	var at := Vector2(float(e["x"]), float(e["z"]))
 	var goal := Vector3(at.x, _water(at) - 0.05, at.y)
 	root.position = goal if root.position.distance_to(goal) > 20.0 else root.position.lerp(goal, minf(1.0, delta * 4.0))
 	root.rotation = Vector3(sin(_clock * 1.1) * 0.05, float(e["yaw"]), cos(_clock * 0.9) * 0.04)
 	var cling := spar.find_child("Cling", true, false) as Node3D
+	var near := float(_nearest(at)[0]) < float(rules.cfg["castaway"].get("wave_m", 150.0))
+	if near:  # somebody is in sight: both arms up, waving
+		DancePoses.apply(body, "wave_arms", _clock * 0.7)
+		n["pose"] = "wave"
+	else:
+		if String(n.get("pose", "")) == "wave":
+			DancePoses.reset(body)
+			n["pose"] = ""
+		BodyMotion.animate(body, 0.0, 0.0, _clock * 1.6, false)
 	body.position = (cling.position if cling != null else Vector3(0.6, 0.0, 0.45)) + Vector3(0.0, -1.05, 0.0)  # in the water to his chest
 	body.rotation = Vector3.ZERO
-	BodyMotion.animate(body, 0.0, 0.0, _clock * 1.6, false)
+
+
+# The sea chest the castaway sits on aboard (made once, a child of his body).
+func _seat(n: Dictionary) -> MeshInstance3D:
+	if n.has("seat"):
+		return n["seat"]
+	var seat := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	var c: Dictionary = rules.cfg["castaway"]
+	var size: Array = c.get("seat_size", [0.55, 0.46, 0.42])
+	box.size = Vector3(float(size[0]), float(size[1]), float(size[2]))
+	seat.mesh = box
+	var wood := StandardMaterial3D.new()
+	wood.albedo_color = Color(0.4, 0.27, 0.16)
+	seat.material_override = wood
+	var at: Array = c.get("seat_at", [0.0, 0.23, 0.12])
+	seat.position = Vector3(float(at[0]), float(at[1]), float(at[2]))
+	(n["body"] as Node3D).add_child(seat)
+	n["seat"] = seat
+	return seat
 
 
 func _place_whales(n: Dictionary, e: Dictionary, delta: float) -> void:

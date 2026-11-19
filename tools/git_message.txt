@@ -1,13 +1,10 @@
-Sea step 13e: region 1 people and quests, plus solid sea events and more riddles
+Sea step 13f: second treasure chart, five more salvage finds, castaway poses
 
-- core/sea/sea_quest_rules.gd, game/sea_quests.gd, data/sea/quests.json, data/sea/writing/quests_r1.txt: four quests (Joss on Palm Ring, Nell on Turtleback, Abe on Saltpan Key, Vesna on Smugglers Hook); steps talk, bring, dive, dungeon; progress is the host world, shared
-- each finished quest moves its person to the home port to run a building (tavern, dock, storehouse, gallery) via game/town_people.gd
-- game/sea_quest_window.gd: own sea quest log on L at sea; quest marks on the sea chart
-- dive step items are salvage spots shown only at their step (joss_strongbox)
-- online: net_sea request_quest / tell_quest; two-copy tested
-- director: merchant raft, castaway spar and whales are solid (players stand on them, a ship stops against them without hull damage)
-- director: seven more bottle riddles and caches in region 1 (ten in all)
-- dev !squest, !sevent ahead / standon
+- data/sea/dungeons.json: the Smugglers Grotto captain chest gives a whole chart, The Smugglers' Cache (gear.json chart_smugglers_cache, chart.json secret X)
+- data/sea/salvage.json: hoard smugglers_cache at the X, loot hoard_smugglers (encounters.json)
+- five new region 1 finds on the newer islands (turtle figurehead, salt seal, smugglers lantern, coral idol, atoll bell); Sunlit Shallows logbook set is now 10 finds, reward 1500 chips, 600 xp, 150 doubloons
+- director: castaway waves from the water when a ship is near and sits on a box aboard (game/sea_events.gd, game/dance_poses.gd)
+- tested solo on the compatibility renderer: chart received and marked, hoard taken, set paid
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

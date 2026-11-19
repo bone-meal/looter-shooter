@@ -670,6 +670,7 @@
     },
     "bottle": {"pieces": [1, 1], "doubloons": [0, 0], "items": {}, "gun_chance": 0.0},
     "whale_wake": {"pieces": [2, 3], "doubloons": [20, 45], "items": {"flawless_gem": [0, 1], "sailcloth": [0, 1]}, "gun_chance": 0.1},
+    "hoard_smugglers": {"pieces": [1, 1], "doubloons": [180, 280], "items": {"brilliant_gem": [1, 2], "flawless_gem": [1, 2]}, "gun_chance": 1.0},
     "riddle_cache": {"pieces": [1, 1], "doubloons": [60, 120], "items": {"flawless_gem": [1, 1], "brilliant_gem": [0, 1]}, "gun_chance": 0.7}
   },
   "loot_mult": {

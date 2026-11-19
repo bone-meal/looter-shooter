@@ -1624,7 +1624,8 @@
     "T": {
      "kind": "chest",
      "name": "chest_captain",
-     "loot": "dungeon_small"
+     "loot": "dungeon_small",
+     "piece": "chart_smugglers_cache"
     }
    },
    "map": [
