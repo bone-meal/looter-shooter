@@ -1,8 +1,8 @@
-Sea step 9c-1: fights inside dungeons + the temple guard
+Sea step 9c-2: The Tidewater Temple (region 1 main dungeon)
 
-Dungeon fights: legend kind fight (reach, spawns, waves); doors that open when a fight is cleared and doors that shut while it goes on.
-The host runs the waves through the sea crews (online puppets, hits sent to the host, deaths and kill pay as for pirates), foes walk the dungeon map.
-New enemy temple_guard: conch helm, shell plates, scallop shield, coral trident. Test hall fight_hall, dev !dun slay and fightwait.
+23 hand-made rooms: key doors, block and plate puzzles, lever shortcuts, 7 fights with temple guards and drowned, the Grapple Hook mid-way (chasm, ledge, lake rooms need it), the rising-tide arena (the hall floods by wave, foes climb ledges, deep water hurts), the Great Key and its door, the sealed boss door for step 10.
+Rules: things on ledges, bigkey and sealed doors, fight tide levels; foes climb ledges and only hit targets at their height in dungeons; grapple lands on the ledge and stops there; far torches not drawn in big dungeons.
+Gate stands near the home port until its reef island is built (9c-3).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

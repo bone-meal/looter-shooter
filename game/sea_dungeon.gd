@@ -6,6 +6,8 @@
 # (host / alone) or asks the host.
 # Dependencies: core/sea/dungeon_rules.gd, assets/models/sea/dungeon/*.gltf (tools/blender/sea_dungeon_kit.py),
 # game/fx_kit.gd. Placed under the sea root at its space (sea coordinates) by the manager.
+# Sea step 9c-2: things on ledges stand on the ledge's top; the Great Key and its door, the sealed door; a fight's
+# rising tide is a water sheet over its flood cells, eased to the level the rules give.
 extends Node3D
 
 const DungeonRules = preload("res://core/sea/dungeon_rules.gd")
@@ -19,6 +21,7 @@ var _nodes := {}  # letter -> Node3D (doors, plates, levers, blocks, keys, chest
 var _solids := {}  # letter -> StaticBody3D (closed doors, blocks)
 var _anim := {}  # letter -> 0..1 shown (doors open, plates down, levers pulled, chest lids)
 var _torches: Array = []
+var _floods := {}  # fight letter -> MeshInstance3D (its tide's water sheet)
 var wall_h := 4.5  # this dungeon's walls (its entry's "wall_h", else the kit's): tall halls stack the kit's wall
 var sea_seconds := Callable()  # the shared sea clock (the fog walkways' reveal is timed on it), set by the manager
 
@@ -123,6 +126,7 @@ func build() -> void:
 	for ch: String in rules.things:
 		_place(ch)
 	_place_torches(walls)
+	_flood_sheets()
 	refresh(true)
 
 
@@ -228,8 +232,10 @@ func _place(ch: String) -> void:
 	match String(th["kind"]):
 		"door":
 			var opens := String(th.get("open", "key"))
-			node = piece("dk_door_lock" if opens == "key" else ("dk_whorl_door" if opens == "whorl" else "dk_door"))
+			node = piece("dk_door_lock" if opens in ["key", "bigkey", "sealed"] else ("dk_whorl_door" if opens == "whorl" else "dk_door"))
 			node.rotation.y = 0.0 if rules.door_along_z(ch) else PI * 0.5
+			if opens in ["bigkey", "sealed"]:  # the great doors: a glow on the lock (gold: the Great Key's; sea-green: sealed)
+				node.add_child(_halo(Color(1.0, 0.8, 0.3, 0.7) if opens == "bigkey" else Color(0.35, 0.95, 0.8, 0.7), 2.2, Vector3(0.0, 1.6, 0.0)))
 			var solid := StaticBody3D.new()
 			node.add_child(solid)
 			_box(solid, Vector3(2.4, 3.4, 0.4), Vector3(0.0, 1.7, 0.0))
@@ -286,6 +292,10 @@ func _place(ch: String) -> void:
 			halo.material_override = mat
 			halo.position = Vector3(0.0, 0.3, 0.0)
 			node.add_child(halo)
+		"bigkey":
+			node = piece("dk_key")
+			node.scale = Vector3.ONE * 3.6
+			node.add_child(_halo(Color(1.0, 0.75, 0.25, 0.75), 1.4, Vector3(0.0, 0.25, 0.0)))
 		"chest":
 			node = piece("dk_chest")
 			node.rotation.y = _face_wall(th["cell"])
@@ -295,9 +305,48 @@ func _place(ch: String) -> void:
 			node.scale = Vector3.ONE * 0.62  # (the island's gate, smaller to fit under the vault)
 	if node == null:
 		return
-	node.position = at
+	node.position = at + Vector3(0.0, rules.height_of(th["cell"]), 0.0)
 	add_child(node)
 	_nodes[ch] = node
+
+
+func _halo(color: Color, size_m: float, at: Vector3) -> MeshInstance3D:
+	var halo := MeshInstance3D.new()
+	var q := QuadMesh.new()
+	q.size = Vector2(size_m, size_m)
+	halo.mesh = q
+	var mat := FxKit.glow(color, true, FxKit.soft_dot())
+	mat.billboard_mode = BaseMaterial3D.BILLBOARD_ENABLED
+	halo.material_override = mat
+	halo.position = at
+	return halo
+
+
+# A fight's rising tide: one water sheet over its flood cells (hidden while dry).
+func _flood_sheets() -> void:
+	for ch: String in rules.of_kind("fight"):
+		var f: Array = rules.things[ch].get("flood", [])
+		if f.size() != 2 or (rules.things[ch].get("tide", []) as Array).is_empty():
+			continue
+		var a := rules.at_of(Vector2i(int(f[0][0]), int(f[0][1])))
+		var b := rules.at_of(Vector2i(int(f[1][0]), int(f[1][1])))
+		var sheet := MeshInstance3D.new()
+		var plane := PlaneMesh.new()
+		plane.size = Vector2(b.x - a.x + rules.tile, b.z - a.z + rules.tile)
+		sheet.mesh = plane
+		sheet.position = (a + b) * 0.5
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = Color(0.1, 0.38, 0.42, 0.78)
+		mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		mat.cull_mode = BaseMaterial3D.CULL_DISABLED  # (seen from under it too)
+		mat.roughness = 0.08
+		mat.metallic_specular = 0.9
+		sheet.material_override = mat
+		sheet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		sheet.visible = false
+		sheet.position.y = 0.0
+		add_child(sheet)
+		_floods[ch] = sheet
 
 
 # Turned so its back is to the nearest wall (a lever, a chest, the exit gate).
@@ -314,8 +363,8 @@ func _place_torches(walls: Array) -> void:
 	for c: Vector2i in walls:
 		for pair: Array in [[Vector2i(0, 1), 0.0], [Vector2i(0, -1), PI], [Vector2i(1, 0), PI * 0.5], [Vector2i(-1, 0), -PI * 0.5]]:
 			var out: Vector2i = pair[0]
-			if not rules.is_floor(c + out) or rules.things.has(rules.char_at(c + out)):
-				continue
+			if not rules.is_floor(c + out) or rules.things.has(rules.char_at(c + out)) or rules.terrain(c + out) == "H":
+				continue  # (none over a thing or inside a ledge)
 			n += 1
 			if n % every != 0:
 				continue
@@ -339,6 +388,10 @@ func _place_torches(walls: Array) -> void:
 			halo.position = Vector3(0.0, 3.05, 0.36)
 			torch.add_child(halo)
 			_torches.append(torch)
+			var seen := float(cfg.get("torch_seen_m", 0.0))  # (big dungeons: far torches are not drawn; walls hide them anyway)
+			if seen > 0.0:
+				for g: Node in torch.find_children("*", "GeometryInstance3D", true, false):
+					(g as GeometryInstance3D).visibility_range_end = seen
 
 
 # --- shown as the state says ---
@@ -365,7 +418,7 @@ func refresh(now: bool) -> void:
 			"block":
 				if now:
 					node.position = rules.at_of(rules.cell_of_thing(ch))
-			"key":
+			"key", "bigkey":
 				node.visible = not bool(rules.state["taken"].get(ch, false))
 			"bramble":
 				var burned := bool(rules.state["burned"].get(ch, false))
@@ -400,6 +453,12 @@ func _process(delta: float) -> void:
 	for raft: Node3D in _rafts:
 		raft.position.y = move_toward(raft.position.y, raft_y, delta * 0.8)
 	_reveal_shown(sea_seconds.call() if sea_seconds.is_valid() else 0.0)
+	for f: String in _floods:  # the tide eases up (0.35 m/s) and drains (0.5 m/s)
+		var sheet: MeshInstance3D = _floods[f]
+		var level := rules.flood_level(f)
+		var y := move_toward(sheet.position.y, level, delta * (0.35 if level > sheet.position.y else 0.5))
+		sheet.position.y = y
+		sheet.visible = y > 0.03
 	for ch: String in _nodes:
 		var th: Dictionary = rules.things[ch]
 		var node: Node3D = _nodes[ch]
@@ -422,9 +481,9 @@ func _process(delta: float) -> void:
 				if w != null:
 					w.position.y = move_toward(w.position.y, 1.08 if bool(rules.state["tide"]) else 0.85, delta * 0.3)
 				continue
-			"key":
+			"key", "bigkey":
 				node.rotation.y += delta * 1.5
-				node.position.y = 0.6 + sin(Time.get_ticks_msec() / 400.0) * 0.12
+				node.position.y = rules.height_of(th["cell"]) + 0.6 + sin(Time.get_ticks_msec() / 400.0) * 0.12
 				continue
 			_:
 				continue
@@ -434,7 +493,7 @@ func _process(delta: float) -> void:
 			"door":
 				var leaf := node.find_child("Leaf", true, false) as Node3D
 				if leaf != null:
-					if String(th.get("open", "key")) == "key":
+					if String(th.get("open", "key")) in ["key", "bigkey", "sealed"]:
 						leaf.rotation.y = -shown * 1.75  # swings in
 					elif String(th.get("open", "")) == "whorl":
 						leaf.position.y = -shown * 3.4  # sinks into the floor
@@ -467,14 +526,24 @@ func usable_at(local: Vector3, facing: Vector3) -> Array:
 		var c := rules.cell_of_thing(ch)
 		var spot := rules.at_of(c)
 		var d := Vector2(local.x - spot.x, local.z - spot.z).length()
+		if absf(local.y - rules.height_of(c)) > 2.0:
+			continue  # (on a ledge above or below)
 		var words := ""
 		match String(th["kind"]):
 			"key":
 				if not bool(rules.state["taken"].get(ch, false)) and d < reach:
 					words = "Take the key"
+			"bigkey":
+				if not bool(rules.state["taken"].get(ch, false)) and d < reach:
+					words = "Take the Great Key"
 			"door":
-				if String(th.get("open", "")) == "key" and not rules.door_open(ch) and d < reach + 0.8:
+				var opens := String(th.get("open", ""))
+				if opens == "key" and not rules.door_open(ch) and d < reach + 0.8:
 					words = "Unlock the door (keys: %d)" % int(rules.state["keys"]) if int(rules.state["keys"]) > 0 else "Locked: it needs a key"
+				elif opens == "bigkey" and not rules.door_open(ch) and d < reach + 0.8:
+					words = "Unlock the great door with the Great Key" if bool(rules.state["big"]) else "Locked: it needs the Great Key"
+				elif opens == "sealed" and d < reach + 0.8:
+					words = String(th.get("says", "Sealed fast"))
 			"lever":
 				if d < reach:
 					words = "Pull the lever"
@@ -499,5 +568,5 @@ func status() -> String:
 	for d: String in rules.of_kind("door"):
 		if rules.door_open(d):
 			open.append(d)
-	return "%s: keys %d, doors open %s, pressed %s, levers %s, blocks %s, taken %s, burned %s, lit %s, tide %s, reveal till %.0f" % [rules.id, int(rules.state["keys"]), str(open), str(rules.state["pressed"]), str(rules.state["levers"]), str(rules.state["blocks"]), str(rules.state["taken"].keys()),
+	return "%s: keys %d, great key %s, fights on %s cleared %s, doors open %s, pressed %s, levers %s, blocks %s, taken %s, burned %s, lit %s, tide %s, reveal till %.0f" % [rules.id, int(rules.state["keys"]), str(rules.state["big"]), str(rules.state["active"]), str(rules.state["cleared"].keys()), str(open), str(rules.state["pressed"]), str(rules.state["levers"]), str(rules.state["blocks"]), str(rules.state["taken"].keys()),
 		str(rules.state["burned"].keys()), str(rules.state["lit"].keys()), str(rules.state["tide"]), float(rules.state["reveal_until"])]

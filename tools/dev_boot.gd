@@ -718,6 +718,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					"stand":  # on that cell (its middle), looking at another cell (or the next one north)
 						var sp: Vector3 = dm.call("space_of", did)
 						var at_c := Vector3(float(words[2]), 0.0, float(words[3])) * float(dm.get("cfg")["tile"])
+						at_c.y = float(dm.get("spaces")[did].get("rules").call("height_of", Vector2i(roundi(float(words[2])), roundi(float(words[3])))))  # (on a ledge: its top)
 						player.call("teleport", sea_d.call("world_of", sp + at_c + Vector3(0.0, 0.4, 0.0)), 0.0)
 						await get_tree().create_timer(0.3, true, false, true).timeout
 						var fc := Vector3(float(words[4]), 0.0, float(words[5])) * float(dm.get("cfg")["tile"]) if words.size() > 5 else at_c + Vector3(0.0, 0.0, -3.0)
@@ -737,8 +738,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						sp_r.get("rules").set("state", sp_r.get("rules").call("fresh"))
 						sp_r.call("refresh", true)
 						dm.set("_dirty", true)
-					"wait":  # until this letter's thing has changed (door open, key / chest taken, lever pulled, block moved), up to 60 s
-						var until_d := Time.get_ticks_msec() + 60000
+					"wait":  # until this letter's thing has changed (door open, key / chest taken, lever pulled, block moved), up to 60 s (or `!dun wait <s>`)
+						var until_d := Time.get_ticks_msec() + (int(float(words[2]) * 1000.0) if words.size() > 2 and words[2].is_valid_float() else 60000)
 						var sp_w: Node3D = dm.get("spaces")[did]
 						var before_w := JSON.stringify(sp_w.get("rules").get("state"))
 						while Time.get_ticks_msec() < until_d and JSON.stringify(sp_w.get("rules").get("state")) == before_w:

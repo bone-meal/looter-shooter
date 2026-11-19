@@ -207,7 +207,7 @@ func _dungeons() -> Node:
 	return _sea.get("dungeons")
 
 
-# Things of a kind in the dungeon this player is in: [[letter, world position of its middle at floor level], ...].
+# Things of a kind in the dungeon this player is in: [[letter, world position of its middle at its floor (a ledge's top)], ...].
 func _dungeon_things(kind: String) -> Array:
 	var dm := _dungeons()
 	var where := String(dm.get("where"))
@@ -219,7 +219,8 @@ func _dungeon_things(kind: String) -> Array:
 	for ch: String in r.get("things"):
 		var th: Dictionary = r.get("things")[ch]
 		if String(th["kind"]) == kind:
-			out.append([ch, _sea.call("world_of", (dm.call("space_of", where) as Vector3) + (r.call("at_of", r.call("cell_of_thing", ch)) as Vector3))])
+			var c: Vector2i = r.call("cell_of_thing", ch)
+			out.append([ch, _sea.call("world_of", (dm.call("space_of", where) as Vector3) + (r.call("at_of", c) as Vector3) + Vector3(0.0, float(r.call("height_of", c)), 0.0))])
 	return out
 
 
@@ -250,7 +251,7 @@ func _grapple() -> void:
 	var ring: Vector3 = best[0]
 	var foot: Vector3 = best[1]
 	var back := Vector3(_player.global_position.x - foot.x, 0.0, _player.global_position.z - foot.z).normalized()
-	var land := foot + back * 1.3 + Vector3(0.0, 0.5, 0.0)
+	var land := foot + back * 0.8 + Vector3(0.0, _t("land_up_m", "grapple"), 0.0)  # (hauled to just over the ring's foot: clears a ledge's edge, then drops)
 	_hook_to = ring
 	_play_use(ring)
 	var net := _net()
@@ -452,8 +453,9 @@ func _physics_process(delta: float) -> void:
 	# the hook: hauled until he gets there
 	if (_player.get("tool_pull") as Vector3).is_finite():
 		_pull_t -= delta
-		if (_player.get("tool_pull") as Vector3).distance_to(_player.global_position) < 0.9 or _pull_t <= 0.0:
+		if (_player.get("tool_pull") as Vector3).distance_to(_player.global_position) < 0.3 or _pull_t <= 0.0:
 			_player.set("tool_pull", Vector3.INF)
+			_player.set("velocity", Vector3.ZERO)  # (arrived: no haul speed left to slide him off a small ledge)
 			_hook_to = Vector3.INF
 	_draw_line()
 	# the glider

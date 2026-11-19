@@ -126,6 +126,7 @@ func _process(delta: float) -> void:
 	if where != "":
 		_lamp.global_position = _player.global_position + Vector3(0.0, 2.2, 0.0)
 		_watch_pits(delta)
+		_watch_tide(delta)
 	# spaces: built and shown when this player is inside; the host also keeps one built while others are in it
 	var others := _others_in()
 	for id: String in spaces:
@@ -179,6 +180,36 @@ func _watch_pits(delta: float) -> void:
 		var c := d.rules.cell_of(local)
 		if local.y > -0.3 and local.y < 0.6 and d.rules.ground_at(c, float(_sea.call("seconds"))) and d.rules.terrain(c) != "%":
 			_safe = d.rules.at_of(c)
+
+
+# A fight's rising tide (sea step 9c-2): standing deep in it hurts (each player's own machine), more the deeper.
+var tide_hurt := 0.0  # dev / checks: damage the tide has done here
+var _tide_t := 0.0
+var _tide_said := -10.0
+
+
+func _watch_tide(delta: float) -> void:
+	_tide_t -= delta
+	if _tide_t > 0.0:
+		return
+	_tide_t = 0.5
+	var r := (spaces[where] as SeaDungeon).rules
+	var local := _local_in(where)
+	var cell := r.cell_of(local)
+	for ch: String in r.of_kind("fight"):
+		var level := r.flood_level(ch)
+		if level <= 0.0 or not r.in_flood(ch, cell):
+			continue
+		var depth := level - maxf(local.y, 0.0)
+		var hurt: Dictionary = cfg.get("tide_hurt", {"from_m": 1.0, "dps_per_m": 8.0})
+		if depth > float(hurt["from_m"]):
+			var dmg := (depth - float(hurt["from_m"]) + 0.5) * float(hurt["dps_per_m"]) * 0.5
+			_player.call("take_damage", dmg, "physical")
+			tide_hurt += dmg
+			var now := Time.get_ticks_msec() / 1000.0
+			if now - _tide_said > 5.0:
+				_tide_said = now
+				_sea.emit_signal("notice", "The tide drags at you: get up high")
 
 
 # Other players' dungeons (the host keeps those spaces built and solid).
@@ -383,12 +414,12 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 		reach = 16.0  # the Ember Gauntlet's bolt
 	elif kind0 == "basin" or (kind0 == "door" and String(r.things[ch].get("open", "")) == "whorl"):
 		reach = 5.0
-	if Vector2(at.x - spot.x, at.z - spot.z).length() > reach:
+	if Vector2(at.x - spot.x, at.z - spot.z).length() > reach or (kind0 != "bramble" and kind0 != "brazier" and absf(at.y - r.height_of(r.cell_of_thing(ch))) > 2.5):
 		last = "refused %s %s: too far (%s)" % [id, ch, str(at.snapped(Vector3.ONE * 0.1))]
 		return false  # not where he says
 	var done := false
 	match String(r.things[ch]["kind"]):
-		"key":
+		"key", "bigkey":
 			done = r.take_key(ch)
 		"door":
 			done = r.whorl(ch) if String(r.things[ch].get("open", "")) == "whorl" else r.use_key(ch)
@@ -410,6 +441,8 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 					_give_chest(peer, loot, int(cfg["dungeons"][id].get("region", 1)))
 				if r.things[ch].has("tool"):  # a tool: for every player in the dungeon
 					_give_tool_all(id, String(r.things[ch]["tool"]))
+	if done and kind0 == "bigkey":
+		_sea.emit_signal("notice", "The Great Key!")
 	if done:
 		applied += 1
 		r.press(_occupied(id))
@@ -594,7 +627,8 @@ func from_net(states: Dictionary) -> void:
 func status() -> String:
 	var parts: Array = []
 	for id: String in spaces:
-		parts.append((spaces[id] as SeaDungeon).status())
+		if where == "" or id == where:  # (inside: only that one)
+			parts.append((spaces[id] as SeaDungeon).status())
 	var camera := get_viewport().get_camera_3d()
 	var foes: Array = []
 	var men: Dictionary = _crews().get("men")
@@ -602,5 +636,5 @@ func status() -> String:
 		if men[m].has("dungeon"):
 			var e: Node3D = men[m]["enemy"]
 			if is_instance_valid(e):
-				foes.append("%s@%s hp%d%s" % [String(men[m]["kind"]).left(8), str(Vector2(e.position.x, e.position.z).snapped(Vector2(0.1, 0.1))), int(float(e.get("health").get("hp"))), " P" if bool(e.get("puppet")) else ""])
-	return "dungeons: in '%s' (dark look %s, settling %s, falls %d), acts %d, applied %d, last '%s'; foes [%s]; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, acts, applied, last, ", ".join(foes), "; ".join(parts)]
+				foes.append("%s@%s hp%d%s" % [String(men[m]["kind"]).left(8), str(e.position.snapped(Vector3(0.1, 0.1, 0.1))), int(float(e.get("health").get("hp"))), " P" if bool(e.get("puppet")) else ""])
+	return "dungeons: in '%s' (dark look %s, settling %s, falls %d, tide hurt %.0f), acts %d, applied %d, last '%s'; foes [%s]; %s" % [where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, tide_hurt, acts, applied, last, ", ".join(foes), "; ".join(parts)]

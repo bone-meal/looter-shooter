@@ -11,7 +11,10 @@
 # `tool`.
 # Sea step 9c: FIGHTS (thing kind "fight": waves of foes that come when a player is within reach_m; the host runs
 # them, game/sea_dungeons.gd + game/sea_crews.gd), doors that open when a fight is "clear"ed, and doors that SHUT WHILE
-# a fight goes on (shut_while) and are otherwise open ("free").
+# a fight goes on (shut_while) and are otherwise open ("free"). A fight may RAISE THE TIDE (`tide`: water level per
+# wave over its `flood` cells [[x0, z0], [x1, z1]]; drains when it is cleared or reset). A thing standing on a ledge
+# says "on": "H" (its cell stays a ledge). The GREAT KEY (kind "bigkey") opens doors "bigkey"; doors "sealed" never
+# open (the boss's door until sea step 10).
 # Dependencies: none (one dungeon's data from data/sea/dungeons.json is passed in).
 extends RefCounted
 
@@ -48,7 +51,7 @@ func fresh() -> Dictionary:
 		if String(things[ch]["kind"]) == "block":
 			var c: Vector2i = things[ch]["cell"]
 			blocks[ch] = [c.x, c.y]
-	return {"doors": {}, "keys": 0, "taken": {}, "levers": {}, "blocks": blocks, "pressed": {}, "burned": {}, "lit": {}, "tide": false, "reveal_until": 0.0, "cleared": {}, "active": {}}
+	return {"doors": {}, "keys": 0, "taken": {}, "levers": {}, "blocks": blocks, "pressed": {}, "burned": {}, "lit": {}, "tide": false, "reveal_until": 0.0, "cleared": {}, "active": {}, "big": false}
 
 
 # Saved / sent form (blocks as [x, z]); a loaded state missing keys gets them fresh.
@@ -85,7 +88,17 @@ func is_floor(cell: Vector2i) -> bool:
 # Terrain letters (sea step 9b): a pit with water, a fog walkway, a ledge, an updraft vent, a raft.
 func terrain(cell: Vector2i) -> String:
 	var ch := char_at(cell)
+	if things.has(ch):
+		return String(things[ch].get("on", ""))
 	return ch if ch in ["=", "%", "H", "u", "_"] else ""
+
+
+const LEDGE_H := 3.0
+
+
+# The height a body stands at in this cell (a ledge's top or the floor).
+func height_of(cell: Vector2i) -> float:
+	return LEDGE_H if terrain(cell) == "H" else 0.0
 
 
 # Is there ground to stand on in this cell now (at floor level or a ledge's top)?
@@ -156,6 +169,10 @@ func door_open(ch: String) -> bool:
 			return all_lit
 		"tide":
 			return bool(state["tide"])
+		"bigkey":
+			return false
+		"sealed":
+			return false
 	return false
 
 
@@ -214,7 +231,7 @@ func push_to(block: String, from: Vector2i) -> Vector2i:
 		return Vector2i(-1, -1)
 	var to := at + way
 	var ch := char_at(to)
-	if not passable(to) or (things.has(ch) and String(things[ch]["kind"]) in ["key", "chest", "lever", "exit", "arrive", "door"]):
+	if not passable(to) or (things.has(ch) and String(things[ch]["kind"]) in ["key", "bigkey", "chest", "lever", "exit", "arrive", "door"]):
 		return Vector2i(-1, -1)
 	return to
 
@@ -228,17 +245,29 @@ func push(block: String, from: Vector2i) -> bool:
 
 
 func take_key(ch: String) -> bool:
-	if not things.has(ch) or String(things[ch]["kind"]) != "key" or bool(state["taken"].get(ch, false)):
+	if not things.has(ch) or not String(things[ch]["kind"]) in ["key", "bigkey"] or bool(state["taken"].get(ch, false)):
 		return false
 	state["taken"][ch] = true
-	state["keys"] = int(state["keys"]) + 1
+	if String(things[ch]["kind"]) == "bigkey":
+		state["big"] = true
+	else:
+		state["keys"] = int(state["keys"]) + 1
 	return true
 
 
 func use_key(door: String) -> bool:
-	if not things.has(door) or String(things[door].get("open", "")) != "key" or door_open(door) or int(state["keys"]) <= 0:
+	if not things.has(door) or door_open(door):
 		return false
-	state["keys"] = int(state["keys"]) - 1
+	match String(things[door].get("open", "")):
+		"key":
+			if int(state["keys"]) <= 0:
+				return false
+			state["keys"] = int(state["keys"]) - 1
+		"bigkey":
+			if not bool(state["big"]):
+				return false
+		_:
+			return false
 	state["doors"][door] = true
 	return true
 
@@ -279,8 +308,8 @@ func whorl(ch: String) -> bool:
 
 
 # Can a foe walk into this cell now (sea step 9c: they keep to the floor, round pits, shut doors and things)?
-func body_can(cell: Vector2i, now: float) -> bool:
-	if not ground_at(cell, now) or terrain(cell) == "H":
+func body_can(cell: Vector2i, now: float, climbs: bool = false) -> bool:
+	if not ground_at(cell, now) or (terrain(cell) == "H" and not climbs):
 		return false
 	var ch := char_at(cell)
 	if things.has(ch):
@@ -320,6 +349,20 @@ func clear_fight(ch: String) -> void:
 # Everyone left while it went on: it starts again from its first wave next time.
 func reset_fight(ch: String) -> void:
 	state["active"].erase(ch)
+
+
+# The water a fight's tide stands at now (0 = none): its wave's level while it goes on.
+func flood_level(ch: String) -> float:
+	var tide: Array = things.get(ch, {}).get("tide", [])
+	if tide.is_empty() or not state["active"].has(ch):
+		return 0.0
+	return float(tide[clampi(int(state["active"][ch]), 0, tide.size() - 1)])
+
+
+# Is this cell under that fight's tide?
+func in_flood(ch: String, cell: Vector2i) -> bool:
+	var f: Array = things.get(ch, {}).get("flood", [])
+	return f.size() == 2 and cell.x >= int(f[0][0]) and cell.x <= int(f[1][0]) and cell.y >= int(f[0][1]) and cell.y <= int(f[1][1])
 
 
 # The Fog Bell rang: fog walkways stand until then (host clock seconds).

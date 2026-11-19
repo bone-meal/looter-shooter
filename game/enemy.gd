@@ -312,7 +312,10 @@ func _physics_process(delta: float) -> void:
 	if distance > 0.01:
 		rotation.y = atan2(-dir.x, -dir.z)
 	var now := Time.get_ticks_msec() / 1000.0
-	var move := _brain.move_sign(distance) * _speed * (1.0 - _slow_amount if now < _slow_until else 1.0)
+	var level := _level_with(_target)  # (a target up on a ledge: keep going for it, the dungeon walker climbs)
+	if not level and distance < 0.4:
+		dir = Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))  # (right under him at the ledge's foot: on the way it faced)
+	var move: float = (float(_brain.move_sign(distance)) if level else 1.0) * _speed * (1.0 - _slow_amount if now < _slow_until else 1.0)
 	if now < _burn_until and now >= _burn_tick:
 		_burn_tick = now + 0.5
 		on_hit(_burn_dps * 0.5)
@@ -364,8 +367,16 @@ func _physics_process(delta: float) -> void:
 	if _strike_at > 0.0 and now >= _strike_at:
 		_strike_at = 0.0
 		_land_blow(distance)
-	elif not busy and (order_attack or not ordered) and _brain.try_attack(distance, now):
+	elif not busy and (order_attack or not ordered) and level and _brain.try_attack(distance, now):
 		_attack()
+
+
+# A melee foe in a dungeon's space reaches only a target about level with it, not one on a ledge above or below it
+# (sea step 9c-2).
+func _level_with(target: Node3D) -> bool:
+	if space == null or not space.has_method("usable_at") or String(_stats.get("attack_type", "")) != "melee":
+		return true  # (only in a dungeon's space: decks keep their old reach)
+	return absf(space.to_local(target.global_position).y - position.y) <= 1.2
 
 
 func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vector3.UP) -> void:

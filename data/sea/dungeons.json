@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors).",
+ "_about": "Sea step 9 dungeons (core/sea/dungeon_rules.gd, game/sea_dungeon.gd, game/sea_dungeons.gd; LOCKED: hand-made from a room kit, own space behind the door). Each dungeon is drawn from `map` (rows of cells `tile` m: '#' wall, ' ' nothing, any other letter = floor; letters in `legend` are things standing there). Kinds: arrive (where you come in), exit (the gate back out), door (open: 'key' = a key unlocks it for good, 'plates' = while every plate in `plates` is pressed by a player or a block; latch true = stays open once opened, 'lever' = while `lever` is pulled), plate, lever, block (pushed one cell away from you with interact), key (a small key for this dungeon), chest (loot table of data/sea/encounters.json). The space lies at sea coordinates space.first_x + slot x space.step_x, space.y, space.z (far off the map, above the water); a player whose sea y is over indoor_y is inside one. entrance = the gate on the island (sea x, z; yaw degrees; it finds the ground below itself). torch_every: a torch on every n-th wall cell beside a floor. env: the light inside. ALL NAMES / NUMBERS MINE. A dungeon may set its own wall_h (a tall hall: the kit's walls are stretched up, more wall over its doors). Sea step 9c: a fight (kind fight: reach_m, spawns [[x, z]], waves [[enemy ids]], notice) may raise a TIDE (tide = water level per wave over its flood cells [[x0, z0], [x1, z1]]; standing deeper than tide_hurt.from_m hurts dps_per_m per metre); doors 'clear' (fight) / 'free' (+ shut_while = shut while that fight goes on) / 'bigkey' (the Great Key, kind bigkey) / 'sealed' (never; says); a thing on a ledge says on: 'H'; `name` is only for reading. Foes climb ledges at foe_climb_speed m/s. torch_seen_m: torches farther than this from the camera are not drawn (0 = always).",
  "tile": 3.0,
  "wall_h": 4.5,
  "torch_every": 4,
@@ -273,6 +273,680 @@
      "loot": "dungeon_small"
     }
    }
+  },
+  "tidewater_temple": {
+   "name": "The Tidewater Temple",
+   "region": 1,
+   "slot": 3,
+   "_about": "Sea step 9c-2: region 1's main dungeon, 23 rooms (hand-made plan in the diary, DECISIONS_SEA.md). The gate stands by the home port until its reef island is built (9c-3).",
+   "entrance": {
+    "at": [
+     0.0,
+     6636.0
+    ],
+    "yaw": 200.0
+   },
+   "wall_h": 8.0,
+   "torch_every": 5,
+   "map": [
+    "#####################################",
+    "#.s...v...Hx#######HH.......HH#....,#",
+    "#=====#...Hy#######H?.......<H#.....#",
+    "#=====#...wH#######...........#..:..#",
+    "#....t#.....#######...........;.....#",
+    "#.....#.....#######....HHH....#.....#",
+    "###q#####z#####)###....H~H....###/###",
+    "#.....#.....#.....#....HHH....#.....#",
+    "#..p..#.....#.....#...........#.....#",
+    "#.....o..n..#.....#......+....#..|..#",
+    "#.....#.....#.....#H>.......^H#.....#",
+    "#.....#.....#.....#HH.......HH#....(#",
+    "#####r###l#####M###########W#####h###",
+    "#1===.#k....#.N.O.#.....#...HV#.....#",
+    "#.===.#..j..#.....#.....#...UH#.....#",
+    "#0===.m..i..K..P..L..Q..R.....X..f.g#",
+    "#.===.#.....#.....#.....#.....#.....#",
+    "#.===2#.....#.....#.....#S....#.....#",
+    "###############G###########T#########",
+    "#.....#....6#.....#.....#==.=.#.....#",
+    "#.8...#.....#.....#..a..#=....#..d..#",
+    "#..7..5..3..I..F..J.....Y..=..Z.....#",
+    "#.....#.4...#.....#.....#=====#.....#",
+    "#.....#.....#.....#b...c#=====#....e#",
+    "###############C#####################",
+    "#######&===.#.....#.....#############",
+    "#######.===.#.....#.===.#############",
+    "#######$===.E..A..D..9.=#############",
+    "#######.===.#.....#.===.#############",
+    "#######.===*#..B..#.....#############",
+    "#####################################"
+   ],
+   "legend": {
+    "A": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "B": {
+     "kind": "exit",
+     "name": "exit"
+    },
+    "C": {
+     "kind": "door",
+     "name": "door_r1_r2",
+     "open": "free",
+     "shut_while": "F"
+    },
+    "D": {
+     "kind": "door",
+     "name": "door_r1_r23",
+     "open": "free"
+    },
+    "E": {
+     "kind": "door",
+     "name": "door_r1_r24",
+     "open": "free"
+    },
+    "F": {
+     "kind": "fight",
+     "name": "fight_r2",
+     "reach_m": 5.5,
+     "spawns": [
+      [
+       13,
+       19
+      ],
+      [
+       17,
+       19
+      ],
+      [
+       15,
+       19
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The hall falls still. The way on grinds open"
+    },
+    "G": {
+     "kind": "door",
+     "name": "door_r2_r3",
+     "open": "clear",
+     "fight": "F"
+    },
+    "I": {
+     "kind": "door",
+     "name": "door_r2_r19",
+     "open": "free",
+     "shut_while": "F"
+    },
+    "J": {
+     "kind": "door",
+     "name": "door_r2_r7",
+     "open": "lever",
+     "lever": "b"
+    },
+    "K": {
+     "kind": "door",
+     "name": "door_r3_west",
+     "open": "key"
+    },
+    "L": {
+     "kind": "door",
+     "name": "door_r3_east",
+     "open": "plates",
+     "plates": [
+      "N",
+      "O"
+     ],
+     "latch": true,
+     "shut_while": "Q"
+    },
+    "M": {
+     "kind": "door",
+     "name": "door_great",
+     "open": "bigkey"
+    },
+    "N": {
+     "kind": "plate",
+     "name": "plate_r3_a"
+    },
+    "O": {
+     "kind": "plate",
+     "name": "plate_r3_b"
+    },
+    "P": {
+     "kind": "block",
+     "name": "block_r3"
+    },
+    "Q": {
+     "kind": "fight",
+     "name": "fight_r4",
+     "reach_m": 5.0,
+     "spawns": [
+      [
+       23,
+       13
+      ],
+      [
+       23,
+       17
+      ],
+      [
+       21,
+       13
+      ]
+     ],
+     "waves": [
+      [
+       "temple_guard",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The barracks fall quiet"
+    },
+    "R": {
+     "kind": "door",
+     "name": "door_r4_r5",
+     "open": "clear",
+     "fight": "Q"
+    },
+    "S": {
+     "kind": "lever",
+     "name": "lever_r5"
+    },
+    "T": {
+     "kind": "door",
+     "name": "door_r5_r6",
+     "open": "lever",
+     "lever": "S"
+    },
+    "U": {
+     "kind": "ring",
+     "name": "ring_r5",
+     "on": "H"
+    },
+    "V": {
+     "kind": "lever",
+     "name": "lever_arena",
+     "on": "H"
+    },
+    "W": {
+     "kind": "door",
+     "name": "door_arena",
+     "open": "lever",
+     "lever": "V",
+     "shut_while": "+"
+    },
+    "X": {
+     "kind": "door",
+     "name": "door_r5_r8",
+     "open": "free",
+     "shut_while": "f"
+    },
+    "Y": {
+     "kind": "door",
+     "name": "door_r6_r7",
+     "open": "free"
+    },
+    "Z": {
+     "kind": "door",
+     "name": "door_r6_vault",
+     "open": "key"
+    },
+    "a": {
+     "kind": "key",
+     "name": "key_r7"
+    },
+    "b": {
+     "kind": "lever",
+     "name": "lever_r7"
+    },
+    "c": {
+     "kind": "chest",
+     "name": "chest_r7",
+     "loot": "dungeon_small"
+    },
+    "d": {
+     "kind": "chest",
+     "name": "chest_vault",
+     "loot": "dungeon_big"
+    },
+    "e": {
+     "kind": "chest",
+     "name": "chest_vault_2",
+     "loot": "dungeon_small"
+    },
+    "f": {
+     "kind": "fight",
+     "name": "fight_r8",
+     "reach_m": 5.0,
+     "spawns": [
+      [
+       31,
+       13
+      ],
+      [
+       35,
+       13
+      ],
+      [
+       35,
+       17
+      ]
+     ],
+     "waves": [
+      [
+       "temple_guard"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The guard post is yours"
+    },
+    "g": {
+     "kind": "chest",
+     "name": "chest_r8",
+     "loot": "dungeon_small"
+    },
+    "h": {
+     "kind": "door",
+     "name": "gate_r8_r15c",
+     "open": "lever",
+     "lever": "("
+    },
+    "i": {
+     "kind": "block",
+     "name": "block_r9_a"
+    },
+    "j": {
+     "kind": "block",
+     "name": "block_r9_b"
+    },
+    "k": {
+     "kind": "plate",
+     "name": "plate_r9"
+    },
+    "l": {
+     "kind": "door",
+     "name": "door_r9_r10",
+     "open": "plates",
+     "plates": [
+      "k"
+     ],
+     "latch": true,
+     "shut_while": "n"
+    },
+    "m": {
+     "kind": "door",
+     "name": "door_r9_r22",
+     "open": "free"
+    },
+    "n": {
+     "kind": "fight",
+     "name": "fight_r10",
+     "reach_m": 5.0,
+     "spawns": [
+      [
+       7,
+       7
+      ],
+      [
+       11,
+       7
+      ],
+      [
+       9,
+       7
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "temple_guard",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The shrine is quiet again"
+    },
+    "o": {
+     "kind": "door",
+     "name": "door_r10_r11",
+     "open": "clear",
+     "fight": "n"
+    },
+    "p": {
+     "kind": "chest",
+     "name": "chest_hook",
+     "loot": "dungeon_small",
+     "tool": "grapple"
+    },
+    "q": {
+     "kind": "door",
+     "name": "door_r11_r12",
+     "open": "free"
+    },
+    "r": {
+     "kind": "door",
+     "name": "door_r11_r22",
+     "open": "free"
+    },
+    "s": {
+     "kind": "ring",
+     "name": "ring_r12"
+    },
+    "t": {
+     "kind": "ring",
+     "name": "ring_r12_back"
+    },
+    "v": {
+     "kind": "door",
+     "name": "door_r12_r13",
+     "open": "free"
+    },
+    "w": {
+     "kind": "ring",
+     "name": "ring_r13",
+     "on": "H"
+    },
+    "x": {
+     "kind": "lever",
+     "name": "lever_r13",
+     "on": "H"
+    },
+    "y": {
+     "kind": "chest",
+     "name": "chest_r13",
+     "loot": "dungeon_small",
+     "on": "H"
+    },
+    "z": {
+     "kind": "door",
+     "name": "door_r13_r10",
+     "open": "lever",
+     "lever": "x"
+    },
+    "0": {
+     "kind": "ring",
+     "name": "ring_r22"
+    },
+    "1": {
+     "kind": "chest",
+     "name": "chest_r22",
+     "loot": "dungeon_small"
+    },
+    "2": {
+     "kind": "ring",
+     "name": "ring_r22_back"
+    },
+    "3": {
+     "kind": "block",
+     "name": "block_r19"
+    },
+    "4": {
+     "kind": "plate",
+     "name": "plate_r19"
+    },
+    "5": {
+     "kind": "door",
+     "name": "door_r19_r20",
+     "open": "plates",
+     "plates": [
+      "4"
+     ],
+     "latch": true,
+     "shut_while": "7"
+    },
+    "6": {
+     "kind": "chest",
+     "name": "chest_r19",
+     "loot": "dungeon_small"
+    },
+    "7": {
+     "kind": "fight",
+     "name": "fight_r20",
+     "reach_m": 4.5,
+     "spawns": [
+      [
+       1,
+       19
+      ],
+      [
+       5,
+       19
+      ],
+      [
+       1,
+       23
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "temple_guard"
+      ]
+     ],
+     "notice": "Quiet again"
+    },
+    "8": {
+     "kind": "key",
+     "name": "key_r20"
+    },
+    "9": {
+     "kind": "chest",
+     "name": "chest_r23",
+     "loot": "dungeon_small"
+    },
+    "$": {
+     "kind": "ring",
+     "name": "ring_r24"
+    },
+    "&": {
+     "kind": "chest",
+     "name": "chest_r24",
+     "loot": "dungeon_small"
+    },
+    "*": {
+     "kind": "ring",
+     "name": "ring_r24_back"
+    },
+    "+": {
+     "kind": "fight",
+     "name": "fight_arena",
+     "reach_m": 7.0,
+     "flood": [
+      [
+       19,
+       1
+      ],
+      [
+       29,
+       11
+      ]
+     ],
+     "tide": [
+      0.5,
+      1.2,
+      1.9,
+      2.5
+     ],
+     "spawns": [
+      [
+       22,
+       1
+      ],
+      [
+       26,
+       1
+      ],
+      [
+       19,
+       6
+      ],
+      [
+       29,
+       6
+      ],
+      [
+       22,
+       11
+      ],
+      [
+       26,
+       11
+      ],
+      [
+       24,
+       3
+      ],
+      [
+       21,
+       8
+      ]
+     ],
+     "waves": [
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "temple_guard",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned",
+       "sea_drowned"
+      ],
+      [
+       "temple_guard",
+       "temple_guard",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The tide runs out of the great hall. A door stands open"
+    },
+    "?": {
+     "kind": "ring",
+     "name": "ring_arena_0",
+     "on": "H"
+    },
+    "<": {
+     "kind": "ring",
+     "name": "ring_arena_1",
+     "on": "H"
+    },
+    ">": {
+     "kind": "ring",
+     "name": "ring_arena_2",
+     "on": "H"
+    },
+    "^": {
+     "kind": "ring",
+     "name": "ring_arena_3",
+     "on": "H"
+    },
+    "~": {
+     "kind": "ring",
+     "name": "ring_arena_4",
+     "on": "H"
+    },
+    ";": {
+     "kind": "door",
+     "name": "door_arena_out",
+     "open": "clear",
+     "fight": "+"
+    },
+    ":": {
+     "kind": "bigkey",
+     "name": "bigkey"
+    },
+    ",": {
+     "kind": "chest",
+     "name": "chest_r15b",
+     "loot": "dungeon_small"
+    },
+    "/": {
+     "kind": "door",
+     "name": "door_r15b_r15c",
+     "open": "free",
+     "shut_while": "|"
+    },
+    "|": {
+     "kind": "fight",
+     "name": "fight_r15c",
+     "reach_m": 5.0,
+     "spawns": [
+      [
+       31,
+       11
+      ],
+      [
+       35,
+       11
+      ],
+      [
+       35,
+       7
+      ]
+     ],
+     "waves": [
+      [
+       "temple_guard",
+       "temple_guard"
+      ],
+      [
+       "temple_guard",
+       "sea_drowned",
+       "sea_drowned"
+      ]
+     ],
+     "notice": "The last of the guard falls"
+    },
+    "(": {
+     "kind": "lever",
+     "name": "lever_r15c"
+    },
+    ")": {
+     "kind": "door",
+     "name": "door_sealed",
+     "open": "sealed",
+     "says": "Sealed. Something vast turns over behind it (step 10)"
+    }
+   }
   }
- }
+ },
+ "tide_hurt": {
+  "from_m": 1.0,
+  "dps_per_m": 8.0
+ },
+ "foe_climb_speed": 2.0,
+ "torch_seen_m": 36.0
 }

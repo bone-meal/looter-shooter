@@ -146,12 +146,23 @@ func _dungeon_walk(from: Vector3, by: Vector3, enemy: Node3D, space: Node3D) -> 
 			var d := away.length()
 			if d < ELBOW and d > 0.001:
 				by += away / d * (ELBOW - d) * 0.25
+	# (sea step 9c-2) they climb onto ledges: at a ledge's foot a foe goes up its face in place, then on; off a ledge
+	# he drops to the floor
+	var dt := get_physics_process_delta_time()
+	var climb := float((space.get("cfg") as Dictionary).get("foe_climb_speed", 2.0))
+	if Vector2(by.x, by.z).length() < 0.0005:
+		return from  # standing still (winding up a blow, stunned): where he is, half way up a face or not
 	for step: Vector3 in [by, Vector3(by.x, 0.0, 0.0), Vector3(0.0, 0.0, by.z)]:
 		var to := from + step
-		to.y = 0.0
-		if bool(rules.call("body_can", rules.call("cell_of", to), now)) and bool(rules.call("body_can", rules.call("cell_of", to + step.normalized() * 0.45), now)):
+		var c: Vector2i = rules.call("cell_of", to)
+		var ahead: Vector2i = rules.call("cell_of", to + step.normalized() * 0.45)
+		if bool(rules.call("body_can", c, now, true)) and bool(rules.call("body_can", ahead, now, true)):
+			var want := maxf(float(rules.call("height_of", c)), float(rules.call("height_of", ahead)))
+			if want > from.y + 0.15:
+				return Vector3(from.x, move_toward(from.y, want, climb * dt), from.z)
+			to.y = move_toward(from.y, want, 9.0 * dt)
 			return to
-	return Vector3(from.x, 0.0, from.z)
+	return Vector3(from.x, move_toward(from.y, float(rules.call("height_of", rules.call("cell_of", from))), 9.0 * dt), from.z)
 
 
 # A crewman's numbers out here: tougher by region.
