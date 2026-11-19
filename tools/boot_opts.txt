@@ -1,2 +1,2 @@
 only=compatibility
-seconds=700
+seconds=600

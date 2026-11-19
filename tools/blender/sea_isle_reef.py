@@ -8,6 +8,8 @@
 # JETTY on the south beach where ships land; a sea arch and stacks off the north. Paths are generated (kit.route) from
 # the jetty to every place and checked here (ROUTE CHECK) like the start island's.
 # Run: python3 tools/blender/sea_isle_reef.py   (bpy as a module; the set pieces first: tools/blender/sea_isle_places.py)
+# AFTER a run: import (tools/import_assets.tscn), then RE-BAKE the island collision (tools/bake_isle_shapes.tscn,
+# sea step 13g) or the changed island loads its collision the slow way.
 # Dependencies: bpy, tools/blender/sea_isle_kit.py. The gate's sea position (data/sea/dungeons.json tidewater_temple
 # entrance) and the island's (data/sea/islands.json "reef") follow GATE / TEMPLE_YAW below.
 import math

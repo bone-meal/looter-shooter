@@ -26,7 +26,7 @@ import bmesh
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
 OUT = os.path.join(ROOT, "assets", "models", "sea")
 PROPS_OUT = os.path.join(ROOT, "data", "sea", "isles")
-SOLID = {"palm_a": 0.3, "palm_b": 0.3, "boulder_a": 1.0, "boulder_b": 2.0, "boulder_c": 0.5, "sea_stack": 4.5, "ruin_wall": 0.0,
+SOLID = {"mangrove_a": 0.35, "mangrove_b": 0.4, "lantern_post": 0.15, "palm_a": 0.3, "palm_b": 0.3, "boulder_a": 1.0, "boulder_b": 2.0, "boulder_c": 0.5, "sea_stack": 4.5, "ruin_wall": 0.0,
          "broadleaf_a": 0.35, "broadleaf_b": 0.35, "jungle_giant": 0.7, "outcrop_slabs": 2.6, "outcrop_spires": 2.2, "outcrop_tor": 2.4}
 
 
@@ -358,6 +358,14 @@ ZONE_RULES = {
     "beach": [(["palm_a", "palm_b"], 0.035, 1.0, 6.5, 0.35, 0.85, 1.2, 0.3), (["shells", "shells", "coconuts", "driftwood"], 0.04, 0.3, 1.8, 0.25, 0.8, 1.2, 0.0),
               ("dune_grass", 0.04, 1.2, 6, 0.4, 0.8, 1.3, 0.0)],
     "town": [("grass_tuft", 0.05, 0.5, 60, 0.5, 0.8, 1.2, 0.0), ("flowers", 0.01, 0.5, 60, 0.4, 0.8, 1.2, 0.0)],  # the port town's site: kept open for step 7
+    # region 2, the Fog Banks (sea step 13 R2a)
+    "swamp": [(["mangrove_a", "mangrove_b"], 0.03, 0.2, 9, 0.5, 0.75, 1.25, 0.2), ("reed_bed", 0.03, 0.15, 1.6, 0.4, 0.8, 1.3, 0.1),
+              ("peat_mound", 0.008, 0.3, 4, 0.4, 0.7, 1.3, 0.2), ("glowcap", 0.006, 0.4, 6, 0.4, 0.8, 1.4, 0.0), ("fern", 0.05, 0.6, 9, 0.6, 0.7, 1.3, 0.1),
+              ("grass_tuft", 0.1, 0.3, 9, 0.6, 0.8, 1.3, 0.0), ("bush", 0.01, 0.6, 9, 0.5, 0.7, 1.2, 0.1)],
+    "mudflat": [("reed_bed", 0.05, -0.2, 1.4, 0.4, 0.8, 1.4, 0.1), ("driftwood", 0.004, 0.0, 2, 0.3, 0.8, 1.3, 0.0), ("peat_mound", 0.004, 0.0, 2, 0.3, 0.6, 1.0, 0.25),
+                ("grass_tuft", 0.04, 0.2, 3, 0.5, 0.7, 1.1, 0.0)],
+    "orchard": [("grass_tuft", 0.3, 0.5, 30, 0.6, 0.8, 1.4, 0.0), ("flowers", 0.04, 0.5, 30, 0.45, 0.8, 1.2, 0.0), ("glowcap", 0.004, 0.5, 30, 0.5, 0.8, 1.3, 0.0),
+                ("fern", 0.03, 0.5, 30, 0.6, 0.7, 1.2, 0.1), ("bush", 0.008, 0.5, 30, 0.5, 0.7, 1.2, 0.1)],
 }
 
 

@@ -14,6 +14,8 @@
 # data/sea/islands.json by hand from the POS printed at the end).
 # Run: python3 tools/blender/sea_isle_region1.py [id ...]   (set pieces first: ONLY=stilt_hut,drying_rack,salt_pans,
 # salt_works python3 tools/blender/sea_isle_places.py)
+# AFTER a run: import (tools/import_assets.tscn), then RE-BAKE the island collision (tools/bake_isle_shapes.tscn,
+# sea step 13g) or the changed island loads its collision the slow way.
 # Dependencies: bpy, tools/blender/sea_isle_kit.py. No game code.
 import math
 import os

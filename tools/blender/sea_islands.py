@@ -3,6 +3,8 @@
 # the look can be judged before the hand-made islands of step 13: a shore that slopes under the water (the ocean's
 # depth foam needs it), a peak; ground painting and props from the island kit (tools/blender/sea_isle_kit.py).
 # Run: python3 tools/blender/sea_islands.py   (bpy 4.x/5.x as a module)
+# AFTER a run: import (tools/import_assets.tscn), then RE-BAKE the island collision (tools/bake_isle_shapes.tscn,
+# sea step 13g) or the changed island loads its collision the slow way.
 # Dependencies: bpy, tools/blender/sea_isle_kit.py. No game code.
 import math
 import os

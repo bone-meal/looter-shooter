@@ -3,7 +3,8 @@
 # "places") and made solid as it is (game/sea_isle_props.gd). A sea arch, a walk-in cave with glowing mushrooms, a
 # lighthouse with the keeper's cottage, a beached wreck, a castaway camp, a wooden jetty, temple ruins on a stepped
 # platform, a tide pool, a footbridge (where generated paths cross a river); the reef island's ruined SEA TEMPLE round the
-# Tidewater Temple's gate and a broken lookout tower (sea step 9c-3); a small shrine round a puzzle vault's gate (9d). Materials are named after what they are made of (fantasy_kit kinds); "glow" is drawn unshaded,
+# Tidewater Temple's gate and a broken lookout tower (sea step 9c-3); a small shrine round a puzzle vault's gate (9d);
+# region 2 (R2a): Lanternwick's rest hall, the sunken chapel, the pitch works, the Hollow Mangrove, a barge, a bell buoy. Materials are named after what they are made of (fantasy_kit kinds); "glow" is drawn unshaded,
 # "water" gets the game's water shader (game/isle_water.gd).
 # Run: python3 tools/blender/sea_isle_places.py   (ONLY=lighthouse builds just that one)
 # Dependencies: bpy, bmesh, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
@@ -644,7 +645,187 @@ def salt_works(m):
     m.box(K("wood", OLD_WOOD), (2.4, 0.12, 1.2), (w / 2 + 3.2, 0.7, -1.8), tilt=14.0, bevel=0.02)
 
 
+# --- region 2, the Fog Banks (sea step 13 R2a) ---
+TAR_WOOD = (0.3, 0.24, 0.18)
+MOSS = (0.3, 0.38, 0.2)
+
+
+def lantern_hall(m):
+    """LANTERNWICK's rest house (region 2's outpost): a long stilt hall 10 x 6 m, its plank floor 1.8 m up on posts,
+    plank walls with a wide door toward +forward and lit windows, a steep shingle roof, a porch with lanterns on
+    poles, steps down to the boardwalk, barrels and a bench."""
+    fl = 1.8
+    for x in (-4.6, -1.5, 1.5, 4.6):
+        for z in (-2.8, 0.0, 2.8):
+            m.rod(K("wood", TAR_WOOD), 0.12, (x, -1.2, z), (x, fl, z), segs=6)
+    m.box(K("wood", OLD_WOOD), (10.4, 0.14, 8.0), (0.0, fl, 0.9), bevel=0.02)  # floor + porch
+    wall = K("timber", (0.42, 0.33, 0.24))
+    h = 2.6
+    m.box(wall, (9.6, h, 0.14), (0.0, fl + h / 2, -2.9), bevel=0.01)
+    for x in (-4.8, 4.8):
+        m.box(wall, (0.14, h, 5.8), (x, fl + h / 2, 0.0), bevel=0.01)
+    for x in (-3.3, 3.3):  # front wall either side of the door
+        m.box(wall, (3.0, h, 0.14), (x, fl + h / 2, 2.9), bevel=0.01)
+    m.box(wall, (3.6, 0.6, 0.14), (0.0, fl + h - 0.3, 2.9), bevel=0.01)
+    for x in (-3.3, 3.3):  # lit windows
+        m.box(fk.GLOW, (1.0, 0.7, 0.05), (x, fl + 1.5, 2.98), bevel=0.0)
+    for z in (-1.5, 1.2):
+        m.box(fk.GLOW, (0.05, 0.7, 0.9), (-4.88, fl + 1.5, z), bevel=0.0)
+    roof = K("slate", (0.32, 0.3, 0.28))
+    for side in (-1.0, 1.0):
+        m.box(roof, (10.6, 0.16, 4.1), (0.0, fl + h + 1.25, side * 1.55), tilt=side * 38.0, bevel=0.03)
+    m.rod(K("wood", TAR_WOOD), 0.09, (-5.3, fl + h + 2.5, 0.0), (5.3, fl + h + 2.5, 0.0), segs=6)
+    for x in (-4.9, 4.9):  # porch lanterns on poles
+        m.rod(K("wood", TAR_WOOD), 0.06, (x, fl, 4.7), (x, fl + 2.4, 4.7), segs=5)
+        m.box(fk.GLOW, (0.22, 0.3, 0.22), (x, fl + 2.2, 4.7), bevel=0.01)
+    for k in range(6):  # steps down to the boardwalk
+        m.box(K("wood", OLD_WOOD), (2.4, 0.1, 0.4), (0.0, fl - 0.3 * k - 0.15, 5.1 + 0.4 * k), bevel=0.01)
+    for k in range(3):
+        m.lathe(K("wood", (0.42, 0.3, 0.18)), [(0.3, 0.0), (0.36, 0.45), (0.3, 0.9)], (-3.8 + 0.75 * k, fl + 0.07, 4.1), segs=10)
+    m.box(K("wood", WOOD), (2.0, 0.1, 0.45), (3.2, fl + 0.5, 4.2), bevel=0.01)
+
+
+def chapel_ruin(m):
+    """The SUNKEN CHAPEL on Greywater Bog (region 2 mini-dungeon 1's way in): a small stone chapel 9 x 6 m sunk a
+    metre into the peat and leaning, mossy walls, a pointed-arch doorway toward +forward, a broken bell-cote, the roof
+    gone but for two ribs, and inside a stair going down into the dark crypt. y 0 = its floor (the bog's surface)."""
+    rnd = random.Random(71)
+    st = K("stone", (0.5, 0.5, 0.46))
+    w, d, h = 9.0, 6.0, 4.0
+    m.box(K("stone", (0.42, 0.42, 0.38)), (w + 0.4, 0.3, d + 0.4), (0.0, -0.1, 0.0), bevel=0.04)
+    for side in (-1.0, 1.0):  # side walls, broken along the top
+        for k in range(4):
+            top = h - rnd.uniform(0.0, 1.6)
+            m.box(st, (2.2, top, 0.6), (-3.3 + 2.2 * k, top / 2, side * d / 2), bevel=0.03)
+    m.box(st, (0.6, h + 1.2, d), (-w / 2, (h + 1.2) / 2, 0.0), bevel=0.03)  # back gable
+    for f in (-1.0, 1.0):  # front wall either side of the arched door
+        m.box(st, (0.6, h, 2.0), (w / 2, h / 2, f * 2.0), bevel=0.03)
+    for k in range(6):  # the pointed arch over the door
+        a = math.pi * k / 5
+        m.box(st, (0.6, 0.45, 0.5), (w / 2, 2.6 + 0.9 * math.sin(a) ** 0.7, -1.05 * math.cos(a)), bevel=0.03)
+    m.box(st, (0.9, 1.6, 1.2), (w / 2, h + 0.6, 0.0), bevel=0.03)  # broken bell-cote
+    for x in (-1.5, 1.8):  # two roof ribs left
+        for side in (-1.0, 1.0):
+            m.box(K("wood", (0.28, 0.24, 0.2)), (0.25, 0.25, 3.6), (x, h + 0.9, side * 1.3), tilt=side * 30.0, bevel=0.02)
+    for k in range(9):  # moss over the walls
+        fk.blob(m, K("leaf", MOSS), (rnd.uniform(0.6, 1.3), 0.25, rnd.uniform(0.6, 1.2)), (rnd.uniform(-4, 4), rnd.uniform(1.5, 3.8), rnd.choice((-1, 1)) * d / 2), seed=300 + k, rough=0.3, cuts=1)
+    m.box(K("stone", (0.08, 0.08, 0.08)), (1.6, 0.05, 2.4), (-2.6, 0.06, 0.0), bevel=0.0)  # the crypt stair's dark well
+    for k in range(4):
+        m.box(K("stone", (0.36, 0.36, 0.33)), (1.6, 0.2, 0.45), (-2.6 + 0.0, -0.25 * k, -0.9 + 0.5 * k), bevel=0.02)
+    for k in range(5):  # fallen stones
+        fk.blob(m, st, (rnd.uniform(0.3, 0.6), 0.25, rnd.uniform(0.3, 0.5)), (rnd.uniform(-4, 6), 0.15, rnd.uniform(-4.5, 4.5)), seed=320 + k, rough=0.2, cuts=1)
+
+
+def pitch_works(m):
+    """The ruined PITCH WORKS on The Knots (region 2 mini-dungeon 2's way in): a brick furnace with a great iron
+    kettle, a broken timber shed frame over it, tar barrels, a pitch-black spill, a tall tapping ladder against a
+    dead mangrove trunk and a hatch going down toward +forward (the works' cellars). y 0 = its yard."""
+    rnd = random.Random(73)
+    brick = K("adobe", (0.44, 0.26, 0.2))
+    m.box(K("stone", (0.36, 0.34, 0.32)), (12.0, 0.25, 9.0), (0.0, 0.0, 0.0), bevel=0.05)
+    m.box(brick, (3.4, 1.4, 3.0), (-2.5, 0.7, -1.5), bevel=0.05)  # furnace
+    m.box(brick, (0.9, 6.0, 0.9), (-3.8, 3.0, -2.6), bevel=0.03)  # its chimney
+    m.lathe(K("metal", (0.18, 0.16, 0.15)), [(0.0, 0.0), (1.3, 0.1), (1.5, 0.9), (1.4, 1.2)], (-2.5, 1.4, -1.5), segs=16)
+    m.lathe(K("paint", (0.05, 0.05, 0.05)), [(0.0, 0.0), (1.3, 0.0)], (-2.5, 2.45, -1.5), segs=16)  # the pitch inside
+    for x in (-5.5, 0.5, 5.5):  # shed frame: posts and a few rafters
+        for z in (-4.0, 4.0):
+            m.rod(K("wood", TAR_WOOD), 0.12, (x, 0.0, z), (x, 4.0 + (0.5 if z < 0 else 0.0), z), segs=6)
+    for k in range(3):
+        m.box(K("wood", TAR_WOOD), (0.18, 0.2, 8.6), (-5.0 + 4.5 * k, 4.4, 0.0), tilt=rnd.uniform(-10, 10), bevel=0.02)
+    m.box(K("wood", TAR_WOOD), (11.4, 0.2, 0.2), (0.0, 4.4, -4.0), bevel=0.02)
+    for k in range(7):  # tar barrels
+        x, z = rnd.uniform(1.0, 5.0), rnd.uniform(-3.5, 0.5)
+        if k == 6:
+            m.lathe(K("wood", (0.22, 0.17, 0.12)), [(0.32, 0.0), (0.38, 0.45), (0.32, 0.9)], (x, 0.45, z), segs=10, axis="x")
+        else:
+            m.lathe(K("wood", (0.22, 0.17, 0.12)), [(0.32, 0.0), (0.38, 0.45), (0.32, 0.9)], (x, 0.12, z), segs=10)
+    m.lathe(K("paint", (0.04, 0.04, 0.04)), [(0.0, 0.0), (1.6, 0.0)], (4.2, 0.14, 1.6), segs=12, squash=0.6)  # the spill
+    m.loft(K("bark", (0.3, 0.27, 0.24)), [(-5.0, 0.0, 3.0, 0.5, 0.48), (-5.1, 5.0, 3.1, 0.35, 0.34), (-5.3, 8.0, 3.0, 0.2, 0.2)], segs=7, steps=2)  # dead trunk
+    for k in range(9):  # its tapping ladder
+        y = 0.6 * k
+        m.rod(K("wood", WOOD), 0.03, (-4.7, y, 2.2), (-4.0, y, 2.3), segs=3)
+    for x in (-4.7, -4.0):
+        m.rod(K("wood", WOOD), 0.04, (x, 0.0, 2.25), (x - 0.4, 5.2, 2.75), segs=4)
+    m.box(K("wood", (0.24, 0.18, 0.12)), (2.0, 0.08, 1.6), (2.5, 0.16, 3.4), bevel=0.01)  # the hatch, propped open
+    m.box(K("stone", (0.06, 0.06, 0.06)), (1.6, 0.03, 1.4), (2.5, 0.13, 3.4), bevel=0.0)
+    m.box(K("wood", (0.24, 0.18, 0.12)), (2.0, 1.4, 0.08), (2.5, 0.85, 2.6), tilt=-15.0, bevel=0.01)
+
+
+def hollow_mangrove(m):
+    """THE HOLLOW MANGROVE (region 2's main dungeon island): one giant mangrove. Its trunk (about 9 m thick) stands
+    6 m up on a cage of 18 great arching roots spanning 36 m, rises to 34 m and spreads a dark crown 50 m wide; hanging
+    roots drop from the boughs; between two roots toward +forward a dark doorway leads down into the trunk (the
+    dungeon's way in), marked by lantern posts and the Marsh Beacon's iron hook. y 0 = the mud at the roots' feet."""
+    rnd = random.Random(79)
+    bark = K("bark", (0.34, 0.29, 0.23))
+    base = 6.0
+    m.loft(bark, [(0.0, base - 1.0, 0.0, 4.8, 4.6), (0.3, base + 8.0, 0.2, 4.2, 4.0), (0.8, base + 18.0, 0.4, 3.4, 3.2), (1.0, 34.0, 0.5, 2.4, 2.3)], segs=18, steps=3)
+    for k in range(18):  # the root cage: out from the trunk's foot in arches down into the mud
+        a = 2 * math.pi * k / 18 + rnd.uniform(-0.08, 0.08)
+        if abs(math.atan2(math.sin(a - math.pi / 2), math.cos(a - math.pi / 2))) < 0.15:
+            continue  # the doorway gap (toward +forward = +z)
+        reach = rnd.uniform(15.0, 18.0)
+        top = (4.0 * math.cos(a), base + rnd.uniform(1.5, 3.5), 4.0 * math.sin(a))
+        mid = (reach * 0.55 * math.cos(a), base + rnd.uniform(2.5, 4.5), reach * 0.55 * math.sin(a))
+        m.loft(bark, [(top[0], top[1], top[2], 1.1, 1.0), (mid[0], mid[1], mid[2], 0.9, 0.85), (reach * 0.85 * math.cos(a), 2.0, reach * 0.85 * math.sin(a), 0.75, 0.7), (reach * math.cos(a), -1.0, reach * math.sin(a), 0.6, 0.6)], segs=8, steps=3)
+    for side in (-1.0, 1.0):  # the two roots framing the doorway
+        a = math.pi / 2 + side * 0.24
+        m.loft(bark, [(4.2 * math.cos(a), base + 1.0, 4.2 * math.sin(a), 1.3, 1.2), (9.0 * math.cos(a), base, 9.0 * math.sin(a), 1.1, 1.0), (14.0 * math.cos(a), 1.0, 14.0 * math.sin(a), 0.85, 0.8), (16.0 * math.cos(a), -1.0, 16.0 * math.sin(a), 0.7, 0.7)], segs=8, steps=3)
+    m.box(K("stone", (0.04, 0.04, 0.04)), (3.2, 4.2, 0.4), (0.0, 2.1, 4.6), bevel=0.0)  # the dark doorway into the trunk
+    for k in range(8):  # steps up to it
+        m.box(K("wood", TAR_WOOD), (3.4, 0.2, 0.7), (0.0, 0.1 + 0.25 * k, 12.0 - 0.9 * k), bevel=0.02)
+    for x in (-2.6, 2.6):
+        m.rod(K("wood", TAR_WOOD), 0.1, (x, 0.0, 13.0), (x, 3.0, 13.0), segs=5)
+        m.box(fk.GLOW, (0.3, 0.4, 0.3), (x, 2.8, 13.0), bevel=0.01)
+    m.rod(K("metal", (0.2, 0.19, 0.18)), 0.06, (1.9, 3.2, 5.0), (1.9, 4.2, 5.6), segs=5)  # the beacon's hook
+    for k in range(7):  # boughs with crown lumps
+        a = 2 * math.pi * k / 7 + rnd.uniform(-0.2, 0.2)
+        r = rnd.uniform(14.0, 20.0)
+        tip = (1.0 + r * math.cos(a), rnd.uniform(28.0, 34.0), 0.5 + r * math.sin(a))
+        m.loft(bark, [(1.0, rnd.uniform(24.0, 30.0), 0.5, 1.4, 1.3), (tip[0], tip[1], tip[2], 0.5, 0.5)], segs=6, steps=2)
+        for j in range(2):
+            fk.blob(m, K("leaf", rnd.choice([(0.15, 0.28, 0.13), (0.19, 0.32, 0.15), (0.13, 0.25, 0.12)])), (rnd.uniform(7.0, 9.5), rnd.uniform(3.0, 4.2), rnd.uniform(7.0, 9.5)), (tip[0] * (0.75 + 0.25 * j), tip[1] + 2.0 + j, tip[2] * (0.75 + 0.25 * j)), seed=400 + k * 2 + j, rough=0.25, cuts=2)
+        for j in range(3):  # hanging roots
+            f = rnd.uniform(0.4, 0.9)
+            hx, hz = 1.0 + (tip[0] - 1.0) * f, 0.5 + (tip[2] - 0.5) * f
+            m.rod(K("bark", (0.3, 0.26, 0.21)), 0.12, (hx, tip[1] - 1.0, hz), (hx * 1.02, rnd.uniform(-0.5, 8.0), hz * 1.02), segs=4)
+    fk.blob(m, K("leaf", (0.16, 0.29, 0.13)), (14.0, 5.0, 14.0), (1.0, 37.0, 0.5), seed=430, rough=0.2, cuts=2)
+
+
+def barge(m):
+    """A stranded marsh barge: a flat-bottomed hull 12 x 4 m listing on a mudbank, a broken deckhouse, crates and a
+    pole. y 0 = the mud."""
+    rnd = random.Random(83)
+    hull = K("wood", (0.32, 0.26, 0.2))
+    for side in (-1.0, 1.0):
+        m.box(hull, (12.0, 1.4, 0.2), (0.0, 0.6 + side * 0.25, side * 2.0), tilt=0.0, bevel=0.02)
+    for x in (-6.0, 6.0):
+        m.box(hull, (0.2, 1.4, 4.2), (x, 0.6, 0.0), bevel=0.02)
+    m.box(K("wood", OLD_WOOD), (11.8, 0.12, 3.9), (0.0, 0.4, 0.0), tilt=6.0, bevel=0.01)
+    m.box(K("timber", (0.4, 0.33, 0.25)), (3.0, 1.8, 2.8), (-3.0, 1.3, 0.0), tilt=6.0, bevel=0.02)
+    m.box(K("wood", TAR_WOOD), (3.4, 0.15, 3.2), (-3.0, 2.3, 0.2), tilt=20.0, bevel=0.02)
+    for k in range(4):
+        m.box(K("wood", (0.5, 0.38, 0.24)), (0.7, 0.6, 0.7), (rnd.uniform(0.5, 4.5), 0.8, rnd.uniform(-1.2, 1.2)), tilt=rnd.uniform(-15, 15), bevel=0.03)
+    m.rod(K("wood", WOOD), 0.06, (5.0, 0.4, 1.0), (7.5, 4.5, 2.5), segs=4)
+
+
+def bell_buoy(m):
+    """A marsh bell buoy: a tarred float with an iron cage and a bell, leaning in the water. y 0 = the water."""
+    m.lathe(K("wood", TAR_WOOD), [(0.0, -0.8), (1.1, -0.6), (1.2, 0.0), (0.9, 0.4), (0.0, 0.45)], (0.0, 0.0, 0.0), segs=14)
+    for k in range(4):
+        a = k * math.pi / 2
+        m.rod(K("metal", (0.25, 0.22, 0.2)), 0.05, (0.7 * math.cos(a), 0.4, 0.7 * math.sin(a)), (0.0, 3.0, 0.0), segs=4)
+    m.lathe(K("metal", (0.55, 0.42, 0.22)), [(0.0, 2.9), (0.25, 2.85), (0.42, 2.3), (0.5, 2.1)], (0.0, 0.0, 0.0), segs=12)
+    m.box(fk.GLOW, (0.2, 0.25, 0.2), (0.0, 3.2, 0.0), bevel=0.01)
+
+
 PLACES = {
+    "lantern_hall": lantern_hall,
+    "chapel_ruin": chapel_ruin,
+    "pitch_works": pitch_works,
+    "hollow_mangrove": hollow_mangrove,
+    "barge": barge,
+    "bell_buoy": bell_buoy,
     "stilt_hut": stilt_hut,
     "drying_rack": drying_rack,
     "salt_pans": salt_pans,

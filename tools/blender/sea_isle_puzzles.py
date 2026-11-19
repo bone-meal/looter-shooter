@@ -10,6 +10,8 @@
 # -> assets/models/sea/isle_<id>.glb + data/sea/isles/isle_<id>.json. Islands in data/sea/islands.json; the court's
 # and gates' sea positions in data/sea/dungeons.json follow ISLANDS below (printed at the end).
 # Run: python3 tools/blender/sea_isle_puzzles.py [id ...]   (set pieces first: tools/blender/sea_isle_places.py)
+# AFTER a run: import (tools/import_assets.tscn), then RE-BAKE the island collision (tools/bake_isle_shapes.tscn,
+# sea step 13g) or the changed island loads its collision the slow way.
 # Dependencies: bpy, tools/blender/sea_isle_kit.py, data/sea/dungeons.json (the court's map). No game code.
 import json
 import math

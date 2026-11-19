@@ -1,12 +1,10 @@
-Sea step 13g: islands load in the background (no frame hitch when one comes near)
+Sea step 13 R2a part 1: region 2 islands (the Fog Banks)
 
-- director: load in background. game/sea_islands.gd: from near + prefetch metres an island's model and its baked collision load on the resource loader's thread and its prop list is read and sorted on a worker thread; inside near it is put together a few milliseconds a frame; within close of a player (arrival, teleport) it is built at once
-- island collision baked into small pieces by tools/bake_isle_shapes.tscn (assets/models/sea/shapes/); rerun it after an island model changes (a stale bake is noticed and the old way used)
-- game/sea_isle_props.gd groups_of / solid_specs (plain data, ready MultiMesh buffers), game/sea_isle_stream.gd bucket + setup steps + shed
-- an island let go is taken down a few pieces a frame (bodies out of the physics space first); no reload on the way out
-- quest people are built hidden while the sea loads (game/sea_quests.gd)
-- on the GTX 1080: home port 0.77 s freeze gone (39 frames, worst 12 ms), mid islands 0.2-0.35 s gone (worst 6-12 ms, the Coralback ruins 30 ms), quest person 0.1 s gone; sailing legs past every main island now worst 36-44 ms
-- two-copy island test (set isle) still works
+- diary/DESIGN_REGION2.md plan; director approved the region 2 boss THE LANTERN QUEEN as written (diary/DESIGN_BOSSES.md)
+- tools/blender/sea_isle_region2.py: LANTERNWICK (outpost round a harbour cove open to the east: rest hall, stilt huts, two jetties, lantern posts along the paths), GREYWATER BOG (peat and black channels, the sunken chapel), THE KNOTS (root islets and channels, the pitch works), HERONS REACH (reeds, sandy spine, inner lagoon, the decoy-maker's hut), DROWNED ORCHARD (orchard mound in a flooded rim, a dyke from the jetty, ruined farmhouse), THE HOLLOW MANGROVE (one giant mangrove, the main dungeon's way in) and 10 islets
+- new props (mangroves, reed bed, peat mound, glowcaps, lantern post) and set pieces (lantern hall, chapel ruin, pitch works, hollow mangrove, barge, bell buoy); swamp / mudflat / orchard zones in the island kit
+- every route checked and every place walked to by the real player; island collision baked (tools/bake_isle_shapes.tscn), longest build step under 14 ms
+- the island generators' Run lines now say to re-bake after a model change
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

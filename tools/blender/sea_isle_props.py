@@ -2,7 +2,8 @@
 # each one mesh node "Body" so the game can draw hundreds of copies in one call (game/sea_isle_props.gd). Coconut palms
 # (two shapes), a broadleaf bush, a fern, three boulders, a sea stack, driftwood, a beach grass tuft, a shell and
 # pebble scatter, a coconut pile, a ruined wall; for the bigger islands (director: plant zones, rocks + coast detail)
-# broadleaf trees, a jungle giant, flowers, reeds, dune grass, hanging vines, three rock outcrops, reefs and coral. Materials named after what they are made of (fantasy_kit kinds).
+# broadleaf trees, a jungle giant, flowers, reeds, dune grass, hanging vines, three rock outcrops, reefs and coral;
+# for region 2, the Fog Banks: two mangroves, a reed bed, a peat mound, glowing marsh mushrooms, a lantern post. Materials named after what they are made of (fantasy_kit kinds).
 # Run: python3 tools/blender/sea_isle_props.py   (ONLY=palm_a builds just that one)
 # Dependencies: bpy, bmesh, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
 import math
@@ -344,6 +345,79 @@ def coral(m, seed):
     m.ball(K("paint", rnd.choice(CORAL)), (0.25, 0.18, 0.25), (0.2, 0.05, -0.1), u=8, v=5)
 
 
+# --- region 2, the Fog Banks (sea step 13 R2a): mangroves, reed beds, peat, glowcaps, lantern posts ---
+MANGROVE_LEAF = [(0.16, 0.3, 0.14), (0.2, 0.34, 0.15), (0.14, 0.27, 0.12)]
+MANGROVE_BARK = (0.4, 0.34, 0.27)
+
+
+def mangrove(m, seed, height, spread):
+    """A mangrove: the trunk stands 1.6 m up on a cage of arching prop roots, a few roots drop from the branches,
+    a low dark crown of leafy lumps."""
+    rnd = random.Random(seed)
+    base = 1.6
+    m.loft(K("bark", MANGROVE_BARK), [(0.0, base, 0.0, 0.26, 0.24), (0.15, base + height * 0.45, 0.0, 0.2, 0.19), (0.25, height, 0.05, 0.12, 0.11)], segs=7, steps=2)
+    n = 7 + seed % 3
+    for k in range(n):  # prop roots: out and down in an arch
+        a = 2 * math.pi * k / n + rnd.uniform(-0.25, 0.25)
+        reach = rnd.uniform(1.3, 2.3)
+        mid = (0.55 * reach * math.cos(a), base + rnd.uniform(0.3, 0.7), 0.55 * reach * math.sin(a))
+        m.rod(K("bark", MANGROVE_BARK), 0.09, (0.12 * math.cos(a), base + 0.2, 0.12 * math.sin(a)), mid, r2=0.07, segs=5)
+        m.rod(K("bark", MANGROVE_BARK), 0.07, mid, (reach * math.cos(a), -0.3, reach * math.sin(a)), r2=0.05, segs=5)
+    for k in range(3):  # branches with crowns
+        a = k * 2.1 + rnd.uniform(-0.3, 0.3)
+        tip = (0.2 + spread * 0.55 * math.cos(a), height * rnd.uniform(0.8, 0.95), spread * 0.55 * math.sin(a))
+        m.rod(K("bark", MANGROVE_BARK), 0.07, (0.2, height * 0.6, 0.0), tip, r2=0.04, segs=5)
+        fk.blob(m, K("leaf", rnd.choice(MANGROVE_LEAF)), (spread * 0.5, spread * 0.3, spread * 0.5), (tip[0], tip[1] + spread * 0.1, tip[2]), seed=seed + 10 + k, rough=0.28, cuts=1)
+        if k < 2:  # an aerial root hanging down from the branch
+            m.rod(K("bark", (0.36, 0.3, 0.24)), 0.025, (tip[0] * 0.8, tip[1] - 0.3, tip[2] * 0.8), (tip[0] * 0.85, rnd.uniform(0.4, 1.2), tip[2] * 0.85), segs=3)
+    fk.blob(m, K("leaf", rnd.choice(MANGROVE_LEAF)), (spread * 0.65, spread * 0.38, spread * 0.65), (0.25, height + spread * 0.15, 0.05), seed=seed + 20, rough=0.25, cuts=2)
+
+
+def reed_bed(m, seed):
+    """A thick bed of tall reeds and bulrushes about 2.5 m across (the marsh edges)."""
+    rnd = random.Random(seed)
+    for k in range(26):
+        a, d = rnd.uniform(0, 6.28), rnd.uniform(0.0, 1.25)
+        x, z = d * math.cos(a), d * math.sin(a)
+        h = rnd.uniform(1.4, 2.4)
+        tip = (x + rnd.uniform(-0.2, 0.2), h, z + rnd.uniform(-0.2, 0.2))
+        m.rod(K("leaf", rnd.choice([(0.4, 0.48, 0.24), (0.5, 0.5, 0.3), (0.34, 0.42, 0.2)])), 0.017, (x, -0.2, z), tip, r2=0.006, segs=3)
+        if k % 4 == 0:
+            m.rod(K("paint", (0.32, 0.22, 0.13)), 0.04, (tip[0], h * 0.78, tip[2]), (tip[0], h * 0.93, tip[2]), segs=5)
+
+
+def peat_mound(m, seed):
+    """A low mound of dark peat and moss with a few grass tufts."""
+    rnd = random.Random(seed)
+    fk.blob(m, K("rock", (0.26, 0.2, 0.15)), (1.6, 0.55, 1.3), (0.0, 0.05, 0.0), seed=seed, rough=0.2, cuts=2)
+    fk.blob(m, K("leaf", (0.3, 0.38, 0.18)), (1.2, 0.35, 1.0), (0.2, 0.3, -0.1), seed=seed + 1, rough=0.3, cuts=1)
+    for k in range(5):
+        a = rnd.uniform(0, 6.28)
+        x, z = 0.9 * math.cos(a), 0.7 * math.sin(a)
+        m.rod(K("leaf", (0.45, 0.5, 0.26)), 0.015, (x, 0.2, z), (x * 1.15, 0.75, z * 1.15), r2=0.004, segs=3)
+
+
+def glowcap(m, seed):
+    """A cluster of pale marsh mushrooms whose caps glow faintly (the Fog Banks' night lights)."""
+    rnd = random.Random(seed)
+    for k in range(7):
+        a, d = rnd.uniform(0, 6.28), rnd.uniform(0.0, 0.45)
+        x, z = d * math.cos(a), d * math.sin(a)
+        h = rnd.uniform(0.12, 0.38)
+        m.rod(K("paint", (0.82, 0.8, 0.72)), 0.025, (x, 0.0, z), (x, h, z), segs=4)
+        m.ball(fk.GLOW, (rnd.uniform(0.06, 0.12), 0.04, rnd.uniform(0.06, 0.12)), (x, h, z), u=8, v=4)
+
+
+def lantern_post(m, seed):
+    """A marsh lantern post: a tarred pole, a crook arm and a hanging lantern (the Fog Banks' way markers)."""
+    m.rod(K("wood", (0.24, 0.19, 0.14)), 0.08, (0.0, -0.4, 0.0), (0.0, 2.7, 0.0), r2=0.06, segs=6)
+    m.rod(K("wood", (0.24, 0.19, 0.14)), 0.04, (0.0, 2.55, 0.0), (0.6, 2.75, 0.0), segs=4)
+    m.rod(K("metal", (0.2, 0.2, 0.2)), 0.008, (0.6, 2.75, 0.0), (0.6, 2.45, 0.0), segs=3)
+    m.box(K("metal", (0.18, 0.17, 0.16)), (0.26, 0.04, 0.26), (0.6, 2.44, 0.0), bevel=0.01)
+    m.box(fk.GLOW, (0.18, 0.24, 0.18), (0.6, 2.3, 0.0), bevel=0.01)
+    m.box(K("metal", (0.18, 0.17, 0.16)), (0.24, 0.04, 0.24), (0.6, 2.16, 0.0), bevel=0.01)
+
+
 PROPS = {
     "palm_a": lambda m: palm(m, 7.5, 0.18, 1),
     "palm_b": lambda m: palm(m, 9.5, 0.32, 2),
@@ -371,6 +445,12 @@ PROPS = {
     "reef_a": lambda m: reef(m, 31, 1.6),
     "reef_b": lambda m: reef(m, 32, 2.6),
     "coral": lambda m: coral(m, 33),
+    "mangrove_a": lambda m: mangrove(m, 41, 6.5, 4.0),
+    "mangrove_b": lambda m: mangrove(m, 42, 9.0, 5.5),
+    "reed_bed": lambda m: reed_bed(m, 43),
+    "peat_mound": lambda m: peat_mound(m, 44),
+    "glowcap": lambda m: glowcap(m, 45),
+    "lantern_post": lambda m: lantern_post(m, 46),
 }
 
 if __name__ == "__main__":

@@ -349,7 +349,23 @@
     "path": "#8c7656",
     "forest": "#56683a"
    }
-  }
+  },
+  {"id": "lanternwick", "pos": [-3900.0, 6200.0], "radius": 200, "model": "isle_lanternwick", "props": "isle_lanternwick", "ground": {"sand": "#776b52", "grass": "#556f35", "rock": "#756f62", "wet": "#554a37", "path": "#755f41", "forest": "#455729"}},
+  {"id": "greywater_bog", "pos": [-5300.0, 4300.0], "radius": 240, "model": "isle_greywater_bog", "props": "isle_greywater_bog", "ground": {"sand": "#6c634e", "grass": "#476531", "rock": "#67655e", "wet": "#494233", "path": "#67553d", "forest": "#374d25"}},
+  {"id": "the_knots", "pos": [-6300.0, 6900.0], "radius": 200, "model": "isle_the_knots", "props": "isle_the_knots", "ground": {"sand": "#726d52", "grass": "#4f7135", "rock": "#6f7162", "wet": "#504c37", "path": "#6f6141", "forest": "#3f5929"}},
+  {"id": "herons_reach", "pos": [-4900.0, 8100.0], "radius": 240, "model": "isle_herons_reach", "props": "isle_herons_reach", "ground": {"sand": "#7e7055", "grass": "#5d7539", "rock": "#7d7566", "wet": "#5c4f3a", "path": "#7d6545", "forest": "#4d5d2d"}},
+  {"id": "drowned_orchard", "pos": [-7600.0, 4600.0], "radius": 230, "model": "isle_drowned_orchard", "props": "isle_drowned_orchard", "ground": {"sand": "#727150", "grass": "#4f7733", "rock": "#6f7760", "wet": "#505135", "path": "#6f673f", "forest": "#3f5f27"}},
+  {"id": "hollow_mangrove", "pos": [-7900.0, 7900.0], "radius": 130, "model": "isle_hollow_mangrove", "props": "isle_hollow_mangrove", "ground": {"sand": "#6d664e", "grass": "#496931", "rock": "#69695e", "wet": "#4b4533", "path": "#69593d", "forest": "#395125"}},
+  {"id": "islet_lantern_east", "pos": [-3400.0, 4300.0], "radius": 22, "model": "isle_islet_lantern_east", "props": "isle_islet_lantern_east", "ground": {"sand": "#6f6552", "grass": "#4b6835", "rock": "#6b6862", "wet": "#4d4437", "path": "#6b5841", "forest": "#3b5029"}},
+  {"id": "islet_root_knot_a", "pos": [-4500.0, 5200.0], "radius": 29, "model": "isle_islet_root_knot_a", "props": "isle_islet_root_knot_a", "ground": {"sand": "#716952", "grass": "#4e6d35", "rock": "#6e6d62", "wet": "#4f4937", "path": "#6e5d41", "forest": "#3e5529"}},
+  {"id": "islet_barge", "pos": [-6100.0, 5400.0], "radius": 35, "model": "isle_islet_barge", "props": "isle_islet_barge", "ground": {"sand": "#746852", "grass": "#516b35", "rock": "#716b62", "wet": "#524737", "path": "#715b41", "forest": "#415329"}},
+  {"id": "islet_bell", "pos": [-5600.0, 7400.0], "radius": 16, "model": "isle_islet_bell", "props": "isle_islet_bell", "ground": {"sand": "#6f6652", "grass": "#4b6935", "rock": "#6b6962", "wet": "#4d4537", "path": "#6b5941", "forest": "#3b5129"}},
+  {"id": "islet_reeds_a", "pos": [-7000.0, 3500.0], "radius": 42, "model": "isle_islet_reeds_a", "props": "isle_islet_reeds_a", "ground": {"sand": "#716a52", "grass": "#4e6e35", "rock": "#6e6e62", "wet": "#4f4937", "path": "#6e5e41", "forest": "#3e5629"}},
+  {"id": "islet_root_knot_b", "pos": [-8600.0, 6200.0], "radius": 32, "model": "isle_islet_root_knot_b", "props": "isle_islet_root_knot_b", "ground": {"sand": "#746852", "grass": "#516c35", "rock": "#716c62", "wet": "#524837", "path": "#715c41", "forest": "#415429"}},
+  {"id": "islet_fog_sand", "pos": [-6800.0, 8600.0], "radius": 48, "model": "isle_islet_fog_sand", "props": "isle_islet_fog_sand", "ground": {"sand": "#6f6752", "grass": "#4b6a35", "rock": "#6b6a62", "wet": "#4d4637", "path": "#6b5a41", "forest": "#3b5229"}},
+  {"id": "islet_lantern_west", "pos": [-8400.0, 3500.0], "radius": 22, "model": "isle_islet_lantern_west", "props": "isle_islet_lantern_west", "ground": {"sand": "#716552", "grass": "#4e6835", "rock": "#6e6862", "wet": "#4f4437", "path": "#6e5841", "forest": "#3e5029"}},
+  {"id": "islet_reeds_b", "pos": [-4100.0, 7300.0], "radius": 38, "model": "isle_islet_reeds_b", "props": "isle_islet_reeds_b", "ground": {"sand": "#746952", "grass": "#516d35", "rock": "#716d62", "wet": "#524937", "path": "#715d41", "forest": "#415529"}},
+  {"id": "islet_hermit", "pos": [-3500.0, 8700.0], "radius": 29, "model": "isle_islet_hermit", "props": "isle_islet_hermit", "ground": {"sand": "#6f6852", "grass": "#4b6b35", "rock": "#6b6b62", "wet": "#4d4737", "path": "#6b5b41", "forest": "#3b5329"}}
  ],
  "spawn": [
   -80.0,
@@ -381,9 +397,17 @@
    "outcrop_tor": 900,
    "reef_a": 160,
    "reef_b": 180,
-   "coral": 70
+   "coral": 70,
+   "mangrove_a": 650,
+   "mangrove_b": 700,
+   "reed_bed": 170,
+   "peat_mound": 200,
+   "glowcap": 80,
+   "lantern_post": 450
   },
   "thin": [
+   "glowcap",
+   "reed_bed",
    "bush",
    "coconuts",
    "coral",
@@ -426,6 +450,8 @@
    "outcrop_tor",
    "palm_a",
    "palm_b",
+   "mangrove_a",
+   "mangrove_b",
    "ruin_wall",
    "sea_stack"
   ]
