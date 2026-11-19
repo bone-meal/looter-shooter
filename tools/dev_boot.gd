@@ -2930,6 +2930,28 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var thr: Dictionary = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/encounters.json")) as Dictionary)["threat"]
 					_lines.append("NG %s: NG+ %d, vault %s, enemy mult region 1 %.2f region 2 %.2f, sea loot level 20 -> %d, 70 -> %d, luck %.2f | prompt '%s'" % [" ".join(words.slice(2)), Threat.ng, str(session.get("_vault_beaten")),
 						Threat.player_mult(thr, 1), Threat.player_mult(thr, 2), Threat.loot_level(20), Threat.loot_level(70), Threat.ng_luck(), String(session.call("_prompt"))])
+		"gate":  # sea step 13a: !gate move <x> <z> (host: the ship we are aboard to that sea spot, we on her deck) | wait <s> | status <note>
+			var sea_g: Node = session.call("sea")
+			var fl_g: Node = sea_g.get("ships") if sea_g != null else null
+			var ship_g: Node3D = fl_g.call("ship_aboard") if fl_g != null else null
+			if ship_g == null and fl_g != null and not (fl_g.get("ships") as Array).is_empty():
+				ship_g = (fl_g.get("ships") as Array)[0]
+			if fl_g == null or ship_g == null:
+				_lines.append("GATE: no ship")
+			elif words.size() > 3 and words[1] == "move":
+				var st_g: Dictionary = ship_g.get("state")
+				st_g["x"] = float(words[2])
+				st_g["z"] = float(words[3])
+				st_g["speed"] = 0.0
+				await get_tree().create_timer(0.6, true, false, true).timeout
+				player.call("teleport", ship_g.call("deck_spot", [0.0, -1.0], 0.4), float(st_g["yaw"]))
+			elif words.size() > 2 and words[1] == "wait":
+				await get_tree().create_timer(float(words[2]), true, false, true).timeout
+			else:
+				var st_s: Dictionary = ship_g.get("state")
+				var dg: Dictionary = (fl_g.get("gates") as RefCounted).call("danger", float(st_s["x"]), float(st_s["z"]), st_s.get("parts", []))
+				_lines.append("GATE %s: ship %s at %.0f %.0f in %s, parts %s, hazard %.2f back %s, hull %.0f / %.0f, fog x%.2f, aboard %s" % [" ".join(words.slice(1)), String(ship_g.get("spec")["name"]), float(st_s["x"]), float(st_s["z"]), String(dg["region"]), str(st_s.get("parts", [])), float(dg["s"]), str((dg["back"] as Vector2).snapped(Vector2(0.01, 0.01))),
+					float(st_s["hull"]), float(st_s["hull_max"]), float((sea_g.get("look") as RefCounted).get("gate_fog")), str(fl_g.call("ship_aboard") == ship_g)])
 		"party":  # sea step 12d: !party send rally|banner|hearth|bloom (test values) | prompt (what [F] says here) | status <note>
 			var np: Node = get_tree().get_first_node_in_group("net_party")
 			var vals := {"rally": [Vector3(10, 25, 2), Vector3.ZERO], "banner": [Vector3(10, 20, 15), Vector3(8, 0, 0)], "hearth": [Vector3(30, 0, 0), Vector3.ZERO], "bloom": [Vector3(4, 10, 5), Vector3.ZERO]}

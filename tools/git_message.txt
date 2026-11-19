@@ -1,7 +1,9 @@
-Sea 12e: two-copy tests of the untried online paths, put-all fix
+Sea 13a: region gates (the hazard hurts, the part protects)
 
-- Tested with two copies on the GTX 1080 (pair sets e12 and chest): a boss wipe online (the guest went down, the host saw it, both woke at the home port with Dread 1), a guest's team XP from the boss (300 XP, boss kill counted), a guest setting the trophy on its hall plinth, a guest's feast giving the host its boons, the crew chest taking a guest's stack.
-- Fix found by the test: the 12c put cap (500) refused putting a whole stack into the crew chest or a hold; it is now 9999 (the chest code's own cap), so only the item's existence is checked.
+Director: build the regions one by one, region 1 finished first as the template; a region's hazard batters a ship without its part; boss pages come with each region.
+- data/sea/gates.json + core/sea/gate_rules.gd: each region is open or needs a ship part; inside a closed region the hazard grows over 150 m from open water: hull damage, a push back, thick fog for those aboard, a notice naming the part.
+- Region 2 (Fog Banks) opens with the Shellback Prow from Abbot Shellback's plates: built at the shipyard it is fitted to the nearest ship there; fitted parts are saved with the fleet and sent online. Later regions stay closed until they are built.
+- Dev !gate: tested on the GTX 1080 (the sloop ground down and pushed back without the prow, sailed 2 km into region 2 with it).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

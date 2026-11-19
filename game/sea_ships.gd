@@ -20,6 +20,7 @@ const SeaBoarding = preload("res://game/sea_boarding.gd")
 const SeaCrane = preload("res://game/sea_crane.gd")
 const SeaEncounters = preload("res://game/sea_encounters.gd")
 const ShipHold = preload("res://game/ship_hold.gd")
+const GateRules = preload("res://core/sea/gate_rules.gd")
 
 const HELM_REACH := 1.5
 const ANCHOR_REACH := 1.8
@@ -46,6 +47,8 @@ var _slow := 0.0
 var shipyard: Node3D  # game/sea_shipyard.gd: where built ships are launched
 var working := false  # this player is trimming sails at a rigging spot (holding interact)
 var dev_rudder := NAN  # dev: a rudder held without keys (tests run without focus)
+var gates: GateRules  # the region gates (sea step 13a): which waters a ship's fitted parts open
+var gate_told := {}  # ship -> engine time her crew was last told of the hazard (here)
 var hull_part := SeaHull.new()  # hulls, leaks, sinking, patching (sea step 5d)
 var dev_patch := false  # dev: interact held for patching without keys
 var cannons := SeaCannons.new()  # the ships' cannons (sea step 5d-2)
@@ -61,6 +64,7 @@ func setup(sea_world: Node3D, player: CharacterBody3D, floor_rid: RID) -> void:
 	_player = player
 	process_priority = -10  # before the player's own movement: the deck moves first, then he walks on it
 	rules = ShipRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/ships.json")))
+	gates = GateRules.new(JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/gates.json")), _sea.get("map"))
 	_ray.collision_mask = 1
 	_floor_rid = floor_rid
 	_layer.layer = 5
@@ -164,6 +168,8 @@ func _process(delta: float) -> void:
 			moved = was.distance_to(Vector2(float(ship.state["x"]), float(ship.state["z"])))
 		else:
 			moved = rules.step(ship.state, wind, wind_dir, hull_part.speed_pct(ship, _speed_pct(ship)), delta)
+			if not ship.state.has("foe"):
+				_gate_step(ship, delta)  # (sea step 13a) a closed region's hazard: hull ground down, pushed back
 			if hull_part.step(ship, delta):
 				hull_part.sink(ship)
 			if ship.state.has("foe"):  # a foe is not raised again: her cargo floats, she is gone
@@ -185,6 +191,8 @@ func _process(delta: float) -> void:
 			elif moved > 0.0:
 				_aground_told = false
 		hull_part.display(ship, delta)
+		if ship == ship_aboard() or ship == helm_ship:
+			_gate_look(ship)
 		ship.pose(waves, t, swell, wind, wind_dir, delta)
 		if riding:
 			_player.call("carry", ship.global_transform * before.affine_inverse(), wrapf(float(ship.state["yaw"]) - yaw_before, -PI, PI))
@@ -255,6 +263,8 @@ func host_states(states: Array) -> void:
 			ship.state["sinking"] = bool(got[14])
 		if got.size() >= 16:
 			ship.state["crane"] = bool(got[15])
+		if got.size() >= 20:  # her gate parts (sea step 13a): the hazard's look follows them here
+			ship.state["parts"] = Array(String(got[19]).left(200).split(",", false))
 		if got.size() >= 17 and String(got[16]) != "" and not ship.state.has("foe"):  # a foe (sea step 8): her look
 			ship.state["foe"] = String(got[16]).left(24)
 			foes.dress(ship)
@@ -633,7 +643,7 @@ func launch(ship_id: String) -> void:
 # The shipyard made a ship's part (game/fantasy_world.gd ship_part_made: "crane"): the host (or alone) fits it to the
 # ship nearest the slipway without one; a client asks the host.
 func fit_part(part: String) -> void:
-	if part != "crane":
+	if part != "crane" and not gates.parts().has(part):
 		return
 	var net := _net()
 	if net != null and bool(net.call("is_client")):
@@ -641,8 +651,53 @@ func fit_part(part: String) -> void:
 		_sea.emit_signal("notice", "The crane goes to the shipyard's nearest ship")
 		return
 	var at: Vector3 = shipyard.call("launch_spot", 0, 6.0)
+	if part != "crane":  # (sea step 13a) a gate part: the nearest ship at the shipyard without it
+		var to := _fit_gate_part(part, Vector2(at.x, at.y))
+		_sea.emit_signal("notice", ("The %s fitted to the %s" % [part.replace("_", " "), to]) if to != "" else "No ship without it lies at the shipyard: sail one in and build it again")
+		return
 	var fitted := crane.fit(Vector3(at.x, 0.0, at.y))
 	_sea.emit_signal("notice", "A salvage crane fitted to the %s" % fitted if fitted != "" else "No ship without a crane lies at the shipyard: sail one in and build it again")
+
+
+func _fit_gate_part(part: String, at: Vector2) -> String:
+	var best: SeaShip = null
+	var best_d := float(crane.cfg["fit_range"])
+	for ship: SeaShip in ships:
+		var d := Vector2(float(ship.state["x"]), float(ship.state["z"])).distance_to(at)
+		if not ship.state.has("foe") and not (ship.state.get("parts", []) as Array).has(part) and d < best_d and not bool(ship.state.get("sinking", false)):
+			best = ship
+			best_d = d
+	if best == null:
+		return ""
+	var have: Array = best.state.get("parts", [])
+	have.append(part)
+	best.state["parts"] = have
+	return String(best.spec["name"])
+
+
+# --- the region gates (sea step 13a, LOCKED: the hazard hurts, the part protects) ---
+
+# Host: one frame of a closed region's hazard on a ship of the fleet.
+func _gate_step(ship: SeaShip, delta: float) -> void:
+	var d := gates.danger(float(ship.state["x"]), float(ship.state["z"]), ship.state.get("parts", []))
+	var s := float(d["s"])
+	if s <= 0.0 or bool(ship.state.get("sinking", false)):
+		return
+	hull_part.damage(ship, Vector3.ZERO, float(ship.state["hull_max"]) * float(gates.cfg["hull_share_per_s"]) * s * delta)
+	var back: Vector2 = d["back"]
+	ship.state["x"] = float(ship.state["x"]) + back.x * float(gates.cfg["push_mps"]) * s * delta
+	ship.state["z"] = float(ship.state["z"]) + back.y * float(gates.cfg["push_mps"]) * s * delta
+
+
+# Every machine, for the ship this player is on: the hazard thickens the sea's fog, and he is told why.
+func _gate_look(ship: SeaShip) -> void:
+	var d := gates.danger(float(ship.state["x"]), float(ship.state["z"]), ship.state.get("parts", []))
+	var s := float(d["s"])
+	(_sea.get("look") as RefCounted).set("gate_fog", 1.0 + (float(gates.cfg["fog_mult"]) - 1.0) * s)
+	var now := Time.get_ticks_msec() / 1000.0
+	if s > 0.05 and now - float(gate_told.get(ship, -1e9)) >= float(gates.cfg["notice_every_s"]):
+		gate_told[ship] = now
+		_sea.emit_signal("notice", String(d["notice"]))
 
 
 # The highest sail stage this ship's helmsman may set (his Sailing level: the swift sail at its level).
@@ -675,7 +730,7 @@ func to_list() -> Array:
 		if ship.state.has("foe"):  # foes are not the world's fleet
 			continue
 		out.append({"ship": ship.state["ship"], "x": snappedf(float(ship.state["x"]), 0.1), "z": snappedf(float(ship.state["z"]), 0.1), "yaw": snappedf(float(ship.state["yaw"]), 0.001), "anchored": ship.state["anchored"], "cell": _sea.get("map").get("cell"),
-			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001), "crane": bool(ship.state.get("crane", false)), "cargo": ship.state.get("cargo", [])})
+			"hull": snappedf(float(ship.state["hull"]), 0.1), "leaks": ship.state["leaks"], "water": snappedf(float(ship.state["water"]), 0.001), "crane": bool(ship.state.get("crane", false)), "cargo": ship.state.get("cargo", []), "parts": ship.state.get("parts", [])})
 	return out
 
 
@@ -716,6 +771,8 @@ func from_list(saved: Variant) -> void:
 		if entry.get("water") is float or entry.get("water") is int:
 			ship.state["water"] = clampf(float(entry["water"]), 0.0, 0.99)
 		ship.state["crane"] = bool(entry.get("crane", false))
+		if entry.get("parts") is Array:  # her fitted gate parts (sea step 13a)
+			ship.state["parts"] = (entry["parts"] as Array).filter(func(p: Variant) -> bool: return p is String and gates.parts().has(p))
 		if entry.get("cargo") is Array and ShipHold.has_hold(ship):  # her hold's goods (sea step 8b-2)
 			ship.state["cargo"] = (entry["cargo"] as Array).slice(0, 200)
 		if bool(ship.state.get("sinking", false)) or hull_part.hull.sunk(ship.state):

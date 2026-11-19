@@ -1,0 +1,19 @@
+{
+  "_about": "Sea step 13a (LOCKED: a region opens with its boss trophy + a ship part from the region before it; the hazard hurts, the part protects). Per region of data/sea/world.json grid: open = no part needed; part = the ship part (fantasy gear item kind ship_part, `part`) a ship must have fitted at the shipyard to sail in; part \"\" = closed until that region is built. Without the part the hazard grows over ramp_m metres in from the nearest open water: hull damage (hull_share_per_s of her full hull a second at full strength), a push back toward open water (push_mps), the sea's fog thickened (fog_mult) on the screens of those aboard, and the notice. kinds: fog_roots (region 2's fog banks and mangrove roots), lava_steam, pack_ice, storm_wall, coral_maze, maelstrom, deep_squall. All numbers and words are placeholders for the director.",
+  "ramp_m": 150.0,
+  "hull_share_per_s": 0.03,
+  "push_mps": 4.0,
+  "fog_mult": 20.0,
+  "notice_every_s": 20.0,
+  "regions": {
+    "region_1": {"open": true},
+    "region_2": {"part": "shellback_prow", "kind": "fog_roots", "notice": "Blind fog and roots under the keel grind the hull: only a Shellback Prow breaks through the Fog Banks."},
+    "region_3": {"part": "", "kind": "lava_steam", "notice": "Scalding steam and falling ash drive the ship back: the Volcanic Archipelago is closed for now."},
+    "region_4": {"part": "", "kind": "pack_ice", "notice": "Grinding pack ice crushes the hull: the Ice Floes are closed for now."},
+    "region_5": {"part": "", "kind": "storm_wall", "notice": "A wall of storm beats the ship back: the Storm Cliffs are closed for now."},
+    "region_6": {"part": "", "kind": "coral_maze", "notice": "Razor coral tears at the keel: the Sunken City is closed for now."},
+    "region_7": {"part": "", "kind": "maelstrom", "notice": "The Maelstrom's pull tears at the ship: the Vault's waters are closed for now."},
+    "deep_1": {"part": "", "kind": "deep_squall", "notice": "Endless squalls over the deep drive the ship back: these waters are closed for now."},
+    "deep_2": {"part": "", "kind": "deep_squall", "notice": "Endless squalls over the deep drive the ship back: these waters are closed for now."}
+  }
+}

@@ -145,7 +145,7 @@ func _send_fleet(fleet: Node) -> void:
 	for ship: Node in fleet.get("ships"):
 		var s: Dictionary = ship.get("state")
 		states.append([float(s["x"]), float(s["z"]), float(s["yaw"]), float(s["speed"]), int(s["stage"]), float(s["rudder"]), bool(s["anchored"]), int(fleet.call("helmsman_of", ship)), String(s["ship"]),
-			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", "")), bool(s.get("struck", false)), snappedf(float(s.get("phase", 1.0)), 0.01)])
+			float(s["hull"]), float(s["water"]), float(s["leaks"][0]), float(s["leaks"][1]), float(s["leaks"][2]), bool(s.get("sinking", false)), bool(s.get("crane", false)), String(s.get("foe", "")), bool(s.get("struck", false)), snappedf(float(s.get("phase", 1.0)), 0.01), ",".join(PackedStringArray(s.get("parts", [])))])
 	sent += 1
 	_fleet_down.rpc(float(sea.call("seconds")), String(sea.get("_forced")), states)
 	_board_down.rpc(fleet.get("boarding").call("to_net"))
@@ -395,7 +395,7 @@ func request_part(part: String) -> void:
 @rpc("any_peer", "call_remote", "reliable")
 func _part_up(part: String) -> void:
 	var from := multiplayer.get_remote_sender_id()
-	if net.is_host() and net.roster.has(from) and part in ["crane"] and _fleet() != null and net.claim_can_make(from, "ship_" + part):
+	if net.is_host() and net.roster.has(from) and _fleet() != null and (part == "crane" or ((_fleet().get("gates") as RefCounted).call("parts") as Array).has(part)) and net.claim_can_make(from, "ship_crane" if part == "crane" else part):
 		_fleet().call("fit_part", part)
 
 

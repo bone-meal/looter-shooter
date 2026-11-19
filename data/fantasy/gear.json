@@ -2261,13 +2261,14 @@
    ]
   },
   "shellback_prow": {
-   "kind": "material",
+   "kind": "ship_part",
    "icon": "sail",
    "color": [
     0.66,
     0.52,
     0.36
-   ]
+   ],
+   "part": "shellback_prow"
   }
  }
 }
