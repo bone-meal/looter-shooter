@@ -1,5 +1,5 @@
 {
- "_about": "Sea step 6 ports, DOUBLOONS and shops (core/sea/port_rules.gd, game/sea_port.gd, game/port_shop_window.gd). Director: doubloons come from the sea (salvage, chests, sea enemies, bosses, selling loot at port shops) PLUS casino chips change into doubloons at a REALLY BAD rate (chips_per_doubloon, one way); chips also buy charts and supplies. ports: every port (only the home port until the regions of step 13): its island (the ferry goes only to ports whose island the player has explored), the stall (the harbour master's: shop, money changer, ferry desk) in sea coordinates + yaw, or \"plot\" = the town building whose Counter marker is the counter (data/sea/town.json; stall then only says where the port is), and where a ferried player lands (dock). sell: what the stall pays for a rolled gun by tier, x (1 + level_bonus x item level); armour pieces pay armour_share of that; plain items are not bought. buy: what the stall sells: an item of the fantasy bag (gear.json) for chips or doubloons, count per purchase. crane: the salvage crane fitted to the ship nearest the shipyard for doubloons. ALL NUMBERS ARE PLACEHOLDERS. town_level = the harbour master's level (data/sea/town.json) a stock entry needs (sea step 7b: more goods at 2, charts at 4); the home port's selling prices x the harbour master's sell_mult.",
+ "_about": "Sea step 6 ports, DOUBLOONS and shops (core/sea/port_rules.gd, game/sea_port.gd, game/port_shop_window.gd). Director: doubloons come from the sea (salvage, chests, sea enemies, bosses, selling loot at port shops) PLUS casino chips change into doubloons at a REALLY BAD rate (chips_per_doubloon, one way); chips also buy charts and supplies. ports: every port (only the home port until the regions of step 13): its island (the ferry goes only to ports whose island the player has explored), the stall (the harbour master's: shop, money changer, ferry desk) in sea coordinates + yaw, or \"plot\" = the town building whose Counter marker is the counter (data/sea/town.json; stall then only says where the port is), and where a ferried player lands (dock). rest (sea step 13 R2a, an outpost): its rest house: sea x, z and floor height, reach, doubloons for full health + Dread cleared (the home port's rest is its tavern). sell: what the stall pays for a rolled gun by tier, x (1 + level_bonus x item level); armour pieces pay armour_share of that; plain items are not bought. buy: what the stall sells: an item of the fantasy bag (gear.json) for chips or doubloons, count per purchase. crane: the salvage crane fitted to the ship nearest the shipyard for doubloons. ALL NUMBERS ARE PLACEHOLDERS. town_level = the harbour master's level (data/sea/town.json) a stock entry needs (sea step 7b: more goods at 2, charts at 4); the home port's selling prices x the harbour master's sell_mult.",
  "chips_per_doubloon": 250,
  "sell": {
   "tier": {
@@ -103,6 +103,15 @@
     6650.0
    ],
    "plot": "harbour_master"
+  },
+  {
+   "id": "lanternwick",
+   "name": "Lanternwick",
+   "island": "lanternwick",
+   "stall": [-3810.0, 6218.0],
+   "yaw": 0.0,
+   "dock": [-3801.0, 6214.0],
+   "rest": {"name": "the Lantern Hall", "at": [-3818.0, 6200.0, 3.57], "reach": 4.0, "doubloons": 5}
   }
  ]
 }

@@ -1429,15 +1429,32 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							(Time.get_ticks_msec() - began_c) / 1000.0, game_c, sailed_c, from_c.x, from_c.y, float(st_c["x"]), float(st_c["z"]), hull_c, float(st_c["hull"]), worst_c, ", ".join(spikes_c)])
 					_:
 						_lines.append(String(fleet.call("status")))
-		"port":  # sea step 6: !port go | open | close | tab <n> | press <button text> | money <chips> <doubloons> | status <note>
+		"port":  # sea step 6: !port go [id] | stall <id> | rest <id> [dread] | open | close | tab <n> | press <button text> | money <chips> <doubloons> | status <note>
 			var sea_p: Node = session.call("sea")
 			var port_p: Node = sea_p.get("port") if sea_p != null else null
 			var sub_p := words[1] if words.size() > 1 else "status"
 			if port_p == null:
 				_lines.append("port: no sea")
-			elif sub_p == "go":
-				var home: Dictionary = port_p.get("rules").call("port", "home")
+			elif sub_p == "go":  # "!port go [id]": at that port's dock (default home)
+				var home: Dictionary = port_p.get("rules").call("port", words[2] if words.size() > 2 else "home")
 				player.call("teleport", sea_p.call("world_of", Vector3(float(home["dock"][0]), 30.0, float(home["dock"][1]))), 0.0)
+			elif sub_p == "stall":  # "!port stall <id>": (sea step 13 R2a) beside that port's stall, facing it, and what F says there
+				var stall_p: Node3D = (port_p.get("_stalls") as Dictionary).get(words[2] if words.size() > 2 else "", null)
+				if stall_p != null:
+					player.call("teleport", stall_p.global_position + stall_p.global_transform.basis.z * 1.8 + Vector3(0.0, 0.5, 0.0), 0.0)
+					await get_tree().create_timer(0.8, true, false, true).timeout
+					player.call("look_at_point", stall_p.global_position + Vector3(0.0, 1.0, 0.0))
+				_lines.append("PORT stall %s: found %s, here '%s', prompt '%s'" % [" ".join(words.slice(2)), str(stall_p != null), String(port_p.call("port_here")), String(port_p.call("prompt", "F"))])
+			elif sub_p == "rest":  # "!port rest <id> [dread]": (sea step 13 R2a) inside that port's rest house with that much Dread, hurt, then F
+				var rp: Dictionary = port_p.get("rules").call("port", words[2])
+				player.set("dread", int(words[3]) if words.size() > 3 else 3)
+				(player.get("health") as Object).call("take_damage", 40.0)
+				player.call("teleport", sea_p.call("world_of", Vector3(float(rp["rest"]["at"][0]), float(rp["rest"]["at"][2]) + 0.6, float(rp["rest"]["at"][1]))), 0.0)
+				await get_tree().create_timer(1.2, true, false, true).timeout
+				var before_r := "dread %d hp %.0f" % [int(player.get("dread")), float(player.get("health").get("hp"))]
+				var said_r := String(port_p.call("prompt", "F"))
+				var did_r: bool = port_p.call("interact")
+				_lines.append("PORT rest %s: before %s, prompt '%s', interact %s -> dread %d hp %.0f, doubloons %d" % [words[2], before_r, said_r, str(did_r), int(player.get("dread")), float(player.get("health").get("hp")), int(session.call("doubloons").get("balance"))])
 			elif sub_p == "open":
 				_lines.append("PORT open: here '%s', prompt '%s'" % [String(port_p.call("port_here")), String(port_p.call("prompt", "F"))])
 				port_p.call("open", "home")

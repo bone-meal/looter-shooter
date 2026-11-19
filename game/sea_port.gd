@@ -1,7 +1,8 @@
 # Purpose: the sea's ports (sea step 6): the harbour master's stall at each port of data/sea/port.json (model
 # assets/models/sea/harbour_stall.gltf, tools/blender/sea_port.py; a port with "plot" has none: its counter is the
 # "Counter" marker of that building of the town, game/sea_town.gd, as the home port's harbour master since step 7), whose interact key opens the port window (game/port_shop_window.gd: buy, sell, change
-# chips into doubloons, ferry), and the DOUBLOONS counter shown at sea. Doubloons and chips are the character's own
+# chips into doubloons, ferry), an outpost's REST HOUSE (port "rest": full health + Dread cleared for doubloons, sea step 13
+# R2a; the home port's rest is its tavern), and the DOUBLOONS counter shown at sea. Doubloons and chips are the character's own
 # (game/game_session.gd doubloons() / wallet(), saved with him), so trading at a stall needs no host; a crane bought
 # here is fitted by the host (game/sea_ships.gd fit_part). A ferry moves only the player (locked: ships, ore and bars
 # do not travel by ferry).
@@ -108,15 +109,49 @@ func port_here() -> String:
 
 func prompt(key: String) -> String:
 	var id := port_here()
-	return "[%s] Harbour master: buy, sell, change chips, ferry" % key if id != "" and not window.visible else ""
+	if id != "" and not window.visible:
+		return "[%s] Harbour master: buy, sell, change chips, ferry" % key
+	var rest := rest_here()
+	if not rest.is_empty():
+		return "[%s] Rest in %s: full health, clears Dread (%d doubloons)" % [key, String(rest["rest"]["name"]), int(rest["rest"]["doubloons"])]
+	return ""
 
 
 func interact() -> bool:
 	var id := port_here()
-	if id == "":
+	if id != "":
+		open(id)
+		return true
+	var rest := rest_here()
+	if rest.is_empty():
 		return false
-	open(id)
+	_sea.emit_signal("notice", take_rest(rest))
 	return true
+
+
+# An outpost's rest house (sea step 13 R2a, data/sea/port.json "rest": a sea spot, its floor height, a name and a
+# price): the port this player stands in, on that floor ({} = none). The home port's rest is its tavern (sea_town).
+func rest_here() -> Dictionary:
+	var here: Vector3 = _sea.call("local_of", _player.global_position)
+	for port: Dictionary in rules.cfg["ports"]:
+		if port.has("rest"):
+			var spot: Array = port["rest"]["at"]
+			if Vector2(float(spot[0]), float(spot[1])).distance_to(Vector2(here.x, here.z)) <= float(port["rest"]["reach"]) and absf(here.y - float(spot[2])) < 1.5:
+				return port
+	return {}
+
+
+# Full health and Dread cleared (sea step 10's Dread: until a rest at a port), for the player's own doubloons.
+func take_rest(port: Dictionary) -> String:
+	var purse := doubloons()
+	if purse == null or not bool(purse.call("spend", int(port["rest"]["doubloons"]))):
+		return "Not enough doubloons"
+	var hp: Variant = _player.get("health")
+	if hp != null:
+		(hp as Object).call("heal", 99999.0)
+	if _player.has_method("clear_dread"):
+		_player.call("clear_dread")
+	return "Rested in %s: full health, Dread cleared" % String(port["rest"]["name"])
 
 
 func open(id: String) -> void:

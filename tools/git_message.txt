@@ -1,10 +1,9 @@
-Sea step 13 R2a part 1: region 2 islands (the Fog Banks)
+Sea step 13 R2a part 2: Lanternwick outpost services
 
-- diary/DESIGN_REGION2.md plan; director approved the region 2 boss THE LANTERN QUEEN as written (diary/DESIGN_BOSSES.md)
-- tools/blender/sea_isle_region2.py: LANTERNWICK (outpost round a harbour cove open to the east: rest hall, stilt huts, two jetties, lantern posts along the paths), GREYWATER BOG (peat and black channels, the sunken chapel), THE KNOTS (root islets and channels, the pitch works), HERONS REACH (reeds, sandy spine, inner lagoon, the decoy-maker's hut), DROWNED ORCHARD (orchard mound in a flooded rim, a dyke from the jetty, ruined farmhouse), THE HOLLOW MANGROVE (one giant mangrove, the main dungeon's way in) and 10 islets
-- new props (mangroves, reed bed, peat mound, glowcaps, lantern post) and set pieces (lantern hall, chapel ruin, pitch works, hollow mangrove, barge, bell buoy); swamp / mudflat / orchard zones in the island kit
-- every route checked and every place walked to by the real player; island collision baked (tools/bake_isle_shapes.tscn), longest build step under 14 ms
-- the island generators' Run lines now say to re-bake after a model change
+- data/sea/port.json: Lanternwick is a port: the harbour master's stall by its jetties (buy, sell, change chips, ferry), its dock for the ferry, and its REST HOUSE (the Lantern Hall: full health and Dread cleared for 5 doubloons)
+- game/sea_port.gd: an outpost port's rest (rest_here / take_rest; the home port's rest stays the tavern)
+- tested on the compatibility renderer: the stall's prompt and window at Lanternwick, the ferry from the home port lists Lanternwick, resting inside the hall took Dread 3 to 0 and health to full for 5 doubloons
+- dev: !port go <id>, stall <id>, rest <id> [dread]
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
