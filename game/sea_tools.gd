@@ -234,7 +234,7 @@ func _grapple() -> void:
 	for pair: Array in _dungeon_things("ring"):
 		candidates.append([pair[1] + Vector3(0.0, 3.75, 0.0), pair[1]])
 	for n: Node in get_tree().get_nodes_in_group("hook_ring"):
-		candidates.append([(n as Node3D).global_position, (n as Node3D).global_position - Vector3(0.0, 3.75, 0.0)])
+		candidates.append([(n as Node3D).global_position, (n as Node3D).global_position - Vector3(0.0, 3.75, 0.0), n])
 	for c: Array in candidates:
 		var to: Vector3 = c[0] - eye.origin
 		if to.length() > _t("range_m") or to.length() < 2.0:
@@ -250,6 +250,14 @@ func _grapple() -> void:
 		return
 	var ring: Vector3 = best[0]
 	var foot: Vector3 = best[1]
+	if best.size() > 2 and (best[2] as Node).has_meta("toll"):  # (sea step 10) a shed boss's bell: the hook hauls the clapper, not him
+		_play_use(ring)
+		var net0 := _net()
+		if net0 != null:
+			net0.call("tell_tool_fx", "hook", _sea.call("local_of", ring), Vector3.ZERO)
+		_dungeons().call("act", "*")
+		last = "grapple hooked the bell"
+		return
 	var back := Vector3(_player.global_position.x - foot.x, 0.0, _player.global_position.z - foot.z).normalized()
 	var land := foot + back * 0.8 + Vector3(0.0, _t("land_up_m", "grapple"), 0.0)  # (hauled to just over the ring's foot: clears a ledge's edge, then drops)
 	_hook_to = ring

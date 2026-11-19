@@ -41,6 +41,7 @@ const CigaretteModel = preload("res://game/cigarette_model.gd")
 const Explosives = preload("res://game/explosives.gd")
 const DamageNumbers = preload("res://game/damage_numbers.gd")
 const ItemDb = preload("res://core/item_db.gd")
+const BossRules = preload("res://core/sea/boss_rules.gd")
 const GunDb = preload("res://core/gun_db.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const GunTraits = preload("res://game/gun_traits.gd")
@@ -1601,7 +1602,7 @@ func _damage_mult() -> float:
 	mult *= self_fx.damage_mult(now, _near_banner())  # Full Clip, War Banner, Phase Step
 	if _sig_node != null and _sig_node.has_method("damage_mult"):
 		mult *= float(_sig_node.call("damage_mult"))  # a chase gun's own boost (Fish Story's boast)
-	return mult * (1.0 + bonus_damage_pct / 100.0) * (1.0 + _armour_bonus("damage_pct") / 100.0)
+	return mult * (1.0 + bonus_damage_pct / 100.0) * (1.0 + _armour_bonus("damage_pct") / 100.0) * _dread_damage()
 
 
 # Applies the progression bonuses (percent). A higher max health also heals by the difference.
@@ -1618,6 +1619,36 @@ func set_progress_bonuses(damage_pct: float, speed_pct: float, hp_pct: float) ->
 # A bonus of the worn armour's rolls and sets (core/armor_math.gd totals "bonus"; percent), 0 without it.
 func _armour_bonus(key: String) -> float:
 	return float((armor.get("bonus", {}) as Dictionary).get(key, 0.0)) + boon(key)
+
+
+# DREAD (sea step 10, LOCKED): each death in a super boss fight stacks it: less max health and gun damage
+# (data/sea/bosses.json "dread"), until a rest at a port (game/sea_town.gd calls clear_dread). Saved in the profile.
+var dread := 0
+var _dread_cfg := {}
+
+
+func _dread_numbers() -> Dictionary:
+	if _dread_cfg.is_empty():
+		_dread_cfg = (JSON.parse_string(FileAccess.get_file_as_string("res://data/sea/bosses.json")) as Dictionary)["dread"]
+	return _dread_cfg
+
+
+func add_dread() -> void:
+	dread = mini(dread + 1, int(_dread_numbers()["max"]))
+	_apply_health_cap()
+
+
+func clear_dread() -> void:
+	dread = 0
+	_apply_health_cap()
+
+
+func _dread_health() -> float:
+	return BossRules.dread_health(dread, _dread_numbers()) if dread > 0 else 1.0
+
+
+func _dread_damage() -> float:
+	return BossRules.dread_damage(dread, _dread_numbers()) if dread > 0 else 1.0
 
 
 # Timed boons (sea step 7b: the home port tavern's drinks and feasts): key -> [percent, until msec]. Same keys as the
@@ -1677,7 +1708,7 @@ func perks_changed(heal: bool) -> void:
 # Glass Cannon lowers max health while the gun is held (current health is never raised by swapping).
 func _apply_health_cap() -> void:
 	var buffs: Dictionary = _held_stats.get("buffs", {})
-	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (1.0 + _armour_bonus("health_pct") / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0) * float(run_fx.get("player_health", 1.0))
+	health.max_hp = (maxf(_base_max_hp, _perk("max_health", 0.0)) + _world_hp) * (1.0 + bonus_hp_pct / 100.0) * (1.0 + _armour_bonus("health_pct") / 100.0) * (GLASS_HEALTH if buffs.has("glass_cannon") else 1.0) * float(run_fx.get("player_health", 1.0)) * _dread_health()
 	health.hp = minf(health.hp, health.max_hp)
 
 

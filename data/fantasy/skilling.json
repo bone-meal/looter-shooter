@@ -2402,6 +2402,36 @@
     "shark_steak": 1
    },
    "batch": true
+  },
+  {
+   "id": "craft_tide_candle",
+   "skill": "crafting",
+   "level": 20,
+   "xp": 160,
+   "station": "crafting_table",
+   "in": {
+    "sunskate_wing": 1,
+    "shark_tooth": 3,
+    "sailcloth": 2
+   },
+   "out": {
+    "tide_candle": 1
+   }
+  },
+  {
+   "id": "build_shellback_prow",
+   "skill": "carpentry",
+   "level": 25,
+   "xp": 420,
+   "station": "shipyard",
+   "in": {
+    "shellback_plate": 4,
+    "iron_bar": 4,
+    "oak_plank": 10
+   },
+   "out": {
+    "shellback_prow": 1
+   }
   }
  ],
  "gather": {
@@ -3393,7 +3423,8 @@
      "tan_elk",
      "cut_gem",
      "craft_gloves",
-     "craft_bracelet"
+     "craft_bracelet",
+     "craft_tide_candle"
     ]
    },
    {

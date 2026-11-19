@@ -16,9 +16,11 @@
 extends Node3D
 
 const SeaDungeon = preload("res://game/sea_dungeon.gd")
+const SeaBoss = preload("res://game/sea_boss.gd")
 
 var cfg: Dictionary
 var spaces := {}  # id -> SeaDungeon
+var boss := SeaBoss.new()  # the super boss fights in their arenas (sea step 10)
 var gates := {}  # id -> {"node": Node3D, "ground": float (NAN until found)}
 var where := ""  # the dungeon this player is in ("" = outside)
 var acts := 0  # dev / checks: [F] uses done (here or asked), host changes applied
@@ -47,6 +49,7 @@ func setup(sea: Node3D, player: CharacterBody3D) -> void:
 		d.setup(id, cfg["dungeons"][id], cfg)
 		d.position = space_of(id)
 		d.sea_seconds = Callable(sea, "seconds")
+		d.boss_words = Callable(boss, "door_words")
 		d.visible = false
 		add_child(d)
 		spaces[id] = d
@@ -58,6 +61,9 @@ func setup(sea: Node3D, player: CharacterBody3D) -> void:
 		gate.rotation.y = deg_to_rad(float(e["yaw"]))
 		add_child(gate)
 		gates[id] = {"node": gate, "ground": NAN}
+	boss.name = "Boss"
+	add_child(boss)
+	boss.setup(self, sea, player)
 	var ec: Dictionary = cfg["env"]
 	_env = Environment.new()
 	_env.background_mode = Environment.BG_COLOR
@@ -312,14 +318,23 @@ func leave() -> void:
 	if where == "":
 		return
 	var id := where
-	var back: Vector3 = gate_front(id)
-	var yaw := deg_to_rad(float(cfg["dungeons"][id]["entrance"]["yaw"])) + PI  # facing away from the gate
-	if _came_from.has(id):  # where he went in: that ground was solid under him then
+	var back: Vector3
+	var yaw: float
+	if _came_from.has(id):  # where he went in: that ground was solid under him then (a boss arena: the temple's door)
 		back = _came_from[id][0]
 		yaw = float(_came_from[id][1]) + PI
+	elif cfg["dungeons"][id].has("entrance"):
+		back = gate_front(id)
+		yaw = deg_to_rad(float(cfg["dungeons"][id]["entrance"]["yaw"])) + PI  # facing away from the gate
+	else:
+		return
 	_player.call("teleport", _sea.call("world_of", back + Vector3(0.0, 0.3, 0.0)), yaw)
-	_settle = {"at": back + Vector3(0.0, 0.3, 0.0), "until": Time.get_ticks_msec() / 1000.0 + 4.0}
 	where = ""
+	if indoor_at(back):  # (back into another dungeon space: no island ground to wait for)
+		_fade()
+		last = "left " + id
+		return
+	_settle = {"at": back + Vector3(0.0, 0.3, 0.0), "until": Time.get_ticks_msec() / 1000.0 + 4.0}
 	_indoor(false)
 	_fade()
 	last = "left " + id
@@ -398,6 +413,9 @@ func interact() -> bool:
 		if String(d.rules.things[ch]["kind"]) == "exit":
 			leave()
 			return true
+		if d.rules.things[ch].has("boss"):  # a boss's sealed door (sea step 10): the offering, then the way in
+			boss.use_door(String(d.rules.things[ch]["boss"]))
+			return true
 		act(ch)
 		return true
 	var g := _gate_near()
@@ -433,6 +451,17 @@ func host_act(peer: int, id: String, ch: String, at: Vector3) -> bool:
 		return false
 	var d: SeaDungeon = spaces[id]
 	var r := d.rules
+	if ch == "@":  # an offering laid at this dungeon's boss door (sea step 10): he must stand at it
+		for door: String in r.of_kind("door"):
+			var ds := r.at_of(r.cell_of_thing(door))
+			if r.things[door].has("boss") and Vector2(at.x - ds.x, at.z - ds.z).length() < r.tile * 1.8:
+				if boss.host_offer(peer, String(r.things[door]["boss"])):
+					applied += 1
+					_dirty = true
+					return true
+		return false
+	if ch == "*":  # the Grapple Hook caught the shed boss's bell (sea step 10)
+		return boss.boss_of_arena(id) != "" and boss.host_toll(peer)
 	if ch == "!":  # the Fog Bell rang here (sea step 9b): the fog walkways stand for a while
 		var tcfg: Dictionary = (_sea.get("tools") as Node).get("cfg")["tools"]["bell"]
 		if r.reveal(float(_sea.call("seconds")) + float(tcfg["reveal_s"])):
@@ -594,6 +623,8 @@ func _run_fights() -> void:
 		for ch: String in fights:
 			var key := id + ":" + ch
 			var r := d.rules
+			if bool(r.things[ch].get("boss", false)):
+				continue  # (a boss arena's tide: game/sea_boss.gd drives it)
 			if r.state["active"].has(ch):
 				if bodies.is_empty():  # everyone left: it starts again next time
 					drop_fight(id, ch)
@@ -677,7 +708,21 @@ func world_dict() -> Dictionary:
 	var out := {}
 	for id: String in spaces:
 		out[id] = (spaces[id] as SeaDungeon).rules.to_dict()
+	out["_boss"] = boss.world_dict()  # (sea step 10) offerings laid, bosses beaten
 	return out
+
+
+# Host: a boss arena's tide stands at this step (-1 = dry), set by game/sea_boss.gd.
+func boss_tide(id: String, ch: String, step: int) -> void:
+	if not spaces.has(id):
+		return
+	var r := (spaces[id] as SeaDungeon).rules
+	if step < 0:
+		r.state["active"].erase(ch)
+	else:
+		r.state["active"][ch] = step
+	(spaces[id] as SeaDungeon).refresh(false)
+	_dirty = true
 
 
 func load_world(saved: Variant) -> void:
@@ -688,6 +733,7 @@ func load_world(saved: Variant) -> void:
 			(spaces[id] as SeaDungeon).rules.from_dict(saved[id])
 			(spaces[id] as SeaDungeon).rules.state["active"] = {}  # (nobody is in it now: a fight left going starts again)
 			(spaces[id] as SeaDungeon).refresh(true)
+	boss.load_world((saved as Dictionary).get("_boss"))
 
 
 # Client: the host's states.
@@ -696,6 +742,8 @@ func from_net(states: Dictionary) -> void:
 		if states.get(id) is Dictionary:
 			(spaces[id] as SeaDungeon).rules.from_dict(states[id])
 			(spaces[id] as SeaDungeon).refresh(false)
+	if states.get("_boss") is Dictionary:  # (the doors' offerings: what [F] at a sealed door says)
+		boss.load_world(states["_boss"])
 
 
 func status() -> String:
@@ -718,4 +766,4 @@ func status() -> String:
 			for item: String in [chart] + Array(cfg["pieces"][chart]):
 				if int(skills.get("bag").call("count", item)) > 0:
 					held.append(item)
-	return "dungeons: pieces %s; in '%s' (dark look %s, settling %s, falls %d, tide hurt %.0f), acts %d, applied %d, last '%s'; foes [%s]; %s" % [str(held), where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, tide_hurt, acts, applied, last, ", ".join(foes), "; ".join(parts)]
+	return boss.status() + "; dungeons: pieces %s; in '%s' (dark look %s, settling %s, falls %d, tide hurt %.0f), acts %d, applied %d, last '%s'; foes [%s]; %s" % [str(held), where, str(camera != null and camera.environment == _env), str(not _settle.is_empty()), falls, tide_hurt, acts, applied, last, ", ".join(foes), "; ".join(parts)]

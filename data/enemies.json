@@ -831,6 +831,27 @@
     0.42
    ],
    "attack_sound": "atk_blade"
+  },
+  "sea_abbot": {
+   "model": "sea_abbot",
+   "max_hp": 18000,
+   "speed": 0.0,
+   "attack_type": "melee",
+   "damage": 30,
+   "attack_range": 3.0,
+   "attack_interval": 5.0,
+   "size": [
+    6.0,
+    7.0,
+    9.0
+   ],
+   "color": [
+    1.0,
+    0.7,
+    0.2
+   ],
+   "attack_sound": "atk_slam",
+   "head_share": 0.0
   }
  }
 }

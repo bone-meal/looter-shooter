@@ -65,6 +65,7 @@ const ChatCommand = preload("res://core/chat_command.gd")
 const AdminCommands = preload("res://game/admin_commands.gd")
 const FantasyWorld = preload("res://game/fantasy_world.gd")
 const SeaWorld = preload("res://game/sea_world.gd")
+const BossBar = preload("res://game/boss_bar.gd")
 const TradeScreen = preload("res://game/trade_screen.gd")
 const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
@@ -1443,6 +1444,8 @@ func _load_profile() -> void:
 		_dungeons_saved = extra.get("sea_dungeons")
 		_tools_saved = extra.get("sea_tools")
 		_town_mine_saved = extra.get("town_mine")
+		_player.dread = clampi(int(extra.get("dread", 0)), 0, 9) if (extra.get("dread") is int or extra.get("dread") is float) else 0  # (sea step 10) until a port rest
+		_player.refresh_equipment()
 	if player_name != "":
 		_profile_name = player_name.strip_edges().substr(0, 20)
 	if not _knife_rolled:  # a new character (or one from before the knives): its knife type is rolled once and kept
@@ -1496,6 +1499,7 @@ func save_profile() -> void:
 		extra["sea_dungeons"] = _sea.dungeons.world_dict() if _sea != null and not guest else _dungeons_saved
 		extra["sea_tools"] = _sea.tools.owned.duplicate() if _sea != null else _tools_saved
 		extra["town_mine"] = _sea.town.mine_dict() if _sea != null else _town_mine_saved
+		extra["dread"] = _player.dread
 		ProfileIO.save(_profile_name, _player.inventory.to_dict(), _player.appearance, _save_key, extra)
 
 
@@ -1549,7 +1553,8 @@ func _prompt() -> String:
 			return "Watching %s. You are back when the next round starts.  [%s] next player" % [net.roster.get(_watched, "the island"), InputSetup.label(settings, "shoot")]
 		return "DOWN: a teammate can help you up (%d s)" % ceili(maxf(_down_until - _time, 0.0))
 	if _revive_target != 0:
-		return "[hold %s] Help %s up%s" % [key, net.roster.get(_revive_target, "your teammate"), "" if _revive_hold <= 0.0 else "  %d %%" % roundi(_revive_hold / float(_rounds.config()["downs"]["hold"]) * 100.0)]
+		var hold_s := float(_sea.dungeons.boss.downs_cfg()["hold"]) if _boss_here() else float(_rounds.config()["downs"]["hold"])
+		return "[hold %s] Help %s up%s" % [key, net.roster.get(_revive_target, "your teammate"), "" if _revive_hold <= 0.0 else "  %d %%" % roundi(_revive_hold / hold_s * 100.0)]
 	if _time < _trade_ask_until:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _hub_near_button():
@@ -2383,6 +2388,10 @@ func _on_player_died() -> void:
 		_player.teleport(_fantasy.haven_world(), 0.0)  # you wake up in the nearest town
 		_fantasy.enter(_player.global_position)
 		_player_hud.play_fade()
+	elif _in_sea and _sea != null:  # (sea step 10, LOCKED death rule) at sea: you wake at the home port, gear kept
+		_sea.dungeons.reset_indoor()
+		_player.teleport(_sea.spawn_world(_party_slot()), 0.0)
+		_player_hud.notice("You wake at the home port.")
 	else:
 		if (net == null or not net.can_send()) and _rounds.rules.number > 0:  # alone, going down ends the run
 			_score.downs += 1
@@ -2396,10 +2405,61 @@ func _on_player_died() -> void:
 			_watch_next()
 
 
+# --- sea step 10: downed in a super boss fight (game/sea_boss.gd keeps the fight's downs on the host) ---
+
+var _boss_down := false  # we went down in a boss fight (its downs, not the islands')
+
+
+# In a super boss fight that is going on, in its arena (or lying in it).
+func _boss_here() -> bool:
+	return _in_sea and _sea != null and (_sea.dungeons.boss.fighting_here() or _boss_down)
+
+
+# Out of the boss fight: the camera goes to a teammate still standing in the arena (none: we look on from where we lie).
+func _boss_watch_next() -> void:
+	if net == null or not net.can_send():
+		return
+	var ids: Array = []
+	var arena := String(_sea.dungeons.where)
+	for id: int in net.roster:
+		var body: Node3D = net.player_node(id)
+		if id != net.my_id() and body != null and _sea.dungeons.boss.state_of(id) == "up" and _sea.dungeons.dungeon_at(_sea.local_of(body.global_position)) == arena:
+			ids.append(id)
+	ids.sort()
+	if ids.is_empty():
+		_watched = 0
+		_player.watch(null)
+		return
+	_watched = ids[(ids.find(_watched) + 1) % ids.size()]
+	_player.watch(net.player_node(_watched))
+
+
+# The boss fight ended for us (game/sea_boss.gd ended): won = up again where we lie; wiped = everyone in the arena
+# wakes at the home port (a stack of Dread for a death we had not paid yet).
+func boss_over(wiped: bool) -> void:
+	var was_out := _out
+	var lying := _player.downed
+	_boss_down = false
+	_out = false
+	_player.watch(null)
+	if lying:
+		_player.revive(1.0 if wiped else 0.5)
+	if wiped:
+		if not was_out:
+			_player.add_dread()
+		_sea.dungeons.reset_indoor()
+		_player.teleport(_sea.spawn_world(_party_slot()), 0.0)
+		_player_hud.play_fade()
+		_player_hud.notice("The party fell. You wake at the home port (Dread %d: rest at the tavern to clear it)." % _player.dread)
+	save_profile()
+
+
 # --- online: down, helped up, out (game/net_downs.gd keeps the party's states on the host) ---
 
 # Asked by the player the moment its health runs out: true = lie down and wait for a teammate instead of dying.
 func _goes_down() -> bool:
+	if _boss_here():  # (sea step 10) in a super boss fight a teammate can help us up, alone or not
+		return true
 	if _in_arena or _in_fantasy or not _on_island(_player.global_position) or _island_round() <= 0:
 		return false
 	return (net != null and net.can_send()) or (_perks.has("second_wind") and not _second_wind_used)  # online; or alone with the one self-revive
@@ -2412,6 +2472,12 @@ func _island_round() -> int:
 func _on_went_down() -> void:
 	_score.downs += 1
 	_stats.add("downs")
+	if _boss_here():  # (sea step 10) the boss fight keeps its own downs (the host decides)
+		_down_until = _time + float(_sea.dungeons.boss.downs_cfg()["seconds"])
+		_boss_down = true
+		_sea.dungeons.boss.report("down")
+		_player_hud.notice("You are down: a teammate can help you up")
+		return
 	if net == null or not net.can_send():  # alone with Second Wind: up again by ourselves in a moment, this once
 		_second_wind_used = true
 		_self_revive_at = _time + _perks.num("self_revive_seconds", 3.0)
@@ -2426,6 +2492,13 @@ func _on_went_down() -> void:
 
 # Nobody helped in time.
 func _bleed_out() -> void:
+	if _boss_down:  # (sea step 10) out of the boss fight: lying there till it ends, and a stack of Dread
+		_out = true
+		_sea.dungeons.boss.report("out")
+		_player.add_dread()
+		_player_hud.notice("Nobody came. You are out of this fight (Dread %d)." % _player.dread)
+		_boss_watch_next()
+		return
 	_out = true
 	net.downs.report("out")
 	_player.finish_off()  # -> _on_player_died: the backpack is left and we watch the others
@@ -2452,6 +2525,7 @@ func _watch_next() -> void:
 
 func _on_revived(share: float) -> void:
 	if _player.downed and not _out:
+		_boss_down = false
 		_player.revive(share)
 		_hurt_at = _time
 		_player_hud.notice("You are back on your feet.")
@@ -2501,18 +2575,24 @@ func _hold_revive(delta: float) -> void:
 	if _player.downed:
 		_revive_hold = 0.0
 		return
-	for id: int in net.downs.states:
+	var boss := _boss_here()
+	for id: int in (_sea.dungeons.boss.down_peers() if boss else net.downs.states.keys()):
 		var body: Node3D = net.player_node(id)
-		if id != net.my_id() and net.downs.state_of(id) == "down" and body != null and _near(body.global_position, net.downs.reach):
+		var lying: bool = _sea.dungeons.boss.state_of(id) == "down" if boss else net.downs.state_of(id) == "down"
+		if id != net.my_id() and lying and body != null and _near(body.global_position, float(_sea.dungeons.boss.downs_cfg()["reach"]) if boss else net.downs.reach):
 			_revive_target = id
 			break
 	if _revive_target == 0 or not Input.is_action_pressed("interact"):
 		_revive_hold = 0.0
 		return
 	_revive_hold += delta
-	if _revive_hold >= float(_rounds.config()["downs"]["hold"]) * _perks.num("revive_mult", 1.0):
+	var hold := float(_sea.dungeons.boss.downs_cfg()["hold"]) if boss else float(_rounds.config()["downs"]["hold"])
+	if _revive_hold >= hold * _perks.num("revive_mult", 1.0):
 		_revive_hold = 0.0
-		net.downs.ask_revive(_revive_target)
+		if boss:
+			_sea.dungeons.boss.ask_revive(_revive_target)
+		else:
+			net.downs.ask_revive(_revive_target)
 
 
 # --- the island's rounds (game/island_rounds.gd runs them; core/round_rules.gd decides) ---
@@ -3976,6 +4056,12 @@ func _build_sea() -> void:
 		_sea.notice.connect(_player_hud.notice)
 		_sea.salvage.load_book(_salvage_saved)
 		_sea.ships.foes.set_game(_director, _score)  # pirate crews, sharks, the wyrm are the director's enemies (shots, kill pay, grenades)
+		_sea.dungeons.boss.director = _director  # (sea step 10) the super bosses too
+		_sea.dungeons.boss.card = _score
+		var boss_bar := BossBar.new()
+		boss_bar.fight = _sea.dungeons.boss
+		boss_bar.player = _player
+		_player_hud.add_child(boss_bar)
 		_sea.chart.from_dict(_chart_saved)
 		_sea.ships.from_list(_fleet_saved)
 		_sea.town.load_world(_town_saved)

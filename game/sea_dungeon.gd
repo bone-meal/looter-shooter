@@ -22,6 +22,7 @@ var _nodes := {}  # letter -> Node3D (doors, plates, levers, blocks, keys, chest
 var _solids := {}  # letter -> StaticBody3D (closed doors, blocks)
 var _anim := {}  # letter -> 0..1 shown (doors open, plates down, levers pulled, chest lids)
 var _torches: Array = []
+var boss_words := Callable()  # (sea step 10) what [F] at a boss's sealed door says: game/sea_boss.gd door_words
 var _floods := {}  # fight letter -> MeshInstance3D (its tide's water sheet)
 var outdoor := false  # (sea step 9d) a puzzle court out on an island: no ceiling, the island's own light
 var wall_h := 4.5  # this dungeon's walls (its entry's "wall_h", else the kit's): tall halls stack the kit's wall
@@ -630,7 +631,7 @@ func usable_at(local: Vector3, facing: Vector3) -> Array:
 				elif opens == "bigkey" and not rules.door_open(ch) and d < reach + 0.8:
 					words = "Unlock the great door with the Great Key" if bool(rules.state["big"]) else "Locked: it needs the Great Key"
 				elif opens == "sealed" and d < reach + 0.8:
-					words = String(th.get("says", "Sealed fast"))
+					words = String(boss_words.call(String(th["boss"]))) if th.has("boss") and boss_words.is_valid() else String(th.get("says", "Sealed fast"))
 			"lever":
 				if d < reach:
 					words = "Pull the lever"

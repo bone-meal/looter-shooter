@@ -2232,6 +2232,42 @@
     0.78,
     0.58
    ]
+  },
+  "tide_candle": {
+   "kind": "material",
+   "icon": "potion",
+   "color": [
+    0.95,
+    0.85,
+    0.6
+   ]
+  },
+  "abbot_bell_clapper": {
+   "kind": "material",
+   "icon": "relic",
+   "color": [
+    0.62,
+    0.42,
+    0.2
+   ]
+  },
+  "shellback_plate": {
+   "kind": "material",
+   "icon": "shell",
+   "color": [
+    0.86,
+    0.34,
+    0.18
+   ]
+  },
+  "shellback_prow": {
+   "kind": "material",
+   "icon": "sail",
+   "color": [
+    0.66,
+    0.52,
+    0.36
+   ]
   }
  }
 }

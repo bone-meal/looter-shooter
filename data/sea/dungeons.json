@@ -938,7 +938,8 @@
      "kind": "door",
      "name": "door_sealed",
      "open": "sealed",
-     "says": "Sealed. Something vast turns over behind it (step 10)"
+     "says": "Sealed. Something vast turns over behind it",
+     "boss": "abbot_shellback"
     }
    },
    "dress": {
@@ -1215,6 +1216,101 @@
      "name": "vault_chest",
      "loot": "puzzle_chest",
      "piece": "chart_piece_3"
+    }
+   }
+  },
+  "drowned_sanctum": {
+   "name": "The Drowned Sanctum",
+   "region": 1,
+   "slot": 7,
+   "_about": "Sea step 10: Abbot Shellback's arena (data/sea/bosses.json), behind The Tidewater Temple's sealed door: a round sanctum, a deep pool in the middle (the boss's), six pillars with hook rings, the boss tide T (driven by game/sea_boss.gd, not by the fight runner). No island gate: you come in through the temple's sealed door and the exit takes you back to it.",
+   "boss_arena": "abbot_shellback",
+   "wall_h": 12.0,
+   "torch_every": 4,
+   "dress": {
+    "floor_worn": 0.2,
+    "floor_mosaic": 0.12,
+    "wall_crusted": 0.3,
+    "wall_relief": 0.1,
+    "clutter": 0.12,
+    "seed": 11
+   },
+   "map": [
+    "#############",
+    "####.....####",
+    "###.a.T.b.###",
+    "##.........##",
+    "#...........#",
+    "#....===....#",
+    "#.c..===..d.#",
+    "#....===....#",
+    "#...........#",
+    "##.........##",
+    "###.e...f.###",
+    "####..A..####",
+    "######X######"
+   ],
+   "legend": {
+    "A": {
+     "kind": "arrive",
+     "name": "arrive"
+    },
+    "X": {
+     "kind": "exit",
+     "name": "back to the temple"
+    },
+    "T": {
+     "kind": "fight",
+     "name": "boss_tide",
+     "boss": true,
+     "flood": [
+      [
+       1,
+       1
+      ],
+      [
+       11,
+       11
+      ]
+     ],
+     "tide": [
+      0.4,
+      0.9,
+      1.5,
+      2.1,
+      4.5
+     ],
+     "waves": []
+    },
+    "a": {
+     "kind": "ring",
+     "name": "pillar_a",
+     "on": "H"
+    },
+    "b": {
+     "kind": "ring",
+     "name": "pillar_b",
+     "on": "H"
+    },
+    "c": {
+     "kind": "ring",
+     "name": "pillar_c",
+     "on": "H"
+    },
+    "d": {
+     "kind": "ring",
+     "name": "pillar_d",
+     "on": "H"
+    },
+    "e": {
+     "kind": "ring",
+     "name": "pillar_e",
+     "on": "H"
+    },
+    "f": {
+     "kind": "ring",
+     "name": "pillar_f",
+     "on": "H"
     }
    }
   }

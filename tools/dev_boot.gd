@@ -756,6 +756,69 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					"prompt":
 						_lines.append("  prompt: '%s'" % String(dm.call("prompt", "F")))
 				_lines.append("DUN %s: %s; prompt '%s'; indoor %s; at %s" % [" ".join(words.slice(1)), String(dm.call("status")), String(dm.call("prompt", "F")), str(sea_d.get("indoor")), str(sea_d.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
+		"boss":  # sea step 10: !boss give (the offering) | door (stand at the temple's sealed door) | in (go through, once open) | hp <share> (host) | part <id> <damage> | face | hook (Grapple Hook at the shed bell) | kill (host) | wait <state|phase|mode|tide> <value> [s] | status <note>
+			var sea_x: Node = session.call("sea")
+			if sea_x == null:
+				_lines.append("boss: no sea")
+			else:
+				var dmx: Node = sea_x.get("dungeons")
+				var bx: Node = dmx.get("boss")
+				var bid := "abbot_shellback"
+				var bcfg: Dictionary = bx.call("boss_cfg", bid)
+				match words[1] if words.size() > 1 else "status":
+					"give":
+						(sea_x.get("skills") as Node).call("give", String(bcfg["offering"]), int(words[2]) if words.size() > 2 else 1)
+					"door":  # on the floor cell before the sealed door, half a cell from it, facing it
+						var temple := String(bcfg["temple"])
+						var rt: RefCounted = dmx.get("spaces")[temple].get("rules")
+						var dc: Vector2i = rt.call("cell_of_thing", String(bcfg["door"]))
+						for step_x: Vector2i in [Vector2i(0, 1), Vector2i(0, -1), Vector2i(1, 0), Vector2i(-1, 0)]:
+							var fc_x: Vector2i = dc + step_x
+							if bool(rt.call("passable", fc_x)) and String(rt.call("char_at", fc_x)) != "#":
+								var tile_x := float(dmx.get("cfg")["tile"])
+								var spot_x := (Vector3(fc_x.x, 0.0, fc_x.y) - Vector3(step_x.x, 0.0, step_x.y) * 0.45) * tile_x  # (cells are centred on whole numbers)
+								player.call("teleport", sea_x.call("world_of", (dmx.call("space_of", temple) as Vector3) + spot_x + Vector3(0.0, 0.4, 0.0)), 0.0)
+								await get_tree().create_timer(0.4, true, false, true).timeout
+								player.call("look_at_point", sea_x.call("world_of", (dmx.call("space_of", temple) as Vector3) + Vector3(dc.x, 0.0, dc.y) * tile_x + Vector3(0.0, 1.2, 0.0)))
+								break
+					"in":
+						bx.call("use_door", bid)
+						await get_tree().create_timer(1.0, true, false, true).timeout
+					"hp":
+						var ex: Node3D = bx.get("enemy")
+						if ex != null:
+							var hx: RefCounted = ex.get("health")
+							hx.set("hp", float(hx.get("max_hp")) * float(words[2]))
+					"part":
+						bx.call("part_hit", words[2], float(words[3]))
+					"face":
+						var ef: Node3D = bx.get("enemy")
+						if ef != null:
+							player.call("look_at_point", ef.global_position + Vector3(0.0, 2.5, 0.0))
+					"hook":  # look at the shed bell's clapper ring and use the Grapple Hook
+						var ring_x: Node3D = bx.get("_bell_ring")
+						if ring_x != null and is_instance_valid(ring_x):
+							player.call("look_at_point", ring_x.global_position)
+							await get_tree().create_timer(0.3, true, false, true).timeout
+							var tmx: Node = sea_x.get("tools")
+							tmx.set("chosen", "grapple")
+							tmx.call("use")
+							await get_tree().create_timer(0.5, true, false, true).timeout
+						else:
+							_lines.append("  no bell ring")
+					"kill":
+						var ek: Node3D = bx.get("enemy")
+						if ek != null:
+							ek.call("on_hit", 1.0e7)
+					"wait":
+						var until_x := Time.get_ticks_msec() + (int(float(words[4]) * 1000.0) if words.size() > 4 else 60000)
+						while Time.get_ticks_msec() < until_x:
+							var got_x := String(bx.get(words[2])) if words[2] in ["state", "mode"] else (str((bx.call("down_peers") as Array).size()) if words[2] == "down" else str(int(bx.get(words[2])) + (1 if words[2] == "phase" else 0)))
+							if got_x == words[3]:
+								break
+							await get_tree().create_timer(0.2, true, false, true).timeout
+				var hpp: RefCounted = player.get("health")
+				_lines.append("BOSS %s: %s; me hp %.0f/%.0f downed %s dread %d; prompt '%s'; at %s" % [" ".join(words.slice(1)), String(bx.call("status")), float(hpp.get("hp")), float(hpp.get("max_hp")), str(player.get("downed")), int(player.get("dread")), String(dmx.call("prompt", "F")), str(sea_x.call("local_of", player.global_position).snapped(Vector3(0.1, 0.1, 0.1)))])
 		"uboat":  # sea step 8e-4: !uboat sight <surface|periscope> <none|torpedo_foe|torpedo_us|crate|chart> | near [m] (host: bring it close, broadside on) | cfg <key> <n> | look [torp] | pause on|off | wait <seen|gone|hit|deed> [n] | status <note>
 			var sea_u: Node = session.call("sea")
 			var fleet_u: Node = sea_u.get("ships") if sea_u != null else null

@@ -88,6 +88,10 @@ sunskate_wing: Sunskate Wing
 fogmaw_lure: Fogmaw Lure
 eel_hide: Eel Hide
 cinder_plate: Cinder Shell Plate
+tide_candle: Tide Candle
+abbot_bell_clapper: Abbot's Bell Clapper
+shellback_plate: Shellback Plate
+shellback_prow: Shellback Prow
 rime_blubber: Rime Blubber
 storm_feather: Storm Feather
 siren_pearl: Siren Pearl

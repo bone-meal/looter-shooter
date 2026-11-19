@@ -1058,3 +1058,118 @@ func _player_fx(kind: String, v: Vector3, damage: float) -> void:
 	var beasts := _foe_part("beasts")
 	if beasts != null and kind in ["knock", "snatch", "slide"]:
 		beasts.call("player_fx", kind, v, damage)
+
+
+# --- the super bosses (sea step 10): the host's boss at 10 Hz, clients' hits / downs / revives as asks ---
+
+func _boss() -> Node:
+	var sea := _sea()
+	return (sea.get("dungeons") as Node).get("boss") if sea != null else null
+
+
+func tell_boss(got: Array) -> void:
+	if active() and net.is_host():
+		_boss_down.rpc(got)
+
+
+@rpc("authority", "call_remote", "unreliable_ordered")
+func _boss_down(got: Array) -> void:
+	var boss := _boss()
+	if boss != null and got.size() <= 24:
+		boss.call("from_net", got)
+
+
+func request_boss_hit(damage: float) -> void:
+	if is_client():
+		_boss_hit.rpc_id(1, damage)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _boss_hit(damage: float) -> void:
+	var boss := _boss()
+	if net.is_host() and net.roster.has(multiplayer.get_remote_sender_id()) and boss != null and is_finite(damage):
+		boss.call("host_hit", damage, multiplayer.get_remote_sender_id())
+
+
+func request_boss_part(id: String, damage: float) -> void:
+	if is_client():
+		_boss_part.rpc_id(1, id, damage)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _boss_part(id: String, damage: float) -> void:
+	var boss := _boss()
+	if net.is_host() and net.roster.has(multiplayer.get_remote_sender_id()) and boss != null and id.length() <= 24 and is_finite(damage) and damage > 0.0:
+		boss.call("host_part", id, damage)
+
+
+func request_boss_down(state: String) -> void:
+	if is_client():
+		_boss_state.rpc_id(1, state)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _boss_state(state: String) -> void:
+	var boss := _boss()
+	if net.is_host() and net.roster.has(multiplayer.get_remote_sender_id()) and boss != null and state in ["up", "down", "out"]:
+		boss.call("host_down", multiplayer.get_remote_sender_id(), state)
+
+
+func request_boss_revive(target: int) -> void:
+	if is_client():
+		_boss_revive.rpc_id(1, target)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _boss_revive(target: int) -> void:
+	var boss := _boss()
+	if net.is_host() and net.roster.has(multiplayer.get_remote_sender_id()) and boss != null:
+		boss.call("host_revive", multiplayer.get_remote_sender_id(), target)
+
+
+func tell_boss_revived(peer: int, share: float) -> void:
+	if active() and net.is_host() and net.roster.has(peer):
+		_boss_revived.rpc_id(peer, share)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _boss_revived(share: float) -> void:
+	var s := get_tree().get_first_node_in_group("game_session")
+	if s != null and is_finite(share):
+		s.call("_on_revived", clampf(share, 0.05, 1.0))
+
+
+func tell_boss_offered(peer: int) -> void:
+	if active() and net.is_host() and net.roster.has(peer):
+		_boss_offered.rpc_id(peer)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _boss_offered() -> void:
+	var boss := _boss()
+	if boss != null:
+		boss.call("offered")
+
+
+func tell_boss_end(id: String, how: String) -> void:
+	if active() and net.is_host():
+		_boss_end.rpc(id, how)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _boss_end(id: String, how: String) -> void:
+	var boss := _boss()
+	if boss != null and id.length() <= 32 and how in ["won", "wipe"]:
+		boss.call("ended", id, how)
+
+
+func tell_boss_notice(text: String) -> void:
+	if active() and net.is_host():
+		_boss_notice.rpc(text.left(120))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _boss_notice(text: String) -> void:
+	var sea := _sea()
+	if sea != null:
+		sea.emit_signal("notice", text.left(120))
