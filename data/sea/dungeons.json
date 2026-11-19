@@ -2438,7 +2438,7 @@
    "name": "The Root Crown",
    "region": 2,
    "slot": 13,
-   "_about": "Sea step 13 R2d: the Lantern Queen's arena (data/sea/bosses.json lantern_queen), behind The Hollow Mangrove's root door: the hollow inside of one giant mangrove, 19 x 19 cells: a root island in the middle, the black pool round it (hers), a ring of root walkways with three gaps, four pitch braziers on it (lit by the Ember Gauntlet; in this arena they burn out after burn_s), six root knots with hook rings in the outer water, the boss tide T (driven by game/sea_boss.gd: the enrage sinks the walkways). No island gate: you come in through the root door and the exit takes you back to it. Layout mine (/home/claude/scratch/r2_crown.py).",
+   "_about": "Sea step 13 R2d: the Lantern Queen's arena (data/sea/bosses.json lantern_queen), behind The Hollow Mangrove's root door: the hollow inside of one giant mangrove, 19 x 19 cells: a root island in the middle, the black pool round it (hers), a ring of root walkways with three gaps, four pitch braziers on it (lit by the Ember Gauntlet; in this arena they burn out after burn_s), six root knots with hook rings in the outer water, the boss tide T (driven by game/sea_boss.gd: the enrage sinks the walkways) and four sink things h i j k (one walkway quarter each, sunk one at a time in phase 2 by game/sea_boss_lantern.gd). No island gate: you come in through the root door and the exit takes you back to it. Layout mine (/home/claude/scratch/r2_crown.py).",
    "boss_arena": "lantern_queen",
    "wall_h": 12.0,
    "torch_every": 0,
@@ -2529,6 +2529,82 @@
      "kind": "ring",
      "name": "knot_n_east",
      "on": "H"
+    },
+    "h": {
+     "kind": "fight",
+     "name": "sink_nw",
+     "boss": true,
+     "flood": [
+      [
+       1,
+       1
+      ],
+      [
+       8,
+       8
+      ]
+     ],
+     "tide": [
+      1.6
+     ],
+     "waves": []
+    },
+    "i": {
+     "kind": "fight",
+     "name": "sink_ne",
+     "boss": true,
+     "flood": [
+      [
+       10,
+       1
+      ],
+      [
+       17,
+       8
+      ]
+     ],
+     "tide": [
+      1.6
+     ],
+     "waves": []
+    },
+    "j": {
+     "kind": "fight",
+     "name": "sink_sw",
+     "boss": true,
+     "flood": [
+      [
+       1,
+       10
+      ],
+      [
+       8,
+       17
+      ]
+     ],
+     "tide": [
+      1.6
+     ],
+     "waves": []
+    },
+    "k": {
+     "kind": "fight",
+     "name": "sink_se",
+     "boss": true,
+     "flood": [
+      [
+       10,
+       10
+      ],
+      [
+       17,
+       17
+      ]
+     ],
+     "tide": [
+      1.6
+     ],
+     "waves": []
     }
    },
    "map": [
@@ -2539,11 +2615,11 @@
     "###===...=...===###",
     "##===w...=...x===##",
     "##a=...=====...=b##",
-    "#===..=======..===#",
+    "#===h.=======.i===#",
     "#==...==...==...==#",
     "#=======...=======#",
     "#==...==...==...==#",
-    "#===..=======..===#",
+    "#===j.=======.k===#",
     "##c=...=====...=d##",
     "##===y.......z===##",
     "###===.T.....===###",

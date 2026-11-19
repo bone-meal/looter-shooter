@@ -138,6 +138,8 @@ func show_move(attack: Dictionary, mode: String, progress: float, boss_at: Vecto
 				_mark(0, 3, here, yaw, float(attack["length"]), float(attack["length"]), float(attack["width"]), progress, warn)
 			"ring":
 				_mark(0, 0, here, 0.0, 2.5, 2.5, 0.0, progress, Color(0.4, 0.85, 1.0, 0.85))  # the bell swings: a glow round it
+			"gulp":  # (the Lantern Queen) she surfaces: the whirlpool's reach and the mouth's circle
+				_mark(0, 0, here, 0.0, float(attack.get("radius", 20.0)), float(attack.get("radius", 20.0)), 0.0, progress, Color(0.3, 0.75, 0.65, 0.45))
 			"line":  # a lane along the two target points (the Lantern Queen's root lash: the glow runs along it)
 				if targets.size() >= 2:
 					var a0: Vector3 = targets[0]
@@ -149,6 +151,8 @@ func show_move(attack: Dictionary, mode: String, progress: float, boss_at: Vecto
 				for i in mini(targets.size(), MARKS):
 					var t: Vector3 = targets[i]
 					_mark(i, 0, Vector3(t.x, maxf(t.y, floor_y) + 0.06, t.z), 0.0, float(attack["radius"]), float(attack["radius"]), 0.0, progress, col)
+	elif mode == "strike" and shape == "gulp":  # (the Lantern Queen's whirlpool: the pull's reach while it lasts)
+		_mark(0, 1, here, 0.0, float(attack.get("radius", 20.0)) + 1.0, float(attack.get("radius", 20.0)) * 0.5, float(attack.get("radius", 20.0)), 1.0, Color(0.3, 0.75, 0.65, 0.35))
 	elif mode == "strike" and shape == "ring" and ring_r >= 0.0:
 		_mark(0, 1, here, 0.0, float(attack["max_r"]) + 1.0, ring_r, float(attack["width"]), 1.0, Color(0.55, 0.9, 1.0, 0.9))
 

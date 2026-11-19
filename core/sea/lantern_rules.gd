@@ -2,7 +2,8 @@
 # the Root Crown's fog is (by phase, thinned by lit braziers), when a lit brazier burns out, whether she is EXPOSED
 # (inside a lit brazier's circle: her body takes all of a hit and her gills are live), the LURE PULL (a player who
 # keeps her lure in view long enough is walked toward the pool), spore CLOUDS (where a spore pod landed: standing in
-# one blinds). Pure: no nodes, no drawing, no network (game/sea_boss_lantern.gd runs it).
+# one blinds), phase 2's rolling fog, FALSE LURES (how many, where, how they pulse against the real one) and which
+# walkway section sinks next. Pure: no nodes, no drawing, no network (game/sea_boss_lantern.gd runs it).
 # Dependencies: none (the boss's "lantern" block of data/sea/bosses.json is passed in).
 extends RefCounted
 
@@ -21,13 +22,48 @@ func setup(lantern: Dictionary) -> void:
 	pulled = false
 
 
-# The arena's fog density in this phase with this many braziers lit.
-func fog(phase: int, lit: int) -> float:
+# The arena's fog density in this phase with this many braziers lit, at this fight time (the "roll" phase: thick for
+# roll[0] s, thin for roll[1] s, densities roll[2] / roll[3], easing over 3 s).
+func fog(phase: int, lit: int, t := 0.0) -> float:
 	var list: Array = cfg.get("fog", [0.1])
 	var base := float(list[clampi(phase, 0, list.size() - 1)])
 	if phase == 0:
 		base -= float(cfg.get("lit_thin", 0.0)) * float(lit)
+	var roll: Dictionary = cfg.get("roll", {})
+	if not roll.is_empty() and phase == int(roll.get("phase", 1)):
+		var thick := float(roll["thick_s"])
+		var cycle := thick + float(roll["thin_s"])
+		var k := fmod(maxf(t, 0.0), cycle)
+		var thin_w := clampf(minf(k - thick, cycle - k) / 3.0, 0.0, 1.0) if k > thick else 0.0
+		base = lerpf(float(roll["thick"]), float(roll["thin"]), thin_w)
 	return maxf(base, 0.02)
+
+
+# How many false lures rise for this party (base, +per_extra a player, at most max).
+func false_count(party: int) -> int:
+	var f: Dictionary = cfg.get("false_lures", {})
+	return mini(int(f.get("base", 2)) + floori(float(clampi(party, 1, 6) - 1) * float(f.get("per_extra", 0.6))), int(f.get("max", 5)))
+
+
+# A false lure's place round the pool (arena-local), from its angle round home.
+func false_at(home: Vector3, ang: float) -> Vector3:
+	var f: Dictionary = cfg.get("false_lures", {})
+	return home + Vector3(cos(ang) * float(f.get("r", 9.0)), float(f.get("height", 2.0)), sin(ang) * float(f.get("r", 9.0)))
+
+
+# How big a lure bulb is drawn now: the false ones pulse together, the real one out of step (and a little uneven).
+func pulse(t: float, real: bool) -> float:
+	var hz := float((cfg.get("false_lures", {}) as Dictionary).get("pulse_hz", 0.8))
+	var a := TAU * hz * t
+	return 1.0 + 0.18 * (sin(a + PI) + 0.25 * sin(a * 2.7) if real else sin(a))
+
+
+# The walkway section to sink next (never the one that just rose).
+func next_sink(count: int, last: int, rng: RandomNumberGenerator) -> int:
+	if count <= 1:
+		return 0
+	var i := rng.randi() % (count - 1)
+	return i + 1 if i >= last and last >= 0 else i
 
 
 # Host: braziers that have burned for their burn_s (given {char: burn_s} of the lit ones) and must go out now.

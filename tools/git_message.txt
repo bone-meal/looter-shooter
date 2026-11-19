@@ -1,6 +1,6 @@
-Sea step 13 R2d part 1: The Lantern Queen, her arena and the light rules
+Sea step 13 R2d part 2: the Lantern Queen's False Lights phase
 
-Region 2 super boss (approved page): anglerfish model, lanternfry and the Lure Lamp trophy; the Root Crown arena behind the Hollow Mangrove's root door (island, black pool, root walkways, four pitch braziers that burn out after 40 s, six root knots with hook rings); the Marsh Beacon offering (Crafting 30, Mangrove Pitch at the stall until R2g); phases with circling in the pool, the fog, exposed in a lit brazier's circle (gills live, full damage), the lure pull, root lash lanes, spore clouds that blind, a breakable lure that blinds her (phase 2) or stuns her (phase 3), Gloomscales and Gloomscale Sheathing (region 3 gate part). Dungeon water colours. Walked on his PC.
+Phase 2 as approved: rolling fog (25 s thick, 15 s thin), false lures round the pool by party size that pulse together while her real lure pulses out of step (shot ones burst into spores and rise again), walkway quarters sinking one after another, she lies low in the black water unless exposed or striking, and the whirlpool gulp: she comes to the pool edge, pulls everyone toward her and swallows whoever reaches her mouth (held inside her for 4 s or until the others hurt her enough, then spat onto the walkway with heavy damage). Walked on his PC.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

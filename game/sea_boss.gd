@@ -657,7 +657,7 @@ func _nearest_up(from: Vector3, floor_only: bool) -> Array:
 	var best: Array = []
 	var best_d := INF
 	for b: Array in _bodies():
-		if rules.state_of(int(b[0])) != "up":
+		if rules.state_of(int(b[0])) != "up" or bool(lantern.call("is_swallowed", int(b[0]))):
 			continue
 		var local: Vector3 = b[2]
 		if floor_only and _ground(local) > 1.0:
@@ -689,7 +689,7 @@ func _drive(delta: float) -> void:
 	if mode == "stunned":
 		mode = "idle"
 		_gap = 1.0
-	var y_goal := (-1.4 if in_pool else (-0.8 if _in_pit(pos) else 0.0))
+	var y_goal := (_pool_y() if in_pool else (-0.8 if _in_pit(pos) else 0.0))
 	match mode:
 		"idle":
 			rear = move_toward(rear, 0.0, delta * 2.0)
@@ -709,7 +709,15 @@ func _drive(delta: float) -> void:
 			rear = move_toward(rear, 1.0 if bool(a.get("rear", false)) else 0.2, delta * 2.5)
 			if String(a.get("shape", "")) == "under":
 				y_goal = -4.0
-			elif not target.is_empty() and String(a.get("shape", "")) in ["arc", "charge"] and _t > _t_total * 0.5:
+			elif String(a.get("shape", "")) == "gulp" and not target.is_empty():  # (the Queen) to the pool's edge before her quarry
+				var out_g := Vector3((target[2] as Vector3).x - home.x, 0.0, (target[2] as Vector3).z - home.z)
+				if out_g.length() > 0.5:
+					var edge := home + out_g.normalized() * float(a.get("edge_m", 10.0))
+					pos = pos.move_toward(Vector3(edge.x, pos.y, edge.z), speed * 2.5 * delta)
+				var to_g: Vector3 = (target[2] as Vector3) - pos
+				to_g.y = 0.0
+				_face(to_g, delta, 6.0)
+			elif not target.is_empty() and String(a.get("shape", "")) in ["arc", "charge", "gulp"] and _t > _t_total * 0.5:
 				var to2: Vector3 = (target[2] as Vector3) - pos
 				to2.y = 0.0
 				_face(to2, delta, 4.0)  # tracks its quarry in the first half of the warning, then commits
@@ -731,6 +739,14 @@ func _drive(delta: float) -> void:
 		flat = flat.normalized() * float(b["arena_r"])
 		pos = Vector3(home.x + flat.x, pos.y, home.z + flat.z)
 	enemy.position = pos
+
+
+# How deep she swims: surfaced (-1.4) while exposed, cracked, stunned or moving to strike; else the phase's "depth"
+# (the Lantern Queen lies low under the fog with only her lure showing).
+func _pool_y() -> float:
+	if rules.exposed or rules.cracked() or rules.stunned() or mode != "idle":
+		return -1.4
+	return float(rules.phase_cfg().get("depth", -1.4))
 
 
 # Where she swims to in the pool: home, or round it on the phase's circle (circle m, once round in circle_s).
@@ -835,6 +851,10 @@ func _strike(a: Dictionary, pos: Vector3) -> Vector3:
 			if targets.size() >= 2:
 				_hit_line(targets[0], targets[1], float(a["width"]), dmg)
 			_recover(a)
+		"gulp":  # (the Lantern Queen) a whirlpool: each machine pulls its own player toward her (game/sea_boss_lantern.gd)
+			_charge_left = float(a.get("pull_s", 4.0))
+			lantern.set("gulps", int(lantern.get("gulps")) + 1)
+			mode = "strike"
 		"leap":
 			_leap_from = pos
 			_leap_t = 0.0
@@ -884,6 +904,15 @@ func _strike_run(a: Dictionary, pos: Vector3, delta: float) -> Vector3:
 					left.append(l)
 			_landings = left
 			if _landings.is_empty():
+				_recover(a)
+		"gulp":
+			_charge_left -= delta
+			var mouth := pos + _forward() * float(a.get("mouth_m", 5.0))
+			for b: Array in _bodies():
+				var local: Vector3 = b[2]
+				if rules.state_of(int(b[0])) == "up" and Vector2(local.x - mouth.x, local.z - mouth.z).length() <= float(a.get("swallow_r", 3.0)) and absf(local.y - maxf(pos.y, 0.0)) < 3.5:
+					lantern.call("swallow", int(b[0]), a)
+			if _charge_left <= 0.0:
 				_recover(a)
 		"leap":
 			_leap_t += delta
@@ -946,7 +975,7 @@ func _hit_circle(at: Vector3, radius: float, dmg: float, any_height: bool) -> vo
 
 func _hit_body(b: Array, dmg: float) -> void:
 	var body: Node3D = b[1]
-	if _hit_set.has(body) or rules.state_of(int(b[0])) != "up":
+	if _hit_set.has(body) or rules.state_of(int(b[0])) != "up" or bool(lantern.call("is_swallowed", int(b[0]))):
 		return
 	_hit_set[body] = true
 	body.call("take_damage", dmg, "physical")
@@ -957,6 +986,9 @@ func _hit_body(b: Array, dmg: float) -> void:
 
 func part_hit(id: String, damage: float) -> void:
 	if enemy == null or not is_instance_valid(enemy) or not is_finite(damage) or damage <= 0.0:
+		return
+	if id.begins_with("false_"):  # (the Lantern Queen's false lures: game/queen_false_lures.gd)
+		lantern.call("false_hit", id, damage)
 		return
 	var p := rules.part_cfg(id) if boss_id != "" else {}
 	if p.is_empty():
@@ -974,6 +1006,9 @@ func part_hit(id: String, damage: float) -> void:
 
 func host_part(id: String, damage: float) -> void:
 	if state != "fight":
+		return
+	if id.begins_with("false_"):
+		lantern.call("false_hit", id, damage)
 		return
 	var got := rules.hit_part(id, minf(damage, 5000.0))
 	if got != "":

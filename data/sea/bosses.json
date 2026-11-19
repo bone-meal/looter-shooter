@@ -93,8 +93,8 @@
         {"id": "lure_3", "node": "LureBulb", "kind": "breakable", "hp": 1200, "radius": 0.8, "phase": 2}
       ],
       "phases": [
-        {"name": "Light in the Fog", "until": 0.7, "armour": 0.25, "tide": -1, "in_pool": true, "circle": 9.5, "circle_s": 26.0, "attacks": ["snap_lunge", "root_lash", "spore_pod"], "adds": ["sea_drowned", "sea_drowned"], "adds_every": 45.0},
-        {"name": "False Lights", "until": 0.35, "armour": 0.25, "tide": -1, "in_pool": true, "circle": 9.5, "circle_s": 20.0, "crack_s": 8.0, "crack_notice": "The lure bursts! She is blinded and surfaces: hit her now!", "attacks": ["snap_lunge", "root_lash", "spore_burst"], "adds": ["sea_lanternfry", "sea_lanternfry", "sea_lanternfry"], "adds_every": 35.0, "notice": "She tears at the walkways: shoot the lure that flickers out of step!"},
+        {"name": "Light in the Fog", "until": 0.7, "armour": 0.25, "tide": -1, "in_pool": true, "depth": -2.6, "circle": 9.5, "circle_s": 26.0, "attacks": ["snap_lunge", "root_lash", "spore_pod"], "adds": ["sea_drowned", "sea_drowned"], "adds_every": 45.0},
+        {"name": "False Lights", "until": 0.35, "armour": 0.25, "tide": -1, "in_pool": true, "depth": -3.4, "circle": 9.5, "circle_s": 20.0, "crack_s": 8.0, "crack_notice": "The lure bursts! She is blinded and surfaces: hit her now!", "attacks": ["snap_lunge", "root_lash", "whirlpool_gulp", "spore_burst"], "adds": ["sea_lanternfry", "sea_lanternfry", "sea_lanternfry"], "adds_every": 35.0, "notice": "She tears at the walkways: shoot the lure that flickers out of step!"},
         {"name": "Lights Out", "until": 0.0, "armour": 0.5, "tide": -1, "anchor": true, "crack_s": 5.0, "crack_stuns": true, "crack_notice": "Her lure bursts again: she reels!", "regrow_s": 20.0, "speed": 1.2, "damage": 1.3, "attacks": ["tail_sweep", "root_lash", "spore_burst"], "adds": [], "adds_every": 0.0, "notice": "She drinks the light: the hall goes dark!"}
       ],
       "attacks": {
@@ -102,16 +102,21 @@
         "root_lash": {"shape": "line", "windup": 1.4, "length": 16.0, "width": 2.4, "damage": 26.0, "recover": 0.6, "gap": 2.5},
         "spore_pod": {"shape": "lob", "windup": 0.9, "count": 2, "flight": 1.4, "radius": 2.6, "damage": 10.0, "cloud_s": 4.0, "blind_s": 3.0, "color": [0.75, 1.0, 0.45], "recover": 0.8, "gap": 3.0},
         "spore_burst": {"shape": "lob", "windup": 0.7, "count": 4, "flight": 1.2, "radius": 2.4, "damage": 12.0, "cloud_s": 4.0, "blind_s": 3.0, "color": [0.75, 1.0, 0.45], "recover": 0.6, "gap": 2.5},
+        "whirlpool_gulp": {"shape": "gulp", "windup": 1.6, "edge_m": 10.0, "pull_s": 4.0, "radius": 20.0, "pull_mps": 3.2, "mouth_m": 5.0, "swallow_r": 3.0, "hold_s": 4.0, "free_dmg": 1500.0, "damage": 45.0, "notice": "She swallows someone whole! Hit her to free them!", "recover": 1.4, "gap": 3.0},
         "tail_sweep": {"shape": "arc", "windup": 1.2, "reach": 17.0, "deg": 140.0, "damage": 36.0, "recover": 1.0, "gap": 2.5, "rear": true}
       },
       "lantern": {
-        "_about": "The Lantern Queen's own arena rules (core/sea/lantern_rules.gd, game/sea_boss_lantern.gd). fog: the arena's fog density by phase (env of data/sea/dungeons.json while she fights); each lit brazier thins phase 1's by lit_thin. light_r: a lit brazier's circle; while she is in one she is EXPOSED (her body takes all of a hit, her gills are live). Braziers go out burn_s after they were lit (the dungeon thing's burn_s). lure: a player who keeps her lure bulb within view_deg of his view and within reach_m for hold_s is walked toward the pool at pull_mps (each player on his own machine) until he looks away or is shoved. clouds: a spore pod's landing leaves a cloud for cloud_s; standing in one blinds for blind_s.",
+        "_about": "The Lantern Queen's own arena rules (core/sea/lantern_rules.gd, game/sea_boss_lantern.gd). fog: the arena's fog density by phase (env of data/sea/dungeons.json while she fights); each lit brazier thins phase 1's by lit_thin. light_r: a lit brazier's circle; while she is in one she is EXPOSED (her body takes all of a hit, her gills are live). Braziers go out burn_s after they were lit (the dungeon thing's burn_s). lure: a player who keeps her lure bulb within view_deg of his view and within reach_m for hold_s is walked toward the pool at pull_mps (each player on his own machine) until he looks away or is shoved. clouds: a spore pod's landing leaves a cloud for cloud_s; standing in one blinds for blind_s. roll: phase 2's fog, thick_s at thick then thin_s at thin. false_lures: in their phase base + per_extra a player (at most max) bulbs on stalks r m round home at height m, hp each, back regrow_s after a burst (a spore cloud); they pulse at pulse_hz, the real lure out of step. sink: in its phase one of the arena's sink things (walkway quarters) goes under for down_s every every_s. spit_m: a swallowed player lands that far from home on her side. gulp attacks: in the windup she goes to the pool's edge (edge_m from home) before her quarry, then pull_s of pull toward her at pull_mps within radius; anyone within swallow_r of her mouth (mouth_m ahead) is swallowed for hold_s (freed sooner when she takes free_dmg), then takes damage.",
         "fog": [0.11, 0.09, 0.05],
         "fog_color": [0.1, 0.12, 0.09],
         "lit_thin": 0.015,
         "light_r": 10.0,
         "light_color": [1.0, 0.62, 0.3],
         "lure": {"view_deg": 9.0, "reach_m": 34.0, "hold_s": 2.0, "pull_mps": 1.6, "notice": "The light... you walk toward it"},
+        "roll": {"phase": 1, "thick_s": 25.0, "thin_s": 15.0, "thick": 0.13, "thin": 0.05},
+        "false_lures": {"phase": 1, "base": 2, "per_extra": 0.6, "max": 5, "hp": 300.0, "regrow_s": 18.0, "r": 9.5, "height": 2.0, "pulse_hz": 0.8, "cloud": {"radius": 3.5, "cloud_s": 4.0, "blind_s": 3.0}},
+        "sink": {"phase": 1, "things": ["h", "i", "j", "k"], "every_s": 12.0, "down_s": 8.0, "notice": "The roots heave: a walkway sinks!"},
+        "spit_m": 14.0,
         "dark": {"ambient": 0.03, "lamp": 0.25}
       },
       "adds_at": [[4, 6], [14, 6], [4, 12], [14, 12]],
