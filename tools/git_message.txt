@@ -1,6 +1,6 @@
-Shared slot jackpot for the whole lobby
+Polish1 D3b: bigger club island and casino (item 72)
 
-Online the slot pot is the lobby's, kept by the host (game/net_slots.gd): a client's spin is an intent, the host rolls it, grows the one pot and pays a jackpot out of it at once; the pot is sent to everyone after every spin and a jackpot is told to the lobby chat. A client keeps its own saved pot aside; a refused or unanswered spin gives the chips back. Pair set slotpot: the guest saw the host's spin grow the pot, the guest's jackpot reset it on both machines.
+Club island radius 26 to 40. New GAMES ROOM west of the club (16 x 16 m, wooden floor, neon) through an arch in the club's left wall, for pool and darts. Casino annex grown from 11 x 13 to 20 x 18 m: pachinko wall centred on the longer back wall with neon signs either side, six slot machines, a round cocktail bar with a bartender in the new east half, the card machine moved to the north-west corner, waitress routes and ceiling lights for the new floor.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -8,7 +8,10 @@ const CasinoRoom = preload("res://game/casino_room.gd")
 const StaffCrew = preload("res://game/staff_crew.gd")
 
 const CENTER := Vector3(1000, 0, 0)
-const RADIUS := 26.0
+const RADIUS := 40.0  # (polish1 item 72, D3) was 26: room for the games room and the bigger casino
+const WING_X0 := -26.0  # (D3) the games room (pool and darts) west of the club: x -26..-10, z -14..2
+const ARCH_Z0 := -1.6  # its arch in the club's left wall: z -1.6..1.6 (the bar ends at z -2)
+const ARCH_Z1 := 1.6
 const SPAWN := CENTER + Vector3(0, 0.1, 14)
 const WALL_H := 6.0
 const MAGENTA := Color(1.0, 0.1, 0.6)
@@ -121,7 +124,10 @@ static func _island(parent: Node3D) -> void:
 static func _building(parent: Node3D) -> void:
 	var wall := _mat(Color(0.14, 0.07, 0.2))
 	_box(parent, Vector3(20.4, WALL_H, 0.4), _at(0, WALL_H * 0.5, -14), wall, true)  # back
-	_box(parent, Vector3(0.4, WALL_H, 16), _at(-10, WALL_H * 0.5, -6), wall, true)  # left
+	_box(parent, Vector3(0.4, WALL_H, ARCH_Z0 + 14.0), _at(-10, WALL_H * 0.5, (ARCH_Z0 - 14.0) * 0.5), wall, true)  # left (bar side)
+	_box(parent, Vector3(0.4, WALL_H, 2.0 - ARCH_Z1), _at(-10, WALL_H * 0.5, (ARCH_Z1 + 2.0) * 0.5), wall, true)  # left, in front of the arch
+	_box(parent, Vector3(0.4, WALL_H - 3.2, ARCH_Z1 - ARCH_Z0), _at(-10, 3.2 + (WALL_H - 3.2) * 0.5, 0.0), wall, true)  # over the arch
+	_games_room(parent, wall)
 	_box(parent, Vector3(0.4, WALL_H, 16), _at(10, WALL_H * 0.5, -6), wall, true)  # right
 	_box(parent, Vector3(7.5, WALL_H, 0.4), _at(-6.25, WALL_H * 0.5, 2), wall, true)  # front, left of door
 	_box(parent, Vector3(7.5, WALL_H, 0.4), _at(6.25, WALL_H * 0.5, 2), wall, true)  # front, right of door
@@ -147,6 +153,65 @@ static func _building(parent: Node3D) -> void:
 	sign_label.position = _at(0, WALL_H + 2.0, 2.3)
 	parent.add_child(sign_label)
 	_sign = sign_label
+
+
+# (D3) The games room for pool and darts: walls, wooden floor, roof, neon, the arch from the club and its signs.
+static func _games_room(parent: Node3D, wall: Material) -> void:
+	var w := -10.0 - WING_X0
+	var cx := (WING_X0 - 10.0) * 0.5
+	_box(parent, Vector3(w, WALL_H, 0.4), _at(cx, WALL_H * 0.5, -14), wall, true)  # back
+	_box(parent, Vector3(0.4, WALL_H, 16.4), _at(WING_X0, WALL_H * 0.5, -6), wall, true)  # west
+	_box(parent, Vector3(w, WALL_H, 0.4), _at(cx, WALL_H * 0.5, 2), wall, true)  # front
+	_box(parent, Vector3(w + 0.6, 0.3, 16.6), _at(cx, WALL_H + 0.15, -6), _mat(Color(0.1, 0.05, 0.14)))  # roof
+	_box(parent, Vector3(w, 0.1, 16), _at(cx, 0.05, -6), _mat(Color(0.22, 0.12, 0.07)))  # wooden floor
+	var line := BoxMesh.new()  # floorboard lines, one MultiMesh
+	line.size = Vector3(w, 0.012, 0.03)
+	line.material = _mat(Color(0.13, 0.07, 0.04))
+	var lines := MultiMesh.new()
+	lines.transform_format = MultiMesh.TRANSFORM_3D
+	lines.mesh = line
+	lines.instance_count = 15
+	for i in 15:
+		lines.set_instance_transform(i, Transform3D(Basis.IDENTITY, _at(cx, 0.106, -13.5 + float(i))))
+	var ln := MultiMeshInstance3D.new()
+	ln.multimesh = lines
+	parent.add_child(ln)
+	var pink := _mat(MAGENTA, true)
+	var blue := _mat(CYAN, true)
+	_box(parent, Vector3(0.15, 0.15, 16.6), _at(WING_X0 - 0.2, WALL_H, -6), blue)  # outside trim
+	_box(parent, Vector3(w + 0.4, 0.15, 0.15), _at(cx, WALL_H, 2.2), pink)
+	for y: float in [0.16, WALL_H - 0.35]:  # neon inside, like the club
+		var low := y < 1.0
+		_box(parent, Vector3(w - 0.6, 0.07, 0.07), _at(cx, y, -13.7), blue if low else pink)
+		_box(parent, Vector3(0.07, 0.07, 15.4), _at(WING_X0 + 0.3, y, -6), pink if low else blue)
+		_box(parent, Vector3(w - 0.6, 0.07, 0.07), _at(cx, y, 1.7), blue if low else pink)
+	for side: float in [-1.0, 1.0]:  # the arch's frame, seen from both rooms
+		var x := -10.0 + side * 0.25
+		_box(parent, Vector3(0.1, 3.2, 0.12), _at(x, 1.6, ARCH_Z0), blue)
+		_box(parent, Vector3(0.1, 3.2, 0.12), _at(x, 1.6, ARCH_Z1), blue)
+		_box(parent, Vector3(0.1, 0.12, ARCH_Z1 - ARCH_Z0), _at(x, 3.2, 0.0), pink)
+		var sign_label := Label3D.new()
+		sign_label.text = "GAMES ROOM"
+		sign_label.font_size = 72
+		sign_label.pixel_size = 0.008
+		sign_label.outline_size = 16
+		sign_label.outline_modulate = Color(0.0, 0.25, 0.3)
+		sign_label.modulate = CYAN
+		sign_label.shaded = false
+		sign_label.double_sided = false
+		sign_label.rotation_degrees.y = 90.0 if side > 0.0 else -90.0  # readable from the club (east) and the room (west)
+		sign_label.position = _at(-10.0 + side * 0.3, 3.75, 0.0)
+		parent.add_child(sign_label)
+		var sub := Label3D.new()
+		sub.text = "POOL  -  DARTS"
+		sub.font_size = 48
+		sub.pixel_size = 0.007
+		sub.modulate = MAGENTA
+		sub.shaded = false
+		sub.double_sided = false
+		sub.rotation_degrees.y = sign_label.rotation_degrees.y
+		sub.position = _at(-10.0 + side * 0.3, 3.4, 0.0)
+		parent.add_child(sub)
 
 
 static func _dance_floor(parent: Node3D) -> void:
@@ -212,13 +277,14 @@ static func _lights(parent: Node3D) -> void:
 	for y: float in [0.16, WALL_H - 0.35]:
 		var low := y < 1.0
 		_box(parent, Vector3(19.4, 0.07, 0.07), _at(0, y, -13.7), blue if low else pink)  # back wall
-		_box(parent, Vector3(0.07, 0.07, 15.4), _at(-9.7, y, -6), pink if low else blue)  # left wall
+		_box(parent, Vector3(0.07, 0.07, ARCH_Z0 + 13.7), _at(-9.7, y, (ARCH_Z0 - 13.7) * 0.5), pink if low else blue)  # left wall, up to the arch
 		_box(parent, Vector3(0.07, 0.07, 15.4), _at(9.7, y, -6), pink if low else blue)  # right wall
 		_box(parent, Vector3(7.0, 0.07, 0.07), _at(-6.2, y, 1.7), blue if low else pink)  # front wall, both sides of the door
 		_box(parent, Vector3(7.0, 0.07, 0.07), _at(6.2, y, 1.7), blue if low else pink)
 	for i in 4:
 		var z := -12.0 + float(i) * 3.6
-		_box(parent, Vector3(0.07, WALL_H - 1.2, 0.07), _at(-9.7, WALL_H * 0.5, z), blue if i % 2 == 0 else pink)
+		if z < ARCH_Z0 - 0.3:
+			_box(parent, Vector3(0.07, WALL_H - 1.2, 0.07), _at(-9.7, WALL_H * 0.5, z), blue if i % 2 == 0 else pink)
 		_box(parent, Vector3(0.07, WALL_H - 1.2, 0.07), _at(9.7, WALL_H * 0.5, z), pink if i % 2 == 0 else blue)
 	var rigs := [[Vector3(-9.0, 5.6, -13.0), Color(1.0, 0.15, 0.6)], [Vector3(9.0, 5.6, -13.0), Color(0.15, 0.85, 1.0)], [Vector3(-9.0, 5.6, 1.0), Color(0.6, 0.3, 1.0)], [Vector3(9.0, 5.6, 1.0), Color(1.0, 0.7, 0.2)]]
 	for i in rigs.size():

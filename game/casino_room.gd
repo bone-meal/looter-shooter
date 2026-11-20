@@ -1,5 +1,7 @@
 # Purpose: builds the casino annex on the club island (east of the club): shell with a door, carpet, neon, lamps that
-# light the tables (polish1 item 73), the giant pachinko machine that IS the back wall, four slot machines along the east wall, the blackjack and roulette tables with their dealers and two waitresses.
+# light the tables (polish1 item 73), the giant pachinko machine on the back wall, six slot machines along the east wall, the blackjack and roulette tables with their dealers and two waitresses.
+# (polish1 item 72, D3) Grown from 11 x 13 m to 20 x 18 m: a round cocktail bar with a bartender in the middle of the
+# new east half, the pachinko wall in the middle of a longer back wall flanked by neon signs, six slot machines.
 # Also the card table on the beach outside the door with its House Dealer (data/tcg/table.json) and the card vending machine.
 # Dependencies: game/pachinko_wall.gd, game/slot_machine.gd, game/staff_crew.gd, game/blackjack_table.gd, game/roulette_table.gd, game/tcg/beach_table.gd, game/tcg/card_vendor.gd. Walls and floor have colliders; decoration is visual only.
 extends RefCounted
@@ -19,10 +21,10 @@ const MAGENTA := Color(1.0, 0.1, 0.6)
 const CYAN := Color(0.1, 0.9, 1.0)
 const GOLD := Color(1.0, 0.8, 0.25)
 
-# Annex bounds relative to the club centre: x 12..23, z -7..6 (door in the south wall at x 16..19, facing the sea).
+# Annex bounds relative to the club centre: x 12..32, z -12..6 (door in the south wall at x 16..19, facing the sea).
 const X0 := 12.0
-const X1 := 23.0
-const Z0 := -7.0
+const X1 := 32.0
+const Z0 := -12.0
 const Z1 := 6.0
 
 
@@ -33,13 +35,14 @@ static func build(parent: Node3D, center: Vector3) -> Dictionary:
 	parent.add_child(root)
 	_shell(root)
 	_ceiling_lights(root)
+	_back_signs(root)
 	var wall: PachinkoWall = PachinkoWall.new()
-	wall.position = Vector3(17.5, 8.8, Z0 + 0.55)
+	wall.position = Vector3(22.0, 8.8, Z0 + 0.55)
 	root.add_child(wall)
 	var slots: Array = []
-	for i in 4:
+	for i in 6:
 		var m: SlotMachine = SlotMachine.new()
-		m.position = Vector3(21.6, 0.0, -2.7 + float(i) * 2.1)  # against the east wall, facing west
+		m.position = Vector3(X1 - 1.4, 0.0, -8.4 + float(i) * 2.3)  # against the east wall, facing west
 		m.rotation_degrees.y = -90.0
 		root.add_child(m)
 		slots.append(m)
@@ -53,15 +56,17 @@ static func build(parent: Node3D, center: Vector3) -> Dictionary:
 	root.add_child(rt)
 	var bj_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_pink", "twin_tails", "#f48fb1", "giggle", 1), Vector3(15.2, 0.0, 1.65), 180.0, null, "dealer_blackjack")
 	var rt_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_purple", "bob", "#3b2a6b", "gentle_smile", 0), Vector3(14.3, 0.0, -2.6), 180.0, null, "dealer_roulette")
-	# Waitress routes stay in the aisles: east aisle (x 17.7..20.3, between the roulette table and the slot machines) and the north aisle (z ~4.9, south of the blackjack table).
-	var loop_a: Array = [Vector3(17.7, 0, 4.9), Vector3(20.3, 0, 4.9), Vector3(20.3, 0, -1.2), Vector3(17.7, 0, -1.2)]
-	var loop_b: Array = [Vector3(14.4, 0, 4.9), Vector3(18.8, 0, 4.9), Vector3(18.8, 0, -4.5), Vector3(18.8, 0, 4.9)]
+	# Waitress routes stay in the aisles: one round the cocktail bar (x 20.3..28.6, z -4..4.6), one up the aisle east of
+	# the roulette table (x 18.8) and along the south wall.
+	var loop_a: Array = [Vector3(20.3, 0, 4.6), Vector3(28.6, 0, 4.6), Vector3(28.6, 0, -4.0), Vector3(20.3, 0, -4.0)]
+	var loop_b: Array = [Vector3(14.4, 0, 4.9), Vector3(18.8, 0, 4.9), Vector3(18.8, 0, -6.0), Vector3(18.8, 0, 4.9)]
+	_cocktail_bar(root, crew)
 	crew.add_obstacle(Vector3(15.2, 0.0, 2.6), 1.35, 0.72)  # blackjack table
 	crew.add_obstacle(Vector3(15.0, 0.0, -1.4), 1.95, 0.75)  # roulette table
 	crew.add_obstacle(Vector3(15.2, 0.0, 1.65), 0.3, 0.3)  # blackjack dealer
 	crew.add_obstacle(Vector3(14.3, 0.0, -2.6), 0.3, 0.3)  # roulette dealer
-	for i in 4:
-		crew.add_obstacle(Vector3(21.6, 0.0, -2.7 + float(i) * 2.1), 0.5, 0.5)  # slot machines
+	for i in slots.size():
+		crew.add_obstacle((slots[i] as Node3D).position, 0.5, 0.5)  # slot machines
 	for i in 3:
 		crew.add_obstacle(Vector3(12.75, 0.0, 0.8 + 1.9 * float(i)), 0.3, 0.7)  # vendor kiosks
 	crew.add("walk", StaffCrew.look("casino_cyan", "ponytail", "#e8c36a", "beaming", 2), loop_a[0], 0.0, loop_a, "waitress_mint")
@@ -91,11 +96,131 @@ static func build(parent: Node3D, center: Vector3) -> Dictionary:
 		root.add_child(pt)
 		player_tables.append(pt)
 	var card_vendor: CardVendor = CardVendor.new()  # the card vending machine: north-west corner, facing the room
-	card_vendor.position = Vector3(13.0, 0.0, -4.6)
+	card_vendor.position = Vector3(13.0, 0.0, -9.6)
 	card_vendor.rotation_degrees.y = 90.0
 	root.add_child(card_vendor)
-	crew.add_obstacle(Vector3(13.0, 0.0, -4.6), 0.6, 0.9)
+	crew.add_obstacle(Vector3(13.0, 0.0, -9.6), 0.6, 0.9)
 	return {"vendors": vendors, "pachinko": wall, "slots": slots, "blackjack": bj, "roulette": rt, "crew": crew, "bj_dealer": bj_dealer, "rt_dealer": rt_dealer, "card_table": card_table, "card_dealer": card_dealer, "card_vendor": card_vendor, "player_tables": player_tables}
+
+
+# (D3) A round cocktail bar in the middle of the east half: glowing counter rim, bottle tower, stools, a bartender.
+const BAR_AT := Vector3(24.5, 0.0, 1.0)
+
+
+static func _cocktail_bar(root: Node3D, crew: StaffCrew) -> void:
+	# few draw calls: the counter is a tube + a flattened ring top, the stools and the bottles one MultiMesh each
+	var tube := CylinderMesh.new()
+	tube.top_radius = 2.2
+	tube.bottom_radius = 2.2
+	tube.height = 1.1
+	tube.radial_segments = 28
+	tube.rings = 1
+	tube.cap_top = false
+	tube.cap_bottom = false
+	var wood := _mat(Color(0.32, 0.12, 0.06))
+	wood.cull_mode = BaseMaterial3D.CULL_DISABLED
+	var t := MeshInstance3D.new()
+	t.mesh = tube
+	t.material_override = wood
+	t.position = BAR_AT + Vector3(0, 0.55, 0)
+	root.add_child(t)
+	var top := TorusMesh.new()
+	top.inner_radius = 1.55
+	top.outer_radius = 2.4
+	top.rings = 28
+	top.ring_segments = 6
+	var tp := MeshInstance3D.new()
+	tp.mesh = top
+	tp.material_override = _mat(Color(0.7, 0.45, 0.18))
+	tp.position = BAR_AT + Vector3(0, 1.12, 0)
+	tp.scale = Vector3(1.0, 0.12, 1.0)
+	root.add_child(tp)
+	var stool := CylinderMesh.new()
+	stool.top_radius = 0.22
+	stool.bottom_radius = 0.18
+	stool.height = 0.75
+	stool.radial_segments = 10
+	stool.rings = 1
+	stool.material = _mat(Color(0.75, 0.08, 0.3))
+	var stools := MultiMesh.new()
+	stools.transform_format = MultiMesh.TRANSFORM_3D
+	stools.mesh = stool
+	stools.instance_count = 8
+	for i in 8:
+		var a := TAU * (float(i) + 0.5) / 8.0
+		stools.set_instance_transform(i, Transform3D(Basis.IDENTITY, BAR_AT + Vector3(sin(a), 0.0, cos(a)) * 2.75 + Vector3(0, 0.375, 0)))
+	var sn := MultiMeshInstance3D.new()
+	sn.multimesh = stools
+	root.add_child(sn)
+	var body := StaticBody3D.new()  # one round collider for the counter
+	body.position = BAR_AT + Vector3(0, 0.55, 0)
+	var shape := CollisionShape3D.new()
+	var cyl := CylinderShape3D.new()
+	cyl.radius = 2.2
+	cyl.height = 1.1
+	shape.shape = cyl
+	body.add_child(shape)
+	root.add_child(body)
+	var rim := CylinderMesh.new()  # the glowing rim under the counter top
+	rim.top_radius = 2.24
+	rim.bottom_radius = 2.24
+	rim.height = 0.06
+	rim.radial_segments = 24
+	rim.rings = 1
+	rim.cap_top = false
+	rim.cap_bottom = false
+	var r := MeshInstance3D.new()
+	r.mesh = rim
+	var glow := _mat(CYAN, true)
+	glow.cull_mode = BaseMaterial3D.CULL_DISABLED
+	r.material_override = glow
+	r.position = BAR_AT + Vector3(0, 1.0, 0)
+	root.add_child(r)
+	_box(root, Vector3(0.9, 2.6, 0.9), BAR_AT + Vector3(0, 1.3 + 1.1, 0), _mat(Color(0.12, 0.05, 0.16)))  # bottle tower
+	var bottle := CylinderMesh.new()
+	bottle.top_radius = 0.05
+	bottle.bottom_radius = 0.07
+	bottle.height = 0.32
+	bottle.radial_segments = 8
+	bottle.rings = 1
+	var glass := _mat(Color.WHITE, true)
+	glass.vertex_color_use_as_albedo = true
+	bottle.material = glass
+	var bottles := MultiMesh.new()
+	bottles.transform_format = MultiMesh.TRANSFORM_3D
+	bottles.use_colors = true
+	bottles.mesh = bottle
+	bottles.instance_count = 12
+	for i in 12:
+		var a2 := TAU * float(i) / 12.0
+		bottles.set_instance_transform(i, Transform3D(Basis.IDENTITY, BAR_AT + Vector3(sin(a2) * 0.52, 2.6 + float(i % 3) * 0.45, cos(a2) * 0.52)))
+		bottles.set_instance_color(i, [MAGENTA, CYAN, GOLD, Color(0.4, 0.9, 0.4)][i % 4])
+	var bm := MultiMeshInstance3D.new()
+	bm.multimesh = bottles
+	root.add_child(bm)
+	_box(root, Vector3(1.0, 0.08, 1.0), BAR_AT + Vector3(0, 3.75, 0), _mat(MAGENTA, true))
+	crew.add_obstacle(BAR_AT, 2.7, 2.7)
+	crew.add("idle", StaffCrew.look("casino_purple", "twin_buns", "#2b1a12", "beaming", 5), BAR_AT + Vector3(0, 0, 1.15), 0.0)
+
+
+# (D3) Neon pictures either side of the pachinko machine on the longer back wall.
+static func _back_signs(root: Node3D) -> void:
+	for side: float in [-1.0, 1.0]:
+		var x := 22.0 + side * 7.6
+		_box(root, Vector3(4.2, 3.0, 0.12), Vector3(x, 6.2, Z0 + 0.3), _mat(Color(0.08, 0.02, 0.1)))
+		_box(root, Vector3(4.4, 0.1, 0.14), Vector3(x, 7.75, Z0 + 0.32), _mat(GOLD, true))
+		_box(root, Vector3(4.4, 0.1, 0.14), Vector3(x, 4.65, Z0 + 0.32), _mat(GOLD, true))
+		var l := Label3D.new()
+		l.text = "777" if side < 0.0 else "LUCKY\nSTAR"
+		l.font_size = 160 if side < 0.0 else 110
+		l.pixel_size = 0.01
+		l.modulate = MAGENTA if side < 0.0 else CYAN
+		l.outline_size = 22
+		l.outline_modulate = Color(0.25, 0.0, 0.2)
+		l.shaded = false
+		l.double_sided = false
+		l.position = Vector3(x, 6.2, Z0 + 0.4)
+		root.add_child(l)
 
 
 # Neon sign on the west wall above the gun vendor kiosks, plus a glowing floor strip under them, so players can find them.
@@ -164,7 +289,7 @@ static func _shell(root: Node3D) -> void:
 	_box(root, Vector3(0.4, H, d), Vector3(X0, H * 0.5, cz), wall, true)  # west
 	_box(root, Vector3(0.4, H, d), Vector3(X1, H * 0.5, cz), wall, true)  # east
 	_box(root, Vector3(4.0, H, 0.4), Vector3(14.0, H * 0.5, Z1), wall, true)  # south, west of the door
-	_box(root, Vector3(4.0, H, 0.4), Vector3(21.0, H * 0.5, Z1), wall, true)  # south, east of the door
+	_box(root, Vector3(X1 - 19.0, H, 0.4), Vector3((19.0 + X1) * 0.5, H * 0.5, Z1), wall, true)  # south, east of the door
 	_box(root, Vector3(3.0, H - 3.5, 0.4), Vector3(17.5, 3.5 + (H - 3.5) * 0.5, Z1), wall, true)  # above the door
 	_box(root, Vector3(w + 0.6, 0.3, d + 0.6), Vector3(cx, H + 0.15, cz), _mat(Color(0.1, 0.04, 0.14)))  # roof
 	_box(root, Vector3(w, 0.1, d), Vector3(cx, 0.05, cz), _mat(Color(0.35, 0.04, 0.1)))  # carpet
@@ -190,9 +315,9 @@ static func _shell(root: Node3D) -> void:
 
 static func _ceiling_lights(root: Node3D) -> void:
 	var warm := _mat(Color(1.0, 0.85, 0.6), true)
-	for ix in 3:
-		for iz in 3:
-			_box(root, Vector3(1.4, 0.08, 1.4), Vector3(14.0 + ix * 3.5, H - 0.05, -4.0 + iz * 4.5), warm)
+	for ix in 5:
+		for iz in 4:
+			_box(root, Vector3(1.4, 0.08, 1.4), Vector3(14.0 + ix * 4.0, H - 0.05, -9.5 + iz * 4.6), warm)
 	# (polish1 item 73) the room was too dark to see the tables: pendant lamps whose warm spot lights really light the
 	# blackjack and roulette felts. Only these two: on the Compatibility renderer every light draws the meshes it
 	# touches once more (a room-wide fill and two more spots cost ~800 draw calls), so they stay small and shadowless.
