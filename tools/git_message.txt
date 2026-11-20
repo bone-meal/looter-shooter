@@ -1,6 +1,6 @@
-Polish1 B3: guns and loot everywhere
+Polish1 B4 and loot filter presets
 
-Gun names in three looks (rarity, maker, name) with maker logos on the inventory card, shift-click to the right slot, a loot filter page (lowest tier shown, beams and chimes per tier, highlights) where filtered drops keep lying without beam or name, middle mouse switches a sniper between scope and its red dot, trades restart W kills and gold and up keep a previous-owner history (hold H), and armour drops as small models of the piece.
+Six loot filter presets (Everything, Early game, Colosseum farming, Chase hunter, Zombies rounds, Quiet) in data, and a teammate's War Banner is now seen on every screen (pole, disc and ring), not only felt.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

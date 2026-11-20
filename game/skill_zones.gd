@@ -152,6 +152,23 @@ func start(db: RefCounted, entry: Dictionary, base: float, at: Vector3) -> void:
 			_edge_at(i, at, db, entry, 0.8)
 
 
+# (polish1 B4) A teammate's War Banner, shown only (its bonus is game/net_party.gd's): the pole, the disc and the
+# ring in the banner's colour, gone after `seconds`.
+func ally_banner(at: Vector3, radius: float, seconds: float, colour: Color) -> void:
+	var i := _open(null, {}, "ally_banner", at, seconds, 1.0)
+	_radius[i] = radius
+	_disc_at(i, at)
+	(_mesh[i].material_override as StandardMaterial3D).albedo_color = Color(colour, 0.1)
+	_mesh[i].visible = true
+	_post[i].position = at + Vector3(0, 1.3, 0)
+	(_post[i].material_override as StandardMaterial3D).albedo_color = Color(colour, 0.9)
+	_post[i].visible = true
+	_edge[i].position = at + Vector3(0, 0.1, 0)
+	_edge[i].scale = Vector3(radius, 2.0, radius)
+	(_edge[i].material_override as StandardMaterial3D).albedo_color = Color(colour, 0.8)
+	_edge[i].visible = true
+
+
 # Bloom (pony trait): a flower at `at` that heals the caster `heal` a second while within `radius`.
 func bloom(at: Vector3, radius: float, seconds: float, heal: float) -> void:
 	var i := _slot()

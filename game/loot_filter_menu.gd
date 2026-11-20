@@ -2,8 +2,9 @@
 # show at all (lower ones stay on the ground without beam, name or chime), each tier's beam and chime on or off, and
 # what to highlight (chase guns, guns with a trait, chosen makers). Kept in the settings: `loot_filter`
 # (core/loot_filter.gd) and the tier chimes in `muted_sounds` (the same ticks as the Sounds page).
+# Presets (data/loot_filter_presets.json) set the whole filter in one click.
 # Dependencies: core/settings_state.gd, core/data_store.gd, core/loot_filter.gd, game/menu_widgets.gd, game/ui_skin.gd,
-# game/sound_board.gd, data/gun_loot.json (tiers), data/manufacturers.json (makers).
+# game/sound_board.gd, data/gun_loot.json (tiers), data/manufacturers.json (makers), data/loot_filter_presets.json.
 extends Control
 
 const SettingsState = preload("res://core/settings_state.gd")
@@ -49,8 +50,20 @@ func _build() -> void:
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	hint.modulate = UiSkin.TEXT_DIM
 	box.add_child(hint)
+	var presets := HFlowContainer.new()  # (director 2026-11-20) one click for a whole filter (data/loot_filter_presets.json)
+	presets.add_theme_constant_override("h_separation", 8)
+	presets.add_theme_constant_override("v_separation", 6)
+	presets.custom_minimum_size = Vector2(WIDTH, 0)
+	box.add_child(presets)
+	for preset: Dictionary in DataStore.load_json("res://data/loot_filter_presets.json").get("presets", []):
+		var b := Button.new()
+		b.text = String(preset["name"])
+		b.tooltip_text = String(preset.get("desc", ""))
+		b.custom_minimum_size = Vector2(0, 36)
+		b.pressed.connect(_use_preset.bind(preset))
+		presets.add_child(b)
 	var scroll := ScrollContainer.new()
-	scroll.custom_minimum_size = Vector2(WIDTH, 420)
+	scroll.custom_minimum_size = Vector2(WIDTH, 380)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	box.add_child(scroll)
 	var list := VBoxContainer.new()
@@ -142,6 +155,19 @@ func _build() -> void:
 			_save())
 		grid.add_child(tick)
 	Widgets.button(box, "Back", func() -> void: closed.emit())
+
+
+# A preset: the whole filter and the tier chimes as it says, then the page shows it.
+func _use_preset(preset: Dictionary) -> void:
+	_filter = LootFilter.clean(preset)
+	for tier: Dictionary in _tiers:
+		var chime := "chime_" + String(tier["id"])
+		settings.muted_sounds.erase(chime)
+		if (preset.get("chime_off", []) as Array).has(String(tier["id"])):
+			settings.muted_sounds.append(chime)
+	SoundBoard.set_muted(settings.muted_sounds)
+	_save()
+	_build.call_deferred()
 
 
 func _save() -> void:

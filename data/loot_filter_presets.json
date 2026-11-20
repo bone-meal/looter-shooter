@@ -1,0 +1,12 @@
+{
+ "version": 1,
+ "_about": "Loot filter presets (polish1 item 68, director 2026-11-20 'add some presets for different usecases'): buttons at the top of Settings > Loot filter (game/loot_filter_menu.gd). Each sets the whole filter (core/loot_filter.gd: min = lowest tier shown, no_beam = tiers without a beam, chase / traits = highlight, makers = maker ids to highlight) and which tier chimes are off (chime_off; the same ticks as the Sounds page). Edit freely; tier ids: grey green blue purple gold orange rainbow pony.",
+ "presets": [
+  {"id": "everything", "name": "Everything", "desc": "Every drop shows, every beam and chime on.", "min": "grey", "no_beam": [], "chase": true, "traits": false, "makers": [], "chime_off": []},
+  {"id": "early", "name": "Early game", "desc": "Hide Commons; quiet chimes for Uncommon and Rare.", "min": "green", "no_beam": [], "chase": true, "traits": false, "makers": [], "chime_off": ["green", "blue"]},
+  {"id": "farming", "name": "Colosseum farming", "desc": "Epic and up only; beams from Legendary; traits highlighted.", "min": "purple", "no_beam": ["purple"], "chase": true, "traits": true, "makers": [], "chime_off": ["grey", "green", "blue", "purple"]},
+  {"id": "chase", "name": "Chase hunter", "desc": "Mythic and up, plus every chase gun starred.", "min": "orange", "no_beam": [], "chase": true, "traits": false, "makers": [], "chime_off": ["grey", "green", "blue", "purple", "gold"]},
+  {"id": "zombies", "name": "Zombies rounds", "desc": "Less clutter while training: Rare and up, beams only from Epic.", "min": "blue", "no_beam": ["blue"], "chase": true, "traits": false, "makers": [], "chime_off": ["grey", "green", "blue"]},
+  {"id": "quiet", "name": "Quiet", "desc": "Everything shows but only Legendary and up chime.", "min": "grey", "no_beam": [], "chase": true, "traits": false, "makers": [], "chime_off": ["grey", "green", "blue", "purple"]}
+ ]
+}

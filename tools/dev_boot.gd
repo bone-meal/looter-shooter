@@ -2689,6 +2689,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				n_a += 1
 			await get_tree().create_timer(0.3, true, false, true).timeout
 			player.call("look_at_point", (player as Node3D).global_position + fwd_a * 3.5 + Vector3(0, 0.6, 0))
+		"lootpreset":  # "!lootpreset <id>": (director 2026-11-20) the Loot filter page's preset button
+			var main_lp: Node = session.get_parent()
+			for preset_lp: Dictionary in (JSON.parse_string(FileAccess.get_file_as_string("res://data/loot_filter_presets.json")) as Dictionary).get("presets", []):
+				if String(preset_lp["id"]) == words[1]:
+					(main_lp.get("_loot_menu") as Node).call("_use_preset", preset_lp)
+			session.call("apply_settings")
 		"sightinfo":  # "!sightinfo <note>": (polish1 item 59) the gun in hand: sight kind, its optic, scope or dot
 			_lines.append("SIGHT %s: kind '%s', scope %.2f, use_optic %s" % [" ".join(words.slice(1)), String(player.call("sight_kind")), float(player.call("scope_amount")), str(player.get("use_optic"))])
 		"islestand":  # "!islestand <x> <z> <toward x> <toward z>": (polish1 A2) on the islands, metres from the spawn island's middle, looking at a spot; "!islestand where <note>": where we are and how high

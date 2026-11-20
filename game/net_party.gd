@@ -67,6 +67,11 @@ func _down(from: int, kind: String, at: Vector3, a: Vector3, b: Vector3) -> void
 	var here: Vector3 = net.from_shared(at)
 	if kind == "banner":  # a: seconds, damage, guard; b.x: radius
 		_banners.append([here, clampf(b.x, 0.0, 30.0), _now() + clampf(a.x, 0.0, 60.0), clampf(a.y, 0.0, 200.0), clampf(a.z, 0.0, 90.0)])
+		var mine: Node3D = net.local_player()  # (polish1 B4) its pole, disc and ring are seen here too
+		var fx: Variant = mine.get("skill_fx") if mine != null and is_instance_valid(mine) else null
+		if fx != null:
+			var c: Array = (mine.get("gun_db") as RefCounted).call("skill_def", "war_banner").get("color", [1.0, 0.8, 0.3])
+			(fx as Node).get("zones").call("ally_banner", here, clampf(b.x, 0.0, 30.0), clampf(a.x, 0.0, 60.0), Color(float(c[0]), float(c[1]), float(c[2])))
 		return
 	var me: Node3D = net.local_player()
 	if me == null or not is_instance_valid(me) or not me.has_method("party_effect"):

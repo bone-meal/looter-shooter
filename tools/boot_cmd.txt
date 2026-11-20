@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp island;!wait 6;/give gun gold sniper_basic;!wait 0.5;!lootfilter blue chase;!key inventory;!wait 1;!inv tab guns tier;!inv hover 0;!wait 0.5;!snap b3_card2;!key inventory;!wait 0.5;!menu loot;!wait 1;!snap b3_loot_page;!menu none
+!uncap;!wait 2;/tp island;!wait 6;!dropgun ak47 grey;!dropgun ak47 green;!dropgun ak47 purple;!dropgun ak47 gold;!wait 1;!lootpreset farming;!wait 0.5;!lootprobe farming;!menu loot;!wait 1;!snap b4_presets;!menu none;!lootpreset everything;!wait 0.5;!lootprobe everything
