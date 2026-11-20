@@ -1,6 +1,6 @@
 # Purpose: entry scene: owns settings and the start, save, pause, settings and controls menus; starts and ends a game session.
 # Dependencies: game/input_setup.gd, game/settings_io.gd, game/main_menu.gd, game/save_menu.gd, game/pause_menu.gd, game/settings_menu.gd, game/controls_menu.gd,
-# game/game_session.gd, core/settings_state.gd, game/renderer_switch.gd.
+# game/game_session.gd, core/settings_state.gd, game/renderer_switch.gd, game/first_run.gd.
 extends Node3D
 
 const QuietTest = preload("res://game/quiet_test.gd")
@@ -21,6 +21,7 @@ const LoadClock = preload("res://game/load_clock.gd")
 const NetSession = preload("res://game/net_session.gd")
 const LobbyMenu = preload("res://game/lobby_menu.gd")
 const RendererSwitch = preload("res://game/renderer_switch.gd")
+const FirstRun = preload("res://game/first_run.gd")
 
 var _settings := SettingsState.new()
 var _main_menu: Control
@@ -47,6 +48,8 @@ func _ready() -> void:
 		add_child(QuietTest.new())
 	process_mode = Node.PROCESS_MODE_ALWAYS  # menus keep working while the game is paused
 	LoadClock.mark("engine start, main scene, menu scripts")
+	if FirstRun.is_first_run() and not QuietTest.active():  # a new player: renderer and preset by the GPU (polish1 item 2)
+		print("first start: ", FirstRun.pick(_settings))
 	SettingsIO.load_into(_settings)
 	if RendererSwitch.relaunch_if_needed(_settings.renderer, get_tree(), ""):
 		set_process_unhandled_input(false)
@@ -92,6 +95,7 @@ func _ready() -> void:
 	layer.add_child(_pause_menu)
 
 	_settings_menu = SettingsMenu.new()
+	_settings_menu.add_to_group("settings_menu")  # game/net_hub.gd holds the hub countdown while the host's Settings are open
 	_settings_menu.settings = _settings
 	_settings_menu.changed.connect(_on_settings_changed)
 	_settings_menu.closed.connect(_close_settings)

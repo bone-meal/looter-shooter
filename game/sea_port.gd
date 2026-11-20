@@ -78,7 +78,8 @@ func _build_stall(port: Dictionary) -> Node3D:
 	add_child(stall)  # this node hangs in the sea root: its space is sea coordinates
 	var x := float(port["stall"][0])
 	var z := float(port["stall"][1])
-	stall.position = Vector3(x, _ground(x, z), z)
+	var spot: Array = port["stall"]  # (polish1 A7) an optional third number = its ground height (the ray can land on something tall)
+	stall.position = Vector3(x, float(spot[2]) if spot.size() > 2 else _ground(x, z), z)
 	stall.rotation.y = deg_to_rad(float(port["yaw"]))
 	for found in stall.find_children("*", "MeshInstance3D", true, false):
 		(found as MeshInstance3D).create_trimesh_collision()

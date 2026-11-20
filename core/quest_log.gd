@@ -6,8 +6,10 @@ extends RefCounted
 
 var active := {}  # quest id -> {"step": index, "n": progress of that step}
 var done: Array[String] = []
+var slain := {}  # (polish1 item 132) bosses (one-kill steps' enemies) the party has killed: a later quest needing one is passed
 
 var _quests := {}  # id -> quest
+var _bosses := {}  # enemies a quest asks to kill once (the region bosses)
 var _order: Array[String] = []
 
 
@@ -15,6 +17,9 @@ func _init(quest_data: Dictionary) -> void:
 	for entry: Dictionary in quest_data["quests"]:
 		_quests[String(entry["id"])] = entry
 		_order.append(String(entry["id"]))
+		for s: Dictionary in entry["steps"]:
+			if String(s["type"]) == "kill" and int(s.get("count", 1)) <= 1:
+				_bosses[String(s["enemy"])] = true
 
 
 func ids() -> Array[String]:
@@ -71,15 +76,17 @@ func step_text(id: String) -> String:
 
 
 # Reports something that happened. event = {"type": "kill", "enemy": id} | {"type": "cast", "sequence", "substance",
-# "secret"} | {"type": "reach", "place": id} | {"type": "talk", "npc": id} | {"type": "fire"}. Returns the changes:
+# "secret"} | {"type": "reach", "place": id} | {"type": "talk", "npc": id} | {"type": "fire"} | {"type": "make", "item", "count"}. Returns the changes:
 # [{"quest": id, "finished": bool, "rewards": {...} when finished}].
 func note(event: Dictionary) -> Array:
 	var changes: Array = []
+	if String(event.get("type", "")) == "kill" and _bosses.has(String(event.get("enemy", ""))):
+		slain[String(event["enemy"])] = true
 	for id: String in active.keys():
 		var s := step(id)
 		if String(s["type"]) != String(event.get("type", "")) or not _matches(s, event):
 			continue
-		active[id]["n"] = int(active[id]["n"]) + 1
+		active[id]["n"] = int(active[id]["n"]) + maxi(int(event.get("count", 1)), 1)
 		if int(active[id]["n"]) >= int(s.get("count", 1)):
 			changes.append(_advance(id))
 		else:
@@ -97,6 +104,8 @@ func _matches(s: Dictionary, event: Dictionary) -> bool:
 			return String(s["npc"]) == String(event.get("npc", ""))
 		"fire":
 			return true
+		"make":  # (polish1 item 115) made at a station after the step began: carrying one already is not enough
+			return String(s["item"]) == String(event.get("item", ""))
 		"cast":
 			if s.has("secret"):
 				return String(s["secret"]) == String(event.get("secret", ""))
@@ -124,6 +133,8 @@ func check(bag: Dictionary, levels: Dictionary) -> Array:
 					bag[String(s["item"])] = int(bag[String(s["item"])]) - int(s["count"])
 			elif String(s["type"]) == "skill":
 				ok = int(levels.get(String(s["skill"]), 1)) >= int(s["level"])
+			elif String(s["type"]) == "kill" and int(s.get("count", 1)) <= 1 and slain.has(String(s["enemy"])):
+				ok = true  # this boss already fell (in an earlier quest, or before this one was taken): it counts
 			if ok:
 				var change := _advance(id)
 				change["take"] = take
@@ -168,6 +179,7 @@ func force_finish(id: String) -> Array:
 func reset() -> void:
 	active = {}
 	done = []
+	slain = {}
 
 
 # How many element slots the story has added (one per finished quest that returns a pigment).
@@ -208,7 +220,7 @@ func chapter() -> int:
 
 
 func to_dict() -> Dictionary:
-	return {"v": 1, "active": active.duplicate(true), "done": done.duplicate()}
+	return {"v": 1, "active": active.duplicate(true), "done": done.duplicate(), "slain": slain.keys()}
 
 
 # Loads a save, keeping only what the quest data allows (known ids, steps in range, requirements met).
@@ -217,6 +229,10 @@ func from_dict(saved: Variant) -> void:
 	if not saved is Dictionary:
 		return
 	var src: Dictionary = saved
+	if src.get("slain") is Array:
+		for e: Variant in src["slain"]:
+			if _bosses.has(String(e)):
+				slain[String(e)] = true
 	if src.get("done") is Array:
 		for id: Variant in src["done"]:
 			if _quests.has(String(id)) and not done.has(String(id)):

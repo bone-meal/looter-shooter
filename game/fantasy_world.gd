@@ -112,6 +112,9 @@ var _timer := 0.0
 var _buff := {}  # potion in effect: {"power", "armor", "until"}
 var _regen_until := 0.0  # healing spells: health returns until this engine time
 var _regen_rate := 0.0
+var _hurt_at := -100.0  # (polish1 item 120) engine time of the last damage taken
+var _last_hp := 0.0
+var _in_safe := false  # inside a town / village / farm border (core/safe_places.gd)
 var _mood := {}  # the sky, fog and light the current spot asks for (looked up twice a second, eased every frame)
 var _busy := false  # true while rewards are being handed out (stops quest checks from nesting)
 var _claimed := {}  # not the host: "quest:step" already reported as passed
@@ -298,8 +301,11 @@ func _on_cast(spell: Dictionary, sequence: String, origin: Vector3, aim: Vector3
 # A pure fire spell that lands near the caster lights the best log in the bag.
 func _on_spell_landed(_kind: String, at: Vector3, spell: Dictionary) -> void:
 	sound("impact", at)
-	if String(spell.get("substance", "")) == "F" and best_log() != "" and at.distance_to(_player.global_position) < 12.0:
-		light_fire(best_log(), local_of(at))
+	if String(spell.get("substance", "")) == "F":  # a fire spell landing on laid logs lights them (polish1 item 107)
+		var pile: int = places.pile_near(local_of(at), 3.0)
+		if pile >= 0:
+			var laid: Dictionary = places.take_pile(pile)
+			light_fire(String(laid["log"]), laid["at"])
 
 
 func _on_move_started(boss: Node3D, index: int, at: Vector3, roll: int) -> void:
@@ -380,6 +386,11 @@ func player_local() -> Vector3:
 # A point of the map standing on the ground, as a world position.
 func ground_world(x: float, z: float) -> Vector3:
 	return world_of(Vector3(x, terrain.height(x, z) + 0.3, z))
+
+
+# The land's own height under a WORLD x, z (sea beds included: the player's automatic unstuck, game/unstuck.gd).
+func land_height(x: float, z: float) -> float:
+	return terrain.height(x - OFFSET.x, z - OFFSET.z)
 
 
 # Land height under a WORLD x, z (creatures walk on this; never below the shallows).
@@ -527,6 +538,14 @@ func _process(delta: float) -> void:
 	mana = minf(mana + mana_regen() * (fire_mult if near_fire else 1.0) * delta, max_mana())
 	if now < _regen_until:
 		_player.health.heal(_regen_rate * delta)
+	var hp_now: float = _player.health.hp  # (polish1 item 120) health comes back by itself: slowly out of a fight, fast in a town or on a farm
+	if hp_now < _last_hp - 0.01:
+		_hurt_at = now
+	_last_hp = hp_now
+	var calm: Dictionary = data["combat"].get("regen", {})
+	if now - _hurt_at >= float(calm.get("calm_s", 8.0)) and hp_now > 0.0:
+		_player.health.heal(_player.health.max_hp * float(calm.get("safe_pct" if _in_safe else "out_pct", 1.0)) / 100.0 * delta)
+		_last_hp = _player.health.hp
 	_timer += delta
 	if _timer < 0.5:
 		return
@@ -538,7 +557,8 @@ func _process(delta: float) -> void:
 	if not _buff.is_empty() and now >= float(_buff["until"]):
 		_buff = {}
 		apply_stats()
-	sounds.call("set_town", squads.safe.place_at(Vector2(local.x, local.z)) >= 0)
+	_in_safe = squads.safe.place_at(Vector2(local.x, local.z)) >= 0
+	sounds.call("set_town", _in_safe)
 	var region := terrain.region_at(local.x, local.z)
 	if String(region["id"]) != _region:
 		_region = String(region["id"])
@@ -731,19 +751,30 @@ func use_item(item: String) -> String:
 			_after_change()
 			return ""
 	if (skilling["fire"]["level"] as Dictionary).has(item):
-		return light_fire(item, player_local())
+		return lay_logs(item)
 	return "Nothing to do with that."
 
 
-# Firemaking: burns one log into a fire at `local`.
-func light_fire(item: String, local: Vector3) -> String:
-	var fire: Dictionary = skilling["fire"]
-	if skills.level("firemaking") < int(fire["level"][item]):
-		return "Needs Firemaking %d." % int(fire["level"][item])
+# (polish1 item 107) Firemaking takes two acts: logs laid on the ground (using a log from the bag), then lit with a
+# fire spell landing on them. Casting Ember anywhere no longer burns a log out of the bag.
+func lay_logs(item: String) -> String:
+	if skills.level("firemaking") < int(skilling["fire"]["level"][item]):
+		return "Needs Firemaking %d." % int(skilling["fire"]["level"][item])
 	if bag.count(item) <= 0:
 		return "You have none."
-	if randf() >= perk("firemaking", "save"):  # Kindler: sometimes the log is not used up
-		bag.remove(item, 1)
+	bag.remove(item, 1)
+	places.lay_logs(player_local() - _player.global_basis.z * 1.2, item)
+	_after_change()
+	notice.emit("Logs laid. Light them with a fire spell.")
+	return ""
+
+
+# Firemaking: a laid pile of `item` logs at `local` catches fire (the log left the bag when it was laid; Kindler
+# sometimes gives it back).
+func light_fire(item: String, local: Vector3) -> String:
+	var fire: Dictionary = skilling["fire"]
+	if randf() < perk("firemaking", "save"):  # Kindler: sometimes the log is not used up
+		bag.add(item, 1)
 	places.light_fire(local, float(fire["seconds"]) * (1.0 + perk("firemaking", "fire_time")))
 	sound("fire_light", world_of(local))
 	gain_xp("firemaking", int(fire["xp_per_log"][item]))
@@ -911,12 +942,16 @@ func map_marks() -> Array:
 			seen[where] = true
 			var p := terrain.place(where)
 			out.append({"x": float(p["pos"][0]), "z": float(p["pos"][1]), "mark": "..."})
+	var givers := {}  # (polish1 item 123) place -> names of the people there with a quest to give
 	for npc: Dictionary in terrain.data["npcs"]:
-		var where := String(npc["place"])
-		if not seen.has(where) and not quests.offers(String(npc["id"])).is_empty():
+		if not quests.offers(String(npc["id"])).is_empty():
+			var at := String(npc["place"])
+			givers[at] = (String(givers[at]) + ", " if givers.has(at) else "") + String(places.person(String(npc["id"])).get("name", ""))
+	for where: String in givers:
+		if not seen.has(where):
 			seen[where] = true
 			var p := terrain.place(where)
-			out.append({"x": float(p["pos"][0]), "z": float(p["pos"][1]), "mark": "!"})
+			out.append({"x": float(p["pos"][0]), "z": float(p["pos"][1]), "mark": "!", "who": String(givers[where])})
 	return out
 
 
@@ -939,15 +974,17 @@ func set_indoors(on: bool) -> void:
 	_sun.visible = not on
 
 
-func refresh_marks() -> void:
+func refresh_marks() -> void:  # (polish1 item 101) grey "?" in progress, gold "?" to be spoken to now, "!" a quest to give, nothing otherwise
 	var over_heads := {}
 	for id in quests.active:
-		var step := quests.step(id)
-		if String(step.get("type", "")) == "talk":
-			over_heads[String(step["npc"])] = "..."
+		over_heads[String(quests.quest(id)["giver"])] = "?grey"
 	for person: Dictionary in places.people:
 		if not quests.offers(String(person["id"])).is_empty():
 			over_heads[String(person["id"])] = "!"
+	for id in quests.active:
+		var step := quests.step(id)
+		if String(step.get("type", "")) == "talk":
+			over_heads[String(step["npc"])] = "?gold"
 	places.set_marks(over_heads)
 
 

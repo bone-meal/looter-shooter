@@ -144,6 +144,8 @@ func _draw() -> void:
 		var at := _spot(float(mark["x"]), float(mark["z"]), sheet) + Vector2(9.0, -6.0)
 		draw_circle(at, 7.5, Color(0.55, 0.12, 0.1))
 		draw_string(font, at + Vector2(-8.0, 5.0), String(mark["mark"]), HORIZONTAL_ALIGNMENT_CENTER, 16.0, 13, Style.PARCHMENT)
+		if String(mark.get("who", "")) != "":  # (polish1 item 123) whose mark it is
+			draw_string(font, at + Vector2(12.0, 4.0), String(mark["who"]), HORIZONTAL_ALIGNMENT_LEFT, 220.0, 11, Color(0.55, 0.12, 0.1))
 	# the party, then the player on top
 	var me: Vector3 = world.call("player_local")
 	for body: Node3D in world.spawner.call("bodies"):

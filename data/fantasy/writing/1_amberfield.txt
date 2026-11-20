@@ -101,6 +101,8 @@ title: Out of the Wheat
 offer: You look lost and you're holding a stick like it owes you money. Go and see Mirren before you put an eye out.
 # Step 1 shows this in the quest list. The player must: talk to Mirren the Hedge-witch.
 step 1: Speak to Mirren the Hedge-witch by the farmhouse
+# What Mirren says when you speak to her for step 1 (polish1 item 103):
+says 1: So Hale sent you, stick and all. Hold the cast key, add one Water and let go. Do it three times and we'll talk magic.
 # Step 2 shows this in the quest list. The player must: cast exactly Water, 3 time(s).
 step 2: Hold the cast key, add one Water, release: cast Water Jet
 # Farmer Hale says this when the quest is finished:
@@ -197,9 +199,9 @@ title: A Proper Fire
 offer: Nights are cold and you'll want something hot. Logs, a spark, and whatever you've got to cook.
 # Step 1 shows this in the quest list. The player must: hold 5 x Ash Log.
 step 1: Chop ash trees for logs
-# Step 2 shows this in the quest list. The player must: light 1 fire(s).
-step 2: Light a fire: drop logs with the use key near open ground, or cast Fire at them
-# Step 3 shows this in the quest list. The player must: hold 1 x Bread.
+# Step 2 shows this in the quest list. The player must: lay logs on the ground and light them with a fire spell.
+step 2: Light a fire: use a log from your bag to lay it on the ground, then cast Ember at it
+# Step 3 shows this in the quest list. The player must: bake 1 x Bread (made now, at a fire).
 step 3: Bake bread at your fire (3 wheat)
 # Farmer Hale says this when the quest is finished:
 done: Sit by it a while. A fire puts the strength back in your casting arm.
@@ -211,7 +213,7 @@ title: Mint for the Pot
 offer: A hedge-witch who buys her tonics is no hedge-witch. Mint, a cauldron, patience.
 # Step 1 shows this in the quest list. The player must: hold 6 x Meadowmint.
 step 1: Pick meadowmint in the fields
-# Step 2 shows this in the quest list. The player must: hold 2 x Mana Tonic.
+# Step 2 shows this in the quest list. The player must: brew 2 x Mana Tonic (made now, at a cauldron).
 step 2: Brew Mana Tonic at the cauldron in Millbrook
 # Mirren the Hedge-witch says this when the quest is finished:
 done: Smell that? That's what a full staff smells like.

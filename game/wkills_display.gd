@@ -27,8 +27,11 @@ static func _build(model: Node3D) -> Node3D:
 	model.add_child(plate)
 	var long := box.size.z >= box.size.x  # guns lie along their longer flat axis
 	var middle := box.get_center()
-	if long:  # on the left side (-X), a little behind the middle
-		plate.position = Vector3(box.position.x - 0.004, middle.y + box.size.y * 0.1, middle.z + box.size.z * 0.08)
+	if long:  # on the left side (-X), a little behind the middle, flat on the gun's own side there (polish1 item 61:
+		# the whole model's widest point, a scope or a drum, left it floating beside the receiver)
+		var spot := Vector3(0.0, middle.y + box.size.y * 0.1, middle.z + box.size.z * 0.08)
+		spot.x = _side_x(model, spot.y, spot.z, box.size.y * 0.25, box.size.z * 0.06, box.position.x)
+		plate.position = Vector3(spot.x - 0.004, spot.y, spot.z)
 		plate.rotation_degrees = Vector3(0, -90, 0)
 	else:
 		plate.position = Vector3(middle.x - box.size.x * 0.08, middle.y + box.size.y * 0.1, box.position.z + box.size.z - 0.004)
@@ -56,6 +59,28 @@ static func _build(model: Node3D) -> Node3D:
 	count.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	plate.add_child(count)
 	return plate
+
+
+# The outermost -X point of the model's meshes near (y, z) in the model's own space (fallback: `widest`).
+static func _side_x(model: Node3D, y: float, z: float, dy: float, dz: float, widest: float) -> float:
+	var best := INF
+	for node: Node in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := node as MeshInstance3D
+		if mi.name == NODE or not mi.visible or mi.mesh == null or mi.get_parent().name == NODE:
+			continue
+		var place := Transform3D.IDENTITY
+		var walk: Node = mi
+		while walk != null and walk != model:
+			if walk is Node3D:
+				place = (walk as Node3D).transform * place
+			walk = walk.get_parent()
+		for s in mi.mesh.get_surface_count():
+			var verts: PackedVector3Array = mi.mesh.surface_get_arrays(s)[Mesh.ARRAY_VERTEX]
+			for v: Vector3 in verts:
+				var at := place * v
+				if absf(at.y - y) <= dy and absf(at.z - z) <= dz:
+					best = minf(best, at.x)
+	return best if best != INF else widest
 
 
 # The model's meshes in the model's own space.

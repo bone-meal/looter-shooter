@@ -4,6 +4,7 @@
 # Dependencies: game/fantasy_panel.gd (the window and its helpers), core/skill_levels.gd through the world.
 extends RefCounted
 
+const FantasyWork = preload("res://game/fantasy_work.gd")
 const Style = preload("res://game/fantasy_style.gd")
 const IconArt = preload("res://game/icon_art.gd")
 
@@ -52,6 +53,15 @@ static func _card(p: Variant, side: Rect2) -> void:
 		Style.bar(p, Rect2(side.position.x + 16.0, top, side.size.x - 32.0, 8.0), float(skills.progress(id)), tint)
 		Style.text(p, Vector2(side.position.x + 16.0, top + 22.0), "%d / %d" % [int(skills.xp.get(id, 0)), int(skills.xp_for(level + 1))], 12, Style.FADED)
 	top += 34.0
+	if (p.world.skilling.get("success", {}) as Dictionary).has(id):  # (polish1 item 121) how often each node finds something now
+		var parts: PackedStringArray = []
+		for nid: String in p.world.skilling["nodes"]:
+			var nd: Dictionary = p.world.skilling["nodes"][nid]
+			if String(nd.get("skill", "")) == id and level >= int(nd["level"]):
+				var odds := FantasyWork.success(p.world.skilling, id, level, int(nd["level"]))
+				parts.append("%s %d%%%s" % [String(p.world.bag.item_name(String(nd["gives"]))) if nd.has("gives") else nid, mini(roundi(odds * 100.0), 100), (" +%d%% bonus" % roundi((odds - 1.0) * 100.0)) if odds > 1.0 else ""])
+		Style.paragraph(p, Vector2(side.position.x + 16.0, top + 4.0), "Success: " + ",  ".join(parts), 12, Style.PARCHMENT, side.size.x - 32.0, 2)
+		top += 34.0
 	var steps: Array = p.world.skilling.get("unlocks", {}).get(id, [])
 	if steps.is_empty():
 		Style.paragraph(p, Vector2(side.position.x + 16.0, top + 16.0), "Its milestones arrive later in this update.", 13, Style.FADED, side.size.x - 32.0, 2)

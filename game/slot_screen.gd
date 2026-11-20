@@ -41,6 +41,8 @@ func setup(data: Dictionary) -> void:
 	_lines = (data["lines"] as Array).size()
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN  # (polish1 item 73) grows up from the bottom edge: SPIN / Leave fell off the screen
 	panel.offset_left = -300
 	panel.offset_right = 300
 	panel.offset_top = -190

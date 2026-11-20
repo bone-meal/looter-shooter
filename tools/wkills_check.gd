@@ -49,7 +49,7 @@ func _ready() -> void:
 		var special := GunGen.unique(db, String(unique_ids[0]))
 		special["wkills"] = 7
 		_say("a hand-made unique with the counter is still legal", GunGen.validate(db, special) == "")
-	_say("its name starts with W kills (%s)" % GunStats.display_name(db, gun), GunStats.display_name(db, gun).begins_with("W kills ") and not GunStats.display_name(db, plain).begins_with("W kills"))
+	_say("its name ends with [W kills: n] (%s)" % GunStats.display_name(db, gun), GunStats.display_name(db, gun).ends_with("[W kills: %d]" % int(gun["wkills"])) and not GunStats.display_name(db, plain).contains("W kills"))
 
 	_lines.append("WKILLS_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/wkills_check.log", FileAccess.WRITE)

@@ -59,7 +59,7 @@ func is_open() -> bool:
 func open() -> void:
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	_screen.call("open", int(_wallet.get("balance")), int(_owned.call("pack_count")))
+	_screen.call("open", int(_wallet.get("balance")), int(_owned.call("pack_count")), _owned.get("mats"))
 
 
 func close() -> void:
@@ -77,4 +77,4 @@ func _on_buy(item: String) -> void:
 		var got := int(_owned.call("pack_count")) - before
 		_screen.call("show_bought", item, "MAT ADDED!" if item.begins_with("mat:") else ("+%d PACK%s!" % [got, "" if got == 1 else "S"] if got > 0 else "DECK ADDED!"))
 		bought.emit()
-	_screen.call("refresh", int(_wallet.get("balance")), int(_owned.call("pack_count")))
+	_screen.call("refresh", int(_wallet.get("balance")), int(_owned.call("pack_count")), _owned.get("mats"))

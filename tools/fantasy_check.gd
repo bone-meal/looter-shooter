@@ -134,6 +134,7 @@ func _ready() -> void:
 					"talk": changes = out_log.note({"type": "talk", "npc": s["npc"]})
 					"reach": changes = out_log.note({"type": "reach", "place": s["place"]})
 					"fire": changes = out_log.note({"type": "fire"})
+					"make": changes = out_log.note({"type": "make", "item": s["item"], "count": int(s["count"])})
 				for change: Dictionary in changes:
 					if bool(change["finished"]):
 						finished += 1

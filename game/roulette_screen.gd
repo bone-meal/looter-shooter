@@ -43,6 +43,8 @@ func setup(cfg: Dictionary) -> void:
 	_table_max = int(cfg["table_max"])
 	var panel := PanelContainer.new()
 	panel.set_anchors_and_offsets_preset(Control.PRESET_CENTER_BOTTOM)
+	panel.grow_horizontal = Control.GROW_DIRECTION_BOTH
+	panel.grow_vertical = Control.GROW_DIRECTION_BEGIN  # (polish1 item 73) grows up from the bottom edge: SPIN / Leave fell off the screen
 	panel.offset_left = -340
 	panel.offset_right = 340
 	panel.offset_top = -330

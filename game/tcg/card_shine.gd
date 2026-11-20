@@ -28,7 +28,7 @@ void fragment() {
 	vec3 foil = hsv(hue, pony > 0.5 ? 0.45 : 0.7, 1.0);
 	float sweep = pow(0.5 + 0.5 * sin(band * 2.2), pony > 0.5 ? 2.0 : 6.0);
 	vec2 cell = floor(p * vec2(90.0, 126.0));
-	float glitter = step(pony > 0.5 ? 0.985 : 0.993, hash(cell + floor(t * (pony > 0.5 ? 8.0 : 3.0))));
+	float glitter = step(pony > 0.5 ? 0.985 : 0.993, hash(cell + floor(TIME * (pony > 0.5 ? 11.0 : 9.0)))  /* polish1 item 83: the rainbow glitter changed under once a second */);
 	float amount = (pony > 0.5 ? 0.38 + 0.1 * sin(TIME * 2.0) : 0.22) * sweep;
 	float plaque = step(0.6, p.y) * step(p.y, 0.89) * step(0.12, p.x) * step(p.x, 0.88);
 	amount *= 1.0 - plaque * 0.75;  // the rules text stays readable

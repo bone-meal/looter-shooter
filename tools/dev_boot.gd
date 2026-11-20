@@ -828,6 +828,17 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						var cg: Dictionary = (bx.get("lantern") as Node).get("cages").get("cages")
 						if not cg.is_empty():
 							bx.call("part_hit", "cage_%d" % int(cg.keys()[0]), 5000.0)
+					"falselure":  # "!boss falselure <i>" (polish1 A7): stand 3 m from false lure i (toward the pool's middle) and look at it
+						var fl: Array = (bx.get("lantern") as Node).get("lures").get("lures")
+						var fi := int(words[2]) if words.size() > 2 else 0
+						if fi < fl.size() and fl[fi].has("bulb") and is_instance_valid(fl[fi]["bulb"]):
+							var fb: Node3D = fl[fi]["bulb"]
+							var to_mid: Vector3 = (bx.get("enemy") as Node3D).global_position - fb.global_position if bx.get("enemy") != null else Vector3(1, 0, 0)
+							to_mid.y = 0.0
+							player.call("teleport", fb.global_position + to_mid.normalized() * 3.0 + Vector3(0.0, -0.5, 0.0), 0.0)
+							await get_tree().create_timer(0.6, true, false, true).timeout
+							player.call("look_at_point", fb.global_position)
+						_lines.append("BOSS falselure %d of %d" % [fi, fl.size()])
 					"lure":  # (sea step 13 R2d) look straight at the Lantern Queen's lure bulb
 						var el: Node3D = bx.get("enemy")
 						var bulb_l: Node3D = (el.get("_model") as Node3D).find_child("LureBulb", true, false) as Node3D if el != null and el.get("_model") != null else null
@@ -1519,7 +1530,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					player.call("teleport", stall_p.global_position + stall_p.global_transform.basis.z * 1.8 + Vector3(0.0, 0.5, 0.0), 0.0)
 					await get_tree().create_timer(0.8, true, false, true).timeout
 					player.call("look_at_point", stall_p.global_position + Vector3(0.0, 1.0, 0.0))
-				_lines.append("PORT stall %s: found %s, here '%s', prompt '%s'" % [" ".join(words.slice(2)), str(stall_p != null), String(port_p.call("port_here")), String(port_p.call("prompt", "F"))])
+				_lines.append("PORT stall %s: found %s, here '%s', prompt '%s', stall at %s yaw %.0f, me at %s" % [" ".join(words.slice(2)), str(stall_p != null), String(port_p.call("port_here")), String(port_p.call("prompt", "F")), str(stall_p.global_position) if stall_p != null else "-", rad_to_deg(stall_p.rotation.y) if stall_p != null else 0.0, str((player as Node3D).global_position)])
 			elif sub_p == "rest":  # "!port rest <id> [dread]": (sea step 13 R2a) inside that port's rest house with that much Dread, hurt, then F
 				var rp: Dictionary = port_p.get("rules").call("port", words[2])
 				player.set("dread", int(words[3]) if words.size() > 3 else 3)
@@ -2615,6 +2626,63 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			session.call("travel", words[1])
 		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give); "!immortal off" ends it
 			player.set("cheat_god", not (words.size() > 1 and words[1] == "off"))
+		"unstuck":  # (polish1 item 110) "!unstuck bury <m>": the body pushed that far down into the ground, then 1.5 s; "!unstuck <note>": what it did
+			if words.size() > 2 and words[1] == "bury":
+				var y0: float = (player as Node3D).global_position.y
+				(player as Node3D).global_position.y -= float(words[2])
+				await get_tree().create_timer(1.5, true, false, true).timeout
+				_lines.append("UNSTUCK buried %s m at y %.2f: now y %.2f, on floor %s, freed %d (%s)" % [words[2], y0, (player as Node3D).global_position.y, str((player as CharacterBody3D).is_on_floor()), int(player.get("unstuck").get("freed")), String(player.get("unstuck").get("last_reason"))])
+			else:
+				_lines.append("UNSTUCK %s: freed %d (%s), y %.2f" % [" ".join(words.slice(1)), int(player.get("unstuck").get("freed")), String(player.get("unstuck").get("last_reason")), (player as Node3D).global_position.y])
+		"ftalk":  # "!ftalk <npc id>": (polish1 A6) stand 1 m from that person of Aurelind (inside their room if they live indoors) and talk; "!ftalk marks <note>": every person's mark over the head and the map's quest marks
+			var fw: Node = session.get("_fantasy")
+			if words[1] == "marks":
+				var heads := PackedStringArray()
+				for who_m: Dictionary in fw.get("places").get("people"):
+					if who_m["mark"] != null and (who_m["mark"] as Label3D).text != "":
+						heads.append("%s %s%s" % [who_m["id"], (who_m["mark"] as Label3D).text, " grey" if (who_m["mark"] as Label3D).modulate.r < 0.8 else ""])
+				var maps := PackedStringArray()
+				for m_m: Dictionary in fw.call("map_marks"):
+					maps.append("%s(%s)" % [m_m["mark"], String(m_m.get("who", ""))])
+				_lines.append("FMARKS %s: heads %s | map %s" % [" ".join(words.slice(2)), ", ".join(heads), ", ".join(maps)])
+			else:
+				var who_t: Dictionary = fw.get("places").call("person", words[1])
+				var at_t: Vector3 = who_t["at"]
+				player.call("teleport", fw.call("ground_world", at_t.x + 1.0, at_t.z), 0.0)
+				await get_tree().create_timer(0.8, true, false, true).timeout
+				player.call("look_at_point", fw.call("ground_world", at_t.x, at_t.z) + Vector3(0.0, 1.5, 0.0))
+				fw.get("work").call("interact")
+				await get_tree().create_timer(0.6, true, false, true).timeout
+		"islestand":  # "!islestand <x> <z> <toward x> <toward z>": (polish1 A2) on the islands, metres from the spawn island's middle, looking at a spot; "!islestand where <note>": where we are and how high
+			if words[1] == "where":
+				var p_w: Vector3 = (player as Node3D).global_position
+				_lines.append("ISLESTAND %s: at %.1f %.2f %.1f (island metres), on floor %s" % [" ".join(words.slice(2)), p_w.x - 500.0, p_w.y, p_w.z, str((player as CharacterBody3D).is_on_floor())])
+			else:
+				player.call("teleport", Vector3(500.0 + float(words[1]), 0.4, float(words[2])), 0.0)
+				await get_tree().create_timer(0.6, true, false, true).timeout
+				player.call("look_at_point", Vector3(500.0 + float(words[3]), 1.5, float(words[4])))
+		"dropgun":  # "!dropgun [body] [tier]": (polish1 A1, item 67) a rolled gun on the ground 3 m in front of us, looked at
+			var fwd_d := -(player as Node3D).global_transform.basis.z
+			fwd_d.y = 0.0
+			var at_d: Vector3 = (player as Node3D).global_position + fwd_d.normalized() * 3.0
+			(session.get("_field") as Node).call("spawn", GunGen.generate(player.get("gun_db"), RandomNumberGenerator.new(), 0.0, words[1] if words.size() > 1 else "sniper_basic", words[2] if words.size() > 2 else "purple"), at_d)
+			await get_tree().create_timer(0.5, true, false, true).timeout
+			player.call("look_at_point", at_d + Vector3(0.0, 0.9, 0.0))
+		"lookset":  # polish1 A1 (body sliders online): "!lookset height 1.12 weight 1.3 bust 0.8 glutes 0.6" = saved from the customize menu
+			var look_s: Dictionary = (player.get("appearance") as Dictionary).duplicate()
+			var i_s := 1
+			while i_s + 1 < words.size():
+				look_s[words[i_s]] = float(words[i_s + 1])
+				i_s += 2
+			session.call("_on_look_applied", look_s)
+			_lines.append("LOOKSET mine now %s" % str(player.get("appearance")))
+		"lookof":  # "!lookof <note>": every other player's look as this machine has it, and the size of the body built for it
+			var ghosts_l: Dictionary = session.get("net").get("_ghosts") if session.get("net") != null else {}
+			for id_l: int in ghosts_l:
+				var node_l: Node = ghosts_l[id_l]["node"]
+				var app_l: Dictionary = node_l.get("appearance")
+				var model_l := node_l.get("_model") as Node3D
+				_lines.append("LOOKOF %s: peer %d height %s weight %s bust %s glutes %s outfit %s; body scale %s" % [" ".join(words.slice(1)), id_l, str(app_l.get("height")), str(app_l.get("weight")), str(app_l.get("bust")), str(app_l.get("glutes")), str(app_l.get("rig_outfit")), str(model_l.scale) if model_l != null else "none"])
 		"wkills":  # "!wkills 5": the rolled gun in hand gets the W kills counter at 5 (a plain gun becomes a rolled one first); "!wkills <note>": what it shows
 			var hand_now := int(player.call("hand_index"))
 			var bag: RefCounted = player.get("inventory")
@@ -2718,6 +2786,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				shop.call("open")
 				if words.size() > 3:
 					shop.call("_on_buy", words[3])
+				if words.size() > 2 and words[2] == "odds":  # "!tcg shop odds": the odds board shown (polish1 item 79)
+					((shop.get("_screen") as Control).get("_odds") as Control).visible = true
+				if words.size() > 2 and words[2] == "mats":  # "!tcg shop mats": the play mats tab (polish1 item 78)
+					var scr_m: Control = shop.get("_screen")
+					for tab_m: Node in scr_m.find_children("*", "Label", true, false):
+						if (tab_m as Label).text == "PLAY MATS":
+							var ev_m := InputEventMouseButton.new()
+							ev_m.button_index = MOUSE_BUTTON_LEFT
+							ev_m.pressed = true
+							(tab_m as Label).gui_input.emit(ev_m)
 					var owned: RefCounted = session.get("_cards")
 					_lines.append("TCG SHOP %s: packs %d, box %s, chips %d" % [words[3], int(owned.call("pack_count")), str(owned.get("box")), int((session.get("_wallet") as RefCounted).get("balance"))])
 			elif words[1] == "sit":  # "!tcg sit": sit at the House Dealer's table (the deck pick shows)
@@ -2792,6 +2870,43 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						"no match" if mir2 == null else "phase %s turn %d current %d winner %d hp %d/%d boards %d/%d" % [mir2.get("phase"), int(mir2.get("turn")), int(mir2.get("current")), int(mir2.get("winner")), int(mir2.get("sides")[0]["hp"]), int(mir2.get("sides")[1]["hp"]), (mir2.get("sides")[0]["board"] as Array).size(), (mir2.get("sides")[1]["board"] as Array).size()]])
 					var rec: Dictionary = (session.get("_cards") as RefCounted).get("record")
 					_lines.append("PTABLE record: wins %d losses %d vs %s, chips %d" % [int(rec["wins"]), int(rec["losses"]), str(rec["vs"]), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "wake":  # (polish1 A3) every creature on our side may attack this turn
+				var m3: RefCounted = tcg.get("match_state")
+				m3.set("phase", "play")
+				m3.set("current", 0)
+				for c3: Dictionary in m3.get("sides")[0]["board"]:
+					c3["born"] = -1
+					c3["attacks"] = 1
+				tcg.call("_after_move")
+			elif words[1] == "click":  # "!tcg click mine|foe <i> | leader": (polish1 A3) a real mouse move + click at that card of the 3D table
+				var scr: Control = tcg.get("_screen")
+				var v3: Node3D = scr.get("view3d")
+				var want_face: Variant = null
+				if words[2] == "leader":
+					for c4: Dictionary in v3.get("_cards"):
+						if c4["face"] is Dictionary and int((c4["face"] as Dictionary).get("side", -1)) == 1:
+							want_face = c4
+				else:
+					var row4: Control = scr.get("_my_row" if words[2] == "mine" else "_foe_row")
+					var face4: Control = row4.get_child(int(words[3]))
+					for c4: Dictionary in v3.get("_cards"):
+						if is_same(c4["face"], face4):
+							want_face = c4
+				if want_face == null:
+					_lines.append("TCG click: no such card")
+				else:
+					var cam4: Camera3D = v3.get("_cam")
+					var at4 := cam4.unproject_position(((want_face as Dictionary)["node"] as Node3D).global_position)
+					var got: Variant = v3.call("pick", at4)  # what the table finds under that screen point (the mouse itself cannot be moved in a test copy)
+					var same := is_same(got, (want_face as Dictionary)["face"])
+					if got is Control:
+						scr.call("_on_card", got, false)
+					elif got is Dictionary and bool((got as Dictionary).get("leader", false)):
+						var code4 := int((scr.get_script() as Script).get_script_constant_map()["HERO"]) - (int(scr.get("_me")) if int((got as Dictionary)["side"]) == 0 else 1 - int(scr.get("_me")))
+						if str(scr.get("_mode")) != "" and (scr.get("_valid") as Array).has(code4):
+							scr.call("_fire", code4)
+					await get_tree().process_frame
+					_lines.append("TCG click %s at %s: picked the right card %s; mode '%s' valid %s" % [" ".join(words.slice(2)), str(at4), str(same), str(scr.get("_mode")), str(scr.get("_valid"))])
 			elif words[1] == "move":  # our side: the move the AI would make, sent as if clicked (or keep the opening hand)
 				tcg.call("dev_move")
 			else:

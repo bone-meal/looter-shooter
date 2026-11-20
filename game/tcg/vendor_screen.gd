@@ -6,6 +6,7 @@
 # Dependencies: game/chip_art.gd, game/tcg/card_face.gd (fonts), assets/tcg/pack.png, box.png, logo.png, art/<leader>.jpg.
 extends Control
 
+const SharpText = preload("res://game/sharp_text.gd")
 const CardArt = preload("res://game/tcg/card_art.gd")
 const ChipArt = preload("res://game/chip_art.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
@@ -27,6 +28,7 @@ class Tile:
 	var title := ""
 	var title_size := 18  # one size for a whole row, so names line up
 	var price := 0
+	var owned := false  # (polish1 item 78) a play mat already bought: greyed, "Already purchased", no click
 	var _hover := 0.0
 
 	func _ready() -> void:
@@ -44,7 +46,8 @@ class Tile:
 	func _gui_input(event: InputEvent) -> void:
 		var click := event as InputEventMouseButton
 		if click != null and click.pressed and click.button_index == MOUSE_BUTTON_LEFT:
-			clicked.emit()
+			if not owned:
+				clicked.emit()
 			accept_event()
 
 	func bounce() -> void:
@@ -98,6 +101,15 @@ class Tile:
 		var nf := CardFace.font("number")
 		var txt := _thousands(price)
 		draw_string(nf, pill.position + Vector2(32, 21), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 19, GOLD)
+		if owned:
+			var shade := StyleBoxFlat.new()
+			shade.bg_color = Color(0.08, 0.08, 0.1, 0.72)
+			shade.set_corner_radius_all(16)
+			draw_style_box(shade, Rect2(Vector2.ZERO, size))
+			var msg := "Already purchased"
+			var mw := f.get_string_size(msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 17).x
+			draw_string_outline(f, Vector2((size.x - mw) * 0.5, size.y * 0.5), msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, 5, Color(0, 0, 0, 0.9))
+			draw_string(f, Vector2((size.x - mw) * 0.5, size.y * 0.5), msg, HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.85, 0.85, 0.85))
 
 	static func _thousands(n: int) -> String:
 		var s := str(n)
@@ -116,6 +128,7 @@ func _ready() -> void:
 	visible = false
 	_fit()
 	get_viewport().size_changed.connect(_fit)
+	visibility_changed.connect(func() -> void: _fit() if is_visible_in_tree() else SharpText.release(self))
 
 
 # Laid out for a 648-pixel-high window and scaled up (like the card table).
@@ -126,6 +139,8 @@ func _fit() -> void:
 	position = Vector2.ZERO
 	scale = Vector2(k, k)
 	size = view / k
+	if is_visible_in_tree():
+		SharpText.hold(self, k)  # words drawn at the scaled size (polish1 items 84 / 88)
 
 
 # cfg = data/tcg/packs.json; starters = data/tcg/starters.json "starters"; leaders = id -> {"name"};
@@ -282,6 +297,7 @@ func setup(cfg: Dictionary, starters: Dictionary, _leaders: Dictionary, mats: Di
 	_odds.set_anchors_and_offsets_preset(Control.PRESET_CENTER_RIGHT)
 	_odds.grow_horizontal = Control.GROW_DIRECTION_BEGIN
 	_odds.offset_right = -20
+	_odds.grow_vertical = Control.GROW_DIRECTION_BOTH  # (polish1 item 79) centred on its anchor: the pony foil line fell off the bottom
 	var ob := StyleBoxFlat.new()
 	ob.bg_color = Color(0.05, 0.02, 0.05, 0.96)
 	ob.border_color = GOLD
@@ -307,15 +323,19 @@ func setup(cfg: Dictionary, starters: Dictionary, _leaders: Dictionary, mats: Di
 	add_child(_toast)
 
 
-func open(chips: int, packs: int) -> void:
+func open(chips: int, packs: int, owned_mats: Array = []) -> void:
 	visible = true
 	_odds.visible = false
-	refresh(chips, packs)
+	refresh(chips, packs, owned_mats)
 
 
-func refresh(chips: int, packs: int) -> void:
+func refresh(chips: int, packs: int, owned_mats: Array = []) -> void:
 	_chips.text = Tile._thousands(chips)
 	_packs.text = str(packs)
+	for key: String in _tiles:
+		if key.begins_with("mat:"):
+			(_tiles[key] as Tile).owned = owned_mats.has(key.trim_prefix("mat:"))
+			(_tiles[key] as Tile).queue_redraw()
 
 
 # A bought item bounces and its pop-up rises; a refusal shakes the panel and says why in the pop-up.

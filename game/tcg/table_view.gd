@@ -102,7 +102,7 @@ func _place_camera() -> void:
 
 # What the table shows. faces = the screen's CardFace controls: hand (mine, in order), mine and foe (creatures, in
 # board order); foe_hand = how many cards the other side holds; leaders = [my leader id, theirs]; decks = [mine, theirs].
-func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Array, decks: Array) -> void:
+func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Array, decks: Array, leader_marks: Array = []) -> void:
 	for tw: Variant in _moves:
 		if (tw as Tween).is_valid():
 			(tw as Tween).kill()
@@ -152,7 +152,7 @@ func show_cards(hand: Array, mine: Array, foe: Array, foe_hand: int, leaders: Ar
 	for k in 2:  # leaders on their portrait spots
 		var s := 1.0 if k == 0 else -1.0
 		var l: Array = _layout["leader"]["at"]
-		_add({"id": String(leaders[k]), "leader": true, "side": k}, _flat(float(l[0]), float(l[1]), 0.0, s), LEADER)
+		_add({"id": String(leaders[k]), "leader": true, "side": k, "outline": leader_marks[k] if leader_marks.size() > k else Color(0, 0, 0, 0)}, _flat(float(l[0]), float(l[1]), 0.0, s), LEADER)
 	for k in 2:  # decks as stacks
 		var s := 1.0 if k == 0 else -1.0
 		var d: Array = _layout["deck"]
@@ -192,13 +192,13 @@ func _stand(uid: int, id: String, at: Vector3, s: float) -> void:
 			_paint(node, model.get_file())
 			add_child(node)
 		var box := _bounds(node)
-		var k := float(f.get("height", 0.11)) / maxf(box.size.y, 0.01)
+		var k := float(f.get("height", 0.11)) / maxf(maxf(box.size.y, maxf(box.size.x, box.size.z) * 0.6), 0.01)  # (polish1 item 91) a low, wide crab is sized by its spread, not its height
 		node.scale = Vector3(k, k, k)
 		node.set_meta("lift", -box.position.y * k)
 		_figures[uid] = node
 	var fig: Node3D = _figures[uid]
 	fig.position = Vector3(at.x, TOP + 0.004 + float(fig.get_meta("lift", 0.0)), at.z)
-	fig.rotation = Vector3(0, 0.0 if s > 0.0 else PI, 0)  # models face +z: mine look across at theirs
+	fig.rotation = Vector3(0, PI if s > 0.0 else 0.0, 0)  # the models face -z: turned so mine look across at theirs (polish1 item 91: all faced away)
 
 
 # What just happened, shown on the table after the redraw (cheap tweens, locked): new creatures slide in from the
@@ -433,6 +433,9 @@ func _add(face: Variant, where: Transform3D, size: Vector2) -> void:
 		(glow.material_override as StandardMaterial3D).albedo_color = outline
 	elif face is Dictionary:
 		id = String(face["id"])
+		var ring: Color = (face as Dictionary).get("outline", Color(0, 0, 0, 0))  # (polish1 item 92) a leader that may be attacked lights up too
+		glow.visible = ring.a > 0.0
+		(glow.material_override as StandardMaterial3D).albedo_color = ring
 	var want := "%s|%s|%s" % [id, finish, str(live)]
 	node.set_meta("want", want)  # a reused node may still have an older picture on its way
 	bake.call("texture", id, "", func(tex: Texture2D) -> void:  # baked plain: a foil's shine moves on the table (game/tcg/card_shine_3d.gd)

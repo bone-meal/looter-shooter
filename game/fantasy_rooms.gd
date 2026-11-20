@@ -32,6 +32,7 @@ var _room_boxes: Array = []  # {"at": Vector3 world, "loot", "key", "model", "no
 var _room_stations: Array = []  # {"at": Vector3 world, "kind"}
 var _exit := Vector3.ZERO  # world position of the room's door
 var _outside := Vector3.ZERO  # world position in front of the building, to return to
+var _out_dir := Vector2.ZERO  # map direction out through the door
 var _anchor := Vector3.ZERO  # the same spot in map metres: where the player counts as standing while indoors
 var _timer := 0.0
 var _rng := RandomNumberGenerator.new()
@@ -199,6 +200,7 @@ func _enter(door: Dictionary) -> void:
 	var def: Dictionary = cfg["rooms"][String(door["kind"])]
 	_anchor = Vector3(door["at"].x, _world.terrain.height(door["at"].x, door["at"].y), door["at"].y)
 	_outside = _world.call("world_of", _anchor + Vector3(0.0, 0.3, 0.0))
+	_out_dir = (door["at"] - Vector2(float(item["x"]), float(item["z"]))).normalized()  # from the building out through its door
 	_room = Node3D.new()
 	_room.position = Vector3(float(item["x"]) + float(cfg["offset"][0]), float(cfg["offset"][1]), float(item["z"]) + float(cfg["offset"][2]))
 	add_child(_room)
@@ -252,7 +254,7 @@ func _enter(door: Dictionary) -> void:
 				shape.shape = drum
 			else:
 				var block := BoxShape3D.new()
-				block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
+				block.size = Vector3(maxf(float(box[2]) - 0.22, 0.3), float(box[4]), maxf(float(box[3]) - 0.22, 0.3))  # (polish1 item 100) a little smaller than the drawn piece: its corners no longer catch the walker
 				shape.shape = block
 			shape.transform = made.transform * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
 			body.add_child(shape)
@@ -275,9 +277,32 @@ func _enter(door: Dictionary) -> void:
 	_world.call("sound", "ui_open")
 
 
+# (polish1 items 122 / 128) Where to come out: the spot before the door if a standing body fits there, else the
+# nearest that does, further out along the door's way and to its sides, on the land's height: never into the ground
+# or a neighbour's wall (Millbrook's chapel faces a house door).
+func _clear_outside() -> Vector3:
+	var body := CapsuleShape3D.new()
+	body.radius = 0.45
+	body.height = 1.8
+	var q := PhysicsShapeQueryParameters3D.new()
+	q.shape = body
+	q.collision_mask = 1
+	q.exclude = [(_player as CollisionObject3D).get_rid()]
+	var space := (_player as Node3D).get_world_3d().direct_space_state
+	var across := Vector2(-_out_dir.y, _out_dir.x)
+	for d: float in [0.0, 1.0, 2.0, 3.0, 4.5, 6.0, 8.0]:
+		for side: float in [0.0, 1.2, -1.2, 2.4, -2.4]:
+			var m := Vector2(_anchor.x, _anchor.z) + _out_dir * d + across * side
+			var spot: Vector3 = _world.call("world_of", Vector3(m.x, _world.terrain.height(m.x, m.y) + 0.3, m.y))
+			q.transform = Transform3D(Basis(), spot + Vector3(0.0, 0.95, 0.0))
+			if space.intersect_shape(q, 1).is_empty():
+				return spot
+	return _outside
+
+
 func _leave() -> void:
 	faded.emit()
-	_player.call("teleport", _outside, 0.0)
+	_player.call("teleport", _clear_outside(), 0.0)
 	_world.call("sound", "ui_close")
 	reset()
 	_near = "?"

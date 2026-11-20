@@ -4,15 +4,17 @@
 # lose_m for lose_s) they wink out. At the end of their way they settle: cache_chance a floating cache (game/
 # sea_flotsam.gd spill, loot cache_loot), else they gather into one light that is a lure: the region's beast (a
 # Fogmaw: game/sea_beasts.gd) rises there. The HOST runs them (game/sea_events.gd hands it the event and sends it
-# with the others); every machine draws them (glowing balls bobbing round the event's point, one light for all).
+# with the others); every machine draws them (flame-like wisps, tools/blender/sea_marsh_fx.py, bobbing round the event's point, one light for all).
 # Dependencies: data/sea/events.json marsh_lights, data/sea/islands.json, game/sea_events.gd (parent `events`: rules, tell, _nearest, _water,
 # _foes, counts), game/sea_flotsam.gd, game/sea_beasts.gd, core/sea/event_rules.gd (region_number).
 extends Node
 
 const RulesScript = preload("res://core/sea/event_rules.gd")
+const MODEL := "res://assets/models/sea/marsh_wisp.gltf"  # (polish1 A7) tools/blender/sea_marsh_fx.py: nodes Core, Halo
 
 var events: Node  # game/sea_events.gd
 var _mat: StandardMaterial3D
+var _halo: StandardMaterial3D  # the wisp model's faint shell
 var _circles: Array = []  # the islands as [centre (sea x, z), radius] (data/sea/islands.json), read once
 
 
@@ -124,11 +126,27 @@ func build(root: Node3D, e: Dictionary, out: Dictionary) -> void:
 	ball.height = 1.1
 	ball.radial_segments = 10
 	ball.rings = 5
+	var model: PackedScene = load(MODEL) if ResourceLoader.exists(MODEL) else null
+	if model != null and _halo == null:
+		_halo = StandardMaterial3D.new()
+		_halo.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_halo.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		_halo.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		_halo.albedo_color = Color(_mat.albedo_color, 0.22)
 	for i in clampi(int(e.get("n", 3)), 1, 8):
-		var w := MeshInstance3D.new()
-		w.mesh = ball
-		w.material_override = _mat
-		w.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		var w: Node3D
+		if model != null:  # (polish1 A7) a flame-like core with a curling tail inside a faint halo
+			w = model.instantiate() as Node3D
+			for found in w.find_children("*", "MeshInstance3D", true, false):
+				var part := found as MeshInstance3D
+				part.material_override = _halo if String(part.name) == "Halo" else _mat
+				part.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		else:
+			var ballw := MeshInstance3D.new()
+			ballw.mesh = ball
+			ballw.material_override = _mat
+			ballw.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+			w = ballw
 		root.add_child(w)
 		wisps.append(w)
 	var light := OmniLight3D.new()
@@ -149,10 +167,11 @@ func place(n: Dictionary, e: Dictionary, delta: float, clock: float) -> void:
 	var mode := String(e.get("mode", "lead"))
 	var wisps: Array = n.get("wisps", [])
 	for i in wisps.size():
-		var w: MeshInstance3D = wisps[i]
+		var w: Node3D = wisps[i]
 		var k := float(i)
 		var spread := 0.4 if mode == "beast" else (1.0 if mode == "lead" else 0.0)
 		w.position = Vector3(sin(clock * 0.7 + k * 2.1) * 4.0 * spread, sin(clock * 1.3 + k) * 0.8 + 0.4, cos(clock * 0.6 + k * 1.7) * 4.0 * spread)
 		w.visible = mode != "cache"
 		w.scale = Vector3.ONE * (0.8 + 0.25 * sin(clock * 3.0 + k * 1.3))
+		w.rotation.y = clock * 0.9 + k  # the tail trails round
 	(n["light"] as OmniLight3D).visible = mode == "lead" or mode == "beast"

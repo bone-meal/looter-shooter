@@ -6,6 +6,7 @@
 # Dependencies: game/tcg/card_face.gd, core/tcg/card_text.gd, core/tcg/match_state.gd (read only, handed in), game/chip_art.gd.
 extends Control
 
+const SharpText = preload("res://game/sharp_text.gd")
 const CardArt = preload("res://game/tcg/card_art.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 const CardText = preload("res://core/tcg/card_text.gd")
@@ -43,6 +44,7 @@ var _my_bar := TableHud.LeaderBadge.new()
 var _power := TableHud.PowerButton.new()
 var _end := TableHud.EndButton.new()
 var _banner := Label.new()  # "YOUR TURN" flashing up
+var _callout := Label.new()  # (polish1 item 93) what a card just summoned, e.g. "Gull Flock: summoned two 1/1 Gulls with Charge"
 var _power_words := ""  # the hero power's text, shown while its button is hovered
 var _hint := Label.new()
 var _turn := Label.new()
@@ -63,16 +65,19 @@ var _events: Array = []  # the last move's match events, played on the 3D table 
 var finishes: Array = [{}, {}]  # by match side: card id -> "rainbow" / "pony", how that player's foils look (core/tcg/collection.gd best_finishes)
 var _felt: ColorRect
 var _hovered: Variant = null  # the face under the mouse in 3D
+var _side: VBoxContainer  # the right column (log; the zoom until the 3D table moves it)
 
 
 func _ready() -> void:
 	visible = false
 	_fit()
 	get_viewport().size_changed.connect(_fit)
+	visibility_changed.connect(func() -> void: _fit() if is_visible_in_tree() else SharpText.release(self))
 	var felt := ColorRect.new()
 	felt.color = Color(0.06, 0.2, 0.16, 0.97)
 	felt.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	felt.gui_input.connect(_on_felt_input)
+	felt.mouse_exited.connect(_drop_hover)  # (polish1 item 90) the mouse onto END TURN or off the table: the zoom goes
 	add_child(felt)
 	_felt = felt
 	var v := VBoxContainer.new()
@@ -146,6 +151,25 @@ func _ready() -> void:
 	_banner.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_banner.modulate.a = 0.0
 	add_child(_banner)
+	_callout.position = Vector2(150, 64)
+	_callout.size = Vector2(560, 30)
+	_callout.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_callout.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_callout.add_theme_font_override("font", CardFace.font("title"))
+	_callout.add_theme_font_size_override("font_size", 19)
+	_callout.add_theme_color_override("font_color", Color(1.0, 0.92, 0.7))
+	_callout.add_theme_color_override("font_outline_color", Color(0.15, 0.05, 0.0, 0.95))
+	_callout.add_theme_constant_override("outline_size", 8)
+	var call_back := StyleBoxFlat.new()
+	call_back.bg_color = Color(0.05, 0.04, 0.06, 0.8)
+	call_back.set_corner_radius_all(8)
+	call_back.set_content_margin_all(8)
+	call_back.border_color = Color(1.0, 0.8, 0.3, 0.8)
+	call_back.set_border_width_all(1)
+	_callout.add_theme_stylebox_override("normal", call_back)
+	_callout.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_callout.modulate.a = 0.0
+	add_child(_callout)
 	# right column: hover view + log
 	var side := VBoxContainer.new()
 	side.set_anchors_and_offsets_preset(Control.PRESET_RIGHT_WIDE)
@@ -156,12 +180,18 @@ func _ready() -> void:
 	side.add_theme_constant_override("separation", 8)
 	side.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(side)
+	_side = side
 	_zoom.custom_minimum_size = ZOOM_SIZE
 	_zoom.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_zoom.visible = false
 	side.add_child(_zoom)
 	_zoom_help.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_zoom_help.add_theme_font_size_override("font_size", 15)
+	var help_back := StyleBoxFlat.new()  # (polish1 item 89) the keyword words on a dark panel: they were lost on the felt, sand and guns
+	help_back.bg_color = Color(0.04, 0.04, 0.06, 0.88)
+	help_back.set_corner_radius_all(6)
+	help_back.set_content_margin_all(8)
+	_zoom_help.add_theme_stylebox_override("normal", help_back)
 	side.add_child(_zoom_help)
 	_log_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_log_label.add_theme_font_size_override("font_size", 15)
@@ -210,6 +240,8 @@ func _fit() -> void:
 	position = Vector2.ZERO
 	scale = Vector2(k, k)
 	size = view / k
+	if is_visible_in_tree():
+		SharpText.hold(self, k)  # words drawn at the scaled size (polish1 items 84 / 88)
 
 
 # ---- what the table shows ----
@@ -274,6 +306,43 @@ func set_prize(chips: int) -> void:
 # numbers, crumbles). Call before show_match.
 func add_events(events: Array) -> void:
 	_events.append_array(events)
+	if _m != null:
+		_call_summons(events)
+
+
+# A card that summons others says so: "<card>: summoned two 1/1 Gulls with Charge" (one line per kind summoned).
+func _call_summons(events: Array) -> void:
+	var source := ""
+	var made := {}  # summoned card id -> how many
+	var order: Array = []
+	for e: Dictionary in events:
+		if String(e.get("e", "")) == "play":
+			source = String(e.get("card", ""))
+		elif String(e.get("e", "")) == "summon" and not bool(e.get("from_hand", true)):
+			var id := String(e.get("card", ""))
+			if not made.has(id):
+				order.append(id)
+			made[id] = int(made.get(id, 0)) + 1
+	if order.is_empty():
+		return
+	var db: RefCounted = _m.get("db")
+	var words := ["no", "one", "two", "three", "four", "five", "six", "seven"]
+	var lines: PackedStringArray = []
+	for id: String in order:
+		var c: Dictionary = db.call("card", id)
+		var n := int(made[id])
+		var title := String(c.get("name", id))
+		var kws: PackedStringArray = []
+		for kw: Variant in c.get("keywords", []):
+			kws.append(String(kw).capitalize())
+		lines.append("summoned %s %d/%d %s%s" % [words[n] if n < words.size() else str(n), int(c.get("attack", 0)), int(c.get("health", 0)), title + ("s" if n > 1 and not title.ends_with("s") else ""), (" with " + " and ".join(kws)) if not kws.is_empty() else ""])
+	var src_name := String((db.call("card", source) as Dictionary).get("name", source)) if source != "" else ""
+	_callout.text = (src_name + ": " if src_name != "" else "") + "; ".join(lines)
+	_callout.size = Vector2(560, 0)
+	_callout.modulate.a = 1.0
+	var tw := _callout.create_tween()
+	tw.tween_interval(3.5)
+	tw.tween_property(_callout, "modulate:a", 0.0, 0.8)
 
 
 func show_match(m: RefCounted, me: int, who: Array) -> void:
@@ -317,7 +386,7 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 	_fill_row(_my_row, mine["board"], MAT_SIZE, false)
 	_fill_row(_hand_row, mine["hand"], HAND_SIZE, true)
 	if m.get("phase") == "mulligan" and not bool(mine["ready"]):
-		_ask("Mulligan: click the cards you want to send back (once).", [["Confirm", func() -> void: _center.visible = false; mulligan_chosen.emit(_redraw.duplicate())]])
+		_ask("Mulligan: swap the cards you don't want, then Confirm.\nClick a card in your hand to swap it (it turns red); click again to keep it.", [["Confirm", func() -> void: _center.visible = false; mulligan_chosen.emit(_redraw.duplicate())]])
 	elif m.get("phase") == "mulligan":
 		_ask("Waiting for %s..." % who[1 - me], [])
 	elif _center_text.text.begins_with("Mulligan") or _center_text.text.begins_with("Waiting"):
@@ -328,6 +397,32 @@ func show_match(m: RefCounted, me: int, who: Array) -> void:
 	_mark_all()
 	if view3d != null and not view3d.visible:
 		view3d.call("enter")
+	_repick()
+
+
+# The board changed under a still mouse (the foe played): show what is under it now, not the card that was.
+func _repick() -> void:
+	if view3d == null or not view3d.visible or not _felt.get_global_rect().has_point(get_global_mouse_position()):
+		_drop_hover()
+		return
+	var under: Variant = view3d.call("pick", get_viewport().get_mouse_position())
+	if not is_same(under, _hovered):
+		if _hovered is Control and is_instance_valid(_hovered):
+			_on_hover(_hovered, false)
+		_hovered = under
+		if under is Control:
+			_on_hover(under, true)
+
+
+func _drop_hover() -> void:
+	if _hovered is Control and is_instance_valid(_hovered):
+		_on_hover(_hovered, false)
+	_hovered = null
+	_zoom.visible = false
+	_zoom_help.text = ""
+	_zoom_help.visible = _zoom_help.text != ""
+	if view3d != null and view3d.visible:
+		view3d.call("pick", Vector2(-10000.0, -10000.0))  # puts a lifted card back down
 
 
 func add_log(lines: PackedStringArray) -> void:
@@ -399,6 +494,9 @@ func _on_card(face: Control, right: bool) -> void:
 	if _mode != "" and _valid.has(code):
 		_fire(code)
 		return
+	if _mode == "attack" and face.get_parent() == _foe_row:  # (polish1 item 92) a foe it may not attack says why
+		flash("must attack a Guard first" if _guard_up() else "it cannot attack that")
+		return
 	if in_hand:
 		_start_play(int(face.get("slot")))
 	elif face.get_parent() == _my_row:
@@ -407,7 +505,15 @@ func _on_card(face: Control, right: bool) -> void:
 			_cancel()
 			flash("it cannot attack now")
 			return
-		_begin("attack", code, hits, "Pick what it attacks (right click = cancel).")
+		_begin("attack", code, hits, "Must attack a Guard first (the shielded card).  Right click = cancel." if _guard_up() else "Pick what it attacks (right click = cancel).")
+
+
+# Does a Guard stand on the foe's side (their creatures with Guard must be attacked first)?
+func _guard_up() -> bool:
+	for c: Dictionary in _m.get("sides")[1 - _me]["board"]:
+		if (c.get("kw", {}) as Dictionary).has("guard") and not (c.get("kw", {}) as Dictionary).has("hidden"):
+			return true
+	return false
 
 
 func _on_leader(b: Control) -> void:
@@ -421,6 +527,7 @@ func _on_leader(b: Control) -> void:
 func _on_power_hover(on: bool) -> void:
 	_zoom.visible = false
 	_zoom_help.text = _power_words if on else ""
+	_zoom_help.visible = _zoom_help.text != ""
 
 
 # "YOUR TURN" rises and fades.
@@ -523,6 +630,8 @@ func _felt_3d(event: InputEvent) -> void:
 		var code := HERO - (_me if int(under["side"]) == 0 else 1 - _me)
 		if _mode != "" and _valid.has(code):
 			_fire(code)
+		elif _mode == "attack" and int(under["side"]) == 1:
+			flash("must attack a Guard first" if _guard_up() else "it cannot attack the leader yet")
 		else:
 			_cancel()
 	else:
@@ -532,6 +641,7 @@ func _felt_3d(event: InputEvent) -> void:
 func _on_hover(face: Control, on: bool) -> void:
 	_zoom.visible = on and not bool(face.get("back"))
 	_zoom_help.text = ""
+	_zoom_help.visible = _zoom_help.text != ""
 	if not _zoom.visible:
 		return
 	(_zoom as CardFace).show_card(face.get("db"), String(face.get("id")), face.get("creature"))
@@ -540,6 +650,7 @@ func _on_hover(face: Control, on: bool) -> void:
 	for row: Array in CardText.keyword_help(face.get("db"), c):
 		lines.append("%s: %s" % [row[0], row[1]])
 	_zoom_help.text = "\n".join(lines)
+	_zoom_help.visible = _zoom_help.text != ""
 
 
 # ---- drawing helpers ----
@@ -613,13 +724,25 @@ func _show_3d() -> void:
 	if not on:
 		_events = []
 		return
-	# over the 3D table: END TURN at the right edge on the centre line and the log up in the sky, both clear of the mat
+	# over the 3D table: END TURN at the right edge on the centre line and the log up in the sky, both clear of the mat;
+	# the hovered card's zoom goes to the left, under the foe's badge (polish1 item 90: at the top right it covered END TURN)
+	if _zoom.get_parent() == _side:
+		for n: Control in [_zoom, _zoom_help]:
+			_side.remove_child(n)
+			add_child(n)
+		_zoom.position = Vector2(14.0, 108.0)
+		_zoom.size = ZOOM_SIZE
+		_zoom_help.position = Vector2(14.0, 108.0 + ZOOM_SIZE.y + 6.0)
+		_zoom_help.size = Vector2(ZOOM_SIZE.x, 0.0)
+		_zoom_help.add_theme_color_override("font_outline_color", Color(0, 0, 0, 0.9))
+		_zoom_help.add_theme_constant_override("outline_size", 5)
 	_end.position = Vector2(size.x - 162.0, 296.0)
 	_turn.position = Vector2(_end.position.x - 16.0, 262.0)
 	_log_label.vertical_alignment = VERTICAL_ALIGNMENT_TOP
 	var sides: Array = _m.get("sides")
 	view3d.call("show_cards", _hand_row.get_children(), _my_row.get_children(), _foe_row.get_children(), (sides[1 - _me]["hand"] as Array).size(),
-		[String(sides[_me]["leader"]), String(sides[1 - _me]["leader"])], [(sides[_me]["deck"] as Array).size(), (sides[1 - _me]["deck"] as Array).size()])
+		[String(sides[_me]["leader"]), String(sides[1 - _me]["leader"])], [(sides[_me]["deck"] as Array).size(), (sides[1 - _me]["deck"] as Array).size()],
+		[C_PICK if _my_bar.target else Color(0, 0, 0, 0), C_PICK if _foe_bar.target else Color(0, 0, 0, 0)])
 	if not _events.is_empty():
 		view3d.call("play", _events, _me)
 		_events = []

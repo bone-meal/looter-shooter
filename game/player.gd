@@ -27,6 +27,7 @@ const AppearanceData = preload("res://game/appearance_data.gd")
 const ViewmodelMotion = preload("res://core/viewmodel_motion.gd")
 const InspectMoves = preload("res://core/inspect_moves.gd")
 const WKillsDisplay = preload("res://game/wkills_display.gd")
+const Unstuck = preload("res://game/unstuck.gd")
 const DataStore = preload("res://core/data_store.gd")
 const HealthState = preload("res://core/health_state.gd")
 const SettingsState = preload("res://core/settings_state.gd")
@@ -133,6 +134,7 @@ var _was_reloading := false
 var _reload_boost_until := 0.0  # the Run and Gun perk: faster until then
 var _fall_speed := 0.0  # how fast the body was falling in its latest tick in the air
 var _crouch := 0.0  # 0 standing .. 1 fully crouched
+var unstuck := Unstuck.new()  # game/unstuck.gd: frees the body from inside geometry / a wedge
 var _capsule: CapsuleShape3D
 var _capsule_node: CollisionShape3D
 var _head := Node3D.new()
@@ -530,9 +532,13 @@ func _move_tick(input: Vector2) -> void:
 	# move_and_slide moves by velocity x the FRAME's time; one tick must move by velocity x the tick's.
 	var frame := get_process_delta_time()
 	var stretch := move.tick / frame if frame > 0.0 else 1.0
+	var wanted := Vector3(velocity.x, 0.0, velocity.z)
+	var before := global_position
 	velocity *= stretch
 	move_and_slide()
 	velocity /= stretch
+	if not cheat_fly and not carried:  # (polish1 item 110) out of a hill or a wedge before the player notices
+		unstuck.step(self, _capsule, _capsule_node, wanted, global_position - before, move.tick)
 	if _shove != Vector3.ZERO:  # what blew or dragged the body is not its own speed
 		var flat := Vector2(velocity.x - _shove.x, velocity.z - _shove.z).limit_length(own)
 		velocity = Vector3(flat.x, velocity.y, flat.y)

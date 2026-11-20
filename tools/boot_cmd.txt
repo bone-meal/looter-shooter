@@ -1,1 +1,1 @@
-!uncap;!wait 2;/give unique lighthouse;!wait 1;!inv log a;!inv click 0;!inv click h0;!inv click 0;!inv log b;!slot 1;!wait 1.5;!snap h1a;!wait 1.5;!snap h1b;!wait 1.5;!snap h1c;!wait 1.5;!snap h1d
+!uncap;!wait 2;!go sea;!wait 12;!immortal;!foe pause;!beast pause;!uboat pause on;!sea go -3790 6214 30;!wait 10;!port stall lanternwick;!wait 1;!snap a7_stall;!sea go -3798 6214 14;!wait 3;!look 90 -5;!where dock;!wait 1;!snap a7_stall_dock

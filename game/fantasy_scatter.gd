@@ -107,6 +107,25 @@ func _undress(key: Vector2i) -> void:
 		_clutter_drop(key)
 
 
+# (polish1 item 97) A piece standing on the ground as it is DRAWN (the chunk's own mesh, not the smooth height it was
+# made from), sunk to the lowest point under its foot and tilted with the slope, so nothing floats or juts out of a hill.
+func _on_ground(x: float, z: float, turn: float, grow: float, radius: float) -> Transform3D:
+	var h := _ground_y(x, z)
+	var reach := clampf(radius * 0.6, 0.2, 2.0)
+	var e := _ground_y(x + reach, z)
+	var w := _ground_y(x - reach, z)
+	var s := _ground_y(x, z + reach)
+	var n := _ground_y(x, z - reach)
+	var up := Vector3(w - e, 2.0 * reach, n - s).normalized()
+	var tilt := Basis(Quaternion(Vector3.UP, up)) if up.dot(Vector3.UP) < 0.9999 else Basis()
+	return Transform3D((tilt * Basis(Vector3.UP, turn)).scaled(Vector3.ONE * grow), Vector3(x, minf(h, minf(minf(e, w), minf(s, n))) - 0.05, z))
+
+
+func _ground_y(x: float, z: float) -> float:
+	var here: Vector2 = _land.call("ground", x, z)
+	return terrain.height(x, z) if is_nan(here.x) else here.x
+
+
 # Clutter is drawn by ONE MultiMesh per model for the whole dressed land (a draw call per kind of boulder, however
 # many chunks are in range); a chunk adds its pieces when it is dressed and takes them out when it is stripped.
 func _clutter_add(key: Vector2i, id: String, where: Transform3D) -> void:
@@ -121,7 +140,7 @@ func _clutter_add(key: Vector2i, id: String, where: Transform3D) -> void:
 		fresh.visible_instance_count = 0
 		var drawn := MultiMeshInstance3D.new()
 		drawn.multimesh = fresh
-		drawn.custom_aabb = AABB(Vector3(-1100.0, -60.0, -1100.0), Vector3(2200.0, 500.0, 2200.0))  # pieces come and go: never culled as a whole
+		drawn.custom_aabb = AABB(Vector3(-1.0e5, -2000.0, -1.0e5), Vector3(2.0e5, 4000.0, 2.0e5))  # pieces come and go: never culled as a whole (polish1 item 112: the old +-1100 m box was smaller than the 6 km world, so far pieces vanished from some angles while their colliders stayed)
 		add_child(drawn)
 		_clutter[id] = {"many": fresh, "at": [], "of": []}
 	var pool: Dictionary = _clutter[id]
@@ -173,7 +192,7 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 		_place(by_model, String(tree[0]), float(tree[1]), terrain.height(float(tree[1]), float(tree[2])), float(tree[2]), float(tree[3]), float(tree[4]))
 		_trunk(trunks, float(tree[1]), float(tree[2]), 0.3 * float(tree[3]))
 	for thing: Array in layout.clutter(key):  # boulders, logs, bushes: [model, x, z, grow, turn, radius]
-		_clutter_add(key, String(thing[0]), Transform3D(Basis(Vector3.UP, float(thing[4])).scaled(Vector3.ONE * float(thing[3])), Vector3(float(thing[1]), terrain.height(float(thing[1]), float(thing[2])) - 0.12, float(thing[2]))))
+		_clutter_add(key, String(thing[0]), _on_ground(float(thing[1]), float(thing[2]), float(thing[4]), float(thing[3]), float(thing[5]) if thing.size() > 5 else 0.6))
 		if not layout.walked_over(String(thing[0])):  # bushes and stumps are walked through; boulders, spires and logs stay solid
 			_trunk(trunks, float(thing[1]), float(thing[2]), float(thing[5]))
 	for node: Array in layout.nodes(key):  # things to work on: [slot, node id, x, y, z, turn]

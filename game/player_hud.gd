@@ -27,7 +27,8 @@ const WHITE := Color(1, 1, 1, 0.95)
 const DIM := Color(1, 1, 1, 0.3)
 const BOSS := Color(0.7, 0.35, 0.9)
 
-const RING_RADIUS := 54.0
+const WKILLS := Color(1.0, 0.55, 0.15)  # the W kills count (the counter plate's orange)
+const RING_RADIUS := 62.0  # polish1 item 56: a little bigger (was 54)
 const RING_WIDTH := 10.0
 const SLOT_W := 200.0
 const SLOT_H := 62.0
@@ -39,8 +40,8 @@ const FLASH_STRIPS := 8
 const FLASH_STRIP_W := 14.0
 const CHALK := Color(0.78, 0.07, 0.05, 0.95)
 const POINTS := Color(1.0, 0.93, 0.7)
-const TALLY_H := 72.0  # height of the round marks
-const TALLY_W := 150.0  # room kept for them left of the health ring
+const TALLY_H := 92.0  # height of the round marks (polish1 item 48: bigger, was 72)
+const TALLY_W := 180.0  # room kept for them left of the health ring
 const POPS := 8  # points pop-ups alive at once
 const POP_TIME := 1.1
 const CALL_TIME := 2.6  # seconds a power-up's name stays across the screen
@@ -159,6 +160,7 @@ func _draw() -> void:
 	if prompt_text != "":
 		draw_string(_font, Vector2(0, view.y * 0.62), prompt_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 22, WHITE)
 	if _notice_time > 0.0:
+		draw_string_outline(_font, Vector2(0, view.y * 0.7), notice_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, 5, Color(0, 0, 0, 0.85 * minf(_notice_time, 1.0)))  # outlined: reads on anything (polish1 item 53)
 		draw_string(_font, Vector2(0, view.y * 0.7), notice_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, Color(1, 0.85, 0.5, minf(_notice_time, 1.0)))
 	if _fade > 0.0:
 		draw_rect(Rect2(Vector2.ZERO, view), Color(0, 0, 0, _fade))
@@ -191,14 +193,14 @@ func _draw_round(view: Vector2) -> float:
 	var w := 0.0
 	if round_of > 0:
 		w = ChalkMarks.number(self, o, round_number, TALLY_H, color)
-		draw_string(_font, o + Vector2(w + 2.0, TALLY_H), "/ %d" % round_of, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color(color, 0.85))
-		w += 46.0
+		draw_string(_font, o + Vector2(w + 2.0, TALLY_H), "/ %d" % round_of, HORIZONTAL_ALIGNMENT_LEFT, -1, 26, Color(color, 0.85))
+		w += 58.0
 	elif round_number <= 5:
 		w = ChalkMarks.tally(self, o, round_number, TALLY_H, color)
 	else:
 		w = ChalkMarks.number(self, o, round_number, TALLY_H, color)
 	if enemies_left >= 0:
-		_text(Vector2(MARGIN + 6.0, o.y - 14.0), "Enemies left  %d" % enemies_left, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 16, WHITE)
+		_text(Vector2(MARGIN + 6.0, o.y - 16.0), "Enemies left  %d" % enemies_left, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 22, WHITE)
 	return maxf(w + 20.0, TALLY_W)
 
 
@@ -306,12 +308,12 @@ func _draw_health(c: Vector2) -> void:
 	if shield > 0.0:  # gun skill Overshield: a blue band outside the ring, as a share of max health
 		draw_arc(c, RING_RADIUS + RING_WIDTH * 0.5 + 4.0, -PI * 0.5, -PI * 0.5 + TAU * clampf(shield / player.health.max_hp, 0.0, 1.0), 48, Color(0.5, 0.85, 1.0, 0.95), 5.0, true)
 	# heart icon
-	draw_circle(c + Vector2(-6, -6), 7.0, color)
-	draw_circle(c + Vector2(6, -6), 7.0, color)
-	draw_colored_polygon(PackedVector2Array([c + Vector2(-12.5, -3), c + Vector2(12.5, -3), c + Vector2(0, 14)]), color)
-	draw_string(_font, c + Vector2(-30, 38), "%d" % ceilf(player.health.hp), HORIZONTAL_ALIGNMENT_CENTER, 60, 16, WHITE)
+	draw_circle(c + Vector2(-7, -7), 8.0, color)
+	draw_circle(c + Vector2(7, -7), 8.0, color)
+	draw_colored_polygon(PackedVector2Array([c + Vector2(-14.5, -3.5), c + Vector2(14.5, -3.5), c + Vector2(0, 16)]), color)
+	draw_string(_font, c + Vector2(-30, 44), "%d" % ceilf(player.health.hp), HORIZONTAL_ALIGNMENT_CENTER, 60, 19, WHITE)
 	if cigarette >= 0.0:  # the cigarette burning down: paper, a filter on the left, the ember at the burning end
-		var bar := Rect2(c + Vector2(-RING_RADIUS, RING_RADIUS + RING_WIDTH * 0.5 + 5.0), Vector2(RING_RADIUS * 2.0, 5.0))
+		var bar := Rect2(c + Vector2(-RING_RADIUS, RING_RADIUS + RING_WIDTH * 0.5 + 5.0), Vector2(RING_RADIUS * 2.0, 7.0))
 		draw_rect(bar.grow(1.0), BACK)
 		draw_rect(Rect2(bar.position, Vector2(bar.size.x * 0.18, bar.size.y)), Color(0.85, 0.55, 0.2))
 		var paper := (bar.size.x * 0.82) * cigarette
@@ -386,8 +388,15 @@ func _draw_weapons(view: Vector2) -> void:
 		tint = TierStyle.color(player.gun_db, String(gun["tier"]), now)
 		draw_rect(Rect2(x, top, SLOT_W, SLOT_H), tint, false, 3.0)
 		var tag := String(player.gun_db.tier(String(gun["tier"])).get("tag", ""))  # director: no "*PONY*" on the HUD, so names fit (its colour says pony)
-		var shown := GunStats.display_name(player.gun_db, gun).replace(tag + " ", "") if tag != "" else GunStats.display_name(player.gun_db, gun)
+		var shown := GunStats.plain_name(player.gun_db, gun).replace(tag + " ", "") if tag != "" else GunStats.plain_name(player.gun_db, gun)
 		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), shown, 14, tint, SLOT_W, now)  # a name too long for the slot scrolls (director 2026-11-20)
+		if gun.has("wkills"):  # polish1 item 62: "W kills:" and the count in orange, above the abilities beside the gun
+			var count_text := "%d" % int(gun["wkills"])
+			var count_w := _font.get_string_size(count_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
+			var label_w := _font.get_string_size("W kills: ", HORIZONTAL_ALIGNMENT_LEFT, -1, 16).x
+			var wy := top + SLOT_H - (SKILL_H + 10.0 if player.skill_count() > 0 else 0.0) - 6.0
+			_text(Vector2(x - 8.0 - count_w - label_w, wy), "W kills: ", HORIZONTAL_ALIGNMENT_LEFT, -1.0, 16, WHITE)
+			_text(Vector2(x - 8.0 - count_w, wy), count_text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, 18, WKILLS)
 	ItemIcons.draw(self, w.weapon_id, Rect2(x + 24, top + 8, 100, 34), tint)
 	var low: bool = w.ammo <= maxi(1, w.mag_size / 4)
 	var spare: int = w.spare()
@@ -482,9 +491,9 @@ func _draw_top(view: Vector2) -> void:
 		ChipArt.draw(self, Vector2(view.x - 150.0, 26.0), 10.0)
 		draw_string(_font, Vector2(view.x - 134.0, 33.0), "%d" % coins, HORIZONTAL_ALIGNMENT_LEFT, 120, 20, WHITE)
 	if level > 0:
-		draw_string(_font, Vector2(view.x - 150.0, 62.0), "LV %d" % level, HORIZONTAL_ALIGNMENT_LEFT, 60, 16, WHITE)
-		draw_rect(Rect2(view.x - 108.0, 52.0, 96.0, 8.0), BACK)
-		draw_rect(Rect2(view.x - 106.0, 54.0, 92.0 * clampf(xp_ratio, 0.0, 1.0), 4.0), Color(0.45, 0.8, 1.0))
+		draw_string(_font, Vector2(view.x - 236.0, 70.0), "LV %d" % level, HORIZONTAL_ALIGNMENT_LEFT, 74, 24, WHITE)  # polish1 item 49: bigger (was 16 pt and a 96 px bar)
+		draw_rect(Rect2(view.x - 160.0, 54.0, 148.0, 14.0), BACK)
+		draw_rect(Rect2(view.x - 158.0, 56.0, 144.0 * clampf(xp_ratio, 0.0, 1.0), 10.0), Color(0.45, 0.8, 1.0))
 	draw_string(_font, Vector2(0, 30), wave_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, WHITE)
 	if boss_ratio >= 0.0:
 		var w := 360.0

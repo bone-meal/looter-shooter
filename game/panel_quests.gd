@@ -7,7 +7,7 @@ extends RefCounted
 const Style = preload("res://game/fantasy_style.gd")
 const IconArt = preload("res://game/icon_art.gd")
 
-const STEP_SHAPES := {"talk": "talk", "cast": "spark", "kill": "sword", "have": "bag", "reach": "pin", "fire": "flame", "skill": "star"}
+const STEP_SHAPES := {"talk": "talk", "cast": "spark", "kill": "sword", "have": "bag", "reach": "pin", "fire": "flame", "skill": "star", "make": "bag"}
 const ROW := 62.0
 
 
@@ -20,6 +20,14 @@ static func draw(p: Variant, body: Rect2, side: Rect2, talking: bool) -> void:
 		top += 78.0
 		var who := String(p.person.get("id", ""))
 		var any := false
+		for told: Dictionary in p.person.get("told", []):  # (polish1 item 103) a quest step that was this talk: what they say, and what comes next
+			if bool(p.shows(body, top, 64.0)):
+				IconArt.draw(p, "talk", Rect2(body.position.x + 4.0, top + 6.0, 24.0, 24.0), Style.GOLD)
+				Style.paragraph(p, Vector2(body.position.x + 36.0, top + 20.0), String(told["line"]), 15, Style.PARCHMENT, body.size.x - 52.0, 3)
+				if String(told["next"]) != "" and String(told["next"]) != String(told["line"]):
+					Style.text(p, Vector2(body.position.x + 36.0, top + 66.0), "Next: " + String(told["next"]), 13, Style.GOLD)
+			top += 78.0
+			any = true
 		for id: String in quests.offers(who):
 			top = _row(p, body, top, id, "exclaim")
 			any = true

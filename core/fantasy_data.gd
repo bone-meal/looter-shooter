@@ -65,6 +65,9 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 		var steps: Array = quest["steps"]
 		for i in steps.size():
 			steps[i]["text"] = _line(text, "quest", id, "step %d" % (i + 1), missing)
+			if String(steps[i]["type"]) == "talk":  # (polish1 item 103) what the person says when that talk step is done
+				var said: Variant = text.get("quest", {}).get(id, {}).get("says %d" % (i + 1))
+				steps[i]["says"] = String(said) if said is String else ""
 	var words := {}
 	for key: String in ["weak", "strong", "perfect"]:
 		words[key] = _line(text, "combat", "words", key, missing)

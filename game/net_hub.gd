@@ -142,7 +142,8 @@ func _process(delta: float) -> void:
 	for peer: int in rules.players.keys():
 		if not where.has(peer):
 			rules.leave(peer)
-	var going := rules.tick(delta, _held)
+	var settings_menu := get_tree().get_first_node_in_group("settings_menu") as Control
+	var going := rules.tick(delta, _held, settings_menu == null or not settings_menu.is_visible_in_tree())  # the countdown waits only while the host's Settings are open (polish1 item 8)
 	_send -= delta
 	if _send <= 0.0 or going:
 		_send = 0.2

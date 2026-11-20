@@ -16,6 +16,7 @@ var _steps := 1
 var _seen := 0
 var _fading: Tween
 var _ending := 0  # counts finish() calls, so an older one that is still waiting gives up
+var _next: Texture2D  # (polish1 item 96) the picture for the next time, loaded ahead: one loaded at begin() was drawn white until the work was over
 
 
 func _ready() -> void:
@@ -33,6 +34,7 @@ func _ready() -> void:
 	_front.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	_front.draw.connect(_draw_front)
 	add_child(_front)
+	_next = _pick()
 
 
 # Shows a random picture right now. `steps` = how many LoadClock marks the coming work will make (for the bar).
@@ -43,16 +45,19 @@ func begin(steps: int) -> void:
 	_steps = maxi(steps, 1)
 	_seen = 0
 	modulate.a = 1.0
-	_picture.texture = null
-	if not _names.is_empty():
-		var path := "res://assets/ui/loading/%s.jpg" % String(_names[randi() % _names.size()])
-		if ResourceLoader.exists(path):
-			_picture.texture = load(path) as Texture2D
+	_picture.texture = _next if _next != null else _pick()
 	visible = true
 	get_viewport().disable_3d = true
 	LoadClock.on_mark = _step
 	_front.queue_redraw()
 	RenderingServer.force_draw()
+
+
+func _pick() -> Texture2D:
+	if _names.is_empty():
+		return null
+	var path := "res://assets/ui/loading/%s.jpg" % String(_names[randi() % _names.size()])
+	return load(path) as Texture2D if ResourceLoader.exists(path) else null
 
 
 func _step() -> void:
@@ -79,6 +84,7 @@ func finish(_unused: int = 0) -> void:
 	_fading = create_tween()
 	_fading.tween_property(self, "modulate:a", 0.0, 0.6)
 	_fading.tween_callback(hide)
+	_next = _pick()  # ready (and on the graphics card) long before the next load
 
 
 func _draw_front() -> void:

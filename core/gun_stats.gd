@@ -135,8 +135,14 @@ static func sea_text(db: RefCounted, gun: Dictionary) -> String:
 	return "%s: %s" % [String(affix.get("name", "")), ", ".join(parts)]
 
 
+# The gun's name; a counter gun ends with "[W kills: 120]" (polish1 item 62).
 static func display_name(db: RefCounted, gun: Dictionary) -> String:
-	return ("W kills " if gun.has("wkills") else "") + _plain_name(db, gun)
+	return _plain_name(db, gun) + (" [W kills: %d]" % int(gun["wkills"]) if gun.has("wkills") else "")
+
+
+# The name without the counter (the HUD shows the count on its own line).
+static func plain_name(db: RefCounted, gun: Dictionary) -> String:
+	return _plain_name(db, gun)
 
 
 static func _plain_name(db: RefCounted, gun: Dictionary) -> String:

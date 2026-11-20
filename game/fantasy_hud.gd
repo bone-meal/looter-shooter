@@ -86,9 +86,9 @@ func _draw_skills() -> void:
 	var x := 16.0  # the three keys, each with the sign of what it opens
 	for hint: Array in [["skills", "bag"], ["quests", "scroll"], ["map", "map"]]:
 		var label := InputSetup.label(settings, String(hint[0]))
-		IconArt.draw(self, String(hint[1]), Rect2(x, 52.0 + MEDAL * 2.0 + 20.0, 18.0, 18.0), Style.GOLD)
-		Style.text(self, Vector2(x + 22.0, 52.0 + MEDAL * 2.0 + 34.0), label, 13, Color(Style.PARCHMENT, 0.8))
-		x += 34.0 + Style.font().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 13).x
+		IconArt.draw(self, String(hint[1]), Rect2(x, 52.0 + MEDAL * 2.0 + 18.0, 28.0, 28.0), Style.GOLD)  # polish1 item 116: bigger (was 18 px / 13 pt)
+		Style.text(self, Vector2(x + 32.0, 52.0 + MEDAL * 2.0 + 39.0), label, 18, Color(Style.PARCHMENT, 0.9))
+		x += 46.0 + Style.font().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 
 
 func _draw_toasts() -> void:

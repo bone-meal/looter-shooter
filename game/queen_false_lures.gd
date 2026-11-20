@@ -10,6 +10,8 @@ extends Node
 
 const BossPart = preload("res://game/boss_part.gd")
 const FxKit = preload("res://game/fx_kit.gd")
+const FantasyModels = preload("res://game/fantasy_models.gd")
+const MODEL := "res://assets/models/sea/false_lure.gltf"  # (polish1 A7) tools/blender/sea_marsh_fx.py: nodes Bulb, Hood, Stalk
 
 var lantern: Node  # game/sea_boss_lantern.gd
 var lures: Array = []  # [{ang, alive, hp, back_at, node, bulb, part}]
@@ -108,25 +110,27 @@ func _build() -> void:
 		var l: Dictionary = lures[i]
 		var root := Node3D.new()
 		root.position = lantern.get("rules").call("false_at", home, float(l["ang"]))
-		var stalk := MeshInstance3D.new()
-		var cyl := CylinderMesh.new()
-		cyl.top_radius = 0.05
-		cyl.bottom_radius = 0.09
-		cyl.height = root.position.y + 2.0
-		cyl.radial_segments = 6
-		stalk.mesh = cyl
-		stalk.material_override = _stalk_mat
-		stalk.position = Vector3(0.0, -cyl.height * 0.5 + 0.3, 0.0)
-		root.add_child(stalk)
-		var bulb := MeshInstance3D.new()
-		var ball := SphereMesh.new()
-		ball.radius = 0.45
-		ball.height = 1.0
-		ball.radial_segments = 12
-		ball.rings = 6
-		bulb.mesh = ball
-		bulb.material_override = _mat
-		root.add_child(bulb)
+		var bulb := _modelled(root)
+		if bulb == null:  # no model file: a stalk and a ball
+			var stalk := MeshInstance3D.new()
+			var cyl := CylinderMesh.new()
+			cyl.top_radius = 0.05
+			cyl.bottom_radius = 0.09
+			cyl.height = root.position.y + 2.0
+			cyl.radial_segments = 6
+			stalk.mesh = cyl
+			stalk.material_override = _stalk_mat
+			stalk.position = Vector3(0.0, -cyl.height * 0.5 + 0.3, 0.0)
+			root.add_child(stalk)
+			bulb = MeshInstance3D.new()
+			var ball := SphereMesh.new()
+			ball.radius = 0.45
+			ball.height = 1.0
+			ball.radial_segments = 12
+			ball.rings = 6
+			bulb.mesh = ball
+			bulb.material_override = _mat
+			root.add_child(bulb)
 		arena.add_child(root)
 		l["node"] = root
 		l["bulb"] = bulb
@@ -142,6 +146,25 @@ func _build() -> void:
 				(me as CharacterBody3D).add_collision_exception_with(part)
 			l["part"] = part
 		_show(l)
+
+
+# (polish1 A7) The modelled lure under `root`: the stalk stretched down to the water, the bulb lit. Returns the bulb
+# (null = no model file).
+func _modelled(root: Node3D) -> MeshInstance3D:
+	if not ResourceLoader.exists(MODEL):
+		return null
+	var made := (load(MODEL) as PackedScene).instantiate() as Node3D
+	root.add_child(made)
+	for found in made.find_children("*", "MeshInstance3D", true, false):
+		FantasyModels.dress((found as MeshInstance3D).mesh)
+	var stalk := made.find_child("Stalk", true, false) as Node3D
+	if stalk != null:  # the model's stalk is 1 m long from the hood down
+		stalk.position.y = 0.3
+		stalk.scale.y = root.position.y + 2.0
+	var bulb := made.find_child("Bulb", true, false) as MeshInstance3D
+	if bulb != null:
+		bulb.material_override = _mat
+	return bulb
 
 
 func _show(l: Dictionary) -> void:

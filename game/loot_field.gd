@@ -57,7 +57,7 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	var model := WeaponModels.build(String(gun["body"]))
 	GunPartsView.apply(model, gun, gun_db)
 	model.position = Vector3.ZERO
-	model.scale = Vector3.ONE * 2.6
+	model.scale *= 1.45  # life-size and a touch bigger to spot (polish1 item 67; each body's own hold scale is the in-hand size, ~80 % of real; was a flat 2.6 = 3-5 m guns)
 	model.rotation_degrees.y = 90.0
 	if String(gun_db.tier(tier_id).get("skin", "")) == "pony":
 		var family := String(gun.get("family", ""))

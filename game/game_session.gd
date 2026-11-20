@@ -121,8 +121,8 @@ const REWARD_RANGE := 3.0
 const CROW_RANGE := 6.0
 const LIFEGUARD_RANGE := 3.2
 const PACHINKO_RANGE := 2.8
-const PACHINKO_HOLD_DELAY := 0.4
-const PACHINKO_HOLD_EVERY := 0.15
+const PACHINKO_HOLD_DELAY := 0.25
+const PACHINKO_HOLD_EVERY := 0.07  # polish1 item 75: holding F fires faster (was 0.15 s)
 const SLOT_RANGE := 2.0
 const TRADE_RANGE := 4.0  # metres: look at a player this near and hold the interact key to ask for a trade
 const TRADE_HOLD := 0.6  # seconds the key must be held
@@ -284,6 +284,8 @@ var _jackpot := 500.0  # this player's progressive slot pot (saved in the profil
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
 var _pachinko_hold := 0.0
+var _crate_sure_id := ""  # the Silver / Gold crate asked about ("Are you sure?"), bought by a second press in time
+var _crate_sure_until := 0
 var _field := LootField.new()  # gun drops lying in the world
 var _drops_cfg: Dictionary  # data/drops.json
 var _casino: Dictionary
@@ -1994,6 +1996,12 @@ func _buy_crate(crate: Dictionary) -> void:
 	if not _wallet.can_afford(price):
 		_player_hud.notice("A %s costs %d chips (you have %d)." % [crate["name"], price, _wallet.balance])
 		return
+	if String(crate["id"]) != "bronze" and (_crate_sure_id != String(crate["id"]) or Time.get_ticks_msec() > _crate_sure_until):  # (polish1 item 72) Silver and Gold ask first
+		_crate_sure_id = String(crate["id"])
+		_crate_sure_until = Time.get_ticks_msec() + 4000
+		_player_hud.notice("Are you sure? Press [%s] again to buy the %s for %d chips." % [InputSetup.label(settings, "interact"), crate["name"], price])
+		return
+	_crate_sure_id = ""
 	var band := ItemLevel.island_band()
 	var gun := GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]), ItemLevel.roll(_rng, band.x, band.y))
 	if not _player.inventory.add_gun(gun):
@@ -4422,6 +4430,9 @@ func _enter_fantasy() -> void:
 	LoadClock.mark("fantasy: world built")
 	_in_fantasy = true
 	_rest_worlds()
+	_player.unstuck.ground_height = _fantasy.land_height  # (polish1 item 110) inside a hill = back on top
+	_player.floor_max_angle = deg_to_rad(52.0)  # (polish1 item 105) small hills are walked up; only real cliffs stop you
+	_player.floor_snap_length = 0.4
 	_player.teleport(_fantasy.spawn_world(), 0.0)
 	_player.look_at_point(_fantasy.farm_world() + Vector3(0.0, 3.0, 0.0))  # you arrive facing the farmhouse
 	apply_settings()  # switches to the painted look and loads the land around the player
@@ -4462,6 +4473,9 @@ func _leave_fantasy() -> void:
 	_fantasy.leave()
 	_director.reset()
 	_in_fantasy = false
+	_player.unstuck.ground_height = Callable()
+	_player.floor_max_angle = deg_to_rad(45.0)
+	_player.floor_snap_length = 0.1
 	_fantasy_left_at = _time
 	_rest_worlds()
 	apply_settings()
@@ -4667,9 +4681,10 @@ func _process(delta: float) -> void:
 	var fps := Performance.get_monitor(Performance.TIME_FPS)
 	var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 	var mem_mb := Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
-	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s/%s guns, %s knife, %s inventory, %s view, Esc menu" % [
+	_hud.visible = not (_tcg.is_open() or (_ptables != null and _ptables.is_open()))  # (polish1 item 86) not under the card table's badges
+	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s/%s guns, %s knife, %s inventory, %s player card, %s view, Esc menu" % [
 		fps, 1000.0 / maxf(fps, 1.0), draws, mem_mb, _moves(), _key("jump"), _key("sprint"), _key("shoot"),
-		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_2"), _key("knife"), _key("inventory"), _key("toggle_view")]
+		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_2"), _key("knife"), _key("inventory"), _key("card"), _key("toggle_view")]
 	_player_hud.wave_text = _director.status_text()
 	_player_hud.boss_ratio = _director.boss_ratio()
 	var on_island := not _in_arena and not _in_fantasy and _on_island(_player.global_position)

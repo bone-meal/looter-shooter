@@ -11,6 +11,7 @@
 # assets/tcg/pack.png; db (core/tcg/card_db.gd), owned (core/tcg/collection.gd), cfg (data/tcg/packs.json) handed in.
 extends Control
 
+const SharpText = preload("res://game/sharp_text.gd")
 const PackOpen = preload("res://core/tcg/pack_open.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 const PackSound = preload("res://game/tcg/pack_sound.gd")
@@ -50,6 +51,7 @@ var _cards: Array = []  # the open pack's cards in stack order (front first)
 var _stack: Array = []  # their faces, front first
 var _row: Array = []  # turned faces, in turning order
 var _busy := false
+var _flip_tweens: Array = []  # the running turn / to-row tweens: a click while they run speeds them through (polish1 item 85)
 var _tear := 0.0
 var _drag_from := -1.0
 var _fly := 0.0  # the torn strip flying away 0..1
@@ -68,6 +70,7 @@ var _summary_grid := GridContainer.new()
 func _ready() -> void:
 	top_level = true
 	visible = false
+	visibility_changed.connect(func() -> void: _fit() if is_visible_in_tree() else SharpText.release(self))
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_rng.randomize()
 	_pack_tex = CardFace.texture("res://assets/tcg/pack.png")
@@ -145,6 +148,8 @@ func _fit() -> void:
 	var k := view.y / H
 	_stage.scale = Vector2(k, k)
 	_stage.position = Vector2((view.x - W * k) * 0.5, 0.0)
+	if is_visible_in_tree():
+		SharpText.hold(self, k)  # words drawn at the scaled size (polish1 item 84)
 
 
 func _left() -> int:
@@ -189,7 +194,12 @@ func _stage_input(event: InputEvent) -> void:
 						_tear = v
 						_stage.queue_redraw(), _tear, 0.0, 0.2)
 		elif _state == "flip" and mb.pressed:
-			_turn_next()
+			if _busy:  # spam-click: the card being turned lands at once
+				for tw: Variant in _flip_tweens:
+					if (tw as Tween).is_valid():
+						(tw as Tween).set_speed_scale(14.0)
+			else:
+				_turn_next()
 	elif event is InputEventMouseMotion and _state == "stack" and _drag_from >= 0.0 and not _busy:
 		_tear = clampf(absf((event as InputEventMouseMotion).position.x - _drag_from) / (PACK.x * 0.85), 0.0, 1.0)
 		_stage.queue_redraw()
@@ -301,6 +311,7 @@ func _turn_next() -> void:
 	var wait: float = BUILD_UP.get(rarity, 0.2)
 	var home := face.position
 	var t := create_tween()
+	_flip_tweens = [t]
 	t.tween_method(func(v: float) -> void:  # build-up: shake and a growing glow
 		_glow = v * 0.6
 		face.position = home + Vector2(_rng.randf_range(-1, 1), _rng.randf_range(-1, 1)) * v * (6.0 if rarity == "legendary" else 3.0)
@@ -329,6 +340,9 @@ func _to_row(face: Control, card: Dictionary) -> void:
 	var spot := Vector2((W - width) * 0.5 + i * (ROW.x + gap), ROW_TOP)
 	face.z_index = 0
 	var t := create_tween().set_parallel(true)
+	if not _flip_tweens.is_empty() and (_flip_tweens[0] as Tween).get_speed_scale() > 1.0:
+		t.set_speed_scale(14.0)  # a skipped card goes to its row at once too
+	_flip_tweens.append(t)
 	t.tween_property(face, "position", spot, 0.3).set_ease(Tween.EASE_OUT)
 	t.tween_property(face, "size", ROW, 0.3)
 	t.chain().tween_callback(func() -> void:
@@ -376,6 +390,7 @@ func _done() -> void:
 			rows.append(["Open all (%d)" % _left(), _open_all])
 	rows.append(["Back to binder", close])
 	_set_buttons(rows)
+	_buttons.position.y = 52.0  # (polish1 item 85) Next pack up top in the middle, near where the pack is torn
 
 
 # ---- open all ----
@@ -474,6 +489,7 @@ func _clear_faces() -> void:
 
 
 func _set_buttons(rows: Array) -> void:
+	_buttons.position.y = 590.0  # the bottom row, except after a pack (_done)
 	for child in _buttons.get_children():
 		_buttons.remove_child(child)
 		child.queue_free()

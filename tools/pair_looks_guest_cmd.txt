@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 15;!lookof g_before;!lookset height 1.12 weight 1.4 bust 0.8 glutes 0.6;!wait 25;!lookof g_after;!wait 10;!lookof g_end

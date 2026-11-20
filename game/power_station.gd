@@ -55,7 +55,11 @@ func setup(part_spots: Array[Vector3], bench: Vector3, yaw: float) -> void:
 	stand.rotation.y = yaw
 	add_child(stand)
 	_box(stand, Vector3(1.6, 0.9, 0.7), Vector3(0, 0.45, 0), wood, true)  # the bench
+	for side: float in [-1.0, 1.0]:  # (polish1 item 33: the switch box floated over the bench) two posts and a back board hold it
+		_box(stand, Vector3(0.12, 2.5, 0.12), Vector3(side * 0.7, 1.25, -0.36), wood, true)
+	_box(stand, Vector3(1.5, 1.2, 0.06), Vector3(0, 1.55, -0.33), wood, false)  # the back board
 	_box(stand, Vector3(0.7, 0.9, 0.18), Vector3(0, 1.45, -0.2), iron, false)  # the switch box on its back board
+	_box(stand, Vector3(0.08, 1.0, 0.08), Vector3(-0.25, 0.5, -0.27), iron, false)  # the cable conduit into the ground
 	_lamp = StandardMaterial3D.new()
 	_lamp.emission_enabled = true
 	_lamp.emission_energy_multiplier = 1.5

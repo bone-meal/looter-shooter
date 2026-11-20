@@ -24,6 +24,7 @@ const SAND := Color(0.9, 0.8, 0.55)
 const SECTORS := 96
 const KEEP_CLEAR := 5.0  # no palm, rock or plant this near a painting, the spawn or the end of a bridge
 const POST_GAP := 4.0  # metres between the posts of a plank bridge
+const RAMP := 3.0  # metres of ramp at each end of a bridge or sandbar
 
 
 # Returns {"spawn", "painting", "painting_fantasy": world positions, "painting_port": [world position, yaw] (not built
@@ -344,6 +345,13 @@ static func _bridge(parent: Node3D, land: Archipelago, index: int, sand: Materia
 			rails.append(Transform3D(Basis(), Vector3(side * (width * 0.5 + 0.1), top + 0.75, 0)))
 		_field(way, post, posts, wood)
 		_field(way, rail, rails, wood)
+		for side: float in [-1.0, 1.0]:  # the rails are solid (polish1 item 31: players walked through posts and rails)
+			var guard := CollisionShape3D.new()
+			var wall := BoxShape3D.new()
+			wall.size = Vector3(0.3, 1.2, length)
+			guard.shape = wall
+			guard.position = Vector3(side * (width * 0.5 + 0.1), top + 0.6, 0)
+			body.add_child(guard)
 	else:
 		var foot := -6.0  # the ridge stands on the sea bed
 		var spread := (top - foot) * 1.25  # how far each side runs out on its way down
@@ -355,7 +363,7 @@ static func _bridge(parent: Node3D, land: Archipelago, index: int, sand: Materia
 			corners.append(Vector3(width * 0.5 + spread, foot, end * length * 0.5))
 		var st := SurfaceTool.new()
 		st.begin(Mesh.PRIMITIVE_TRIANGLES)
-		for quad: Array in [[0, 1, 5, 4], [2, 0, 4, 6], [1, 3, 7, 5]]:  # top, left side, right side
+		for quad: Array in [[0, 1, 5, 4], [2, 0, 4, 6], [1, 3, 7, 5], [0, 1, 3, 2], [2, 3, 1, 0], [4, 5, 7, 6], [6, 7, 5, 4]]:  # top, left side, right side, both ends both ways round (polish1 item 35: the sea showed through the open ends)
 			var normal := ((corners[quad[1]] - corners[quad[0]]).cross(corners[quad[3]] - corners[quad[0]])).normalized()
 			if normal.y < 0.0:
 				normal = -normal
@@ -367,11 +375,40 @@ static func _bridge(parent: Node3D, land: Archipelago, index: int, sand: Materia
 		var hull := ConvexPolygonShape3D.new()
 		hull.points = PackedVector3Array(corners)
 		shape.shape = hull
+	_ramps(way, body, length, width, top, wood_or_sand(String(entry["kind"]), sand))
 	var pile: Node3D = DebrisPile.new()
 	pile.set("width", width)
 	pile.position = Vector3(0, top, 0)
 	way.add_child(pile)
 	return pile
+
+
+static func wood_or_sand(kind: String, sand: Material) -> Material:
+	return SurfaceLibrary.material("painting_post", Color(0.4, 0.28, 0.15)) if kind == "planks" else sand
+
+
+# (polish1 item 31) A ramp at each end, from the deck down to the island's flat ground RAMP m further in: the deck's
+# edge stood a lip above the sand that had to be jumped.
+static func _ramps(way: Node3D, body: StaticBody3D, length: float, width: float, top: float, look: Material) -> void:
+	var slope := atan2(top + 0.3, RAMP)
+	var run := sqrt(RAMP * RAMP + (top + 0.3) * (top + 0.3))
+	for end: float in [-1.0, 1.0]:
+		var middle := Vector3(0.0, (top - 0.3) * 0.5, end * (length * 0.5 + RAMP * 0.5))  # the top face runs from (top) at the deck to (-0.3) in the sand
+		var tilt := Basis(Vector3.RIGHT, slope * end)
+		var at := Transform3D(tilt, middle - tilt.y * 0.15)
+		var plank := BoxMesh.new()
+		plank.size = Vector3(width, 0.3, run)
+		var mesh := MeshInstance3D.new()
+		mesh.mesh = plank
+		mesh.material_override = look
+		mesh.transform = at
+		way.add_child(mesh)
+		var shape := CollisionShape3D.new()
+		var box := BoxShape3D.new()
+		box.size = plank.size
+		shape.shape = box
+		shape.transform = at
+		body.add_child(shape)
 
 
 # A framed painting on two posts at `at`, its picture facing `yaw` (0 = +z). Also used for the way home inside a
@@ -384,8 +421,8 @@ static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D, yaw:
 	var post_wood := SurfaceLibrary.material("painting_post", Color(0.4, 0.28, 0.15))
 	for side: float in [-1.0, 1.0]:
 		var post := BoxMesh.new()
-		post.size = Vector3(0.25, 3.6, 0.25)
-		_place(stand, post, post_wood, Vector3(side * 2.4, 1.8, 0))
+		post.size = Vector3(0.25, 6.6, 0.25)  # (polish1 item 97) 3 m of post in the ground: on a slope or uneven land the foot never floats
+		_place(stand, post, post_wood, Vector3(side * 2.4, 0.3, 0))
 	var frame := BoxMesh.new()
 	frame.size = Vector3(5.0, 3.6, 0.2)
 	_place(stand, frame, SurfaceLibrary.material("painting_frame", Color(0.55, 0.4, 0.15)), Vector3(0, 2.3, 0))

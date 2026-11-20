@@ -591,6 +591,8 @@ func _animate(delta: float) -> void:
 		if _strike_at > 0.0 and _windup > 0.0:
 			tell = 1.0 - clampf((_strike_at - Time.get_ticks_msec() / 1000.0) / _windup, 0.0, 1.0)
 		_model.rotation.x = 0.2 * _flinch + 0.4 * tell - 0.55 * _lunge - (1.25 if _crawling else 0.0)
+		if _stats.has("hop"):  # (polish1 A7) it moves in hops (data "hop" = the hop's height in m)
+			_model.position.y = absf(sin(_walk_phase * 0.6)) * float(_stats["hop"]) * clampf(speed / 2.0, 0.0, 1.0)
 	_walk_phase += speed * delta * 1.6
 	if _leg_l != null:
 		var swing := sin(_walk_phase) * WALK_SWING * clampf(speed / 3.0, 0.0, 1.0)

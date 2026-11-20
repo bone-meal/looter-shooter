@@ -1,13 +1,13 @@
 # Purpose: turns a drawn card (game/tcg/card_face.gd) into a texture for the 3D table: one small SubViewport draws the
-# face once (256 x 358), the picture is copied into an ImageTexture and kept in a small cache (oldest dropped first),
+# face once (320 x 448), the picture is copied into an ImageTexture and kept in a small cache (oldest dropped first),
 # so a match holds a few dozen card pictures and nothing is drawn per frame. Also the card back.
 # Dependencies: game/tcg/card_face.gd; a card db handed in.
 extends Node
 
 const CardFace = preload("res://game/tcg/card_face.gd")
 
-const SIZE := Vector2i(256, 358)
-const KEEP := 48  # pictures kept (each about 360 KB)
+const SIZE := Vector2i(320, 448)  # polish1 item 84: words on the table were blurry at 256 x 358 (each picture ~570 KB)
+const KEEP := 48  # pictures kept
 
 var db: RefCounted
 var _view := SubViewport.new()

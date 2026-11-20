@@ -899,7 +899,8 @@
     0.15
    ],
    "attack_sound": "atk_claw",
-   "head_share": 0.0
+   "head_share": 0.0,
+   "hop": 0.35
   }
  }
 }

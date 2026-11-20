@@ -181,8 +181,8 @@ func deck_width() -> float:
 
 
 # Height of a bridge's walking surface above the islands' ground.
-func deck_height(bridge: int) -> float:
-	return 0.35 if String(bridges[bridge]["kind"]) == "planks" else 0.2
+func deck_height(_bridge: int) -> float:
+	return 0.35  # planks and sandbars alike (polish1 item 35: the sea's waves rolled over a sandbar at 0.2)
 
 
 # The bridge whose deck (x, z) is on, -1 = none.

@@ -44,7 +44,8 @@ func set_stage(peer: int, on: bool) -> void:
 
 
 # One step of time. held = peer -> F held now. Returns true the moment the group goes (countdown out, or all ready).
-func tick(dt: float, held: Dictionary) -> bool:
+# clock_on false = the countdown waits (the host has Settings open, polish1 item 8); readying goes on.
+func tick(dt: float, held: Dictionary, clock_on: bool = true) -> bool:
 	if launched:
 		return false
 	for peer: int in players:
@@ -66,7 +67,7 @@ func tick(dt: float, held: Dictionary) -> bool:
 	if everyone_ready():
 		launched = true
 		return true
-	if not button and not players.is_empty():
+	if not button and not players.is_empty() and clock_on:
 		left = maxf(left - dt, 0.0)
 		if left <= 0.0:
 			launched = true

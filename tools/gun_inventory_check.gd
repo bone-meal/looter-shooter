@@ -1,4 +1,4 @@
-# Purpose: developer check of rolled guns in the inventory: one slot per gun, click/swap/right-click moves, save round trip, tamper rejection, chest-style drops with a tier floor, held-gun stats. Writes tools/gun_inventory_check.log and quits. Run scene tools/gun_inventory_check.tscn.
+# Purpose: developer check of rolled guns in the inventory (backpack; the holsters are filled first): one slot per gun, click/swap/right-click moves, save round trip, tamper rejection, chest-style drops with a tier floor, held-gun stats. Writes tools/gun_inventory_check.log and quits. Run scene tools/gun_inventory_check.tscn.
 # Dependencies: core/inventory_state.gd, item_db.gd, gun_db.gd, gun_gen.gd, gun_stats.gd, data_store.gd.
 extends Node
 
@@ -17,6 +17,8 @@ func _ready() -> void:
 	inv.set_gun_db(db)
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 11
+	for _h in inv.holster_count:  # (polish1 A1) guns fill free holsters first since round 6: fill them so a and b land in the backpack
+		inv.add_gun(GunGen.generate(db, rng, 0.0, "pistol_basic", "green"))
 	var a := GunGen.generate(db, rng, 0.0, "ak47", "gold")
 	var b := GunGen.generate(db, rng, 0.0, "m16", "rainbow")
 	out_log.append("add a: %s, add b: %s" % [inv.add_gun(a), inv.add_gun(b)])

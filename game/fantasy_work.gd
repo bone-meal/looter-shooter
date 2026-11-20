@@ -91,8 +91,23 @@ func interact() -> void:
 	var local: Vector3 = world.player_local()
 	var person: Dictionary = world.places.person_near(local, TALK_REACH)
 	if not person.is_empty():
+		var told: Array = []  # (polish1 item 103) quests waiting on a talk with this person: what they say for it
+		for qid: String in world.quests.active:
+			var s: Dictionary = world.quests.step(qid)
+			if String(s.get("type", "")) == "talk" and String(s.get("npc", "")) == String(person["id"]):
+				told.append(qid)
 		world.report({"type": "talk", "npc": String(person["id"])})
-		talk_opened.emit(person)
+		var said: Array = []
+		for qid: String in told:
+			var steps: Array = world.quests.quest(qid)["steps"]
+			for s2: Dictionary in steps:
+				if String(s2.get("type", "")) == "talk" and String(s2.get("npc", "")) == String(person["id"]):
+					var line := String(s2.get("says", ""))
+					var next := String(world.quests.step_text(qid))
+					said.append({"quest": qid, "line": line if line != "" else next, "next": next})
+		var shown := person.duplicate()
+		shown["told"] = said
+		talk_opened.emit(shown)
 		return
 	if world.agility.busy():
 		return
@@ -155,7 +170,15 @@ func _process(delta: float) -> void:
 		world.give(find, many)
 		world.worked.emit(skill, find, many, false)
 	else:
+		var odds := success(world.skilling, skill, int(world.skills.level(skill)), int(def["level"]))
+		if randf() >= odds:  # (polish1 item 121) a miss is fine, but it says so
+			var words := String((world.skilling.get("success", {}) as Dictionary).get(skill, {}).get("miss_words", "Nothing this time."))
+			world.emit_signal("notice", words)
+			world.gain_xp(skill, maxi(floori(float(def["xp"]) / 4.0), 1))
+			return
 		var count := 2 if randf() < world.perk(skill, "double") else 1
+		if randf() < odds - 1.0:  # over 100 %: a bonus find
+			count += 1
 		world.give(String(def["gives"]), count)
 		world.worked.emit(skill, String(def["gives"]), count, false)
 	for find: Dictionary in [] if def.has("animal") or def.has("finds") else SkillPerks.bonus_finds(world.skilling.get("unlocks", {}), skill, int(world.skills.level(skill))):
@@ -165,6 +188,15 @@ func _process(delta: float) -> void:
 	if bool(def.get("once", false)) or randf() < float(_cfg["deplete_chance"]) * (1.0 - world.perk(skill, "keep")):
 		world.gather.spend(_node, float(def["respawn"]) * maxf(1.0 - world.perk(skill, "regrow"), 0.2))
 		_node = {}
+
+
+# The chance a cycle of a gathering skill finds something (data/fantasy/skilling.json "success"); 1.0 for skills not
+# listed; over 1.0 = the extra is a bonus item's chance.
+static func success(skilling: Dictionary, skill: String, level: int, node_level: int) -> float:
+	var rule: Dictionary = (skilling.get("success", {}) as Dictionary).get(skill, {})
+	if rule.is_empty():
+		return 1.0
+	return clampf(float(rule["base"]) + float(rule["per_level"]) * float(level - node_level), float(rule["min"]), float(rule.get("most", 1.5)))
 
 
 func _pick_find(finds: Dictionary) -> String:
@@ -259,6 +291,7 @@ func make(recipe: Dictionary) -> String:
 		var count := int(recipe["out"][item]) * (1 + extra)
 		world.give(item, count)
 		world.worked.emit(skill, item, count, true)
+		world.report({"type": "make", "item": item, "count": count})  # (polish1 item 115) "make" quest steps need the real making
 	world.gain_xp(String(recipe["skill"]), int(recipe["xp"]))
 	if recipe.has("lore"):  # a collection completed: its story (data/fantasy/writing/skills.txt [lore <id>])
 		var line := String(world.data["text"].get("lore", {}).get(String(recipe["lore"]), {}).get("text", ""))

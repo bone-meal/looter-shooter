@@ -218,7 +218,7 @@
   },
   {
    "id": "crit_damage",
-   "name": "Executioner",
+   "name": "Keen Eye",
    "desc": "Critical hits deal +%s%% damage",
    "min": 25.0,
    "max": 100.0,
@@ -443,7 +443,7 @@
   {
    "id": "bronze",
    "name": "Bronze Crate",
-   "price": 300,
+   "price": 150,
    "luck": 0.0,
    "min_tier": "grey",
    "color": "#c07a3a"
@@ -451,7 +451,7 @@
   {
    "id": "silver",
    "name": "Silver Crate",
-   "price": 1500,
+   "price": 750,
    "luck": 0.3,
    "min_tier": "blue",
    "color": "#c0c8d0"
@@ -459,7 +459,7 @@
   {
    "id": "gold",
    "name": "Gold Crate",
-   "price": 6000,
+   "price": 3000,
    "luck": 0.6,
    "min_tier": "purple",
    "color": "#ffc83d"

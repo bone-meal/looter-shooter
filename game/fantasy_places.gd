@@ -39,6 +39,7 @@ var people: Array = []  # {"id", "name", "at": Vector3, "place", "greet", "look"
 var _built := {}  # place or site id -> Node3D
 var _sails: Array[Node3D] = []
 var _fires: Array = []  # lit by players: {"node", "until"}
+var _piles: Array = []  # (polish1 item 107) logs laid on the ground, not lit yet: {"node", "at", "log"}
 var _timer := 0.0
 var _clock := 0.0
 var _marks := {}  # npc id -> text above the head ("!" quest to give, "..." a quest points here)
@@ -271,8 +272,50 @@ func haven_near(local: Vector3) -> Vector3:
 func set_marks(marks: Dictionary) -> void:
 	_marks = marks
 	for entry: Dictionary in people:
-		if entry["mark"] != null:
-			(entry["mark"] as Label3D).text = String(marks.get(entry["id"], ""))
+		if entry["mark"] != null:  # (polish1 item 101) "!" a quest to give, gold "?" waiting to be spoken to, grey "?" a quest of theirs under way
+			var m := String(marks.get(entry["id"], ""))
+			var label := entry["mark"] as Label3D
+			label.text = m.substr(0, 1)
+			label.modulate = Color(0.7, 0.7, 0.7) if m == "?grey" else Color(1.0, 0.85, 0.3)
+
+
+# (polish1 item 107) Logs laid on the ground, to be lit with a fire spell.
+func lay_logs(local: Vector3, log_id: String) -> void:
+	var pile := Node3D.new()
+	pile.position = Vector3(local.x, terrain.height(local.x, local.z), local.z)
+	var bark := StandardMaterial3D.new()
+	bark.albedo_color = Color(0.36, 0.25, 0.15)
+	for k in 4:
+		var wood := MeshInstance3D.new()
+		var cyl := CylinderMesh.new()
+		cyl.top_radius = 0.07
+		cyl.bottom_radius = 0.08
+		cyl.height = 0.7
+		cyl.radial_segments = 6
+		wood.mesh = cyl
+		wood.material_override = bark
+		wood.rotation = Vector3(deg_to_rad(90.0 - 18.0), float(k) * PI * 0.5, 0.0)
+		wood.position = Vector3(sin(float(k) * PI * 0.5) * 0.12, 0.18, cos(float(k) * PI * 0.5) * 0.12)
+		pile.add_child(wood)
+	add_child(pile)
+	_piles.append({"node": pile, "at": pile.position, "log": log_id})
+
+
+# The laid pile within reach of a spot, -1 = none.
+func pile_near(local: Vector3, reach: float) -> int:
+	for i in _piles.size():
+		var at: Vector3 = _piles[i]["at"]
+		if Vector2(local.x - at.x, local.z - at.z).length() < reach:
+			return i
+	return -1
+
+
+# Takes a laid pile away (it is being lit): its log id and place.
+func take_pile(i: int) -> Dictionary:
+	var pile: Dictionary = _piles[i]
+	(pile["node"] as Node3D).queue_free()
+	_piles.remove_at(i)
+	return pile
 
 
 # A fire a player lit: burns for `seconds`, cooks food and warms (see game/fantasy_work.gd).
@@ -427,7 +470,8 @@ func _build(id: String, items: Array) -> void:
 				shape.shape = drum
 			else:
 				var block := BoxShape3D.new()
-				block.size = Vector3(float(box[2]), float(box[4]), float(box[3]))
+				var trim := 0.22 if inside else 0.0  # (polish1 item 100) furniture in a walk-in house is a little smaller than drawn: corners no longer catch
+				block.size = Vector3(maxf(float(box[2]) - trim, 0.3), float(box[4]), maxf(float(box[3]) - trim, 0.3))
 				shape.shape = block
 			shape.transform = at * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
 			body.add_child(shape)
@@ -492,12 +536,14 @@ func _stand(entry: Dictionary) -> void:
 		plate.position.y = 2.05
 		body.add_child(plate)
 	var mark := Label3D.new()
-	mark.text = String(_marks.get(entry["id"], ""))
+	var m := String(_marks.get(entry["id"], ""))
+	mark.text = m.substr(0, 1)
 	mark.font_size = 96
 	mark.pixel_size = 0.006
 	mark.outline_size = 12
-	mark.modulate = Color(1.0, 0.85, 0.2)
+	mark.modulate = Color(0.7, 0.7, 0.7) if m == "?grey" else Color(1.0, 0.85, 0.2)
 	mark.billboard = BaseMaterial3D.BILLBOARD_ENABLED
+	mark.no_depth_test = bool(entry.get("indoors", false))  # (polish1 item 123) shows through the roof: their house is findable from the street
 	mark.position.y = 2.5
 	body.add_child(mark)
 	var solid := StaticBody3D.new()  # people are in the way like anything else
