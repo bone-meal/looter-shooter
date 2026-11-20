@@ -15,6 +15,7 @@ const MusicMenu = preload("res://game/music_menu.gd")
 const SettingsMenu = preload("res://game/settings_menu.gd")
 const ControlsMenu = preload("res://game/controls_menu.gd")
 const SoundMenu = preload("res://game/sound_menu.gd")
+const LootFilterMenu = preload("res://game/loot_filter_menu.gd")
 const CrosshairMenu = preload("res://game/crosshair_menu.gd")
 const LoadingScreen = preload("res://game/loading_screen.gd")
 const LoadClock = preload("res://game/load_clock.gd")
@@ -35,6 +36,7 @@ var _music_menu: Control  # game/music_menu.gd: the jukebox window (music note i
 var _settings_menu: Control
 var _controls_menu: Control
 var _sound_menu: Control
+var _loot_menu: Control
 var _crosshair_menu: Control
 var _loading: Control  # the picture shown while a session is built or Aurelind is entered
 var _settings_return: Control  # menu to show again when settings closes
@@ -102,6 +104,7 @@ func _ready() -> void:
 	_settings_menu.controls_pressed.connect(_open_controls)
 	_settings_menu.sounds_pressed.connect(func() -> void: _show_only(_sound_menu))
 	_settings_menu.crosshair_pressed.connect(func() -> void: _show_only(_crosshair_menu))
+	_settings_menu.loot_pressed.connect(func() -> void: _show_only(_loot_menu))
 	layer.add_child(_settings_menu)
 
 	_controls_menu = ControlsMenu.new()
@@ -113,9 +116,15 @@ func _ready() -> void:
 	_sound_menu = SoundMenu.new()
 	_sound_menu.settings = _settings
 	_sound_menu.music = _music_box  # (polish1 item 3) the music volume on the Sounds page
-	_sound_menu.changed.connect(_on_settings_changed)
+	_sound_menu.changed.connect(func() -> void: SettingsIO.apply_display(_settings))  # volumes and mutes only: no full re-apply while a slider moves
 	_sound_menu.closed.connect(_close_controls)  # saves and goes back to the settings, like the controls page
 	layer.add_child(_sound_menu)
+
+	_loot_menu = LootFilterMenu.new()  # (polish1 item 68)
+	_loot_menu.settings = _settings
+	_loot_menu.changed.connect(_on_settings_changed)
+	_loot_menu.closed.connect(_close_controls)  # saves and goes back to the settings
+	layer.add_child(_loot_menu)
 
 	_crosshair_menu = CrosshairMenu.new()
 	_crosshair_menu.settings = _settings
@@ -177,7 +186,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		return
 	if _session != null and _session.close_inventory():
 		pass
-	elif _controls_menu.visible or _crosshair_menu.visible:
+	elif _controls_menu.visible or _crosshair_menu.visible or _sound_menu.visible or _loot_menu.visible:
 		_close_controls()
 	elif _settings_menu.visible:
 		_close_settings()
@@ -308,7 +317,7 @@ func _on_settings_changed() -> void:
 
 # Shows one menu (or none) and frees the mouse whenever a menu is up.
 func _show_only(menu: Control) -> void:
-	for m in [_main_menu, _save_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _crosshair_menu, _lobby]:
+	for m in [_main_menu, _save_menu, _pause_menu, _settings_menu, _controls_menu, _sound_menu, _loot_menu, _crosshair_menu, _lobby]:
 		m.visible = (m == menu)
 	if menu != null:
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE

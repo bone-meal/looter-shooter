@@ -260,6 +260,11 @@ func _draw_card() -> void:
 
 
 # view: what the desk says this player sees (core/trade_desk.gd `_views`).
+# (polish1 item 63) Who the trade is with (the name guns go back in history under).
+func partner() -> String:
+	return String(_view.get("with", "?"))
+
+
 func show_table(view: Dictionary) -> void:
 	if not visible:  # a new trade: the card marks start over (kept after close, the session reads them when it is done)
 		offered_cards = {}

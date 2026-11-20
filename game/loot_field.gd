@@ -10,9 +10,13 @@ const SoundBoard = preload("res://game/sound_board.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
+const LootFilter = preload("res://core/loot_filter.gd")
 
 var gun_db: RefCounted
 var cfg: Dictionary
+var items: RefCounted  # core/item_db.gd: an armour drop's slot picks its model (set by the session)
+var _mats := {}  # colour -> material of armour drops (shared)
+var filter := LootFilter.DEFAULTS.duplicate(true)  # (polish1 item 68) this player's loot filter (set by the session from the settings)
 
 var _drops: Array[Dictionary] = []  # {"node", "gun", "beam_mat", "label", "age", "ttl", "animated", "tier"}
 
@@ -80,17 +84,54 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	label.position.y = 2.0
 	label.visibility_range_end = 30.0
 	node.add_child(label)
+	var look := LootFilter.look(filter, gun_db, gun)  # (polish1 item 68) filtered: no beam, no name, no chime (it stays to be picked up)
+	beam.visible = bool(look["beam"])
+	label.visible = bool(look["shown"])
+	if bool(look["mark"]):  # highlighted by the filter: a star and a gold edge
+		label.text = "* " + label.text + " *"
+		label.outline_modulate = Color(1.0, 0.8, 0.2)
 	var player := AudioStreamPlayer3D.new()
 	player.stream = TierSound.chime(ti)
 	player.unit_size = 10.0 + float(ti) * 3.0
 	player.volume_db = -6.0 + float(ti) + SoundBoard.gain_db("chime_" + tier_id)
 	node.add_child(player)
-	if SoundBoard.allow("chime_" + tier_id):  # the Sounds page of the settings can mute each tier's chime
+	if SoundBoard.allow("chime_" + tier_id) and bool(look["shown"]):  # the Sounds page of the settings can mute each tier's chime
 		player.play()
 		SoundBoard.heard("chime_" + tier_id)
 	var ttl := float(cfg["despawn_seconds_gold_up"]) if ti >= gun_db.tier_index("gold") else float(cfg["despawn_seconds"])
-	_drops.append({"node": node, "gun": gun, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": INF if shared != 0 else ttl, "animated": TierStyle.animated(gun_db, tier_id), "tier": tier_id, "shared": shared})
+	_drops.append({"node": node, "gun": gun, "beam": beam, "beam_mat": mat, "label": label, "holder": holder, "age": 0.0, "ttl": INF if shared != 0 else ttl, "animated": TierStyle.animated(gun_db, tier_id), "tier": tier_id, "shared": shared})
 	_tint(_drops[_drops.size() - 1], 0.0)
+
+
+# (polish1 item 66) A small model of the piece itself (tools/blender/armour_drops.py, by its equipment slot) in its colour,
+# its trim darker; anything without one (a slot-less item) is the old box.
+func _piece_model(id: String, color: Color) -> Node3D:
+	var slot := String(items.call("equip_slot", id)) if items != null and bool(items.call("has_item", id)) else ""
+	var path := "res://assets/models/armour/%s.gltf" % slot
+	if slot != "" and ResourceLoader.exists(path):
+		var made := (load(path) as PackedScene).instantiate() as Node3D
+		for found in made.find_children("*", "MeshInstance3D", true, false):
+			var mesh := found as MeshInstance3D
+			mesh.material_override = _armour_mat(color.darkened(0.55) if String(mesh.name).begins_with("Trim") else color)
+		made.scale = Vector3.ONE * 1.4
+		return made
+	var piece := MeshInstance3D.new()
+	var box := BoxMesh.new()
+	box.size = Vector3(0.42, 0.42, 0.42)
+	piece.mesh = box
+	piece.material_override = _armour_mat(color)
+	return piece
+
+
+func _armour_mat(color: Color) -> StandardMaterial3D:
+	var key := color.to_html()
+	if not _mats.has(key):
+		var mat := StandardMaterial3D.new()
+		mat.albedo_color = color
+		mat.metallic = 0.35
+		mat.roughness = 0.45
+		_mats[key] = mat
+	return _mats[key]
 
 
 # Drops an item (a piece of armour) at `pos`: a small box turning under a beam of its colour, with its name.
@@ -119,13 +160,7 @@ func spawn_item(id: String, title: String, color: Color, pos: Vector3, amount :=
 	beam.position.y = 6.0
 	beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	node.add_child(beam)
-	var solid := StandardMaterial3D.new()
-	solid.albedo_color = color
-	var box := BoxMesh.new()
-	box.size = Vector3(0.42, 0.42, 0.42)
-	var piece := MeshInstance3D.new()
-	piece.mesh = box
-	piece.material_override = solid
+	var piece := _piece_model(id, color)
 	var holder := Node3D.new()
 	holder.position.y = 0.9
 	holder.add_child(piece)
@@ -189,6 +224,17 @@ func _remove(i: int) -> void:
 		return
 	(_drops[i]["node"] as Node3D).queue_free()
 	_drops.remove_at(i)
+
+
+# (polish1 item 68) The filter changed: the guns already lying show by the new one.
+func refilter(new_filter: Dictionary) -> void:
+	filter = LootFilter.clean(new_filter)
+	for d: Dictionary in _drops:
+		if (d["gun"] as Dictionary).is_empty():
+			continue
+		var look := LootFilter.look(filter, gun_db, d["gun"])
+		(d["beam"] as Node3D).visible = bool(look["beam"])
+		(d["label"] as Label3D).visible = bool(look["shown"])
 
 
 func _tint(d: Dictionary, t: float) -> void:

@@ -140,6 +140,11 @@ static func display_name(db: RefCounted, gun: Dictionary) -> String:
 	return _plain_name(db, gun) + (" [W kills: %d]" % int(gun["wkills"]) if gun.has("wkills") else "")
 
 
+# (polish1 item 47) The maker's name as it is written in the gun's name (the name's second look).
+static func maker_name(db: RefCounted, gun: Dictionary) -> String:
+	return String(db.makers.get(String(gun.get("maker", "")), {}).get("name", ""))
+
+
 # The name without the counter (the HUD shows the count on its own line).
 static func plain_name(db: RefCounted, gun: Dictionary) -> String:
 	return _plain_name(db, gun)

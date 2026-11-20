@@ -51,6 +51,19 @@ func _ready() -> void:
 		_say("a hand-made unique with the counter is still legal", GunGen.validate(db, special) == "")
 	_say("its name ends with [W kills: n] (%s)" % GunStats.display_name(db, gun), GunStats.display_name(db, gun).ends_with("[W kills: %d]" % int(gun["wkills"])) and not GunStats.display_name(db, plain).contains("W kills"))
 
+	# (polish1 item 63) a trade: the counter starts again; gold and up remember the owner
+	var traded := GunGen.hand_over(db, again, "Bonk")
+	_say("a traded rainbow gun counts from 0 and remembers Bonk's 142 (%s)" % str(traded.get("owners")), int(traded["wkills"]) == 0 and (traded["owners"] as Array).size() == 1 and int(traded["owners"][0]["k"]) == 142 and GunGen.validate(db, JSON.parse_string(JSON.stringify(traded)) as Dictionary) == "")
+	var epic := GunGen.generate(db, rng, 0.0, "ak47", "purple")
+	epic["wkills"] = 30
+	var low := GunGen.hand_over(db, epic, "Bonk")
+	_say("a purple (Epic) gun only starts again (no history)", int(low["wkills"]) == 0 and not low.has("owners"))
+	var forged := low.duplicate(true)
+	forged["owners"] = [{"n": "x", "k": 5}]
+	_say("a purple gun with a history is refused", GunGen.validate(db, forged) != "")
+	for i in 12:
+		traded = GunGen.hand_over(db, traded, "P%d" % i)
+	_say("the history keeps the last %d owners" % GunGen.OWNERS_MAX, (traded["owners"] as Array).size() == GunGen.OWNERS_MAX and GunGen.validate(db, traded) == "")
 	_lines.append("WKILLS_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/wkills_check.log", FileAccess.WRITE)
 	file.store_string("\n".join(_lines) + "\n")

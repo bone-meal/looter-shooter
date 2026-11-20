@@ -1,9 +1,10 @@
 # Purpose: the inventory's docked item card (locked 2026-11-14 layout, diary/DECISIONS_SEA.md): the right-hand panel
 # showing the chosen gun (rarity band, name, level, big icon, maker, stats compared with the gun in hand, parts,
 # combos, buffs, traits, Q / E skills) or item (icon, kind, stats, flavor), with its action buttons at the foot.
-# Dependencies: game/ui_skin.gd, game/item_icons.gd, game/tier_style.gd, core/gun_stats.gd, core/skill_state.gd, core/armour_stats.gd (rolled armour).
+# Dependencies: game/ui_skin.gd, game/item_icons.gd, game/tier_style.gd, core/gun_stats.gd, core/skill_state.gd, core/armour_stats.gd (rolled armour), game/emblem_art.gd (maker logos, polish1 item 47).
 extends RefCounted
 
+const EmblemArt = preload("res://game/emblem_art.gd")
 const UiSkin = preload("res://game/ui_skin.gd")
 const IconArt = preload("res://game/icon_art.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
@@ -74,10 +75,13 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	var x := r.position.x + PAD
 	var w := r.size.x - 2.0 * PAD
 	var y := r.position.y + 84.0
-	TierStyle.draw_name(canvas, font, Vector2(x, y), db, tier_id, GunStats.display_name(db, gun), 24, tint, w, t)  # a long name scrolls
+	TierStyle.draw_name(canvas, font, Vector2(x, y), db, tier_id, GunStats.display_name(db, gun), 24, tint, w, t, GunStats.maker_name(db, gun))  # a long name scrolls
 	y += 12.0
 	ItemIcons.plate(canvas, Rect2(x, y, w, 118.0), db, tier_id, t)
 	ItemIcons.draw(canvas, String(gun["body"]), Rect2(x + w * 0.06, y, w * 0.88, 120.0), tint)
+	var logo: Dictionary = db.makers.get(String(gun.get("maker", "")), {}).get("logo", {})
+	if not logo.is_empty() and not gun.has("unique"):  # (polish1 item 47) the maker's logo, here only (data/manufacturers.json "logo")
+		EmblemArt.draw_def(canvas, logo, Vector2(x + w - 24.0, y + 24.0), 19.0)
 	y += 132.0
 	var maker: Dictionary = db.makers[String(gun["maker"])]
 	canvas.draw_circle(Vector2(x + 6, y - 5), 5.0, Color.html(String(maker["color"])))
@@ -144,6 +148,15 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		var u: Dictionary = stats["unique"]
 		if String(u.get("flavor", "")) != "":
 			lines.append(["\"%s\"" % String(u["flavor"]), Color(1.0, 0.55, 0.7), false, ""])
+	var past: Array = gun.get("owners", [])
+	if not past.is_empty():  # (polish1 item 63) a gold+ gun's previous owners: a hint, the list while the key is held
+		var key := _key_text("gun_history")
+		if InputMap.has_action("gun_history") and Input.is_action_pressed("gun_history"):
+			lines = [["PREVIOUS OWNERS", UiSkin.ACCENT, false, ""]]
+			for i in range(past.size() - 1, -1, -1):
+				lines.append(["%s   %d W kills" % [String(past[i]["n"]), int(past[i]["k"])], UiSkin.TEXT, false, ""])
+		else:
+			lines.append(["Hold [%s]: previous owners (%d)" % [key, past.size()], UiSkin.ACCENT, false, ""])
 	for line: Array in lines:
 		var indent := 40.0 if String(line[3]) != "" else (6.0 if bool(line[2]) else 0.0)  # a skill's icon sits left of its text
 		var text_h := maxf(font.get_multiline_string_size(String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 10.0 - indent, 14).y, 34.0 if indent > 30.0 else 0.0)
@@ -158,6 +171,15 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 			IconArt.draw(canvas, String(line[3]), Rect2(x, y, 34.0, 34.0), line[1])
 		canvas.draw_multiline_string(font, Vector2(x + indent, y + 14.0), String(line[0]), HORIZONTAL_ALIGNMENT_LEFT, w - 10.0 - indent, 14, -1, line[1])
 		y += text_h + (8.0 if bool(line[2]) else 2.0)
+
+
+# The first key of an action as text ("H").
+static func _key_text(action: String) -> String:
+	if InputMap.has_action(action):
+		for event in InputMap.action_get_events(action):
+			if event is InputEventKey:
+				return OS.get_keycode_string((event as InputEventKey).physical_keycode)
+	return "?"
 
 
 # A whole number for counts (the magazine), the value itself otherwise.

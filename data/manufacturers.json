@@ -1,7 +1,7 @@
 {
  "version": 1,
  "makers": {
-  "kestrel": {
+  "kestrel": {"logo": {"frame": "hex", "symbol": "crosshair", "c1": "#5fd0ff", "c2": "#e8f8ff", "c3": "#1a1c24", "c4": "#5fd0ff"}, 
    "name": "Kestrel Works",
    "color": "#5fd0ff",
    "flavor": "Tight groups, steady hands.",
@@ -20,7 +20,7 @@
     "opener"
    ]
   },
-  "brawn": {
+  "brawn": {"logo": {"frame": "shield", "symbol": "fist", "c1": "#ff6b4a", "c2": "#ffd0b0", "c3": "#1a1c24", "c4": "#ff6b4a"}, 
    "name": "Brawn & Sons",
    "color": "#ff6b4a",
    "flavor": "Hits like a truck, reloads like one.",
@@ -38,7 +38,7 @@
     "last_word"
    ]
   },
-  "zephyr": {
+  "zephyr": {"logo": {"frame": "disc", "symbol": "feather", "c1": "#b6ff6a", "c2": "#f0ffd8", "c3": "#1a1c24", "c4": "#b6ff6a"}, 
    "name": "Zephyr Labs",
    "color": "#b6ff6a",
    "flavor": "Everything faster.",
@@ -56,7 +56,7 @@
     "hip_shooter"
    ]
   },
-  "moss": {
+  "moss": {"logo": {"frame": "diamond", "symbol": "leaf", "c1": "#7bd88f", "c2": "#d8ffe0", "c3": "#1a1c24", "c4": "#7bd88f"}, 
    "name": "Moss Dynamics",
    "color": "#7bd88f",
    "flavor": "Grows on you. Big mags, slow bloom.",
@@ -73,7 +73,7 @@
     "pristine"
    ]
   },
-  "vantor": {
+  "vantor": {"logo": {"frame": "square", "symbol": "gear", "c1": "#d9a7ff", "c2": "#f4e8ff", "c3": "#1a1c24", "c4": "#d9a7ff"}, 
    "name": "Vantor Ordnance",
    "color": "#d9a7ff",
    "flavor": "Plain, balanced, reliable.",
@@ -84,7 +84,7 @@
     "crowd_pleaser"
    ]
   },
-  "halyard": {
+  "halyard": {"logo": {"frame": "disc", "symbol": "anchor", "c1": "#2f9e8f", "c2": "#c8f0ea", "c3": "#1a1c24", "c4": "#2f9e8f"}, 
    "name": "Halyard Marine",
    "color": "#2f9e8f",
    "flavor": "Salt-proof, quick on the reload.",
@@ -101,7 +101,7 @@
     "second_breath"
    ]
   },
-  "cinder": {
+  "cinder": {"logo": {"frame": "shield", "symbol": "flame", "c1": "#e0602a", "c2": "#ffd08a", "c3": "#1a1c24", "c4": "#e0602a"}, 
    "name": "Cinderwright Foundry",
    "color": "#e0602a",
    "flavor": "Hot barrels, harder hits.",
@@ -119,7 +119,7 @@
     "point_blank"
    ]
   },
-  "lumen": {
+  "lumen": {"logo": {"frame": "hex", "symbol": "eye", "c1": "#d8d27a", "c2": "#fffbd8", "c3": "#1a1c24", "c4": "#d8d27a"}, 
    "name": "Lumen Optics",
    "color": "#d8d27a",
    "flavor": "See it first, hit it first.",

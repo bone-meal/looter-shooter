@@ -72,7 +72,8 @@ var _shown_look := {}
 # moves; and a thin top layer (hover and chosen outlines, the stack on the mouse) when the mouse moves.
 var _card_layer := Control.new()
 var _names := Control.new()  # the ready guns' names: redrawn alone at 15 Hz while one is too long and scrolls
-var _ready_names: Array = []  # [position, width, tier id, name]
+var _history := false
+var _ready_names: Array = []  # [position, width, tier id, name, maker]
 var _since_names := 0.0
 var _top := Control.new()
 var _drawn_mouse := Vector2(-1, -1)
@@ -141,13 +142,17 @@ func _process(delta: float) -> void:
 	if shift != _shift:
 		_shift = shift
 		card = true
+	var history := InputMap.has_action("gun_history") and Input.is_action_pressed("gun_history")
+	if history != _history:  # (polish1 item 63) the card shows the gun's previous owners while the key is held
+		_history = history
+		card = true
 	if card or (_card_moves and _since_card >= CARD_ANIMATED):
 		_card_layer.queue_redraw()
 	_since_names += delta
 	if _since_names >= CARD_ANIMATED:
 		_since_names = 0.0
 		for entry: Array in _ready_names:
-			if TierStyle.animated(gun_db, String(entry[2])) or TierStyle.overflows(_font, gun_db, String(entry[2]), String(entry[3]), 15, float(entry[1])):
+			if TierStyle.animated(gun_db, String(entry[2])) or TierStyle.overflows(_font, gun_db, String(entry[2]), String(entry[3]), 15, float(entry[1]), String(entry[4])):
 				_names.queue_redraw()
 				break
 
@@ -478,6 +483,9 @@ func _gui_input(event: InputEvent) -> void:
 		if button == MOUSE_BUTTON_LEFT and not _frame().has_point(pos):
 			_drop(-1)  # carried out of the window and let go
 		return
+	if button == MOUSE_BUTTON_LEFT and (event as InputEventMouseButton).shift_pressed and inventory.cursor.is_empty() and slot < KNIFE_SLOT and _id_at(slot) != "":
+		_quick_move(slot)  # (polish1 item 69) shift-click: straight where it belongs
+		return
 	if slot == BANK_BUTTON:
 		if button == MOUSE_BUTTON_LEFT:
 			bank_upgrade.emit()
@@ -584,6 +592,22 @@ func _act(action: String) -> void:
 	_redraw_all()
 
 
+# (polish1 item 69) Shift-click: a gun in the backpack goes into a free holster, a gun in a holster back into the
+# backpack, armour / jewellery into its slot (worn: back into the backpack). Nothing happens when there is no room.
+func _quick_move(slot: int) -> void:
+	_focus = slot
+	if slot >= HOLSTER_BASE:
+		_act("unequip")
+	elif slot >= EQUIP_BASE:
+		_act("take_off")
+	elif slot < inventory.SIZE:
+		if inventory.is_weapon(_stack(slot)):
+			if inventory.free_holster() >= 0:
+				_act("equip")
+		elif _gear_slot(inventory.item_id(slot)) != "":
+			_act("wear")
+
+
 # What the card's foot offers for the focused thing.
 func _actions() -> Array:
 	if not inventory.cursor.is_empty() or _focus < 0:
@@ -624,7 +648,7 @@ func _draw() -> void:
 func _draw_names() -> void:
 	for entry: Array in _ready_names:
 		var tier := String(entry[2])
-		TierStyle.draw_name(_names, _font, entry[0], gun_db, tier, String(entry[3]), 15, TierStyle.color(gun_db, tier, _now()), float(entry[1]), _now())
+		TierStyle.draw_name(_names, _font, entry[0], gun_db, tier, String(entry[3]), 15, TierStyle.color(gun_db, tier, _now()), float(entry[1]), _now(), String(entry[4]))
 
 
 func _draw_card_layer() -> void:
@@ -729,7 +753,7 @@ func _draw_ready() -> void:
 		if gun.is_empty():
 			draw_string(_font, Vector2(tx, r.position.y + 30), items.item_name(String(inventory.holsters[i].get("id", ""))), HORIZONTAL_ALIGNMENT_LEFT, tw, 15, UiSkin.TEXT)
 		else:
-			_ready_names.append([Vector2(tx, r.position.y + 28), tw, String(gun["tier"]), GunStats.display_name(gun_db, gun)])  # drawn by the names layer: long ones scroll
+			_ready_names.append([Vector2(tx, r.position.y + 28), tw, String(gun["tier"]), GunStats.display_name(gun_db, gun), GunStats.maker_name(gun_db, gun)])  # drawn by the names layer: long ones scroll
 			var stats := GunStats.final_stats(gun_db, gun)
 			draw_string(_font, Vector2(tx, r.position.y + 50), "%s   Lv %d" % [String(gun_db.tier(String(gun["tier"]))["name"]), int(stats["lvl"])], HORIZONTAL_ALIGNMENT_LEFT, tw, 13, UiSkin.TEXT_DIM)
 			draw_string(_font, Vector2(tx, r.position.y + 72), "DPS %.0f" % (float(stats["damage"]) * float(stats["fire_rate"])), HORIZONTAL_ALIGNMENT_LEFT, tw, 15, UiSkin.ACCENT)

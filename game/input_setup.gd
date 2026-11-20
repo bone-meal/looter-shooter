@@ -41,6 +41,8 @@ const ACTIONS := [
 	["weapon_3", "Gun 3 (with a third holster)"],
 	["weapon_4", "Gun 4 (with a fourth holster)"],
 	["inspect", "Inspect what is in hand"],
+	["sight_switch", "Sniper: scope / red dot on top"],
+	["gun_history", "Inventory: previous owners of a gun (hold)"],
 	["photo_mode", "Photo mode"],
 	["logbook", "Salvage logbook (at sea)"],
 	["tool_use", "Use the chosen sea tool (at sea)"],
@@ -84,6 +86,8 @@ static func default_code(action: String) -> String:
 		"knife": return "key:%d" % KEY_3
 		"shield": return "key:%d" % KEY_X
 		"inspect": return "key:%d" % KEY_V
+		"sight_switch": return "mouse:%d" % MOUSE_BUTTON_MIDDLE  # (polish1 item 59)
+		"gun_history": return "key:%d" % KEY_H  # (polish1 item 63) only read while the inventory is open
 		"photo_mode": return "key:%d" % KEY_F10
 		"logbook": return "key:%d" % KEY_J
 		"tool_use": return "key:%d" % KEY_T

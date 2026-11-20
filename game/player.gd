@@ -211,6 +211,7 @@ var cheat_speed := 1.0  # movement speed multiplier
 var _shove := Vector3.ZERO  # see shove()
 var damage_gate: Callable  # fantasy world (game/combat_tools.gd): every hit is passed through it first: (amount, element) -> what is left
 var struck_by: Node3D  # whoever is about to hurt us: set by the attacker just before take_damage (may stay null)
+var use_optic := false  # (polish1 item 59) a scoped gun with an optic part aims through the optic (middle mouse switches)
 var struck_from := Vector3.INF  # where a hit without an attacker node comes from (a projectile)
 var hurt_from := Vector3.INF  # (polish1 item 42) where the last blow that hurt us came from (INF = unknown): the HUD's hit-direction marker
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
@@ -363,6 +364,8 @@ func _unhandled_input(event: InputEvent) -> void:
 			_reload()  # (Hot Potato at full heat throws the gun instead)
 	elif event.is_action_pressed("inspect"):
 		start_inspect()
+	elif event.is_action_pressed("sight_switch") and _holding and bool(_views[_slot].get("scope", false)) and String(_views[_slot].get("optic", "")) != "":
+		use_optic = not use_optic  # (polish1 item 59) a sniper with a red dot on top: scope or dot
 	elif event.is_action_pressed("skill_1"):
 		use_skill(0)
 	elif event.is_action_pressed("skill_2"):
@@ -1080,7 +1083,12 @@ func _undress_body(index: int) -> void:
 
 # 0..1 how far the scope view is up (only weapons with "scope": true, first person only).
 func scope_amount() -> float:
-	return _motion.ads_eased() if _holding and bool(_views[_slot].get("scope", false)) else 0.0
+	return _motion.ads_eased() if _holding and bool(_views[_slot].get("scope", false)) and not _dot_on_scope() else 0.0
+
+
+# (polish1 item 59) A sniper whose sight part is an optic and the player switched to it (no scope zoom then).
+func _dot_on_scope() -> bool:
+	return use_optic and String(_views[_slot].get("optic", "")) != ""
 
 
 # What the held gun is aimed through: "scope" (the sniper), an optic part ("red_dot", "acog", "holo") or "" for its
@@ -1088,7 +1096,7 @@ func scope_amount() -> float:
 func sight_kind() -> String:
 	if not _holding:
 		return ""
-	return "scope" if bool(_views[_slot].get("scope", false)) else String(_views[_slot].get("optic", ""))
+	return "scope" if bool(_views[_slot].get("scope", false)) and not _dot_on_scope() else String(_views[_slot].get("optic", ""))
 
 
 # 0..1 how far that view is up.
@@ -1097,6 +1105,7 @@ func sight_amount() -> float:
 
 
 func _select_slot(index: int) -> void:
+	use_optic = false
 	_models[_slot].visible = false
 	_slot = index
 	_models[index].visible = true

@@ -465,7 +465,7 @@ func _draw_weapons(view: Vector2) -> void:
 		draw_rect(Rect2(x, top, SLOT_W, SLOT_H), tint, false, 3.0)
 		var tag := String(player.gun_db.tier(String(gun["tier"])).get("tag", ""))  # director: no "*PONY*" on the HUD, so names fit (its colour says pony)
 		var shown := GunStats.plain_name(player.gun_db, gun).replace(tag + " ", "") if tag != "" else GunStats.plain_name(player.gun_db, gun)
-		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), shown, 14, tint, SLOT_W, now)  # a name too long for the slot scrolls (director 2026-11-20)
+		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), shown, 14, tint, SLOT_W, now, GunStats.maker_name(player.gun_db, gun))  # a name too long for the slot scrolls (director 2026-11-20)
 		if gun.has("wkills"):  # polish1 item 62: "W kills:" and the count in orange, above the abilities beside the gun
 			var count_text := "%d" % int(gun["wkills"])
 			var count_w := _font.get_string_size(count_text, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x

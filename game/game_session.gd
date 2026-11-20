@@ -671,6 +671,7 @@ func _ready() -> void:
 	_bars.source = _director
 	_drops_cfg = DataStore.load_json("res://data/drops.json")
 	_field.setup(_player.gun_db, _drops_cfg)
+	_field.items = _player.items  # (polish1 item 66) armour drops as small models of the piece
 	add_child(_field)
 	_director.killed.connect(_on_enemy_killed)
 	_director.wave_stats = func(stats: Dictionary, wave: int) -> Dictionary: return _colosseum.wave_stats(stats, wave, _director.run_fx)
@@ -808,6 +809,7 @@ func apply_settings() -> void:
 		_sea.enter(settings.graphics)
 	_overlay.visible = settings.show_debug
 	_player_hud.show_speed = settings.show_debug
+	_field.refilter(settings.loot_filter)  # (polish1 item 68) the loot filter
 	_cross.show_style(_cross_styles.clean(settings.crosshair) if not settings.crosshair.is_empty() else _cross_styles.preset(0))
 
 
@@ -1197,8 +1199,9 @@ func _on_trade_message(what: String, args: Array) -> void:
 		"refused":
 			_player_hud.notice("That cannot be traded.")
 		"done":
+			var partner: String = _trade_screen.partner()
 			_close_trade()
-			_finish_trade(args[0], args[1])
+			_finish_trade(args[0], args[1], partner)
 		"ended":
 			_trade_ask_until = 0.0
 			if _trade_screen.is_open():
@@ -1224,7 +1227,7 @@ func _legal_card(thing: Dictionary) -> bool:
 	return not db.card(id).is_empty() and String(db.card(id)["rarity"]) != "token"
 
 
-func _finish_trade(gave: Array, got: Array) -> void:
+func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 	for ref: Variant in gave:
 		if _trade_screen.offered_cards.has(int(ref)):  # a card from the collection
 			var c: Dictionary = _trade_screen.offered_cards[int(ref)]
@@ -1242,8 +1245,9 @@ func _finish_trade(gave: Array, got: Array) -> void:
 			continue
 		var given: Dictionary = thing
 		if given.has("gun") and _legal_gun(given["gun"]):
-			if not _player.inventory.add_gun(given["gun"]):
-				_on_gun_dropped(given["gun"])
+			var ours := GunGen.hand_over(_player.gun_db, given["gun"], partner)  # (polish1 item 63) W kills start again; gold+ remembers the owner
+			if not _player.inventory.add_gun(ours):
+				_on_gun_dropped(ours)
 		elif given.has("arm") and ArmourGen.validate(_player.items, String(given.get("id", "")), given["arm"]) == "":
 			var piece := {"id": String(given["id"]), "count": 1, "arm": given["arm"]}
 			if not _player.inventory.add_armour(piece):

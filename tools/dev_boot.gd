@@ -2218,7 +2218,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						window.set("_mouse", (window.call("_holster_rect", int(words[2].substr(1))) as Rect2).get_center())
 					else:
 						window.set("_mouse", (window.call("_slot_rect", int(words[2])) as Rect2).get_center())
-				"press":  # a REAL left mouse click through the window's own input: a backpack slot (0-35), a holster ("h0".."h3"), a bank slot ("b0".."b59") or "bankbutton"
+				"press", "shiftpress":  # a REAL left mouse click through the window's own input: a backpack slot (0-35), a holster ("h0".."h3"), a bank slot ("b0".."b59") or "bankbutton"; "shiftpress" with Shift held (polish1 item 69)
 					var spot := Rect2()
 					if words[2] == "bankbutton":
 						spot = window.call("_bank_button")
@@ -2232,6 +2232,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						var click := InputEventMouseButton.new()
 						click.button_index = MOUSE_BUTTON_LEFT
 						click.pressed = down
+						click.shift_pressed = words[1] == "shiftpress"
 						click.position = spot.get_center()
 						click.global_position = spot.get_center()
 						window.call("_gui_input", click)
@@ -2656,6 +2657,40 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("look_at_point", fw.call("ground_world", at_t.x, at_t.z) + Vector3(0.0, 1.5, 0.0))
 				fw.get("work").call("interact")
 				await get_tree().create_timer(0.6, true, false, true).timeout
+		"lootprobe":  # "!lootprobe <note>": (polish1 B3) what the drops lying here show: name, beam, name tag, model
+			var lf: Node = session.get("_field")
+			var seen_l := PackedStringArray()
+			for d_l: Dictionary in lf.get("_drops"):
+				var lab: Label3D = d_l["label"]
+				var beam_v: Variant = d_l.get("beam")
+				seen_l.append("%s [beam %s, name %s, model %s]" % [lab.text, str((beam_v as Node3D).visible) if beam_v != null else "-", str(lab.visible), (d_l["holder"] as Node3D).get_child(0).name])
+			_lines.append("LOOTPROBE %s: %s" % [" ".join(words.slice(1)), "; ".join(seen_l)])
+		"lootfilter":  # "!lootfilter <min tier> [chase|traits|maker:<id>]...": (polish1 B3) set the loot filter as the page would
+			var lfil := {"min": words[1], "no_beam": [], "chase": words.has("chase"), "traits": words.has("traits"), "makers": []}
+			for w_l: String in words:
+				if w_l.begins_with("maker:"):
+					(lfil["makers"] as Array).append(w_l.substr(6))
+			session.get("settings").set("loot_filter", lfil)
+			session.call("apply_settings")
+		"droparmour":  # "!droparmour": (polish1 item 66) one armour drop of each slot in a row 3 m ahead, looked at
+			var lf_d: Node = session.get("_field")
+			var fwd_a := -(player as Node3D).global_transform.basis.z
+			fwd_a.y = 0.0
+			fwd_a = fwd_a.normalized()
+			var side_a := fwd_a.cross(Vector3.UP)
+			var done_slots := {}
+			var n_a := 0
+			for id_a: String in player.get("items").call("armour_drops"):
+				var slot_a := String(player.get("items").call("equip_slot", id_a))
+				if done_slots.has(slot_a) or n_a >= 9:
+					continue
+				done_slots[slot_a] = true
+				lf_d.call("spawn_item", id_a, String(player.get("items").call("item_name", id_a)), Color(0.95, 0.75, 0.25), (player as Node3D).global_position + fwd_a * 3.5 + side_a * (float(n_a) - 4.0) * 0.9)
+				n_a += 1
+			await get_tree().create_timer(0.3, true, false, true).timeout
+			player.call("look_at_point", (player as Node3D).global_position + fwd_a * 3.5 + Vector3(0, 0.6, 0))
+		"sightinfo":  # "!sightinfo <note>": (polish1 item 59) the gun in hand: sight kind, its optic, scope or dot
+			_lines.append("SIGHT %s: kind '%s', scope %.2f, use_optic %s" % [" ".join(words.slice(1)), String(player.call("sight_kind")), float(player.call("scope_amount")), str(player.get("use_optic"))])
 		"islestand":  # "!islestand <x> <z> <toward x> <toward z>": (polish1 A2) on the islands, metres from the spawn island's middle, looking at a spot; "!islestand where <note>": where we are and how high
 			if words[1] == "where":
 				var p_w: Vector3 = (player as Node3D).global_position
@@ -3223,7 +3258,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			_lines.append("pick %s = %s" % [words[1], words[2]])
 		"menu":  # "!menu settings" / "!menu controls" shows that page (for a picture), "!menu none" hides the menus again
 			var main_scene: Node = session.get_parent()
-			var pages := {"settings": "_settings_menu", "controls": "_controls_menu", "sounds": "_sound_menu"}  # (polish1 B2) + the Sounds page
+			var pages := {"settings": "_settings_menu", "controls": "_controls_menu", "sounds": "_sound_menu", "loot": "_loot_menu"}  # (polish1 B2) + the Sounds page
 			main_scene.call("_show_only", main_scene.get(String(pages[words[1]])) if pages.has(words[1]) else null)
 			if words[1] == "sounds" and words.size() > 2:  # "!menu sounds open": the first two groups opened
 				var opened := 0

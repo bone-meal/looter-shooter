@@ -7,6 +7,8 @@ const SkillState = preload("res://core/skill_state.gd")
 const ItemLevel = preload("res://core/item_level.gd")
 const WKILLS_MAX := 9999999  # the counter shows 7 digits
 const RECORD_MAX := 1e12  # Fish Story's biggest hit can be no bigger
+const OWNERS_MAX := 8  # (polish1 item 63) previous owners a gold+ gun remembers
+const OWNER_NAME_MAX := 24
 const VERSION := 4  # 4 = pony "family" + "sea" affix; 3 = item level "lvl" + traits; 2 = skills without a level; 1 = before skills (all still legal)
 const EPS := 0.002
 
@@ -106,6 +108,22 @@ static func keep_wkills(old: Dictionary, made: Dictionary) -> Dictionary:
 	return made
 
 
+# (polish1 item 63) A gun changing hands in a trade: its W kills counter starts again at 0 for the new owner; from gold
+# up the gun keeps a PREVIOUS-OWNER history (the last OWNERS_MAX: {"n": name, "k": kills}). Returns the gun to keep.
+static func hand_over(db: RefCounted, gun: Dictionary, from_name: String) -> Dictionary:
+	var out := gun.duplicate(true)
+	if not out.has("wkills"):
+		return out
+	if db.tier_index(String(out.get("tier", ""))) >= db.tier_index("gold"):
+		var past: Array = out.get("owners", [])
+		past.append({"n": from_name.left(OWNER_NAME_MAX), "k": int(out["wkills"])})
+		while past.size() > OWNERS_MAX:
+			past.pop_front()
+		out["owners"] = past
+	out["wkills"] = 0
+	return out
+
+
 # One more kill made with this gun; false when it has no counter.
 static func count_kill(gun: Dictionary) -> bool:
 	if not gun.has("wkills"):
@@ -165,6 +183,15 @@ static func validate(db: RefCounted, gun: Dictionary) -> String:
 			return "bad W kills count"
 		gun = gun.duplicate()
 		gun.erase("wkills")  # the counter says nothing about the rest of the gun
+	if gun.has("owners"):  # (polish1 item 63) its previous owners and their kills (gold and up)
+		var past: Variant = gun["owners"]
+		if not past is Array or (past as Array).size() > OWNERS_MAX or db.tier_index(String(gun.get("tier", ""))) < db.tier_index("gold"):
+			return "bad owners"
+		for entry: Variant in past:
+			if not entry is Dictionary or not (entry as Dictionary).get("n") is String or String(entry["n"]).length() > OWNER_NAME_MAX or not ((entry as Dictionary).get("k") is int or (entry as Dictionary).get("k") is float) or float(entry["k"]) < 0.0 or float(entry["k"]) > float(WKILLS_MAX):
+				return "bad owners"
+		gun = gun.duplicate()
+		gun.erase("owners")
 	if gun.has("record"):  # a number the gun remembers (data/gun_uniques.json "keeps": Fish Story's biggest hit)
 		var best: Variant = gun["record"]
 		var keeps := String((db.uniques.get(String(gun.get("unique", "")), {}) as Dictionary).get("keeps", ""))

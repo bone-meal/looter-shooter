@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp island;!wait 6;/give gun purple;!wait 1;/xp 3000;!wait 4;!snap b2_new;/tp fantasy;!wait 22;!snap b2_fantasy
+!uncap;!wait 2;/tp island;!wait 6;/give gun gold sniper_basic;!wait 0.5;!lootfilter blue chase;!key inventory;!wait 1;!inv tab guns tier;!inv hover 0;!wait 0.5;!snap b3_card2;!key inventory;!wait 0.5;!menu loot;!wait 1;!snap b3_loot_page;!menu none

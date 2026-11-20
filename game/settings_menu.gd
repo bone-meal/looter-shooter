@@ -12,6 +12,7 @@ signal closed
 signal controls_pressed
 signal sounds_pressed
 signal crosshair_pressed
+signal loot_pressed  # (polish1 item 68) the Loot filter page
 
 var settings: SettingsState  # set before add_child
 
@@ -49,6 +50,7 @@ func _ready() -> void:
 		func(v: float) -> void: settings.volume = v)
 	Widgets.button(box, "Crosshair", func() -> void: crosshair_pressed.emit())
 	Widgets.button(box, "Sounds", func() -> void: sounds_pressed.emit())
+	Widgets.button(box, "Loot filter", func() -> void: loot_pressed.emit())
 	Widgets.button(box, "Controls", func() -> void: controls_pressed.emit())
 	Widgets.button(box, "Back", func() -> void: closed.emit())
 

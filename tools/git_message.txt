@@ -1,6 +1,6 @@
-Polish1 B2: menus and controls
+Polish1 B3: guns and loot everywhere
 
-Menu icons with keys and new-badges in the top left, tap Tab for the inventory and hold Tab for the scoreboard, Shift and Ctrl key combos in the controls, a redesigned Sounds page with master, music and per-group volumes, and a jukebox with search, shuffle and a host's music or my own switch.
+Gun names in three looks (rarity, maker, name) with maker logos on the inventory card, shift-click to the right slot, a loot filter page (lowest tier shown, beams and chimes per tier, highlights) where filtered drops keep lying without beam or name, middle mouse switches a sniper between scope and its red dot, trades restart W kills and gold and up keep a previous-owner history (hold H), and armour drops as small models of the piece.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
