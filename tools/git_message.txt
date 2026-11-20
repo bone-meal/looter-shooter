@@ -1,8 +1,1 @@
-Long gun names scroll on the HUD and the hover card
-
-- game/player_hud.gd: the held gun's name scrolls when it does not fit its slot (it shrank before)
-- game/hover_card.gd: a gun name too long for the card scrolls (trade window)
-- tools/loot_pool_check.gd: long titles are allowed (they scroll)
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.11
