@@ -35,6 +35,11 @@ var puppet := false  # online copy of a boss simulated on the host: no AI, follo
 var net_pos := Vector3.ZERO
 var net_yaw := 0.0
 var walker: Callable  # fantasy world: (from, step) -> where the body ends up. When set the enemy moves by it without physics: around houses, trees and deep water, the same on every machine
+var nav_map := RID()  # (polish1 D4a) island enemies: the islands' navigation map (game/island_nav.gd); unset = straight at the target
+var _path := PackedVector3Array()
+var _path_i := 0
+var _path_at := 0.0
+var _path_goal := Vector3.INF
 var feud := ""  # fantasy tribes: the banner this warrior fights for ("" = none)
 var sounds: Node  # the game's sound player (game/fantasy_sounds.gd with data/sounds.json), set by game/wave_director.gd; null = silent
 var order_goal := Vector3.INF  # squad order (game/squad_command.gd): walk to this spot instead of straight at the target
@@ -294,6 +299,25 @@ func set_run_fx(fx: Dictionary) -> void:
 	_berserk_at = health.max_hp * float(fx.get("berserk_below", 0.0))
 
 
+# The way to the target along the navigation path (asked again every half second or when the target has moved),
+# flat; ZERO when there is no path (then it goes straight as before).
+func _nav_step() -> Vector3:
+	var now := Time.get_ticks_msec() / 1000.0
+	var goal := _target.global_position
+	if now >= _path_at or goal.distance_to(_path_goal) > 2.0 or _path_i >= _path.size():
+		_path = NavigationServer3D.map_get_path(nav_map, global_position, goal, true)
+		_path_i = 1
+		_path_goal = goal
+		_path_at = now + randf_range(0.4, 0.6)
+	while _path_i < _path.size():
+		var d := _path[_path_i] - global_position
+		d.y = 0.0
+		if d.length() > 0.7:
+			return d.normalized()
+		_path_i += 1
+	return Vector3.ZERO
+
+
 func _physics_process(delta: float) -> void:
 	if _falling:
 		if _rig != null:  # (polish1 D2) it goes limp or falls apart as it drops
@@ -324,6 +348,10 @@ func _physics_process(delta: float) -> void:
 	flat.y = 0.0
 	var distance := flat.length()
 	var dir := flat / distance if distance > 0.01 else Vector3.ZERO
+	if nav_map.is_valid() and distance > 2.5:  # (polish1 D4a) round ridges, ruins, huts and up hills by the islands' navigation mesh
+		var step := _nav_step()
+		if step != Vector3.ZERO:
+			dir = step
 	if distance > 0.01:
 		rotation.y = atan2(-dir.x, -dir.z)
 	var now := Time.get_ticks_msec() / 1000.0

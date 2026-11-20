@@ -6,72 +6,72 @@
  "secrets": [
   {
    "things": [
-    {"island": "home", "at": [-9.2, 18.4]},
-    {"island": "wreck", "at": [-7.2, -10.1]},
-    {"island": "painter", "at": [-14.7, -3.4]}
+    {"island": "home", "at": [-18.4, 36.8]},
+    {"island": "wreck", "at": [-14.4, -20.2]},
+    {"island": "painter", "at": [-29.4, -6.8]}
    ]
   },
   {
    "things": [
-    {"island": "painter", "at": [-17.2, 8.9]},
-    {"island": "gull", "at": [6.5, 6.5]},
-    {"island": "shoal", "at": [-9.7, -11.6]}
+    {"island": "painter", "at": [-34.4, 17.8]},
+    {"island": "gull", "at": [13.0, 13.0]},
+    {"island": "shoal", "at": [-19.4, -23.2]}
    ]
   },
   {
    "things": [
-    {"island": "shoal", "at": [-13.9, 4.2]},
-    {"island": "home", "at": [1.0, 27.7]},
-    {"island": "wreck", "at": [12.7, -1.6]}
+    {"island": "shoal", "at": [-27.8, 8.4]},
+    {"island": "home", "at": [2.0, 55.4]},
+    {"island": "wreck", "at": [25.4, -3.2]}
    ]
   },
   {
    "things": [
-    {"island": "wreck", "at": [-16.3, 9.2]},
-    {"island": "painter", "at": [9.4, 13.3]},
-    {"island": "home", "at": [2.5, -27.6]}
+    {"island": "wreck", "at": [-32.6, 18.4]},
+    {"island": "painter", "at": [18.8, 26.6]},
+    {"island": "home", "at": [5.0, -55.2]}
    ]
   },
   {
    "things": [
-    {"island": "gull", "at": [6.8, -6.8]},
-    {"island": "shoal", "at": [11.0, -17.3]},
-    {"island": "home", "at": [-28.9, 4.7]}
+    {"island": "gull", "at": [13.6, -13.6]},
+    {"island": "shoal", "at": [22.0, -34.6]},
+    {"island": "home", "at": [-57.8, 9.4]}
    ]
   },
   {
    "things": [
-    {"island": "home", "at": [-21.0, -27.8]},
-    {"island": "wreck", "at": [6.3, -12.9]},
-    {"island": "painter", "at": [8.3, -17.9]}
+    {"island": "home", "at": [-42.0, -55.6]},
+    {"island": "wreck", "at": [12.6, -25.8]},
+    {"island": "painter", "at": [16.6, -35.8]}
    ]
   },
   {
    "things": [
-    {"island": "painter", "at": [-2.8, 15.3]},
-    {"island": "home", "at": [-20.9, 25.6]},
-    {"island": "shoal", "at": [1.7, 16.1]}
+    {"island": "painter", "at": [-5.6, 30.6]},
+    {"island": "home", "at": [-41.8, 51.2]},
+    {"island": "shoal", "at": [3.4, 32.2]}
    ]
   },
   {
    "things": [
-    {"island": "shoal", "at": [17.3, -5.3]},
-    {"island": "home", "at": [22.9, 17.4]},
-    {"island": "wreck", "at": [3.4, 12.8]}
+    {"island": "shoal", "at": [34.6, -10.6]},
+    {"island": "home", "at": [45.8, 34.8]},
+    {"island": "wreck", "at": [6.8, 25.6]}
    ]
   },
   {
    "things": [
-    {"island": "wreck", "at": [-12.9, -2.3]},
-    {"island": "painter", "at": [15.3, -4.3]},
-    {"island": "gull", "at": [-8.9, -8.8]}
+    {"island": "wreck", "at": [-25.8, -4.6]},
+    {"island": "painter", "at": [30.6, -8.6]},
+    {"island": "gull", "at": [-17.8, -17.6]}
    ]
   },
   {
    "things": [
-    {"island": "home", "at": [14.1, -22.0]},
-    {"island": "shoal", "at": [11.8, 15.4]},
-    {"island": "wreck", "at": [13.7, 14.8]}
+    {"island": "home", "at": [28.2, -44.0]},
+    {"island": "shoal", "at": [23.6, 30.8]},
+    {"island": "wreck", "at": [27.4, 29.6]}
    ]
   }
  ]

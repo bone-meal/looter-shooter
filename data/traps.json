@@ -45,8 +45,8 @@
    "name": "Fire Pit",
    "island": "painter",
    "at": [
-    4.4,
-    7.9
+    8.8,
+    15.8
    ],
    "price": 750,
    "seconds": 20.0,

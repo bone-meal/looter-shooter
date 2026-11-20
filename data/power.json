@@ -7,32 +7,32 @@
    "name": "Lever",
    "island": "home",
    "at": [
-    -30.4,
-    12.9
+    -60.8,
+    25.8
    ]
   },
   {
    "name": "Fuse",
    "island": "home",
    "at": [
-    -5.8,
-    -18.1
+    -11.6,
+    -36.2
    ]
   },
   {
    "name": "Coil of cable",
    "island": "home",
    "at": [
-    20.1,
-    -24.9
+    40.2,
+    -49.8
    ]
   }
  ],
  "bench": {
   "island": "painter",
   "at": [
-   -16.0,
-   -6.0
+   -32.0,
+   -12.0
   ]
  }
 }

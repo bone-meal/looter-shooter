@@ -7,22 +7,22 @@
       "id": "shield",
       "name": "Hatch Shield",
       "parts": [
-        {"name": "Hatch door", "island": "home", "at": [-14.0, -28.0]},
-        {"name": "Coil of rope", "island": "home", "at": [30.0, 4.0]},
-        {"name": "Iron bands", "island": "painter", "at": [14.0, 12.0]}
+        {"name": "Hatch door", "island": "home", "at": [-28.0, -56.0]},
+        {"name": "Coil of rope", "island": "home", "at": [60.0, 8.0]},
+        {"name": "Iron bands", "island": "painter", "at": [28.0, 24.0]}
       ],
-      "bench": {"island": "home", "at": [-14.0, -2.0]}
+      "bench": {"island": "home", "at": [-28.0, -4.0]}
     },
     {
       "id": "boat",
       "name": "Skiff",
       "parts": [
-        {"name": "Hull planks", "island": "painter", "at": [19.0, 7.0]},
-        {"name": "Tiller", "island": "shoal", "at": [16.0, -14.0]},
-        {"name": "Pot of tar", "island": "shoal", "at": [-18.0, 0.0]},
-        {"name": "Sailcloth", "island": "wreck", "at": [-14.0, 14.0]}
+        {"name": "Hull planks", "island": "painter", "at": [38.0, 14.0]},
+        {"name": "Tiller", "island": "shoal", "at": [32.0, -28.0]},
+        {"name": "Pot of tar", "island": "shoal", "at": [-36.0, 0.0]},
+        {"name": "Sailcloth", "island": "wreck", "at": [-28.0, 28.0]}
       ],
-      "bench": {"island": "wreck", "at": [4.0, 22.0]}
+      "bench": {"island": "wreck", "at": [8.0, 44.0]}
     }
   ]
 }

@@ -26,6 +26,7 @@ var bodies := Callable()  # func() -> Array of the players' bodies standing on t
 var land: RefCounted  # core/archipelago.gd: where the islands are and where an enemy can come out of the sea
 var shelters: Node3D  # game/shelters.gd: where an enemy goes when its prey sits in a hut (null = there are none)
 var one_blow := Callable()  # func() -> bool, handed to every enemy sent in (game/enemy.gd `one_blow`)
+var nav: Node  # (polish1 D4a) game/island_nav.gd: its map is handed to every enemy sent in (they follow paths)
 var active := true  # false on a machine that only watches (a client): the host runs the rounds
 
 var _cfg: Dictionary
@@ -164,6 +165,8 @@ func _send_in(id: String, here: Array) -> void:
 	enemy.set_meta("island", true)
 	enemy.set_meta("tier", rules.number)
 	enemy.set("one_blow", one_blow)
+	if nav != null and bool(nav.call("ready_to_use")):
+		enemy.set("nav_map", nav.get("map"))
 	enemy.call("set_target", prey)
 	enemy.connect("died", _on_died)
 	_alive.append(enemy)
@@ -178,6 +181,8 @@ func send_at(id: String, at: Vector3, number: int) -> Node3D:
 	enemy.set_meta("tier", number)
 	enemy.set_meta("quest_boss", true)
 	enemy.set("one_blow", one_blow)
+	if nav != null and bool(nav.call("ready_to_use")):
+		enemy.set("nav_map", nav.get("map"))
 	var here: Array = bodies.call() if bodies.is_valid() else []
 	if not here.is_empty():
 		enemy.call("set_target", _nearest(here, at))

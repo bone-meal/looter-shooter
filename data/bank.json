@@ -4,5 +4,5 @@
  "slots": 10,
  "per_upgrade": 10,
  "upgrades": [{"points": 25000}, {"points": 75000}, {"coins": 5000}, {"coins": 15000}, {"coins": 45000}],
- "place": [5.0, -2.5]
+ "place": [10.0, -5.0]
 }

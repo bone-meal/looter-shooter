@@ -4,7 +4,8 @@
 # that stands on an island keeps y = 0.
 # Dependencies: core/archipelago.gd (where everything is; the session passes its own so both agree), core/data_store.gd,
 # game/debris_pile.gd, game/painting_art.gd, game/surface_library.gd, game/ground_blend.gd, game/water_surface.gd,
-# game/palm_builder.gd, game/model_library.gd, game/look_props.gd. Static and batched (MultiMeshes, shared materials).
+# game/palm_builder.gd, game/model_library.gd, game/look_props.gd, game/island_terrain.gd (polish1 D4a: hills are in
+# the ground mesh, ridges / ruins / boulders are built there). Static and batched (MultiMeshes, shared materials).
 extends RefCounted
 
 const Archipelago = preload("res://core/archipelago.gd")
@@ -17,10 +18,11 @@ const WaterSurface = preload("res://game/water_surface.gd")
 const PalmBuilder = preload("res://game/palm_builder.gd")
 const ModelLibrary = preload("res://game/model_library.gd")
 const LookProps = preload("res://game/look_props.gd")
+const IslandTerrain = preload("res://game/island_terrain.gd")
 
 const CENTER := Vector3(500, 0, 0)  # the middle of the spawn island in the world
 const SAND := Color(0.9, 0.8, 0.55)
-const SECTORS := 96
+const SECTORS := 96  # the fewest slices round an island's ground (bigger islands get more: about one per 2.4 m of shore)
 const KEEP_CLEAR := 5.0  # no palm, rock or plant this near a painting, the spawn or the end of a bridge
 const POST_GAP := 4.0  # metres between the posts of a plank bridge
 const RAMP := 3.0  # metres of ramp at each end of a bridge or sandbar
@@ -57,6 +59,7 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 		_ground(parent, land, i, blend)
 	_palms(parent, land, clear)
 	_rocks(parent, land, clear)
+	IslandTerrain.build(parent, land, CENTER)
 	_plants(parent, land, clear)
 	var debris: Array = []
 	for i in land.bridges.size():
@@ -121,13 +124,14 @@ static func _ground(parent: Node3D, land: Archipelago, index: int, blend: Materi
 	var edge := flat + float(land.cfg["sea_bed"])
 	var radii: Array[float] = [0.0]
 	while radii[-1] < edge - 0.01:
-		radii.append(minf(radii[-1] + (minf(4.0, flat - radii[-1]) if radii[-1] < flat - 0.01 else 0.6), edge))
+		radii.append(minf(radii[-1] + (minf(1.6, flat - radii[-1]) if radii[-1] < flat - 0.01 else 0.6), edge))  # fine enough for the hills
 	var st := SurfaceTool.new()
 	st.begin(Mesh.PRIMITIVE_TRIANGLES)
 	for ring in radii.size() - 1:
-		for sector in SECTORS:
-			var a0 := TAU * float(sector) / SECTORS
-			var a1 := TAU * float(sector + 1) / SECTORS
+		var sectors := maxi(SECTORS, roundi(TAU * float(isle["radius"]) / 2.4))
+		for sector in sectors:
+			var a0 := TAU * float(sector) / sectors
+			var a1 := TAU * float(sector + 1) / sectors
 			var p00 := _ground_point(land, index, at, radii[ring], a0)
 			var p01 := _ground_point(land, index, at, radii[ring], a1)
 			var p10 := _ground_point(land, index, at, radii[ring + 1], a0)
@@ -184,7 +188,7 @@ static func _palm_spots(land: Archipelago, clear: Array[Vector2]) -> Array[Vecto
 			var angle := TAU * float(i) / float(count) + rng.randf_range(-0.2, 0.2)
 			var r := rng.randf_range(float(isle["grass"]) * 0.7, float(isle["flat"]) - 2.5)
 			var spot: Vector2 = (isle["at"] as Vector2) + Vector2(cos(angle), sin(angle)) * r
-			if not _near_any(spot, clear, KEEP_CLEAR):
+			if not _near_any(spot, clear, KEEP_CLEAR) and not land.blocked(spot.x, spot.y, 2.5, true):
 				spots.append(spot)
 	return spots
 
@@ -241,7 +245,7 @@ static func _rocks(parent: Node3D, land: Archipelago, clear: Array[Vector2]) -> 
 				var r := rng.randf_range(radius - 1.6, radius + 2.2)
 				var big := rng.randf_range(float(kind[3]), float(kind[4]))
 				var at: Vector2 = (isle["at"] as Vector2) + Vector2(cos(angle), sin(angle)) * r
-				if _near_any(at, clear, KEEP_CLEAR + 1.0):
+				if _near_any(at, clear, KEEP_CLEAR + 1.0) or land.blocked(at.x, at.y, 2.0, true):
 					continue
 				var spot := Vector3(at.x, land.island_height(index, at.x, at.y) - 0.25 * big * reach, at.y)  # sunk into the sand a little
 				var turn := Basis.from_euler(Vector3(rng.randf_range(-0.2, 0.2), rng.randf_range(0.0, TAU), rng.randf_range(-0.2, 0.2)))
@@ -274,7 +278,7 @@ static func _plants(parent: Node3D, land: Archipelago, clear: Array[Vector2]) ->
 						var foot: Vector2 = feet[rng.randi() % feet.size()]
 						if foot.distance_to(mid) < float(isle["radius"]):  # at the foot of one of this island's palms
 							at = foot + Vector2(cos(angle), sin(angle)) * rng.randf_range(0.5, 1.6)
-					if _near_any(at, clear, KEEP_CLEAR - 1.5) or land.height_at(at.x, at.y) < -0.01:
+					if _near_any(at, clear, KEEP_CLEAR - 1.5) or land.height_at(at.x, at.y) < -0.01 or land.blocked(at.x, at.y, 1.0, true):
 						continue
 					var big := rng.randf_range(float(kind[2]), float(kind[3]))
 					var turn := Basis(Vector3.UP, rng.randf_range(0.0, TAU)) * Basis.from_scale(Vector3(big, big, big))

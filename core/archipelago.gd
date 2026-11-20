@@ -1,6 +1,8 @@
 # Purpose: the islands' land as pure rules: where the islands and the ways between them are, how high the ground is,
 # which island a spot belongs to, where something that fell in the water washes up, where an enemy may come out of
-# the sea, and which debris is cleared. No nodes, no rendering.
+# the sea, and which debris is cleared. (polish1 D4a) The lie of the land: hills raise the ground (smooth, walkable);
+# ridges, ruins and boulders are solid things standing on it (`blocks`, built by game/island_terrain.gd).
+# No nodes, no rendering.
 # Dependencies: none. Data: data/archipelago.json, passed to the constructor. Positions are metres (x, z) from the
 # middle of the spawn island (island 0); heights are relative to the islands' flat ground (0).
 extends RefCounted
@@ -10,7 +12,8 @@ const TRIES := 12
 
 var cfg: Dictionary
 var sea_level: float
-var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "grass", "palms", "scatter"}
+var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "grass", "palms", "scatter", "hills": [[at, radius, height]]}
+var blocks: Array = []  # every ridge / ruin / boulder in world-plan metres: {"kind", "island", "a": Vector2, "b": Vector2, "half_width", "height"}
 var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)}
 var shelters: Array = []  # {"island": int, "at": Vector2, "yaw": the way its door faces (toward its island's middle)}
 var keep_clear: Array[Vector2] = []  # more spots where things will stand (the session adds them before the islands are built): no tree or rock there
@@ -27,8 +30,20 @@ func _init(config: Dictionary) -> void:
 	_drop = float(config["beach_drop"])
 	for entry: Dictionary in config["islands"]:
 		var radius := float(entry["radius"])
-		islands.append({"id": String(entry["id"]), "name": String(entry["name"]), "at": Vector2(float(entry["at"][0]), float(entry["at"][1])),
-			"radius": radius, "flat": radius - FLAT_BEFORE_SHORE, "grass": float(entry["grass"]), "palms": int(entry["palms"]), "scatter": float(entry.get("scatter", 1.0))})
+		var mid := Vector2(float(entry["at"][0]), float(entry["at"][1]))
+		var hills: Array = []
+		for f: Dictionary in entry.get("features", []):
+			var kind := String(f["kind"])
+			if kind == "hill":
+				hills.append([mid + Vector2(float(f["at"][0]), float(f["at"][1])), float(f["radius"]), float(f["height"])])
+			elif kind == "boulder":
+				var c := mid + Vector2(float(f["at"][0]), float(f["at"][1]))
+				blocks.append({"kind": kind, "island": islands.size(), "a": c, "b": c, "half_width": float(f["size"]), "height": float(f["size"]) * 1.4})
+			else:  # ridge / ruin
+				blocks.append({"kind": kind, "island": islands.size(), "a": mid + Vector2(float(f["from"][0]), float(f["from"][1])), "b": mid + Vector2(float(f["to"][0]), float(f["to"][1])),
+					"half_width": 1.6 if kind == "ridge" else 0.35, "height": float(f["height"])})
+		islands.append({"id": String(entry["id"]), "name": String(entry["name"]), "at": mid,
+			"radius": radius, "flat": radius - FLAT_BEFORE_SHORE, "grass": float(entry["grass"]), "palms": int(entry["palms"]), "scatter": float(entry.get("scatter", 1.0)), "hills": hills})
 	for entry: Dictionary in config["bridges"]:
 		var from := index_of(String(entry["from"]))
 		var to := index_of(String(entry["to"]))
@@ -82,24 +97,44 @@ func within(x: float, z: float) -> bool:
 	return Vector2(x, z).distance_to(_middle) < _reach
 
 
-# Ground height: every island is flat (0) to 2 m before its waterline and slopes into the sea from there; between
-# islands the higher sea bed counts. Bridges are not ground (see deck_at).
+# Ground height: every island is flat (0) to 2 m before its waterline and slopes into the sea from there, with its
+# hills on top; between islands the higher sea bed counts. Bridges are not ground (see deck_at).
 func height_at(x: float, z: float) -> float:
 	var best := -INF
-	for isle: Dictionary in islands:
-		var at: Vector2 = isle["at"]
-		var beyond := maxf(Vector2(x, z).distance_to(at) - float(isle["flat"]), 0.0)
-		var dunes := sin(x * 1.3 + z * 0.7) * sin(z * 1.1 - x * 0.4) * 0.05
-		best = maxf(best, -_drop * pow(beyond, 1.5) + dunes * clampf(beyond / 1.5, 0.0, 1.0))
+	for i in islands.size():
+		best = maxf(best, island_height(i, x, z))
 	return best
 
 
-# One island's own slope (what its ground mesh is built from).
+# One island's own ground (what its ground mesh is built from).
 func island_height(island: int, x: float, z: float) -> float:
 	var isle: Dictionary = islands[island]
 	var beyond := maxf(Vector2(x, z).distance_to(isle["at"]) - float(isle["flat"]), 0.0)
 	var dunes := sin(x * 1.3 + z * 0.7) * sin(z * 1.1 - x * 0.4) * 0.05
-	return -_drop * pow(beyond, 1.5) + dunes * clampf(beyond / 1.5, 0.0, 1.0)
+	var h := -_drop * pow(beyond, 1.5) + dunes * clampf(beyond / 1.5, 0.0, 1.0)
+	for hill: Array in isle["hills"]:
+		var d := Vector2(x, z).distance_to(hill[0]) / float(hill[1])
+		if d < 1.0:
+			var c := cos(d * PI) * 0.5 + 0.5  # a smooth dome: flat on top, easing out to nothing at its edge
+			h += float(hill[2]) * c
+	return h
+
+
+# True when (x, z) is within `margin` metres of a ridge, ruin or boulder (or on a hill when hills count).
+func blocked(x: float, z: float, margin: float, hills_count := false) -> bool:
+	var p := Vector2(x, z)
+	for b: Dictionary in blocks:
+		var a: Vector2 = b["a"]
+		var ab: Vector2 = (b["b"] as Vector2) - a
+		var t := 0.0 if ab.length_squared() < 1e-6 else clampf((p - a).dot(ab) / ab.length_squared(), 0.0, 1.0)
+		if p.distance_to(a + ab * t) < float(b["half_width"]) + margin:
+			return true
+	if hills_count:
+		for isle: Dictionary in islands:
+			for hill: Array in isle["hills"]:
+				if p.distance_to(hill[0]) < float(hill[1]) + margin:
+					return true
+	return false
 
 
 # The island a spot belongs to: the one whose shore is nearest (a spot on an island = that island).

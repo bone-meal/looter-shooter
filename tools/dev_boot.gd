@@ -2993,6 +2993,40 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"note":
 					var gun_c: Dictionary = opening.call("winner") if opening.visible else {}
 					_lines.append("CASE %s: cases %s, chips %d, opening %s spinning %s, winner %s %s, bag guns %d" % [" ".join(words.slice(2)), str(shelf.get("counts")), int((session.get("_wallet") as RefCounted).get("balance")), opening.visible, opening.call("is_spinning"), String(gun_c.get("tier", "")), String(gun_c.get("body", "")), int((player.get("inventory") as RefCounted).call("gun_count")) if (player.get("inventory") as RefCounted).has_method("gun_count") else -1])
+		"nav":  # (polish1 D4a) "!nav note" (the islands' navigation mesh), "!nav path x z" (a path from us to that spot, metres from the
+			# spawn island's middle), "!nav view x z yaw pitch" (stand there on the ground, look that way), "!nav enemies" (where the island's enemies are)
+			var nv: Node3D = session.get("_island_nav")
+			var centre := Vector3(500, 0, 0)
+			match words[1]:
+				"note":
+					var reg_mesh: NavigationMesh = null
+					for c in nv.get_children():
+						if c is NavigationRegion3D:
+							reg_mesh = (c as NavigationRegion3D).navigation_mesh
+					_lines.append("NAV: ready %s polygons %d" % [str(nv.call("ready_to_use")), reg_mesh.get_polygon_count() if reg_mesh != null else -1])
+				"path":
+					var goal := centre + Vector3(float(words[2]), 0.0, float(words[3]))
+					var path := NavigationServer3D.map_get_path(nv.get("map"), player.global_position, goal, true)
+					var length := 0.0
+					for i in range(1, path.size()):
+						length += path[i].distance_to(path[i - 1])
+					_lines.append("NAV path to (%s, %s): %d points, %.1f m (straight %.1f m), ends %s" % [words[2], words[3], path.size(), length, player.global_position.distance_to(goal), str(path[path.size() - 1] - centre) if path.size() > 0 else "-"])
+				"view":
+					var land: RefCounted = session.get("_land")
+					var vx := float(words[2])
+					var vz := float(words[3])
+					player.call("teleport", centre + Vector3(vx, float(land.call("height_at", vx, vz)) + 0.1, vz), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					var yaw_n := deg_to_rad(float(words[4]))
+					var pitch_n := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
+					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_n) * cos(pitch_n), sin(pitch_n), -cos(yaw_n) * cos(pitch_n)) * 20.0)
+				"enemies":
+					var spots: PackedStringArray = []
+					for e: Variant in ((session.get("_rounds") as Node).get("_alive") as Array):
+						if is_instance_valid(e):
+							var p3 := (e as Node3D).global_position - centre
+							spots.append("(%.0f, %.1f, %.0f)%s" % [p3.x, p3.y, p3.z, " nav" if (e.get("nav_map") as RID).is_valid() else ""])
+					_lines.append("NAV enemies %d: %s" % [spots.size(), " ".join(spots)])
 		"pool":  # (polish1 item 71) "!pool open <table>" (stand there, open the menu); "!pool start <ai id> <stake>"; "!pool auto" = our next
 			# shot as the Shark would play it (waits for our turn; places the cue ball first if in hand); "!pool shot <deg> <power> [spin x] [spin y]";
 			# "!pool cam" (switch the view); "!pool note"; "!pool wait" (until our turn or the end, 60 s); "!pool esc"

@@ -85,6 +85,7 @@ const InventoryState = preload("res://core/inventory_state.gd")
 const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
+const IslandNav = preload("res://game/island_nav.gd")
 const PowerupRules = preload("res://core/powerup_rules.gd")
 const Archipelago = preload("res://core/archipelago.gd")
 const WallBuy = preload("res://game/wall_buy.gd")
@@ -239,6 +240,7 @@ var _tab_down_at := -1.0  # (polish1 item 136) when a shared inventory / scorebo
 const TAB_TAP_S := 0.22  # shorter than this is a tap (the scoreboard waits as long: game/scoreboard.gd HOLD_S)
 var _knife_rolled := false  # this character has its knife type
 var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
+var _island_nav := IslandNav.new()  # (polish1 D4a) the islands' navigation mesh: island enemies path round obstacles
 var _first_look := false  # a new character is still in its first customize menu: the rounds wait
 var _hurt_at := 0.0  # when the local player was last hurt (the island heals whoever is left alone for a while)
 var _pack: DroppedPack  # our backpack lying where we went down on the islands (null = none); saved with the character
@@ -766,6 +768,10 @@ func _ready() -> void:
 	_director.wave_list = func(waves: Array, count: int) -> Array: return _colosseum.run_waves(waves, count, _director.run_fx)
 	_rounds.director = _director
 	_rounds.land = _land
+	add_child(_island_nav)
+	_island_nav.setup(self, _land, Island.CENTER)
+	_rounds.nav = _island_nav
+	_island_nav.rebuild.call_deferred()  # once everything on the islands stands
 	_rounds.shelters = _shelters
 	_player.perks = _perks
 	_player_hud.perks = _perks
@@ -3589,6 +3595,7 @@ func _buy_debris(index: int) -> void:
 func _open_debris(index: int, show_it: bool) -> void:
 	if _land.open(index):
 		(_debris[index] as Node).call("set_open", true, show_it)
+		get_tree().create_timer(0.2).timeout.connect(_island_nav.rebuild)  # the way is open for the enemies too
 		if show_it and _island_side():
 			_sounds.call("play", "debris_clear")
 			_player_hud.notice("The way to %s and back is clear." % _land.islands[int(_land.bridges[index]["to"])]["name"])
@@ -3611,6 +3618,7 @@ func _close_debris() -> void:
 	_land.close_all()
 	for pile: Variant in _debris:
 		(pile as Node).call("set_open", false)
+	get_tree().create_timer(0.2).timeout.connect(_island_nav.rebuild)
 	_shelters.rules.board_all()
 	_shelters.refresh()
 	_power.reset()
