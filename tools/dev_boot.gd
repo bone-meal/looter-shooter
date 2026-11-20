@@ -2779,6 +2779,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					if not (progress.get("unlocked") as Array).has(id):
 						progress.call("_unlock", id)
 					n += 1
+				if words.size() > 3 and words[3] == "quiet":  # "!ach grant n quiet": no cards slide in for them (clean pictures)
+					progress.call("take_unlocked")
 			_lines.append("ACH %s: %d unlocked %s | emblem %s title %s" % [" ".join(words.slice(1)), (progress.get("unlocked") as Array).size(), str(progress.get("unlocked")), str(progress.get("emblem")), str(progress.get("title"))])
 		"jukebox":  # "!jukebox goto": stand in front of the club's jukebox
 			var box: Node3D = session.get("_jukebox")
@@ -3379,6 +3381,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var hub: Node = session.get("net").get("hub")
 			if words.size() > 3 and words[1] == "at":
 				player.call("teleport", (hub.get("center") as Vector3) + Vector3(float(words[2]), 0.1, float(words[3])), 0.0)
+			elif words.size() > 1 and words[1] == "press":  # "!hub press": the big red button (the countdown stops: long hub tests)
+				(hub.get("rules") as RefCounted).call("press_button")
 			elif words.size() > 1 and words[1] == "heavy":  # "!hub heavy": the session's children that still draw the most triangles
 				var rows: Array = []
 				for child: Node in session.get_children():
@@ -3395,6 +3399,16 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					env.background_mode, str(env.ambient_light_color), (style.get("sun") as DirectionalLight3D).light_energy, env.fog_density if env.fog_enabled else 0.0, str(hub.get("view"))])
 				var hud: Control = session.get("_hub_hud")
 				_lines.append("HUB HUD visible %s in tree %s size %s drawn view %s" % [str(hud.is_visible_in_tree()), str(hud.is_inside_tree()), str(hud.size), str(not (hud.get("view") as Dictionary).is_empty())])
+		"shelf":  # (polish1 item 16) "!shelf aim <cabinet> <podium|eye|row|button> <spot>": stand before it and look at it (then !key interact); "!shelf note": prompt, saved choice, what cabinet 0 shows
+			var room: Node = (session.get("_hub_room") as Node).get("trophies")
+			if words.size() > 4 and words[1] == "aim":
+				var pts: Array = room.call("dev_point", int(words[2]), words[3], int(words[4]))
+				player.call("teleport", Vector3((pts[1] as Vector3).x, (room as Node3D).global_position.y + 0.1, (pts[1] as Vector3).z), 0.0)
+				player.call("look_at_point", pts[0])
+			else:
+				var lay: Dictionary = (room.get("_layouts") as Array)[0]
+				_lines.append("SHELF %s: prompt '%s' | saved %s | podium %s | eye %s | row0 %s | pages %d" % [" ".join(words.slice(1)), String(session.call("_prompt")), str((session.get("_progress") as RefCounted).get("shelves")),
+					str(lay.get("podium", [])), str((lay.get("eye", []) as Array).slice(0, 4)), str((lay.get("rows", [[]]) as Array)[0].slice(0, 4)), int(lay.get("pages", 0))])
 		"where":  # the player's spot for the log: map metres in the fantasy world, world metres elsewhere
 			var here: Vector3 = player.global_position
 			if session.call("fantasy") != null:

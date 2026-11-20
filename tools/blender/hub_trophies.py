@@ -209,7 +209,8 @@ def room(m):
 def cabinet(m):
     """5 m wide, 2.7 m tall, 0.5 m deep, its back at forward = 0 and its front facing -forward (toward the room).
     Wings: x -2.5..-0.45 and 0.45..2.5, six shelves at 0.35 + 0.38 k (k = 0..5; the eye-level row is k = 3, 1.49 m).
-    Podium in the middle: top at 1.1 m, lit from a glowing strip above."""
+    Podium in the middle: top at 1.1 m, lit from a glowing strip above. A brass button at the outer end of each shelf but
+    the eye-level row (polish1 item 16)."""
     wood = K("wood", (0.26, 0.15, 0.08))
     dark = K("wood", (0.12, 0.07, 0.04))
     m.box(dark, (5.0, 2.7, 0.04), (0, 1.35, -0.02), bevel=0.0)  # back board
@@ -229,6 +230,9 @@ def cabinet(m):
     m.box((fantasy_kit.GLOW, (1.0, 0.9, 0.7)), (0.8, 0.03, 0.08), (0, 2.55, -0.45), bevel=0.0)  # the light over the podium
     m.box(dark, (0.84, 0.06, 0.12), (0, 2.6, -0.44), bevel=0.0)
     m.box(K("metal", (0.85, 0.65, 0.3)), (0.7, 0.12, 0.01), (0, 2.4, -0.505), bevel=0.0)  # name plate (the name is Label3D)
+    for k in (0, 1, 2, 4, 5):  # (polish1 item 16) a brass button on the outer post of every shelf but the eye-level row:
+        for sx in (-1, 1):  # it turns that shelf to other achievements (game/trophy_room.gd BUTTON_*)
+            m.cyl(K("metal", (0.9, 0.68, 0.28)), 0.028, -0.49, -0.535, y=0.35 + 0.38 * k + 0.06, x=sx * 2.475, segs=12)
 
 
 MODELS = [("hub_trophy_room", room, 0.5), ("hub_cabinet", cabinet, 1.0),

@@ -1,6 +1,6 @@
-Polish1 B5: bodies and textures
+Polish1 C1: hub polish
 
-Textures no longer swim on moving things (sewn clothes by their own UVs; the shield, the boat and the hub's turning stair in their own space), the third-person gun swings about the chest with the right hand on it, aiming brings the camera over the shoulder and a scope switches to first person while aiming, and the staff stands upright in the hand with the arm raised while channelling.
+Starry night moon window, two turning antique globes, Corinthian capitals with acanthus leaves and volutes, cobwebs on the trophy room doorway, the pedestal story redrawn as clear carved figures, the hop-course painting from the start and the Aurelind painting after a visit, trophy cabinets the player arranges (5 switchable podium spots, pinned eye-level row, shelf buttons that turn pages; saved and shown online) and playtime under each name plate.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

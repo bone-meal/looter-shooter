@@ -7,8 +7,8 @@
 #                 damp stains, the high round moon window's stone ring (its glass and light: game/hub_room.gd)
 #   hub_stage     the checkerboard stage with steps, two Corinthian pillars, the stone arch frame behind it
 #   hub_stair     one turn of the spiral staircase seen through the arch (the game stacks copies up and down and turns it)
-#   hub_pedestal  the sandstone pedestal and its gold top, carved with four bands of glyph figures running round all
-#                 sides that tell the king's story (STORY below; stylised, nothing graphic)
+#   hub_pedestal  the sandstone pedestal and its gold top, with the raised lines of four bands running round all sides;
+#                 the carved figures telling the king's story are a picture laid on by the game (tools/paint_frieze.py)
 #   hub_button    the big red button (a separate model: the game pushes it in)
 #   hub_chandelier an iron ring of candles on chains
 # Game axes in the helpers below: x across the hall, y up, z along it (+z = the front where players appear, -z = the
@@ -23,7 +23,7 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 import bpy  # noqa: F401 (must load before bmesh)
 import bmesh
-from mathutils import Matrix
+from mathutils import Matrix, Vector
 import kit
 import fantasy_kit
 from fantasy_kit import K, init
@@ -137,7 +137,7 @@ def hall(m):
     # bookcases: both long walls (two storeys, the balcony between), the front wall, the back wall beside the arch
     by_color = [[] for _ in BOOKS]
     boards = []
-    for z0, z1 in [(-hd + 0.6, -10.8), (-7.2, -4.0), (-3.4, door_z0 - 0.3), (door_z1 + 0.3, hd - 0.6)]:  # left wall downstairs: gaps for the cell door (z -9) and the trophy room doorway
+    for z0, z1 in [(-hd + 0.6, -10.8), (-7.2, -4.0), (2.8, door_z0 - 0.3), (door_z1 + 0.3, hd - 0.6)]:  # left wall downstairs: gaps for the cell door (z -9), the hop-course painting (polish1 item 19) and the trophy room doorway
         shelf_unit(by_color, boards, -hw, z0, -hw, z1, 0.2, 5.6, rnd, 1)
     for z0, z1 in [(-hd + 0.6, -4.0), (-3.4, door_z0 - 0.3), (door_z1 + 0.3, hd - 0.6)]:  # left wall upstairs
         shelf_unit(by_color, boards, -hw, z0, -hw, z1, 6.6, 12.6, rnd, 1)
@@ -195,8 +195,7 @@ def hall(m):
     many(m, K("cloth", (0.92, 0.88, 0.75)), open_books)
     for gx, gz in [(-6.0, 9.0), (14.0, -6.0)]:
         m.lathe(K("wood", DARK_WOOD), [(0.35, 0.0), (0.35, 0.08), (0.06, 0.12), (0.05, 0.9), (0.08, 0.95)], (gx, 0.0, -gz), segs=12)
-        m.ball(K("paint", (0.25, 0.4, 0.45)), 0.42, (gx, 1.4, -gz))
-        m.rod(K("metal", (0.8, 0.6, 0.25)), 0.02, (gx - 0.47, 1.4, -gz), (gx + 0.47, 1.4, -gz))
+        m.lathe(K("metal", (0.8, 0.6, 0.25)), [(0.03, 0.9), (0.03, 0.95)], (gx, 0.0, -gz), segs=8)  # (the ball and its ring turn: game/hub_room.gd)
     # the barred cell door in the left wall (z -9): a stone frame, dark inside, iron bars
     many(m, K("stone", STONE), [((0.4, 3.2, 0.4), (-hw + 0.2, 1.6, -10.4), 0), ((0.4, 3.2, 0.4), (-hw + 0.2, 1.6, -7.6), 0), ((0.4, 0.4, 3.2), (-hw + 0.2, 3.3, -9.0), 0)])
     many(m, K("paint", (0.02, 0.02, 0.03)), [((0.05, 3.0, 2.4), (-hw + 0.05, 1.5, -9.0), 0)])
@@ -244,17 +243,95 @@ def corinthian(m, x, z, h):
         a = k / 20.0 * math.tau
         flutes.append(((0.06, h - 2.6, 0.06), (x + math.cos(a) * 0.52, (h - 1.6 + 0.8) / 2 + 0.1, z + math.sin(a) * 0.52), 0))
     many(m, K("stone", (0.72, 0.7, 0.66)), flutes)
-    # the capital: a bell with two rows of leaves and corner scrolls, the square abacus on top
-    m.lathe(marble, [(0.47, h - 1.6), (0.52, h - 1.2), (0.62, h - 0.7), (0.72, h - 0.35)], (x, 0.0, -z), segs=24)
+    # (polish1 item 14) the capital: a bell wrapped in two rows of curling, lobed acanthus leaves, stalks rising between
+    # them into scrolls (volutes) under each corner of the abacus, a flower on each face of the abacus
+    m.lathe(marble, [(0.47, h - 1.6), (0.5, h - 1.2), (0.56, h - 0.7), (0.62, h - 0.32)], (x, 0.0, -z), segs=24)
     leaf = K("stone", (0.8, 0.78, 0.7))
-    for row, (r, y) in enumerate([(0.55, h - 1.3), (0.66, h - 0.85)]):
-        for k in range(8):
-            a = (k + row * 0.5) / 8.0 * math.tau
-            m.ball(leaf, (0.16, 0.32, 0.1), (x + math.cos(a) * r, y, -(z + math.sin(a) * r)), yaw=-math.degrees(a))
+    for row, (n, y0, length, w) in enumerate([(8, h - 1.6, 0.62, 0.21), (8, h - 1.25, 0.72, 0.2)]):
+        for k in range(n):
+            a = (k + row * 0.5) / n * math.tau
+            acanthus(m, leaf, x, z, a, 0.48 + row * 0.03, y0, length, w)
+    for k in range(4):  # each face: two stalks from between the upper leaves curling out into scrolls toward its corners
+        a = k / 4.0 * math.tau
+        out = (math.cos(a), math.sin(a))
+        side = (-math.sin(a), math.cos(a))
+        for s in (-1.0, 1.0):
+            volute(m, leaf, x, z, out, side, s, h)
+        m.ball(leaf, (0.07, 0.07, 0.05), (x + out[0] * 0.87, h - 0.17, -(z + out[1] * 0.87)), yaw=-math.degrees(a) + 90.0)  # the abacus flower
+    abacus = bmesh.new()  # the abacus: square with its sides curved in, as on a real Corinthian capital
+    pts = []
     for k in range(4):
-        a = (k + 0.5) / 4.0 * math.tau
-        m.ball(leaf, (0.16, 0.16, 0.16), (x + math.cos(a) * 0.82, h - 0.45, -(z + math.sin(a) * 0.82)))
-    box(m, marble, (1.7, 0.3, 1.7), (x, h - 0.15, z))
+        a0 = k / 4.0 * math.tau + math.pi / 4.0
+        for i2 in range(7):
+            f = i2 / 6.0
+            a = a0 + f * math.pi / 2.0
+            r = 1.2 - 0.12 * math.sin(f * math.pi)
+            pts.append((x + math.cos(a) * r * 0.707 / math.cos((f - 0.5) * math.pi / 2.0), z + math.sin(a) * r * 0.707 / math.cos((f - 0.5) * math.pi / 2.0)))
+    lo = [abacus.verts.new((px, -pz, h - 0.3)) for px, pz in pts]
+    hi = [abacus.verts.new((px, -pz, h)) for px, pz in pts]
+    for i2 in range(len(pts)):
+        i3 = (i2 + 1) % len(pts)
+        abacus.faces.new((lo[i2], lo[i3], hi[i3], hi[i2]))
+    abacus.faces.new(lo[::-1])
+    abacus.faces.new(hi)
+    m._add(abacus, marble, "Body", 0)
+
+
+def acanthus(m, mat, cx, cz, a, r0, y0, length, w):
+    """One acanthus leaf on a column at game (cx, cz), facing out along angle a: it rises against the bell, then bends
+    out and curls over at the tip; lobed (wavy) edges, a raised midrib, edges cupped forward. Solid (two-sided)."""
+    out = Vector((math.cos(a), -math.sin(a), 0.0))  # game z -> the kit's -forward (Blender y)
+    side = Vector((-out.y, out.x, 0.0))
+    up = Vector((0.0, 0.0, 1.0))
+    nu, nv = 9, 7
+    bm = bmesh.new()
+    spine = []
+    p = Vector((cx, -cz, y0)) + out * r0
+    for i in range(nu + 1):
+        u = i / nu
+        spine.append(p.copy())
+        bend = math.radians(8.0 + 150.0 * u ** 2.2)  # from the vertical: upright low down, curling over at the top
+        p = p + (up * math.cos(bend) + out * math.sin(bend)) * (length / nu)
+    grid = []
+    for i in range(nu + 1):
+        u = i / nu
+        width = w * math.sin(math.pi * min(0.15 + u * 0.95, 1.0)) * (1.0 - 0.3 * math.sin(u * math.pi * 5.0) ** 2) + 0.004
+        row = []
+        for j in range(nv):
+            v = j / (nv - 1) * 2.0 - 1.0
+            cup = (abs(v) ** 1.6) * width * 0.3  # the edges curl forward, the midrib stands
+            rib = (1.0 - abs(v)) ** 3 * 0.012
+            row.append(bm.verts.new(spine[i] + side * (v * width) + out * (cup + rib)))
+        grid.append(row)
+    for i in range(nu):
+        for j in range(nv - 1):
+            bm.faces.new((grid[i][j], grid[i][j + 1], grid[i + 1][j + 1], grid[i + 1][j]))
+    bmesh.ops.solidify(bm, geom=bm.faces[:], thickness=0.012)
+    m._add(bm, mat, "Body", 0)
+
+
+def volute(m, mat, cx, cz, out, side, s, h):
+    """A stalk rising from between the leaves of one face and rolling outward into a scroll under the abacus corner on
+    side s (+1 / -1); the scroll lies in the face's plane so it reads from the front."""
+    rings = []
+    start = (0.12 * s, h - 1.0)  # (along the face, height)
+    eye = (0.6 * s, h - 0.42)  # the scroll's centre
+    for i in range(6):  # the stalk, curving up and out
+        f = i / 5.0
+        along = start[0] + (eye[0] - start[0] + 0.0 * s) * f * 0.75
+        rings.append((along, start[1] + (eye[1] + 0.17 - start[1]) * math.sin(f * math.pi / 2.0), 0.038))
+    for i in range(1, 15):  # then the spiral, turning inward toward its eye
+        f = i / 14.0
+        ang = math.pi / 2.0 - f * math.tau * 1.15
+        rr = 0.17 * (1.0 - 0.75 * f)
+        rings.append((eye[0] + s * rr * math.cos(ang), eye[1] + rr * math.sin(ang), 0.038 * (1.0 - 0.4 * f)))
+    depth = 0.74 + 0.03 * abs(s)
+    pts = []
+    for along, y, r in rings:
+        gx = cx + out[0] * depth + side[0] * along
+        gz = cz + out[1] * depth + side[1] * along
+        pts.append((gx, y, -gz, r, r))
+    m.loft(mat, pts, segs=8, steps=1)
 
 
 def stage(m):
@@ -318,76 +395,7 @@ def stair(m):
 
 # Carved figures for the pedestal's bands: each glyph = boxes [(w, h, u, v, roll degrees)] about its foot (u along
 # the band, v up, metres at scale 1 = a 0.15 m tall adult). Stylised like an ancient frieze; nothing graphic.
-def _person(h=0.15, arms="down", lean=0.0):
-    b = [(0.05, h * 0.6, 0.0, h * 0.3, lean), (0.04, h * 0.22, 0.0, h * 0.72, 0.0)]  # robe and shoulders
-    b.append((0.04, 0.04, 0.0, h * 0.92, 0.0))  # head
-    if arms == "up":  # praise or grief: both arms raised
-        b += [(0.013, h * 0.32, -0.034, h * 0.88, 20.0), (0.013, h * 0.32, 0.034, h * 0.88, -20.0)]
-    elif arms == "out":  # reaching ahead (giving, leading)
-        b.append((h * 0.36, 0.013, 0.06, h * 0.66, 0.0))
-    elif arms == "bowl":  # an offering held up
-        b += [(0.013, h * 0.27, 0.035, h * 0.84, -15.0), (0.06, 0.02, 0.045, h * 1.0, 0.0)]
-    return b
-
-
-GLYPHS = {
-    "king": _person(0.17, "out") + [(0.026, 0.05, 0.0, 0.195, 0.0), (0.006, 0.19, 0.08, 0.095, 0.0)],  # tall crown, staff
-    "king_big": [(w * 1.5, h * 1.5, u * 1.5, v * 1.5, r) for w, h, u, v, r in _person(0.17, "out") + [(0.026, 0.05, 0.0, 0.195, 0.0), (0.006, 0.19, 0.08, 0.095, 0.0)]],
-    "king_kneel": [(0.04, 0.06, 0.0, 0.03, 0.0), (0.035, 0.06, 0.0, 0.085, 25.0), (0.03, 0.03, -0.02, 0.125, 0.0), (0.022, 0.035, -0.02, 0.155, 0.0)],
-    "throne": [(0.07, 0.04, 0.0, 0.05, 0.0), (0.015, 0.12, -0.035, 0.06, 0.0), (0.012, 0.05, 0.03, 0.025, 0.0)],
-    "person": _person(),
-    "praise": _person(arms="up"),
-    "bow": [(0.035, 0.08, 0.0, 0.04, 0.0), (0.035, 0.06, 0.02, 0.095, -55.0), (0.03, 0.03, 0.05, 0.11, 0.0)],
-    "bearer": _person(arms="bowl"),
-    "priest": _person(0.16, "out") + [(0.055, 0.03, 0.0, 0.015, 0.0), (0.02, 0.04, 0.0, 0.17, 0.0)],  # wide hem, tall cap
-    "small": [(w * 0.6, h * 0.6, u * 0.6, v * 0.6, r) for w, h, u, v, r in _person(arms="up")],  # a little one, hand raised to the next
-    "farmer": _person(arms="out") + [(0.006, 0.12, 0.09, 0.06, -30.0)],  # with a sickle's long handle
-    "god": [(0.045, 0.16, 0.0, 0.08, 0.0), (0.03, 0.04, 0.0, 0.18, 0.0), (0.06, 0.06, 0.0, 0.23, 0.0), (0.05, 0.008, 0.05, 0.12, 0.0)],  # sun-headed figure, hand out
-    "sun": [(0.06, 0.06, 0.0, 0.11, 0.0)] + [(0.008, 0.035, 0.05 * math.cos(math.radians(a)), 0.11 + 0.05 * math.sin(math.radians(a)), a - 90.0) for a in range(0, 360, 45)],
-    "sun_big": [(0.08, 0.08, 0.0, 0.11, 0.0)] + [(0.01, 0.06, 0.07 * math.cos(math.radians(a)), 0.11 + 0.07 * math.sin(math.radians(a)), a - 90.0) for a in range(0, 360, 30)],
-    "sun_rise": [(0.07, 0.035, 0.0, 0.017, 0.0), (0.12, 0.006, 0.0, 0.0, 0.0)] + [(0.007, 0.03, 0.055 * math.cos(math.radians(a)), 0.02 + 0.055 * math.sin(math.radians(a)), a - 90.0) for a in (30, 60, 90, 120, 150)],
-    "sun_dark": [(0.06, 0.008, 0.0, 0.08, 0.0), (0.06, 0.008, 0.0, 0.14, 0.0), (0.008, 0.06, -0.03, 0.11, 0.0), (0.008, 0.06, 0.03, 0.11, 0.0)],  # an empty ring: no light
-    "wheat": [(0.006, 0.12, 0.0, 0.06, 0.0), (0.016, 0.03, 0.0, 0.13, 0.0), (0.006, 0.1, 0.03, 0.05, 6.0), (0.014, 0.028, 0.035, 0.11, 6.0)],
-    "wheat_dead": [(0.006, 0.07, 0.0, 0.035, 0.0), (0.006, 0.05, 0.015, 0.075, -70.0), (0.006, 0.06, 0.04, 0.03, 30.0)],
-    "temple": [(0.18, 0.015, 0.0, 0.007, 0.0), (0.15, 0.015, 0.0, 0.022, 0.0), (0.12, 0.015, 0.0, 0.037, 0.0), (0.012, 0.11, -0.05, 0.1, 0.0), (0.012, 0.11, 0.05, 0.1, 0.0), (0.14, 0.02, 0.0, 0.165, 0.0)],
-    "temple_shut": [(0.18, 0.015, 0.0, 0.007, 0.0), (0.15, 0.015, 0.0, 0.022, 0.0), (0.12, 0.015, 0.0, 0.037, 0.0), (0.012, 0.11, -0.05, 0.1, 0.0), (0.012, 0.11, 0.05, 0.1, 0.0), (0.14, 0.02, 0.0, 0.165, 0.0), (0.085, 0.11, 0.0, 0.1, 0.0)],
-    "steps": [(0.05, 0.015 * (i + 1), 0.05 * i, 0.0075 * (i + 1), 0.0) for i in range(4)],
-    "feet": [(0.012, 0.02, 0.0, 0.01, 0.0), (0.012, 0.02, 0.018, 0.022, 0.0)],  # footprints, all going one way
-    "jar": [(0.03, 0.04, 0.0, 0.02, 0.0), (0.015, 0.012, 0.0, 0.046, 0.0)],
-    "rays_down": [(0.006, 0.12, 0.03 * k, 0.1, 10.0 * k) for k in (-2, -1, 0, 1, 2)],  # light falling on whoever stands below
-    "glyph_eye": [(0.04, 0.012, 0.0, 0.02, 0.0), (0.012, 0.012, 0.0, 0.02, 0.0), (0.006, 0.018, -0.01, 0.005, 20.0)],
-    "glyph_bird": [(0.035, 0.018, 0.0, 0.02, -10.0), (0.012, 0.012, 0.02, 0.035, 0.0), (0.004, 0.015, 0.0, 0.006, 0.0)],
-    "glyph_reed": [(0.006, 0.05, 0.0, 0.025, 0.0), (0.012, 0.018, 0.004, 0.05, 25.0)],
-    "glyph_water": [(0.012, 0.006, 0.012 * k, 0.01 + 0.004 * (k % 2), 30.0 * (1 - 2 * (k % 2))) for k in range(4)],
-    "glyph_ankh": [(0.006, 0.035, 0.0, 0.018, 0.0), (0.025, 0.006, 0.0, 0.035, 0.0), (0.016, 0.016, 0.0, 0.048, 0.0)],
-}
-
-# The story, one band per chapter, each band running round all four sides (front, right, back, left) and read from
-# the top band down: a king is crowned under the rising sun; the sun goes dark and the fields die, he kneels to the
-# sun-headed one and is given power; the little ones are led in a line up the temple steps, those left behind raise
-# their arms; the temple is shut, the footprints go in and none come out, the sun blazes, the wheat stands tall and
-# the king stands taller than his temple. A newcomer sees an ordinary ancient frieze; it tells itself to those who
-# look.
-STORY = [
-    [["sun_rise", "glyph_eye", "throne", "king", "bow", "bow"], ["bearer", "bearer", "bow", "praise", "glyph_reed"], ["farmer", "wheat", "wheat", "farmer", "wheat"], ["jar", "jar", "person", "glyph_bird", "king", "sun"]],
-    [["sun_dark", "wheat_dead", "wheat_dead", "wheat_dead", "praise"], ["praise", "person", "praise", "glyph_water", "jar"], ["king_kneel", "glyph_ankh", "god"], ["god", "king", "glyph_eye", "praise", "praise"]],
-    [["priest", "small", "small", "small", "small"], ["small", "small", "priest", "praise", "praise"], ["praise", "small", "small", "steps", "small"], ["priest", "small", "temple", "glyph_reed"]],
-    [["temple_shut", "feet", "feet", "feet"], ["sun_big", "rays_down", "king_big"], ["wheat", "wheat", "bow", "bow", "wheat"], ["glyph_bird", "temple", "king_big", "glyph_ankh"]],
-]
-# Between the figures stand short columns of small glyphs (the carved words beside the pictures), each column
-# different.
-_SMALL = ["glyph_eye", "glyph_bird", "glyph_reed", "glyph_water", "glyph_ankh", "jar"]
-for _k in range(6):
-    GLYPHS["col_%d" % _k] = [(w * 0.75, h * 0.75, u * 0.75, v * 0.75 + 0.058 * i, r) for i in range(3) for w, h, u, v, r in GLYPHS[_SMALL[(_k + i * 2) % 6]]]
 FACES = [(0, 1), (1, 0), (0, -1), (-1, 0)]  # front (toward the spawns), right, back, left: the bands read round clockwise
-
-
-def carve(parts, face, u, v, glyph, scale=1.0):
-    nx, nz = face
-    for w, h, gu, gv, roll in GLYPHS[glyph]:
-        pu, pv = u + gu * scale, v + gv * scale
-        at = (nx * 0.72 + (-nz) * pu, pv, nz * 0.72 + nx * pu)
-        parts.append(((max(w * scale, 0.011), max(h * scale, 0.011), 0.026), at, nx, nz, roll))
 
 
 def pedestal(m):
@@ -402,26 +410,13 @@ def pedestal(m):
     box(m, K("metal", GOLD), (1.3, 0.06, 1.3), (0, 1.42, 0))
     parts = []
     bands = [1.03, 0.83, 0.63, 0.43]  # the foot of each band, top chapter first
-    for face_i, face in enumerate(FACES):
-        nx, nz = face
-        for v in bands + [1.21]:  # raised lines between the bands
-            parts.append(((1.38, 0.014, 0.02), (nx * 0.716, v - 0.014, nz * 0.716), nx, nz, 0.0))
-        for chapter, v in enumerate(bands):
-            row = []
-            for k, name in enumerate(STORY[chapter][face_i]):  # a column of words after every figure
-                row += [name, "col_%d" % ((k + chapter * 2 + face_i) % 6)]
-            widths = [max(0.07, max(abs(g[2]) + g[0] / 2 for g in GLYPHS[name]) * 2 + 0.03) for name in row]
-            scale = min(1.0, 1.3 / sum(widths))
-            u = -0.65
-            for name, w in zip(row, widths):
-                u += w * scale / 2
-                tall = max(g[3] + abs(g[1]) / 2 for g in GLYPHS[name])
-                carve(parts, face, u, v, name, min(scale, 0.17 / tall))  # nothing reaches into the band above
-                u += w * scale / 2 + (1.3 - sum(widths) * scale) / max(len(row) - 1, 1)
+    for nx, nz in FACES:  # raised lines between the bands; the carved story itself is a picture the game lays on each face
+        for v in bands + [1.21]:  # (polish1 item 9: tools/paint_frieze.py, game/hub_room.gd _frieze)
+            parts.append(((1.38, 0.014, 0.02), (nx * 0.716, v - 0.014, nz * 0.716), nx, nz))
     bm = bmesh.new()
-    for size, at, nx, nz, roll in parts:
+    for size, at, nx, nz in parts:
         yaw = math.degrees(math.atan2(nx, nz))
-        mat4 = Matrix.Translation((at[0], -at[2], at[1])) @ Matrix.Rotation(math.radians(-yaw), 4, "Z") @ Matrix.Rotation(math.radians(roll), 4, "Y") @ Matrix.Diagonal((size[0], size[2], size[1], 1.0))
+        mat4 = Matrix.Translation((at[0], -at[2], at[1])) @ Matrix.Rotation(math.radians(-yaw), 4, "Z") @ Matrix.Diagonal((size[0], size[2], size[1], 1.0))
         bmesh.ops.create_cube(bm, size=1.0, matrix=mat4)
     m._add(bm, deep, "Body", 0)
 

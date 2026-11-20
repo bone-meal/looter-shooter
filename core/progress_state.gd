@@ -1,7 +1,12 @@
 # Purpose: pure player progression rules: XP and level, stat points, traits, achievement counters and unlocks, and the player card (callsign, emblem, title). Also sanitizes a loaded save and lets the host validate a joiner's progress. No nodes, no rendering.
-# Dependencies: none (config comes from data/progression.json and data/achievements.json, passed to the constructor).
+# Dependencies: core/trophy_shelves.gd (config comes from data/progression.json and data/achievements.json, passed to the constructor).
 extends RefCounted
 
+const TrophyShelves = preload("res://core/trophy_shelves.gd")
+
+const PLAYED_MAX := 100000000  # seconds (about 3 years): a bigger playtime is an edited save
+var shelves := {}  # (polish1 item 16) what the trophy cabinet shows: core/trophy_shelves.gd (saved, sent with the card)
+var played := 0  # (polish1 item 135) this character's playtime in seconds (the session sets it from its stats), shown in the trophy cabinet
 var xp := 0
 var spent := {}  # stat id -> points spent
 var traits: Array = []  # trait id per slot ("" = empty)
@@ -24,6 +29,7 @@ var _fresh: Array = []  # achievements unlocked since the last take_unlocked()
 func _init(progression: Dictionary, achievements: Dictionary) -> void:
 	_cfg = progression
 	_ach = achievements
+	shelves = TrophyShelves.clean(null, {})
 	emblem = String(_ach["default_emblem"])
 	title = String(_ach["default_title"])
 	for id: String in _cfg["stats"]:
@@ -307,7 +313,7 @@ func stat_text(id: String) -> String:
 
 func to_dict() -> Dictionary:
 	return {"v": 1, "xp": xp, "spent": spent.duplicate(), "traits": traits.duplicate(), "counters": counters.duplicate(), "stats": stat_values.duplicate(),
-		"unlocked": unlocked.duplicate(), "dates": dates.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}}
+		"unlocked": unlocked.duplicate(), "dates": dates.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}, "played": played, "shelves": shelves.duplicate(true)}
 
 
 # Loads a saved dictionary, dropping or clamping anything invalid (a damaged or edited file never breaks the game).
@@ -316,6 +322,8 @@ func from_dict(d: Variant) -> void:
 		return
 	var src: Dictionary = d
 	xp = maxi(int(src.get("xp", 0)), 0)
+	shelves = TrophyShelves.clean(src.get("shelves"), _ach.get("achievements", {}))
+	played = clampi(int(src.get("played", 0)) if (src.get("played", 0) is int or src.get("played", 0) is float) else 0, 0, PLAYED_MAX)
 	_recalc()
 	var stats: Dictionary = _cfg["stats"]
 	var left := points_total()

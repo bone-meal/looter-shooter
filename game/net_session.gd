@@ -748,7 +748,7 @@ func _make_card(progress: Variant) -> Dictionary:
 	var trophies := {}  # earned achievement id -> date ("" = before dates were kept): the hub's trophy cabinets
 	for id: String in rules.unlocked:
 		trophies[id] = String(rules.dates.get(id, ""))
-	return {"callsign": rules.callsign, "title": rules.title_name(rules.title), "level": rules.level(), "emblem_def": rules.emblem_def(rules.emblem), "trophies": trophies}
+	return {"callsign": rules.callsign, "title": rules.title_name(rules.title), "level": rules.level(), "emblem_def": rules.emblem_def(rules.emblem), "trophies": trophies, "played": rules.played, "shelves": rules.shelves}
 
 
 # Our progress or card changed (level up, achievement, new emblem): tell everyone.

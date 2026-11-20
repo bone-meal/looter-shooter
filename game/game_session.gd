@@ -98,6 +98,7 @@ const QuestState = preload("res://core/quest_state.gd")
 const QuestThings = preload("res://game/quest_things.gd")
 const SongBook = preload("res://core/song_book.gd")
 const SongFloats = preload("res://game/song_floats.gd")
+const TrophyShelves = preload("res://core/trophy_shelves.gd")
 const Jukebox = preload("res://game/jukebox.gd")
 const MusicLibrary = preload("res://game/music_library.gd")
 const TextBook = preload("res://core/text_book.gd")
@@ -191,6 +192,8 @@ var _ink := InkBlackout.new()  # the hub's travel effect
 var _hub_dark := false  # the player stands in the hub: the sky's light is off, the hub's own candles light it
 var _hub_tick := -1  # the last countdown second ticked
 var _hub_painting := Vector3.INF
+var _hub_wheat: Node3D  # (polish1 item 19) the hub's Aurelind painting: hidden until this character has been there
+var _hub_course := Vector3.INF  # (polish1 item 19) the hub's hop-course painting
 var _far_hidden: Array = []  # far world parts hidden while we stand in the hub
 var _trophy_wait := 0.0  # seconds to the next look at whose trophies fill the cabinets
 var _reward: RewardArea
@@ -531,7 +534,11 @@ func _ready() -> void:
 		add_child(_hub_room)
 		var hung: Array = _hub_room.painting_spot()
 		_hub_painting = hung[0]
-		Island.build_painting(self, _hub_painting, PaintingArt.wheat_texture(), float(hung[1]))
+		_hub_wheat = Island.build_painting(self, _hub_painting, PaintingArt.wheat_texture(), float(hung[1]))  # (polish1 item 19) up once Aurelind was visited
+		_hub_wheat.visible = _aurelind_seen()
+		var cp: Array = net.hub.cfg.get("course_painting", [-24.6, 0.0, 90.0])  # (polish1 item 19) the hop course, there from the start
+		_hub_course = _hub_room.position + Vector3(float(cp[0]), 0.0, float(cp[1]))
+		Island.build_painting(self, _hub_course, PaintingArt.course_texture(), deg_to_rad(float(cp[2])))
 		var ccfg: Dictionary = _crossing.cfg  # (sea step 11) the sea painting and the NEW GAME+ lectern
 		_sea_painting = _hub_room.position + Vector3(float(ccfg["hub_painting"]["at"][0]), 0.0, float(ccfg["hub_painting"]["at"][1]))
 		Island.build_painting(self, _sea_painting, PaintingArt.port_texture(), deg_to_rad(float(ccfg["hub_painting"]["yaw"])))
@@ -1613,7 +1620,15 @@ func _near_painting() -> bool:
 
 
 func _near_painting_fantasy() -> bool:
-	return not _in_arena and not _in_fantasy and (_near(_painting_fantasy, PAINTING_RANGE) or (_hub_painting.is_finite() and _near(_hub_painting, PAINTING_RANGE)))
+	return not _in_arena and not _in_fantasy and (_near(_painting_fantasy, PAINTING_RANGE) or (_hub_painting.is_finite() and _aurelind_seen() and _near(_hub_painting, PAINTING_RANGE)))
+
+
+# (polish1 item 19) This character has been to Aurelind (this session or saved): the hub shows its painting.
+func _aurelind_seen() -> bool:
+	var seen := _fantasy != null or _fantasy_saved != null
+	if seen and _hub_wheat != null and not _hub_wheat.visible:
+		_hub_wheat.visible = true
+	return seen
 
 
 func _near_fantasy_exit() -> bool:
@@ -1640,6 +1655,8 @@ func _prompt() -> String:
 		return "[%s] Trade with %s  (ignore it to say no)" % [key, _trade_asker]
 	if _hub_near_button():
 		return "[%s] Press the big red button" % key
+	if not _hub_trophy_act().is_empty():
+		return "[%s] %s" % [key, String(_hub_hud.trophy.get("act_text", ""))]
 	if _pack != null and _near(_pack.global_position, DroppedPack.REACH):
 		return "[%s] Take your things back (%d)" % [key, InventoryState.bundle_size(_pack.bundle)]
 	if _quest_use_here() != "":
@@ -1761,6 +1778,8 @@ func _prompt() -> String:
 		return "[%s] Step into the painting: the home port" % key
 	if _near_painting_fantasy():
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
+	if _hub_course.is_finite() and _near(_hub_course, PAINTING_RANGE):
+		return "[%s] Step into the painting: the hop course%s" % [key, ("  (your best %s)" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""]
 	if _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
 		return ("[%s] Step into the painting: the open sea" % key) if _sea_open() else "The open sea. Follow the U-boat from Gull Rock once to open it."
 	if _ng_lectern.is_finite() and _near(_ng_lectern, 2.5):
@@ -1782,6 +1801,8 @@ func _interact() -> void:
 		return  # lying down, or busy helping somebody up (the key is held for that)
 	if _hub_near_button():
 		net.hub.press_button()
+	elif not _hub_trophy_act().is_empty():
+		_use_trophy_act(_hub_trophy_act())
 	elif _seat >= 0:
 		_leave_boat(false)
 	elif _time < _trade_ask_until:
@@ -1843,6 +1864,8 @@ func _interact() -> void:
 		port_travel()
 	elif _near_painting_fantasy():
 		_enter_fantasy()
+	elif _hub_course.is_finite() and _near(_hub_course, PAINTING_RANGE):
+		travel("course")  # (polish1 item 19)
 	elif _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
 		if _sea_open():
 			_enter_sea()
@@ -4739,6 +4762,7 @@ func _process(delta: float) -> void:
 	_player_hud.wave_text = _director.status_text()
 	_player_hud.boss_ratio = _director.boss_ratio()
 	_player_hud.menu_keys = _menu_keys()
+	_progress.played = int(_stats.total("seconds_played"))  # (polish1 item 135) saved and sent with the card
 	var on_island := not _in_arena and not _in_fantasy and _on_island(_player.global_position)
 	var watching: bool = net != null and net.rounds.is_client()  # the host runs the rounds: we show what it tells us
 	var island_round: int = net.rounds.round_number if watching else _rounds.rules.number
@@ -4782,14 +4806,40 @@ func _trophy_owners() -> Array:
 	for id: String in _progress.unlocked:
 		mine[id] = String(_progress.dates.get(id, ""))
 	if not net.can_send():
-		return [{"owner": 1, "name": _profile_name, "trophies": mine}]
+		return [{"owner": 1, "name": _profile_name, "trophies": mine, "played": _progress.played, "shelves": _progress.shelves}]
 	var out: Array = []
 	var ids: Array = net.roster.keys()
 	ids.sort()
 	for peer: int in ids:
 		var card: Dictionary = net.cards.get(peer, {})
-		out.append({"owner": peer, "name": String(net.roster[peer]), "trophies": mine if peer == net.my_id() else card.get("trophies", {})})
+		out.append({"owner": peer, "name": String(net.roster[peer]), "trophies": mine if peer == net.my_id() else card.get("trophies", {}), "played": _progress.played if peer == net.my_id() else int(card.get("played", 0)), "shelves": _progress.shelves if peer == net.my_id() else card.get("shelves", {})})
 	return out.slice(0, 6)
+
+
+# (polish1 item 16) What F does at the trophy (or shelf button) we look at in our own cabinet; {} for nothing.
+func _hub_trophy_act() -> Dictionary:
+	if _hub_room == null or not _in_hub() or _hub_hud == null:
+		return {}
+	return _hub_hud.trophy.get("act", {})
+
+
+# Pin / unpin, switch a podium spot or turn a shelf: saved and sent with the card so others see the cabinet as we set it.
+func _use_trophy_act(act: Dictionary) -> void:
+	var have := {}
+	for id: String in _progress.unlocked:
+		have[id] = true
+	var data: Dictionary = _hub_room.trophies.data()
+	match String(act.get("do", "")):
+		"pin", "unpin":
+			_progress.shelves = TrophyShelves.toggle_pin(_progress.shelves, String(act["id"]), have)
+		"podium":
+			_progress.shelves = TrophyShelves.cycle_podium(_progress.shelves, int(act["spot"]), data, have)
+		"shelf":
+			_progress.shelves = TrophyShelves.cycle_shelf(_progress.shelves, int(act["shelf"]), data, have)
+	_trophy_wait = 0.0
+	_hub_hud.trophy = {}
+	save_profile()
+	card_changed.emit(_progress.to_dict())
 
 
 func _hub_place() -> int:
@@ -4824,7 +4874,7 @@ func _run_hub() -> void:
 		_trophy_wait = 1.0
 		_hub_room.trophies.show_owners(_trophy_owners())
 	var eye := get_viewport().get_camera_3d()
-	_hub_hud.trophy = _hub_room.trophies.look(eye.global_position, -eye.global_basis.z) if here and eye != null else {}
+	_hub_hud.trophy = _hub_room.trophies.look(eye.global_position, -eye.global_basis.z, net.my_id() if net.can_send() else 1) if here and eye != null else {}
 	_hub_hud.key = _key("interact")
 	_hub_hud.me = net.hub.me()
 	net.hub.hold(here and _player.controls_enabled and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and Input.is_action_pressed("interact"))

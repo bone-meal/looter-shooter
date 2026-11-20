@@ -413,7 +413,7 @@ static func _ramps(way: Node3D, body: StaticBody3D, length: float, width: float,
 
 # A framed painting on two posts at `at`, its picture facing `yaw` (0 = +z). Also used for the way home inside a
 # painting's world.
-static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D, yaw: float = 0.0) -> void:
+static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D, yaw: float = 0.0) -> Node3D:
 	var stand := Node3D.new()
 	stand.position = at
 	stand.rotation.y = yaw
@@ -441,3 +441,4 @@ static func build_painting(parent: Node3D, at: Vector3, texture: Texture2D, yaw:
 	shape.shape = box
 	body.add_child(shape)
 	stand.add_child(body)
+	return stand

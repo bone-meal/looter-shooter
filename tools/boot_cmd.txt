@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp fantasy;!wait 22;!third;!wait 1;!look 0 -15;!wait 0.5;!snap b5_staff
+!uncap;!wait 3;!hub press;!ach grant 60 quiet;!wait 1;!hub at 18 -8;!wait 0.4;!look -90 42;!wait 1;!snap c1_window;!hub at 12.8 -6;!wait 0.4;!look -90 -10;!wait 1;!snap c1_globe;!hub at 7.2 -9.8;!wait 0.4;!look -45 62;!wait 1;!snap c1_pillar;!hub at -22.5 6;!wait 0.4;!look 90 35;!wait 1;!snap c1_cobweb;!hub at -27.5 6;!wait 0.4;!look -90 35;!wait 1;!snap c1_cobweb_in;!shelf aim 0 plate 0;!wait 1;!snap c1_plate

@@ -61,6 +61,42 @@ static func island_texture() -> ImageTexture:
 	return ImageTexture.create_from_image(img)
 
 
+# (polish1 item 19) The hub's hop-course painting: a dusk sky over the sea with floating stepping blocks in neon
+# colours rising toward a lit arch, the way the course plays.
+static func course_texture() -> ImageTexture:
+	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)
+	for y in H:
+		for x in W:
+			img.set_pixel(x, y, _course_pixel(x, y))
+	return ImageTexture.create_from_image(img)
+
+
+static func _course_pixel(x: int, y: int) -> Color:
+	var fx := float(x)
+	var fy := float(y)
+	var blocks := [[24.0, 150.0, 30.0], [64.0, 130.0, 26.0], [100.0, 112.0, 22.0], [136.0, 96.0, 20.0], [170.0, 82.0, 18.0], [204.0, 66.0, 16.0]]
+	var neon := [Color(0.95, 0.3, 0.7), Color(0.3, 0.9, 0.95), Color(0.98, 0.85, 0.3), Color(0.5, 0.95, 0.4), Color(0.7, 0.45, 1.0), Color(1.0, 0.5, 0.25)]
+	for i in blocks.size():  # the stepping blocks: a lit top, a darker face, each its own neon
+		var b: Array = blocks[i]
+		var lx := fx - float(b[0])
+		var ly := fy - float(b[1])
+		if lx >= 0.0 and lx < float(b[2]) and ly >= 0.0 and ly < 4.0:
+			return (neon[i] as Color).lightened(0.25)
+		if lx >= 0.0 and lx < float(b[2]) and ly >= 4.0 and ly < 12.0:
+			return (neon[i] as Color).darkened(0.45)
+	if fx >= 222.0 and fx <= 250.0 and fy >= 26.0 and fy < 66.0:  # the arch at the top: two posts, a lintel, light inside
+		if fx < 226.0 or fx > 246.0 or fy < 30.0:
+			return Color(0.92, 0.9, 0.86)
+		return Color(1.0, 0.92, 0.6).lerp(Color(1.0, 0.75, 0.35), (fy - 30.0) / 36.0)
+	if fy >= 158.0:  # the sea under it all
+		var wave := sin(fx * 0.3 + fy * 1.1) * 0.5 + 0.5
+		return Color(0.08, 0.16, 0.32).lerp(Color(0.25, 0.3, 0.5), wave * 0.35)
+	var sky := Color(0.18, 0.12, 0.35).lerp(Color(0.95, 0.5, 0.45), fy / 158.0)  # dusk: violet above, coral at the horizon
+	if (x * 7 + y * 13) % 211 == 0 and fy < 90.0:
+		return Color(1, 1, 1)  # a few early stars
+	return sky
+
+
 # Painting that leads to the fantasy world: a golden wheat field beside a large half-timbered farmhouse.
 static func wheat_texture() -> ImageTexture:
 	var img := Image.create(W, H, false, Image.FORMAT_RGBA8)
