@@ -2993,6 +2993,71 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"note":
 					var gun_c: Dictionary = opening.call("winner") if opening.visible else {}
 					_lines.append("CASE %s: cases %s, chips %d, opening %s spinning %s, winner %s %s, bag guns %d" % [" ".join(words.slice(2)), str(shelf.get("counts")), int((session.get("_wallet") as RefCounted).get("balance")), opening.visible, opening.call("is_spinning"), String(gun_c.get("tier", "")), String(gun_c.get("body", "")), int((player.get("inventory") as RefCounted).call("gun_count")) if (player.get("inventory") as RefCounted).has_method("gun_count") else -1])
+		"pool":  # (polish1 item 71) "!pool open <table>" (stand there, open the menu); "!pool start <ai id> <stake>"; "!pool auto" = our next
+			# shot as the Shark would play it (waits for our turn; places the cue ball first if in hand); "!pool shot <deg> <power> [spin x] [spin y]";
+			# "!pool cam" (switch the view); "!pool note"; "!pool wait" (until our turn or the end, 60 s); "!pool esc"
+			var pg: Node3D = session.get("_pool")
+			match words[1]:
+				"open":
+					var tb: Node3D = (pg.get("tables") as Array)[int(words[2]) if words.size() > 2 else 0]
+					player.call("teleport", tb.global_position + tb.global_basis.z * 1.4 + Vector3(0, 0.1, 0), 0.0)
+					await get_tree().create_timer(0.3).timeout
+					pg.set("player_name", "Tester")
+					pg.call("open", int(words[2]) if words.size() > 2 else 0)
+				"start":
+					pg.call("_on_start", words[2], int(words[3]) if words.size() > 3 else 0)
+				"wait":
+					var wt := 0.0
+					while wt < 60.0 and String(pg.get("_state")) not in ["aim", "place", "result", ""]:
+						await get_tree().create_timer(0.1).timeout
+						wt += 0.1
+				"auto", "shot":
+					var wt2 := 0.0
+					while wt2 < 60.0 and String(pg.get("_state")) not in ["aim", "place", "result", ""]:
+						await get_tree().create_timer(0.1).timeout
+						wt2 += 0.1
+					var psim: RefCounted = pg.get("_sim")
+					var prules: RefCounted = pg.get("rules")
+					if String(pg.get("_state")) == "place":
+						var Ai: GDScript = load("res://core/pool_ai.gd")
+						psim.call("place", 0, Ai.call("place_cue", psim, prules, int(prules.get("current"))))
+						pg.set("_state", "aim")
+					if String(pg.get("_state")) != "aim":
+						return
+					var ang := 0.0
+					var pw := 0.5
+					var sp := Vector2.ZERO
+					var called := -1
+					if words[1] == "auto":
+						var Ai2: GDScript = load("res://core/pool_ai.gd")
+						var sh: Dictionary = Ai2.call("choose", psim, prules, int(prules.get("current")), {"aim_error": 0.3, "power_error": 0.03}, RandomNumberGenerator.new()) if not bool(prules.get("break_shot")) else {"angle": ((psim.call("foot_spot") as Vector2) - (psim.get("pos") as PackedVector2Array)[0]).angle(), "power": 0.97, "spin": Vector2.ZERO, "called": -1}
+						ang = float(sh["angle"])
+						pw = sqrt(float(sh["power"]))
+						sp = sh["spin"]
+						called = int(sh["called"])
+					else:
+						ang = deg_to_rad(float(words[2]))
+						pw = float(words[3])
+						if words.size() > 5:
+							sp = Vector2(float(words[4]), float(words[5]))
+					pg.set("_angle", ang)
+					pg.set("_spin", sp)
+					pg.set("_power", pw)
+					pg.set("_pulling", true)
+					await get_tree().create_timer(0.5).timeout
+					pg.set("_pulling", false)
+					pg.call("_take_shot", ang, pw, sp, called)
+				"cam":
+					pg.set("_top_view", not bool(pg.get("_top_view")))
+				"note":
+					var nsim: RefCounted = pg.get("_sim")
+					var nrules: RefCounted = pg.get("rules")
+					var on := 0
+					for i in 16:
+						on += int((nsim.get("on_table") as PackedByteArray)[i])
+					_lines.append("POOL: state %s current %d groups %s in hand %s break %s winner %d on table %d message '%s' chips %d" % [pg.get("_state"), int(nrules.get("current")), str(nrules.get("groups")), str(nrules.get("ball_in_hand")), str(nrules.get("break_shot")), int(nrules.get("winner")), on, nrules.get("message"), int((session.get("_wallet") as RefCounted).get("balance"))])
+				"esc":
+					pg.call("request_close")
 		"darts":  # (polish1 item 71) "!darts open <board>" stand at its line and open the menu; "!darts start <501|clock> <ai id> <stake>";
 			# "!darts throw [target]" the player's next dart (at the hand's aim with its sway, or at a target like T20 as aimed); "!darts turn" = our whole
 			# turn at the AI's choice of targets; "!darts note"; "!darts esc"

@@ -664,6 +664,22 @@
     {
      "id": "dart_bust",
      "label": "Darts: bust"
+    },
+    {
+     "id": "pool_strike",
+     "label": "Pool: cue strikes"
+    },
+    {
+     "id": "pool_click",
+     "label": "Pool: balls knock"
+    },
+    {
+     "id": "pool_cushion",
+     "label": "Pool: cushion"
+    },
+    {
+     "id": "pool_pocket",
+     "label": "Pool: ball drops"
     }
    ]
   }

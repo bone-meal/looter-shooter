@@ -1,1 +1,1 @@
-!uncap;!immortal;!wait 2;/tp club;!wait 14;!darts open 0;!wait 2.5;!snap darts_menu;!darts start 501 regular 0;!wait 1;!darts throw T20;!wait 1.2;!snap darts_aim;!darts esc
+!uncap;!immortal;!wait 2;/tp club;!wait 14;!pool open 1;!wait 2.5;!measure pool_menu;!pool start shark 0;!wait 1.5;!measure pool_aim;!pool cam;!wait 1;!snap pool_top;!pool cam;!pool auto;!wait 0.8;!snap pool_rolling;!pool wait;!pool note;!wait 1;!snap pool_after;!pool esc;!wait 1;!casino view -11 1 45 -12;!wait 1;!snap pool_room;!measure room

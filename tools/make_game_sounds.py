@@ -140,6 +140,11 @@ def darts(save):
     """(polish1 item 71) the games room's darts: a throw's soft whoosh, a dart thudding into the sisal, a bust buzz."""
     save("dart_throw", band(noise(0.22), 900, 3500) * env(n(0.22), 0.06, 2.2) * 0.5, 0.35)
     save("dart_hit", mix(lowpass(noise(0.09), 1800) * env(n(0.09), 0.0005, 5) * 1.2, tone(glide(190, 120, 0.08), 0.08) * env(n(0.08), 0.001, 4) * 0.8, at(click(3200, 0.02), 0.0)), 0.7)
+    # pool: the cue tip on the cue ball, ball on ball, a cushion, a ball dropping into a leather pocket
+    save("pool_strike", mix(click(2400, 0.02), lowpass(noise(0.06), 1500) * env(n(0.06), 0.0005, 6) * 0.6), 0.6)
+    save("pool_click", mix(tone(glide(3300, 2900, 0.05), 0.05) * env(n(0.05), 0.0003, 7) * 0.6, click(4200, 0.015) * 0.8), 0.6)
+    save("pool_cushion", lowpass(noise(0.12), 600) * env(n(0.12), 0.002, 4) * 0.9, 0.5)
+    save("pool_pocket", mix(lowpass(noise(0.25), 900) * env(n(0.25), 0.005, 3) * 0.6, at(tone(glide(160, 90, 0.15), 0.15) * env(n(0.15), 0.002, 3) * 0.7, 0.12)), 0.6)
     save("dart_bust", mix(lowpass(tone(110, 0.45, "saw"), 900) * env(n(0.45), 0.01, 1.6) * 0.6, lowpass(tone(116, 0.45, "saw"), 900) * env(n(0.45), 0.01, 1.6) * 0.5), 0.5)
 
 

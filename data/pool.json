@@ -1,0 +1,14 @@
+{
+ "version": 1,
+ "_about": "Pool (8-ball) in the club's games room (polish1 item 71: core/pool_sim.gd, core/pool_rules.gd, game/pool_game.gd). table = a 9 ft table in metres (cushion noses), ball radius, how far the cushions stop short of the pockets and how close a ball's centre must come to a pocket's middle to drop. physics: cue ball speed at full power, sliding / rolling slow-down (m/s2), english loss per second, restitutions, how much side english bends a cushion bounce. ai = the house players: aim error in degrees (normal), power error share, think seconds. shot_clock = seconds per shot (running out = a foul). stakes = chips (a win pays the stake again). tables = where the tables stand in the games room (centre from the club centre, yaw).",
+ "table": {"length": 2.54, "width": 1.27, "ball_radius": 0.028575, "corner_mouth": 0.07, "side_mouth": 0.062, "corner_capture": 0.072, "side_capture": 0.062},
+ "physics": {"max_speed": 7.0, "slide": 2.0, "rolling": 0.2, "side_decay": 0.6, "ball_restitution": 0.94, "cushion_restitution": 0.78, "english": 0.35},
+ "ai": [
+  {"id": "rookie", "name": "Rookie Rita", "aim_error": 2.2, "power_error": 0.15, "think": 1.6, "about": "Knows which end of the cue to hold."},
+  {"id": "regular", "name": "Pub Regular Pete", "aim_error": 1.1, "power_error": 0.08, "think": 1.4, "about": "Pots the easy ones, plays a safety when stuck."},
+  {"id": "shark", "name": "The Shark", "aim_error": 0.45, "power_error": 0.04, "think": 1.2, "about": "Runs racks. Do not bet the house."}
+ ],
+ "shot_clock": 45,
+ "stakes": [0, 25, 50, 100, 250],
+ "tables": [{"at": [-15.0, 0.0, -9.6], "yaw": 90.0}, {"at": [-15.0, 0.0, -3.0], "yaw": 90.0}]
+}
