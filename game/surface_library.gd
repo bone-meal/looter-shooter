@@ -28,6 +28,18 @@ static func material(id: String, flat: Color) -> StandardMaterial3D:
 	return m
 
 
+# (polish1 items 7 / 13 / 60) The same surface for things that MOVE: "local" = its texture follows the object (the
+# shield, a carried prop) instead of staying pinned to the world while the object slides through it; "uv" = by the
+# mesh's own UVs (skinned clothes: they bend, so even object space slides). UV-mapped meshes are expected to carry
+# 5 UV units per metre (tools/tailor.py's weave).
+static func material_local(id: String, flat: Color) -> StandardMaterial3D:
+	return material(id + "@local", flat)
+
+
+static func material_uv(id: String, flat: Color) -> StandardMaterial3D:
+	return material(id + "@uv", flat)
+
+
 static func configure(textured: bool, tex_res: String, maps: int) -> void:
 	if textured == _textured and tex_res == _tex_res and maps == _maps:
 		return
@@ -69,7 +81,8 @@ static func definition(id: String) -> Dictionary:
 
 static func _apply(id: String) -> void:
 	var m: StandardMaterial3D = _mats[id]
-	var def := definition(id)
+	var mode := id.get_slice("@", 1)  # "" (pinned to the world), "local" or "uv"
+	var def := definition(id.get_slice("@", 0))
 	var set_id := String(def.get("set", ""))
 	var diff: Texture2D = null
 	if _textured and set_id != "":
@@ -97,10 +110,10 @@ static func _apply(id: String) -> void:
 	m.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
 	var own_uv := bool(def.get("uv", false))
 	var tile := maxf(float(def.get("tile", 2.0)), 0.01)
-	m.uv1_triplanar = diff != null and not own_uv
-	m.uv1_world_triplanar = m.uv1_triplanar
+	m.uv1_triplanar = diff != null and not own_uv and mode != "uv"
+	m.uv1_world_triplanar = m.uv1_triplanar and mode == ""
 	m.uv1_triplanar_sharpness = 4.0
-	m.uv1_scale = Vector3.ONE / tile if diff != null else Vector3.ONE
+	m.uv1_scale = (Vector3.ONE / tile / (5.0 if mode == "uv" else 1.0)) if diff != null else Vector3.ONE
 	m.texture_filter = BaseMaterial3D.TEXTURE_FILTER_LINEAR_WITH_MIPMAPS_ANISOTROPIC
 
 

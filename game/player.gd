@@ -64,6 +64,9 @@ const THIRD_PERSON_CAM := Vector3(0.9, 0.35, 2.8)   # over the right shoulder
 const THIRD_PERSON_HOLD := Vector3(0.26, -0.3, -0.5)  # weapon position relative to the head in third person
 const CAMERA_PADDING := 0.25
 const ORBIT_CAM := Vector3(0.0, 0.3, 3.4)  # camera offset while orbiting with H held
+const SHOULDER_CAM := Vector3(0.55, 0.2, 1.2)  # (polish1 item 65) aiming in third person: close over the right shoulder
+const SHOULDER_FOV := 0.78  # ... and the view narrows to this share of the player's field of view
+const AIM_PIVOT := Vector3(0.0, -0.32, 0.0)  # (polish1 item 64) the third-person gun turns about the chest, not the eyes
 const KNIFE := -1  # `_hand` when the knife is out instead of a holstered gun
 const SHIELD := -2  # `_hand` while the buildable shield is held up
 const LOOT_HOLD := Vector3(0.28, -0.26, -0.55)  # first-person position of something else held in the hand (the staff)
@@ -143,6 +146,8 @@ var _wheel_open := false
 var _wheel_mouse := Vector2.ZERO
 var _orbit_yaw := 0.0
 var _orbit_pitch := 0.0
+var _shoulder := 0.0  # (polish1 item 65) 0..1 how far the third-person camera has come over the shoulder for aiming
+var _scope_first := false  # (polish1 item 65) third person, but looking through a scope: first person until aim lets go
 var _emote_t := 0.0
 var _view_before_emote := false
 var _camera := Camera3D.new()
@@ -357,6 +362,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif channelling or downed:
 		return
 	elif event.is_action_pressed("toggle_view"):
+		_scope_first = false
 		third_person = not third_person
 		_apply_view()
 	elif event.is_action_pressed("reload"):
@@ -1195,7 +1201,7 @@ func _place_watching_camera() -> void:
 
 # Keeps the shoulder camera from clipping through walls: pulls it in front of whatever blocks the view.
 func _place_third_person_camera() -> void:
-	var desired := _head.global_transform * THIRD_PERSON_CAM
+	var desired := _head.global_transform * THIRD_PERSON_CAM.lerp(SHOULDER_CAM, ease(_shoulder, -1.6))
 	if _wheel_open:
 		var orbit := Basis(Vector3.UP, _yaw + _orbit_yaw) * Basis(Vector3.RIGHT, _orbit_pitch)
 		desired = _head.global_position + orbit * ORBIT_CAM
@@ -1219,7 +1225,17 @@ func _animate_weapon(delta: float) -> void:
 		elif _shield_out:
 			_animate_shield()
 		return
-	var wants_ads := not third_person and Input.is_action_pressed("aim") and _mouse_held()
+	var aiming := Input.is_action_pressed("aim") and _mouse_held() and controls_enabled
+	if third_person and aiming and sight_kind() == "scope" and not _scope_first:  # (polish1 item 65) a scope is looked through in first person
+		_scope_first = true
+		third_person = false
+		_apply_view()
+	elif _scope_first and not aiming:
+		_scope_first = false
+		third_person = true
+		_apply_view()
+	_shoulder = move_toward(_shoulder, 1.0 if third_person and aiming else 0.0, delta * 5.0)  # over the shoulder while aiming
+	var wants_ads := not third_person and aiming
 	_motion.update(delta, wants_ads, weapon.reload_fraction(_now()))
 	var view := _views[_slot]
 	var aim := _motion.ads_eased()
@@ -1229,12 +1245,15 @@ func _animate_weapon(delta: float) -> void:
 	var model := _models[_slot]
 	if _body != null and _body.has_method("support"):  # long guns: the body's left hand reaches the fore-end
 		_body.call("support", model.get_node_or_null("Support") if third_person else null)
-		if _body.has_method("grip"):
-			_body.call("grip", model.get_node_or_null("Grip") if third_person else null)
+		if _body.has_method("grip"):  # (polish1 item 64) the right hand holds the gun wherever the aim takes it
+			var grip_at := model.get_node_or_null("Grip") as Node3D
+			_body.call("grip", (grip_at if grip_at != null else model) if third_person else null)
 	var base := _third_person_hold if third_person else _hip_positions[_slot]
 	if third_person and view.has("shoulder_hold"):
 		var on_shoulder: Array = view["shoulder_hold"]
 		base = Vector3(on_shoulder[0], on_shoulder[1], on_shoulder[2])
+	if third_person:  # (polish1 item 64) the gun swings about the chest with the aim, so looking up does not lift it over the head
+		base += AIM_PIVOT.rotated(Vector3.RIGHT, -_head.rotation.x) - AIM_PIVOT
 	var look := inspect_pose()
 	model.position = base.lerp(_ads_positions[_slot], aim) + Vector3(0.0, -0.16, 0.04) * curve + Vector3(0.0, back * 0.25, back) * kick + (look[0] as Vector3)
 	model.rotation_degrees = Vector3(float(view.get("recoil_pitch", 6.0)) * kick + 20.0 * curve, 0.0, 35.0 * curve) + (look[1] as Vector3)
@@ -1242,7 +1261,7 @@ func _animate_weapon(delta: float) -> void:
 	if slide != null:
 		slide.position.z = 0.05 * kick
 	GunActions.pose(model, weapon, _now())  # hammers, levers, cylinders, strings, the flame (sea step 2 bodies)
-	_camera.fov = lerpf(settings.fov, float(view.get("ads_fov", settings.fov)), aim)
+	_camera.fov = lerpf(settings.fov, float(view.get("ads_fov", settings.fov)), aim) * lerpf(1.0, SHOULDER_FOV, ease(_shoulder, -1.6))
 	model.visible = not (sight_kind() != "" and aim > 0.85)  # a scope or optic is looked THROUGH: the overlay takes over
 
 

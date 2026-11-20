@@ -1,6 +1,6 @@
-Polish1 B4 and loot filter presets
+Polish1 B5: bodies and textures
 
-Six loot filter presets (Everything, Early game, Colosseum farming, Chase hunter, Zombies rounds, Quiet) in data, and a teammate's War Banner is now seen on every screen (pole, disc and ring), not only felt.
+Textures no longer swim on moving things (sewn clothes by their own UVs; the shield, the boat and the hub's turning stair in their own space), the third-person gun swings about the chest with the right hand on it, aiming brings the camera over the shoulder and a scope switches to first person while aiming, and the staff stands upright in the hand with the arm raised while channelling.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

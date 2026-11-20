@@ -37,7 +37,7 @@ static func _make() -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	wood.commit(mesh)
 	iron.commit(mesh)
-	mesh.surface_set_material(0, SurfaceLibrary.material("painting_post", Color(0.42, 0.3, 0.17)))
+	mesh.surface_set_material(0, SurfaceLibrary.material_local("painting_post", Color(0.42, 0.3, 0.17)))  # (polish1 item 60) the grain travels with the shield
 	var metal := StandardMaterial3D.new()
 	metal.albedo_color = Color(0.27, 0.28, 0.3)
 	metal.metallic = 0.5

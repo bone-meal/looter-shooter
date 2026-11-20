@@ -12,6 +12,7 @@ signal cast_done(spell: Dictionary, sequence: String, origin: Vector3, aim: Vect
 signal swung  # the cast key was let go with nothing gathered: a staff strike (game/combat_tools.gd)
 
 const FantasyModels = preload("res://game/fantasy_models.gd")
+var _raise: Node3D  # (polish1 item 113) the channelling hand's target (_raise_target)
 var world: Node3D  # game/fantasy_world.gd
 var sequence := ""
 var channelling := false
@@ -61,7 +62,15 @@ func _process(delta: float) -> void:
 	if id != _shown_staff:
 		_shown_staff = id
 	var raise := 0.12 if channelling else 0.0
-	if bool(_player.get("third_person")):
+	var body: Node3D = _player.get("_body")
+	var hand: Node3D = body.call("hand_anchor") if body != null and body.has_method("hand_anchor") else null
+	if body != null and body.has_method("grip"):  # (polish1 item 113) channelling raises the staff arm toward the aim
+		body.call("grip", _raise_target() if channelling and bool(_player.get("third_person")) else null)
+		body.call("support", null)  # no long gun's fore-end to hold
+	if bool(_player.get("third_person")) and hand != null:  # (polish1 item 113) in the fist: it runs, channels and casts with the arm
+		var upright := Basis(Vector3.UP, float(_player.get("_yaw"))) * Basis(Vector3.RIGHT, deg_to_rad(-12.0 - (25.0 if channelling else 0.0)))  # standing up in the fist, leaning forward (more while channelling)
+		_staff.global_transform = Transform3D(upright, hand.global_position - upright.y * 0.55)
+	elif bool(_player.get("third_person")):
 		var hold: Vector3 = _player.call("hand_position")
 		_staff.position = hold + Vector3(0.06, -0.38 + raise, 0.0)
 		_staff.rotation_degrees = Vector3(-14.0 - (22.0 if channelling else 0.0), 0.0, -6.0)
@@ -146,6 +155,16 @@ func _blend(built: String) -> Color:
 		var c: Array = world.spells.data["elements"][letter]["color"]
 		total += Color(c[0], c[1], c[2], 0.0)
 	return Color(total.r / built.length(), total.g / built.length(), total.b / built.length(), 0.9)
+
+
+# (polish1 item 113) Where the staff hand goes while channelling in third person: raised in front of the chest, turning
+# with the aim (a point under the head, made once).
+func _raise_target() -> Node3D:
+	if _raise == null:
+		_raise = Node3D.new()
+		(_player.call("hand_parent") as Node3D).add_child(_raise)
+		_raise.position = Vector3(0.22, -0.22, -0.42)
+	return _raise
 
 
 func _build_staff() -> void:

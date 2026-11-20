@@ -577,6 +577,9 @@ func _add_pieces(path: String, ours: bool) -> void:
 			continue
 		if ours:
 			FantasyModels.dress(piece.mesh)
+			var kinds: PackedStringArray = piece.mesh.get_meta("kinds", PackedStringArray())
+			for i in kinds.size():  # (polish1 item 7) the cloth's weave by its own UVs: it stays on the cloth as it bends
+				piece.set_surface_override_material(i, FantasyModels.worn(kinds[i]))
 		_adopt(piece, null, from, false)
 		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		piece.set_meta("own_colours", true)

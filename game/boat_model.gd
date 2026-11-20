@@ -46,7 +46,7 @@ static func _make() -> ArrayMesh:
 	var mesh := ArrayMesh.new()
 	wood.commit(mesh)
 	cloth.commit(mesh)
-	var planks: StandardMaterial3D = SurfaceLibrary.material("boat_planks", Color(0.45, 0.31, 0.18))
+	var planks: StandardMaterial3D = SurfaceLibrary.material_local("boat_planks", Color(0.45, 0.31, 0.18))  # (polish1) the grain sails with the boat
 	planks.cull_mode = BaseMaterial3D.CULL_DISABLED  # the hull is one skin: seen from outside and from inside
 	mesh.surface_set_material(0, planks)
 	var canvas := StandardMaterial3D.new()

@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp island;!wait 6;!dropgun ak47 grey;!dropgun ak47 green;!dropgun ak47 purple;!dropgun ak47 gold;!wait 1;!lootpreset farming;!wait 0.5;!lootprobe farming;!menu loot;!wait 1;!snap b4_presets;!menu none;!lootpreset everything;!wait 0.5;!lootprobe everything
+!uncap;!wait 2;/tp fantasy;!wait 22;!third;!wait 1;!look 0 -15;!wait 0.5;!snap b5_staff

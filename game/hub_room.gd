@@ -114,6 +114,7 @@ func _stair() -> void:
 	var turn := FantasyModels.mesh("hub_stair")
 	if turn == null:
 		return
+	turn = FantasyModels.moving(turn)  # (polish1 item 13) the texture turns with the stair
 	_spiral = Node3D.new()
 	_spiral.position = STAIR_AT
 	add_child(_spiral)

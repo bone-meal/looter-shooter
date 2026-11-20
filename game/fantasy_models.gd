@@ -146,6 +146,31 @@ static func surface(kind: String) -> StandardMaterial3D:
 	return m
 
 
+# (polish1 item 7) The material of a part of skinned clothes: the same surface by the mesh's own UVs, so the weave
+# stays on the cloth while it bends (world or object triplanar slides over moving cloth: "swimming").
+static func worn(kind: String) -> StandardMaterial3D:
+	if not KINDS.has(kind):
+		return paint()
+	var m := SurfaceLibrary.material_uv("fx_" + kind, Color.WHITE)
+	m.vertex_color_use_as_albedo = true
+	m.vertex_color_is_srgb = true
+	return m
+
+
+# (polish1 item 13) A copy of a shared model's mesh for something that MOVES (the hub's turning stair): its textures in
+# the object's own space, so they turn with it instead of staying still while it turns through them.
+static func moving(target: Mesh) -> Mesh:
+	var copy := target.duplicate() as Mesh
+	var kinds: PackedStringArray = target.get_meta("kinds", PackedStringArray())
+	for i in kinds.size():
+		if KINDS.has(kinds[i]):
+			var m := SurfaceLibrary.material_local("fx_" + kinds[i], Color.WHITE)
+			m.vertex_color_use_as_albedo = true
+			m.vertex_color_is_srgb = true
+			copy.surface_set_material(i, m)
+	return copy
+
+
 static func _fix(target: Mesh) -> void:
 	if _fixed.has(target):
 		return
