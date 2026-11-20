@@ -86,7 +86,19 @@ static func _ridge(st: SurfaceTool, body: StaticBody3D, a: Vector2, b: Vector2, 
 		var ring2: Array = rings[end]
 		for k in range(1, ring2.size() - 1):
 			_tri(st, ring2[0], ring2[k], ring2[k + 1], axis)
-	_box_shape(body, (a + b) * 0.5, Vector3(length + 0.6, h + 0.6, 3.0), ground + h * 0.5 - 0.3, atan2(dir.x, dir.y))
+	# (polish1 item 110 / director: no getting stuck) the collider follows the rock's real slopes (a convex shell of its
+	# cross-sections, a little inside the bumps) so a body slides along the face instead of meeting an invisible box edge
+	var hull := PackedVector3Array()
+	for i2 in range(0, rings.size(), maxi(1, floori(rings.size() / 6.0))):
+		for p3: Vector3 in rings[i2]:
+			hull.append(p3)
+	for p4: Vector3 in rings[rings.size() - 1]:
+		hull.append(p4)
+	var shape := CollisionShape3D.new()
+	var convex := ConvexPolygonShape3D.new()
+	convex.points = hull
+	shape.shape = convex
+	body.add_child(shape)
 
 
 # A broken stone wall: blocks of uneven height with a gap or two, fallen stones at its foot.
@@ -133,11 +145,14 @@ static func _boulder(st: SurfaceTool, body: StaticBody3D, at: Vector2, size: flo
 		for j in segs:
 			var j2 := (j + 1) % segs
 			_quad(st, pts[i][j], pts[i][j2], pts[i + 1][j2], pts[i + 1][j], Vector3(at.x, ground + size * 0.35, at.y))
-	var ball := SphereShape3D.new()
-	ball.radius = size * 0.95
+	var hull := PackedVector3Array()  # the rock's own shape (convex), not a ball taller than the squashed stone
+	for row: Array in pts:
+		for p3: Vector3 in row:
+			hull.append(p3)
+	var convex := ConvexPolygonShape3D.new()
+	convex.points = hull
 	var shape := CollisionShape3D.new()
-	shape.shape = ball
-	shape.position = Vector3(at.x, ground + size * 0.35, at.y)
+	shape.shape = convex
 	body.add_child(shape)
 
 

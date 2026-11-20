@@ -3020,6 +3020,51 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var yaw_n := deg_to_rad(float(words[4]))
 					var pitch_n := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
 					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_n) * cos(pitch_n), sin(pitch_n), -cos(yaw_n) * cos(pitch_n)) * 20.0)
+				"sweep":  # "!nav sweep <island id>": walk the body past every ridge / ruin / boulder of that island (grazing it from 4 sides) and up its
+					# hills; lines for every stall (moved under 1.5 m in 1.5 s), how often the unstuck acted, and how far up each hill it got
+					var land2: RefCounted = session.get("_land")
+					var isle := int(land2.call("index_of", words[2] if words.size() > 2 else "home"))
+					var unst: RefCounted = player.get("unstuck")
+					var freed0 := int(unst.get("freed"))
+					var tries := 0
+					var stalls: PackedStringArray = []
+					for b: Dictionary in land2.get("blocks"):
+						if int(b["island"]) != isle:
+							continue
+						var a2: Vector2 = b["a"]
+						var b2: Vector2 = b["b"]
+						var mid2 := (a2 + b2) * 0.5
+						var along2 := (b2 - a2).normalized() if a2.distance_to(b2) > 0.01 else Vector2(1, 0)
+						var side2 := Vector2(-along2.y, along2.x)
+						for k in 4:
+							var off := side2 * (1.0 if k % 2 == 0 else -1.0) * (float(b["half_width"]) + 1.3)
+							var start := mid2 + off - along2 * (a2.distance_to(b2) * 0.5 + 2.0) * (1.0 if k < 2 else -1.0)
+							if bool(land2.call("blocked", start.x, start.y, 0.6, false)) or float(land2.call("height_at", start.x, start.y)) < -0.3:
+								continue
+							var goal2 := start + along2 * (1.0 if k < 2 else -1.0) * 6.0 - off.normalized() * 1.2  # running along it, leaning in
+							player.call("teleport", centre + Vector3(start.x, float(land2.call("height_at", start.x, start.y)) + 0.2, start.y), 0.0)
+							await get_tree().create_timer(0.25).timeout
+							player.call("look_at_point", centre + Vector3(goal2.x, float(land2.call("height_at", goal2.x, goal2.y)) + 1.6, goal2.y))
+							var from3 := player.global_position
+							Input.action_press("move_forward")
+							await get_tree().create_timer(1.5).timeout
+							Input.action_release("move_forward")
+							tries += 1
+							var moved := Vector2(player.global_position.x - from3.x, player.global_position.z - from3.z).length()
+							if moved < 1.5:
+								stalls.append("%s at (%.0f, %.0f) side %d moved %.2f, in front: %s" % [b["kind"], start.x, start.y, k, moved, _what_ahead(player)])
+					var hills_l: PackedStringArray = []
+					for hill: Array in (land2.get("islands")[isle]["hills"] as Array):
+						var c2: Vector2 = hill[0]
+						var start2 := c2 + Vector2(float(hill[1]) + 2.0, 0.0)
+						player.call("teleport", centre + Vector3(start2.x, float(land2.call("height_at", start2.x, start2.y)) + 0.2, start2.y), 0.0)
+						await get_tree().create_timer(0.25).timeout
+						player.call("look_at_point", centre + Vector3(c2.x, float(hill[2]) + 1.6, c2.y))
+						Input.action_press("move_forward")
+						await get_tree().create_timer(2.6).timeout
+						Input.action_release("move_forward")
+						hills_l.append("%.1f of %.1f m (ended at %.0f, %.0f; in front: %s)" % [player.global_position.y, float(hill[2]), player.global_position.x - centre.x, player.global_position.z - centre.z, _what_ahead(player)])
+					_lines.append("NAV sweep %s: %d runs, %d stalls, unstuck acted %d; hills climbed %s%s" % [words[2] if words.size() > 2 else "home", tries, stalls.size(), int(unst.get("freed")) - freed0, ", ".join(hills_l), ("; " + "; ".join(stalls)) if not stalls.is_empty() else ""])
 				"enemies":
 					var spots: PackedStringArray = []
 					for e: Variant in ((session.get("_rounds") as Node).get("_alive") as Array):
@@ -4139,3 +4184,22 @@ class _DevFire extends Node:
 
 	func fire_near(point: Vector3, reach: float) -> bool:
 		return point.distance_to(at) <= 0.5 + reach
+
+
+# (D4a stuck sweep) What a ray from the chest straight ahead hits within 1.5 m: the collider's path, or "nothing".
+func _what_ahead(body: Node3D) -> String:
+	var from := body.global_position + Vector3(0, 1.0, 0)
+	var ahead := -body.global_basis.z
+	ahead.y = 0.0
+	var q := PhysicsRayQueryParameters3D.create(from, from + ahead.normalized() * 1.5)
+	q.exclude = [(body as CollisionObject3D).get_rid()]
+	var hit := body.get_world_3d().direct_space_state.intersect_ray(q)
+	if hit.is_empty():
+		var low := PhysicsRayQueryParameters3D.create(body.global_position + Vector3(0, 0.25, 0), body.global_position + Vector3(0, 0.25, 0) + ahead.normalized() * 1.5)
+		low.exclude = q.exclude
+		hit = body.get_world_3d().direct_space_state.intersect_ray(low)
+		if hit.is_empty():
+			return "nothing"
+	var c: Node = hit["collider"]
+	return "%s (%s)" % [str(c.get_path()).get_slice("/", -1), str(c.get_parent().name) if c.get_parent() != null else ""]
+

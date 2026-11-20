@@ -772,6 +772,7 @@ func _ready() -> void:
 	_island_nav.setup(self, _land, Island.CENTER)
 	_rounds.nav = _island_nav
 	_island_nav.rebuild.call_deferred()  # once everything on the islands stands
+	_player.unstuck.ground_height = _island_ground  # (director: no getting stuck, as in Aurelind) under the islands' ground = back on top
 	_rounds.shelters = _shelters
 	_player.perks = _perks
 	_player_hud.perks = _perks
@@ -3592,6 +3593,13 @@ func _buy_debris(index: int) -> void:
 		net.rounds.tell_debris(index)
 
 
+# The islands' ground under a world spot, -INF away from the islands (the unstuck's "under the land" test).
+func _island_ground(x: float, z: float) -> float:
+	var lx := x - Island.CENTER.x
+	var lz := z - Island.CENTER.z
+	return _land.height_at(lx, lz) if _land.within(lx, lz) else -INF
+
+
 func _open_debris(index: int, show_it: bool) -> void:
 	if _land.open(index):
 		(_debris[index] as Node).call("set_open", true, show_it)
@@ -5198,7 +5206,7 @@ func _leave_fantasy() -> void:
 	_fantasy.leave()
 	_director.reset()
 	_in_fantasy = false
-	_player.unstuck.ground_height = Callable()
+	_player.unstuck.ground_height = _island_ground
 	_player.floor_max_angle = deg_to_rad(45.0)
 	_player.floor_snap_length = 0.1
 	_fantasy_left_at = _time

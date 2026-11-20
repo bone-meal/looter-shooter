@@ -1,1 +1,1 @@
-!uncap;!immortal;!wait 2;/tp island;!wait 10;!nav view 2 4 180 -3;!wait 1;!snap d4_ridge;!nav view 10 -12 117 -6;!wait 1;!snap d4_hill;!nav view 14 -14 -142 -4;!wait 1;!snap d4_ruin;!measure island;!nav view 0 8 0 0;/round 6;!wait 25;!nav enemies;!measure round6
+!uncap;!immortal;!wait 2;/tp island;!wait 10;!nav sweep home

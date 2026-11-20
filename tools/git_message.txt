@@ -1,6 +1,6 @@
-Polish1 D4a: bigger zombie islands with hills, rock ridges, ruins and boulders, and a navigation mesh (items 28 / 29)
+Polish1 D4a: no getting stuck on the islands' rocks and slopes
 
-The islands are about twice as big (Home Sand 80 m, the others 52 m, Gull Rock 36 m); they keep their order round the ring, their middles moved out to keep the gaps, and every spot on them (perks, wall buys, huts, the box, power parts, buildables, quest spots, the boat, the bank) moved out with them. Each island has hills (smooth, walkable), craggy rock ridges that cannot be climbed, broken ruin walls with a gap and big boulders: cover, narrow paths and choke points. A check proves nothing placed stands on a hill or against a rock. Island enemies now follow a navigation mesh (director: navmesh) baked at load from every collider of the islands and again when debris is cleared: they walk round ridges and huts and up hills to their prey.
+Ridge and boulder colliders follow the rocks' real shape (convex shells, no invisible box edges or balls taller than the stone), the automatic unstuck now also knows the islands' ground (under it = back on top, as in Aurelind), and a dev sweep (!nav sweep <island>) runs the body along every ridge, ruin and boulder from four sides and up every hill: Home Sand 64 runs and Wreck Cay 44 runs, 0 stalls, the unstuck never needed; hills climbed to the top.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
