@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!go club;!wait 16;!darts open 0;!wait 1;!darts start 501 player 50;!wait 1;!snap h_wait;!darts note;!darts play;!darts note;!darts hostset 0 40 40;!darts exact;!darts play D20;!wait 3;!darts note;!snap h_result;!darts esc;!wait 1;!darts open 1;!wait 1;!darts start clock player 0;!wait 16;!darts note;!snap h_left;!darts esc;!wait 1;!darts note

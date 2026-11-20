@@ -127,6 +127,28 @@ func next_turn() -> void:
 	_new_turn()
 
 
+# (online) The state after a throw, for the players' machines: their copy follows with apply(); res = throw_dart's answer.
+func snapshot(res: Dictionary) -> Dictionary:
+	return {"mode": mode, "scores": Array(scores), "current": current, "darts_left": darts_left, "turn_hits": turn_hits.duplicate(true),
+		"winner": winner, "hit": res.get("hit", {}), "bust": bool(res.get("bust", false)), "turn_over": bool(res.get("turn_over", false)), "won": bool(res.get("won", false))}
+
+
+func apply(snap: Dictionary) -> void:
+	mode = String(snap["mode"])
+	var sc: Array = snap["scores"]
+	players = sc.size()
+	scores.resize(players)
+	for i in players:
+		scores[i] = int(sc[i])
+	current = int(snap["current"])
+	darts_left = int(snap["darts_left"])
+	turn_hits = (snap["turn_hits"] as Array).duplicate(true)
+	winner = int(snap["winner"])
+	last_bust = bool(snap.get("bust", false))
+	if darts_left == 3:
+		turn_start = scores[current]
+
+
 # What the current player needs, as words for the board ("501", "On 7", "On the BULL").
 func need_text(i: int) -> String:
 	if mode == "501":

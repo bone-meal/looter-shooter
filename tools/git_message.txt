@@ -1,6 +1,6 @@
-Polish1 D3c: darts against the house (item 71)
+Polish1 D3c: darts against other players online for chips (item 71)
 
-Two dartboards on the games room's west wall: standard board face drawn once into a texture, cork and wood backboard with a lamp bar, oche at 2.37 m, chalk slate. F at a throw line: the view goes to the line, the menu picks 501 (double out, busts) or Around the Clock (double / treble skip), one of three house players (Rookie Rita, Pub Regular Pete, The Shark) and a chip stake (free to 250, a win pays the stake again). Mouse aims while the hand drifts, hold right mouse to steady for a few seconds, left mouse throws: the dart flies and sticks; scoreboard with this turn's darts and the checkout, call-outs for doubles, trebles, BUST, 100+ and 180. Pure rules in core/darts_rules.gd with tools/darts_check.gd (0 problems). New sounds dart_throw / dart_hit / dart_bust.
+Another player as the opponent: the board opens for a challenger (game and stake), someone else at that throw line is offered Join and pays the same stake. The host keeps the match (game/net_darts.gd): a throw sends only the aimed point, the host adds the spread, scores it and sends the landing and the new state to everyone; the players' machines fly the dart and follow the score, everyone else sees the darts on the board. The host names the winner, also when the other player leaves; the winner gets twice the stake, a cancelled open board refunds it. Pair set dartsnet: the guest joined the host's 501 for 50, the host won on D20 (+50, guest -50), and the guest leaving a second game gave it to the host.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

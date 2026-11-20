@@ -12,6 +12,7 @@ const SharpText = preload("res://game/sharp_text.gd")
 
 signal start(mode: String, opponent: String, stake: int)
 signal again
+signal join
 signal closed
 
 var _menu := CenterContainer.new()
@@ -22,6 +23,10 @@ var _checkout := Label.new()
 var _hint := Label.new()
 var _callout := Label.new()
 var _result_text := Label.new()
+var _again_b := Button.new()
+var _join_b := Button.new()
+var _leave_b := Button.new()
+var _player_choice: Button
 var _chips := Label.new()
 var _picks := {"mode": "501", "opponent": "", "stake": 0}
 var _pick_buttons := {}  # group -> {value -> Button}
@@ -107,7 +112,9 @@ func _build_menu(cfg: Dictionary) -> void:
 	for ai: Dictionary in cfg["ai"]:
 		opp.append([String(ai["id"]), String(ai["name"]), String(ai.get("about", ""))])
 	_picks["opponent"] = String(opp[0][0])
+	opp.append(["player", "Another player", "A person in this lobby: they come to this board and join (you both put in the stake)."])
 	v.add_child(_choices("opponent", opp))
+	_player_choice = _pick_buttons["opponent"]["player"]
 	v.add_child(_section("STAKE (win = the stake again)"))
 	var st: Array = []
 	for s: Variant in cfg["stakes"]:
@@ -210,14 +217,15 @@ func _build_result() -> void:
 	foot.alignment = BoxContainer.ALIGNMENT_CENTER
 	foot.add_theme_constant_override("separation", 12)
 	v.add_child(foot)
-	var again_b := Button.new()
-	again_b.text = "Play again"
-	again_b.pressed.connect(func() -> void: again.emit())
-	foot.add_child(again_b)
-	var leave := Button.new()
-	leave.text = "Leave"
-	leave.pressed.connect(func() -> void: closed.emit())
-	foot.add_child(leave)
+	_join_b.text = "  Join  "
+	_join_b.pressed.connect(func() -> void: join.emit())
+	foot.add_child(_join_b)
+	_again_b.text = "Play again"
+	_again_b.pressed.connect(func() -> void: again.emit())
+	foot.add_child(_again_b)
+	_leave_b.text = "Leave"
+	_leave_b.pressed.connect(func() -> void: closed.emit())
+	foot.add_child(_leave_b)
 
 
 func _panel_box() -> StyleBoxFlat:
@@ -226,8 +234,12 @@ func _panel_box() -> StyleBoxFlat:
 	return box
 
 
-func show_menu(chips: int) -> void:
+# Online the opponent list also offers another player.
+func show_menu(chips: int, online := false) -> void:
 	visible = true
+	_player_choice.visible = online
+	if not online and String(_picks["opponent"]) == "player":
+		_select("opponent", (_pick_buttons["opponent"] as Dictionary).keys()[0])
 	_chips.text = str(chips)
 	_menu.visible = true
 	_board.visible = false
@@ -244,12 +256,31 @@ func show_play() -> void:
 	_hint.visible = true
 
 
-func show_result(text: String, good: bool) -> void:
+func show_result(text: String, good: bool, can_again := true) -> void:
+	_menu.visible = false
+	_join_b.visible = false
+	_again_b.visible = can_again
+	_leave_b.text = "Leave"
 	_result_text.text = text
 	_result_text.add_theme_color_override("font_color", UiSkin.GOOD if good else UiSkin.TEXT)
 	_result.visible = true
 	_hint.visible = false
 	_reticle_on = false
+
+
+# Waiting for a challenger (Cancel gives the stake back) or for the host.
+func show_waiting(text: String) -> void:
+	show_result(text, false, false)
+	_leave_b.text = "Cancel"
+	_board.visible = false
+
+
+# Someone waits at this board: Join (pays the same stake) or Leave.
+func show_offer(text: String) -> void:
+	visible = true
+	show_result(text, false, false)
+	_join_b.visible = true
+	_board.visible = false
 
 
 # names, needs (text), turn texts, whose turn, the checkout line.

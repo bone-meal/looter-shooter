@@ -3029,7 +3029,47 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						await get_tree().create_timer(0.5).timeout
 				"note":
 					var rl3: RefCounted = dg.get("rules")
-					_lines.append("DARTS: state %s mode %s scores %s current %d darts_left %d winner %d hits %s chips %d" % [dg.get("_state"), rl3.get("mode"), str(rl3.get("scores")), int(rl3.get("current")), int(rl3.get("darts_left")), int(rl3.get("winner")), str(rl3.get("turn_hits")), int((session.get("_wallet") as RefCounted).get("balance"))])
+					var lk: Node = dg.get("link")
+					_lines.append("DARTS: state %s net %s me %d mode %s scores %s current %d darts_left %d winner %d hits %s chips %d tables %s" % [dg.get("_state"), str(dg.get("_net")), int(dg.get("_me")), rl3.get("mode"), str(rl3.get("scores")), int(rl3.get("current")), int(rl3.get("darts_left")), int(rl3.get("winner")), str(rl3.get("turn_hits")), int((session.get("_wallet") as RefCounted).get("balance")), str(lk.get("tables")) if lk != null else "-"])
+				"join":
+					dg.call("_on_join")
+				"play":  # "!darts play [target]": our next turn (waits up to 40 s for it), three darts at the target or the AI's choice
+					var rl4: RefCounted = dg.get("rules")
+					var waited := 0.0
+					while String(dg.get("_state")) != "aim" and waited < 40.0:
+						await get_tree().create_timer(0.1).timeout
+						waited += 0.1
+					for i in 3:
+						var w2 := 0.0
+						while String(dg.get("_state")) != "aim" and w2 < 6.0:
+							await get_tree().create_timer(0.05).timeout
+							w2 += 0.05
+						if String(dg.get("_state")) != "aim" or int(rl4.get("current")) != int(dg.get("_me")):
+							break
+						dg.set("_aim", rl4.call("target_point", words[2] if words.size() > 2 else rl4.call("ai_target")))
+						var ev3 := InputEventMouseButton.new()
+						ev3.button_index = MOUSE_BUTTON_LEFT
+						ev3.pressed = true
+						dg.call("_unhandled_input", ev3)
+						await get_tree().create_timer(0.7).timeout
+				"exact":  # "!darts exact": no hand drift and (as host) no throw spread, so a dart lands where aimed
+					var acfg: Dictionary = (dg.get("cfg") as Dictionary)["aim"]
+					acfg["sway"] = 0.0
+					acfg["spread"] = 0.0
+					var lk2: Node = dg.get("link")
+					if lk2 != null:
+						((lk2.get("_cfg") as Dictionary)["aim"] as Dictionary)["spread"] = 0.0
+				"hostset":  # host: "!darts hostset <board> <score 0> <score 1>" sets a running match's scores
+					var lk3: Node = dg.get("link")
+					var mt: Dictionary = (lk3.get("_matches") as Dictionary).get(int(words[2]), {})
+					if not mt.is_empty():
+						var hr: RefCounted = mt["rules"]
+						var sc: PackedInt32Array = hr.get("scores")
+						sc[0] = int(words[3])
+						sc[1] = int(words[4])
+						hr.set("scores", sc)
+						hr.set("turn_start", sc[int(hr.get("current"))])
+						_lines.append("DARTS hostset: %s" % str(hr.get("scores")))
 				"esc":
 					dg.call("request_close")
 		"pachinko":  # "!pachinko": stand in front of the casino's pachinko wall (the chips show at the top right there)

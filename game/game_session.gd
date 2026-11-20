@@ -5271,6 +5271,8 @@ func _club_setup(first: int) -> void:
 	_darts.setup(_wallet, _player, _player_hud, _custom_layer, _sounds, _rng, ClubIsland.CENTER)
 	_darts.finished.connect(save_profile)
 	if net != null:
+		_darts.set_link(net.darts, func() -> int: return net.my_id())
+	if net != null:
 		net.slots.ask_pot()  # the lobby's slot pot on the machines
 	_pachinko.set_pot(_pachinko_pot)
 	_slot_machines = _casino["slots"]

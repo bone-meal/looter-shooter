@@ -30,6 +30,7 @@ const NetDrops = preload("res://game/net_drops.gd")
 const NetScores = preload("res://game/net_scores.gd")
 const NetRounds = preload("res://game/net_rounds.gd")
 const NetSlots = preload("res://game/net_slots.gd")
+const NetDarts = preload("res://game/net_darts.gd")
 const NetDowns = preload("res://game/net_downs.gd")
 const NetSea = preload("res://game/net_sea.gd")
 
@@ -84,6 +85,7 @@ var drops: Node  # guns players drop for each other (game/net_drops.gd)
 var scores: Node  # the party's scoreboard rows (game/net_scores.gd)
 var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
 var slots: Node  # the lobby's shared slot jackpot (game/net_slots.gd)
+var darts: Node  # darts matches between players (game/net_darts.gd)
 var downs: Node  # who is down or out on the islands, revives, the party's game over (game/net_downs.gd)
 var sea: Node  # the sea's fleet, helms, decks, swimmers and ropes (game/net_sea.gd)
 var space: Node = null  # the sea world (game/sea_world.gd) once built: its floating origin turns positions to and from shared ones
@@ -174,6 +176,10 @@ func _ready() -> void:
 	slots.name = "Slots"
 	slots.net = self
 	add_child(slots)
+	darts = NetDarts.new()
+	darts.name = "Darts"
+	darts.net = self
+	add_child(darts)
 	downs = NetDowns.new()
 	downs.name = "Downs"
 	downs.net = self

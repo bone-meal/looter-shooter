@@ -4,8 +4,12 @@
 # dart flies and sticks where it lands. Three darts a turn, then the house player throws (it picks targets like a
 # club player and scatters by its skill). Rules and scoring: core/darts_rules.gd. Chips: the stake leaves the wallet
 # at the start, a win pays it back twice; leaving a running game forfeits it.
+# ONLINE (game/net_darts.gd, `link`): "Another player" opens the board for a challenger; someone else at that line
+# is offered to Join (same stake). The host plays the rules: our throw sends only the aimed point, the landing and
+# the new score come back; the host names the winner (also when one leaves). Other players' darts show on the boards.
 # Dependencies: core/darts_rules.gd, game/dart_board.gd, game/darts_screen.gd, data/darts.json, core/data_store.gd,
-# core/wallet.gd (handed in), game/player.gd, game/player_hud.gd, game/fantasy_sounds.gd (sounds dart_throw / dart_hit / dart_bust).
+# core/wallet.gd (handed in), game/player.gd, game/player_hud.gd, game/fantasy_sounds.gd (sounds dart_throw / dart_hit / dart_bust),
+# game/net_darts.gd (online matches, optional).
 extends Node3D
 
 const Rules = preload("res://core/darts_rules.gd")
@@ -47,6 +51,12 @@ var _last_mode := "501"
 var _last_opp := ""
 var _turn_text: Array = ["", ""]
 var player_name := "You"
+var link: Node = null  # game/net_darts.gd when in a lobby
+var my_peer := Callable()  # -> int, our peer id
+var _board_i := -1
+var _net := false  # playing another player through the host
+var _me := 0  # our place in the match (0 vs the house)
+var _waiting_since := 0.0
 
 
 func setup(wallet: RefCounted, player: CharacterBody3D, hud: Control, layer: CanvasLayer, sounds: Node, rng: RandomNumberGenerator, club_centre: Vector3) -> void:
@@ -73,6 +83,27 @@ func setup(wallet: RefCounted, player: CharacterBody3D, hud: Control, layer: Can
 	_cam = Camera3D.new()
 	_cam.fov = 24.0
 	add_child(_cam)
+	_screen.join.connect(_on_join)
+
+
+func set_link(net_darts: Node, peer_of_me: Callable) -> void:
+	link = net_darts
+	my_peer = peer_of_me
+	link.started.connect(_on_net_started)
+	link.thrown.connect(_on_net_thrown)
+	link.ended.connect(_on_net_ended)
+	link.refused.connect(_on_net_refused)
+
+
+func _online() -> bool:
+	return link != null and bool(link.call("online"))
+
+
+func _table(i: int) -> Dictionary:
+	if not _online():
+		return {}
+	var t: Array = link.get("tables")
+	return t[i] if i < t.size() else {}
 
 
 # The board whose throw line `pos` stands at, or -1.
@@ -90,6 +121,7 @@ func is_open() -> bool:
 
 func open(i: int) -> void:
 	_board = boards[i]
+	_board_i = i
 	_state = "menu"
 	_player.controls_enabled = false
 	_hud.visible = false
@@ -100,13 +132,26 @@ func open(i: int) -> void:
 	_cam.global_position = _board.eye_position()
 	_cam.look_at(_board.global_position, Vector3.UP)
 	_cam.make_current()
-	_screen.show_menu(int(_wallet.get("balance")))
 	_board.set_chalk("DARTS\n\n501\nAround the\nClock")
+	var t := _table(i)
+	if t.is_empty():
+		_screen.show_menu(int(_wallet.get("balance")), _online())
+	elif String(t["state"]) == "open":
+		_screen.show_offer("%s waits for a challenger:\n%s for %s" % [String((t["names"] as Array)[0]), "501" if String(t["mode"]) == "501" else "Around the Clock", "fun (no chips)" if int(t["stake"]) == 0 else "%d chips" % int(t["stake"])])
+	else:
+		_screen.visible = true
+		_screen.show_result("%s and %s are playing here." % [String((t["names"] as Array)[0]), String((t["names"] as Array)[1])], false, false)
 
 
 func close() -> void:
 	if _state == "":
 		return
+	if _online() and (_net or _state == "waiting"):
+		link.call("ask_leave", _board_i)  # a running match is lost (the other wins), an open one is taken down
+	if _state == "waiting" and _paid:  # nobody joined: the stake comes back
+		_wallet.call("add", _stake)
+	_paid = false
+	_net = false
 	_token += 1
 	_state = ""
 	_screen.visible = false
@@ -125,6 +170,14 @@ func close() -> void:
 
 
 func _on_start(mode: String, opponent: String, stake: int) -> void:
+	if opponent == "player":
+		_open_for_player(mode, stake)
+		return
+	if not _table(_board_i).is_empty():
+		_screen.callout("This board is in use", Color(1.0, 0.45, 0.4))
+		return
+	_me = 0
+	_net = false
 	_ai = {}
 	for a: Dictionary in cfg["ai"]:
 		if String(a["id"]) == opponent:
@@ -152,6 +205,11 @@ func _begin_turn() -> void:
 	_board.clear_darts()
 	_turn_text[rules.current] = ""
 	_show()
+	if _net:
+		_state = "aim" if rules.current == _me else "wait"
+		_steady_left = 1.0
+		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		return
 	if rules.current == 0:
 		_state = "aim"
 		_steady_left = 1.0
@@ -195,6 +253,11 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 	elif click.button_index == MOUSE_BUTTON_LEFT and click.pressed:
 		get_viewport().set_input_as_handled()
+		if _net:  # the host adds the spread and scores it; the dart flies when its answer comes
+			_state = "flying"
+			_waiting_since = _t
+			link.call("ask_throw", _board_i, _aim + _sway())
+			return
 		_throw(_aim + _sway() + Vector2(_rng.randfn(0.0, float(cfg["aim"]["spread"])), _rng.randfn(0.0, float(cfg["aim"]["spread"]))), YOU, true)
 
 
@@ -223,6 +286,8 @@ func _process(delta: float) -> void:
 			_steadying = false
 	else:
 		_steady_left = minf(_steady_left + delta / (float(a["steady_seconds"]) * 1.6), 1.0)
+	if _net and _state == "flying" and _flights.is_empty() and _t - _waiting_since > 2.5 and rules.current == _me:
+		_state = "aim"  # the host did not take that throw (too early): throw again
 	if _state == "aim":
 		var at := _board.mm_to_world(_aim + _sway(), 0.01)
 		_screen.set_reticle(true, _cam.unproject_position(at), _steady_left, _steadying)
@@ -249,8 +314,8 @@ func _process(delta: float) -> void:
 		k += 1
 
 
-# A dart toward board point p (mm). The player's comes from the right hand, the house's from the left.
-func _throw(p: Vector2, colour: Color, mine: bool) -> void:
+# A dart toward board point p (mm). Ours comes from the right hand, the other player's / house's from the left.
+func _throw(p: Vector2, colour: Color, mine: bool, done := Callable()) -> void:
 	_state = "flying"
 	_steadying = false
 	var dart := DartBoard.make_dart(colour)
@@ -259,24 +324,29 @@ func _throw(p: Vector2, colour: Color, mine: bool) -> void:
 	var from := _cam.global_position + _cam.global_basis.x * side - _cam.global_basis.y * 0.1 - _cam.global_basis.z * 0.35
 	_sounds.call("play", "dart_throw", from)
 	var token := _token
-	_flights.append([dart, from, _board.mm_to_world(p), p, colour, 0.0, float(cfg["aim"]["flight_seconds"]), func() -> void: _landed(p, colour, token)])
+	_flights.append([dart, from, _board.mm_to_world(p), p, colour, 0.0, float(cfg["aim"]["flight_seconds"]), done if done.is_valid() else func() -> void: _landed(p, colour, token)])
 
 
 func _landed(p: Vector2, colour: Color, token: int) -> void:
 	if token != _token:
 		return
 	_board.stick(p, colour, _rng)
-	var res := rules.throw_dart(p)
-	var hit: Dictionary = res["hit"]
-	_sounds.call("play", "dart_hit" if String(hit["label"]) != "MISS" else "dart_throw", _board.mm_to_world(p))
 	var who := rules.current
+	var res := rules.throw_dart(p)
+	_after_dart(p, res["hit"], bool(res["bust"]), bool(res["turn_over"]), bool(res["won"]), who, token)
+
+
+# What a landed dart shows (ours, the house's or the other player's): the turn's darts, call-outs, sounds, then the
+# next step: the end (vs the house; online the host's word ends it), the next turn after a pause, or the next dart.
+func _after_dart(p: Vector2, hit: Dictionary, bust: bool, turn_over: bool, won: bool, who: int, token: int) -> void:
+	_sounds.call("play", "dart_hit" if String(hit["label"]) != "MISS" else "dart_throw", _board.mm_to_world(p))
 	var turn_sum := 0
 	var parts: PackedStringArray = []
 	for h: Dictionary in rules.turn_hits:
 		parts.append(String(h["label"]))
 		turn_sum += int(h["points"])
 	_turn_text[who] = " ".join(parts) + ((" = %d" % turn_sum) if rules.mode == "501" else "")
-	if bool(res["bust"]):
+	if bust:
 		_turn_text[who] = " ".join(parts) + "  BUST"
 		_screen.callout("BUST", Color(1.0, 0.4, 0.35))
 		_sounds.call("play", "dart_bust")
@@ -285,11 +355,14 @@ func _landed(p: Vector2, colour: Color, token: int) -> void:
 	else:
 		_screen.callout("MISS", Color(0.7, 0.7, 0.75))
 	_show()
-	if bool(res["won"]):
-		_end_game(token)
+	if won:
+		if not _net:
+			_end_game(token)
+		else:
+			_state = "result"
 		return
-	if bool(res["turn_over"]):
-		if rules.mode == "501" and not bool(res["bust"]) and rules.turn_hits.size() == 3:
+	if turn_over:
+		if rules.mode == "501" and not bust and rules.turn_hits.size() == 3:
 			if turn_sum == 180:
 				_screen.callout("ONE HUNDRED AND EIGHTY!", Color(1.0, 0.8, 0.2))
 			elif turn_sum >= 100:
@@ -300,8 +373,10 @@ func _landed(p: Vector2, colour: Color, token: int) -> void:
 			return
 		rules.next_turn()
 		_begin_turn()
-	elif who == 0:
+	elif who == _me:
 		_state = "aim"
+	elif _net:
+		_state = "wait"
 
 
 func _ai_turn(token: int) -> void:
@@ -336,6 +411,113 @@ func _end_game(token: int) -> void:
 	_paid = false
 	_screen.show_result(text, won)
 	finished.emit()
+
+
+# ---------------------------------------------------------------- online
+
+func _open_for_player(mode: String, stake: int) -> void:
+	if not _online():
+		return
+	if not _table(_board_i).is_empty():
+		_screen.callout("This board is in use", Color(1.0, 0.45, 0.4))
+		return
+	if stake > 0 and not bool(_wallet.call("spend", stake)):
+		_screen.callout("Not enough chips", Color(1.0, 0.45, 0.4))
+		return
+	_stake = stake
+	_paid = stake > 0
+	_last_mode = mode
+	_state = "waiting"
+	link.call("ask_open", _board_i, mode, stake)
+	_screen.show_waiting("Waiting for a challenger at this board...\n%s for %s\n(another player walks up to this line and joins)" % ["501" if mode == "501" else "Around the Clock", "fun" if stake == 0 else "%d chips" % stake])
+
+
+func _on_join() -> void:
+	var t := _table(_board_i)
+	if t.is_empty() or String(t["state"]) != "open":
+		_screen.show_result("Nobody is waiting here any more.", false, false)
+		return
+	var stake := int(t["stake"])
+	if stake > 0 and not bool(_wallet.call("spend", stake)):
+		_screen.callout("Not enough chips (%d)" % stake, Color(1.0, 0.45, 0.4))
+		return
+	_stake = stake
+	_paid = stake > 0
+	_state = "waiting"
+	link.call("ask_join", _board_i)
+	_screen.show_waiting("Joining...")
+
+
+func _on_net_started(board: int, players: Array, names: Array, snap: Dictionary) -> void:
+	var me := int(my_peer.call()) if my_peer.is_valid() else 0
+	if board != _board_i or _state != "waiting" or not players.has(me):
+		return
+	_token += 1
+	_net = true
+	_me = players.find(me)
+	_names = names.duplicate()
+	rules.apply(snap)
+	_board.clear_darts()
+	_turn_text = ["", ""]
+	_aim = Vector2(0, 103.0) if rules.mode == "501" else rules.target_point("S1")
+	_screen.show_play()
+	_screen.callout("GAME ON", Color(1.0, 0.85, 0.35))
+	_begin_turn()
+
+
+func _on_net_thrown(board: int, thrower: int, p: Vector2, snap: Dictionary) -> void:
+	var playing_here := _net and board == _board_i
+	var colour := YOU if (thrower == 0) else HOUSE
+	if not playing_here:  # someone else's match: their darts show on that board (unless we play the house there)
+		if board < boards.size() and not (_state != "" and board == _board_i):
+			var b := boards[board]
+			b.stick(p, colour, _rng)
+			if bool(snap["turn_over"]) or bool(snap["won"]):
+				get_tree().create_timer(1.6).timeout.connect(b.clear_darts)
+		return
+	var token := _token
+	var mine := thrower == _me
+	_throw(p, YOU if mine else HOUSE, mine, func() -> void:
+		if token != _token:
+			return
+		_board.stick(p, YOU if mine else HOUSE, _rng)
+		rules.apply(snap)
+		_after_dart(p, snap["hit"], bool(snap["bust"]), bool(snap["turn_over"]), bool(snap["won"]), thrower, token))
+
+
+func _on_net_ended(board: int, winner_peer: int, reason: String) -> void:
+	if board != _board_i or not _net:
+		return  # (also: our own open board taken down after we cancelled)
+	var me := int(my_peer.call()) if my_peer.is_valid() else 0
+	var won := winner_peer == me
+	var stake := _stake if _paid else 0
+	if won and stake > 0:  # paid at once (the result shows after the last dart)
+		_wallet.call("add", stake * 2)
+	_paid = false
+	finished.emit()
+	var token := _token
+	if reason == "won":
+		await get_tree().create_timer(1.4).timeout  # let the last dart land first
+	if token != _token:
+		return
+	_net = false
+	_state = "result"
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	var other := String(_names[1 - _me])
+	var text := ("YOU WIN!" if reason == "won" else "%s left: YOU WIN!" % other) if won else "%s wins." % other
+	if stake > 0:
+		text += ("\n+%d chips" % stake) if won else ("\nYou lose %d chips." % stake)
+	_screen.show_result(text, won, false)
+
+
+func _on_net_refused(text: String) -> void:
+	if _state != "waiting":
+		return
+	if _paid:
+		_wallet.call("add", _stake)
+		_paid = false
+	_state = "menu"
+	_screen.show_result(text, false, false)
 
 
 # Esc while playing: leave (a running game with a stake is lost).

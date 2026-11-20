@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 12;!go club;!wait 20;!darts open 0;!wait 1.5;!snap g_offer;!darts join;!wait 2;!snap g_on;!darts note;!darts play;!darts note;!wait 12;!darts note;!snap g_result;!darts esc;!wait 6;!darts open 1;!wait 1;!darts join;!wait 3;!darts note;!darts esc;!wait 2;!darts note
