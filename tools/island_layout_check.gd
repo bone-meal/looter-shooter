@@ -36,7 +36,7 @@ func _walk(v: Variant, where: String) -> int:
 		var d: Dictionary = v
 		if d.get("island") is String and d.get("at") is Array and _land.index_of(String(d["island"])) >= 0:
 			var p := _land.on_island(String(d["island"]), d["at"])
-			_check(p, "%s %s" % [where, String(d["island"])], 5.5 if where.contains("shelters") else 2.5)  # (a hut's footprint)
+			_check(p, "%s %s" % [where, String(d["island"])], 11.0 if where.contains("shelters") else 2.5)  # (a 12 x 9 m hut: 7.5 m to a corner + room to walk round it)
 			n += 1
 		for k: Variant in d:
 			n += _walk(d[k], "%s.%s" % [where, str(k)])

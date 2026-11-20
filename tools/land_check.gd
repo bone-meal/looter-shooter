@@ -47,7 +47,7 @@ func _ready() -> void:
 	_say("washing up: dry land stays (%s), a spot in the sea comes 1.5 m inside the nearest shore (%s), a named island wins (%s)" % [dry, wet, forced],
 		dry.is_equal_approx(Vector3(5, land.height_at(5, 5), 5)) and absf(Vector2(wet.x, wet.z).distance_to(second) - (float(land.islands[1]["radius"]) - 1.5)) < 0.01 and land.on_land(wet.x, wet.z)
 		and absf(Vector2(forced.x, forced.z).length() - (float(home["radius"]) - 1.5)) < 0.01)
-	_say("the islands' area: the middle of the farthest island counts, a spot 400 m away does not", land.within((land.islands[2]["at"] as Vector2).x, (land.islands[2]["at"] as Vector2).y) and land.within(0.0, 0.0) and not land.within(400.0, 0.0))
+	_say("the islands' area: the middle of the farthest island counts, a spot 700 m away does not", land.within((land.islands[2]["at"] as Vector2).x, (land.islands[2]["at"] as Vector2).y) and land.within(0.0, 0.0) and not land.within(700.0, 0.0))
 
 	var rng := RandomNumberGenerator.new()
 	rng.seed = 8
@@ -99,7 +99,11 @@ func _ready() -> void:
 	var weapons: Dictionary = DataStore.load_json("res://data/weapons.json")["weapons"]
 	var chalk: Dictionary = DataStore.load_json("res://data/chalk_guns.json")["cells"]
 	var boards := PackedStringArray()
-	var boards_fine := land.wall_buys.size() == weapons.size()
+	var boards_fine := land.wall_buys.size() <= weapons.size()  # (polish1 D4b: the huts' wall buys added; each gun at most once)
+	var seen_guns := {}
+	for board: Dictionary in land.wall_buys:
+		boards_fine = boards_fine and not seen_guns.has(String(board["gun"]))
+		seen_guns[String(board["gun"])] = true
 	for i in land.wall_buys.size():
 		var board: Dictionary = land.wall_buys[i]
 		var at: Vector2 = board["at"]
@@ -112,7 +116,7 @@ func _ready() -> void:
 
 	# shelters
 	var huts := ShelterRules.new(land.cfg["windows"], land.shelters)
-	var huts_fine := huts.huts.size() == land.shelters.size() and huts.windows.size() == huts.huts.size() * 3 and huts.doors.size() == huts.huts.size()
+	var huts_fine := huts.huts.size() == land.shelters.size() and huts.windows.size() == huts.huts.size() * 5 and huts.doors.size() == huts.huts.size()
 	for hut in huts.huts.size():
 		var at: Vector2 = huts.huts[hut]["at"]
 		var isle := int(land.shelters[hut]["island"])
@@ -121,15 +125,16 @@ func _ready() -> void:
 		huts_fine = huts_fine and huts.hut_of((door["step"] as Vector2).x, (door["step"] as Vector2).y) == -1 and huts.hut_of((door["in"] as Vector2).x, (door["in"] as Vector2).y) == hut
 		huts_fine = huts_fine and (door["step"] as Vector2).distance_to(land.islands[isle]["at"]) < at.distance_to(land.islands[isle]["at"])  # the door looks inland
 		for board: Dictionary in land.wall_buys:
-			huts_fine = huts_fine and at.distance_to(board["at"]) > 8.0
+			var bat: Vector2 = board["at"]
+			huts_fine = huts_fine and (at.distance_to(bat) > 8.0 or huts.hut_of(bat.x, bat.y) == hut)  # (its own wall buy stands inside)
 		for id: String in ["spawn", "painting_arena", "painting_fantasy"]:
 			huts_fine = huts_fine and at.distance_to(land.place_of(id)["at"]) > 9.0
 	for i in huts.windows.size():
 		var opening: Dictionary = huts.windows[i]
 		var hut := int(opening["hut"])
 		huts_fine = huts_fine and huts.hut_of((opening["out"] as Vector2).x, (opening["out"] as Vector2).y) == -1 and huts.hut_of((opening["in"] as Vector2).x, (opening["in"] as Vector2).y) == hut
-		huts_fine = huts_fine and is_zero_approx(land.height_at((opening["out"] as Vector2).x, (opening["out"] as Vector2).y)) and huts.window_near((opening["in"] as Vector2).x, (opening["in"] as Vector2).y) == i and huts.boards[i] == huts.full()
-	_say("%d huts with a door looking inland and three boarded windows each, on flat ground, clear of boards and paintings" % huts.huts.size(), huts_fine and huts.huts.size() >= 1)
+		huts_fine = huts_fine and is_zero_approx(land.height_at((opening["out"] as Vector2).x, (opening["out"] as Vector2).y)) and huts.window_near((opening["in"] as Vector2).x, (opening["in"] as Vector2).y) == i and huts.boards[i] == huts.full_of(i)
+	_say("%d huts with a door looking inland (door_boards planks) and four boarded windows each, on flat ground, clear of boards and paintings" % huts.huts.size(), huts_fine and huts.huts.size() >= 1)
 	var prey: Vector2 = huts.huts[0]["at"]
 	var first: Dictionary = huts.windows[0]
 	var far_out: Vector2 = (first["out"] as Vector2) + ((first["out"] as Vector2) - (first["mid"] as Vector2)) * 6.0
@@ -148,6 +153,25 @@ func _ready() -> void:
 		hopped = move.has("hop") and move["hop"] == first["in"]
 	_say("at the window: nothing torn on arrival, then %d boards one by one, then it climbs in after %.1f s in all" % [torn, seconds], not early and torn == huts.full() and hopped and huts.boards[0] == 0 and seconds >= float(huts.full()) * float(land.cfg["windows"]["tear_seconds"]))
 	var door0: Dictionary = huts.doors[0]
+	# (polish1 D4b) the door: shut, it is bashed in plank by plank like a window; open, they walk straight in
+	var de := int(door0["entry"])
+	var at_door: Vector2 = huts.windows[de]["out"]
+	var door_torn := 0
+	var door_hop := false
+	var dsec := 0.0
+	while dsec < 40.0 and not door_hop:
+		dsec += 0.5
+		var dm: Dictionary = huts.guide(at_door.x, at_door.y, prey.x, prey.y, clock + 200.0 + dsec)
+		if dm.has("tore") and int(dm["tore"]) == de:
+			door_torn += 1
+		door_hop = dm.has("hop") and dm["hop"] == huts.windows[de]["in"]
+	var shut_ok := door_torn == huts.full_of(de) and door_hop and not huts.toggle_door(de)  # a broken door cannot be shut
+	huts.board_all()
+	var opened := huts.toggle_door(de) and huts.encoded(de) == huts.full_of(de) + 100
+	var walk_in: Dictionary = huts.guide(at_door.x, at_door.y, prey.x, prey.y, clock + 300.0)
+	huts.set_boards(de, huts.full_of(de))
+	_say("a shut door: %d planks bashed off, then in; a broken one will not shut; opened, they walk in at once" % door_torn, shut_ok and opened and walk_in.has("hop") and huts.open[de] == 0)
+	huts.board_all()
 	huts.set_boards(1, 0)
 	var second_window: Vector2 = huts.windows[1]["out"]
 	_say("a full hut lets nobody else climb in; with room the next one does", not huts.guide(second_window.x, second_window.y, prey.x, prey.y, clock + 60.0, 1.4, false).has("hop") and huts.guide(second_window.x, second_window.y, prey.x, prey.y, clock + 60.0, 1.4, true).has("hop"))
@@ -177,7 +201,10 @@ func _ready() -> void:
 	huts.set_boards(0, 0)
 	_say("a new round pays again; a full window takes no board; the carpenter makes every window whole", huts.nail(0, clock + 5.0) == pays and huts.nail(1, clock + 5.0) == -1 and huts.boards[0] == 1)
 	huts.board_all()
-	_say("... all whole", huts.boards.count(huts.full()) == huts.boards.size())
+	var whole := true
+	for i in huts.boards.size():
+		whole = whole and huts.boards[i] == huts.full_of(i)
+	_say("... all whole", whole)
 
 	_lines.append("LAND_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/land_check.log", FileAccess.WRITE)

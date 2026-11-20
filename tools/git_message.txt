@@ -1,6 +1,12 @@
-Polish1 D4a: no getting stuck on the islands' rocks and slopes
+Polish1 D4b: hold-out huts
 
-Ridge and boulder colliders follow the rocks' real shape (convex shells, no invisible box edges or balls taller than the stone), the automatic unstuck now also knows the islands' ground (under it = back on top, as in Aurelind), and a dev sweep (!nav sweep <island>) runs the body along every ridge, ruin and boulder from four sides and up every hill: Home Sand 64 runs and Wreck Cay 44 runs, 0 stalls, the unstuck never needed; hills climbed to the top.
+Huts 12 x 9 m with a real plank door you open and shut (enemies bash it
+plank by plank like the window boards, walk through when open), four
+boarded windows, pitched thatch roof with gable boards. Inside each hut:
+a wall buy, an ammo crate (refills every gun's spare ammo) and one perk.
+A fourth hut on Painter's Key. Door synced online (client asks, host
+checks). Chalk outlines for every gun body. Boulder colliders without
+undercut. Features moved clear of the huts; dev !nav huts sweep.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

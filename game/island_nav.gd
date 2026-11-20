@@ -68,7 +68,7 @@ func _tag(node: Node) -> void:
 	for child in node.get_children():
 		if child is StaticBody3D:
 			var p := (child as Node3D).global_position
-			if _area.has_point(Vector2(p.x, p.z)) and not child.is_in_group(&"island_nav"):
+			if _area.has_point(Vector2(p.x, p.z)) and not child.is_in_group(&"island_nav") and not child.is_in_group(&"nav_skip"):  # (doors: open / shut)
 				child.add_to_group(&"island_nav")
 		elif child.get_child_count() > 0 and not (child is CharacterBody3D) and not (child is Control):
 			_tag(child)

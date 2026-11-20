@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 20;!net guest_in;!wait 2;!hut window 4 out;!wait 1;!hut door 0;!wait 3;!hut g_opened;!snap huts_guest_open;!hut crate 0;!wait 4;!hut window 4 out;!wait 1;!hut door 0;!wait 3;!hut g_shut;!snap huts_guest_shut

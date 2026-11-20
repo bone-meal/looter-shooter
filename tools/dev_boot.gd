@@ -2320,6 +2320,28 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			if words.size() > 2 and words[1] == "in":
 				var mid: Vector2 = (hut_rules.get("huts") as Array)[int(words[2])]["at"]
 				player.call("teleport", Vector3(500.0 + mid.x, 0.15, mid.y), 0.0)
+			elif words.size() > 2 and words[1] == "door":  # (polish1 D4b) "!hut door 0": open / shut hut n's door (as if we stood at it)
+				session.call("_toggle_door", int((hut_rules.get("doors") as Array)[int(words[2])]["entry"]))
+			elif words.size() > 2 and words[1] == "crate":  # (polish1 D4b) "!hut crate 0": empty our spare ammo, stand at ammo crate n and use it
+				var crate: Node3D = (session.get("_ammo_crates") as Array)[int(words[2])]
+				var pools_c: RefCounted = player.get("pools")
+				for body_c: String in pools_c.call("bodies"):
+					pools_c.call("take", body_c, int(pools_c.call("left", body_c)))
+				var spare0 := PackedStringArray()
+				for body_c: String in pools_c.call("bodies"):
+					spare0.append("%s %d" % [body_c, int(pools_c.call("left", body_c))])
+				var mid_c := crate.global_position + (Vector3(500.0, 0.0, 0.0) - crate.global_position).normalized() * 1.4
+				player.call("teleport", Vector3(mid_c.x, crate.global_position.y + 0.15, mid_c.z), 0.0)
+				await get_tree().create_timer(0.3).timeout
+				player.call("look_at_point", crate.global_position + Vector3(0, 0.6, 0))
+				(session.call("score") as RefCounted).call("give", 3000)
+				var pts0 := int((session.call("score") as RefCounted).get("points"))
+				var here_c := int(session.call("_ammo_crate_here"))
+				session.call("_use_ammo_crate", int(words[2]))
+				var spare1 := PackedStringArray()
+				for body_c: String in pools_c.call("bodies"):
+					spare1.append("%s %d" % [body_c, int(pools_c.call("left", body_c))])
+				_lines.append("HUT crate %s: crate here %d, points %d -> %d, spare before [%s] after [%s]" % [words[2], here_c, pts0, int((session.call("score") as RefCounted).get("points")), ", ".join(spare0), ", ".join(spare1)])
 			elif words.size() > 2 and words[1] == "window":
 				var opening: Dictionary = (hut_rules.get("windows") as Array)[int(words[2])]
 				var side: Vector2 = ((opening["out"] as Vector2) - (opening["mid"] as Vector2)) * (1.3 if words.size() > 3 else -1.3)
@@ -2330,7 +2352,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				for enemy: Variant in session.call("director").call("enemy_list"):
 					if is_instance_valid(enemy) and int(hut_rules.call("hut_of", (enemy as Node3D).global_position.x - 500.0, (enemy as Node3D).global_position.z)) >= 0:
 						inside += 1
-				_lines.append("HUT %s: boards %s, player in hut %d, enemies inside huts %d of %d, points %d" % [" ".join(words.slice(1)), str(hut_rules.get("boards")), int(hut_rules.call("hut_of", player.global_position.x - 500.0, player.global_position.z)), inside,
+				_lines.append("HUT %s: boards %s, doors open %s, player in hut %d, enemies inside huts %d of %d, points %d" % [" ".join(words.slice(1)), str(hut_rules.get("boards")), str(Array(hut_rules.get("open") as PackedByteArray)), int(hut_rules.call("hut_of", player.global_position.x - 500.0, player.global_position.z)), inside,
 					(session.call("director").call("enemy_list") as Array).size(), int((session.call("score") as RefCounted).get("points"))])
 		"wall":  # "!wall goto 3": stand in front of wall buy n, looking at its board
 			var land: RefCounted = session.get("_land")
@@ -3052,7 +3074,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							tries += 1
 							var moved := Vector2(player.global_position.x - from3.x, player.global_position.z - from3.z).length()
 							if moved < 1.5:
-								stalls.append("%s at (%.0f, %.0f) side %d moved %.2f, in front: %s" % [b["kind"], start.x, start.y, k, moved, _what_ahead(player)])
+								stalls.append("%s at (%.0f, %.0f) side %d moved %.2f, in front: %s, touching: %s, at %.1f %.1f" % [b["kind"], start.x, start.y, k, moved, _what_ahead(player), _touching(player), player.global_position.x - centre.x, player.global_position.z - centre.z])
 					var hills_l: PackedStringArray = []
 					for hill: Array in (land2.get("islands")[isle]["hills"] as Array):
 						var c2: Vector2 = hill[0]
@@ -3065,6 +3087,76 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						Input.action_release("move_forward")
 						hills_l.append("%.1f of %.1f m (ended at %.0f, %.0f; in front: %s)" % [player.global_position.y, float(hill[2]), player.global_position.x - centre.x, player.global_position.z - centre.z, _what_ahead(player)])
 					_lines.append("NAV sweep %s: %d runs, %d stalls, unstuck acted %d; hills climbed %s%s" % [words[2] if words.size() > 2 else "home", tries, stalls.size(), int(unst.get("freed")) - freed0, ", ".join(hills_l), ("; " + "; ".join(stalls)) if not stalls.is_empty() else ""])
+				"huts":  # (polish1 D4b) "!nav huts <island id>": open each hut's door, then run past its walls outside (both ways, 1.2 m off),
+					# in through the door, round the inside (past the table, wall buy, perk and ammo crate) and out again; a line per stall
+					var land3: RefCounted = session.get("_land")
+					var isle3 := int(land3.call("index_of", words[2] if words.size() > 2 else "home"))
+					var sh: Node3D = session.get("_shelters")
+					var hr: RefCounted = sh.get("rules")
+					var hut_runs := 0
+					var hut_stalls: PackedStringArray = []
+					var inside_ok := 0
+					for hut in (hr.get("huts") as Array).size():
+						if int((land3.get("shelters") as Array)[hut]["island"]) != isle3:
+							continue
+						var door_e := int((hr.get("doors") as Array)[hut]["entry"])
+						if (hr.get("open") as PackedByteArray)[door_e] == 0:
+							session.call("_toggle_door", door_e)
+						await get_tree().create_timer(0.8).timeout
+						var hat: Vector2 = (hr.get("huts") as Array)[hut]["at"]
+						var hyaw := float((hr.get("huts") as Array)[hut]["yaw"])
+						var hx := 6.0 + 1.2
+						var hz := 4.5 + 1.2
+						var runs: Array = [
+							[Vector2(-hx - 2, -hz), Vector2(hx + 2, -hz), "back wall"], [Vector2(hx + 2, -hz), Vector2(-hx - 2, -hz), "back wall rev"],
+							[Vector2(-hx, -hz - 2), Vector2(-hx, hz + 2), "left wall"], [Vector2(-hx, hz + 2), Vector2(-hx, -hz - 2), "left wall rev"],
+							[Vector2(hx, -hz - 2), Vector2(hx, hz + 2), "right wall"], [Vector2(hx, hz + 2), Vector2(hx, -hz - 2), "right wall rev"],
+							[Vector2(-hx - 2, hz), Vector2(hx + 2, hz), "front wall"], [Vector2(hx + 2, hz), Vector2(-hx - 2, hz), "front wall rev"],
+							[Vector2(0, hz + 3.0), Vector2(0, 0.5), "in by the door"],
+							[Vector2(0, 3.2), Vector2(-4.9, -3.4), "to back left"], [Vector2(0, 3.2), Vector2(3.0, -3.6), "to back right"],
+							[Vector2(-4.9, -0.65), Vector2(0.5, -0.65), "past the table's side"], [Vector2(-1.15, -3.6), Vector2(-1.15, 2.6), "past the table's end"],
+							[Vector2(-1.0, 1.8), Vector2(-5.2, 1.8), "past the ammo crate"], [Vector2(3.4, 2.6), Vector2(3.4, -3.6), "past the perk"],
+							[Vector2(1.5, -3.4), Vector2(1.5, 3.4), "past the trap lever"], [Vector2(-4.9, 0.6), Vector2(4.9, 0.6), "across the middle"],
+							[Vector2(-1.0, -3.0), Vector2(0, hz + 3.0), "out by the door"]]
+						for run: Array in runs:
+							var s_l: Vector2 = run[0]
+							var g_l: Vector2 = run[1]
+							var s_w: Vector2 = hat + Vector2(s_l.x * cos(hyaw) + s_l.y * sin(hyaw), -s_l.x * sin(hyaw) + s_l.y * cos(hyaw))
+							var g_w: Vector2 = hat + Vector2(g_l.x * cos(hyaw) + g_l.y * sin(hyaw), -g_l.x * sin(hyaw) + g_l.y * cos(hyaw))
+							if float(land3.call("height_at", s_w.x, s_w.y)) < -0.3:
+								continue
+							player.call("teleport", centre + Vector3(s_w.x, float(land3.call("height_at", s_w.x, s_w.y)) + 0.2, s_w.y), 0.0)
+							await get_tree().create_timer(0.25).timeout
+							player.call("look_at_point", centre + Vector3(g_w.x, float(land3.call("height_at", g_w.x, g_w.y)) + 1.6, g_w.y))
+							var from4 := player.global_position
+							var want := minf(s_w.distance_to(g_w) - 0.6, 6.0)
+							Input.action_press("move_forward")
+							var held := 0.0
+							while held < 1.5 and Vector2(player.global_position.x - from4.x, player.global_position.z - from4.z).length() < want:
+								await get_tree().process_frame
+								held += get_process_delta_time()
+							Input.action_release("move_forward")
+							hut_runs += 1
+							var moved4 := Vector2(player.global_position.x - from4.x, player.global_position.z - from4.z).length()
+							if String(run[2]) == "in by the door" and int(hr.call("hut_of", player.global_position.x - centre.x, player.global_position.z - centre.z)) == hut:
+								inside_ok += 1
+							if moved4 < minf(1.5, want):
+								hut_stalls.append("hut %d %s moved %.2f, in front: %s, touching: %s" % [hut, run[2], moved4, _what_ahead(player), _touching(player)])
+						# the shut door holds: walking at it from outside leaves us outside
+						session.call("_toggle_door", door_e)
+						await get_tree().create_timer(0.6).timeout
+						var out_l := Vector2(0, hz + 3.0)
+						var out_w: Vector2 = hat + Vector2(out_l.x * cos(hyaw) + out_l.y * sin(hyaw), -out_l.x * sin(hyaw) + out_l.y * cos(hyaw))
+						player.call("teleport", centre + Vector3(out_w.x, float(land3.call("height_at", out_w.x, out_w.y)) + 0.2, out_w.y), 0.0)
+						await get_tree().create_timer(0.25).timeout
+						player.call("look_at_point", centre + Vector3(hat.x, 1.6, hat.y))
+						Input.action_press("move_forward")
+						await get_tree().create_timer(2.0).timeout
+						Input.action_release("move_forward")
+						if int(hr.call("hut_of", player.global_position.x - centre.x, player.global_position.z - centre.z)) == hut:
+							hut_stalls.append("hut %d: walked in through the SHUT door" % hut)
+						session.call("_toggle_door", door_e)
+					_lines.append("NAV huts %s: %d runs, %d stalls, got inside by the door %d%s" % [words[2] if words.size() > 2 else "home", hut_runs, hut_stalls.size(), inside_ok, ("; " + "; ".join(hut_stalls)) if not hut_stalls.is_empty() else ""])
 				"enemies":
 					var spots: PackedStringArray = []
 					for e: Variant in ((session.get("_rounds") as Node).get("_alive") as Array):
@@ -4202,4 +4294,31 @@ func _what_ahead(body: Node3D) -> String:
 			return "nothing"
 	var c: Node = hit["collider"]
 	return "%s (%s)" % [str(c.get_path()).get_slice("/", -1), str(c.get_parent().name) if c.get_parent() != null else ""]
+
+
+# (polish1 D4b) What a 0.6 m ball round the body's middle touches: "Node (parent) at x z" each, for stall lines.
+func _touching(body: Node3D) -> String:
+	var ball := PhysicsShapeQueryParameters3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.6
+	ball.shape = sphere
+	ball.transform = Transform3D(Basis(), body.global_position + Vector3(0, 0.9, 0))
+	ball.exclude = [(body as CollisionObject3D).get_rid()]
+	var found := PackedStringArray()
+	for t: Dictionary in body.get_world_3d().direct_space_state.intersect_shape(ball, 6):
+		var c: Node = t["collider"]
+		var at := (c as Node3D).global_position if c is Node3D else Vector3.ZERO
+		if c is CollisionObject3D:  # a body of many shapes (the island's rocks): where that one shape is
+			var owner_n := (c as CollisionObject3D).shape_owner_get_owner((c as CollisionObject3D).shape_find_owner(int(t["shape"])))
+			if owner_n is CollisionShape3D:
+				var sh3: Shape3D = (owner_n as CollisionShape3D).shape
+				if sh3 is ConvexPolygonShape3D and (sh3 as ConvexPolygonShape3D).points.size() > 0:
+					var sum := Vector3.ZERO
+					for q3: Vector3 in (sh3 as ConvexPolygonShape3D).points:
+						sum += q3
+					at = (owner_n as Node3D).global_transform * (sum / float((sh3 as ConvexPolygonShape3D).points.size()))
+				else:
+					at = (owner_n as Node3D).global_position
+		found.append("%s (%s) at %.1f %.1f" % [c.name, str(c.get_parent().name) if c.get_parent() != null else "", at.x - 500.0, at.z])
+	return ", ".join(found) if not found.is_empty() else "nothing"
 

@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "The islands (core/archipelago.gd). Every position is [x, z] in metres from the middle of the spawn island (island 0); the flat ground of every island is height 0. An island no bridge names (Gull Rock) is reached only by the boat (data/boat.json). islands: `radius` = where the sand meets the sea (the flat part ends 2 m before it), `grass` = radius of the grass patch, `palms` = palm trees, `scatter` = how many shore rocks and plants it gets (1 = as many as the old single island had; they are only drawn within scatter_range metres of the island's shore). bridges: `from` / `to` = island ids, `price` = points to clear the debris in its middle (it closes again at game over), `kind` = planks | sandbar. spots: things standing on an island, [x, z] from THAT island's middle; `yaw_to` = the island id it faces. spawn_ring: enemies come out of the sea this many metres beyond the shore of the island their prey is on. spawn_arc: metres of shore to either side of its prey within which an enemy comes up (on a big island they would otherwise walk half a minute). far_respawn: an enemy on ANOTHER island than its prey and farther than this from it goes back into the sea and comes out near the players. wade_depth: a player whose feet are this far under the sea surface is carried back to the last island stood on (nobody swims round the debris). wall_buys: a chalk board per gun: `gun` = body id of data/weapons.json, `price` in points (holding that kind of gun already = its ammo pool refilled for `ammo_share` of the price), `island` + `at` [x, z] from that island's middle; the board faces the island's middle. shelters: huts whose windows can be boarded: `island` + `at` [x, z] from that island's middle; the door faces the island's middle, a window is in each of the three other walls. windows: `boards` a window holds; an enemy at a boarded window tears one off every `tear_seconds`, through an open one a new enemy climbs every `climb_seconds`; a player holding interact at a window nails one back every `repair_seconds` for `repair_points` (only the first `paid_per_round` boards of a round are paid); at most `max_inside` enemies are inside one hut at a time, the others wait at the windows. Names are the director's to change. spots: places on the islands; painting_* face `yaw` (0 = +z); lifeguard = where she fishes (facing the sea), crow_perch / crow_land = the home crow's perch and where a crow from the club lands (polish1 items 18 and 70: out of the middle, on the shore). (polish1 D4a, 2026-11-20: the islands doubled in size, their middles moved out x1.85 to keep the gaps, every spot on them moved out x2.) features = the island's lie of the land, [x, z] from its middle: hill (a smooth rise of `height` over `radius`, walkable), ridge (a rock wall from / to, `height`, not climbable: cover and choke points), ruin (a broken stone wall from / to), boulder (a big rock of `size` metres). Nothing that stands on an island may be on a hill or in a ridge / ruin / boulder (tools/island_layout_check.gd).",
+ "_about": "The islands (core/archipelago.gd). Every position is [x, z] in metres from the middle of the spawn island (island 0); the flat ground of every island is height 0. An island no bridge names (Gull Rock) is reached only by the boat (data/boat.json). islands: `radius` = where the sand meets the sea (the flat part ends 2 m before it), `grass` = radius of the grass patch, `palms` = palm trees, `scatter` = how many shore rocks and plants it gets (1 = as many as the old single island had; they are only drawn within scatter_range metres of the island's shore). bridges: `from` / `to` = island ids, `price` = points to clear the debris in its middle (it closes again at game over), `kind` = planks | sandbar. spots: things standing on an island, [x, z] from THAT island's middle; `yaw_to` = the island id it faces. spawn_ring: enemies come out of the sea this many metres beyond the shore of the island their prey is on. spawn_arc: metres of shore to either side of its prey within which an enemy comes up (on a big island they would otherwise walk half a minute). far_respawn: an enemy on ANOTHER island than its prey and farther than this from it goes back into the sea and comes out near the players. wade_depth: a player whose feet are this far under the sea surface is carried back to the last island stood on (nobody swims round the debris). wall_buys: a chalk board per gun: `gun` = body id of data/weapons.json, `price` in points (holding that kind of gun already = its ammo pool refilled for `ammo_share` of the price), `island` + `at` [x, z] from that island's middle; the board faces the island's middle. shelters: huts whose windows can be boarded: `island` + `at` [x, z] from that island's middle; the door faces the island's middle, a window is in each of the three other walls. windows: `boards` a window holds; an enemy at a boarded window tears one off every `tear_seconds`, through an open one a new enemy climbs every `climb_seconds`; a player holding interact at a window nails one back every `repair_seconds` for `repair_points` (only the first `paid_per_round` boards of a round are paid); at most `max_inside` enemies are inside one hut at a time, the others wait at the windows. Names are the director's to change. spots: places on the islands; painting_* face `yaw` (0 = +z); lifeguard = where she fishes (facing the sea), crow_perch / crow_land = the home crow's perch and where a crow from the club lands (polish1 items 18 and 70: out of the middle, on the shore). (polish1 D4a, 2026-11-20: the islands doubled in size, their middles moved out x1.85 to keep the gaps, every spot on them moved out x2.) features = the island's lie of the land, [x, z] from its middle: hill (a smooth rise of `height` over `radius`, walkable), ridge (a rock wall from / to, `height`, not climbable: cover and choke points), ruin (a broken stone wall from / to), boulder (a big rock of `size` metres). Nothing that stands on an island may be on a hill or in a ridge / ruin / boulder (tools/island_layout_check.gd). (polish1 D4b, director: HOLD-OUT HUTS) shelters: each hut is 12 x 9 m with a door (windows.door_boards planks: enemies bash them off, players shut / open it and nail it back) and four windows; inside it `wall_buy` (on the back wall), `perk` (that perk's machine stands in the hut instead of its perks.json spot) and an ammo crate (`ammo` = points for a refill of every gun's spare ammo). Traps name huts by their order here (keep the first three).",
  "sea_level": -0.4,
  "beach_drop": 0.1414,
  "sea_bed": 18.0,
@@ -13,14 +13,14 @@
  "islands": [
   {"id": "home", "name": "Home Sand", "at": [0.0, 0.0], "radius": 80.0, "grass": 60.0, "palms": 22, "scatter": 2.1, "features": [
     {"kind": "hill", "at": [-26.7, -30.0], "radius": 10.8, "height": 3.5},
-    {"kind": "hill", "at": [-10.8, -1.4], "radius": 11.0, "height": 4.5},
+    {"kind": "hill", "at": [-12.0, -2.0], "radius": 11.0, "height": 4.5},
     {"kind": "ridge", "from": [-2.5, -62.7], "to": [-8.5, -52.1], "height": 4.6},
     {"kind": "ridge", "from": [32.9, 7.0], "to": [49.5, 12.6], "height": 3.8},
     {"kind": "ridge", "from": [-42.2, -19.3], "to": [-32.4, -11.7], "height": 5.4},
     {"kind": "ridge", "from": [1.0, 15.6], "to": [-12.4, 26.4], "height": 4.4},
     {"kind": "ruin", "from": [19.9, -4.7], "to": [27.5, 0.9], "height": 2.4},
     {"kind": "ruin", "from": [4.9, -46.9], "to": [0.5, -39.1], "height": 2.4},
-    {"kind": "ruin", "from": [-48.1, 22.9], "to": [-57.3, 30.9], "height": 2.4},
+    {"kind": "ruin", "from": [-52.1, 22.5], "to": [-61.3, 30.5], "height": 2.4},
     {"kind": "boulder", "at": [4.0, -11.1], "size": 2.4},
     {"kind": "boulder", "at": [63.3, -2.2], "size": 2.3},
     {"kind": "boulder", "at": [-20.0, -45.1], "size": 2.1},
@@ -46,13 +46,13 @@
     {"kind": "boulder", "at": [24.9, -25.0], "size": 1.8}
   ]},
   {"id": "shoal", "name": "Far Shoal", "at": [186.9, 0.0], "radius": 52.0, "grass": 32.0, "palms": 8, "scatter": 0.9, "features": [
-    {"kind": "hill", "at": [1.8, 1.1], "radius": 12.3, "height": 5.0},
-    {"kind": "ridge", "from": [18.5, 9.6], "to": [25.9, 19.8], "height": 3.7},
+    {"kind": "hill", "at": [-1.5, 0.5], "radius": 12.3, "height": 5.0},
+    {"kind": "ridge", "from": [22.5, 15.6], "to": [29.9, 25.8], "height": 3.7},
     {"kind": "ridge", "from": [-21.7, -4.1], "to": [-18.3, 8.1], "height": 5.0},
     {"kind": "ridge", "from": [5.4, -29.0], "to": [10.2, -16.8], "height": 5.3},
-    {"kind": "ruin", "from": [33.3, -3.1], "to": [39.9, 4.1], "height": 2.4},
+    {"kind": "ruin", "from": [36.3, -3.1], "to": [42.9, 4.1], "height": 2.4},
     {"kind": "ruin", "from": [2.5, 25.6], "to": [-4.5, 32.2], "height": 2.4},
-    {"kind": "boulder", "at": [24.5, -8.0], "size": 1.8},
+    {"kind": "boulder", "at": [30.0, -14.0], "size": 1.8},
     {"kind": "boulder", "at": [33.1, -22.6], "size": 2.1},
     {"kind": "boulder", "at": [-12.3, -10.9], "size": 1.4},
     {"kind": "boulder", "at": [-6.4, -16.4], "size": 2.2},
@@ -60,12 +60,12 @@
     {"kind": "boulder", "at": [-27.2, -16.2], "size": 2.1}
   ]},
   {"id": "wreck", "name": "Wreck Cay", "at": [112.9, 101.8], "radius": 52.0, "grass": 30.0, "palms": 8, "scatter": 0.9, "features": [
-    {"kind": "hill", "at": [-8.0, 4.0], "radius": 9.6, "height": 3.8},
+    {"kind": "hill", "at": [-14.0, 8.0], "radius": 9.6, "height": 3.8},
     {"kind": "ridge", "from": [-6.8, -41.2], "to": [-10.6, -28.0], "height": 4.7},
     {"kind": "ridge", "from": [-39.0, -2.9], "to": [-30.6, 6.9], "height": 3.7},
     {"kind": "ridge", "from": [8.7, 33.4], "to": [-11.5, 39.2], "height": 4.0},
     {"kind": "ruin", "from": [-23.1, 19.8], "to": [-17.1, 28.6], "height": 2.4},
-    {"kind": "ruin", "from": [-2.6, -22.7], "to": [-7.8, -15.5], "height": 2.4},
+    {"kind": "ruin", "from": [-4.6, -24.7], "to": [-9.8, -17.5], "height": 2.4},
     {"kind": "boulder", "at": [4.2, 18.0], "size": 1.4},
     {"kind": "boulder", "at": [20.5, 0.2], "size": 1.6},
     {"kind": "boulder", "at": [39.2, -14.5], "size": 2.4},
@@ -89,11 +89,12 @@
   {"from": "wreck", "to": "home", "price": 20250, "kind": "sandbar"}
  ],
  "shelters": [
-  {"island": "home", "at": [-40.0, 28.0]},
-  {"island": "shoal", "at": [24.0, 2.0]},
-  {"island": "wreck", "at": [2.0, -10.0]}
+  {"island": "home", "at": [-40.0, 28.0], "wall_buy": {"gun": "smg", "price": 1000}, "perk": "quick_revive", "ammo": 1500},
+  {"island": "shoal", "at": [24.0, 2.0], "wall_buy": {"gun": "blunderbuss", "price": 1800}, "perk": "thick_skin", "ammo": 2000},
+  {"island": "wreck", "at": [2.0, -10.0], "wall_buy": {"gun": "crossbow", "price": 2200}, "perk": "cold_blood", "ammo": 2500},
+  {"island": "painter", "at": [18.0, -14.0], "wall_buy": {"gun": "lever_rifle", "price": 1400}, "perk": "steady_hand", "ammo": 1500}
  ],
- "windows": {"boards": 5, "tear_seconds": 1.2, "climb_seconds": 0.8, "repair_seconds": 0.9, "repair_points": 10, "paid_per_round": 12, "reach": 2.2, "max_inside": 6},
+ "windows": {"boards": 5, "tear_seconds": 1.2, "climb_seconds": 0.8, "repair_seconds": 0.9, "repair_points": 10, "paid_per_round": 12, "reach": 2.2, "max_inside": 6, "door_boards": 6},
  "bridge_width": 3.2,
  "ammo_share": 0.5,
  "wall_buys": [

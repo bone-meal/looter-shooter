@@ -6,7 +6,7 @@
   256
  ],
  "columns": 2,
- "rows": 4,
+ "rows": 8,
  "cells": {
   "pistol_basic": 0,
   "sniper_basic": 1,
@@ -15,6 +15,14 @@
   "m60": 4,
   "shotgun_double": 5,
   "rocket_launcher": 6,
-  "grenade_launcher": 7
+  "grenade_launcher": 7,
+  "smg": 8,
+  "revolver": 9,
+  "lever_rifle": 10,
+  "harpoon_gun": 11,
+  "flare_gun": 12,
+  "flamethrower": 13,
+  "crossbow": 14,
+  "blunderbuss": 15
  }
 }

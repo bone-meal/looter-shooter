@@ -16,6 +16,13 @@ var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "gras
 var blocks: Array = []  # every ridge / ruin / boulder in world-plan metres: {"kind", "island", "a": Vector2, "b": Vector2, "half_width", "height"}
 var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)}
 var shelters: Array = []  # {"island": int, "at": Vector2, "yaw": the way its door faces (toward its island's middle)}
+# (polish1 D4b hold-out huts) what stands inside each hut: its wall buy joins `wall_buys` (on the back wall, facing in),
+# its perk machine and its ammo crate are here: perk id -> {"at", "yaw"}; [{"at", "yaw", "price"}]
+var hut_perks := {}
+var ammo_crates: Array = []
+const HUT_WALL_BUY := Vector2(0.0, -4.15)  # in the hut's frame (door at +z), matches core/shelter_rules.gd HALF
+const HUT_PERK := Vector2(4.4, -3.0)
+const HUT_AMMO := Vector2(-4.6, 2.6)
 var keep_clear: Array[Vector2] = []  # more spots where things will stand (the session adds them before the islands are built): no tree or rock there
 var bridges: Array = []  # {"from": int, "to": int, "price": int, "kind", "a": Vector2, "b": Vector2 (shore to shore), "mid": Vector2, "open": bool}
 
@@ -60,7 +67,18 @@ func _init(config: Dictionary) -> void:
 	for entry: Dictionary in config.get("shelters", []):
 		var isle := index_of(String(entry["island"]))
 		var off := Vector2(float(entry["at"][0]), float(entry["at"][1]))
-		shelters.append({"island": isle, "at": (islands[isle]["at"] as Vector2) + off, "yaw": atan2(-off.x, -off.y)})
+		var hut_at := (islands[isle]["at"] as Vector2) + off
+		var hy := atan2(-off.x, -off.y)
+		shelters.append({"island": isle, "at": hut_at, "yaw": hy})
+		if entry.has("wall_buy"):
+			var wb: Dictionary = entry["wall_buy"]
+			wall_buys.append({"gun": String(wb["gun"]), "price": int(wb["price"]), "island": isle, "at": hut_at + _hut_turn(HUT_WALL_BUY, hy), "yaw": hy})
+		if entry.has("perk"):
+			var f := _hut_turn(Vector2(-1.0, 0.0), hy)
+			hut_perks[String(entry["perk"])] = {"at": hut_at + _hut_turn(HUT_PERK, hy), "yaw": atan2(f.x, f.y)}
+		if entry.has("ammo"):
+			var f2 := _hut_turn(Vector2(1.0, 0.0), hy)
+			ammo_crates.append({"at": hut_at + _hut_turn(HUT_AMMO, hy), "yaw": atan2(f2.x, f2.y), "price": int(entry["ammo"])})
 	var low := Vector2(INF, INF)
 	var high := Vector2(-INF, -INF)
 	for isle: Dictionary in islands:
@@ -70,6 +88,11 @@ func _init(config: Dictionary) -> void:
 		high = Vector2(maxf(high.x, at.x + r), maxf(high.y, at.y + r))
 	_middle = (low + high) * 0.5
 	_reach = (high - low).length() * 0.5 + float(config["sea_bed"]) + 12.0
+
+
+# A hut-frame offset turned the hut's way (the same turn as core/shelter_rules.gd).
+static func _hut_turn(local: Vector2, yaw: float) -> Vector2:
+	return Vector2(local.x * cos(yaw) + local.y * sin(yaw), -local.x * sin(yaw) + local.y * cos(yaw))
 
 
 func index_of(id: String) -> int:

@@ -25,7 +25,8 @@ signal power_gone(id: int)  # on a client: it was taken or its time ran out
 signal power_taken(kind: String)  # on a client: somebody took it, so the whole party has it
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
-signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
+signal nail_paid(points: int)
+signal door_asked(entry: int)  # on the host: a client standing at a hut's door wants it shut / opened  # on a client: the host let us nail a board back and this is what it pays
 signal run_asked(peer: int, ticket: int, modifiers: PackedStringArray, banner: String)  # on the host: a client standing at the colosseum painting buys a run (banner "" = a plain ticket)
 signal run_started(ticket: int, modifiers: PackedStringArray, buyer: int, banner: String)  # on a client: the party goes into the colosseum; `buyer` pays
 signal quest_asked(peer: int, action: String, index: int)  # on the host: a client did something for the main quest (it stood there: checked)
@@ -344,11 +345,29 @@ func _nail_ask(window: int) -> void:
 	var paid := int(shelters.call("nail", window, Time.get_ticks_msec() / 1000.0))
 	if paid < 0:
 		return
-	var boards := int((shelters.get("boards") as PackedInt32Array)[window])
+	var boards := int(shelters.call("encoded", window))
 	_window.rpc(window, boards)
 	window_set.emit(window, boards)
 	if paid > 0:
 		_nail_paid.rpc_id(peer, paid)
+
+
+# (polish1 D4b) a client at a hut's door wants it shut / opened; the host checks it stands there.
+func ask_door(entry: int) -> void:
+	if is_client():
+		_door_ask.rpc_id(1, entry)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _door_ask(entry: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body == null or shelters == null:
+		return
+	var at := body.global_position - ORIGIN
+	if entry < 0 or int(shelters.call("window_near", at.x, at.z)) != entry or not bool(shelters.call("is_door", entry)):
+		return
+	door_asked.emit(entry)
 
 
 @rpc("authority", "call_remote", "reliable")
@@ -643,7 +662,7 @@ func _ask_all() -> void:
 	if shelters != null:
 		var boards: PackedInt32Array = shelters.get("boards")
 		for window in boards.size():
-			_window.rpc_id(peer, window, boards[window])
+			_window.rpc_id(peer, window, int(shelters.call("encoded", window)))
 	for id: int in _enemies:
 		if is_instance_valid(_enemies[id]):
 			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position, int(_enemies[id].get_meta("tier")), _enemies[id].get_meta("net_stats", {}))

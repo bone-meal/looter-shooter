@@ -86,6 +86,7 @@ const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
 const IslandNav = preload("res://game/island_nav.gd")
+const AmmoCrate = preload("res://game/ammo_crate.gd")
 const PowerupRules = preload("res://core/powerup_rules.gd")
 const Archipelago = preload("res://core/archipelago.gd")
 const WallBuy = preload("res://game/wall_buy.gd")
@@ -240,6 +241,7 @@ var _tab_down_at := -1.0  # (polish1 item 136) when a shared inventory / scorebo
 const TAB_TAP_S := 0.22  # shorter than this is a tap (the scoreboard waits as long: game/scoreboard.gd HOLD_S)
 var _knife_rolled := false  # this character has its knife type
 var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
+var _ammo_crates: Array = []  # (polish1 D4b) game/ammo_crate.gd, one per hold-out hut
 var _island_nav := IslandNav.new()  # (polish1 D4a) the islands' navigation mesh: island enemies path round obstacles
 var _first_look := false  # a new character is still in its first customize menu: the rounds wait
 var _hurt_at := 0.0  # when the local player was last hurt (the island heals whoever is left alone for a while)
@@ -436,6 +438,8 @@ func _ready() -> void:
 	_perks = PerkState.new(DataStore.load_json("res://data/perks.json"))
 	for id: String in _perks.ids():
 		_perk_spots[id] = _land.on_island(String(_perks.cfg["perks"][id]["island"]), _perks.cfg["perks"][id]["at"])
+		if _land.hut_perks.has(id):  # (polish1 D4b) this perk stands inside a hold-out hut
+			_perk_spots[id] = _land.hut_perks[id]["at"]
 		_land.keep_clear.append(_perk_spots[id])
 	_power_cfg = DataStore.load_json("res://data/power.json")
 	_power = PowerState.new(_power_cfg)
@@ -516,7 +520,7 @@ func _ready() -> void:
 		machine.price = _perks.price(id)
 		machine.tint = _perks.color_of(id)
 		machine.position = _flat(_perk_spots[id])
-		machine.rotation.y = _toward_middle(_perk_spots[id])
+		machine.rotation.y = float(_land.hut_perks[id]["yaw"]) if _land.hut_perks.has(id) else _toward_middle(_perk_spots[id])
 		add_child(machine)
 		_perk_machines[id] = machine
 	var parts: Array[Vector3] = []
@@ -561,6 +565,13 @@ func _ready() -> void:
 	_shelters.setup(_land.shelters, _land.cfg["windows"])
 	_shelters.tore.connect(_on_board_torn)
 	add_child(_shelters)
+	for crate: Dictionary in _land.ammo_crates:  # (polish1 D4b) one in every hold-out hut
+		var c := AmmoCrate.new()
+		c.price = int(crate["price"])
+		c.position = _flat(crate["at"])
+		c.rotation.y = float(crate["yaw"])
+		add_child(c)
+		_ammo_crates.append(c)
 	for board: Dictionary in _land.wall_buys:
 		var stand := WallBuy.new()
 		stand.gun = String(board["gun"])
@@ -871,6 +882,7 @@ func _ready() -> void:
 		net.rounds.trap_started.connect(_on_trap_started)
 		net.rounds.window_set.connect(_on_window_set)
 		net.rounds.nail_paid.connect(_on_nail_paid)
+		net.rounds.door_asked.connect(_on_door_asked)
 		var downs: Dictionary = _rounds.config()["downs"]
 		net.downs.reach = float(downs["reach"])
 		net.downs.health_share = float(downs["health"])
@@ -1845,8 +1857,17 @@ func _prompt() -> String:
 			return "[%s] Build the %s" % [key, built_name]
 		return "The %s needs %d parts (%d found)." % [built_name, _builds.part_count(what), _builds.found_count(what)]
 	var window := _window_here()
-	if window >= 0 and _shelters.rules.boards[window] < _shelters.rules.full():
-		return "[hold %s] Nail a board back (%d of %d)" % [key, _shelters.rules.boards[window], _shelters.rules.full()]
+	if window >= 0 and _shelters.rules.is_door(window):  # (polish1 D4b) the hut's door
+		var planks: int = _shelters.rules.boards[window]
+		var whole: int = _shelters.rules.full_of(window)
+		if planks < whole and _shelters.rules.open[window] == 0:
+			return "[hold %s] Nail the door back together (%d of %d planks)" % [key, planks, whole]
+		return "[%s] %s the door" % [key, "Shut" if _shelters.rules.open[window] == 1 else "Open"] + ("" if planks >= whole else "  (hold %s after: nail planks back, %d of %d)" % [key, planks, whole])
+	if window >= 0 and _shelters.rules.boards[window] < _shelters.rules.full_of(window):
+		return "[hold %s] Nail a board back (%d of %d)" % [key, _shelters.rules.boards[window], _shelters.rules.full_of(window)]
+	var crate := _ammo_crate_here()
+	if crate >= 0:
+		return "[%s] Ammo crate: refill every gun's spare ammo (%d points)" % [key, int(_land.ammo_crates[crate]["price"])]
 	var board := _wall_buy_here()
 	if board >= 0:
 		var body := String(_land.wall_buys[board]["gun"])
@@ -1968,6 +1989,10 @@ func _interact() -> void:
 		_go_to_course()  # (polish1 item 24) the stage's start or finish pad: back to the hub
 	elif _hub_exit_here():
 		travel("island")
+	elif _window_here() >= 0 and _shelters.rules.is_door(_window_here()) and (_shelters.rules.open[_window_here()] == 1 or _shelters.rules.boards[_window_here()] >= _shelters.rules.full_of(_window_here())):
+		_toggle_door(_window_here())
+	elif _ammo_crate_here() >= 0:
+		_use_ammo_crate(_ammo_crate_here())
 	elif _wall_buy_here() >= 0:
 		_buy_from_wall(_wall_buy_here())
 	elif _debris_here() >= 0:
@@ -4310,8 +4335,10 @@ func _window_here() -> int:
 # Interact held at a window that misses boards: one goes back every repair_seconds. Online the host nails it.
 func _hold_nailing() -> void:
 	var window := _window_here()
-	if window < 0 or _player.downed or not Input.is_action_pressed("interact") or _shelters.rules.boards[window] >= _shelters.rules.full():
+	if window < 0 or _player.downed or not Input.is_action_pressed("interact") or _shelters.rules.boards[window] >= _shelters.rules.full_of(window):
 		return
+	if _shelters.rules.is_door(window) and _shelters.rules.open[window] == 1:
+		return  # (an open door is shut with a press first)
 	var now := Time.get_ticks_msec() / 1000.0  # the clock the rounds use for the boards
 	if net != null and net.rounds.is_client():
 		if now >= _nail_at:
@@ -4325,7 +4352,7 @@ func _hold_nailing() -> void:
 	_sounds.call("play", "board_fix")
 	_score.give(paid * _score.mult)
 	if net != null:
-		net.rounds.tell_window(window, _shelters.rules.boards[window])
+		net.rounds.tell_window(window, _shelters.rules.encoded(window))
 
 
 # Where the rounds run: an enemy tore a board off.
@@ -4333,7 +4360,54 @@ func _on_board_torn(window: int) -> void:
 	if _near(_shelters.window_spot(window), 30.0):
 		_sounds.call("play", "board_tear")
 	if net != null:
-		net.rounds.tell_window(window, _shelters.rules.boards[window])
+		net.rounds.tell_window(window, _shelters.rules.encoded(window))
+
+
+# (polish1 D4b) A press at a hut's door: shut it / open it. Online the host decides and tells everyone.
+func _toggle_door(entry: int) -> void:
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_door(entry)
+		return
+	if _shelters.rules.toggle_door(entry):
+		_shelters.refresh()
+		_sounds.call("play", "board_fix")
+		if net != null:
+			net.rounds.tell_window(entry, _shelters.rules.encoded(entry))
+
+
+# The host: a client wants this door shut or opened (net_rounds checked it stands there).
+func _on_door_asked(entry: int) -> void:
+	if _shelters.rules.toggle_door(entry):
+		_shelters.refresh()
+		net.rounds.tell_window(entry, _shelters.rules.encoded(entry))
+
+
+# (polish1 D4b) The ammo crate our player stands at, -1 = none.
+func _ammo_crate_here() -> int:
+	if _in_arena or _in_fantasy or not _on_island(_player.global_position):
+		return -1
+	for i in _ammo_crates.size():
+		if _near((_ammo_crates[i] as Node3D).global_position, 2.0):
+			return i
+	return -1
+
+
+func _use_ammo_crate(index: int) -> void:
+	var price := int(_land.ammo_crates[index]["price"])
+	var all_full := true
+	for body: String in _player.pools.bodies():
+		all_full = all_full and _player.pools.is_full(body)
+	if all_full:
+		_player_hud.notice("Every gun's spare ammo is already full.")
+		return
+	if not _score.can_afford(price):
+		_player_hud.notice("The ammo crate costs %d points (you have %d)." % [price, _score.points])
+		return
+	_score.spend(price)
+	_player.pools.fill_all()
+	(_ammo_crates[index] as Node).call("pop")
+	_sounds.call("play", "wall_buy")
+	_player_hud.notice("Spare ammo refilled for every gun.")
 
 
 # The host says what a window has now (as a client; on the host after a client nailed a board).

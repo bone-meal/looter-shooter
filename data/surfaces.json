@@ -32,6 +32,12 @@
    "tint": "#ffffff"
   },
   {
+   "id": "hut_door",
+   "set": "weathered_brown_planks",
+   "tile": 1.1,
+   "tint": "#7a5a48"
+  },
+  {
    "id": "boat_planks",
    "set": "weathered_brown_planks",
    "tile": 1.8,

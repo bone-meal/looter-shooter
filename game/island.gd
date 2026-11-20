@@ -45,7 +45,7 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 		if (land.cfg["spots"] as Dictionary).has(id):
 			clear.append(land.place_of(id)["at"])
 	for hut: Dictionary in land.shelters:
-		for corner: Vector2 in [Vector2.ZERO, Vector2(3, 2.4), Vector2(-3, 2.4), Vector2(3, -2.4), Vector2(-3, -2.4), Vector2(0, 5)]:
+		for corner: Vector2 in [Vector2.ZERO, Vector2(6, 4.5), Vector2(-6, 4.5), Vector2(6, -4.5), Vector2(-6, -4.5), Vector2(0, 7.5), Vector2(6, 0), Vector2(-6, 0), Vector2(0, -4.5)]:  # (polish1 D4b: 12 x 9 m huts)
 			clear.append((hut["at"] as Vector2) + corner.rotated(-float(hut["yaw"])))
 	for bridge: Dictionary in land.bridges:
 		clear.append(bridge["a"])

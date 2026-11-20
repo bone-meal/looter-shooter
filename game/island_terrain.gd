@@ -145,9 +145,17 @@ static func _boulder(st: SurfaceTool, body: StaticBody3D, at: Vector2, size: flo
 		for j in segs:
 			var j2 := (j + 1) % segs
 			_quad(st, pts[i][j], pts[i][j2], pts[i + 1][j2], pts[i + 1][j], Vector3(at.x, ground + size * 0.35, at.y))
-	var hull := PackedVector3Array()  # the rock's own shape (convex), not a ball taller than the squashed stone
-	for row: Array in pts:
-		for p3: Vector3 in row:
+	var hull := PackedVector3Array()  # the rock's own shape (convex), not a ball taller than the squashed stone ...
+	var waist := rings >> 1  # ... but straight down from its widest ring (polish1 D4b): no undercut to wedge a leg under
+	for i in rings + 1:
+		for j in segs:
+			var p3: Vector3 = pts[i][j]
+			if i <= waist + 1:
+				var wide: Vector3 = pts[waist][j]
+				var wide2: Vector3 = pts[waist + 1][j]
+				if Vector2(wide2.x - at.x, wide2.z - at.y).length() > Vector2(wide.x - at.x, wide.z - at.y).length():
+					wide = wide2
+				p3 = Vector3(wide.x, minf(p3.y, wide.y), wide.z)
 			hull.append(p3)
 	var convex := ConvexPolygonShape3D.new()
 	convex.points = hull

@@ -20,7 +20,7 @@
    "price": 1000,
    "seconds": 25.0,
    "cooldown": 60.0,
-   "radius": 8.5
+   "radius": 11.0
   },
   {
    "kind": "electric",
@@ -29,7 +29,7 @@
    "price": 1000,
    "seconds": 25.0,
    "cooldown": 60.0,
-   "radius": 8.5
+   "radius": 11.0
   },
   {
    "kind": "electric",
@@ -38,7 +38,7 @@
    "price": 1000,
    "seconds": 25.0,
    "cooldown": 60.0,
-   "radius": 8.5
+   "radius": 11.0
   },
   {
    "kind": "fire",

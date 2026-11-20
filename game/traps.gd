@@ -42,11 +42,11 @@ func add(kind: String, centre: Vector3, lever: Vector3, radius: float) -> void:
 		pole.top_radius = 0.07
 		pole.bottom_radius = 0.1
 		pole.height = 1.6
-		_piece(self, pole, iron, centre + Vector3(0, 3.6, 0))
+		_piece(self, pole, iron, centre + Vector3(0, 5.3, 0))  # (polish1 D4b) on the bigger huts' ridge (4.6 m)
 		var ball := SphereMesh.new()
 		ball.radius = 0.32
 		ball.height = 0.64
-		_piece(self, ball, glow, centre + Vector3(0, 4.6, 0))
+		_piece(self, ball, glow, centre + Vector3(0, 6.3, 0))
 		var ring := TorusMesh.new()
 		ring.inner_radius = radius - 0.12
 		ring.outer_radius = radius

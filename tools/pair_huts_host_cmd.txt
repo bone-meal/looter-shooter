@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;!net wait_guest;!wait 6;!hut h_start;!wait 14;!hut h_guest_opened;!snap huts_host_open;!wait 16;!hut h_guest_shut;!wait 5;!hut h_end
