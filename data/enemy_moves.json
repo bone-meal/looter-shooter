@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "(polish1 D2) How each reworked enemy moves (game/enemy_rig.gd). An enemy uses the style named by its data 'moves' (else its 'model'). Angles in degrees on the model's pivots (Hips, Spine, Head, Jaw, ArmL / ForeL, ArmR / ForeR, LegL / ShinL, LegR / ShinR, or any other node a style names). Signs: x+ swings a hanging limb FORWARD (an arm raised in front, a leg stepping out) and tips the Spine / Head BACK; a knee bends with Shin x-; the left arm goes OUT with z-, the right with z+. gait: full_at = m/s at which the walk is at full size, cadence = steps against the usual stride (1 = normal), leg / knee / arm / elbow = swing sizes, arm_out = arms held away from the sides, arms_up = arms raised in front (the drowned reach), bob = metres the hips rise each step, sway / twist = the torso's roll / turn with the stride, lean = forward lean at full speed, crouch = bent knees and hips all the time, limp = 0..1 a dragged right leg, jerk = 0..1 a stepped rattling walk, head_loll = the head rolls about. idle: breath, look (turning the head while it stands), twitch 0..1 (sudden head jerks), jaw / jaw_rate (opening and closing). osc: extra swings [{node, axis, amp, phase (deg), rate (cycles a second; 0 = with the stride), with_speed}]. wind = the pose at the top of a wind-up, strike = right after the blow, aim = held while it shoots, recoil = on a shot. death: slump (goes limp) or crumble (falls apart). variants = how many of the model's V1_ / V2_ / V3_ sets may be shown (0 = all).",
+ "_about": "(polish1 D2) How each reworked enemy moves (game/enemy_rig.gd). An enemy uses the style named by its data 'moves' (else its 'model'). Angles in degrees on the model's pivots (Hips, Spine, Head, Jaw, ArmL / ForeL, ArmR / ForeR, LegL / ShinL, LegR / ShinR, or any other node a style names). Signs: x+ swings a hanging limb FORWARD (an arm raised in front, a leg stepping out) and tips the Spine / Head BACK; a knee bends with Shin x-; the left arm goes OUT with z-, the right with z+. gait: full_at = m/s at which the walk is at full size, cadence = steps against the usual stride (1 = normal), leg / knee / arm / elbow = swing sizes, arm_out = arms held away from the sides, arms_up = arms raised in front (the drowned reach), bob = metres the hips rise each step, sway / twist = the torso's roll / turn with the stride, lean = forward lean at full speed, crouch = bent knees and hips all the time, limp = 0..1 a dragged right leg, jerk = 0..1 a stepped rattling walk, head_loll = the head rolls about. idle: breath, look (turning the head while it stands), twitch 0..1 (sudden head jerks), jaw / jaw_rate (opening and closing). osc: extra swings [{node, axis, amp, phase (deg), rate (cycles a second; 0 = with the stride), with_speed, spin (true = keeps turning, `rate` turns a second)}]. wind = the pose at the top of a wind-up, strike = right after the blow, aim = held while it shoots, recoil = on a shot. death: slump (goes limp) or crumble (falls apart). variants = how many of the model's V1_ / V2_ / V3_ sets may be shown (0 = all).",
  "styles": {
   "en_drowned": {
    "gait": {
@@ -1163,6 +1163,513 @@
     ],
     "Head": [
      -10,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_clockwork_bear": {
+   "gait": {
+    "full_at": 2.5,
+    "cadence": 0.6,
+    "leg": 24,
+    "knee": 20,
+    "arm": 10,
+    "elbow": 10,
+    "arm_out": 14,
+    "bob": 0.06,
+    "sway": 12,
+    "twist": 6,
+    "lean": 4
+   },
+   "idle": {
+    "breath": 0,
+    "look": 20,
+    "jaw": 12,
+    "jaw_rate": 0.7
+   },
+   "osc": [
+    {
+     "node": "Key",
+     "axis": "z",
+     "rate": 0.4,
+     "spin": true,
+     "with_speed": false
+    },
+    {
+     "node": "Gear",
+     "axis": "z",
+     "rate": 0.8,
+     "spin": true,
+     "with_speed": false
+    },
+    {
+     "node": "Head",
+     "axis": "z",
+     "amp": 6,
+     "rate": 0.5,
+     "with_speed": false
+    }
+   ],
+   "aim": {
+    "ArmL": [
+     80,
+     0,
+     -6
+    ],
+    "ArmR": [
+     80,
+     0,
+     6
+    ],
+    "ForeL": [
+     5,
+     0,
+     0
+    ],
+    "ForeR": [
+     5,
+     0,
+     0
+    ],
+    "Head": [
+     -5,
+     0,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmL": [
+     -14,
+     0,
+     0
+    ],
+    "ArmR": [
+     -14,
+     0,
+     0
+    ],
+    "Spine": [
+     6,
+     0,
+     0
+    ],
+    "Jaw": [
+     25,
+     0,
+     0
+    ]
+   },
+   "death": "crumble"
+  },
+  "en_boss_butcher": {
+   "gait": {
+    "full_at": 3.6,
+    "cadence": 0.62,
+    "leg": 28,
+    "knee": 30,
+    "arm": 18,
+    "elbow": 28,
+    "arm_out": 18,
+    "bob": 0.08,
+    "sway": 10,
+    "twist": 10,
+    "lean": 12,
+    "crouch": 6
+   },
+   "idle": {
+    "breath": 6,
+    "look": 20,
+    "jaw": 6,
+    "jaw_rate": 0.5
+   },
+   "wind": {
+    "ArmR": [
+     165,
+     0,
+     10
+    ],
+    "ForeR": [
+     30,
+     0,
+     0
+    ],
+    "ArmL": [
+     60,
+     0,
+     -30
+    ],
+    "ForeL": [
+     40,
+     0,
+     0
+    ],
+    "Spine": [
+     15,
+     30,
+     0
+    ],
+    "Head": [
+     5,
+     -10,
+     0
+    ]
+   },
+   "strike": {
+    "ArmR": [
+     20,
+     0,
+     -20
+    ],
+    "ForeR": [
+     5,
+     0,
+     0
+    ],
+    "ArmL": [
+     -10,
+     0,
+     -20
+    ],
+    "Spine": [
+     -35,
+     -30,
+     0
+    ],
+    "LegL": [
+     20,
+     0,
+     0
+    ],
+    "Head": [
+     -10,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_boss_dome_beast": {
+   "gait": {
+    "full_at": 5.8,
+    "cadence": 0.7,
+    "leg": 38,
+    "knee": 55,
+    "arm": 65,
+    "elbow": 30,
+    "arm_out": 16,
+    "arms_up": 40,
+    "bob": 0.1,
+    "sway": 6,
+    "twist": 10,
+    "lean": 50,
+    "crouch": 18
+   },
+   "idle": {
+    "breath": 8,
+    "look": 30,
+    "twitch": 0.4,
+    "jaw": 20,
+    "jaw_rate": 1.2
+   },
+   "wind": {
+    "ArmL": [
+     170,
+     0,
+     -15
+    ],
+    "ArmR": [
+     170,
+     0,
+     15
+    ],
+    "ForeL": [
+     20,
+     0,
+     0
+    ],
+    "ForeR": [
+     20,
+     0,
+     0
+    ],
+    "Spine": [
+     25,
+     0,
+     0
+    ],
+    "Head": [
+     20,
+     0,
+     0
+    ],
+    "Jaw": [
+     35,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmL": [
+     20,
+     0,
+     -5
+    ],
+    "ArmR": [
+     20,
+     0,
+     5
+    ],
+    "ForeL": [
+     0,
+     0,
+     0
+    ],
+    "ForeR": [
+     0,
+     0,
+     0
+    ],
+    "Spine": [
+     -55,
+     0,
+     0
+    ],
+    "Head": [
+     35,
+     0,
+     0
+    ],
+    "Jaw": [
+     40,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_boss_tyrant": {
+   "gait": {
+    "full_at": 2.8,
+    "cadence": 0.6,
+    "leg": 26,
+    "knee": 25,
+    "arm": 5,
+    "elbow": 10,
+    "arm_out": 12,
+    "bob": 0.07,
+    "sway": 8,
+    "twist": 5,
+    "lean": 5
+   },
+   "idle": {
+    "breath": 3,
+    "look": 20
+   },
+   "osc": [
+    {
+     "node": "Barrels",
+     "axis": "y",
+     "rate": 1.5,
+     "spin": true,
+     "with_speed": false
+    }
+   ],
+   "aim": {
+    "ArmR": [
+     30,
+     0,
+     15
+    ],
+    "ForeR": [
+     70,
+     0,
+     0
+    ],
+    "ArmL": [
+     60,
+     0,
+     -20
+    ],
+    "ForeL": [
+     60,
+     0,
+     0
+    ],
+    "Spine": [
+     0,
+     -10,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmR": [
+     -6,
+     0,
+     0
+    ],
+    "Spine": [
+     5,
+     0,
+     0
+    ],
+    "Head": [
+     4,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_boss_warlord": {
+   "gait": {
+    "full_at": 3.0,
+    "cadence": 0.7,
+    "leg": 30,
+    "knee": 32,
+    "arm": 6,
+    "elbow": 12,
+    "arm_out": 10,
+    "bob": 0.05,
+    "sway": 5,
+    "twist": 6,
+    "lean": 4
+   },
+   "idle": {
+    "breath": 3,
+    "look": 35
+   },
+   "aim": {
+    "ArmR": [
+     25,
+     0,
+     12
+    ],
+    "ForeR": [
+     72,
+     0,
+     0
+    ],
+    "ArmL": [
+     62,
+     0,
+     26
+    ],
+    "ForeL": [
+     48,
+     0,
+     0
+    ],
+    "Spine": [
+     0,
+     -15,
+     0
+    ],
+    "Head": [
+     -5,
+     12,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmR": [
+     -14,
+     0,
+     0
+    ],
+    "ForeR": [
+     -10,
+     0,
+     0
+    ],
+    "Spine": [
+     8,
+     0,
+     0
+    ],
+    "Head": [
+     6,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_boss_overseer": {
+   "gait": {
+    "full_at": 3.0,
+    "cadence": 0.55,
+    "leg": 28,
+    "knee": 30,
+    "arm": 4,
+    "elbow": 10,
+    "arm_out": 10,
+    "bob": 0.04,
+    "sway": 3,
+    "twist": 4,
+    "lean": 10
+   },
+   "idle": {
+    "breath": 2,
+    "look": 0
+   },
+   "osc": [
+    {
+     "node": "Head",
+     "axis": "y",
+     "amp": 28,
+     "rate": 0.25,
+     "with_speed": false
+    },
+    {
+     "node": "Drone",
+     "axis": "y",
+     "rate": 0.5,
+     "spin": true,
+     "with_speed": false
+    }
+   ],
+   "aim": {
+    "ArmL": [
+     82,
+     0,
+     -6
+    ],
+    "ForeL": [
+     0,
+     0,
+     0
+    ],
+    "ArmR": [
+     25,
+     0,
+     12
+    ],
+    "ForeR": [
+     70,
+     0,
+     0
+    ],
+    "Spine": [
+     -5,
+     0,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmL": [
+     -12,
+     0,
+     0
+    ],
+    "ArmR": [
+     -8,
+     0,
+     0
+    ],
+    "Spine": [
+     6,
      0,
      0
     ]

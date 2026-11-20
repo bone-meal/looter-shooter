@@ -175,7 +175,7 @@
    "attack_sound": "atk_dart"
   },
   "boss": {
-   "model": "clockwork_bear",
+   "model": "en_clockwork_bear",
    "max_hp": 400,
    "speed": 2.5,
    "attack_type": "ranged",
@@ -332,7 +332,7 @@
    "attack_sound": "atk_slam"
   },
   "boss_butcher": {
-   "model": "boss_butcher",
+   "model": "en_boss_butcher",
    "max_hp": 950,
    "speed": 3.6,
    "attack_type": "melee",
@@ -357,7 +357,7 @@
    "attack_sound": "atk_slam"
   },
   "boss_tyrant": {
-   "model": "boss_tyrant",
+   "model": "en_boss_tyrant",
    "max_hp": 1150,
    "speed": 2.8,
    "attack_type": "ranged",
@@ -386,7 +386,7 @@
    "attack_sound": "atk_gun"
   },
   "boss_dome_beast": {
-   "model": "boss_dome_beast",
+   "model": "en_boss_dome_beast",
    "max_hp": 1050,
    "speed": 5.8,
    "attack_type": "melee",
@@ -411,7 +411,7 @@
    "attack_sound": "atk_slam"
   },
   "boss_warlord": {
-   "model": "boss_warlord",
+   "model": "en_boss_warlord",
    "max_hp": 1600,
    "speed": 3.0,
    "attack_type": "ranged",
@@ -440,7 +440,7 @@
    "attack_sound": "atk_rifle"
   },
   "boss_overseer": {
-   "model": "boss_overseer",
+   "model": "en_boss_overseer",
    "max_hp": 2300,
    "speed": 3.0,
    "attack_type": "ranged",

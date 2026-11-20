@@ -41,6 +41,8 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--only="):
 			only = arg.trim_prefix("--only=").split(",", false)
+	if only.is_empty() and FileAccess.file_exists("res://tools/enemy_shot_only.txt"):  # (a run from the editor cannot pass arguments)
+		only = FileAccess.get_file_as_string("res://tools/enemy_shot_only.txt").strip_edges().split(",", false)
 	var ids: Array = styles.keys() if only.is_empty() else Array(only)
 	var lines := PackedStringArray()
 	var rigs: Array = []

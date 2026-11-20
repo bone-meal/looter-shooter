@@ -758,9 +758,303 @@ def brute(m):
         scrap_plate(m, K("metal", SCRAP), (sh[0] + side * 0.05, sh[1] + 0.06, sh[2]), (0.2, 0.05, 0.22), variant(m, "V3_Pad" + s, "Arm" + s, sh))
 
 
+# ---------- the bosses (D2c) ----------
+
+BRASS = (0.72, 0.55, 0.24)
+BRASS_DARK = (0.45, 0.33, 0.15)
+
+
+def gear(m, mat, at, r, teeth, node, axis="f"):
+    m.lathe(mat, [(0.0, -0.02), (r * 0.85, -0.02), (r * 0.85, 0.02), (0.0, 0.02)], at, node=node, segs=24, axis=axis)
+    for k in range(teeth):
+        a = k * math.tau / teeth
+        if axis == "f":
+            m.box(mat, (0.04 * r / 0.15, 0.04 * r / 0.15, 0.035), (at[0] + math.cos(a) * r * 0.9, at[1] + math.sin(a) * r * 0.9, at[2]), node=node, bevel=0.003)
+        else:
+            m.box(mat, (0.035, 0.04 * r / 0.15, 0.04 * r / 0.15), (at[0], at[1] + math.sin(a) * r * 0.9, at[2] + math.cos(a) * r * 0.9), node=node, bevel=0.003)
+
+
+def clockwork_bear(m):
+    rnd = random.Random(201)
+    b = Body(girth=1.7, shoulders=1.45, hips=1.35, belly=0.12, hunch=0.04, arm=0.95, arm_r=1.5, leg_r=1.5, head=1.35, neck=0.5)
+    b.nodes(m)
+    brass, dark, steel = K("metal", BRASS), K("metal", BRASS_DARK), K("metal", (0.5, 0.5, 0.52))
+    # the barrel body in riveted brass plates
+    m.loft(brass, [(0.0, 0.84, 0.0, 0.25, 0.2), (0.0, 0.98, 0.0, 0.28, 0.24)], node="Hips", segs=18)
+    m.loft(brass, [(0.0, 1.0, 0.0, 0.27, 0.24), (0.0, 1.15, 0.05, 0.31, 0.3), (0.0, 1.32, 0.06, 0.32, 0.29), (0.0, 1.45, 0.05, 0.26, 0.22), (0.0, 1.52, 0.04, 0.12, 0.1)], node="Spine", segs=20)
+    for k in range(4):
+        m.loft(dark, [(0.0, 1.06 + k * 0.12, 0.04, 0.3 + (0.02 if k in (1, 2) else 0), 0.29), (0.0, 1.075 + k * 0.12, 0.04, 0.305 + (0.02 if k in (1, 2) else 0), 0.295)], node="Spine", segs=20, steps=1, flat=True)
+        for i in range(10):
+            a = i * math.tau / 10
+            m.ball(dark, 0.012, (math.sin(a) * 0.31, 1.07 + k * 0.12, 0.04 + math.cos(a) * 0.3), node="Spine", u=6, v=4)  # rivets
+    # the chest window with its turning gear ("Gear") and a steel rim
+    m.lathe(steel, [(0.11, -0.01), (0.14, 0.0), (0.14, 0.025), (0.11, 0.03)], (0.0, 1.26, 0.33), node="Spine", segs=20, axis="f")
+    m.node("Gear", (0.0, 1.26, 0.34), parent="Spine")
+    gear(m, K("metal", (0.85, 0.7, 0.3)), (0.0, 1.26, 0.34), 0.1, 10, "Gear")
+    m.node("Key", (0.0, 1.25, -0.3), parent="Spine")  # the wind-up key on its back
+    m.rod(steel, 0.025, (0.0, 1.25, -0.28), (0.0, 1.25, -0.42), node="Key", segs=8)
+    m.prof(steel, 0.03, [(-0.42, 1.25), (-0.48, 1.42), (-0.56, 1.42), (-0.5, 1.25), (-0.56, 1.08), (-0.48, 1.08)], x=0.0, node="Key")
+    # head: round brass bear head, round ears, muzzle with a hinged jaw, glass eyes
+    y, f = b.head_y, b.head_f
+    m.ball(brass, (0.2, 0.19, 0.19), (0.0, y + 0.15, f), node="Head", u=16, v=12)
+    for side in (-1, 1):
+        m.lathe(brass, [(0.0, -0.02), (0.07, -0.02), (0.075, 0.02), (0.0, 0.025)], (side * 0.15, y + 0.3, f - 0.02), node="Head", segs=14, axis="f")
+        m.lathe(dark, [(0.0, 0.025), (0.045, 0.025), (0.0, 0.03)], (side * 0.15, y + 0.3, f - 0.02), node="Head", segs=12, axis="f")
+        m.ball((fk.GLOW, (1.0, 0.75, 0.3)), 0.035, (side * 0.08, y + 0.2, f + 0.17), node="Head", u=10, v=8)
+        m.lathe(steel, [(0.035, -0.01), (0.045, 0.0), (0.035, 0.01)], (side * 0.08, y + 0.2, f + 0.175), node="Head", segs=12, axis="f")
+    m.ball(K("metal", (0.85, 0.7, 0.3)), (0.11, 0.08, 0.1), (0.0, y + 0.1, f + 0.15), node="Head", u=12, v=8)  # muzzle
+    m.ball(K("leather", (0.08, 0.06, 0.05)), (0.035, 0.025, 0.03), (0.0, y + 0.13, f + 0.25), node="Head", u=8, v=6)  # nose
+    m.ball(K("metal", (0.8, 0.65, 0.28)), (0.09, 0.04, 0.09), (0.0, y + 0.03, f + 0.14), node="Jaw", u=12, v=6)
+    for k in range(4):
+        m.rod(steel, 0.008, (-0.045 + k * 0.03, y + 0.06, f + 0.21), (-0.045 + k * 0.03, y + 0.03, f + 0.22), r2=0.002, node="Jaw", segs=5)
+    # limbs: brass cylinders with ball joints and claws; the arms end in paw cannons
+    for side, s in ((-1, "L"), (1, "R")):
+        sh, el, wr = b.shoulder(side), b.elbow(side), b.wrist(side)
+        m.ball(dark, 0.1, sh, node="Arm" + s, u=12, v=8)
+        m.loft(brass, [(sh[0], sh[1] - 0.05, sh[2], 0.085, 0.085), (el[0], el[1], el[2], 0.075, 0.075)], node="Arm" + s, segs=14)
+        m.ball(dark, 0.08, el, node="Fore" + s, u=10, v=8)
+        m.loft(brass, [(el[0], el[1], el[2], 0.075, 0.075), (wr[0], wr[1], wr[2], 0.09, 0.09)], node="Fore" + s, segs=14)
+        m.rod(steel, 0.04, (wr[0], wr[1] - 0.02, wr[2]), (wr[0], wr[1] - 0.2, wr[2] + 0.02), node="Fore" + s, segs=12)  # paw cannon barrel
+        m.lathe(dark, [(0.045, 0.0), (0.06, 0.02), (0.045, 0.04)], (wr[0], wr[1] - 0.2, wr[2] + 0.02), node="Fore" + s, segs=12)
+        for k in range(3):
+            m.rod(K("bone", (0.9, 0.85, 0.7)), 0.012, (wr[0] + side * 0.02 - 0.03 + k * 0.03, wr[1] - 0.05, wr[2] + 0.08), (wr[0] + side * 0.02 - 0.03 + k * 0.03, wr[1] - 0.12, wr[2] + 0.13), r2=0.002, node="Fore" + s, segs=5)
+        hp, kn = b.hip(side), b.knee(side)
+        m.ball(dark, 0.11, hp, node="Leg" + s, u=12, v=8)
+        m.loft(brass, [(hp[0], hp[1] - 0.05, 0.0, 0.11, 0.11), (kn[0], kn[1], kn[2], 0.09, 0.09)], node="Leg" + s, segs=14)
+        m.ball(dark, 0.09, kn, node="Shin" + s, u=10, v=8)
+        m.loft(brass, [(kn[0], kn[1], kn[2], 0.09, 0.09), (kn[0], 0.12, 0.0, 0.1, 0.1)], node="Shin" + s, segs=14)
+        m.loft(brass, [(kn[0], 0.08, -0.06, 0.1, 0.08), (kn[0], 0.06, 0.1, 0.11, 0.07), (kn[0], 0.05, 0.2, 0.09, 0.05)], node="Shin" + s, segs=12)
+        for k in range(3):
+            m.rod(K("bone", (0.9, 0.85, 0.7)), 0.015, (kn[0] - 0.05 + k * 0.05, 0.05, 0.22), (kn[0] - 0.05 + k * 0.05, 0.02, 0.29), r2=0.003, node="Shin" + s, segs=5)
+    v = variant(m, "V1_TopHat", "Head", (0.0, y, f))
+    m.lathe(K("cloth", (0.1, 0.09, 0.1)), [(0.0, 0.0), (0.2, 0.0), (0.2, 0.02), (0.12, 0.025), (0.12, 0.25), (0.0, 0.26)], (0.0, y + 0.31, f - 0.02), node=v, segs=18)
+    m.lathe(K("cloth", (0.5, 0.1, 0.1)), [(0.123, 0.03), (0.123, 0.07)], (0.0, y + 0.31, f - 0.02), node=v, segs=18)
+    v = variant(m, "V2_Monocle", "Head", (0.0, y, f))
+    m.lathe(K("metal", (0.85, 0.75, 0.35)), [(0.05, -0.006), (0.058, 0.0), (0.05, 0.006)], (0.08, y + 0.2, f + 0.185), node=v, segs=14, axis="f")
+    m.rod(K("metal", (0.85, 0.75, 0.35)), 0.003, (0.13, y + 0.18, f + 0.18), (0.16, y + 0.0, f + 0.14), node=v, segs=4)
+    v2 = variant(m, "V2_Bow", "Spine", (0.0, 1.5, 0.1))
+    for side in (-1, 1):
+        m.loft(K("cloth", (0.6, 0.08, 0.1)), [(0.0, 1.5, 0.17, 0.02, 0.02), (side * 0.07, 1.53, 0.16, 0.035, 0.012), (side * 0.12, 1.5, 0.15, 0.05, 0.01)], node=v2, segs=8)
+    v = variant(m, "V3_Patches", "Spine", (0.0, 1.25, 0.0))
+    for k in range(5):
+        a = rnd.uniform(-1.2, 1.2)
+        scrap_plate(m, K("metal", RUST), (math.sin(a) * 0.3, rnd.uniform(1.05, 1.42), math.cos(a) * 0.28 + 0.04), (0.12, 0.1, 0.02), v, tilt=rnd.uniform(-15, 15))
+
+
+def butcher(m):
+    rnd = random.Random(211)
+    b = Body(girth=1.6, shoulders=1.5, hips=1.3, belly=0.14, hunch=0.09, arm=1.1, arm_r=1.4, leg_r=1.3, head=1.0, neck=0.6)
+    b.nodes(m)
+    skin = K("leather", (0.5, 0.36, 0.32))
+    flesh(m, b, skin, eyes_glow=False, brow=1.8)
+    trousers(m, b, K("cloth", (0.22, 0.2, 0.2)), length=0.85, seed=21)
+    boots(m, b, K("leather", (0.12, 0.09, 0.07)))
+    apron = K("leather", (0.62, 0.58, 0.5))
+    m.loft(apron, [(0.0, 1.42, b.hunch * 0.8 + 0.19, 0.2, 0.02), (0.0, 1.15, b.hunch * 0.4 + 0.3, 0.26, 0.02), (0.0, 0.95, 0.27, 0.27, 0.02)], node="Spine", segs=6, flat=True)
+    m.loft(apron, [(0.0, 0.98, 0.28, 0.27, 0.02), (0.0, 0.55, 0.2, 0.25, 0.02)], node="Hips", segs=6, flat=True)
+    for k in range(7):
+        y0 = rnd.uniform(0.75, 1.3)
+        node = "Spine" if y0 > 1.0 else "Hips"
+        fz = (0.3 if y0 > 1.0 else 0.25)
+        m.ball(K("leather", (0.38, 0.04, 0.04)), (rnd.uniform(0.03, 0.07), rnd.uniform(0.04, 0.1), 0.012), (rnd.uniform(-0.18, 0.18), y0, fz), node=node, u=8, v=5)
+    belt(m, b, K("leather", (0.14, 0.1, 0.07)), y=0.98, knot=False)
+    # a cleaver in the right hand, a meat hook in the left
+    g = grip_at(b, 1)
+    m.rod(K("wood", (0.3, 0.2, 0.12)), 0.022, (g[0], g[1] + 0.07, g[2] - 0.03), (g[0], g[1] - 0.06, g[2] + 0.02), node="ForeR", segs=8)
+    m.prof(K("metal", (0.55, 0.55, 0.57)), 0.012, [(g[2] + 0.0, g[1] - 0.05), (g[2] + 0.42, g[1] - 0.3), (g[2] + 0.42, g[1] - 0.58), (g[2] + 0.08, g[1] - 0.38)], x=g[0], node="ForeR")
+    gl = grip_at(b, -1)
+    m.rod(K("wood", (0.3, 0.2, 0.12)), 0.02, (gl[0], gl[1] + 0.06, gl[2] - 0.02), (gl[0], gl[1] - 0.05, gl[2] + 0.02), node="ForeL", segs=8)
+    m.loft(K("metal", RUST), [(gl[0], gl[1] - 0.05, gl[2] + 0.02, 0.012, 0.012), (gl[0], gl[1] - 0.25, gl[2] + 0.04, 0.012, 0.012), (gl[0], gl[1] - 0.33, gl[2] + 0.13, 0.01, 0.01), (gl[0], gl[1] - 0.25, gl[2] + 0.2, 0.007, 0.007), (gl[0], gl[1] - 0.18, gl[2] + 0.18, 0.003, 0.003)], node="ForeL", segs=6)
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Sack", "Head", (0.0, y, f))
+    m.loft(K("cloth", (0.55, 0.47, 0.34)), [(0.0, y - 0.0, f, 0.1, 0.11), (0.0, y + 0.12, f + 0.005, 0.105, 0.12), (0.0, y + 0.22, f - 0.01, 0.09, 0.1), (0.0, y + 0.29, f - 0.02, 0.03, 0.03)], node=v, segs=14)
+    for side in (-1, 1):
+        m.ball(K("leather", (0.04, 0.02, 0.02)), (0.022, 0.018, 0.01), (side * 0.036, y + 0.13, f + 0.11), node=v, u=8, v=6)
+    m.lathe(K("cloth", ROPE), [(0.09, -0.01), (0.1, 0.0), (0.09, 0.01)], (0.0, y + 0.02, f), node=v, segs=14)
+    v = variant(m, "V2_Cage", "Head", (0.0, y, f))
+    for k in range(8):
+        a = k * math.tau / 8
+        m.loft(K("metal", RUST), [(math.sin(a) * 0.11, y + 0.0, f + math.cos(a) * 0.12, 0.008, 0.008), (math.sin(a) * 0.115, y + 0.15, f + math.cos(a) * 0.125, 0.008, 0.008), (math.sin(a) * 0.05, y + 0.27, f + math.cos(a) * 0.05, 0.008, 0.008), (0.0, y + 0.29, f, 0.008, 0.008)], node=v, segs=5)
+    for yy in (y + 0.02, y + 0.16):
+        m.lathe(K("metal", RUST), [(0.115, -0.008), (0.122, 0.0), (0.115, 0.008)], (0.0, yy, f), node=v, segs=16)
+    v = variant(m, "V3_PigSkull", "Head", (0.0, y, f))
+    m.ball(K("bone", BONE), (0.11, 0.1, 0.12), (0.0, y + 0.15, f + 0.04), node=v, u=12, v=9)
+    m.loft(K("bone", BONE), [(0.0, y + 0.12, f + 0.12, 0.06, 0.05), (0.0, y + 0.1, f + 0.22, 0.05, 0.045)], node=v, segs=10)
+    for side in (-1, 1):
+        m.ball(K("leather", (0.03, 0.02, 0.02)), 0.025, (side * 0.045, y + 0.17, f + 0.14), node=v, u=8, v=6)
+        m.ball(K("leather", (0.03, 0.02, 0.02)), (0.012, 0.016, 0.006), (side * 0.018, y + 0.1, f + 0.265), node=v, u=6, v=5)
+        m.prof(K("bone", BONE), 0.015, [(f - 0.02, y + 0.25), (f - 0.05, y + 0.34), (f + 0.02, y + 0.27)], x=side * 0.08, node=v)
+
+
+def dome_beast(m):
+    rnd = random.Random(221)
+    b = Body(girth=1.75, shoulders=1.7, hips=1.15, belly=0.04, hunch=0.22, arm=1.45, arm_r=1.55, leg_r=1.3, head=1.15, neck=0.5)
+    b.nodes(m)
+    hide, plate, horn = K("leather", (0.32, 0.3, 0.26)), K("bone", (0.72, 0.68, 0.58)), K("bone", (0.85, 0.8, 0.66))
+    flesh(m, b, hide, eye=(0.6, 1.0, 0.4), brow=2.0, ears=False)
+    y, f = b.head_y, b.head_f
+    m.lathe(plate, [(0.0, 0.0), (0.13, -0.02), (0.15, 0.05), (0.12, 0.12), (0.06, 0.16), (0.0, 0.17)], (0.0, y + 0.15, f - 0.01), node="Head", segs=18)  # the bony dome
+    for k in range(9):  # spikes down the spine
+        yy = 1.48 - k * 0.07
+        m.rod(plate, 0.035 - k * 0.002, (0.0, yy, -0.12 + b.hunch * (1.0 - k / 9) * 0.7), (0.0, yy + 0.08, -0.24 + b.hunch * (1.0 - k / 9) * 0.7), r2=0.004, node="Spine", segs=6)
+    for side, s in ((-1, "L"), (1, "R")):  # huge knuckles for walking on, plated forearms
+        hand(m, b, side, hide, "Fore" + s, claws=horn)
+        el, wr = b.elbow(side), b.wrist(side)
+        for k in range(3):
+            scrap_plate(m, plate, (el[0] + side * 0.02, el[1] - 0.06 - k * 0.08, el[2] - 0.05), (0.09, 0.07, 0.03), "Fore" + s, tilt=10)
+        m.ball(hide, (0.07, 0.06, 0.08), (wr[0], wr[1] - 0.06, wr[2] + 0.03), node="Fore" + s, u=10, v=7)
+    for k in range(6):  # fur tufts on the shoulders
+        p = (rnd.uniform(-0.25, 0.25), rnd.uniform(1.38, 1.5), rnd.uniform(-0.05, 0.15))
+        m.loft(K("fur", (0.25, 0.22, 0.18)), [(p[0], p[1], p[2], 0.06, 0.04), (p[0] * 1.1, p[1] - 0.1, p[2] - 0.05, 0.04, 0.02)], node="Spine", segs=6)
+    m.loft(K("cloth", (0.3, 0.25, 0.18)), [(0.0, 0.86, 0.0, 0.2, 0.15), (0.0, 1.0, 0.0, 0.19, 0.14)], node="Hips", segs=14, flat=True)
+    v = variant(m, "V1_Chains", "Spine", (0.0, 1.3, 0.0))
+    chain(m, K("metal", RUST), [(-0.3, 1.45, 0.05), (-0.1, 1.32, 0.3), (0.1, 1.2, 0.3), (0.3, 1.1, 0.1)], v, 0.05)
+    for side, s in ((-1, "L"), (1, "R")):
+        wr = b.wrist(side)
+        v2 = variant(m, "V1_Cuff" + s, "Fore" + s, wr)
+        m.lathe(K("metal", RUST), [(0.08, -0.04), (0.085, 0.0), (0.08, 0.04)], (wr[0], wr[1] + 0.05, wr[2]), node=v2, segs=14)
+    v = variant(m, "V2_Armour", "Spine", (0.0, 1.3, 0.0))
+    for k in range(3):
+        scrap_plate(m, K("metal", SCRAP), (-0.12 + k * 0.12, 1.3, 0.34), (0.11, 0.2, 0.03), v, tilt=-10)
+    v = variant(m, "V3_Horns", "Head", (0.0, y, f))
+    for side in (-1, 1):
+        m.loft(horn, [(side * 0.11, y + 0.2, f, 0.04, 0.04), (side * 0.2, y + 0.25, f + 0.06, 0.03, 0.03), (side * 0.22, y + 0.35, f + 0.16, 0.015, 0.015), (side * 0.18, y + 0.42, f + 0.2, 0.003, 0.003)], node=v, segs=8)
+
+
+def power_armour(m, b, metal, trim):
+    """Scrap power armour over a big body: chest, back plate, shoulder pauldrons, thigh and shin plates."""
+    m.loft(metal, [(0.0, 1.02, 0.0, 0.17 * b.g, 0.14 * b.g), (0.0, 1.2, b.hunch * 0.4, 0.2 * b.g, 0.17 * b.g), (0.0, 1.4, b.hunch * 0.8, 0.21 * b.g * b.sh, 0.15 * b.g), (0.0, 1.5, b.hunch, 0.14 * b.g, 0.1 * b.g)], node="Spine", segs=16)
+    m.loft(trim, [(0.0, 1.27, b.hunch * 0.6, 0.205 * b.g * b.sh, 0.17 * b.g), (0.0, 1.31, b.hunch * 0.65, 0.207 * b.g * b.sh, 0.172 * b.g)], node="Spine", segs=16, steps=1, flat=True)
+    for side, s in ((-1, "L"), (1, "R")):
+        sh = b.shoulder(side)
+        m.lathe(metal, [(0.0, 0.1), (0.12, 0.08), (0.17, 0.0), (0.17, -0.06), (0.0, -0.06)], (sh[0] + side * 0.03, sh[1] + 0.04, sh[2]), node="Arm" + s, segs=16, squash=0.9)
+        hp, kn = b.hip(side), b.knee(side)
+        m.loft(metal, [(hp[0], hp[1] - 0.02, 0.0, 0.1 * b.leg_r, 0.105 * b.leg_r), (kn[0], kn[1] + 0.06, kn[2], 0.08 * b.leg_r, 0.085 * b.leg_r)], node="Leg" + s, segs=12, flat=True)
+        m.loft(metal, [(kn[0], kn[1] - 0.02, kn[2], 0.075 * b.leg_r, 0.08 * b.leg_r), (kn[0], 0.13, 0.0, 0.07 * b.leg_r, 0.075 * b.leg_r)], node="Shin" + s, segs=12, flat=True)
+        m.ball(trim, 0.06 * b.leg_r, (kn[0], kn[1], kn[2] + 0.05), node="Shin" + s, u=10, v=7)
+        m.loft(metal, [(kn[0], 0.09, -0.07, 0.07, 0.06), (kn[0], 0.06, 0.08, 0.075, 0.05), (kn[0], 0.05, 0.19, 0.06, 0.03)], node="Shin" + s, segs=12)
+
+
+def tyrant(m):
+    rnd = random.Random(231)
+    b = Body(girth=1.55, shoulders=1.55, hips=1.25, belly=0.05, hunch=0.06, arm=1.05, arm_r=1.45, leg_r=1.35, head=0.95, neck=0.6)
+    b.nodes(m)
+    metal, trim = K("metal", (0.38, 0.4, 0.42)), K("metal", (0.6, 0.45, 0.2))
+    skin = K("leather", (0.45, 0.33, 0.27))
+    flesh(m, b, skin, eyes_glow=False, brow=1.5)
+    power_armour(m, b, metal, trim)
+    y, f = b.head_y, b.head_f
+    m.loft(metal, [(0.0, y - 0.0, f - 0.02, 0.11, 0.12), (0.0, y + 0.14, f, 0.115, 0.125), (0.0, y + 0.25, f - 0.02, 0.08, 0.09), (0.0, y + 0.29, f - 0.03, 0.02, 0.02)], node="Head", segs=14)  # the helmet
+    m.box(K("leather", (0.05, 0.05, 0.06)), (0.15, 0.03, 0.03), (0.0, y + 0.14, f + 0.12), node="Head")  # visor slit
+    m.box((fk.GLOW, (1.0, 0.3, 0.15)), (0.13, 0.012, 0.01), (0.0, y + 0.14, f + 0.135), node="Head")
+    # the gatling arm (right): a drum of six barrels on node "Barrels" that spins, a feed belt to the back drum
+    g = grip_at(b, 1)
+    m.lathe(metal, [(0.0, 0.0), (0.09, 0.0), (0.1, 0.25), (0.0, 0.26)], (g[0], g[1] - 0.12, g[2]), node="ForeR", segs=14)
+    m.node("Barrels", (g[0], g[1] - 0.3, g[2]), parent="ForeR")
+    for k in range(6):
+        a = k * math.tau / 6
+        m.rod(K("metal", (0.2, 0.2, 0.22)), 0.018, (g[0] + math.cos(a) * 0.05, g[1] - 0.2, g[2] + math.sin(a) * 0.05), (g[0] + math.cos(a) * 0.05, g[1] - 0.75, g[2] + math.sin(a) * 0.05), node="Barrels", segs=8)
+    for yy in (g[1] - 0.35, g[1] - 0.7):
+        m.lathe(trim, [(0.07, -0.015), (0.08, 0.0), (0.07, 0.015)], (g[0], yy, g[2]), node="Barrels", segs=14)
+    m.lathe(metal, [(0.0, 0.0), (0.16, 0.0), (0.16, 0.36), (0.0, 0.36)], (0.0, 1.18, -0.28), node="Spine", segs=16, axis="x")  # ammo drum on the back
+    m.loft(trim, [(0.18, 1.3, -0.22, 0.03, 0.01), (0.3, 1.3, 0.0, 0.03, 0.01), (0.33, 1.18, 0.12, 0.03, 0.01)], node="Spine", segs=6)
+    gl = b.elbow(-1)  # a riot shield on the left forearm
+    m.box(metal, (0.04, 0.6, 0.36), (gl[0] - 0.08, gl[1] - 0.2, gl[2] + 0.02), node="ForeL", bevel=0.02)
+    m.box(K("ice", (0.3, 0.4, 0.45)), (0.045, 0.06, 0.2), (gl[0] - 0.08, gl[1] - 0.02, gl[2] + 0.02), node="ForeL")
+    v = variant(m, "V1_Stacks", "Spine", (0.0, 1.4, -0.2))
+    for side in (-1, 1):
+        m.lathe(K("metal", RUST), [(0.0, 0.0), (0.045, 0.0), (0.045, 0.4), (0.055, 0.42), (0.055, 0.47), (0.0, 0.47)], (side * 0.12, 1.35, -0.3), node=v, segs=12)
+    v = variant(m, "V2_Skulls", "Spine", (0.0, 1.3, 0.0))
+    for k in range(4):
+        p = (-0.18 + k * 0.12, 0.98, 0.2)
+        m.ball(K("bone", BONE), (0.04, 0.045, 0.045), p, node=v, u=10, v=8)
+    v = variant(m, "V3_Banner", "Spine", (0.0, 1.4, -0.3))
+    m.rod(K("wood", WOOD), 0.02, (0.15, 1.2, -0.32), (0.15, 2.3, -0.32), node=v, segs=8)
+    m.prof(K("cloth", (0.55, 0.1, 0.1)), 0.008, [(-0.33, 2.28), (-0.33, 1.8), (-0.75, 1.92), (-0.62, 2.1), (-0.75, 2.28)], x=0.15, node=v)
+
+
+def warlord(m):
+    rnd = random.Random(241)
+    b = Body(girth=1.35, shoulders=1.45, hips=1.15, belly=0.03, hunch=0.03, arm=1.05, arm_r=1.25, leg_r=1.2, head=1.0, neck=0.8)
+    b.nodes(m)
+    skin = K("leather", (0.45, 0.32, 0.25))
+    flesh(m, b, skin, eyes_glow=False, brow=1.4)
+    coat = K("leather", (0.32, 0.22, 0.15))
+    shirt(m, b, coat, sleeves=0.95, seed=31)
+    m.loft(coat, [(0.0, 1.0, 0.0, 0.2, 0.16), (0.0, 0.7, 0.0, 0.25, 0.2), (0.0, 0.45, -0.02, 0.27, 0.22)], node="Hips", segs=16, flat=True)  # long coat skirt
+    trousers(m, b, K("cloth", (0.2, 0.2, 0.22)), seed=32)
+    boots(m, b, K("leather", (0.1, 0.08, 0.06)))
+    for k in range(10):  # the fur mantle
+        a = -1.6 + k * 0.36
+        m.ball(K("fur", (0.35, 0.3, 0.25)), (0.09, 0.07, 0.08), (math.sin(a) * 0.24, 1.47, b.hunch + math.cos(a) * 0.12 - 0.02), node="Spine", u=8, v=6)
+    m.box(K("metal", (0.7, 0.55, 0.25)), (0.06, 0.06, 0.02), (0.0, 1.0, 0.18), node="Hips")
+    gun(m, b, "ForeR", 1, 0.85, scope=True)
+    m.lathe(K("metal", (0.7, 0.55, 0.25)), [(0.025, -0.02), (0.028, 0.0), (0.025, 0.02)], (b.wrist(1)[0], b.wrist(1)[1] - 0.25, b.wrist(1)[2] + 0.07), node="ForeR", segs=10)  # gilded bands
+    y, f = b.head_y, b.head_f
+    m.lathe(K("metal", (0.45, 0.42, 0.4)), [(0.0, 0.11), (0.07, 0.1), (0.11, 0.04), (0.115, -0.02), (0.0, -0.02)], (0.0, y + 0.16, f - 0.01), node="Head", segs=16)  # helmet
+    m.box(K("metal", (0.45, 0.42, 0.4)), (0.02, 0.1, 0.02), (0.0, y + 0.1, f + 0.115), node="Head")  # nose guard
+    for side in (-1, 1):  # the horns
+        m.loft(K("bone", (0.85, 0.8, 0.66)), [(side * 0.1, y + 0.2, f, 0.03, 0.03), (side * 0.2, y + 0.24, f + 0.02, 0.025, 0.025), (side * 0.25, y + 0.34, f + 0.04, 0.012, 0.012), (side * 0.24, y + 0.4, f + 0.02, 0.003, 0.003)], node="Head", segs=8)
+    v = variant(m, "V1_Flag", "Spine", (0.0, 1.4, -0.2))
+    m.rod(K("wood", WOOD), 0.018, (0.0, 1.1, -0.2), (0.0, 2.4, -0.22), node=v, segs=8)
+    m.prof(K("cloth", (0.15, 0.15, 0.17)), 0.008, [(-0.22, 2.38), (-0.22, 1.9), (-0.7, 2.0), (-0.56, 2.18), (-0.7, 2.38)], x=0.0, node=v)
+    m.ball(K("bone", BONE), (0.07, 0.08, 0.07), (0.0, 2.17, -0.45), node=v, u=10, v=8)
+    v = variant(m, "V2_Skulls", "Spine", (0.0, 1.45, 0.0))
+    for side in (-1, 1):
+        m.ball(K("bone", BONE), (0.07, 0.08, 0.075), (side * (b.sx + 0.06), b.shoulder_y + 0.08, b.hunch), node=v, u=10, v=8)
+    v = variant(m, "V3_Spears", "Spine", (0.0, 1.3, -0.2))
+    for k in range(3):
+        m.rod(K("wood", WOOD), 0.012, (-0.1 + k * 0.1, 0.9, -0.2), (-0.25 + k * 0.15, 2.2, -0.35), node=v, segs=6)
+        m.rod(K("metal", RUST), 0.02, (-0.25 + k * 0.15, 2.2, -0.35), (-0.27 + k * 0.155, 2.38, -0.37), r2=0.002, node=v, segs=6)
+
+
+def overseer(m):
+    rnd = random.Random(251)
+    b = Body(girth=1.15, shoulders=1.25, hips=1.05, hunch=0.12, arm=1.25, arm_r=1.1, leg_r=1.1, head=1.0, neck=1.3)
+    b.nodes(m)
+    coat, brass, steel = K("cloth", (0.2, 0.18, 0.22)), K("metal", (0.66, 0.5, 0.25)), K("metal", (0.4, 0.4, 0.42))
+    skin = K("leather", (0.4, 0.38, 0.4))
+    flesh(m, b, skin, eyes_glow=False)
+    shirt(m, b, coat, sleeves=1.0, seed=41)
+    m.loft(coat, [(0.0, 1.0, 0.0, 0.18, 0.15), (0.0, 0.6, -0.02, 0.24, 0.19), (0.0, 0.2, -0.05, 0.28, 0.22)], node="Hips", segs=16, flat=True)  # a long coat to the shins
+    boots(m, b, K("leather", (0.1, 0.08, 0.07)))
+    y, f = b.head_y, b.head_f
+    m.ball(brass, (0.16, 0.17, 0.16), (0.0, y + 0.15, f), node="Head", u=16, v=12)  # the brass helm
+    m.lathe(steel, [(0.16, -0.02), (0.18, 0.0), (0.16, 0.02)], (0.0, y + 0.02, f), node="Head", segs=18)  # collar ring
+    m.lathe(steel, [(0.07, -0.01), (0.085, 0.0), (0.085, 0.03), (0.07, 0.035)], (0.0, y + 0.16, f + 0.15), node="Head", segs=16, axis="f")
+    m.ball((fk.GLOW, (0.95, 0.3, 0.95)), (0.06, 0.06, 0.02), (0.0, y + 0.16, f + 0.175), node="Head", u=12, v=8)  # the single lamp eye
+    for side in (-1, 1):
+        m.lathe(steel, [(0.04, -0.01), (0.045, 0.0), (0.045, 0.02), (0.04, 0.025)], (side * 0.13, y + 0.16, f + 0.06), node="Head", segs=10, axis="x")
+    # a harness on the back with two arms of cable and a lamp mast
+    m.box(steel, (0.3, 0.42, 0.16), (0.0, 1.25, -0.2), node="Spine", bevel=0.03)
+    for k in range(3):
+        m.lathe(brass, [(0.0, 0.0), (0.035, 0.0), (0.035, 0.08), (0.0, 0.08)], (-0.1 + k * 0.1, 1.45, -0.2), node="Spine", segs=10)
+    m.loft(K("leather", (0.08, 0.08, 0.08)), [(0.12, 1.4, -0.22, 0.02, 0.02), (0.2, 1.55, -0.1, 0.02, 0.02), (0.12, b.head_y + 0.05, b.head_f - 0.12, 0.02, 0.02)], node="Spine", segs=6)
+    # the arm cannon (left forearm) and a long scatter gun (right)
+    gl = b.elbow(-1)
+    m.lathe(steel, [(0.0, 0.0), (0.08, 0.0), (0.09, 0.3), (0.06, 0.32), (0.06, 0.45), (0.0, 0.46)], (gl[0], gl[1] - 0.48, gl[2]), node="ForeL", segs=14)
+    gun(m, b, "ForeR", 1, 0.7, drum=True)
+    v = variant(m, "V1_Antenna", "Head", (0.0, y, f))
+    m.rod(steel, 0.008, (0.08, y + 0.26, f - 0.05), (0.12, y + 0.6, f - 0.12), node=v, segs=6)
+    m.ball((fk.GLOW, (1.0, 0.2, 0.2)), 0.02, (0.12, y + 0.61, f - 0.12), node=v, u=8, v=6)
+    v = variant(m, "V2_Drone", "Spine", (0.0, 1.9, -0.1))
+    m.node("Drone", (0.25, 2.0, -0.1), parent=v)
+    m.ball(steel, (0.09, 0.05, 0.09), (0.25, 2.0, -0.1), node="Drone", u=10, v=7)
+    m.ball((fk.GLOW, (0.95, 0.3, 0.95)), 0.025, (0.25, 1.99, -0.02), node="Drone", u=8, v=6)
+    for side in (-1, 1):
+        m.lathe(steel, [(0.0, 0.0), (0.06, 0.0), (0.06, 0.008), (0.0, 0.01)], (0.25 + side * 0.12, 2.04, -0.1), node="Drone", segs=12)
+    v = variant(m, "V3_Lamps", "Spine", (0.0, 1.45, 0.0))
+    for side in (-1, 1):
+        sh = b.shoulder(side)
+        m.lathe(brass, [(0.0, 0.0), (0.05, 0.0), (0.06, 0.08), (0.0, 0.085)], (sh[0], sh[1] + 0.08, sh[2] + 0.04), node=v, segs=12, axis="f")
+        m.ball((fk.GLOW, (1.0, 0.9, 0.6)), (0.045, 0.045, 0.015), (sh[0], sh[1] + 0.08, sh[2] + 0.125), node=v, u=10, v=6)
+
+
 MODELS = (("en_drowned", drowned), ("en_drowned_runner", drowned_runner), ("en_swimmer", swimmer), ("en_reef_crab", reef_crab), ("en_tide_brute", tide_brute),
           ("en_skeleton_sword", skeleton_sword), ("en_skeleton_archer", skeleton_archer), ("en_raider", raider), ("en_feral", feral),
-          ("en_scav_gunner", scav_gunner), ("en_marksman", marksman), ("en_brute", brute))
+          ("en_scav_gunner", scav_gunner), ("en_marksman", marksman), ("en_brute", brute),
+          ("en_clockwork_bear", clockwork_bear), ("en_boss_butcher", butcher), ("en_boss_dome_beast", dome_beast), ("en_boss_tyrant", tyrant),
+          ("en_boss_warlord", warlord), ("en_boss_overseer", overseer))
 
 
 def main():

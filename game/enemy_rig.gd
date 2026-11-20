@@ -20,7 +20,7 @@ var _rot: PackedVector3Array = PackedVector3Array()  # this frame's sum, per piv
 var _hips_y := 0.0
 var _g := {}  # gait numbers
 var _i := {}  # idle numbers
-var _osc: Array = []  # [pivot index, axis 0..2, amplitude, phase offset, rate (0 = with the stride), with speed]
+var _osc: Array = []  # [pivot index, axis 0..2, amplitude, phase offset, rate (0 = with the stride), with speed, spin]
 var _poses := {}  # "wind" / "strike" / "aim" / "recoil" -> [[pivot index, Vector3 radians], ...]
 var _death := "slump"
 var _seed := 0.0
@@ -67,7 +67,7 @@ func setup(model: Node3D, style: Dictionary, rng: RandomNumberGenerator) -> void
 		_hips_y = _nodes[HIPS].position.y
 	for o: Dictionary in style.get("osc", []):
 		_osc.append([names.find(String(o["node"])), ["x", "y", "z"].find(String(o.get("axis", "x"))), deg_to_rad(float(o.get("amp", 20.0))),
-			deg_to_rad(float(o.get("phase", 0.0))), float(o.get("rate", 0.0)), bool(o.get("with_speed", true))])
+			deg_to_rad(float(o.get("phase", 0.0))), float(o.get("rate", 0.0)), bool(o.get("with_speed", true)), bool(o.get("spin", false))])
 	for kind: String in ["wind", "strike", "aim", "recoil"]:
 		var list: Array = []
 		var src: Dictionary = style.get(kind, {})
@@ -171,6 +171,8 @@ func pose(delta: float, speed: float, phase: float, tell: float, lunge: float, s
 		var rate := float(o[4])
 		var a := (_t * rate if rate > 0.0 else phase) + float(o[3])
 		var amount := float(o[2]) * sin(a) * (w if bool(o[5]) else 1.0)
+		if bool(o[6]):  # spin: turns on and on (`rate` turns a second; amp ignored)
+			amount = fmod(_t * rate * TAU, TAU)
 		var v := Vector3.ZERO
 		v[int(o[1])] = amount
 		_add(int(o[0]), v)
