@@ -13,6 +13,8 @@ const HealthState = preload("res://core/health_state.gd")
 const EnemyBrain = preload("res://core/enemy_brain.gd")
 const CharacterModels = preload("res://game/character_models.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
+const EnemyRig = preload("res://game/enemy_rig.gd")
+const RigidSkin = preload("res://game/rigid_skin.gd")
 
 const BONE_COLOR := Color(0.9, 0.88, 0.8)
 const BONE_FLASH := Color(1.0, 0.35, 0.35)
@@ -77,6 +79,8 @@ var _swings: Array[Node3D] = []  # fantasy creatures: legs that swing against ea
 var _flaps: Array[Node3D] = []  # wings (FlapL, FlapR)
 var _pulse: Node3D  # the part of a blob or spirit that breathes
 var _model: Node3D  # a fantasy creature's body (leans when hit, sinks when it dies)
+var _rig: EnemyRig  # (polish1 D2) a reworked enemy's own animation (game/enemy_rig.gd), null for the older models
+static var _moves := {}  # data/enemy_moves.json styles, read once
 static var _glow_material: StandardMaterial3D  # Keeper's Lantern glow, shared by every enemy
 var _glowing := false
 var _own: Array[StandardMaterial3D] = []  # a fantasy creature's own materials, one per kind of part
@@ -254,7 +258,15 @@ func _ready() -> void:
 		for found in creature.find_children("Flap*", "Node3D", true, false):
 			_flaps.append(found as Node3D)
 		_pulse = creature.find_child("Pulse", true, false) as Node3D
-		if _stats["attack_type"] == "melee":
+		if EnemyRig.rigged(creature):  # (polish1 D2) its own gait, idle, blows and death; one of its variants
+			if _moves.is_empty():
+				_moves = JSON.parse_string(FileAccess.get_file_as_string("res://data/enemy_moves.json"))
+			var dice := RandomNumberGenerator.new()
+			dice.randomize()
+			RigidSkin.fold(creature, model_name)  # one skinned mesh instead of a mesh per pivot
+			_rig = EnemyRig.new()
+			_rig.setup(creature, (_moves.get("styles", {}) as Dictionary).get(String(_stats.get("moves", model_name)), {}), dice)
+		elif _stats["attack_type"] == "melee":
 			_sword_arm = creature.find_child("ArmR", true, false) as Node3D
 	else:
 		_base_color = _accent
@@ -284,6 +296,8 @@ func set_run_fx(fx: Dictionary) -> void:
 
 func _physics_process(delta: float) -> void:
 	if _falling:
+		if _rig != null:  # (polish1 D2) it goes limp or falls apart as it drops
+			_rig.pose(delta, 0.0, _walk_phase, 0.0, 0.0, 0.0, 0.0, false)
 		return
 	if _berserk_at > 0.0 and health.hp <= _berserk_at:  # Berserkers: nearly dead, it gets faster and hits harder
 		_berserk_at = 0.0
@@ -548,6 +562,8 @@ func fall() -> void:
 	if _model == null:
 		queue_free()
 		return
+	if _rig != null:
+		_rig.die()
 	if String(_stats.get("remains", "")) == "gulls" and _pulse == null and GullFeast.room(get_tree()):
 		_gull_remains()
 		return
@@ -608,7 +624,10 @@ func _animate(delta: float) -> void:
 		var tell := 0.0  # winding up a blow: it rears back, then throws itself forward
 		if _strike_at > 0.0 and _windup > 0.0:
 			tell = 1.0 - clampf((_strike_at - Time.get_ticks_msec() / 1000.0) / _windup, 0.0, 1.0)
-		_model.rotation.x = 0.2 * _flinch + 0.4 * tell - 0.55 * _lunge - (1.25 if _crawling else 0.0)
+		_model.rotation.x = (0.2 * _flinch + 0.4 * tell - 0.55 * _lunge if _rig == null else 0.0) - (1.25 if _crawling else 0.0)
+		if _rig != null:
+			_swing_left = maxf(_swing_left - delta, 0.0)
+			_rig.pose(delta, speed, _walk_phase, tell, _lunge, _swing_left / SWING_TIME, _flinch, _stats["attack_type"] != "melee")
 		if _stats.has("hop"):  # (polish1 A7) it moves in hops (data "hop" = the hop's height in m)
 			_model.position.y = absf(sin(_walk_phase * 0.6)) * float(_stats["hop"]) * clampf(speed / 2.0, 0.0, 1.0)
 	_walk_phase += speed * delta * 1.6
@@ -653,6 +672,8 @@ func _attack() -> void:
 		else:
 			_land_blow(0.0)
 		return
+	if _rig != null:
+		_rig.fired()
 	var origin := global_position + Vector3(0, _size.y * 0.7, 0)
 	var aim := (_target.global_position + Vector3(0, AIM_HEIGHT, 0) - origin).normalized()
 	if aim_fix.is_valid():
