@@ -57,6 +57,8 @@ const RenderStyle = preload("res://game/render_style.gd")
 const CustomizeMenu = preload("res://game/customize_menu.gd")
 const Wallet = preload("res://core/wallet.gd")
 const PachinkoWall = preload("res://game/pachinko_wall.gd")
+const PrizeScreen = preload("res://game/prize_screen.gd")
+const PrizeBook = preload("res://core/prize_book.gd")
 const SlotMachine = preload("res://game/slot_machine.gd")
 const SlotScreen = preload("res://game/slot_screen.gd")
 const SlotMath = preload("res://core/slot_math.gd")
@@ -317,6 +319,10 @@ var _jackpot := 500.0  # this player's progressive slot pot (saved in the profil
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
 var _pachinko_hold := 0.0
+var _pachinko_cfg: Dictionary  # data/pachinko.json (pocket kinds, fever, jackpot, prizes)
+var _pachinko_pot := 200.0  # (polish1 item 75) this player's pachinko jackpot pot (saved in the profile)
+var _prize_tickets := 0  # (polish1 item 75) pachinko prize tickets (saved in the profile)
+var _prize_screen := PrizeScreen.new()
 var _crate_sure_id := ""  # the Silver / Gold crate asked about ("Are you sure?"), bought by a second press in time
 var _crate_sure_until := 0
 var _field := LootField.new()  # gun drops lying in the world
@@ -586,6 +592,8 @@ func _ready() -> void:
 	LoadClock.mark("club island shell")
 	_club_spawn = ClubIsland.SPAWN
 	_casino_cfg = DataStore.load_json("res://data/casino.json")
+	_pachinko_cfg = DataStore.load_json("res://data/pachinko.json")
+	_pachinko_pot = float(_pachinko_cfg["jackpot"]["seed"])
 	_wallet = Wallet.new(int(_casino_cfg["starting_coins"]))
 	_slot_data = DataStore.load_json("res://data/slots.json")
 	_slot_math = SlotMath.new(_slot_data)
@@ -715,6 +723,10 @@ func _ready() -> void:
 	_trade_screen.setup(_player.inventory, _player.items, _player.gun_db)
 	_trade_screen.set_cards(_cards, _card_screen.card_db)
 	_slot_screen.setup(_slot_data)
+	custom_layer.add_child(_prize_screen)
+	_prize_screen.setup(_pachinko_cfg["prizes"])
+	_prize_screen.redeem.connect(_on_prize_redeem)
+	_prize_screen.closed.connect(_close_prizes)
 	_slot_screen.spin_requested.connect(_on_slot_spin)
 	_slot_screen.closed.connect(_close_slots)
 	_games.round_finished.connect(save_profile)
@@ -901,7 +913,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _card_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _crow_carrying():
 		return
@@ -960,6 +972,9 @@ func close_inventory() -> bool:
 		return true
 	if _shop.is_open():
 		_shop.close()
+		return true
+	if _prize_screen.visible:
+		_close_prizes()
 		return true
 	if _slot_screen.visible:
 		_slot_screen.close()
@@ -1240,7 +1255,7 @@ func _trade_target() -> int:
 
 
 func _hold_trade(delta: float) -> void:
-	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
 	if busy or not Input.is_action_pressed("interact") or _trade_target() == 0 or not _field.nearest(_player.global_position).is_empty():
 		_trade_hold = 0.0
 		return
@@ -1580,6 +1595,10 @@ func _load_profile() -> void:
 			_jackpot = float(extra.get("jackpot", _jackpot))
 		_doubloons.balance = maxi(int(extra.get("doubloons", 0)), 0)
 		_cases.from_dict(extra.get("cases"), _crates.map(func(c: Dictionary) -> String: return String(c["id"])))
+		_prize_tickets = maxi(int(extra.get("prize_tickets", 0)), 0)
+		_pachinko_pot = maxf(float(extra.get("pachinko_pot", _pachinko_pot)), float(_pachinko_cfg["jackpot"]["seed"]))
+		if _pachinko != null:
+			_pachinko.set_pot(_pachinko_pot)
 		_progress.from_dict(extra.get("progress", {}))
 		_score.from_dict(extra.get("score"))
 		_player.pools.from_dict(extra.get("ammo"))
@@ -1654,7 +1673,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict()}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1722,7 +1741,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _crow_carrying():
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _crow_carrying():
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1840,6 +1859,8 @@ func _prompt() -> String:
 		return "[%s] %s" % [key, _ptables.prompt(_ptables.near(_player.global_position))]
 	if _shop.near(_player.global_position):
 		return "[%s] Card machine: packs, boxes and starter decks" % key
+	if _near_prizes():
+		return "[%s] Prize counter: trade prize tickets for card packs and crates (%d tickets)" % [key, _prize_tickets]
 	if _near_pachinko():
 		return "[%s] Launch a pachinko ball (%d chips, hold to keep firing): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
 	var food: String = _crow_cfg["food_item"]
@@ -1942,6 +1963,8 @@ func _interact() -> void:
 		_ptables.open(_ptables.near(_player.global_position))
 	elif _shop.near(_player.global_position):
 		_shop.open()
+	elif _near_prizes():
+		_open_prizes()
 	elif _near_pachinko():
 		_launch_pachinko()
 	elif _near(_crow_a_pos, CROW_RANGE):
@@ -2051,7 +2074,7 @@ func _near_pachinko() -> bool:
 
 
 func _hold_pachinko(delta: float) -> void:
-	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _inventory_screen.visible
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _inventory_screen.visible
 	if busy or not Input.is_action_pressed("interact") or not _near_pachinko():
 		_pachinko_hold = 0.0
 		return
@@ -2075,15 +2098,69 @@ func _launch_pachinko() -> void:
 	if _pachinko.launch():
 		_wallet.spend(cost)
 		_coins_dirty = true
+		_pachinko_pot += float(cost) * float(_pachinko_cfg["jackpot"]["share"])  # every ball grows the pot
+		_pachinko.set_pot(_pachinko_pot)
 	else:
 		_player_hud.notice("The board is full, wait for balls to land.")
 
 
-func _on_pachinko_landed(_pocket: int, coins: int, pocket_name: String) -> void:
+func _on_pachinko_landed(pocket: int, coins: int, pocket_name: String) -> void:
+	var kind := _pachinko.pocket_kind(pocket)
 	if coins > 0:
 		_wallet.add(coins)
+	if kind == "fever":
+		var fever: Dictionary = _pachinko_cfg["fever"]
+		_pachinko.start_fever(float(fever["seconds"]), int(fever["free_balls"]))
+		_player_hud.notice("FEVER! %d free gold balls: land %d in the JACKPOT to win the pot" % [int(fever["free_balls"]), int(_pachinko_cfg["jackpot"]["lamps"])])
+	elif kind == "ticket":
+		var n := int(_pachinko_cfg["tickets_per_pocket"])
+		_prize_tickets += n
+		_player_hud.notice("%s: +%d chips, +%d prize ticket%s (%d)" % [pocket_name, coins, n, "" if n == 1 else "s", _prize_tickets])
+	elif coins > 0:
 		_player_hud.notice("%s: +%d chips" % [pocket_name, coins])
 	_coins_dirty = true
+
+
+# (polish1 item 75) Every jackpot lamp lit in one fever: the pot and a stack of prize tickets.
+func _on_pachinko_jackpot() -> void:
+	var jack: Dictionary = _pachinko_cfg["jackpot"]
+	var won := int(_pachinko_pot)
+	_wallet.add(won)
+	_prize_tickets += int(jack["tickets"])
+	_pachinko_pot = float(jack["seed"])
+	_pachinko.set_pot(_pachinko_pot)
+	_player_hud.notice("PACHINKO JACKPOT! +%d chips and +%d prize tickets" % [won, int(jack["tickets"])])
+	_coins_dirty = true
+
+
+func _near_prizes() -> bool:
+	return _pachinko != null and _near(_pachinko.prize_position(), PACHINKO_RANGE)
+
+
+func _open_prizes() -> void:
+	_player.controls_enabled = false
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_prize_screen.open(_prize_tickets)
+
+
+func _close_prizes() -> void:
+	_prize_screen.visible = false
+	_player.controls_enabled = true
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	save_profile()
+
+
+func _on_prize_redeem(id: String) -> void:
+	var left := PrizeBook.redeem(_pachinko_cfg["prizes"], id, _prize_tickets, _cards, _cases, DataStore.load_json("res://data/tcg/packs.json"))
+	if left < 0:
+		_prize_screen.show_result("Not enough tickets.", false)
+		return
+	_prize_tickets = left
+	var prize := PrizeBook.find(_pachinko_cfg["prizes"], id)
+	var where := "Collection" if String(prize["gives"]).begins_with("tcg:") else "CASES tab"
+	_prize_screen.show_result("%s added (see your %s)." % [String(prize["name"]), where], true)
+	_prize_screen.refresh(_prize_tickets)
+	save_profile()
 
 
 func _feed_crow() -> void:
@@ -5109,6 +5186,8 @@ func _club_setup(first: int) -> void:
 		_club_parts.append(get_child(index))
 	_pachinko = _casino["pachinko"]
 	_pachinko.ball_landed.connect(_on_pachinko_landed)
+	_pachinko.jackpot_won.connect(_on_pachinko_jackpot)
+	_pachinko.set_pot(_pachinko_pot)
 	_slot_machines = _casino["slots"]
 	for m in _slot_machines:
 		m.finished.connect(_on_slot_finished)

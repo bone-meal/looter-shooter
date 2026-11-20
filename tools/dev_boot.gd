@@ -2976,9 +2976,39 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var gun_c: Dictionary = opening.call("winner") if opening.visible else {}
 					_lines.append("CASE %s: cases %s, chips %d, opening %s spinning %s, winner %s %s, bag guns %d" % [" ".join(words.slice(2)), str(shelf.get("counts")), int((session.get("_wallet") as RefCounted).get("balance")), opening.visible, opening.call("is_spinning"), String(gun_c.get("tier", "")), String(gun_c.get("body", "")), int((player.get("inventory") as RefCounted).call("gun_count")) if (player.get("inventory") as RefCounted).has_method("gun_count") else -1])
 		"pachinko":  # "!pachinko": stand in front of the casino's pachinko wall (the chips show at the top right there)
+			# (polish1 item 75) "!pachinko launch <n>" fires n paid balls, "fever" = a FEVER pocket lands, "jackpot" = the lamps are all lit,
+			# "tickets <n>" sets the prize tickets, "prizes" = stand at the prize counter and open it, "redeem <id>", "close", "note"
 			var wall: Node3D = session.get("_pachinko")
-			if wall != null:
-				player.global_position = wall.global_position + wall.global_basis.z * 4.0
+			if wall == null:
+				_lines.append("PACHINKO: no wall (go to the club first)")
+				return
+			var sub := words[1] if words.size() > 1 else ""
+			match sub:
+				"launch":
+					for i in (int(words[2]) if words.size() > 2 else 1):
+						session.call("_launch_pachinko")
+				"fever":
+					var kinds: Array = (session.get("_pachinko_cfg") as Dictionary)["pocket_kinds"]
+					session.call("_on_pachinko_landed", kinds.find("fever"), 0, "FEVER")
+				"jackpot":
+					wall.emit_signal("jackpot_won")
+				"tickets":
+					session.set("_prize_tickets", int(words[2]))
+				"prizes":
+					player.call("teleport", wall.call("prize_position") + wall.global_basis.z * 1.6 + Vector3(0, 0.1, 0), 0.0)
+					await get_tree().create_timer(0.3).timeout
+					player.call("look_at_point", wall.call("prize_position") + Vector3(0, 1.2, 0))
+					session.call("_open_prizes")
+				"redeem":
+					session.call("_on_prize_redeem", words[2])
+				"close":
+					session.call("_close_prizes")
+				"note":
+					var cards: RefCounted = session.get("_cards")
+					var cases: RefCounted = session.get("_cases")
+					_lines.append("PACHINKO: chips %d tickets %d pot %.1f fever %.1f lamps %d balls %d | packs %d items %s | cases %s" % [int((session.get("_wallet") as RefCounted).get("balance")), int(session.get("_prize_tickets")), float(session.get("_pachinko_pot")), float(wall.get("fever_left")), int(wall.get("jackpot_lamps")), int(wall.call("balls_in_play")), int(cards.call("pack_count")), str(cards.get("items")), str(cases.get("counts"))])
+				_:
+					player.global_position = wall.global_position + wall.global_basis.z * 4.0
 		"tcg":  # "!tcg tide [auto]": stand at the card table, sit, start a match with that starter (auto = the AI plays our side too); "!tcg esc" = press Esc there; "!tcg move" = our next move as a click; "!tcg shop [buy <item>]" = the card machine; "!tcg binder [decks]" = the binder; "!tcg look" = view of the tables; "!tcg put <card> [foe]" = a creature onto the mat; "!tcg mat <id>" = own and lay that play mat; "!tcg ptable <i> / pdeck / pmove / pnote" = the player tables online; "!tcg note" = the match in one line
 			var tcg: Node = session.get("_tcg")
 			if words[1] == "note":

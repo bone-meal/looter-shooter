@@ -1,8 +1,8 @@
 {
  "ball_cost": 10,
  "max_balls": 40,
- "bins": 9,
- "bin_width": 1.0,
+ "bins": 11,
+ "bin_width": 0.8182,
  "rows": 13,
  "row_gap": 0.85,
  "top": 1.5,
@@ -19,6 +19,101 @@
  "aim_max_x": 6.0,
  "max_speed": 14.0,
  "max_age": 25.0,
- "pocket_multipliers": [0, 0, 0.3, 0.5, 2.8, 0.5, 0.3, 0, 0],
- "pocket_names": ["MISS", "MISS", "SMALL", "WIN", "BULLSEYE", "WIN", "SMALL", "MISS", "MISS"]
+ "pocket_multipliers": [
+  0,
+  0,
+  0.2,
+  0.5,
+  0.6,
+  1.5,
+  0.6,
+  0.5,
+  0.2,
+  0,
+  0
+ ],
+ "pocket_names": [
+  "MISS",
+  "FEVER",
+  "TICKET",
+  "SMALL",
+  "WIN",
+  "JACKPOT",
+  "WIN",
+  "SMALL",
+  "TICKET",
+  "FEVER",
+  "MISS"
+ ],
+ "pocket_kinds": [
+  "miss",
+  "fever",
+  "ticket",
+  "coin",
+  "coin",
+  "jackpot",
+  "coin",
+  "coin",
+  "ticket",
+  "fever",
+  "miss"
+ ],
+ "fever": {
+  "free_balls": 4,
+  "seconds": 10.0
+ },
+ "jackpot": {
+  "seed": 200,
+  "share": 0.05,
+  "lamps": 3,
+  "tickets": 25
+ },
+ "tickets_per_pocket": 1,
+ "prizes": [
+  {
+   "id": "crate_bronze",
+   "name": "Bronze Crate",
+   "tickets": 12,
+   "gives": "crate:bronze",
+   "icon": "res://assets/ui/cases/bronze.png"
+  },
+  {
+   "id": "pack_single",
+   "name": "Card pack",
+   "tickets": 25,
+   "gives": "tcg:single",
+   "icon": "res://assets/tcg/pack.png"
+  },
+  {
+   "id": "crate_silver",
+   "name": "Silver Crate",
+   "tickets": 55,
+   "gives": "crate:silver",
+   "icon": "res://assets/ui/cases/silver.png"
+  },
+  {
+   "id": "pack_5",
+   "name": "5 card packs",
+   "tickets": 110,
+   "gives": "tcg:bundle_5",
+   "icon": "res://assets/tcg/pack.png"
+  },
+  {
+   "id": "pack_10",
+   "name": "10 card packs",
+   "tickets": 200,
+   "gives": "tcg:bundle_10",
+   "icon": "res://assets/tcg/pack.png"
+  },
+  {
+   "id": "crate_gold",
+   "name": "Gold Crate",
+   "tickets": 220,
+   "gives": "crate:gold",
+   "icon": "res://assets/ui/cases/gold.png"
+  }
+ ],
+ "_about": "The giant pachinko wall (game/pachinko_wall.gd, core/pachinko_sim.gd). Physics numbers as tuned in DECISIONS_CASINO.md. (polish1 item 75) 11 pockets: each pays pocket_multipliers x ball_cost chips; pocket_kinds: coin, miss, ticket (also tickets_per_pocket prize tickets), fever (the BONUS ROUND: fever.free_balls gold balls drop free around the marker), jackpot (pays its multiplier; every gold fever ball in it lights a jackpot lamp, jackpot.lamps lit in one fever wins the pachinko pot plus jackpot.tickets tickets; jackpot.share of every paid ball grows the pot, it restarts at jackpot.seed; saved per player). prizes = what prize tickets buy at the prize counter beside the console (gives tcg:<unopened item> or crate:<crate id>). Return measured with tools/pachinko_check.tscn.",
+ "_prizes": "Ticket prices: a ticket comes about every 4 balls (40 chips staked, edges more, middle less), so one is worth ~13 chips at the vendors; prizes cost ~3x their chip price in stakes.",
+ "_return": "Worked out 2026-11-20 (11 pockets, sweeping marker / held in the middle / at an edge): chips back 0.915 / 0.941 / 0.907 of the stake, counting the pot; jackpot about 1 in 640 / 480 / 1600 balls, pot ~520 on average; prize tickets 0.23 / 0.12 / 0.43 per ball."
 }

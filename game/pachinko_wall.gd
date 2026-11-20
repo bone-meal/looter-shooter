@@ -1,4 +1,7 @@
 # Purpose: the giant pachinko machine on the casino back wall: cabinet, peg board, pooled balls drawn from core/pachinko_sim.gd, pocket trays, sweeping aim marker, chasing side lights and the launch console. Draws only; the sim decides where balls land and what they pay.
+# (polish1 item 75) Pockets of different kinds (data/pachinko.json pocket_kinds): FEVER pockets start the bonus round
+# (`start_fever`: free balls drop at once, the lamps race, the JACKPOT pocket is open for a while), TICKET pockets give
+# prize tickets, the JACKPOT pocket in the middle; the marquee shows the pachinko pot (`set_pot`) and the fever clock.
 # Dependencies: core/pachinko_sim.gd, core/data_store.gd, data/pachinko.json. game/game_session.gd spends coins, calls launch() and listens to ball_landed.
 extends Node3D
 
@@ -6,12 +9,14 @@ const Sim = preload("res://core/pachinko_sim.gd")
 const DataStore = preload("res://core/data_store.gd")
 
 signal ball_landed(pocket: int, coins: int, pocket_name: String)
+signal jackpot_won  # (polish1 item 75) the fever balls lit every jackpot lamp
 
 const S := 0.62  # metres per sim unit
 const GOLD := Color(1.0, 0.8, 0.25)
 const PINK := Color(1.0, 0.1, 0.6)
 const CYAN := Color(0.1, 0.9, 1.0)
 const CONSOLE_LOCAL := Vector3(0, -8.8, 2.85)
+const PRIZES_LOCAL := Vector3(3.4, -8.8, 1.5)  # (polish1 item 75) the prize counter, right of the console
 const LAMPS_PER_SIDE := 16
 
 var sim: Sim
@@ -34,6 +39,15 @@ var _needle: Node3D
 var _lamps: Array[StandardMaterial3D] = []
 var _lamp_step := -1
 var _t := 0.0
+var _kinds: Array = []
+var fever_left := 0.0  # seconds of the bonus round left
+var jackpot_lamps := 0  # gold balls of the current batch in the JACKPOT pocket
+var _batch := 0
+var _lamps_needed := 3
+var _jack_lamps: Array[StandardMaterial3D] = []
+var _fever_label: Label3D
+var _pot_label: Label3D
+var _fever_shown := -1
 
 
 func _ready() -> void:
@@ -41,6 +55,8 @@ func _ready() -> void:
 	sim = Sim.new(data)
 	_sweep = float(data["aim_sweep_speed"])
 	_names = data["pocket_names"]
+	_kinds = data.get("pocket_kinds", [])
+	_lamps_needed = int((data.get("jackpot", {}) as Dictionary).get("lamps", 3))
 	_cabinet()
 	_build_pegs()
 	_build_pockets()
@@ -49,6 +65,7 @@ func _ready() -> void:
 	_marquee()
 	_side_lamps()
 	_console()
+	_prize_counter()
 
 
 func ball_cost() -> int:
@@ -68,8 +85,38 @@ func launch() -> bool:
 	return sim.launch(aim_now())
 
 
+func pocket_kind(pocket: int) -> String:
+	return String(_kinds[pocket]) if pocket < _kinds.size() else "coin"
+
+
+# The bonus round: `free` gold balls drop at once (free of charge) around the marker. Each gold ball of this batch that
+# lands in the JACKPOT pocket lights a jackpot lamp; all lamps lit by one batch wins the pot (jackpot_won). A new fever
+# starts a new batch and puts the lamps out.
+func start_fever(seconds: float, free: int) -> void:
+	_batch = _batch % 255 + 1
+	jackpot_lamps = 0
+	fever_left = maxf(fever_left, seconds)
+	for i in free:
+		sim.launch(clampf(aim_now() + (float(i) - float(free - 1) * 0.5) * 0.08, 0.0, 1.0), _batch)
+	_light_jackpot()
+
+
+func _light_jackpot() -> void:
+	for i in _jack_lamps.size():
+		_jack_lamps[i].albedo_color = GOLD if i < jackpot_lamps else Color(0.22, 0.16, 0.05)
+
+
+func set_pot(chips: float) -> void:
+	if _pot_label != null:
+		_pot_label.text = "JACKPOT\n%d" % int(chips)
+
+
 func console_position() -> Vector3:
 	return to_global(CONSOLE_LOCAL)
+
+
+func prize_position() -> Vector3:
+	return to_global(PRIZES_LOCAL)
 
 
 # sim coordinates (x right, y down) -> local position
@@ -173,8 +220,13 @@ func _build_pegs() -> void:
 func _build_pockets() -> void:
 	for i in sim.bins:
 		var mult := sim.multiplier(i)
+		var kind := pocket_kind(i)
 		var color := Color(0.45, 0.05, 0.12)
-		if mult >= 2.0:
+		if kind == "fever":
+			color = Color(0.62, 0.15, 0.95)
+		elif kind == "ticket":
+			color = Color(0.1, 0.7, 0.68)
+		elif kind == "jackpot" or mult >= 2.0:
 			color = GOLD
 		elif mult >= 0.5:
 			color = Color(0.1, 0.65, 0.3)
@@ -186,7 +238,9 @@ func _build_pockets() -> void:
 		var cx := (float(i) + 0.5) * sim.bin_width
 		_box(self, Vector3(sim.bin_width * S * 0.9, 0.5, 0.25), _p(cx, sim.floor_y + 0.45, 0.05), mat)
 		var text := String(_names[i])
-		if mult > 0.0:
+		if kind == "fever":
+			text += "\nBONUS"
+		elif mult > 0.0:
 			text += "\nx%.1f" % mult
 		_label(text, 40, 0.0035, Color(1, 1, 1), _p(cx, sim.floor_y + 0.45, 0.2))
 		var popup := _label("", 64, 0.008, GOLD, _p(cx, sim.floor_y - 1.0, 0.3))
@@ -205,14 +259,16 @@ func _build_balls() -> void:
 	mesh.radial_segments = 8
 	mesh.rings = 5
 	var m := _mat(Color(0.85, 0.88, 0.95))
+	m.vertex_color_use_as_albedo = true
 	m.metallic = 0.3
 	m.roughness = 0.3
 	m.emission_enabled = true
 	m.emission = Color(0.7, 0.75, 0.85)
-	m.emission_energy_multiplier = 0.5
+	m.emission_energy_multiplier = 0.25
 	mesh.material = m
 	_balls = MultiMesh.new()
 	_balls.transform_format = MultiMesh.TRANSFORM_3D
+	_balls.use_colors = true  # fever balls are gold
 	_balls.mesh = mesh
 	_balls.instance_count = sim.max_balls
 	_balls.visible_instance_count = 0
@@ -248,6 +304,14 @@ func _marquee() -> void:
 	l.outline_size = 24
 	l.outline_modulate = Color(0.4, 0.0, 0.25)
 	_label("press when the marker is on the gold line", 48, 0.006, GOLD, Vector3(0, 0.3, 0.1))
+	_pot_label = _label("JACKPOT", 56, 0.006, GOLD, Vector3(-4.4, 0.75, 0.1))
+	_pot_label.outline_size = 18
+	for i in _lamps_needed:  # the jackpot lamps under the pot
+		var lamp := _mat(Color(0.22, 0.16, 0.05), true)
+		_jack_lamps.append(lamp)
+		_box(self, Vector3(0.3, 0.3, 0.12), Vector3(-4.4 + (float(i) - float(_lamps_needed - 1) * 0.5) * 0.42, 0.12, 0.1), lamp)
+	_fever_label = _label("", 64, 0.007, Color(0.85, 0.45, 1.0), Vector3(4.4, 0.55, 0.1))
+	_fever_label.outline_size = 20
 
 
 func _side_lamps() -> void:
@@ -300,15 +364,62 @@ func _console() -> void:
 	c.add_child(l)
 
 
+# A teal counter with a ticket sign: game/game_session.gd opens the prize window here.
+func _prize_counter() -> void:
+	var c := Node3D.new()
+	c.position = PRIZES_LOCAL
+	add_child(c)
+	var teal := Color(0.1, 0.7, 0.68)
+	_box(c, Vector3(1.8, 1.05, 0.8), Vector3(0, 0.525, 0), _mat(Color(0.08, 0.2, 0.24)), true)
+	_box(c, Vector3(1.86, 0.06, 0.86), Vector3(0, 1.08, 0), _mat(teal, true))
+	_box(c, Vector3(1.8, 0.7, 0.08), Vector3(0, 2.3, -0.3), _mat(Color(0.05, 0.12, 0.14)))
+	_box(c, Vector3(0.06, 1.3, 0.06), Vector3(-0.8, 1.6, -0.3), _mat(teal, true))
+	_box(c, Vector3(0.06, 1.3, 0.06), Vector3(0.8, 1.6, -0.3), _mat(teal, true))
+	var board := Label3D.new()
+	board.text = "PRIZES"
+	board.font_size = 72
+	board.pixel_size = 0.006
+	board.modulate = Color(0.35, 0.95, 0.9)
+	board.outline_size = 14
+	board.shaded = false
+	board.position = Vector3(0, 2.36, -0.25)
+	c.add_child(board)
+	var note := Label3D.new()
+	note.text = "tickets for packs and crates"
+	note.font_size = 36
+	note.pixel_size = 0.005
+	note.modulate = GOLD
+	note.shaded = false
+	note.position = Vector3(0, 2.1, -0.25)
+	c.add_child(note)
+
+
 func _process(delta: float) -> void:
 	delta = minf(delta, 0.1)
 	_t += delta
+	if fever_left > 0.0 and fever_left <= delta and jackpot_lamps > 0:  # the fever ends: the lamps go out
+		jackpot_lamps = 0
+		_light_jackpot()
+	fever_left = maxf(fever_left - delta, 0.0)
+	if _fever_label != null:
+		var shown := ceili(fever_left)
+		if shown != _fever_shown:  # new text only when the number changes
+			_fever_shown = shown
+			_fever_label.text = ("FEVER!\n%d" % shown) if shown > 0 else ""
+		_fever_label.modulate = Color(0.85, 0.45, 1.0).lerp(Color.WHITE, 0.5 + 0.5 * sin(_t * 12.0))
 	var aim := aim_now()
 	_marker.position.x = (lerpf(sim.aim_min_x, sim.aim_max_x, aim) - sim.width * 0.5) * S
 	_needle.rotation_degrees.y = lerpf(-70.0, 70.0, aim)
-	for pocket in sim.step(delta):
+	var landed := sim.step(delta)
+	for n in landed.size():
+		var pocket := landed[n]
 		_pocket_glow[pocket] = 1.0
 		var coins := sim.payout(pocket)
+		if sim.landed_bonus[n] == _batch and _batch > 0 and pocket_kind(pocket) == "jackpot" and jackpot_lamps < _lamps_needed:
+			jackpot_lamps += 1
+			_light_jackpot()
+			if jackpot_lamps >= _lamps_needed:
+				jackpot_won.emit()
 		_popup_t[pocket] = 1.4
 		if coins > 0:
 			_popups[pocket].text = "+%d" % coins
@@ -324,6 +435,7 @@ func _draw_balls() -> void:
 	_balls.visible_instance_count = sim.count
 	for i in sim.count:
 		_balls.set_instance_transform(i, Transform3D(Basis.IDENTITY, _p(sim.xs[i], sim.ys[i], 0.04)))
+		_balls.set_instance_color(i, GOLD if sim.bonus[i] > 0 else Color.WHITE)
 
 
 func _flash_pegs(delta: float) -> void:
@@ -361,10 +473,11 @@ func _glow_pockets(delta: float) -> void:
 
 
 func _chase_lamps() -> void:
-	var step := floori(_t * 8.0)
+	var step := floori(_t * (24.0 if fever_left > 0.0 else 8.0))  # the lamps race in a fever
 	if step == _lamp_step:
 		return
 	_lamp_step = step
+	var on := Color(0.75, 0.3, 1.0) if fever_left > 0.0 else PINK
 	for i in _lamps.size():
 		var lit := (i + step) % 3 == 0
-		_lamps[i].albedo_color = PINK if lit else Color(0.25, 0.04, 0.2)
+		_lamps[i].albedo_color = on if lit else Color(0.25, 0.04, 0.2)

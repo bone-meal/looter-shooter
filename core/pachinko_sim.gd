@@ -1,4 +1,5 @@
 # Purpose: pachinko ball simulation: a small deterministic 2D physics run (balls fall through a peg lattice into pockets). Rendering only draws its state; payout comes from the same run. No Godot physics.
+# A ball can be a bonus ball (polish1 item 75: the free balls of a fever); landed_bonus says which landed balls were.
 # Dependencies: none (data from data/pachinko.json passed in). Caller owns the seed.
 extends RefCounted
 
@@ -32,6 +33,8 @@ var vxs := PackedFloat32Array()
 var vys := PackedFloat32Array()
 var ages := PackedFloat32Array()
 var count := 0
+var bonus := PackedByteArray()  # 0 = a paid ball, else the fever batch (1..255) a free gold ball belongs to
+var landed_bonus := PackedByteArray()  # parallel to the last step()'s landed pockets
 var hit_pegs := PackedInt32Array()  # peg ids (row * 100 + column) touched during the last step() call
 
 var _rng := RandomNumberGenerator.new()
@@ -69,6 +72,7 @@ func _init(data: Dictionary, seed_value: int = 0) -> void:
 	vxs.resize(max_balls)
 	vys.resize(max_balls)
 	ages.resize(max_balls)
+	bonus.resize(max_balls)
 
 
 # Peg position for a row/column (even rows have bins+1 pegs on the bin edges, odd rows bins pegs between them).
@@ -94,7 +98,7 @@ func payout(pocket: int) -> int:
 
 
 # aim 0..1 across the aim range (aim_min_x..aim_max_x) at the top of the board. Returns false when the board is full.
-func launch(aim: float) -> bool:
+func launch(aim: float, batch := 0) -> bool:
 	if count >= max_balls:
 		return false
 	var i := count
@@ -104,12 +108,14 @@ func launch(aim: float) -> bool:
 	vxs[i] = (_rng.randf() - 0.5) * launch_jitter * 2.0
 	vys[i] = 0.0
 	ages[i] = 0.0
+	bonus[i] = batch
 	return true
 
 
 # Advance by dt; returns the pockets (0..bins-1) of balls that landed during this call.
 func step(dt: float) -> Array[int]:
 	var landed: Array[int] = []
+	landed_bonus.clear()
 	hit_pegs.clear()
 	_left += dt
 	while _left >= STEP:
@@ -165,12 +171,14 @@ func _tick(landed: Array[int]) -> void:
 					hit_pegs.append(row * 100 + col)
 		if y >= floor_y or ages[i] > max_age:
 			landed.append(clampi(floori(x / bin_width), 0, bins - 1))
+			landed_bonus.append(bonus[i])
 			count -= 1
 			xs[i] = xs[count]
 			ys[i] = ys[count]
 			vxs[i] = vxs[count]
 			vys[i] = vys[count]
 			ages[i] = ages[count]
+			bonus[i] = bonus[count]
 			continue
 		xs[i] = x
 		ys[i] = y
