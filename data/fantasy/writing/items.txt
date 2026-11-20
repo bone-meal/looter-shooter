@@ -275,6 +275,8 @@ ship_galleon: Galleon
 [items ship_part]
 # WHAT: a part the shipyard makes for a ship already afloat (fitted to the ship nearest the slipway). Read a line as  id: Name .
 ship_crane: Salvage Crane
+shellback_prow: Shellback Prow
+gloomscale_sheathing: Gloomscale Sheathing
 
 [items plan]
 # WHAT: a found plan the shipyard needs for a side ship (kept when the ship is built). Read a line as  id: Name .

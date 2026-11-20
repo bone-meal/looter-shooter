@@ -1,1 +1,6 @@
-Release v1.12
+Polish1 B1: styled HUD feedback
+
+Round call-out in chalk, level-up banner with what is new, power-up medallions and icons with draining rings along the top, achievement cards sliding in with a chime, blood at the screen edges, health ring flash / lost chunk / refill, hit-direction marker, stacking damage numbers with crit colour and a red X, DEF and BLOCK icons, chunkier points font. Ship part names written.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

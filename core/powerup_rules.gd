@@ -38,6 +38,11 @@ func name_of(kind: String) -> String:
 	return String(_kinds[kind]["name"]) if _kinds.has(kind) else kind
 
 
+# (polish1 item 43) Its HUD icon (a shape of game/icon_art.gd's sheet; data "icon").
+func icon_of(kind: String) -> String:
+	return String(_kinds[kind].get("icon", "star")) if _kinds.has(kind) else "star"
+
+
 func color_of(kind: String) -> Color:
 	return _colors[kind] if _colors.has(kind) else Color.WHITE
 

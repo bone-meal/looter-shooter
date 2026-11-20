@@ -9,6 +9,7 @@
   "hub_button": {"volume": -4, "pitch": [1.0, 1.0], "range": 0},
   "hub_tick": {"volume": -10, "pitch": [1.0, 1.0], "range": 0},
   "sting_round_end": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
+  "achievement_chime": {"volume": -12, "pitch": [1.0, 1.0], "range": 0},
   "sting_boss": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
   "sting_special": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
   "powerup_drop": {"volume": -8, "pitch": [1.0, 1.0], "range": 0},

@@ -307,7 +307,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				if is_instance_valid(e) and not e.health.is_dead() and (near_a == null or e.global_position.distance_to(player.global_position) < near_a.global_position.distance_to(player.global_position)):
 					near_a = e
 			if near_a != null:
-				player.call("look_at_point", near_a.global_position + Vector3(0, 1.1, 0))
+				player.call("look_at_point", near_a.global_position + Vector3(0, float(near_a.call("head_height")) * 0.6 if near_a.has_method("head_height") else 1.1, 0))  # a low crab too
 			_lines.append("AIMNEAR %s" % (str(near_a.global_position.snapped(Vector3.ONE * 0.1)) if near_a != null else "nothing"))
 		"tofriend":  # "!tofriend": stand 3 m from the first other player (two-copy tests)
 			var spots: Dictionary = session.get("net").call("positions")
@@ -2611,6 +2611,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var owned: RefCounted = session.get("_cards")
 					_lines.append("TRADE %s: window open %s, rolled guns %d, harbor_gull %d, total cards %d" % [" ".join(words.slice(1)), str(ts.call("is_open")), guns, int(owned.call("count", "harbor_gull")), int(owned.call("total")) if owned.has_method("total") else -1])
 		"hurt":  # "!hurt 40": we take that much damage (going down online needs it)
+			if words.size() > 3:  # "!hurt 40 <right m> <ahead m>": (polish1 item 42) the blow comes from there (the hit-direction marker)
+				var cam_h: Camera3D = get_viewport().get_camera_3d()  # relative to where we look
+				player.set("struck_from", cam_h.global_position + cam_h.global_basis * Vector3(float(words[2]), 0.0, -float(words[3])))
 			player.call("take_damage", float(words[1]))
 		"downs":  # "!downs <note>": who is down or out online, whether we lie down, our health; "!downs wait_down" waits (up to 60 s) until somebody is down, "!downs wait_up" until we are up again
 			var dl: Node = session.get("net")

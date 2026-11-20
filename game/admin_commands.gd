@@ -82,8 +82,10 @@ func run(text: String, near: Node3D) -> PackedStringArray:
 			if args.size() < 1 or not String(args[0]).is_valid_int():
 				out.append(String(entry["usage"]))
 			else:
-				session.progress().add_xp(maxi(String(args[0]).to_int(), 0))
+				var gained: int = session.progress().add_xp(maxi(String(args[0]).to_int(), 0))
 				session.refresh_after_command()
+				if session.has_method("progress_notices"):
+					session.progress_notices(gained)  # the level-up banner and achievement cards, as in play (polish1 item 54)
 				out.append("Level %d now." % session.progress().level())
 		"spawn":
 			out.append(_spawn(args, near, String(entry["usage"])))

@@ -18,6 +18,7 @@ const UiSkin = preload("res://game/ui_skin.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const InputSetup = preload("res://game/input_setup.gd")
 const GunStats = preload("res://core/gun_stats.gd")
+const HudCallouts = preload("res://game/hud_callouts.gd")
 
 const GOOD := Color(0.3, 0.85, 0.4)
 const WARN := Color(0.95, 0.8, 0.25)
@@ -36,16 +37,12 @@ const SLOT_GAP := 6.0
 const SKILL_W := 150.0
 const SKILL_H := 44.0
 const MARGIN := 16.0
-const FLASH_STRIPS := 8
-const FLASH_STRIP_W := 14.0
 const CHALK := Color(0.78, 0.07, 0.05, 0.95)
 const POINTS := Color(1.0, 0.93, 0.7)
 const TALLY_H := 92.0  # height of the round marks (polish1 item 48: bigger, was 72)
 const TALLY_W := 180.0  # room kept for them left of the health ring
 const POPS := 8  # points pop-ups alive at once
 const POP_TIME := 1.1
-const CALL_TIME := 2.6  # seconds a power-up's name stays across the screen
-const POWER_BOX := Vector2(176.0, 38.0)  # one running power-up above the holster bar
 
 var player: CharacterBody3D
 var wave_text := ""
@@ -69,6 +66,17 @@ var perks: RefCounted  # core/perk_state.gd: the perks carried, shown as a row o
 var powerups: RefCounted  # core/powerup_rules.gd: the running ones are shown with their time left
 var power_now := 0.0  # the session's clock, for that time
 var party: Array = []  # the other players' {"name", "points"}, set by the session a few times a second
+var callouts := HudCallouts.new()  # (polish1 B1) styled round / level-up / power-up call-outs and achievement cards
+var card_key := "P"  # the player card's key, for that badge (set by the session)
+var card_unseen := false  # (polish1 item 54) a level-up happened and the player card was not opened since (the P badge's dot)
+var _chunky: Font = load("res://assets/fonts/LilitaOne.ttf")  # (polish1 item 46) the points' chunkier game font
+var _blood: GradientTexture2D  # (polish1 item 42) red at the screen's edges, clear in the middle
+var _shown_hp := 1.0  # the health ring's drawn share: rises smoothly when healing (you see it fill back up)
+var _lost_hp := 1.0  # where the ring stood before the last hits: a pale chunk that drains away after a moment
+var _lost_wait := 0.0
+var _hit_from := Vector3.INF  # where the last hit came from (the marker turns with the view while it fades)
+var _hit_time := 0.0
+var _crit_time := 0.0  # a crit just landed: a faint red X on the crosshair
 
 var _flash := 0.0
 var _notice_time := 0.0
@@ -79,9 +87,6 @@ var _pop_amount := PackedInt32Array()  # pop-up pool: what each shows (negative 
 var _pop_age := PackedFloat32Array()  # ... and for how long it has been flying (POP_TIME = free)
 var _pop_next := 0
 var _round_seen := 0
-var _call_text := ""  # the power-up just taken, called out across the screen (see callout())
-var _call_color := Color.WHITE
-var _call_time := 0.0
 var _white := 0.0  # white screen amount, runs 1 -> 0 after flash_white() (the nuke)
 var _round_flash := 0.0  # a new round: its marks flash white for a moment
 
@@ -92,6 +97,18 @@ func _ready() -> void:
 	_pop_amount.resize(POPS)
 	_pop_age.resize(POPS)
 	_pop_age.fill(POP_TIME)
+	_blood = GradientTexture2D.new()  # made once: transparent middle, deep red rim
+	_blood.width = 256
+	_blood.height = 256
+	_blood.fill = GradientTexture2D.FILL_RADIAL
+	_blood.fill_from = Vector2(0.5, 0.5)
+	_blood.fill_to = Vector2(1.05, 0.5)
+	var ramp := Gradient.new()
+	ramp.set_color(0, Color(0.55, 0.0, 0.0, 0.0))
+	ramp.set_color(1, Color(0.55, 0.0, 0.0, 1.0))
+	ramp.add_point(0.62, Color(0.6, 0.0, 0.0, 0.0))
+	ramp.add_point(0.85, Color(0.6, 0.02, 0.02, 0.55))
+	_blood.gradient = ramp
 
 
 # Shows this score card's points; every gain and every purchase flies off the number as a pop-up.
@@ -107,9 +124,19 @@ func _pop(amount: int) -> void:
 	_pop_next = (_pop_next + 1) % POPS
 
 
-# Called when the player takes damage.
+# Called when the player takes damage: the edges flash, the ring keeps a pale chunk of what was lost, and a marker
+# points where the blow came from (player.hurt_from; unknown = no marker).
 func flash() -> void:
 	_flash = 1.0
+	_lost_wait = 0.45
+	if player != null and (player.get("hurt_from") as Vector3).is_finite():
+		_hit_from = player.get("hurt_from")
+		_hit_time = 1.2
+
+
+# A crit or a headshot landed (game/damage_numbers.gd crit_hit).
+func crit_mark() -> void:
+	_crit_time = 0.35
 
 
 # Shows a message near the bottom of the screen for a few seconds.
@@ -118,11 +145,10 @@ func notice(text: String) -> void:
 	_notice_time = 3.0
 
 
-# A power-up was taken: its name across the screen for a moment.
-func callout(text: String, color: Color) -> void:
-	_call_text = text.to_upper()
-	_call_color = color
-	_call_time = CALL_TIME
+# Something taken or done (a power-up, a treasure, RUN WON ...): a medallion with its icon and its name across the
+# screen for a moment (game/hud_callouts.gd).
+func callout(text: String, color: Color, icon: String = "star") -> void:
+	callouts.power(text, color, icon)
 
 
 # The nuke: the screen goes white and clears within a second.
@@ -139,7 +165,17 @@ func _process(delta: float) -> void:
 	_flash = maxf(_flash - delta * 2.0, 0.0)
 	_fade = maxf(_fade - delta, 0.0)
 	_notice_time = maxf(_notice_time - delta, 0.0)
-	_call_time = maxf(_call_time - delta, 0.0)
+	callouts.tick(delta)
+	_hit_time = maxf(_hit_time - delta, 0.0)
+	_crit_time = maxf(_crit_time - delta, 0.0)
+	if player != null:
+		var ratio: float = clampf(player.health.hp / player.health.max_hp, 0.0, 1.0)
+		_shown_hp = ratio if ratio < _shown_hp else move_toward(_shown_hp, ratio, delta * 0.6)  # a hit shows at once; healing fills in
+		_lost_wait = maxf(_lost_wait - delta, 0.0)
+		if _lost_hp < _shown_hp:
+			_lost_hp = _shown_hp
+		elif _lost_wait <= 0.0:
+			_lost_hp = move_toward(_lost_hp, _shown_hp, delta * 0.5)
 	_white = maxf(_white - delta * 1.3, 0.0)
 	for i in POPS:
 		_pop_age[i] = minf(_pop_age[i] + delta, POP_TIME)
@@ -174,6 +210,8 @@ func _draw() -> void:
 	_draw_weapons(view)
 	_draw_points(view)
 	_draw_top(view)
+	_draw_hit_marks(view)
+	callouts.draw(self, view)
 	if course_text != "":
 		_text(Vector2(0, 92.0), course_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 24, Color(0.75, 0.95, 1.0))
 	if quest_text != "":
@@ -210,13 +248,14 @@ func _draw_points(view: Vector2) -> void:
 		return
 	var right := view.x - MARGIN
 	var base := view.y - MARGIN - SLOT_H - 32.0
-	var widest := _font.get_string_size("%d" % int(_score.points), HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x
+	var points_w := _chunky.get_string_size("%d" % int(_score.points), HORIZONTAL_ALIGNMENT_LEFT, -1, 36).x
+	var widest := points_w
 	for other: Dictionary in party:
 		widest = maxf(widest, _font.get_string_size("%s   %d" % [other["name"], other["points"]], HORIZONTAL_ALIGNMENT_LEFT, -1, 15).x)
 	var top := base - 30.0 if party.is_empty() else base - 40.0 - 20.0 * float(party.size() - 1) - 15.0
 	draw_rect(Rect2(right - widest - 40.0, top, widest + 48.0, base - top + 10.0), Color(0.12, 0.12, 0.13, 0.42))  # a faint box behind our points and the party's
-	_text(Vector2(right - 300.0, base), "%d" % int(_score.points), HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 34, POINTS)
-	CurrencyArt.draw(self, "points", Vector2(right - _font.get_string_size("%d" % int(_score.points), HORIZONTAL_ALIGNMENT_LEFT, -1, 34).x - 18.0, base - 11.0), 11.0)  # the island's coin, as in the inventory
+	_chunky_text(Vector2(right - 300.0, base), "%d" % int(_score.points), HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 36, POINTS)  # (polish1 item 46) a chunkier game font
+	CurrencyArt.draw(self, "points", Vector2(right - points_w - 18.0, base - 11.0), 11.0)  # the island's coin, as in the inventory
 	for i in party.size():
 		var other: Dictionary = party[i]
 		_text(Vector2(right - 300.0, base - 40.0 - 20.0 * i), "%s   %d" % [other["name"], other["points"]], HORIZONTAL_ALIGNMENT_RIGHT, 300.0, 15, Color(1, 1, 1, 0.85))
@@ -227,14 +266,12 @@ func _draw_points(view: Vector2) -> void:
 		var amount := _pop_amount[i]
 		var at := Vector2(right - 170.0 - 90.0 * t, base - 10.0 + (float(i % 4) - 1.5) * 26.0 * t)
 		var tint := Color(1.0, 0.85, 0.2, 1.0 - t * t) if amount > 0 else Color(0.95, 0.3, 0.3, 1.0 - t * t)
-		_text(at - Vector2(80.0, 0.0), ("+%d" if amount > 0 else "%d") % amount, HORIZONTAL_ALIGNMENT_RIGHT, 80.0, 22, tint)
+		_chunky_text(at - Vector2(80.0, 0.0), ("+%d" if amount > 0 else "%d") % amount, HORIZONTAL_ALIGNMENT_RIGHT, 80.0, 24, tint)
 
 
 # The power-up just taken, called out across the screen, and the ones still running in a row above the holster bar:
 # name, seconds left and a bar that runs down; one about to end blinks.
 func _draw_powers(view: Vector2) -> void:
-	if _call_time > 0.0:
-		_text(Vector2(0, view.y * 0.3), _call_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 48, Color(_call_color.r, _call_color.g, _call_color.b, clampf(_call_time / 0.6, 0.0, 1.0)))
 	if powerups == null:
 		return
 	var kinds: Array[String] = powerups.timed()
@@ -244,22 +281,22 @@ func _draw_powers(view: Vector2) -> void:
 			running += 1
 	if running == 0:
 		return
-	var x := (view.x - (float(running) * (POWER_BOX.x + 8.0) - 8.0)) * 0.5
-	var y := view.y - MARGIN - 44.0 - 12.0 - POWER_BOX.y
+	var r := 26.0  # (polish1 item 43) icons along the top, each in a ring that drains as its time runs out
+	var x := view.x * 0.5 - float(running - 1) * (r * 2.0 + 14.0) * 0.5
+	var y := 96.0 if boss_ratio < 0.0 else 112.0
 	for kind in kinds:
 		if not bool(powerups.is_on(kind, power_now)):
 			continue
 		var left: float = powerups.left(kind, power_now)
 		var color: Color = powerups.color_of(kind)
-		if left < 5.0 and fmod(left * 3.0, 1.0) < 0.35:
-			color.a = 0.35
-		var r := Rect2(Vector2(x, y), POWER_BOX)
-		draw_rect(r, BACK)
-		draw_rect(Rect2(x, y + POWER_BOX.y - 5.0, POWER_BOX.x * clampf(left / float(powerups.seconds_of(kind)), 0.0, 1.0), 5.0), color)
-		draw_rect(r, color, false, 2.0)
-		draw_string(_font, Vector2(x + 8.0, y + 23.0), String(powerups.name_of(kind)), HORIZONTAL_ALIGNMENT_LEFT, POWER_BOX.x - 56.0, 15, color)
-		draw_string(_font, Vector2(x + POWER_BOX.x - 50.0, y + 23.0), "%d s" % ceili(left), HORIZONTAL_ALIGNMENT_RIGHT, 42.0, 15, WHITE)
-		x += POWER_BOX.x + 8.0
+		var alpha := 0.35 if left < 5.0 and fmod(left * 3.0, 1.0) < 0.35 else 1.0  # about to end: it blinks
+		var c := Vector2(x, y)
+		draw_circle(c, r + 4.0, BACK)
+		draw_arc(c, r, 0.0, TAU, 32, Color(1, 1, 1, 0.15), 5.0, true)
+		draw_arc(c, r, -PI * 0.5, -PI * 0.5 + TAU * clampf(left / float(powerups.seconds_of(kind)), 0.0, 1.0), 32, Color(color, alpha), 5.0, true)
+		IconArt.draw(self, String(powerups.icon_of(kind)), Rect2(c - Vector2(r, r) * 0.62, Vector2(r, r) * 1.24), color, alpha)
+		_text(c + Vector2(-30.0, r + 20.0), "%d" % ceili(left), HORIZONTAL_ALIGNMENT_CENTER, 60.0, 15, Color(1, 1, 1, alpha))
+		x += r * 2.0 + 14.0
 
 
 # The perks carried: a row of tags in each perk's colour with its initials, right of the health ring.
@@ -284,25 +321,59 @@ func _text(at: Vector2, text: String, align: HorizontalAlignment, width: float, 
 	draw_string(_font, at, text, align, width, box_size, color)
 
 
+# _text in the chunky points font.
+func _chunky_text(at: Vector2, text: String, align: HorizontalAlignment, width: float, box_size: int, color: Color) -> void:
+	draw_string_outline(_chunky, at, text, align, width, box_size, 6, Color(0, 0, 0, 0.75 * color.a))
+	draw_string(_chunky, at, text, align, width, box_size, color)
+
+
+# (polish1 item 42) Blood at the screen's edges: it deepens as health drops below half (a slow pulse when low) and
+# flares on each hit; healing clears it.
 func _draw_flash(view: Vector2) -> void:
-	if _flash <= 0.0:
-		return
-	for i in FLASH_STRIPS:
-		var color := Color(0.8, 0.02, 0.02, _flash * 0.45 * (1.0 - float(i) / FLASH_STRIPS))
-		var d := i * FLASH_STRIP_W
-		draw_rect(Rect2(d, 0, FLASH_STRIP_W, view.y), color)
-		draw_rect(Rect2(view.x - d - FLASH_STRIP_W, 0, FLASH_STRIP_W, view.y), color)
-		draw_rect(Rect2(0, d, view.x, FLASH_STRIP_W), color)
-		draw_rect(Rect2(0, view.y - d - FLASH_STRIP_W, view.x, FLASH_STRIP_W), color)
+	var ratio: float = clampf(player.health.hp / player.health.max_hp, 0.0, 1.0)
+	var low := clampf((0.5 - ratio) / 0.5, 0.0, 1.0)
+	if ratio <= 0.0:
+		low = 0.0  # down: the down screen takes over
+	var amount := maxf(low * (0.6 + 0.12 * sin(Time.get_ticks_msec() * 0.006)), _flash * 0.85)
+	if amount > 0.01:
+		draw_texture_rect(_blood, Rect2(Vector2.ZERO, view), false, Color(1, 1, 1, amount))
+
+
+# (polish1 items 42 and 52) The hit-direction marker (a red arc round the crosshair, turning with the view while it
+# fades) and the faint red X of a crit.
+func _draw_hit_marks(view: Vector2) -> void:
+	var mid := view * 0.5
+	if _hit_time > 0.0:
+		var cam := get_viewport().get_camera_3d()
+		if cam != null:
+			var local := cam.global_transform.basis.inverse() * (_hit_from - cam.global_position)
+			var a := atan2(local.x, -local.z)  # 0 = straight ahead, + = to the right
+			var dir := Vector2(sin(a), -cos(a))
+			var r := minf(view.y * 0.16, 170.0)
+			var fade := clampf(_hit_time / 0.5, 0.0, 1.0)
+			draw_arc(mid, r, a - PI * 0.5 - 0.32, a - PI * 0.5 + 0.32, 16, Color(0.9, 0.08, 0.05, 0.85 * fade), 9.0, true)
+			var tip := mid + dir * (r + 22.0)
+			var side := Vector2(-dir.y, dir.x)
+			draw_colored_polygon(PackedVector2Array([tip, mid + dir * (r + 6.0) + side * 11.0, mid + dir * (r + 6.0) - side * 11.0]), Color(0.9, 0.08, 0.05, 0.85 * fade))
+	if _crit_time > 0.0:
+		var c := Color(1.0, 0.15, 0.1, 0.55 * _crit_time / 0.35)
+		for s: Vector2 in [Vector2(1, 1), Vector2(1, -1)]:
+			draw_line(mid - s * 13.0, mid - s * 6.0, c, 2.0, true)
+			draw_line(mid + s * 6.0, mid + s * 13.0, c, 2.0, true)
 
 
 func _draw_health(c: Vector2) -> void:
 	var ratio: float = clampf(player.health.hp / player.health.max_hp, 0.0, 1.0)
 	var color := GOOD if ratio > 0.6 else (WARN if ratio > 0.3 else BAD)
+	color = color.lerp(Color.WHITE, _flash * 0.7)  # (polish1 item 42) the ring flashes on a hit
 	draw_circle(c, RING_RADIUS + RING_WIDTH * 0.5 + 2.0, BACK)
 	draw_arc(c, RING_RADIUS, 0.0, TAU, 48, Color(1, 1, 1, 0.12), RING_WIDTH, true)
-	if ratio > 0.0:
-		draw_arc(c, RING_RADIUS, -PI * 0.5, -PI * 0.5 + TAU * ratio, 48, color, RING_WIDTH, true)
+	if _lost_hp > _shown_hp + 0.002:  # what the last hits took: pale, draining away
+		draw_arc(c, RING_RADIUS, -PI * 0.5 + TAU * _shown_hp, -PI * 0.5 + TAU * _lost_hp, 32, Color(1.0, 0.92, 0.85, 0.75), RING_WIDTH, true)
+	if ratio > _shown_hp + 0.002:  # healing: the part still filling in glows
+		draw_arc(c, RING_RADIUS, -PI * 0.5 + TAU * _shown_hp, -PI * 0.5 + TAU * ratio, 32, Color(color, 0.25 + 0.2 * sin(Time.get_ticks_msec() * 0.012)), RING_WIDTH, true)
+	if _shown_hp > 0.0:
+		draw_arc(c, RING_RADIUS, -PI * 0.5, -PI * 0.5 + TAU * _shown_hp, 48, color, RING_WIDTH, true)
 	draw_arc(c, RING_RADIUS - 11.0, 0.0, TAU, 48, DIM, 1.5, true)
 	var shield: float = player.overshield_left()
 	if shield > 0.0:  # gun skill Overshield: a blue band outside the ring, as a share of max health
@@ -324,7 +395,11 @@ func _draw_health(c: Vector2) -> void:
 
 # Armor summary and active elemental effects above the health ring.
 func _draw_status(o: Vector2) -> void:
-	draw_string(_font, o, "DEF %d   BLOCK %d%%" % [int(player.armor["defense"]), roundi(float(player.armor["block"]) * 100.0)], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, WHITE)
+	# (polish1 item 45) defense and block as icons with their numbers
+	IconArt.draw(self, "helm", Rect2(o + Vector2(0.0, -20.0), Vector2(24.0, 24.0)), Color(0.75, 0.82, 0.95))
+	_text(o + Vector2(28.0, 0.0), "%d" % int(player.armor["defense"]), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 17, WHITE)
+	IconArt.draw(self, "shield", Rect2(o + Vector2(78.0, -20.0), Vector2(24.0, 24.0)), Color(0.95, 0.8, 0.45))
+	_text(o + Vector2(106.0, 0.0), "%d%%" % roundi(float(player.armor["block"]) * 100.0), HORIZONTAL_ALIGNMENT_LEFT, -1.0, 17, WHITE)
 	var x := 0.0
 	for element in ["fire", "ice", "toxic"]:
 		var left: float = player.status.remaining(element)
@@ -494,6 +569,9 @@ func _draw_top(view: Vector2) -> void:
 		draw_string(_font, Vector2(view.x - 236.0, 70.0), "LV %d" % level, HORIZONTAL_ALIGNMENT_LEFT, 74, 24, WHITE)  # polish1 item 49: bigger (was 16 pt and a 96 px bar)
 		draw_rect(Rect2(view.x - 160.0, 54.0, 148.0, 14.0), BACK)
 		draw_rect(Rect2(view.x - 158.0, 56.0, 144.0 * clampf(xp_ratio, 0.0, 1.0), 10.0), Color(0.45, 0.8, 1.0))
+		if card_unseen:  # (polish1 item 54) something new on the player card: its key with a dot until it is opened
+			var w := UiSkin.key_cap(self, _font, Vector2(view.x - 280.0, 50.0), card_key)
+			draw_circle(Vector2(view.x - 280.0 + w, 50.0), 5.0, Color(1.0, 0.3, 0.2))
 	draw_string(_font, Vector2(0, 30), wave_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, WHITE)
 	if boss_ratio >= 0.0:
 		var w := 360.0

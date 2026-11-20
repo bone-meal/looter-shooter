@@ -129,6 +129,10 @@ def main():
     save("hub_button", mix(click(1500, 0.03), at(crack(0.35, 70, 500, 1.6, 2.0), 0.03), at(tone(glide(90, 45, 0.5), 0.5) * env(n(0.5), 0.002, 2.0) * 0.8, 0.05), at(click(600, 0.05) * 0.5, 0.32)), 0.85)
     save("hub_tick", mix(click(2600, 0.02), tone(1800, 0.05) * env(n(0.05), 0.001, 6) * 0.3), 0.5)
 
+    # --- (polish1 item 44) an achievement unlocked: a quiet, bright two-note chime with a soft shimmer ---
+    save("achievement_chime", mix(note(1047, 0.9, "sine", 0.6), at(note(1568, 1.2, "sine", 0.5), 0.11), at(note(2093, 1.0, "sine", 0.2), 0.2),
+                                  band(noise(0.8), 5000, 9000) * env(n(0.8), 0.01, 3.0) * 0.04), 0.45)
+
 
 if __name__ == "__main__":
     main()

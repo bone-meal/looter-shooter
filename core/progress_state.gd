@@ -277,6 +277,15 @@ func trait_defs() -> Dictionary:
 	return _cfg["traits"]
 
 
+# (polish1 item 54) What a level-up brings, for the HUD's banner.
+func points_per_level() -> int:
+	return int(_cfg["points_per_level"])
+
+
+func trait_slot_count() -> int:
+	return (_cfg["trait_slot_levels"] as Array).size()
+
+
 func trait_unlock_level(slot: int) -> int:
 	return int((_cfg["trait_slot_levels"] as Array)[slot])
 

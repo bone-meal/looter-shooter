@@ -194,6 +194,7 @@ var _rally_until := 0.0  # Rally Cry: extra damage and healing until this engine
 var _rally_dmg := 0.0
 var _rally_regen := 0.0
 var _last_crit := false
+var _last_head := false  # (polish1 item 52) the last pellet was a headshot: its number is a crit
 var score: RefCounted  # core/score_card.gd, set by the session (null in test scenes): shots that hurt an enemy pay points
 var head_share := 0.0  # data/points.json "headshot", set by the session: the top part of an enemy that is its head ...
 var head_mult := 1.0  # ... and how much harder a hit there lands
@@ -211,6 +212,7 @@ var _shove := Vector3.ZERO  # see shove()
 var damage_gate: Callable  # fantasy world (game/combat_tools.gd): every hit is passed through it first: (amount, element) -> what is left
 var struck_by: Node3D  # whoever is about to hurt us: set by the attacker just before take_damage (may stay null)
 var struck_from := Vector3.INF  # where a hit without an attacker node comes from (a projectile)
+var hurt_from := Vector3.INF  # (polish1 item 42) where the last blow that hurt us came from (INF = unknown): the HUD's hit-direction marker
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var _rush_until := 0.0  # gun buff Adrenaline: faster after a kill until then
 var _rush_pct := 0.0
@@ -704,6 +706,7 @@ func take_damage(amount: float, element: String = "physical") -> void:
 	taken = self_fx.incoming(taken, _now(), _near_banner())  # War Banner guard, then the Overshield soaks
 	if taken <= 0.0:
 		return
+	hurt_from = from
 	_hurt(taken)
 	if not _held_gun.is_empty():
 		_traits.on_hurt(_held_stats.get("traits", {}), _now())  # trait Last Stand
@@ -1525,6 +1528,7 @@ func _shoot() -> void:
 	_crowd = _enemies_near(CROWD_RANGE) if buffs.has("crowd_pleaser") else 0
 	var totals := {}  # collider -> damage dealt this shot (one number per target, even for shotgun pellets)
 	var spots := {}
+	var crits := {}  # (polish1 item 52) colliders hit by a crit or a headshot this shot
 	var reach := float(data.get("range", SHOT_RANGE))  # the flamethrower's cone ends at its range
 	var falloff: Dictionary = data.get("falloff", {})
 	_fire_ends.clear()
@@ -1546,6 +1550,8 @@ func _shoot() -> void:
 					hit.collider.apply_burn(float(data["burn"]["dps"]), float(data["burn"]["seconds"]))
 			totals[hit.collider] = float(totals.get(hit.collider, 0.0)) + dealt
 			spots[hit.collider] = hit.position
+			if _last_crit or _last_head:
+				crits[hit.collider] = true
 	if score != null:
 		score.blow = ""
 		for collider in totals:
@@ -1566,7 +1572,7 @@ func _shoot() -> void:
 				shown = float(_sig_node.call("on_hit_total", spots[collider], shown, collider.get("health") != null and collider.health.is_dead()))
 			if _sig_node != null and _sig_node.has_method("on_target_hit"):  # Grillmaster: a burning kill drops food
 				_sig_node.call("on_target_hit", collider, spots[collider], float(totals[collider]), collider.get("health") != null and collider.health.is_dead())
-			damage_numbers.spawn(spots[collider], shown)
+			damage_numbers.spawn(spots[collider], shown, crits.has(collider), collider)
 	for collider in totals:  # a host-run enemy's death is the host's to tell: remember our shot for its kill credit
 		if collider is Node and (collider as Node).has_meta("host_pays") and not (collider.get("health") != null and collider.health.is_dead()):
 			if _shot_at.size() > 64:
@@ -1609,6 +1615,7 @@ func _land_hit(collider: Object, at: Vector3, normal: Vector3, mult: float, extr
 	var gun_traits: Dictionary = _held_stats.get("traits", {})
 	var dealt := _gun_damage() * mult
 	var head: bool = collider.has_method("head_hit") and collider.head_hit(at, head_share)
+	_last_head = head
 	if head:
 		dealt *= head_mult * _perk("head_mult", 1.0) * extra_head
 	dealt *= _situational(collider, at, head) * _traits.damage_mult(gun_traits, collider)

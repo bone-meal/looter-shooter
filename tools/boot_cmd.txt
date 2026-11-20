@@ -1,1 +1,1 @@
-!uncap;!wait 2;!go sea;!wait 12;!immortal;!foe pause;!beast pause;!uboat pause on;!sea go -3790 6214 30;!wait 10;!port stall lanternwick;!wait 1;!snap a7_stall;!sea go -3798 6214 14;!wait 3;!look 90 -5;!where dock;!wait 1;!snap a7_stall_dock
+!uncap;!wait 2;/tp island;!wait 6;!immortal;/round 3;!wait 9;!aimnear;!fire;!wait 0.12;!fire;!wait 0.12;!fire;!wait 0.12;!fire;!wait 0.12;!fire;!wait 0.05;!snap b1_stack;!wait 0.3;!aimnear;!fire;!wait 0.1;!fire;!wait 0.05;!snap b1_stack2;!immortal off;!hurt 20 5 0;!wait 0.1;!snap b1_hit_right;!hurt 10 0 -5;!wait 0.1;!snap b1_hit_back

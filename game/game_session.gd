@@ -590,6 +590,7 @@ func _ready() -> void:
 	_player.died.connect(_on_player_died)
 	_player.blocked.connect(_player_hud.notice.bind("Blocked!"))
 	_player.damage_numbers = _numbers
+	_numbers.crit_hit.connect(_player_hud.crit_mark)  # (polish1 item 52) the red X of a crit
 	_player.explosives = _explosives
 	_player.bolts = _bolts
 	_bolts.ignore = _player.get_rid()
@@ -895,6 +896,7 @@ func apply_table_event(_peer: int, op: String, args: Array) -> void:
 
 
 func _open_card() -> void:
+	_player_hud.card_unseen = false  # (polish1 item 54) the P badge's dot goes
 	_card_screen.open(_card_line())
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -942,14 +944,34 @@ func _award(kind: String, counter_names: Array) -> void:
 	_progress_notices(levels)
 
 
+# Command /xp: the same banner and cards as a real level-up.
+func progress_notices(levels: int) -> void:
+	_progress_notices(levels)
+
+
 func _progress_notices(levels: int) -> void:
-	var parts: Array[String] = []
-	if levels > 0:
-		parts.append("LEVEL UP! Level %d (press P for your card)" % _progress.level())
-	for id: String in _progress.take_unlocked():
-		parts.append("ACHIEVEMENT: %s" % String((_progress.achievement_defs()[id] as Dictionary)["name"]))
-	if not parts.is_empty():
-		_player_hud.notice("  |  ".join(parts))
+	var any := levels > 0
+	if levels > 0:  # (polish1 item 54) a banner saying what is new on the player card; a dot on the P badge until it is opened
+		var points: int = levels * _progress.points_per_level()
+		var news: Array = ["+%d stat point%s to spend" % [points, "" if points == 1 else "s"]]
+		for slot in _progress.trait_slot_count():
+			var at := _progress.trait_unlock_level(slot)
+			if at > _progress.level() - levels and at <= _progress.level():
+				news.append("Trait slot %d is open" % (slot + 1))
+		_player_hud.callouts.level_up(_progress.level(), news, _key("card"))
+		_player_hud.card_unseen = true
+		_player_hud.card_key = _key("card")
+	for id: String in _progress.take_unlocked():  # (polish1 item 44) a card slides in from the top, with a quiet chime
+		var a: Dictionary = _progress.achievement_defs()[id]
+		var gives := PackedStringArray()
+		if a.has("emblem"):
+			gives.append("emblem")
+		if a.has("title"):
+			gives.append("title \"%s\"" % _progress.title_name(String(a["title"])))
+		_player_hud.callouts.achievement(String(a["name"]), String(a.get("desc", "")), _progress.emblem_def(String(a["emblem"])) if a.has("emblem") else {}, ("Unlocks " + " + ".join(gives)) if not gives.is_empty() else "")
+		_sounds.call("play", "achievement_chime")
+		any = true
+	if any:
 		_apply_progress()
 		save_profile()
 		card_changed.emit(_progress.to_dict())
@@ -2958,14 +2980,14 @@ func _on_round_started(number: int, kind: String) -> void:
 		_run_kills = _score.kills
 		_run_earned = 0
 	match kind:
-		"boss":
-			_player_hud.notice("Round %d: something big is wading in" % number)
+		"boss":  # (polish1 item 51) the round in red chalk toward the top
+			_player_hud.callouts.round_call(number, "something big is wading in")
 			_sounds.call("play", "sting_boss")
 		"special":
-			_player_hud.notice("Round %d: the sea is crawling" % number)
+			_player_hud.callouts.round_call(number, "the sea is crawling")
 			_sounds.call("play", "sting_special")
 		_:
-			_player_hud.notice("Round %d" % number)
+			_player_hud.callouts.round_call(number, "")
 			_sounds.call("play", "sting_round")
 
 
@@ -2973,7 +2995,7 @@ func _on_round_ended(number: int, kind: String) -> void:
 	var parting := String(_powerups.cfg.get("special_round_end", ""))
 	if kind == "special" and _rounds.active and _powerups.has(parting):  # the last one of a special round leaves this
 		_drop_power(parting, _director.last_killed.global_position if is_instance_valid(_director.last_killed) else _island_spawn)
-	_player_hud.notice("Round %d survived" % number)
+	_player_hud.callouts.round_done(number)
 	if _island_side():
 		_stats.add("island_rounds")
 	_sounds.call("play", "sting_round_end")
@@ -3844,7 +3866,7 @@ func _apply_power(kind: String) -> void:
 		_score.blow = before
 	if not _island_side():
 		return
-	_player_hud.callout(_powerups.name_of(kind), _powerups.color_of(kind))
+	_player_hud.callout(_powerups.name_of(kind), _powerups.color_of(kind), _powerups.icon_of(kind))
 	_sounds.call("play", "powerup_nuke" if kind == "nuke" else "powerup_grab")
 	match kind:
 		"max_ammo":

@@ -119,6 +119,10 @@
      "label": "Round survived"
     },
     {
+     "id": "achievement_chime",
+     "label": "Achievement unlocked"
+    },
+    {
      "id": "sting_boss",
      "label": "Boss round starts"
     },
