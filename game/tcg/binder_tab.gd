@@ -5,6 +5,9 @@
 # list to take it out, click a leader to lead the deck; mana curve and whether the deck can be played).
 # "Open packs" starts the pack opening over the whole screen (game/tcg/pack_opening.gd). "Play mats" lists every mat
 # (owned ones to pick for your half of the table, locked ones dim with how they come; core/tcg/mat_book.gd).
+# (polish1 item 80) The starter decks stand above the deck slots (load one owned, buy one not owned). (polish1 item 82)
+# The binder lies closed first and swings open on a click; clicking an owned card opens the inspect view
+# (game/tcg/card_inspect.gd: turn it, compare Plain / Rainbow / Pony); a filter for foils.
 # Dependencies: core/tcg/binder_list.gd, core/tcg/deck_edit.gd, game/tcg/card_face.gd, game/tcg/card_shine.gd, game/tcg/pack_opening.gd, data/tcg/packs.json;
 # db (core/tcg/card_db.gd) and owned (core/tcg/collection.gd) handed in by build().
 extends VBoxContainer
@@ -14,6 +17,7 @@ const DeckEdit = preload("res://core/tcg/deck_edit.gd")
 const CardFace = preload("res://game/tcg/card_face.gd")
 const PackOpening = preload("res://game/tcg/pack_opening.gd")
 const MatBook = preload("res://core/tcg/mat_book.gd")
+const CardInspect = preload("res://game/tcg/card_inspect.gd")
 
 signal changed  # a deck slot was saved, or packs were opened
 
@@ -42,6 +46,9 @@ var _info := Label.new()
 var _browse_panel := VBoxContainer.new()
 var _deck_panel := VBoxContainer.new()
 var _slots := HBoxContainer.new()
+var _starter_row := HBoxContainer.new()  # (polish1 item 80) the buyable starter decks, above the slots
+var buy_starter := Callable()  # func(starter id) -> "" when bought, else why not (the session's wallet); set by the card screen
+var _starters: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/starters.json"))["starters"]
 var _name := LineEdit.new()
 var _leader_label := Label.new()
 var _rows := VBoxContainer.new()
@@ -52,6 +59,8 @@ var _mat_panel := VBoxContainer.new()
 var _mat_list := VBoxContainer.new()
 var _mats_cfg: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))
 var _opening: Control
+var _inspect: Control  # (polish1 item 82) game/tcg/card_inspect.gd, over the whole menu
+var _cover: Cover  # (polish1 item 82) the closed binder, opened with a click
 var _slot := -1  # deck slot being built, -1 = just browsing
 var _deck: Dictionary = {}
 
@@ -104,6 +113,46 @@ class Badges extends Control:
 				var br := Rect2((page.call("pocket", i) as Rect2).end - Vector2(bw + 2, fs2 + 6), Vector2(bw, fs2 + 4))
 				draw_rect(br, Color(0, 0, 0, 0.75))
 				draw_string(f, br.position + Vector2(4, fs2), b, HORIZONTAL_ALIGNMENT_LEFT, -1, fs2, Color(1.0, 0.85, 0.4))
+
+
+# (polish1 item 82) The binder lies CLOSED first: its leather front cover over the spread (gold frame, title, how many
+# cards owned); a click swings it open about the spine (or it opens by itself after a moment).
+class Cover extends Control:
+	signal open_me
+	var book := Rect2()
+	var line := ""
+	var swing := 0.0  # 0 closed .. 1 swung open
+
+	func _gui_input(event: InputEvent) -> void:
+		if event is InputEventMouseButton and (event as InputEventMouseButton).pressed and swing <= 0.0:
+			open_me.emit()
+			accept_event()
+
+	func _draw() -> void:
+		var half := Rect2(Vector2(book.get_center().x, book.position.y), Vector2(book.size.x * 0.5, book.size.y))  # the cover hinges at the spine
+		var w := half.size.x * cos(swing * PI * 0.5)
+		if w < 2.0:
+			return
+		draw_rect(Rect2(Vector2(book.position.x, book.position.y), Vector2(book.size.x * 0.5, book.size.y)), Color(0.05, 0.03, 0.02, 0.95 * (1.0 - swing)))  # the table under the closed book
+		var r := Rect2(half.position, Vector2(w, half.size.y))
+		draw_rect(r, Color(0.3, 0.16, 0.08))
+		draw_rect(r.grow(-6.0), Color(0.22, 0.12, 0.06), false, 2.0)
+		draw_rect(Rect2(r.position, Vector2(minf(18.0, w), r.size.y)), Color(0.16, 0.09, 0.05))  # the spine edge
+		if w < half.size.x * 0.5:
+			return
+		var gold := Color(1.0, 0.82, 0.4)
+		var frame := r.grow(-28.0)
+		draw_rect(frame, gold, false, 3.0)
+		draw_rect(frame.grow(-8.0), Color(gold, 0.5), false, 1.0)
+		var f: Font = CardFace.font("title")
+		var mid := frame.get_center()
+		for k in 8:  # a little sun emblem
+			var a := float(k) * TAU / 8.0
+			draw_line(mid + Vector2.from_angle(a) * 26.0 - Vector2(0, 40), mid + Vector2.from_angle(a) * 46.0 - Vector2(0, 40), gold, 3.0)
+		draw_circle(mid - Vector2(0, 40), 20.0, gold)
+		draw_string(f, Vector2(frame.position.x, mid.y + 40.0), "CARD BINDER", HORIZONTAL_ALIGNMENT_CENTER, frame.size.x, 34, gold)
+		draw_string(f, Vector2(frame.position.x, mid.y + 76.0), line, HORIZONTAL_ALIGNMENT_CENTER, frame.size.x, 18, Color(gold, 0.75))
+		draw_string(f, Vector2(frame.position.x, frame.end.y - 18.0), "click to open", HORIZONTAL_ALIGNMENT_CENTER, frame.size.x, 15, Color(1, 1, 1, 0.5))
 
 
 # The open binder: leather, a spine with rings, two pages. Drag across it to turn.
@@ -233,6 +282,9 @@ func build(card_db: RefCounted, collection: RefCounted) -> void:
 	_float.visible = false
 	_spread.add_child(_float)
 	_float.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cover = Cover.new()
+	_spread.add_child(_cover)
+	_cover.open_me.connect(_open_cover)
 	var turn_row := HBoxContainer.new()
 	turn_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	left.add_child(turn_row)
@@ -268,6 +320,7 @@ func _filters() -> HBoxContainer:
 			["rarity", [["Any rarity", ""], ["Common", "common"], ["Rare", "rare"], ["Epic", "epic"], ["Legendary", "legendary"]]],
 			["type", [["Any type", ""], ["Creatures", "creature"], ["Spells", "spell"], ["Tells", "trap"], ["Leaders", "leader"]]],
 			["tribe", tribe_names],
+			["finish", [["Any finish", ""], ["Rainbow foils", "rainbow"], ["Pony foils", "pony"]]],
 			["show", [["Owned and missing", "all"], ["Owned", "owned"], ["Missing", "missing"]]],
 			["sort", [["By number", "number"], ["By cost", "cost"], ["By rarity", "rarity"], ["By name", "name"], ["Newest", "newest"]]]]:
 		var pick := OptionButton.new()
@@ -316,6 +369,8 @@ func _build_browse(stack: VBoxContainer) -> void:
 	add_child(layer)
 	_opening = PackOpening.new()
 	layer.add_child(_opening)
+	_inspect = CardInspect.new()
+	layer.add_child(_inspect)
 	_opening.connect("changed", func() -> void: changed.emit())
 	_opening.connect("closed", refresh)
 
@@ -324,6 +379,8 @@ func _build_deck(stack: VBoxContainer) -> void:
 	stack.add_child(_deck_panel)
 	_deck_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_deck_panel.visible = false
+	_starter_row.add_theme_constant_override("separation", 4)
+	_deck_panel.add_child(_starter_row)
 	_slots.add_theme_constant_override("separation", 4)
 	_deck_panel.add_child(_slots)
 	_name.placeholder_text = "Deck name"
@@ -377,6 +434,39 @@ func refresh() -> void:
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_VISIBILITY_CHANGED and _opening != null and _opening.visible and not is_visible_in_tree():
 		_opening.call("close")
+	if what == NOTIFICATION_VISIBILITY_CHANGED and _inspect != null and not is_visible_in_tree():
+		_inspect.call("close")
+	if what == NOTIFICATION_VISIBILITY_CHANGED and _cover != null and is_visible_in_tree() and _slot < 0:
+		_close_cover()
+
+
+# (polish1 item 82) The binder closed again (each time it comes into view): the cover over the pages.
+func _close_cover() -> void:
+	_cover.swing = 0.0
+	_cover.visible = true
+	_cover.mouse_filter = Control.MOUSE_FILTER_STOP
+	var have := 0
+	for e: Dictionary in BinderList.entries(db, owned, {}):
+		have += 1 if int(e["have"]) > 0 else 0
+	_cover.line = "%d of %d cards" % [have, BinderList.numbers(db).size()]
+	for page: Control in _pages:
+		page.visible = false
+	_cover.queue_redraw()
+
+
+func _open_cover() -> void:
+	if _cover.swing > 0.0:
+		return
+	var t := create_tween()
+	t.tween_method(func(v: float) -> void:
+		_cover.swing = v
+		_cover.queue_redraw(), 0.0, 1.0, 0.45).set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
+	t.parallel().tween_callback(func() -> void:
+		for page: Control in _pages:
+			page.visible = true).set_delay(0.22)
+	t.tween_callback(func() -> void:
+		_cover.visible = false
+		_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE)
 
 
 func _page_count() -> int:
@@ -399,6 +489,9 @@ func _layout() -> void:
 	var left := (_spread.size.x - 2 * pw - spine - 2 * margin) * 0.5
 	_spread.book = Rect2(left, 0, 2 * pw + spine + 2 * margin, _spread.size.y)
 	_spread.queue_redraw()
+	_cover.size = _spread.size
+	_cover.book = _spread.book
+	_cover.queue_redraw()
 	for p in 2:
 		var page: Page = _pages[p]
 		page.position = Vector2(left + margin + p * (pw + spine), margin)
@@ -534,7 +627,11 @@ func _on_hover(face: Control, on: bool) -> void:
 
 func _on_card(face: Control, _right: bool) -> void:
 	var e := _entry(face)
-	if _slot < 0 or e.is_empty():
+	if e.is_empty():
+		return
+	if _slot < 0:  # browsing: (polish1 item 82) the card big, to turn and compare its versions
+		if int(e["have"]) > 0:
+			_inspect.call("open", db, owned, String(e["id"]), bool(e["leader"]))
 		return
 	var why: String
 	if bool(e["leader"]):
@@ -573,6 +670,11 @@ func _show_mats() -> void:
 # ---- decks ----
 
 func _open_slots() -> void:
+	_cover.visible = false  # building a deck: straight to the open pages
+	_cover.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_cover.swing = 1.0
+	for page: Control in _pages:
+		page.visible = true
 	_browse_panel.visible = false
 	_deck_panel.visible = true
 	_fill_slots()
@@ -580,7 +682,44 @@ func _open_slots() -> void:
 		_pick_slot(0)
 
 
+# (polish1 item 80) The five starter decks above the slots: one owned whole loads into the slot being built; one not owned
+# is bought first (2 000 chips, the cards and leader join the collection), then loaded. Saving keeps it in the slot.
+func _fill_starters() -> void:
+	for child in _starter_row.get_children():
+		_starter_row.remove_child(child)
+		child.queue_free()
+	var head := Label.new()
+	head.text = "Starter decks:"
+	_starter_row.add_child(head)
+	for sid: String in _starters:
+		var deck: Dictionary = _starters[sid]
+		var have: bool = String(owned.call("missing_for", deck)) == ""
+		var b := Button.new()
+		b.text = "%s\n%s" % [String(deck["name"]), "load into this slot" if have else "buy 2 000 chips"]
+		b.tooltip_text = "%s (leader %s)" % [deck["name"], String((db.get("leaders") as Dictionary).get(String(deck["leader"]), {}).get("name", deck["leader"]))]
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(_take_starter.bind(sid))
+		_starter_row.add_child(b)
+
+
+func _take_starter(sid: String) -> void:
+	var deck: Dictionary = _starters[sid]
+	if String(owned.call("missing_for", deck)) != "":
+		var why := String(buy_starter.call(sid)) if buy_starter.is_valid() else "the machine is not here"
+		if why != "":
+			_status.text = "Could not buy %s: %s." % [deck["name"], why]
+			return
+		changed.emit()
+	if _slot < 0:
+		_pick_slot(0)
+	_deck = {"name": String(deck["name"]), "leader": String(deck["leader"]), "cards": (deck["cards"] as Array).duplicate()}
+	_name.text = String(_deck["name"])
+	_fill_starters()
+	_show_deck("The %s deck is in slot %d: press Save to keep it." % [deck["name"], _slot + 1])
+
+
 func _fill_slots() -> void:
+	_fill_starters()
 	for child in _slots.get_children():
 		_slots.remove_child(child)
 		child.queue_free()

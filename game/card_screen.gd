@@ -1,4 +1,4 @@
-# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards), the Combat Report (everything done, with a portrait), the card game Binder (the banner hides there to give the pages room) and the Cases (unopened crates, game/case_tab.gd). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
+# Purpose: full-screen player card menu (key P), in the game's skin (polish1 item 81: game/ui_skin.gd theme, gradient backdrop, rows in panels, stat pips): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards), the Combat Report (everything done, with a portrait), the card game Binder (the banner hides there to give the pages room) and the Cases (unopened crates, game/case_tab.gd). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
 # Dependencies: core/progress_state.gd (set `progress` before open), game/player_card.gd, game/emblem_art.gd, game/menu_widgets.gd, game/achievement_grid.gd, game/combat_report_tab.gd, game/tcg/binder_tab.gd (set `cards` and `card_db`).
 extends Control
 
@@ -8,6 +8,7 @@ const Widgets = preload("res://game/menu_widgets.gd")
 const CombatReportTab = preload("res://game/combat_report_tab.gd")
 const AchievementGrid = preload("res://game/achievement_grid.gd")
 const BinderTab = preload("res://game/tcg/binder_tab.gd")
+const UiSkin = preload("res://game/ui_skin.gd")
 
 signal changed
 signal closed
@@ -22,6 +23,7 @@ var _card: Control
 var _tabs: TabContainer
 var _info := ""  # one stats line shown on the card (set by the session)
 var _binder: Control  # kept between openings: its page, filters and the deck being built
+var buy_starter := Callable()  # (polish1 item 80) handed to the binder: buys a starter deck with the session's chips
 var cases_tab: Control  # (polish1 item 72) game/case_tab.gd, set by the session; shown next to the Binder
 
 
@@ -40,15 +42,30 @@ class EmblemTile extends Control:
 			picked.emit(emblem_id)
 
 	func _draw() -> void:
-		draw_rect(Rect2(Vector2.ZERO, size), Color(0.14, 0.16, 0.22))
-		draw_rect(Rect2(Vector2.ZERO, size), Color(1.0, 0.85, 0.3) if selected else Color(1, 1, 1, 0.15), false, 3.0 if selected else 1.0)
+		UiSkin.slot(self, Rect2(Vector2.ZERO, size), Color(1.0, 0.8, 0.35), selected, "chosen" if selected else "")
 		EmblemArt.draw_def(self, def, size * 0.5, 21.0)
+
+
+# (polish1 item 81) The menu's background: a deep gradient with a soft light behind the banner, edges darker.
+class Backdrop extends Control:
+	func _draw() -> void:
+		var top := Color(0.06, 0.07, 0.11, 0.98)
+		var low := Color(0.02, 0.02, 0.04, 0.98)
+		draw_polygon(PackedVector2Array([Vector2.ZERO, Vector2(size.x, 0), size, Vector2(0, size.y)]), PackedColorArray([top, top, low, low]))
+		for k in 6:
+			draw_circle(Vector2(size.x * 0.5, 80.0), 260.0 + 90.0 * float(k), Color(1.0, 0.78, 0.32, 0.012))
+		for k in 10:  # vignette
+			var w := float(k) * 6.0
+			draw_rect(Rect2(Vector2(w, w), size - Vector2(w, w) * 2.0), Color(0, 0, 0, 0.035), false, 6.0)
 
 
 func _ready() -> void:
 	Widgets.fill(self)
 	visible = false
-	Widgets.backdrop(self, Color(0.04, 0.05, 0.08, 0.96))
+	theme = UiSkin.theme()  # (polish1 item 81) every tab in the game's own skin
+	var back := Backdrop.new()
+	add_child(back)
+	Widgets.fill(back)
 	var margin := MarginContainer.new()
 	add_child(margin)
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT, Control.PRESET_MODE_MINSIZE, 28)
@@ -97,6 +114,7 @@ func _refresh() -> void:
 		if _binder == null:
 			_binder = BinderTab.new()
 			_binder.set("stats", stats)
+			_binder.set("buy_starter", buy_starter)
 			_binder.build(card_db, cards)
 			_binder.changed.connect(func() -> void: changed.emit())
 		_tabs.add_child(_binder)
@@ -127,8 +145,36 @@ func _commit() -> void:
 
 func _page() -> VBoxContainer:
 	var page := VBoxContainer.new()
-	page.add_theme_constant_override("separation", 8)
+	page.add_theme_constant_override("separation", 10)
 	return page
+
+
+# (polish1 item 81) A row in its own rounded panel (stats, traits, the card's fields).
+func _row_panel(page: Container) -> HBoxContainer:
+	var panel := PanelContainer.new()
+	page.add_child(panel)
+	var row := HBoxContainer.new()
+	row.add_theme_constant_override("separation", 14)
+	panel.add_child(row)
+	return row
+
+
+# Pips for a stat: filled gold up to `have`, empty up to `cap`.
+class Pips extends Control:
+	var have := 0
+	var cap := 1
+
+	func _init(h: int, c: int) -> void:
+		have = h
+		cap = maxi(c, 1)
+		custom_minimum_size = Vector2(minf(float(cap) * 16.0, 260.0), 22)
+		size_flags_vertical = Control.SIZE_SHRINK_CENTER
+
+	func _draw() -> void:
+		var w := size.x / float(cap)
+		for i in cap:
+			var r := Rect2(Vector2(float(i) * w + 1.0, 4), Vector2(maxf(w - 3.0, 2.0), size.y - 8.0))
+			draw_rect(r, Color(1.0, 0.78, 0.32) if i < have else Color(1, 1, 1, 0.1))
 
 
 func _label(text: String, size_px: int = 16, color: Color = Color(1, 1, 1, 0.9)) -> Label:
@@ -141,7 +187,10 @@ func _label(text: String, size_px: int = 16, color: Color = Color(1, 1, 1, 0.9))
 
 func _card_tab() -> Control:
 	var page := _page()
-	page.add_child(_label("Callsign (letters, numbers, spaces; up to %d)" % progress.callsign_max()))
+	var head := _row_panel(page)
+	var names := VBoxContainer.new()
+	head.add_child(names)
+	names.add_child(_label("CALLSIGN  (letters, numbers, spaces; up to %d)" % progress.callsign_max(), 15, UiSkin.ACCENT))
 	var edit := LineEdit.new()
 	edit.text = progress.callsign
 	edit.max_length = progress.callsign_max()
@@ -149,8 +198,10 @@ func _card_tab() -> Control:
 	edit.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
 	edit.text_submitted.connect(func(text: String) -> void: _set_card(text, progress.emblem, progress.title))
 	edit.focus_exited.connect(func() -> void: _set_card(edit.text, progress.emblem, progress.title))
-	page.add_child(edit)
-	page.add_child(_label("Title"))
+	names.add_child(edit)
+	var titles_box := VBoxContainer.new()
+	head.add_child(titles_box)
+	titles_box.add_child(_label("TITLE", 15, UiSkin.ACCENT))
 	var titles := OptionButton.new()
 	var open_titles: Array = progress.titles_open()
 	for i in open_titles.size():
@@ -159,8 +210,8 @@ func _card_tab() -> Control:
 			titles.select(i)
 	titles.item_selected.connect(func(index: int) -> void: _set_card(progress.callsign, progress.emblem, String(open_titles[index])))
 	titles.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
-	page.add_child(titles)
-	page.add_child(_label("Emblem (earn more with achievements)"))
+	titles_box.add_child(titles)
+	page.add_child(_label("EMBLEM  (earn more with achievements)", 15, UiSkin.ACCENT))
 	var grid := GridContainer.new()
 	grid.columns = 16
 	for id: String in progress.emblems_open():
@@ -194,24 +245,23 @@ func _stats_tab() -> Control:
 	var defs: Dictionary = progress.stat_defs()
 	for id: String in defs:
 		var def: Dictionary = defs[id]
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
-		var name_label := _label(String(def["name"]), 18)
-		name_label.custom_minimum_size = Vector2(120, 0)
+		var row := _row_panel(page)
+		var name_label := _label(String(def["name"]).to_upper(), 20, UiSkin.ACCENT)
+		name_label.custom_minimum_size = Vector2(160, 0)
 		row.add_child(name_label)
-		var rank := _label("%d / %d" % [int(progress.spent[id]), int(def["cap"])])
+		row.add_child(Pips.new(int(progress.spent[id]), int(def["cap"])))
+		var rank := _label("%d / %d" % [int(progress.spent[id]), int(def["cap"])], 18)
 		rank.custom_minimum_size = Vector2(70, 0)
 		row.add_child(rank)
 		var plus := Button.new()
-		plus.text = "+"
+		plus.text = "  +  "
 		plus.disabled = progress.points_left() <= 0 or int(progress.spent[id]) >= int(def["cap"])
 		plus.pressed.connect(func() -> void:
 			if progress.spend(id):
 				_commit()
 				_refresh())
 		row.add_child(plus)
-		row.add_child(_label(progress.stat_text(id), 16, Color(0.7, 0.9, 1.0)))
-		page.add_child(row)
+		row.add_child(_label(progress.stat_text(id), 17, Color(0.7, 0.9, 1.0)))
 	var reset := Button.new()
 	reset.text = "Reset all points"
 	reset.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
@@ -229,10 +279,9 @@ func _traits_tab() -> Control:
 	var defs: Dictionary = progress.trait_defs()
 	var ids: Array = defs.keys()
 	for slot in progress.traits.size():
-		var row := HBoxContainer.new()
-		row.add_theme_constant_override("separation", 12)
+		var row := _row_panel(page)
 		var slot_open: bool = slot < progress.trait_slots_open()
-		row.add_child(_label("Slot %d" % (slot + 1), 18))
+		row.add_child(_label("SLOT %d" % (slot + 1), 20, UiSkin.ACCENT if slot_open else UiSkin.TEXT_DIM))
 		var pick := OptionButton.new()
 		pick.add_item("(none)", 0)
 		for i in ids.size():
@@ -248,8 +297,7 @@ func _traits_tab() -> Control:
 			_refresh())
 		row.add_child(pick)
 		if not slot_open:
-			row.add_child(_label("unlocks at level %d" % progress.trait_unlock_level(slot), 14, Color(1, 1, 1, 0.5)))
-		page.add_child(row)
+			row.add_child(_label("unlocks at level %d" % progress.trait_unlock_level(slot), 16, Color(1, 1, 1, 0.5)))
 	return page
 
 

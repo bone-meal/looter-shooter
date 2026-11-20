@@ -1,4 +1,6 @@
-# Purpose: opening card packs (locked step 11), over the whole screen from the Binder: the unopened packs stand one in
+# Purpose: opening card packs (locked step 11), over the whole screen from the Binder. (polish1 item 77) First the list
+# of unopened purchases (single packs, 5-packs, 10-packs, boxes, each kept apart); a single pack opens as below, a
+# bundle or box opens all its packs with one tear and shows them as one summary. The unopened packs stand one in
 # front of the other (front pack largest); drag across the top of the front pack to tear it (the tear follows the
 # mouse, letting go early snaps it back; a god pack tears gold); the cards rise out of the pack with their backs to
 # the camera, two are tucked to the back, then each click turns the front card over, lowest rarity first, highest last,
@@ -17,6 +19,7 @@ const CardFace = preload("res://game/tcg/card_face.gd")
 const PackSound = preload("res://game/tcg/pack_sound.gd")
 const SoundBoard = preload("res://game/sound_board.gd")
 const TcgStats = preload("res://core/tcg/tcg_stats.gd")
+const Collection = preload("res://core/tcg/collection.gd")
 
 signal changed  # cards joined the collection: save
 signal closed
@@ -65,6 +68,11 @@ var _buttons := HBoxContainer.new()
 var _big: Control  # a turned card shown big under the mouse
 var _summary := ScrollContainer.new()
 var _summary_grid := GridContainer.new()
+var _item := ""  # (polish1 item 77) the unopened purchase being opened: "single", "bundle_5", "bundle_10", "box" ("" = the list)
+var _batch := 0  # packs of a bundle / box still to open
+var _list_hover := -1
+const ITEM_NAMES := {"single": "Single pack", "bundle_5": "5-pack", "bundle_10": "10-pack", "box": "Box"}
+const ITEM_ORDER := ["single", "bundle_5", "bundle_10", "box"]
 
 
 func _ready() -> void:
@@ -122,7 +130,7 @@ func open(card_db: RefCounted, collection: RefCounted, pack_cfg: Dictionary) -> 
 	visible = true
 	get_viewport().disable_3d = true  # the opening's own backdrop covers the screen: the club behind is not drawn (low-end)
 	_fit()
-	_show_stack()
+	_show_list()
 
 
 func is_open() -> bool:
@@ -153,7 +161,45 @@ func _fit() -> void:
 
 
 func _left() -> int:
-	return owned.pack_count()
+	return owned.item_count("single") if _item == "single" else _batch
+
+
+func _kind() -> String:
+	return PackOpen.kind_of(_item)
+
+
+# ---- (polish1 item 77) the list of unopened purchases: pick one to open ----
+
+func _list_items() -> Array:
+	return ITEM_ORDER.filter(func(id: String) -> bool: return owned.item_count(id) > 0)
+
+
+func _list_rect(i: int, n: int) -> Rect2:
+	var w := 210.0
+	var gap := 30.0
+	var x0 := (W - float(n) * w - float(n - 1) * gap) * 0.5
+	return Rect2(Vector2(x0 + float(i) * (w + gap), 120), Vector2(w, 360))
+
+
+func _show_list() -> void:
+	PackOpen.undo(owned, _rolled)
+	_rolled = {}
+	_clear_faces()
+	_summary.visible = false
+	_item = ""
+	_state = "list"
+	var have := _list_items()
+	_title.text = "YOUR UNOPENED PACKS" if not have.is_empty() else "NO PACKS TO OPEN"
+	_hint.text = "Pick what to open" if not have.is_empty() else "Packs come from the card machine at the casino"
+	_hint.position.y = 520
+	_set_buttons([["Back to binder", close]])
+	_stage.queue_redraw()
+
+
+func _start(item: String) -> void:
+	_item = item
+	_batch = 0 if item == "single" else mini(int(Collection.ITEM_PACKS[item]), int((owned.get("packs") as Dictionary).get(_kind(), 0)))
+	_show_stack()
 
 
 # ---- the stack of unopened packs ----
@@ -166,10 +212,14 @@ func _show_stack() -> void:
 	_fly = 0.0
 	_drop = 0.0
 	_glow = 0.0
-	_title.text = "%d PACK%s TO OPEN" % [_left(), "" if _left() == 1 else "S"]
-	_hint.text = "Drag across the top of the pack to tear it open"
+	if _item == "single":
+		_title.text = "%d PACK%s TO OPEN" % [_left(), "" if _left() == 1 else "S"]
+		_hint.text = "Drag across the top of the pack to tear it open"
+	else:
+		_title.text = "%s: %d PACKS" % [String(ITEM_NAMES[_item]).to_upper(), _batch]
+		_hint.text = "Tear the top pack to open all %d at once" % _batch
 	_hint.position.y = 520
-	_set_buttons([["Back to binder", close]] + ([["Open all (%d)" % _left(), _open_all]] if opened_one and _left() > 1 else []))
+	_set_buttons([["Back", _show_list]] + ([["Open all (%d)" % _left(), _open_all]] if _item == "single" and opened_one and _left() > 1 else []))
 	_stage.queue_redraw()
 
 
@@ -178,6 +228,21 @@ func _front_rect() -> Rect2:
 
 
 func _stage_input(event: InputEvent) -> void:
+	if _state == "list":  # (polish1 item 77) pick an unopened purchase
+		var items := _list_items()
+		if event is InputEventMouseMotion:
+			var was := _list_hover
+			_list_hover = -1
+			for i in items.size():
+				if _list_rect(i, items.size()).has_point((event as InputEventMouseMotion).position):
+					_list_hover = i
+			if was != _list_hover:
+				_stage.queue_redraw()
+		elif event is InputEventMouseButton and (event as InputEventMouseButton).pressed and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
+			for i in items.size():
+				if _list_rect(i, items.size()).has_point((event as InputEventMouseButton).position):
+					_start(String(items[i]))
+		return
 	if event is InputEventMouseButton and (event as InputEventMouseButton).button_index == MOUSE_BUTTON_LEFT:
 		var mb := event as InputEventMouseButton
 		if _state == "stack" and not _busy:
@@ -185,7 +250,7 @@ func _stage_input(event: InputEvent) -> void:
 			var band := Rect2(r.position - Vector2(30, 30), Vector2(r.size.x + 60, r.size.y * 0.28 + 30))
 			if mb.pressed and band.has_point(mb.position):
 				if _rolled.is_empty():
-					_rolled = PackOpen.roll(db, owned, cfg, _rng, mats)
+					_rolled = PackOpen.roll(db, owned, cfg, _rng, mats, _kind())
 				_drag_from = mb.position.x
 			elif not mb.pressed and _drag_from >= 0.0:
 				_drag_from = -1.0
@@ -219,7 +284,11 @@ func _unhandled_key_input(event: InputEvent) -> void:
 func _torn() -> void:
 	_busy = true
 	_play(PackSound.tear(), "card_tear")
+	if _item != "single":  # a bundle or box: one tear opens them all
+		_open_batch()
+		return
 	var got := PackOpen.commit(owned, _rolled)
+	owned.take_item("single")
 	var god := bool(_rolled.get("god", false))
 	TcgStats.pack(stats, got, god, String(_rolled.get("kind", "standard")))
 	var mat := String(_rolled.get("mat", ""))
@@ -388,16 +457,44 @@ func _done() -> void:
 		rows.append(["Next pack (%d left)" % _left(), _show_stack])
 		if _left() > 1:
 			rows.append(["Open all (%d)" % _left(), _open_all])
-	rows.append(["Back to binder", close])
+	rows.append(["Other packs" if not _list_items().is_empty() else "Back to binder", _show_list if not _list_items().is_empty() else close])
 	_set_buttons(rows)
 	_buttons.position.y = 52.0  # (polish1 item 85) Next pack up top in the middle, near where the pack is torn
 
 
 # ---- open all ----
 
-func _open_all() -> void:
+func _open_all() -> void:  # every single pack left
 	_clear_faces()
-	var got := PackOpen.open_all(db, owned, cfg, _rng, mats)
+	var n: int = owned.item_count("single")
+	var got := PackOpen.open_all(db, owned, cfg, _rng, mats, "standard", n)
+	for _i in int(got["packs"]):
+		owned.take_item("single")
+	_show_summary(got)
+
+
+# A bundle / box torn open: the torn pack and the rest of it at once, shown as one summary; the item is used up.
+func _open_batch() -> void:
+	var first := PackOpen.commit(owned, _rolled)
+	var first_roll := _rolled
+	_rolled = {}
+	var got := PackOpen.open_all(db, owned, cfg, _rng, mats, _kind(), _batch - 1)
+	(got["cards"] as Array).append_array(first)
+	(got["rolls"] as Array).append({"cards": first, "god": bool(first_roll.get("god", false)), "kind": String(first_roll.get("kind", _kind()))})
+	got["packs"] = int(got["packs"]) + 1
+	if bool(first_roll.get("god", false)):
+		got["gods"] = int(got["gods"]) + 1
+	if String(first_roll.get("mat", "")) != "":
+		(got["mats"] as Array).append(first_roll["mat"])
+	owned.take_item(_item)
+	opened_one = true
+	_play(PackSound.tear(), "card_tear")
+	_busy = false
+	_clear_faces()
+	_show_summary(got)
+
+
+func _show_summary(got: Dictionary) -> void:
 	for roll: Dictionary in got["rolls"]:
 		TcgStats.pack(stats, roll["cards"], bool(roll["god"]), String(roll["kind"]))
 	changed.emit()
@@ -442,7 +539,7 @@ func _open_all() -> void:
 		if bool(c["new"]):
 			_new_tag(face, true)
 	_summary.visible = true
-	_set_buttons([["Back to binder", close]])
+	_set_buttons([["Other packs", _show_list]] if not _list_items().is_empty() else [["Back to binder", close]])
 	_stage.queue_redraw()
 
 
@@ -462,7 +559,7 @@ func dev_step(what: String) -> void:
 			if _state != "stack" or _left() <= 0:
 				return
 			if _rolled.is_empty():
-				_rolled = PackOpen.roll(db, owned, cfg, _rng, mats)
+				_rolled = PackOpen.roll(db, owned, cfg, _rng, mats, _kind())
 			_tear = 0.5 if what == "half" else 1.0
 			_stage.queue_redraw()
 			if what == "tear":
@@ -471,6 +568,13 @@ func dev_step(what: String) -> void:
 			_turn_next()
 		"all":
 			_open_all()
+		"list":
+			_show_list()
+		"close":
+			close()
+		"single", "bundle_5", "bundle_10", "box":  # pick that item in the list
+			if _state == "list" and owned.item_count(what) > 0:
+				_start(what)
 
 
 # ---- helpers ----
@@ -523,6 +627,9 @@ func _draw_stage() -> void:
 		for i in 12:  # rays
 			var a := i * TAU / 12.0 + _glow
 			_stage.draw_line(c, c + Vector2(cos(a), sin(a)) * 330.0 * _glow, Color(_glow_color, 0.25 * _glow), 6.0)
+	if _state == "list":
+		_draw_list()
+		return
 	if _state not in ["stack", "rise"] or _pack_tex == null:
 		return
 	var tsize := _pack_tex.get_size()
@@ -558,3 +665,35 @@ func _draw_stage() -> void:
 			if god:
 				_stage.draw_polyline(line, Color(GOLD, 0.35), 10.0)
 			_stage.draw_polyline(line, GOLD if god else Color(1, 1, 1, 0.9), 2.5)
+
+
+# (polish1 item 77) The unopened purchases as tiles: the packs fanned out (one, five, ten, a box), the name, how many.
+func _draw_list() -> void:
+	var items := _list_items()
+	var font := CardFace.font("title")
+	for i in items.size():
+		var id := String(items[i])
+		var r := _list_rect(i, items.size())
+		var lit := i == _list_hover
+		_stage.draw_rect(r.grow(6.0 if lit else 0.0), Color(1, 1, 1, 0.1 if lit else 0.05))
+		_stage.draw_rect(r.grow(6.0 if lit else 0.0), Color(GOLD, 0.9 if lit else 0.35), false, 2.0)
+		if _pack_tex != null:
+			var fan := {"single": 1, "bundle_5": 5, "bundle_10": 7, "box": 1}[id] as int
+			var pw := 120.0
+			var ph := pw * PACK.y / PACK.x
+			if id == "box":  # a box: a closed carton with packs peeking out
+				var box := Rect2(r.position + Vector2(20, 70), Vector2(r.size.x - 40.0, 170))
+				for k in 5:
+					_stage.draw_texture_rect(_pack_tex, Rect2(box.position + Vector2(12.0 + float(k) * 30.0, -60.0), Vector2(60, 97)), false)
+				_stage.draw_rect(box, Color(0.45, 0.12, 0.3))
+				_stage.draw_rect(box, GOLD, false, 3.0)
+				_stage.draw_string(font, Vector2(box.position.x, box.get_center().y + 14.0), "50", HORIZONTAL_ALIGNMENT_CENTER, box.size.x, 44, GOLD)
+			else:
+				for k in fan:
+					var off := float(k) - float(fan - 1) * 0.5
+					var at := Vector2(r.get_center().x, r.position.y + 30.0 + ph * 0.5)
+					_stage.draw_set_transform(at + Vector2(off * 14.0, absf(off) * 4.0), off * 0.09)
+					_stage.draw_texture_rect(_pack_tex, Rect2(Vector2(-pw * 0.5, -ph * 0.5), Vector2(pw, ph)), false)
+				_stage.draw_set_transform(Vector2.ZERO)
+		_stage.draw_string(font, Vector2(r.position.x, r.end.y - 62.0), String(ITEM_NAMES[id]), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 24, Color.WHITE)
+		_stage.draw_string(font, Vector2(r.position.x, r.end.y - 22.0), "x%d" % owned.item_count(id), HORIZONTAL_ALIGNMENT_CENTER, r.size.x, 30, GOLD)

@@ -12,17 +12,23 @@ const MatBook = preload("res://core/tcg/mat_book.gd")
 const KINDS := ["standard", "box"]
 
 
-static func next_kind(owned: RefCounted) -> String:
+# `only` = the kind an unopened item holds ("standard" or "box"; "" = any, standard first).
+static func next_kind(owned: RefCounted, only: String = "") -> String:
 	var packs: Dictionary = owned.get("packs")
 	for k: String in KINDS:
-		if int(packs.get(k, 0)) > 0:
+		if int(packs.get(k, 0)) > 0 and (only == "" or only == k):
 			return k
 	return ""
 
 
+# (polish1 item 77) The pack kind an unopened item holds.
+static func kind_of(item: String) -> String:
+	return "box" if item == "box" else "standard"
+
+
 # Rolls the next pack without taking it: {"kind", "cards", "god", "mat", "undo"} or {} when there is none.
-static func roll(db: RefCounted, owned: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, mats: Dictionary = {}) -> Dictionary:
-	var kind := next_kind(owned)
+static func roll(db: RefCounted, owned: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, mats: Dictionary = {}, only: String = "") -> Dictionary:
+	var kind := next_kind(owned, only)
 	if kind == "":
 		return {}
 	var before := {"pity": (owned.get("pity") as Dictionary).duplicate(), "box": (owned.get("box") as Dictionary).duplicate()}
@@ -57,10 +63,11 @@ static func commit(owned: RefCounted, rolled: Dictionary) -> Array:
 
 
 # Every pack left, at once: {"packs": n, "cards": [...], "gods": n, "mats": [ids], "rolls": [{"cards", "god", "kind"} per pack]}.
-static func open_all(db: RefCounted, owned: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, mats: Dictionary = {}) -> Dictionary:
+# `only` / `most` (polish1 item 77): just that kind, at most that many packs (-1 = all).
+static func open_all(db: RefCounted, owned: RefCounted, cfg: Dictionary, rng: RandomNumberGenerator, mats: Dictionary = {}, only: String = "", most: int = -1) -> Dictionary:
 	var out := {"packs": 0, "cards": [], "gods": 0, "mats": [], "rolls": []}
-	while next_kind(owned) != "":
-		var rolled := roll(db, owned, cfg, rng, mats)
+	while next_kind(owned, only) != "" and (most < 0 or int(out["packs"]) < most):
+		var rolled := roll(db, owned, cfg, rng, mats, only)
 		if String(rolled["mat"]) != "":
 			(out["mats"] as Array).append(rolled["mat"])
 		var got := commit(owned, rolled)

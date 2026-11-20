@@ -94,3 +94,62 @@ static func bar(canvas: CanvasItem, r: Rect2, share: float, colour: Color) -> vo
 	canvas.draw_style_box(_box(Color(1, 1, 1, 0.08), Color(0, 0, 0, 0), 2, 0), r)
 	if share > 0.0:
 		canvas.draw_style_box(_box(colour, Color(0, 0, 0, 0), 2, 0), Rect2(r.position, Vector2(r.size.x * clampf(share, 0.0, 1.0), r.size.y)))
+
+
+static var _theme: Theme
+
+
+# (polish1 item 81) The skin as a Theme for menus built from controls (the player card's tabs, buttons, lists, text
+# fields): rounded dark panels, pill buttons and tabs (gold when chosen), bigger text. Made once.
+static func theme() -> Theme:
+	if _theme != null:
+		return _theme
+	var t := Theme.new()
+	t.default_font_size = 18
+	for kind: String in ["Button", "OptionButton", "MenuButton", "CheckBox", "CheckButton"]:
+		t.set_stylebox("normal", kind, _pad(_box(Color(1, 1, 1, 0.07), Color(1, 1, 1, 0.16), 18, 1), 16, 7))
+		t.set_stylebox("hover", kind, _pad(_box(Color(1, 1, 1, 0.15), Color(1, 1, 1, 0.45), 18, 1), 16, 7))
+		t.set_stylebox("pressed", kind, _pad(_box(Color(ACCENT, 0.9), Color(ACCENT, 1.0), 18, 1), 16, 7))
+		t.set_stylebox("hover_pressed", kind, _pad(_box(Color(ACCENT, 1.0), Color(1, 1, 1, 0.6), 18, 1), 16, 7))
+		t.set_stylebox("disabled", kind, _pad(_box(Color(1, 1, 1, 0.03), Color(1, 1, 1, 0.06), 18, 1), 16, 7))
+		t.set_stylebox("focus", kind, _box(Color(0, 0, 0, 0), Color(ACCENT, 0.6), 18, 1))
+		t.set_color("font_color", kind, TEXT)
+		t.set_color("font_hover_color", kind, Color.WHITE)
+		t.set_color("font_pressed_color", kind, Color(0.08, 0.06, 0.02))
+		t.set_color("font_hover_pressed_color", kind, Color(0.08, 0.06, 0.02))
+		t.set_color("font_disabled_color", kind, Color(TEXT_DIM, 0.5))
+	t.set_stylebox("tab_selected", "TabContainer", _pad(_box(Color(ACCENT, 0.92), Color(ACCENT, 1.0), 16, 1), 20, 8))
+	t.set_stylebox("tab_hovered", "TabContainer", _pad(_box(Color(1, 1, 1, 0.16), Color(1, 1, 1, 0.4), 16, 1), 20, 8))
+	t.set_stylebox("tab_unselected", "TabContainer", _pad(_box(Color(1, 1, 1, 0.06), Color(1, 1, 1, 0.12), 16, 1), 20, 8))
+	t.set_stylebox("tab_disabled", "TabContainer", _pad(_box(Color(1, 1, 1, 0.02), Color(0, 0, 0, 0), 16, 1), 20, 8))
+	t.set_stylebox("panel", "TabContainer", _pad(_box(INK, EDGE, 14, 1), 18, 16))
+	t.set_stylebox("tabbar_background", "TabContainer", StyleBoxEmpty.new())
+	t.set_color("font_selected_color", "TabContainer", Color(0.08, 0.06, 0.02))
+	t.set_color("font_unselected_color", "TabContainer", TEXT)
+	t.set_color("font_hovered_color", "TabContainer", Color.WHITE)
+	t.set_constant("side_margin", "TabContainer", 0)
+	t.set_font_size("font_size", "TabContainer", 19)
+	t.set_stylebox("panel", "PanelContainer", _pad(_box(Color(1, 1, 1, 0.04), Color(1, 1, 1, 0.08), 12, 1), 14, 10))
+	t.set_stylebox("panel", "Panel", _box(INK, EDGE, 12, 1))
+	t.set_stylebox("normal", "LineEdit", _pad(_box(INK_DEEP, Color(1, 1, 1, 0.2), 10, 1), 12, 8))
+	t.set_stylebox("focus", "LineEdit", _pad(_box(INK_DEEP, Color(ACCENT, 0.9), 10, 2), 12, 8))
+	t.set_color("font_color", "LineEdit", TEXT)
+	t.set_color("font_color", "Label", TEXT)
+	t.set_stylebox("panel", "PopupMenu", _pad(_box(INK, Color(ACCENT, 0.5), 10, 1), 8, 8))
+	t.set_stylebox("hover", "PopupMenu", _box(Color(ACCENT, 0.85), Color(0, 0, 0, 0), 6, 0))
+	t.set_color("font_hover_color", "PopupMenu", Color(0.08, 0.06, 0.02))
+	t.set_stylebox("panel", "TooltipPanel", _pad(_box(INK, Color(ACCENT, 0.6), 8, 1), 10, 6))
+	t.set_stylebox("scroll", "VScrollBar", _box(Color(1, 1, 1, 0.04), Color(0, 0, 0, 0), 4, 0))
+	t.set_stylebox("grabber", "VScrollBar", _box(Color(1, 1, 1, 0.25), Color(0, 0, 0, 0), 4, 0))
+	t.set_stylebox("grabber_highlight", "VScrollBar", _box(Color(ACCENT, 0.7), Color(0, 0, 0, 0), 4, 0))
+	_theme = t
+	return t
+
+
+static func _pad(box: StyleBoxFlat, x: float, y: float) -> StyleBoxFlat:
+	var b := box.duplicate() as StyleBoxFlat
+	b.content_margin_left = x
+	b.content_margin_right = x
+	b.content_margin_top = y
+	b.content_margin_bottom = y
+	return b

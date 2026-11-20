@@ -1,5 +1,6 @@
 # Purpose: one player's card game collection of "You got me Lobster?" (locked: permanent, cards only ever traded):
-# cards and leaders owned per finish ("" plain, "rainbow", "pony"), unopened packs, the five deck slots, play mats,
+# cards and leaders owned per finish ("" plain, "rainbow", "pony"), unopened packs (and the purchases they came in:
+# single, 5-pack, 10-pack, box, kept apart: polish1 item 77), the five deck slots, play mats,
 # pity counters for pack rolls, and the record (wins / losses against players, per opponent name and per deck; the
 # House Dealer's own record apart: wins against her never count toward the win milestones). Saved in the profile's
 # extra "tcg" as plain ids + counts + a version number. Pure: no nodes.
@@ -10,10 +11,13 @@ const VERSION := 1
 const FINISHES := ["", "rainbow", "pony"]
 const DECK_SLOTS := 5
 const START_PACKS := 3  # locked: a new player picks one starter deck + 3 packs
+const ITEM_PACKS := {"single": 1, "bundle_5": 5, "bundle_10": 10, "box": 50}  # packs in each kind of unopened purchase (data/tcg/packs.json rows)
+const BOX_PACKS := 50
 
 var cards: Dictionary = {}  # id -> {finish: count}
 var leaders: Dictionary = {}  # leader id -> {finish: count}
-var packs: Dictionary = {}  # pack kind -> count
+var packs: Dictionary = {}  # pack kind -> count (the pool the packs are rolled from)
+var items: Dictionary = {}  # (polish1 item 77) unopened purchases kept apart: "single" / "bundle_5" / "bundle_10" / "box" -> count
 var decks: Array = []  # DECK_SLOTS entries: {} empty or {"name", "leader", "cards": [ids]}
 var mats: Array = []  # play mat ids owned
 var mat := ""  # the mat in use
@@ -32,6 +36,7 @@ func _blank() -> void:
 	cards = {}
 	leaders = {}
 	packs = {}
+	items = {}
 	decks = []
 	for i in DECK_SLOTS:
 		decks.append({})
@@ -101,6 +106,24 @@ func add_box(packs_in: int, legendaries: int, epics: int) -> void:
 	box["epics"] = int(box["epics"]) + epics
 
 
+# (polish1 item 77) An unopened purchase: kept as its own item; its packs are in the pool (add_pack / add_box).
+func add_item(id: String, n := 1) -> void:
+	items[id] = int(items.get(id, 0)) + n
+
+
+func take_item(id: String) -> bool:
+	if int(items.get(id, 0)) <= 0:
+		return false
+	items[id] = int(items[id]) - 1
+	if int(items[id]) == 0:
+		items.erase(id)
+	return true
+
+
+func item_count(id: String) -> int:
+	return int(items.get(id, 0))
+
+
 func pack_count() -> int:
 	var n := 0
 	for k: String in packs:
@@ -116,6 +139,7 @@ func give_starter(starter_id: String, deck: Dictionary, pack_kind: String) -> vo
 	add(String(deck["leader"]), "", 1, true)
 	set_deck(first_free_slot(), {"name": deck["name"], "leader": deck["leader"], "cards": (deck["cards"] as Array).duplicate()})
 	add_pack(pack_kind, START_PACKS)
+	add_item("single", START_PACKS)
 
 
 # A whole starter deck bought at the machine: its cards and leader (the deck is not put in a slot by itself).
@@ -197,7 +221,7 @@ func record_result(won: bool, opponent: String, deck_name: String, vs_ai: bool, 
 
 func to_dict() -> Dictionary:
 	return {"version": VERSION, "cards": cards, "leaders": leaders, "packs": packs, "decks": decks, "mats": mats, "mat": mat,
-		"pity": pity, "record": record, "starter": starter, "box": box, "got": got}
+		"pity": pity, "record": record, "starter": starter, "box": box, "got": got, "items": items}
 
 
 # Reads a saved collection; unknown ids, bad counts and broken decks are dropped (the rest is kept).
@@ -256,3 +280,25 @@ func from_dict(d: Variant, db: RefCounted) -> void:
 	if src.get("box") is Dictionary:
 		for k: String in ["left", "legendaries", "epics"]:
 			box[k] = maxi(int(src["box"].get(k, 0)), 0)
+	_read_items(src.get("items"))
+
+
+# The unopened purchases, checked against the pool: an item needs its packs there (an older save without items, or
+# one that does not add up, gets its standard packs as singles and its box packs as boxes of 50, a last part box too).
+func _read_items(saved: Variant) -> void:
+	items = {}
+	var standard := int(packs.get("standard", 0))
+	var in_box := int(packs.get("box", 0))
+	if saved is Dictionary:
+		var need := 0
+		for id: String in ["single", "bundle_5", "bundle_10"]:
+			need += maxi(int(saved.get(id, 0)), 0) * ITEM_PACKS[id]
+		if need == standard and maxi(int(saved.get("box", 0)), 0) == ceili(float(in_box) / float(BOX_PACKS)):
+			for id: String in ITEM_PACKS:
+				if int(saved.get(id, 0)) > 0:
+					items[id] = int(saved[id])
+			return
+	if standard > 0:
+		items["single"] = standard
+	if in_box > 0:
+		items["box"] = ceili(float(in_box) / float(BOX_PACKS))

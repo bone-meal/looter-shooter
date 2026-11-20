@@ -30,4 +30,5 @@ static func buy(item: String, wallet: RefCounted, owned: RefCounted, cfg: Dictio
 		owned.call("add_box", int(found["packs"]), int(cfg["box"]["legendaries"]), int(cfg["box"]["epics"]))
 	else:
 		owned.call("add_pack", "standard", int(found["packs"]))
+	owned.call("add_item", item)  # (polish1 item 77) kept as its own unopened item
 	return ""

@@ -2897,6 +2897,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var yaw_c := deg_to_rad(float(words[4]))
 					var pitch_c := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
 					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_c) * cos(pitch_c), sin(pitch_c), -cos(yaw_c) * cos(pitch_c)) * 20.0)
+		"cardtab":  # (polish1 item 81) "!cardtab <n>": the player card open on tab n (0 Card, 1 Stats, 2 Traits, 3 Achievements, 4 Combat Report, 5 Binder, 6 Cases)
+			session.call("_open_card")
+			var tabs_c: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
+			tabs_c.current_tab = clampi(int(words[1]), 0, tabs_c.get_tab_count() - 1)
 		"case":  # (polish1 item 72) "!case give <id> [n]": crates into our cases; "!case tab": the player card on its Cases tab; "!case press <key>": a control of the
 			# Cases tab ("open <id>") or of the opening screen ("open", "skip", "again", "done"); "!case buy <id>": buy at that kiosk as a player would (twice for Are you sure); "!case note"
 			var shelf: RefCounted = session.get("_cases")
@@ -2989,19 +2993,27 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				session.call("_open_card")
 				var screen: Node = session.get("_card_screen")
 				var tabs: TabContainer = screen.get("_tabs")
-				tabs.current_tab = tabs.get_tab_count() - 1
+				tabs.current_tab = tabs.get_tab_idx_from_control(screen.get("_binder"))  # (the Cases tab comes after it now)
 				if words.size() > 2:
 					screen.get("_binder").call("_open_slots")
-			elif words[1] == "packs":  # "!tcg packs [half | tear | turn | all]": 3 more packs and the opening from the binder; then the drag / a click / Open all done for us
+			elif words[1] == "packs":  # "!tcg packs [give] | half | tear | turn | all | single | bundle_5 | bundle_10 | box": 3 more single packs (give: + a 5-pack, 10-pack, box) and the opening's list from the binder; then a pick from the list / the drag / a click / Open all done for us
 				var screen: Node = session.get("_card_screen")
 				var binder: Node = screen.get("_binder")
 				var opening: Node = binder.get("_opening") if binder != null else null
-				if words.size() == 2:
-					(session.get("_cards") as RefCounted).call("add_pack", "standard", 3)
+				if words.size() == 2 or words[2] == "give":  # "!tcg packs give": also a 5-pack, a 10-pack and a box (polish1 item 77)
+					var col: RefCounted = session.get("_cards")
+					col.call("add_pack", "standard", 3)
+					col.call("add_item", "single", 3)
+					if words.size() > 2:
+						col.call("add_pack", "standard", 15)
+						col.call("add_item", "bundle_5")
+						col.call("add_item", "bundle_10")
+						col.call("add_box", 50, 5, 12)
+						col.call("add_item", "box")
 					session.call("_open_card")
 					var tabs: TabContainer = screen.get("_tabs")
-					tabs.current_tab = tabs.get_tab_count() - 1
 					binder = screen.get("_binder")
+					tabs.current_tab = tabs.get_tab_idx_from_control(binder)
 					binder.call("refresh")
 					(binder.get("_open_button") as Button).pressed.emit()
 				elif opening != null:
@@ -3014,6 +3026,52 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("TCG MAT %s: now %s" % [words[2], mb.call("current", session.get("_cards"), mats_cfg)])
 			elif words[1] == "foil":  # "!tcg foil <card> <rainbow|pony>": that card looks like that foil on our side of the House table
 				((tcg.get("_screen") as Control).get("finishes")[0] as Dictionary)[words[2]] = words[3]
+			elif words[1] == "cover":  # (polish1 item 82) "!tcg cover": a click on the closed binder
+				((session.get("_card_screen") as Node).get("_binder") as Node).call("_open_cover")
+			elif words[1] == "inspect":  # (polish1 item 82) "!tcg inspect <card id>" (owned) | "!tcg inspect press <plain|rainbow|pony|spin|close>"
+				var bi: Node = (session.get("_card_screen") as Node).get("_binder")
+				var ins: Control = bi.get("_inspect")
+				if words[2] == "press":
+					_lines.append("TCG inspect press %s: %s" % [words[3], ins.call("press", words[3])])
+				else:
+					(session.get("_cards") as RefCounted).call("add", words[2], "rainbow")
+					(session.get("_cards") as RefCounted).call("add", words[2], "pony")
+					ins.call("open", bi.get("db"), session.get("_cards"), words[2], false)
+			elif words[1] == "starter":  # (polish1 item 80) "!tcg starter <id>": that starter deck above the slots clicked (bought if not owned, then loaded)
+				var bt: Node = (session.get("_card_screen") as Node).get("_binder")
+				bt.call("_take_starter", words[2])
+				_lines.append("TCG starter %s: %s, chips %d" % [words[2], String((bt.get("_status") as Label).text), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "hover":  # (polish1 item 95) "!tcg hover <n> [foe]": the mouse moves onto our (or the dealer's) n-th creature on the 3D table
+				var scr: Control = tcg.get("_screen")
+				var v3: Node3D = scr.get("view3d")
+				var want_foe := words.has("foe")
+				var seen := 0
+				var hit_note := "no such card"
+				for c: Dictionary in v3.get("_cards"):
+					var f: Variant = c["face"]
+					if not f is Control or (f as Control).get("creature") == null or ((f as Control).get("creature") as Dictionary).is_empty():
+						continue
+					var mine := int(((f as Control).get("creature") as Dictionary).get("side", 0)) == int(scr.get("_me"))
+					if mine == want_foe:
+						continue
+					if seen == int(words[2]):
+						var cam: Camera3D = v3.get("_cam")
+						var at := cam.unproject_position((c["node"] as Node3D).global_position)
+						var motion := InputEventMouseMotion.new()
+						motion.position = at
+						motion.global_position = at
+						get_viewport().warp_mouse(at)
+						if words.has("real"):  # through the real input path (what a player's mouse does)
+							Input.parse_input_event(motion)
+							await get_tree().process_frame
+							await get_tree().process_frame
+						else:
+							scr.call("_felt_3d", motion)
+						var zoom: Control = scr.get("_zoom")
+						hit_note = "at %s: hovered %s, zoom %s %s" % [str(at), str(scr.get("_hovered")), zoom.visible, String(zoom.get("id"))]
+						break
+					seen += 1
+				_lines.append("TCG hover %s: %s" % [" ".join(words.slice(2)), hit_note])
 			elif words[1] == "put":  # "!tcg put <card> [foe]": a creature onto our side (or the dealer's) of the running match, then a redraw
 				var m2: RefCounted = tcg.get("match_state")
 				if m2 != null:

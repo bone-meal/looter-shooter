@@ -47,6 +47,7 @@ const Lifeguard = preload("res://game/lifeguard.gd")
 const ProgressState = preload("res://core/progress_state.gd")
 const CardScreen = preload("res://game/card_screen.gd")
 const CaseShelf = preload("res://core/case_shelf.gd")
+const PackShop = preload("res://core/tcg/pack_shop.gd")
 const CaseTab = preload("res://game/case_tab.gd")
 const CaseOpening = preload("res://game/case_opening.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
@@ -677,6 +678,11 @@ func _ready() -> void:
 	_case_tab.gun_db = _player.gun_db
 	_case_tab.open_requested.connect(_show_case)
 	_card_screen.cases_tab = _case_tab
+	_card_screen.buy_starter = func(sid: String) -> String:  # (polish1 item 80) a starter deck bought from the binder
+		var why := String(PackShop.buy("starter:" + sid, _wallet, _cards, DataStore.load_json("res://data/tcg/packs.json"), DataStore.load_json("res://data/tcg/starters.json")["starters"]))
+		if why == "":
+			save_profile()
+		return why
 	_opening.gun_db = _player.gun_db
 	_opening.sounds = _sounds
 	_opening.open_pressed.connect(_open_case)

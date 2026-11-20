@@ -5,7 +5,7 @@
 extends RefCounted
 
 const RARITY_ORDER := {"common": 0, "rare": 1, "epic": 2, "legendary": 3}
-const ALL := {"faction": "", "cost": -1, "rarity": "", "type": "", "tribe": "", "show": "all", "sort": "number"}
+const ALL := {"faction": "", "cost": -1, "rarity": "", "type": "", "tribe": "", "show": "all", "sort": "number", "finish": ""}  # finish: "" any, "rainbow" / "pony" = only cards owned in that foil (polish1 item 82)
 
 
 # id -> set number (1 ...), and whether it is a leader.
@@ -56,6 +56,8 @@ static func entries(db: RefCounted, owned: RefCounted, f: Dictionary) -> Array:
 		if want["tribe"] != "" and x["tribe"] != want["tribe"]:
 			continue
 		if (want["show"] == "owned" and have <= 0) or (want["show"] == "missing" and have > 0):
+			continue
+		if want["finish"] != "" and int(owned.count(id, String(want["finish"]), leader)) <= 0:
 			continue
 		out.append({"id": id, "leader": leader, "no": int(nums[id]["no"]), "have": have, "cost": int(x["cost"]),
 			"rarity": RARITY_ORDER.get(x["rarity"], 0), "name": x["name"]})
