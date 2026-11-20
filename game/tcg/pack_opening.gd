@@ -505,6 +505,7 @@ func _set_buttons(rows: Array) -> void:
 func _play(stream: AudioStream, id: String) -> void:
 	if SoundBoard.allow(id):
 		_sound.stream = stream
+		_sound.volume_db = SoundBoard.gain_db(id)
 		_sound.play()
 		SoundBoard.heard(id)
 

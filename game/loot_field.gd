@@ -83,7 +83,7 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	var player := AudioStreamPlayer3D.new()
 	player.stream = TierSound.chime(ti)
 	player.unit_size = 10.0 + float(ti) * 3.0
-	player.volume_db = -6.0 + float(ti)
+	player.volume_db = -6.0 + float(ti) + SoundBoard.gain_db("chime_" + tier_id)
 	node.add_child(player)
 	if SoundBoard.allow("chime_" + tier_id):  # the Sounds page of the settings can mute each tier's chime
 		player.play()

@@ -10,6 +10,7 @@ const ROW_H := 34.0
 const NAME_W := 250.0
 
 const REFRESH := 0.25  # seconds between two looks at the numbers while it is open
+const HOLD_S := 0.22  # the key must be held this long
 
 var card: RefCounted
 var my_name := ""
@@ -22,6 +23,7 @@ var _font: Font = ThemeDB.fallback_font
 var _wait := 0.0
 var _copied := 0.0  # seconds "Copied" still shows
 var _ctrl_c := false
+var _held := 0.0
 
 
 func _ready() -> void:
@@ -32,7 +34,8 @@ func _ready() -> void:
 
 # Open while the key is held during play (not over a menu, where the mouse is free).
 func _process(delta: float) -> void:
-	var want := card != null and Input.is_action_pressed("scoreboard") and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED
+	_held = _held + delta if Input.is_action_pressed("scoreboard") else 0.0
+	var want := card != null and _held >= HOLD_S and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED  # (polish1 item 136) a held key, not a tap (a tap of a shared key opens the inventory)
 	if want != visible:
 		visible = want
 		_wait = 0.0

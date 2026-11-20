@@ -3223,7 +3223,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			_lines.append("pick %s = %s" % [words[1], words[2]])
 		"menu":  # "!menu settings" / "!menu controls" shows that page (for a picture), "!menu none" hides the menus again
 			var main_scene: Node = session.get_parent()
-			main_scene.call("_show_only", main_scene.get("_settings_menu") if words[1] == "settings" else (main_scene.get("_controls_menu") if words[1] == "controls" else null))
+			var pages := {"settings": "_settings_menu", "controls": "_controls_menu", "sounds": "_sound_menu"}  # (polish1 B2) + the Sounds page
+			main_scene.call("_show_only", main_scene.get(String(pages[words[1]])) if pages.has(words[1]) else null)
+			if words[1] == "sounds" and words.size() > 2:  # "!menu sounds open": the first two groups opened
+				var opened := 0
+				for b_m in (main_scene.get("_sound_menu") as Node).find_children("*", "Button", true, false):
+					if (b_m as Button).text == ">" and opened < 2:
+						(b_m as Button).pressed.emit()
+						opened += 1
+			if words[1] == "music":  # "!menu music": the jukebox window
+				var mm: Node = session.get("music_menu")
+				if mm != null:
+					mm.call("open")
 		"buildings":  # "!buildings full" / "!buildings plain": which building models places built from now on use, whatever the tier says (to measure one against the other)
 			(session.call("fantasy").get("places") as Node).set("plain", words[1] == "plain")
 			_lines.append("buildings %s" % words[1])

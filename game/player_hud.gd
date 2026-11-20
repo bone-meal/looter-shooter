@@ -67,7 +67,7 @@ var powerups: RefCounted  # core/powerup_rules.gd: the running ones are shown wi
 var power_now := 0.0  # the session's clock, for that time
 var party: Array = []  # the other players' {"name", "points"}, set by the session a few times a second
 var callouts := HudCallouts.new()  # (polish1 B1) styled round / level-up / power-up call-outs and achievement cards
-var card_key := "P"  # the player card's key, for that badge (set by the session)
+var menu_keys: Array = []  # (polish1 item 55) the small menu icons top left: {"icon", "key", "new"} (set by the session)
 var card_unseen := false  # (polish1 item 54) a level-up happened and the player card was not opened since (the P badge's dot)
 var _chunky: Font = load("res://assets/fonts/LilitaOne.ttf")  # (polish1 item 46) the points' chunkier game font
 var _blood: GradientTexture2D  # (polish1 item 42) red at the screen's edges, clear in the middle
@@ -210,15 +210,16 @@ func _draw() -> void:
 	_draw_weapons(view)
 	_draw_points(view)
 	_draw_top(view)
+	_draw_menu_keys()
 	_draw_hit_marks(view)
 	callouts.draw(self, view)
 	if course_text != "":
 		_text(Vector2(0, 92.0), course_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 24, Color(0.75, 0.95, 1.0))
 	if quest_text != "":
 		var lines := quest_text.split("\n")
-		draw_string(_font, Vector2(MARGIN, 96.0), lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.6, 0.85, 1.0))
+		draw_string(_font, Vector2(MARGIN, 118.0), lines[0], HORIZONTAL_ALIGNMENT_LEFT, -1, 17, Color(0.6, 0.85, 1.0))  # under the menu icons
 		if lines.size() > 1:
-			draw_string(_font, Vector2(MARGIN, 116.0), lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.6, 0.85, 1.0, 0.75))
+			draw_string(_font, Vector2(MARGIN, 138.0), lines[1], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, Color(0.6, 0.85, 1.0, 0.75))
 
 
 # The round in the bottom left corner, in red chalk: tallies up to 5, then a number; the colosseum shows "3 / 8".
@@ -561,6 +562,23 @@ func _draw_holsters(view: Vector2) -> void:
 		draw_rect(plate, WHITE, false, 1.0)
 
 
+# (polish1 item 55) A row of small menu icons in the top left, each with its key; a red "!" when something new is
+# there (a gun picked up, a level-up on the card ...). Not clickable.
+func _draw_menu_keys() -> void:
+	var x := MARGIN
+	var y := 62.0  # under the debug lines
+	for entry: Dictionary in menu_keys:
+		var box := Rect2(Vector2(x, y), Vector2(32.0, 32.0))
+		UiSkin.panel(self, box, Color(0.05, 0.06, 0.08, 0.72), Color(1, 1, 1, 0.18), 6)
+		IconArt.draw(self, String(entry["icon"]), box.grow(-5.0), Color(1.0, 0.85, 0.5))
+		var w := UiSkin.key_cap(self, _font, Vector2(x + 36.0, y + 6.0), String(entry["key"]))
+		if bool(entry.get("new", false)):
+			var c := box.position + Vector2(box.size.x - 1.0, 1.0)
+			draw_circle(c, 8.0, Color(0.85, 0.15, 0.1))
+			draw_string(_chunky, c + Vector2(-8.0, 5.0), "!", HORIZONTAL_ALIGNMENT_CENTER, 16.0, 13, Color.WHITE)
+		x += 36.0 + w + 12.0
+
+
 func _draw_top(view: Vector2) -> void:
 	if coins >= 0:
 		ChipArt.draw(self, Vector2(view.x - 150.0, 26.0), 10.0)
@@ -569,9 +587,6 @@ func _draw_top(view: Vector2) -> void:
 		draw_string(_font, Vector2(view.x - 236.0, 70.0), "LV %d" % level, HORIZONTAL_ALIGNMENT_LEFT, 74, 24, WHITE)  # polish1 item 49: bigger (was 16 pt and a 96 px bar)
 		draw_rect(Rect2(view.x - 160.0, 54.0, 148.0, 14.0), BACK)
 		draw_rect(Rect2(view.x - 158.0, 56.0, 144.0 * clampf(xp_ratio, 0.0, 1.0), 10.0), Color(0.45, 0.8, 1.0))
-		if card_unseen:  # (polish1 item 54) something new on the player card: its key with a dot until it is opened
-			var w := UiSkin.key_cap(self, _font, Vector2(view.x - 280.0, 50.0), card_key)
-			draw_circle(Vector2(view.x - 280.0 + w, 50.0), 5.0, Color(1.0, 0.3, 0.2))
 	draw_string(_font, Vector2(0, 30), wave_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 20, WHITE)
 	if boss_ratio >= 0.0:
 		var w := 360.0

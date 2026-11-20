@@ -2,6 +2,8 @@
 # the game. The song list (our Music folder, or the host's online) with Play and Queue on each song, what plays now,
 # play / pause, skip, stop, volume, and Open Folder (where songs are added or changed; not shown to a joiner, whose
 # list is the host's). Asks game/music_box.gd; closes with Back or Esc (the caller listens to `closed`).
+# (polish1 item 5) Room for a big library (~400 of the player's own files): a search box filters the list, songs show as
+# striped rows (now playing lit, queued numbered), SHUFFLE, and for a joiner a switch: the host's music or our own.
 # Dependencies: game/menu_widgets.gd, game/music_box.gd (`box`), game/music_library.gd.
 extends Control
 
@@ -18,6 +20,9 @@ var _pause := Button.new()
 var _folder := Button.new()
 var _volume := HSlider.new()
 var _refresh := 0.0
+var _search := LineEdit.new()
+var _shuffle := Button.new()
+var _source := OptionButton.new()  # online, a joiner: "Host's music" / "My own music"
 
 
 func _ready() -> void:
@@ -32,6 +37,18 @@ func _ready() -> void:
 	_hint.custom_minimum_size = Vector2(620, 0)
 	_hint.add_theme_color_override("font_color", Color(0.75, 0.75, 0.85))
 	column.add_child(_hint)
+	var tools := HBoxContainer.new()
+	tools.add_theme_constant_override("separation", 8)
+	column.add_child(tools)
+	_search.placeholder_text = "Search songs or artists"
+	_search.clear_button_enabled = true
+	_search.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_search.text_changed.connect(func(_text: String) -> void: _fill())
+	tools.add_child(_search)
+	_source.add_item("Host's music")
+	_source.add_item("My own music")
+	_source.item_selected.connect(func(index: int) -> void: box.call("set_own", index == 1))
+	tools.add_child(_source)
 	var scroll := ScrollContainer.new()
 	scroll.custom_minimum_size = Vector2(620, 300)
 	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -48,6 +65,11 @@ func _ready() -> void:
 	_pause.custom_minimum_size = Vector2(110, 40)
 	_pause.pressed.connect(func() -> void: box.call("toggle_pause"))
 	controls.add_child(_pause)
+	_shuffle.custom_minimum_size = Vector2(120, 40)
+	_shuffle.toggle_mode = true
+	_shuffle.text = "Shuffle"
+	_shuffle.pressed.connect(func() -> void: box.call("toggle_shuffle"))
+	controls.add_child(_shuffle)
 	for pair: Array in [["Skip", func() -> void: box.call("skip")], ["Stop", func() -> void: box.call("stop_all")]]:
 		var b := Button.new()
 		b.text = String(pair[0])
@@ -126,9 +148,22 @@ func _fill() -> void:
 	var songs: Array = shown.get("songs")
 	var now := String(shown.get("now"))
 	var waiting: Array = shown.get("queue")
+	var find := _search.text.strip_edges().to_lower()
+	var n := 0
 	for s: Dictionary in songs:
+		if find != "" and not (String(s["title"]).to_lower().contains(find) or String(s["artist"]).to_lower().contains(find)):
+			continue
+		var stripe := PanelContainer.new()  # striped rows, the one playing lit
+		var look := StyleBoxFlat.new()
+		look.bg_color = Color(0.32, 0.22, 0.06, 0.85) if String(s["id"]) == now else (Color(1, 1, 1, 0.05) if n % 2 == 0 else Color(0, 0, 0, 0))
+		look.set_corner_radius_all(6)
+		look.content_margin_left = 8
+		look.content_margin_right = 4
+		stripe.add_theme_stylebox_override("panel", look)
+		n += 1
 		var row := HBoxContainer.new()
 		row.add_theme_constant_override("separation", 6)
+		stripe.add_child(row)
 		var name_label := Label.new()
 		var artist := String(s["artist"])
 		var title := String(s["title"]) if artist == "" else "%s  -  %s" % [artist, String(s["title"])]
@@ -144,8 +179,10 @@ func _fill() -> void:
 			b.custom_minimum_size = Vector2(80, 34)
 			b.pressed.connect(pair[1])
 			row.add_child(b)
-		_list.add_child(row)
+		_list.add_child(stripe)
 	_folder.visible = bool(box.call("host_side"))
+	_source.visible = bool(box.call("joined_someone"))
+	_source.select(1 if bool(box.get("own_music")) else 0)
 	_status()
 
 
@@ -169,3 +206,5 @@ func _status() -> void:
 	else:
 		_now.text = "Now: %s%s" % [String(song["title"]), "" if String(song["artist"]) == "" else "  -  " + String(song["artist"])]
 	_pause.text = "Play" if bool(box.call("is_paused")) or String(box.call("playing_id")) == "" else "Pause"
+	_shuffle.set_pressed_no_signal(bool(shown.get("shuffle")))
+	_shuffle.text = "Shuffle: on" if bool(shown.get("shuffle")) else "Shuffle: off"

@@ -1,6 +1,6 @@
-Polish1 B1: styled HUD feedback
+Polish1 B2: menus and controls
 
-Round call-out in chalk, level-up banner with what is new, power-up medallions and icons with draining rings along the top, achievement cards sliding in with a chime, blood at the screen edges, health ring flash / lost chunk / refill, hit-direction marker, stacking damage numbers with crit colour and a red X, DEF and BLOCK icons, chunkier points font. Ship part names written.
+Menu icons with keys and new-badges in the top left, tap Tab for the inventory and hold Tab for the scoreboard, Shift and Ctrl key combos in the controls, a redesigned Sounds page with master, music and per-group volumes, and a jukebox with search, shuffle and a host's music or my own switch.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

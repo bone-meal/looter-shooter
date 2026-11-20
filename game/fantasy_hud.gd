@@ -75,7 +75,7 @@ func _draw_skills() -> void:
 		var id := String(ids[i])
 		var tint: Array = world.skilling["skills"][id]["color"]
 		var color := Color(tint[0], tint[1], tint[2])
-		var center := Vector2(14.0 + MEDAL + float(i) * step, 52.0 + MEDAL)
+		var center := Vector2(14.0 + MEDAL + float(i) * step, 106.0 + MEDAL)  # (polish1 item 55) under the menu icons (their K / L / M are in that row now)
 		draw_circle(center, MEDAL, Style.INK)
 		draw_arc(center, MEDAL - 1.5, 0.0, TAU, 32, Style.GOLD_DIM, 1.0, true)
 		var share := float(world.skills.progress(id))
@@ -83,12 +83,6 @@ func _draw_skills() -> void:
 			draw_arc(center, MEDAL - 1.5, -PI * 0.5, -PI * 0.5 + TAU * share, 32, color, 3.0, true)
 		IconArt.draw(self, String(world.skilling["skills"][id]["icon"]), Rect2(center - Vector2(11.0, 11.0), Vector2(22.0, 22.0)), color)
 		Style.text(self, center + Vector2(-MEDAL - 4.0, MEDAL + 13.0), str(int(world.skills.level(id))), 12, Style.PARCHMENT, HORIZONTAL_ALIGNMENT_CENTER, MEDAL * 2.0 + 8.0)
-	var x := 16.0  # the three keys, each with the sign of what it opens
-	for hint: Array in [["skills", "bag"], ["quests", "scroll"], ["map", "map"]]:
-		var label := InputSetup.label(settings, String(hint[0]))
-		IconArt.draw(self, String(hint[1]), Rect2(x, 52.0 + MEDAL * 2.0 + 18.0, 28.0, 28.0), Style.GOLD)  # polish1 item 116: bigger (was 18 px / 13 pt)
-		Style.text(self, Vector2(x + 32.0, 52.0 + MEDAL * 2.0 + 39.0), label, 18, Color(Style.PARCHMENT, 0.9))
-		x += 46.0 + Style.font().get_string_size(label, HORIZONTAL_ALIGNMENT_LEFT, -1, 18).x
 
 
 func _draw_toasts() -> void:

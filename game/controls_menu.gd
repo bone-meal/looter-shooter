@@ -15,6 +15,7 @@ var settings: SettingsState  # set before add_child
 var _buttons := {}  # action -> its SLOTS buttons
 var _waiting := ""  # action currently waiting for a key press ("" = none)
 var _slot := 0  # which of its slots
+var _modifier := 0  # (polish1 item 137) Shift or Ctrl held down while waiting (0 = none): a combo with the next key
 var _note: Label  # what the last change did (e.g. which control a key was taken from)
 
 
@@ -24,7 +25,7 @@ func _ready() -> void:
 	var box := Widgets.centered_column(self, 700)
 	Widgets.title(box, "CONTROLS")
 	var hint := Label.new()
-	hint.text = "Each control takes up to three: click a slot, then press a key or a mouse button, or roll the wheel. Delete empties the slot, Esc cancels."
+	hint.text = "Each control takes up to three: click a slot, then press a key (hold Shift or Ctrl with it for a combo) or a mouse button, or roll the wheel. Delete empties the slot, Esc cancels."
 	hint.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	hint.custom_minimum_size = Vector2(700, 0)
 	hint.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -68,20 +69,42 @@ func _input(event: InputEvent) -> void:
 		return
 	var is_key: bool = event is InputEventKey and event.pressed and not event.echo
 	var is_mouse: bool = event is InputEventMouseButton and event.pressed and event.button_index <= MOUSE_BUTTON_XBUTTON2
+	if event is InputEventKey and InputSetup.is_modifier(_key_of(event)):  # (polish1 item 137) Shift / Ctrl: alone when let go, else a combo with the next key
+		if event.pressed and not event.echo:
+			_modifier = _key_of(event)
+		elif not event.pressed and _modifier == _key_of(event):
+			_modifier = 0
+			_take("key:%d" % _key_of(event))
+		get_viewport().set_input_as_handled()
+		return
 	if not (is_key or is_mouse):
 		return
-	_note.text = ""
+	_modifier = 0
 	if is_key and event.keycode == KEY_DELETE:
+		_note.text = ""
 		InputSetup.unbind(settings, _waiting, _slot)
-	else:
-		var code := InputSetup.event_to_code(event)
-		var from := InputSetup.bind(settings, _waiting, _slot, code)
-		if from != "":
-			_note.text = "%s was taken from \"%s\"." % [InputSetup.describe(code), from]
+		_waiting = ""
+		_refresh()
+		changed.emit()
+		get_viewport().set_input_as_handled()
+		return
+	_take(InputSetup.event_to_code(event))
+	get_viewport().set_input_as_handled()
+
+
+# Binds `code` to the slot being waited on.
+func _take(code: String) -> void:
+	_note.text = ""
+	var from := InputSetup.bind(settings, _waiting, _slot, code)
+	if from != "":
+		_note.text = "%s was taken from \"%s\"." % [InputSetup.describe(code), from]
 	_waiting = ""
 	_refresh()
 	changed.emit()
-	get_viewport().set_input_as_handled()
+
+
+static func _key_of(event: InputEventKey) -> int:
+	return event.physical_keycode if event.physical_keycode != 0 else event.keycode
 
 
 func _add_row(rows: Container, action: String, label_text: String) -> void:

@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp island;!wait 6;!immortal;/round 3;!wait 9;!aimnear;!fire;!wait 0.12;!fire;!wait 0.12;!fire;!wait 0.12;!fire;!wait 0.12;!fire;!wait 0.05;!snap b1_stack;!wait 0.3;!aimnear;!fire;!wait 0.1;!fire;!wait 0.05;!snap b1_stack2;!immortal off;!hurt 20 5 0;!wait 0.1;!snap b1_hit_right;!hurt 10 0 -5;!wait 0.1;!snap b1_hit_back
+!uncap;!wait 2;/tp island;!wait 6;/give gun purple;!wait 1;/xp 3000;!wait 4;!snap b2_new;/tp fantasy;!wait 22;!snap b2_fantasy

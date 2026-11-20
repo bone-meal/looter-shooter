@@ -19,7 +19,7 @@ const ACTIONS := [
 	["skill_1", "Gun skill 1"],
 	["skill_2", "Gun skill 2"],
 	["toggle_view", "Switch 1st/3rd person"],
-	["inventory", "Inventory"],
+	["inventory", "Inventory (tap)"],
 	["card", "Player card"],
 	["scoreboard", "Scoreboard (hold)"],
 	["chat", "Chat"],
@@ -64,7 +64,7 @@ static func default_code(action: String) -> String:
 		"skill_1": return "key:%d" % KEY_Q
 		"skill_2": return "key:%d" % KEY_E
 		"toggle_view": return "key:%d" % KEY_B
-		"inventory": return "key:%d" % KEY_I
+		"inventory": return "key:%d" % KEY_TAB  # (polish1 item 136) tap Tab = inventory, hold Tab = scoreboard
 		"card": return "key:%d" % KEY_P
 		"scoreboard": return "key:%d" % KEY_TAB
 		"chat": return "key:%d" % KEY_ENTER
@@ -145,6 +145,8 @@ static func bind(settings: RefCounted, action: String, slot: int, code: String) 
 		var other: String = entry[0]
 		if other.begins_with("element_") != action.begins_with("element_"):
 			continue
+		if other != action and [action, other].has("inventory") and [action, other].has("scoreboard"):
+			continue  # (polish1 item 136) tap and hold of one key: they may share it
 		var theirs := codes(settings, other)
 		var at := theirs.find(code)
 		if at >= 0:
@@ -174,29 +176,53 @@ static func _store(settings: RefCounted, action: String, bound: PackedStringArra
 	apply(action, bound)
 
 
+# (polish1 item 136) Inventory and scoreboard share a key: a tap opens the inventory, holding it shows the scoreboard.
+static func tap_or_hold(settings: RefCounted) -> bool:
+	for code in codes(settings, "inventory"):
+		if codes(settings, "scoreboard").has(code):
+			return true
+	return false
+
+
 static func reset_to_defaults(settings: RefCounted) -> void:
 	settings.bindings.clear()
 	register(settings)
 
 
-# "key:87" for a key press, "mouse:1" for a mouse button, "" for anything else.
+# "key:87" for a key press, "mouse:1" for a mouse button, "" for anything else. (polish1 item 137) A key pressed with
+# Shift and / or Ctrl held is a combo: "key:87:shift", "key:87:ctrl", "key:87:ctrl+shift" (a modifier alone stays plain).
 static func event_to_code(event: InputEvent) -> String:
 	if event is InputEventKey:
 		var key: int = event.physical_keycode if event.physical_keycode != 0 else event.keycode
-		return "key:%d" % key
+		var mods := PackedStringArray()
+		if not is_modifier(key):
+			if (event as InputEventKey).ctrl_pressed:
+				mods.append("ctrl")
+			if (event as InputEventKey).shift_pressed:
+				mods.append("shift")
+		return "key:%d" % key + ("" if mods.is_empty() else ":" + "+".join(mods))
 	if event is InputEventMouseButton:
 		return "mouse:%d" % event.button_index
 	return ""
 
 
+# Shift and Ctrl themselves (a combo is made of one of them and another key).
+static func is_modifier(key: int) -> bool:
+	return key in [KEY_SHIFT, KEY_CTRL]
+
+
 static func describe(code: String) -> String:
 	var parts := code.split(":")
-	if parts.size() != 2:
+	if parts.size() < 2 or parts.size() > 3:
 		return "?"
 	var value := int(parts[1])
 	if parts[0] == "key":
 		var shown: int = DisplayServer.keyboard_get_label_from_physical(value as Key)
-		return OS.get_keycode_string((shown if shown != 0 else value) as Key)
+		var name := OS.get_keycode_string((shown if shown != 0 else value) as Key)
+		if parts.size() == 3:  # a combo: "Ctrl + Shift + R"
+			for mod in parts[2].split("+"):
+				name = mod.capitalize() + " + " + name
+		return name
 	match value:
 		MOUSE_BUTTON_LEFT: return "Left Mouse"
 		MOUSE_BUTTON_RIGHT: return "Right Mouse"
@@ -217,12 +243,15 @@ static func label(settings: RefCounted, action: String) -> String:
 
 static func _event_from_code(code: String) -> InputEvent:
 	var parts := code.split(":")
-	if parts.size() != 2:
+	if parts.size() < 2 or parts.size() > 3:
 		return null
 	var value := int(parts[1])
 	if parts[0] == "key":
 		var key := InputEventKey.new()
 		key.physical_keycode = value as Key
+		if parts.size() == 3:  # a combo: the action needs these held too
+			key.shift_pressed = parts[2].contains("shift")
+			key.ctrl_pressed = parts[2].contains("ctrl")
 		return key
 	if parts[0] == "mouse":
 		var mouse := InputEventMouseButton.new()

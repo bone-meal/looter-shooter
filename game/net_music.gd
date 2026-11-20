@@ -61,6 +61,8 @@ func _intent(_peer: int, what: String, id: String) -> void:
 			queue.play_now(id)
 		"skip":
 			queue.skip()
+		"shuffle":  # (polish1 item 5)
+			queue.shuffle = not queue.shuffle
 		"pause":
 			if queue.now == "" and not queue.songs.is_empty():  # Play with nothing playing: the first song
 				queue.add(String(queue.songs[0]["id"]))
@@ -89,7 +91,7 @@ func song_ended() -> void:
 # ---- the host: list, sending, starting ----
 
 func _send_state() -> void:
-	_state.rpc(queue.songs, queue.queue, queue.now, queue.paused)
+	_state.rpc(queue.songs, queue.queue, queue.now, queue.paused, queue.shuffle)
 	state_changed.emit()
 
 
@@ -173,11 +175,12 @@ func joined(_peer: int) -> void:
 # ---- every client ----
 
 @rpc("authority", "call_remote", "reliable")
-func _state(songs: Array, waiting: Array, now: String, paused: bool) -> void:
+func _state(songs: Array, waiting: Array, now: String, paused: bool, shuffled: bool) -> void:
 	queue.set_songs(songs)
 	queue.queue = waiting
 	queue.now = now
 	queue.paused = paused
+	queue.shuffle = shuffled
 	state_changed.emit()
 
 
@@ -185,7 +188,7 @@ func _state(songs: Array, waiting: Array, now: String, paused: bool) -> void:
 func _offer(id: String, file: String, size: int) -> void:
 	if size <= 0 or size > MusicQueue.MAX_BYTES:
 		return
-	if cache.has(id):
+	if cache.has(id) or bool(box.get("own_music")):  # (polish1 item 5) playing our own: nothing to fetch, never keep the host waiting
 		_have.rpc_id(1, id)
 	else:
 		_incoming[id] = {"file": file, "count": ceili(float(size) / PIECE), "parts": {}}
@@ -211,18 +214,20 @@ func _piece(id: String, file: String, index: int, count: int, data: PackedByteAr
 
 @rpc("authority", "call_remote", "reliable")
 func _start(id: String, file: String) -> void:
-	if cache.has(id):
+	if cache.has(id) and not bool(box.get("own_music")):
 		box.call("play_bytes", id, file, cache[id])
 
 
 @rpc("authority", "call_remote", "reliable")
 func _pause(on: bool) -> void:
-	box.call("pause", on)
+	if not bool(box.get("own_music")):
+		box.call("pause", on)
 
 
 @rpc("authority", "call_remote", "reliable")
 func _stop() -> void:
-	box.call("stop")
+	if not bool(box.get("own_music")):
+		box.call("stop")
 
 
 # How far the song now being sent to us has come (0..1), or -1 when nothing comes.

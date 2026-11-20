@@ -33,3 +33,4 @@ static func apply_display(settings: RefCounted) -> void:
 	AudioServer.set_bus_volume_db(0, linear_to_db(maxf(float(settings.volume), 0.0001)))  # master volume
 	AudioServer.set_bus_mute(0, float(settings.volume) <= 0.0)
 	SoundBoard.set_muted(settings.muted_sounds)
+	SoundBoard.set_groups(settings.sound_groups)

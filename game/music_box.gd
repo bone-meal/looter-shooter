@@ -16,6 +16,7 @@ var net_music: Node  # game/net_music.gd under the online session
 var local := MusicQueue.new()  # our own folder's list and queue
 var player := AudioStreamPlayer.new()
 var volume := 0.8
+var own_music := false  # (polish1 item 5) online, this player plays their own Music folder instead of the host's (saved)
 var _playing := ""  # id of what plays here ("secret:<file>" for a hidden song)
 
 
@@ -26,6 +27,8 @@ func _ready() -> void:
 	var cfg := ConfigFile.new()
 	if cfg.load(SETTINGS) == OK:
 		volume = clampf(float(cfg.get_value("music", "volume", 0.8)), 0.0, 1.0)
+		own_music = bool(cfg.get_value("music", "own", false))
+		local.shuffle = bool(cfg.get_value("music", "shuffle", false))
 	player.volume_db = linear_to_db(maxf(volume, 0.0001))
 	local.set_songs(MusicLibrary.scan())
 	if net_music != null:
@@ -33,7 +36,41 @@ func _ready() -> void:
 
 
 func online() -> bool:
-	return net_music != null and bool(net_music.call("active"))
+	return net_music != null and bool(net_music.call("active")) and not own_music
+
+
+# A joiner: is there a host whose music we could follow (for the "host's music / my own" switch)?
+func joined_someone() -> bool:
+	return net_music != null and bool(net_music.call("active")) and not bool(net_music.get("net").call("is_host"))
+
+
+# (polish1 item 5) Online: hear the host's music (false) or play our own folder (true).
+func set_own(on: bool) -> void:
+	if on == own_music:
+		return
+	own_music = on
+	stop()
+	local.set_songs(MusicLibrary.scan())
+	_save()
+	changed.emit()
+
+
+# (polish1 item 5) Shuffle on / off: the host's online, ours otherwise.
+func toggle_shuffle() -> void:
+	if online():
+		net_music.call("ask", "shuffle")
+	else:
+		local.shuffle = not local.shuffle
+		_save()
+	changed.emit()
+
+
+func _save() -> void:
+	var cfg := ConfigFile.new()
+	cfg.set_value("music", "volume", volume)
+	cfg.set_value("music", "own", own_music)
+	cfg.set_value("music", "shuffle", local.shuffle)
+	cfg.save(SETTINGS)
 
 
 # The list and queue the menus show: the host's online, ours otherwise.
@@ -99,9 +136,7 @@ func stop_all() -> void:
 func set_volume(v: float) -> void:
 	volume = clampf(v, 0.0, 1.0)
 	player.volume_db = linear_to_db(maxf(volume, 0.0001))
-	var cfg := ConfigFile.new()
-	cfg.set_value("music", "volume", volume)
-	cfg.save(SETTINGS)
+	_save()
 
 
 # ---- what plays here ----

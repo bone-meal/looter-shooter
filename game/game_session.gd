@@ -203,6 +203,9 @@ var _doubloons := Wallet.new()  # the sea's money (sea step 6; saved in the prof
 var _points_cfg: Dictionary = DataStore.load_json("res://data/points.json")
 var _score := ScoreCard.new(_points_cfg)  # zombies-style points (saved in the profile) and this session's scoreboard row
 var _scoreboard := Scoreboard.new()
+var _inv_seen := -1  # (polish1 item 55) the inventory's `arrived` count when it was last opened (-1 = take it at start)
+var _tab_down_at := -1.0  # (polish1 item 136) when a shared inventory / scoreboard key went down (-1 = not down)
+const TAB_TAP_S := 0.22  # shorter than this is a tap (the scoreboard waits as long: game/scoreboard.gd HOLD_S)
 var _knife_rolled := false  # this character has its knife type
 var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
 var _first_look := false  # a new character is still in its first customize menu: the rounds wait
@@ -843,7 +846,15 @@ func _unhandled_input(event: InputEvent) -> void:
 	elif event.is_action_pressed("map") and _in_sea and not _inventory_screen.visible:
 		_sea.toggle_chart()
 	elif event.is_action_pressed("inventory"):
-		_toggle_inventory()
+		if _inventory_screen.visible or not InputSetup.tap_or_hold(settings):
+			_toggle_inventory()
+		else:
+			_tab_down_at = _time  # (polish1 item 136) a tap opens it on release; held, the scoreboard shows instead
+		get_viewport().set_input_as_handled()
+	elif event.is_action_released("inventory") and _tab_down_at >= 0.0:
+		if _time - _tab_down_at < TAB_TAP_S and not _inventory_screen.visible:
+			_toggle_inventory()
+		_tab_down_at = -1.0
 	elif event.is_action_pressed("interact") and not _inventory_screen.visible:
 		_interact()
 
@@ -960,7 +971,6 @@ func _progress_notices(levels: int) -> void:
 				news.append("Trait slot %d is open" % (slot + 1))
 		_player_hud.callouts.level_up(_progress.level(), news, _key("card"))
 		_player_hud.card_unseen = true
-		_player_hud.card_key = _key("card")
 	for id: String in _progress.take_unlocked():  # (polish1 item 44) a card slides in from the top, with a quiet chime
 		var a: Dictionary = _progress.achievement_defs()[id]
 		var gives := PackedStringArray()
@@ -1003,7 +1013,22 @@ func _on_look_applied(look: Dictionary) -> void:
 	_close_customizer()
 
 
+# (polish1 item 55) The menu icons top left for where we are: inventory and player card everywhere, the skills / quests /
+# map of Aurelind, the logbook / quests / chart at sea; "new" = something waiting there.
+func _menu_keys() -> Array:
+	if _inv_seen < 0:
+		_inv_seen = _player.inventory.arrived  # what the save brought in is not new
+	var out: Array = [{"icon": "bag", "key": _key("inventory"), "new": _player.inventory.arrived > _inv_seen},
+		{"icon": "sk_banner", "key": _key("card"), "new": _player_hud.card_unseen}]
+	if _in_fantasy:
+		out.append_array([{"icon": "pickaxe", "key": _key("skills")}, {"icon": "scroll", "key": _key("quests")}, {"icon": "map", "key": _key("map")}])
+	elif _in_sea:
+		out.append_array([{"icon": "book", "key": _key("logbook")}, {"icon": "scroll", "key": _key("quests")}, {"icon": "map", "key": _key("map")}])
+	return out
+
+
 func _toggle_inventory() -> void:
+	_inv_seen = _player.inventory.arrived  # (polish1 item 55) what came in has been seen
 	if _inventory_screen.visible:
 		_inventory_screen.close()
 		_player.controls_enabled = true
@@ -4704,11 +4729,12 @@ func _process(delta: float) -> void:
 	var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 	var mem_mb := Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
 	_hud.visible = not (_tcg.is_open() or (_ptables != null and _ptables.is_open()))  # (polish1 item 86) not under the card table's badges
-	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s/%s guns, %s knife, %s inventory, %s player card, %s view, Esc menu" % [
+	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s/%s guns, %s knife, %s inventory (hold: scoreboard), %s player card, %s view, Esc menu" % [
 		fps, 1000.0 / maxf(fps, 1.0), draws, mem_mb, _moves(), _key("jump"), _key("sprint"), _key("shoot"),
 		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_2"), _key("knife"), _key("inventory"), _key("card"), _key("toggle_view")]
 	_player_hud.wave_text = _director.status_text()
 	_player_hud.boss_ratio = _director.boss_ratio()
+	_player_hud.menu_keys = _menu_keys()
 	var on_island := not _in_arena and not _in_fantasy and _on_island(_player.global_position)
 	var watching: bool = net != null and net.rounds.is_client()  # the host runs the rounds: we show what it tells us
 	var island_round: int = net.rounds.round_number if watching else _rounds.rules.number

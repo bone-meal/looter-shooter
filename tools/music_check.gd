@@ -29,6 +29,14 @@ func _ready() -> void:
 	_say("play now jumps in, the queue stays", q.play_now(b) and q.now == b and q.queue == [a])
 	q.skip()
 	_say("with an empty queue skip goes on down the list (%s)" % q.skip(), q.now == b)
+	q.shuffle = true  # (polish1 item 5)
+	var never_same := true
+	for i in 30:
+		var was := q.now
+		q.skip()
+		never_same = never_same and q.now != was and q.now != ""
+	_say("shuffle picks another song each time (30 skips)", never_same)
+	q.shuffle = false
 	q.stop()
 	_say("stop clears it all", q.now == "" and q.queue.is_empty())
 	q.hold(a, 1)

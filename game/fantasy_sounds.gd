@@ -72,7 +72,7 @@ func play(id: String, at: Vector3 = Vector3.INF) -> void:
 		_next_placed = (_next_placed + 1) % _placed.size()
 		voice.stream = stream
 		voice.global_position = at
-		voice.volume_db = float(def.get("volume", 0.0)) + _master
+		voice.volume_db = float(def.get("volume", 0.0)) + _master + SoundBoard.gain_db(id)
 		voice.pitch_scale = pitch
 		voice.unit_size = float(def.get("range", 40.0)) * 0.15  # fades quickly with distance and is gone at `range`
 		voice.max_distance = float(def.get("range", 40.0))
@@ -84,7 +84,7 @@ func play(id: String, at: Vector3 = Vector3.INF) -> void:
 		var voice := _flat[_next_flat]
 		_next_flat = (_next_flat + 1) % _flat.size()
 		voice.stream = stream
-		voice.volume_db = float(def.get("volume", 0.0)) + _master
+		voice.volume_db = float(def.get("volume", 0.0)) + _master + SoundBoard.gain_db(id)
 		voice.pitch_scale = pitch
 		voice.play()
 		SoundBoard.heard(id)
@@ -145,7 +145,7 @@ func set_town(inside: bool) -> void:
 func _town_volume() -> float:
 	if not SoundBoard.allow("ambience_town"):
 		return -80.0
-	return float((_data["town"] as Dictionary).get("volume", -15.0)) + _master
+	return float((_data["town"] as Dictionary).get("volume", -15.0)) + _master + SoundBoard.gain_db("ambience_town")
 
 
 # The ambience of a region fades in and the previous one out ("" = silence, on leaving the world).
@@ -170,6 +170,6 @@ func set_region(id: String) -> void:
 	fresh.stream = stream
 	fresh.volume_db = -60.0
 	fresh.play()
-	_bed_volume = float(def.get("volume", -12.0)) + _master
+	_bed_volume = float(def.get("volume", -12.0)) + _master + SoundBoard.gain_db("ambience_" + id)
 	_fade_until = Time.get_ticks_msec() / 1000.0 + seconds
 	create_tween().tween_property(fresh, "volume_db", _bed_volume if SoundBoard.allow("ambience_" + id) else -80.0, seconds)

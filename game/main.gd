@@ -112,6 +112,7 @@ func _ready() -> void:
 
 	_sound_menu = SoundMenu.new()
 	_sound_menu.settings = _settings
+	_sound_menu.music = _music_box  # (polish1 item 3) the music volume on the Sounds page
 	_sound_menu.changed.connect(_on_settings_changed)
 	_sound_menu.closed.connect(_close_controls)  # saves and goes back to the settings, like the controls page
 	layer.add_child(_sound_menu)

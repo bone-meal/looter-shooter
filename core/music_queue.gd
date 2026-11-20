@@ -12,6 +12,7 @@ var songs: Array = []  # in list order (by file name)
 var queue: Array = []  # ids waiting, first plays next
 var now := ""  # id playing (or waiting for every player to hold it); "" = nothing
 var paused := false
+var shuffle := false  # (polish1 item 5) with nothing queued the next song is a random one (not the list order)
 var holders := {}  # host: id -> {peer: true} who holds that song's bytes
 
 
@@ -84,6 +85,10 @@ func skip() -> String:
 		now = String(queue.pop_front())
 	elif songs.is_empty():
 		now = ""
+	elif shuffle and songs.size() > 1:
+		var at := ids().find(now)
+		var pick := randi() % (songs.size() - 1)  # any song but the one that just played
+		now = String(songs[pick if at < 0 or pick < at else pick + 1]["id"])
 	else:
 		var at := ids().find(now)
 		now = String(songs[(at + 1) % songs.size()]["id"])

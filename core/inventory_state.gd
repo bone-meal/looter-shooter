@@ -28,6 +28,7 @@ var slot_count := BASE_SLOTS
 var holsters: Array[Dictionary] = []  # {} or a stack as in a slot: a plain weapon item or a rolled gun
 var loaded: Array[int] = []  # rounds in each ready gun (FRESH = not loaded yet)
 var returned := {}  # gun body -> rounds taken out of guns that left their holster, waiting to go back to the pool
+var arrived := 0  # (polish1 item 55) counts things that came in (guns, armour, items): the HUD's "!" on the inventory icon
 
 var _db: RefCounted
 var _gun_db: RefCounted  # core/gun_db.gd; guns in a save are checked against it (without it every saved gun is dropped)
@@ -201,10 +202,12 @@ func add_gun(gun: Dictionary) -> bool:
 	if holster >= 0:
 		holsters[holster] = {"id": "gun", "count": 1, "gun": gun}
 		loaded[holster] = FRESH
+		arrived += 1
 		return true
 	for i in slot_count:
 		if _slots[i].is_empty():
 			_slots[i] = {"id": "gun", "count": 1, "gun": gun}
+			arrived += 1
 			return true
 	return false
 
@@ -215,6 +218,7 @@ func add_armour(stack: Dictionary) -> bool:
 	if slot < 0:
 		return false
 	_slots[slot] = {"id": String(stack["id"]), "count": 1, "arm": (stack["arm"] as Dictionary).duplicate(true)}
+	arrived += 1
 	return true
 
 
@@ -257,6 +261,8 @@ func add(id: String, count: int) -> int:
 			var moved := mini(limit, left)
 			_slots[i] = {"id": id, "count": moved}
 			left -= moved
+	if left < count:
+		arrived += 1
 	return left
 
 
