@@ -387,7 +387,7 @@ func _draw_weapons(view: Vector2) -> void:
 		draw_rect(Rect2(x, top, SLOT_W, SLOT_H), tint, false, 3.0)
 		var tag := String(player.gun_db.tier(String(gun["tier"])).get("tag", ""))  # director: no "*PONY*" on the HUD, so names fit (its colour says pony)
 		var shown := GunStats.display_name(player.gun_db, gun).replace(tag + " ", "") if tag != "" else GunStats.display_name(player.gun_db, gun)
-		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), shown, 14, tint, SLOT_W)
+		TierStyle.draw_name(self, _font, Vector2(x, top - 6), player.gun_db, String(gun["tier"]), shown, 14, tint, SLOT_W, now)  # a name too long for the slot scrolls (director 2026-11-20)
 	ItemIcons.draw(self, w.weapon_id, Rect2(x + 24, top + 8, 100, 34), tint)
 	var low: bool = w.ammo <= maxi(1, w.mag_size / 4)
 	var spare: int = w.spare()

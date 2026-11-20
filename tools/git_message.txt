@@ -1,7 +1,8 @@
-Chase guns of unbuilt bosses drop from the built ones for now
+Long gun names scroll on the HUD and the hover card
 
-- data/loot_pools.json borrow_chase: the Abbot (region 1) also drops the region 3, 5, 7 and raid 1 chase guns; the Lantern Queen (region 2) the region 4, 6, raid 2 and Vault ones (director, for now)
-- core/gun_db.gd pool_uniques reads it; tools/loot_pool_check.gd accepts borrowed guns
+- game/player_hud.gd: the held gun's name scrolls when it does not fit its slot (it shrank before)
+- game/hover_card.gd: a gun name too long for the card scrolls (trade window)
+- tools/loot_pool_check.gd: long titles are allowed (they scroll)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

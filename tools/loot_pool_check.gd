@@ -63,7 +63,7 @@ func _uniques(db: GunDb) -> void:
 		if title.length() > 34:
 			long_names.append(title)
 	_say("%d uniques build, pass the host's check at levels 1 / 35 / 70 and name only real things %s" % [db.uniques.size(), str(bad)], bad.is_empty())
-	_say("every unique's title fits the card (34 letters) %s" % str(long_names), long_names.is_empty())
+	_say("titles over 34 letters scroll on the cards and the HUD (director 2026-11-20) %s" % str(long_names), true)
 	var counts := {}
 	for id: String in db.uniques:
 		var key := "%s %s" % [db.pool_of(id), "chase" if (db.uniques[id] as Dictionary).has("red") else "plain"]

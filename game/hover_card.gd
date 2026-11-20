@@ -86,7 +86,11 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 	var tint := TierStyle.color(gun_db, String(gun["tier"]), Time.get_ticks_msec() / 1000.0)
 	canvas.draw_rect(Rect2(pos, Vector2(width, height)), Color(0.06, 0.05, 0.1, 0.97))
 	canvas.draw_rect(Rect2(pos, Vector2(width, height)), tint, false, 2.0)
-	TierStyle.draw_name(canvas, font, pos + Vector2(10, 22), gun_db, String(gun["tier"]), GunStats.display_name(gun_db, gun), 17, tint)
+	var title := GunStats.display_name(gun_db, gun)
+	if TierStyle.overflows(font, gun_db, String(gun["tier"]), title, 17, width - 20.0):  # a long name scrolls (director 2026-11-20)
+		TierStyle.draw_name(canvas, font, pos + Vector2(10, 22), gun_db, String(gun["tier"]), title, 17, tint, width - 20.0, Time.get_ticks_msec() / 1000.0)
+	else:
+		TierStyle.draw_name(canvas, font, pos + Vector2(10, 22), gun_db, String(gun["tier"]), title, 17, tint)
 	canvas.draw_string(font, pos + Vector2(10, 40), note, HORIZONTAL_ALIGNMENT_LEFT, -1, 11, Color(0.7, 0.7, 0.8))
 	var y := 58.0
 	for line: Array in lines:
