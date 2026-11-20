@@ -1,8 +1,7 @@
-Sea step 13 R2h: region 2 check
+Chase guns of unbuilt bosses drop from the built ones for now
 
-- Walks: all 6 region 2 islands with paths, every place reached after one fix: the Lanternwick stall stood on the landing to marsh path (moved to -3814, 6213); Wren, Tansy and the 4 castaway stands moved off the paths
-- Sail-round 18.8 km in 13 legs, never aground, hull kept; island builds spread over frames
-- Two-copy sets gate3 (region 3 gate, Gloomscale Sheathing) and squest2 (Wren and Hob) both work
+- data/loot_pools.json borrow_chase: the Abbot (region 1) also drops the region 3, 5, 7 and raid 1 chase guns; the Lantern Queen (region 2) the region 4, 6, raid 2 and Vault ones (director, for now)
+- core/gun_db.gd pool_uniques reads it; tools/loot_pool_check.gd accepts borrowed guns
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

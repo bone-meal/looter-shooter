@@ -70,11 +70,15 @@ func world_uniques(body: String = "") -> Array:
 	return out
 
 
-# A pool's uniques: chase guns (red text) when chase is true, else the plain ones.
+# A pool's uniques: chase guns (red text) when chase is true, else the plain ones. A pool's "borrow_chase" (pool ids)
+# adds those pools' chase guns to its own (director 2026-11-20: unbuilt bosses' chase guns drop from the built ones for now).
 func pool_uniques(pool_id: String, chase: bool) -> Array:
+	var from: Array = [pool_id]
+	if chase:
+		from.append_array((pools.get(pool_id, {}) as Dictionary).get("borrow_chase", []))
 	var out: Array = []
 	for id: String in uniques:
-		if pool_of(id) == pool_id and (uniques[id] as Dictionary).has("red") == chase:
+		if from.has(pool_of(id)) and (uniques[id] as Dictionary).has("red") == chase:
 			out.append(id)
 	return out
 

@@ -90,7 +90,7 @@ func _pools(db: GunDb, rng: RandomNumberGenerator) -> void:
 			for gun: Dictionary in LootPool.roll(db, rng, pool_id, 45):
 				if gun.has("unique"):
 					uniques += 1
-					if db.pool_of(String(gun["unique"])) != pool_id:
+					if db.pool_of(String(gun["unique"])) != pool_id and not (pool.get("borrow_chase", []) as Array).has(db.pool_of(String(gun["unique"]))):
 						wrong += 1
 				else:
 					guns += 1
