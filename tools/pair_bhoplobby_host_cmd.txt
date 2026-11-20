@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 3;/tp course;!wait 3;!bhop best surf_1 41.2;!wait 14;!bhop board;!snap h_board;!wait 8;!bhop board

@@ -67,6 +67,17 @@ static func build(parent: Node, rules: RefCounted) -> Node3D:
 				shape_r.shape = box_r
 				shape_r.transform = xf
 				body.add_child(shape_r)
+			"block":  # (polish1 edgebugs) a pillar to clip: pink, solid, its top edges lit so the edge reads
+				_box_xf(tool, xf, psize, Color(0.78, 0.32, 0.5))
+				for e: Vector3 in [Vector3(0, 0, 1), Vector3(0, 0, -1), Vector3(1, 0, 0), Vector3(-1, 0, 0)]:
+					var long := Vector3(psize.x + 0.02, 0.04, 0.06) if e.x == 0.0 else Vector3(0.06, 0.04, psize.z + 0.02)
+					_box_xf(tool, xf * Transform3D(Basis(), Vector3(e.x * psize.x * 0.5, psize.y * 0.5 - 0.015, e.z * psize.z * 0.5)), long, Color(1.0, 0.85, 0.95))
+				var shape_b := CollisionShape3D.new()
+				var box_b := BoxShape3D.new()
+				box_b.size = psize
+				shape_b.shape = box_b
+				shape_b.transform = xf
+				body.add_child(shape_b)
 			"ladder":  # two rails and a rung every 30 cm on a tower's face; climbed, not stood on
 				var rails := Color(0.55, 0.55, 0.6)
 				for side: float in [-0.45, 0.45]:

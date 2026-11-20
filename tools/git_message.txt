@@ -1,4 +1,4 @@
-Polish1 C7: bhop server hub with 18 stages (classic, surf, air strafe, long jump, KZ ladders, edgebug drops), one ocean, surf ramp physics
+Polish1 C7b: Source-style edgebugs on the edgebug stages (pillars, hard landings), bhop best times shared with the lobby on the hub board and portals
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

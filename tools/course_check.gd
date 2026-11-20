@@ -77,6 +77,24 @@ func _ready() -> void:
 				bad.append("a step higher than a jump without a ladder")
 		if kind == "surf":
 			note = "%d ramp faces" % (c.cfg["parts"] as Array).size()
+		if kind == "edgebug":  # each drop: the floor and the pillar's top land too hard, the bug's short drop does not, the pillar is in reach
+			var unit := float(move["unit_m"])
+			var g := float(move["gravity"]) * unit
+			var hard := float(server["edgebug"]["hard_landing"]) * unit
+			var run := float(move["base_speed"]) * sprint * unit
+			var worst := 0.0
+			for bug: Dictionary in c.cfg["bugs"]:
+				var fall := c.top_of(int(bug["from"])) - c.top_of(int(bug["to"]))
+				var pillar := float(bug["pillar"])
+				var air := sqrt(2.0 * maxf(fall - pillar, 0.0) / g)
+				worst = maxf(worst, float(bug["reach"]) / maxf(run * air, 0.01))
+				if sqrt(2.0 * g * (fall - pillar)) <= hard:
+					bad.append("drop %d: the pillar's top is a safe landing" % int(bug["to"]))
+				if sqrt(2.0 * g * pillar) >= hard * 0.95:
+					bad.append("drop %d: the drop after the edgebug lands too hard" % int(bug["to"]))
+				if float(bug["reach"]) + 0.4 > run * air:
+					bad.append("drop %d: the pillar is out of reach (%.1f m, %.1f m in the air)" % [int(bug["to"]), float(bug["reach"]), run * air])
+			note = "%d edgebugs, the farthest pillar needs %d %% of a sprint" % [(c.cfg["bugs"] as Array).size(), roundi(worst * 100.0)]
 		_say("%s (%s %d): %d pads from %.1f to %.1f m%s%s" % [st["id"], st["type"], int(st["tier"]), c.pads.size(), low, high, (", " + note) if note != "" else "", "" if bad.is_empty() else "  PROBLEMS: " + "; ".join(bad)], bad.is_empty() and c.start_index() == 0 and c.finish_index() == c.pads.size() - 1)
 	_say("6 types x 3 stages: %s" % str(types), types.size() == 6 and types.values().all(func(n: int) -> bool: return n == 3))
 

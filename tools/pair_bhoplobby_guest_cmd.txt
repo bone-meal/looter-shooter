@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 10;!bhop best edge_1 33.5;!bhop best surf_1 39.9;!wait 6;!bhop hub;!wait 4;!bhop board;!wait 10;!bhop board

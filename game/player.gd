@@ -233,6 +233,8 @@ var shots_hit := 0
 var hurt_total := 0.0  # damage taken, likewise
 var ladder := false  # (polish1 item 26) inside a KZ ladder's reach (game_session sets it): climbing, no gravity
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
+var edgebug_cfg := {}  # (polish1 edgebugs) set by game_session on edgebug stages: min_fall, push (m/s) and edge (normal height); {} = off
+var edgebug_at := -10.0  # when the latest edgebug happened (_now() seconds)
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
 var _shot_at := {}  # host-run enemy (instance id) -> engine time our gun shot hit it (credit_kill)
@@ -550,10 +552,12 @@ func _move_tick(input: Vector2) -> void:
 	var stretch := move.tick / frame if frame > 0.0 else 1.0
 	var wanted := Vector3(velocity.x, 0.0, velocity.z)
 	var before := global_position
+	var falling := -velocity.y
 	velocity *= stretch
 	move_and_slide()
 	velocity /= stretch
-	if even_ground and not is_on_floor():  # (polish1 item 24) surf: Godot counts a too-steep ramp as an upright wall and lets
+	var bugged := not edgebug_cfg.is_empty() and falling >= float(edgebug_cfg["min_fall"]) and _edgebug()
+	if even_ground and not is_on_floor() and not bugged:  # (polish1 item 24) surf: Godot counts a too-steep ramp as an upright wall and lets
 		for hit in get_slide_collision_count():  # the fall go on through it; the ramp's own slope carries the fall off sideways
 			var n := get_slide_collision(hit).get_normal()
 			if n.y > 0.05 and n.y < cos(floor_max_angle) and velocity.dot(n) < 0.0:
@@ -564,6 +568,31 @@ func _move_tick(input: Vector2) -> void:
 		var flat := Vector2(velocity.x - _shove.x, velocity.z - _shove.z).limit_length(own)
 		velocity = Vector3(flat.x, velocity.y, flat.y)
 		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * move.tick)
+
+
+# (polish1 edgebugs) Source's edgebug: falling fast, the round bottom of the body clips the top edge of something
+# (a contact on the lower half-sphere whose normal leans more than `edge` allows) -> the fall stops dead there, the
+# body is pushed clear of the edge and drops on with its run speed kept; the landing after it counts from there.
+func _edgebug() -> bool:
+	for hit in get_slide_collision_count():
+		var contact := get_slide_collision(hit)
+		var n := contact.get_normal()
+		var at := contact.get_position()
+		if n.y <= 0.05 or n.y >= float(edgebug_cfg["edge"]) or at.y - global_position.y >= _capsule.radius:
+			continue
+		var flat := Vector2(global_position.x - at.x, global_position.z - at.z)
+		var away := Vector3(flat.x, 0.0, flat.y).normalized() if flat.length() > 0.001 else Vector3(n.x, 0.0, n.z).normalized()
+		global_position += away * maxf(_capsule.radius - flat.length() + 0.03, 0.0)  # off the edge, not standing on it
+		velocity = Vector3(velocity.x, 0.0, velocity.z) + away * float(edgebug_cfg["push"])
+		_fall_speed = 0.0
+		edgebug_at = _now()
+		return true
+	return false
+
+
+# How fast the body fell into its latest landing (m/s): the bhop server's hard landings.
+func landing_speed() -> float:
+	return _fall_speed
 
 
 # (polish1 item 26) On a ladder, Source style: forward climbs while looking level or up and goes down while looking
@@ -839,6 +868,7 @@ func teleport(to: Vector3, yaw: float) -> void:
 	position = to
 	_tick_from = to
 	velocity = Vector3.ZERO
+	_fall_speed = 0.0  # (polish1 edgebugs) a fall that sent you back is not your next landing
 	_spawn_position = to
 	_yaw = yaw
 	_head.rotation = Vector3(0.0, yaw, 0.0)

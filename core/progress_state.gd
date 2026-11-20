@@ -7,6 +7,7 @@ const TrophyShelves = preload("res://core/trophy_shelves.gd")
 const PLAYED_MAX := 100000000  # seconds (about 3 years): a bigger playtime is an edited save
 var shelves := {}  # (polish1 item 16) what the trophy cabinet shows: core/trophy_shelves.gd (saved, sent with the card)
 var played := 0  # (polish1 item 135) this character's playtime in seconds (the session sets it from its stats), shown in the trophy cabinet
+var bhop := {}  # (polish1) bhop server stage id -> this character's best time in seconds (the session copies its own record here; sent with the card for the lobby's boards)
 var xp := 0
 var spent := {}  # stat id -> points spent
 var traits: Array = []  # trait id per slot ("" = empty)
@@ -313,7 +314,20 @@ func stat_text(id: String) -> String:
 
 func to_dict() -> Dictionary:
 	return {"v": 1, "xp": xp, "spent": spent.duplicate(), "traits": traits.duplicate(), "counters": counters.duplicate(), "stats": stat_values.duplicate(),
-		"unlocked": unlocked.duplicate(), "dates": dates.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}, "played": played, "shelves": shelves.duplicate(true)}
+		"unlocked": unlocked.duplicate(), "dates": dates.duplicate(), "card": {"callsign": callsign, "emblem": emblem, "title": title}, "played": played, "shelves": shelves.duplicate(true), "bhop": bhop.duplicate()}
+
+
+# Best times as a card may carry them: at most 40 stages, short ids, each time 1 s .. 10 h (anything else is dropped).
+# A time itself cannot be proved by the host; this only keeps the board sane.
+static func clean_times(raw: Variant) -> Dictionary:
+	var out := {}
+	if not raw is Dictionary:
+		return out
+	for id: Variant in raw:
+		var t: Variant = (raw as Dictionary)[id]
+		if out.size() < 40 and id is String and (id as String).length() <= 32 and (t is float or t is int) and float(t) >= 1.0 and float(t) <= 36000.0:
+			out[id] = float(t)
+	return out
 
 
 # Loads a saved dictionary, dropping or clamping anything invalid (a damaged or edited file never breaks the game).
@@ -324,6 +338,7 @@ func from_dict(d: Variant) -> void:
 	xp = maxi(int(src.get("xp", 0)), 0)
 	shelves = TrophyShelves.clean(src.get("shelves"), _ach.get("achievements", {}))
 	played = clampi(int(src.get("played", 0)) if (src.get("played", 0) is int or src.get("played", 0) is float) else 0, 0, PLAYED_MAX)
+	bhop = clean_times(src.get("bhop"))
 	_recalc()
 	var stats: Dictionary = _cfg["stats"]
 	var left := points_total()

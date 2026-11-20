@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "(polish1 item 26) THE BHOP SERVER: the hop island became a CS-style bhop server. `hub` = the floating plaza you arrive on (world metres, y = its top), with one gate per stage `type` round it (name, colour) and three portals each; `exit` = where on the hub the arch back to the islands stands. `stages`: 6 types x 3 tiers; each has an `id` (saved best times are kept by it), a `name`, a `tier` (1 easy .. 3 hard) and a `recipe` that core/bhop_stages.gd turns into its platforms: fixed = data/course.json (today's course is classic 1); hops = pads one after another (`pads`, pad size, edge-to-edge `gap` range, `turn` degrees between hops (alternate = left / right), `rise` up / down range, a checkpoint every `every` pads, `speed` / `strafe` = what the hops are built for, as in course.json); surf = slanted ramps (`ramps`, `length`, `angle` from the ground, `drop` per ramp, `gap` between, `width`, `bend` degrees the run turns); long = long jumps off runways (`jumps` gaps in metres, `runway`, `landing`, `width`); climb = KZ: blocks that rise (`rise` range per step, `gap`, `block` size) with LADDERS between (metres tall each); drops = edgebug drops (`drops`, start `height`, `fall` and `reach` ranges per drop, `target` = landing ledge size). `seed` makes a stage the same for everyone. `ring` = how far from the hub the stages stand; `fall_below` as in course.json; `ladder_speed` (units/s) climbing.",
+ "_about": "(polish1 item 26) THE BHOP SERVER: the hop island became a CS-style bhop server. `hub` = the floating plaza you arrive on (world metres, y = its top), with one gate per stage `type` round it (name, colour) and three portals each; `exit` = where on the hub the arch back to the islands stands. `stages`: 6 types x 3 tiers; each has an `id` (saved best times are kept by it), a `name`, a `tier` (1 easy .. 3 hard) and a `recipe` that core/bhop_stages.gd turns into its platforms: fixed = data/course.json (today's course is classic 1); hops = pads one after another (`pads`, pad size, edge-to-edge `gap` range, `turn` degrees between hops (alternate = left / right), `rise` up / down range, a checkpoint every `every` pads, `speed` / `strafe` = what the hops are built for, as in course.json); surf = slanted ramps (`ramps`, `length`, `angle` from the ground, `drop` per ramp, `gap` between, `width`, `bend` degrees the run turns); long = long jumps off runways (`jumps` gaps in metres, `runway`, `landing`, `width`); climb = KZ: blocks that rise (`rise` range per step, `gap`, `block` size) with LADDERS between (metres tall each); edgebug = Source-style edgebugs (`drops` floors, `fall` metres floor to floor, a `pillar` that tall and `block` wide on each floor, `reach` = metres from the ledge you leave to the pillar's near face, `floor` size, `edge` = how lenient the pillar's edge is: 0.707 = only a true edge contact, nearer 1 = a wider band round it). `edgebug` (units/s): on edgebug stages a landing faster than `hard_landing` sends you back (Source's safe fall speed is about 580); clipping an edge while falling faster than `min_fall` stops the fall there and pushes you off the edge at `push`. `seed` makes a stage the same for everyone. `ring` = how far from the hub the stages stand; `fall_below` as in course.json; `ladder_speed` (units/s) climbing.",
  "hub": {
   "at": [
    1620.0,
@@ -353,20 +353,22 @@
    "id": "edge_1",
    "type": "edge",
    "tier": 1,
-   "name": "Ledges",
+   "name": "Soft Landing",
    "recipe": {
-    "kind": "drops",
-    "drops": 6,
-    "height": 36,
+    "kind": "edgebug",
+    "drops": 5,
     "fall": [
-     4,
-     6
+     10,
+     12
     ],
+    "pillar": 3.0,
+    "block": 1.6,
     "reach": [
-     3,
-     4.5
+     2.0,
+     3.0
     ],
-    "target": 2.6
+    "floor": 8,
+    "edge": 0.95
    },
    "seed": 61
   },
@@ -376,18 +378,20 @@
    "tier": 2,
    "name": "Freefall",
    "recipe": {
-    "kind": "drops",
-    "drops": 8,
-    "height": 56,
+    "kind": "edgebug",
+    "drops": 7,
     "fall": [
-     5,
-     8
+     13,
+     17
     ],
+    "pillar": 2.6,
+    "block": 1.2,
     "reach": [
-     4,
-     5.5
+     2.8,
+     4.0
     ],
-    "target": 1.8
+    "floor": 7,
+    "edge": 0.85
    },
    "seed": 62
   },
@@ -397,20 +401,27 @@
    "tier": 3,
    "name": "Needles",
    "recipe": {
-    "kind": "drops",
-    "drops": 10,
-    "height": 80,
+    "kind": "edgebug",
+    "drops": 9,
     "fall": [
-     6,
-     9
+     18,
+     24
     ],
+    "pillar": 2.2,
+    "block": 0.8,
     "reach": [
-     4.5,
-     6.5
+     3.5,
+     5.0
     ],
-    "target": 1.2
+    "floor": 6.5,
+    "edge": 0.72
    },
    "seed": 63
   }
- ]
+ ],
+ "edgebug": {
+  "hard_landing": 580.0,
+  "min_fall": 300.0,
+  "push": 40.0
+ }
 }

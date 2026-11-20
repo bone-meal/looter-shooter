@@ -175,6 +175,9 @@ var _on_course := false
 var _server := {}  # (polish1 item 26) data/bhop_server.json: the hub and its 18 stages
 var _hub_root: Node3D  # the server's hub, built on the first trip
 var _stage := -1  # the stage being run (index into _server.stages), -1 = on the hub
+var _hard_landing := INF  # (polish1 edgebugs) m/s: on an edgebug stage a landing faster than this sends you back
+var _was_floor := true
+var _last_bug := -10.0  # the player's edgebug time already called out
 var _stage_roots := {}  # stage index -> its built Node3D (built when first entered)
 var _bhop_best := {}  # stage id -> best time of this character (saved "bhop_best"; classic_1 is the old "course_best")
 var _ocean: Node3D  # (polish1 item 25) the gun side's one sea, kept under the camera
@@ -1592,6 +1595,7 @@ func _load_profile() -> void:
 		var old_best := maxf(float(extra.get("course_best", 0.0)), 0.0) if (extra.get("course_best") is float or extra.get("course_best") is int) else 0.0
 		if old_best > 0.0 and not _bhop_best.has("classic_1"):
 			_bhop_best["classic_1"] = old_best
+		_progress.bhop = _bhop_best.duplicate()  # (polish1) the lobby sees them on the hub's boards
 		_bank.from_dict(extra.get("bank"), _player.inventory)
 		_cards.from_dict(extra.get("tcg"), CardDb.from_files())
 		var lying: Variant = extra.get("pack")
@@ -4476,7 +4480,10 @@ func _go_to_course() -> void:
 	if _hub_root == null:
 		_hub_root = BhopCourse.build_hub(self, _server)
 		_show_bests()
+		if net != null:
+			net.roster_changed.connect(func(_r: Dictionary) -> void: _show_bests())  # a teammate's new record or a new face
 	_stage = -1
+	_edgebugs_on(false)
 	_player.ladder = false
 	_player.teleport(_hub_root.position + Vector3(0, 0.1, 8.0), 0.0)
 
@@ -4489,9 +4496,20 @@ func _enter_stage(i: int) -> void:
 		_stage_roots[i] = BhopCourse.build(self, _course)
 	_course_root = _stage_roots[i]
 	_stage = i
+	_edgebugs_on(String(_server["stages"][i]["recipe"]["kind"]) == "edgebug")
 	_course.best = float(_bhop_best.get(_stage_id(), 0.0))
 	_put_on_course(_course.start_index())
 	_player_hud.notice("%s  %s" % [_stage_title(i), ("  your best %s" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""])
+
+
+# (polish1 edgebugs) Edgebugs and hard landings live on the edgebug stages only (data/bhop_server.json edgebug, units/s).
+func _edgebugs_on(on: bool) -> void:
+	var eb: Dictionary = _server.get("edgebug", {})
+	var unit := float(DataStore.load_json("res://data/movement.json")["unit_m"])
+	_hard_landing = float(eb.get("hard_landing", 580.0)) * unit if on else INF
+	_player.edgebug_cfg = {"min_fall": float(eb.get("min_fall", 300.0)) * unit, "push": float(eb.get("push", 40.0)) * unit,
+		"edge": float(_server["stages"][_stage]["recipe"].get("edge", 0.707))} if on else {}
+	_last_bug = float(_player.edgebug_at)
 
 
 func _stage_id() -> String:
@@ -4526,24 +4544,42 @@ func _hub_exit_here() -> bool:
 	return _on_course and _stage < 0 and _hub_root != null and _near(_hub_root.position + (_hub_root.get_meta("exit") as Vector3), COURSE_DOOR_REACH)
 
 
-# The portal labels (stage, tier stars, your best) and the BEST TIMES board in the middle of the hub.
+# The portal labels (stage, tier stars, the lobby's record and yours) and the BEST TIMES board in the middle of the
+# hub: everyone in the lobby with their character's times (sent with the player card, net_session cards "bhop").
 func _show_bests() -> void:
 	if _hub_root == null:
 		return
+	var people: Array = [[_my_name(), _bhop_best]]  # [name, {stage id: seconds}]
+	if net != null and net.can_send():
+		for peer: Variant in net.roster:
+			if int(peer) != int(net.my_id()):
+				people.append([String(net.roster[peer]), (net.cards.get(peer, {}) as Dictionary).get("bhop", {})])
 	var labels: Dictionary = _hub_root.get_meta("labels")
-	var lines := PackedStringArray(["BEST TIMES"])
+	var lines := PackedStringArray(["BEST TIMES IN THIS LOBBY"])
 	for t: Dictionary in _server["types"]:
 		var row := PackedStringArray()
 		for i in (_server["stages"] as Array).size():
 			var st: Dictionary = _server["stages"][i]
 			if String(st["type"]) != String(t["id"]):
 				continue
-			var best := float(_bhop_best.get(String(st["id"]), 0.0))
-			row.append(CourseRules.clock(best) if best > 0.0 else "--")
+			var id := String(st["id"])
+			var top := 0.0
+			var holder := ""
+			for who: Array in people:
+				var t_who := float((who[1] as Dictionary).get(id, 0.0))
+				if t_who > 0.0 and (top <= 0.0 or t_who < top):
+					top = t_who
+					holder = String(who[0])
+			var mine := float(_bhop_best.get(id, 0.0))
+			row.append(("%s %s" % [CourseRules.clock(top), holder]) if top > 0.0 else "--")
 			if labels.has(i):
-				(labels[i] as Label3D).text = "%s\n%s\n%s" % [String(st["name"]), "*".repeat(int(st["tier"])), ("best " + CourseRules.clock(best)) if best > 0.0 else "no time yet"]
+				(labels[i] as Label3D).text = "%s\n%s\n%s\n%s" % [String(st["name"]), "*".repeat(int(st["tier"])), ("record %s  %s" % [CourseRules.clock(top), holder]) if top > 0.0 else "no time yet", ("yours " + CourseRules.clock(mine)) if mine > 0.0 else ""]
 		lines.append("%s   %s" % [String(t["name"]), "  |  ".join(row)])
 	(_hub_root.get_meta("board") as Label3D).text = "\n".join(lines)
+
+
+func _my_name() -> String:
+	return String(net.roster.get(net.my_id(), _profile_name)) if net != null and net.can_send() else _profile_name
 
 
 # Every frame: on the server (everybody moves the same there), the hub's portals, the stage's clock, falls,
@@ -4561,6 +4597,7 @@ func _run_course(delta: float) -> void:
 		_haze(here)
 		if not here:
 			_stage = -1
+			_edgebugs_on(false)
 	if not here:
 		return
 	if _stage < 0:  # the hub: walk onto a portal
@@ -4578,8 +4615,19 @@ func _run_course(delta: float) -> void:
 		if box.has_point(local):
 			ladder = true
 	_player.ladder = ladder
-	var under := _course.pad_at(local.x, local.z, local.y) if _player.is_on_floor() else -1
-	var fallen := local.y < _course.lowest() - float(_course.cfg.get("fall_below", 3.0))
+	var on_floor := _player.is_on_floor()
+	var hard := false
+	if not _player.edgebug_cfg.is_empty():
+		if float(_player.edgebug_at) != _last_bug:
+			_last_bug = float(_player.edgebug_at)
+			_player_hud.callout("EDGEBUG", Color(1.0, 0.55, 0.8))
+			_sounds.call("play", "course_checkpoint")
+		hard = on_floor and not _was_floor and _course.state == CourseRules.RUNNING and _player.landing_speed() > _hard_landing
+		if hard:
+			_player_hud.notice("Too hard a landing: clip a pillar's top edge on the way down (edgebug)")
+	_was_floor = on_floor
+	var under := _course.pad_at(local.x, local.z, local.y) if on_floor and not hard else -1
+	var fallen := hard or local.y < _course.lowest() - float(_course.cfg.get("fall_below", 3.0))
 	match _course.update(delta, under, fallen):
 		"fell":
 			_put_on_course(_course.checkpoint)
@@ -4599,6 +4647,8 @@ func _run_course(delta: float) -> void:
 			_sounds.call("play", "course_finish")
 			_player_hud.callout("New best  %s" % CourseRules.clock(_course.best), Color(1.0, 0.85, 0.3))
 			_bhop_best[_stage_id()] = _course.best
+			_progress.bhop = _bhop_best.duplicate()
+			card_changed.emit(_progress.to_dict())  # the other players' boards
 			_show_bests()
 			save_profile()
 	var best := ("   best %s" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""

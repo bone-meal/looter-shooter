@@ -2897,7 +2897,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var yaw_c := deg_to_rad(float(words[4]))
 					var pitch_c := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
 					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_c) * cos(pitch_c), sin(pitch_c), -cos(yaw_c) * cos(pitch_c)) * 20.0)
-		"bhop":  # (polish1 C7) "!bhop hub" | "!bhop stage <i>" | "!bhop pad <n>" (stand on that pad of the stage) | "!bhop note" | "!bhop at x y z" | "!bhop walk <s> [keys]"
+		"bhop":  # (polish1 C7) "!bhop hub" | "!bhop stage <i>" | "!bhop pad <n>" (stand on that pad of the stage) | "!bhop note" | "!bhop at x y z" | "!bhop walk <s> [keys]" | "!bhop bug n off h" | "!bhop best id s" | "!bhop board"
 			match words[1]:
 				"hub":
 					session.call("_go_to_course")
@@ -2905,6 +2905,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					session.call("_enter_stage", int(words[2]))
 				"pad":
 					session.call("_put_on_course", int(words[2]))
+				"bug":  # "!bhop bug <n> <offset> <height>": hang over edgebug pillar n's near face, offset metres out from it (minus = over its top), height over its top, facing the way the stage runs
+					var blocks_b: Array = (session.get("_course") as RefCounted).get("cfg")["parts"].filter(func(q: Dictionary) -> bool: return String(q["kind"]) == "block")
+					var post_b: Dictionary = blocks_b[int(words[2])]
+					var yaw_b := deg_to_rad(float(post_b["yaw"]))
+					var way_b := Vector3(-sin(yaw_b), 0.0, -cos(yaw_b))
+					var top_b := Vector3(float(post_b["at"][0]), float(post_b["at"][1]) + float(post_b["size"][1]) * 0.5, float(post_b["at"][2]))
+					var spot_b := top_b - way_b * (float(post_b["size"][2]) * 0.5 + float(words[3])) + Vector3(0, float(words[4]), 0)
+					player.call("teleport", (session.get("_course_root") as Node3D).global_position + spot_b, yaw_b)
+				"best":  # "!bhop best <stage id> <seconds>": a record for this character (sent to the lobby like a real one)
+					var bests_b: Dictionary = session.get("_bhop_best")
+					bests_b[words[2]] = float(words[3])
+					(session.get("_progress") as RefCounted).set("bhop", bests_b.duplicate())
+					session.emit_signal("card_changed", (session.get("_progress") as RefCounted).call("to_dict"))
+					session.call("_show_bests")
+				"board":  # "!bhop board": the hub board's text and the first portal's label
+					var hub_b: Node3D = session.get("_hub_root")
+					_lines.append("BHOP board: %s | portal 0: %s" % [String((hub_b.get_meta("board") as Label3D).text).replace("\n", " / "), String((hub_b.get_meta("labels")[0] as Label3D).text).replace("\n", " / ")])
 				"at":  # "!bhop at <x> <y> <z>": stand at that spot of the stage (the view keeps its way)
 					player.global_position = (session.get("_course_root") as Node3D).global_position + Vector3(float(words[2]), float(words[3]), float(words[4]))
 					player.velocity = Vector3.ZERO
@@ -2924,7 +2941,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var rules_b: RefCounted = session.get("_course")
 					var root_b: Node3D = session.get("_course_root")
 					var local_b: Vector3 = player.global_position - (root_b.global_position if root_b != null else Vector3.ZERO)
-					_lines.append("BHOP %s: stage %d, state %s, time %.2f, pad under %d, feet %s, ladder %s, on floor %s, speed %d u/s, bests %s" % [words[1], int(session.get("_stage")), String(rules_b.get("state")), float(rules_b.get("time")), int(rules_b.call("pad_at", local_b.x, local_b.z, local_b.y)), str(local_b.snapped(Vector3.ONE * 0.01)), str(player.get("ladder")), str(player.is_on_floor()), int(player.call("speed_units")), str(session.get("_bhop_best"))])
+					_lines.append("BHOP %s: stage %d, state %s, time %.2f, pad under %d, feet %s, ladder %s, on floor %s, speed %d u/s, edgebug at %.2f, checkpoint %d, bests %s" % [words[1], int(session.get("_stage")), String(rules_b.get("state")), float(rules_b.get("time")), int(rules_b.call("pad_at", local_b.x, local_b.z, local_b.y)), str(local_b.snapped(Vector3.ONE * 0.01)), str(player.get("ladder")), str(player.is_on_floor()), int(player.call("speed_units")), float(player.get("edgebug_at")), int(rules_b.get("checkpoint")), str(session.get("_bhop_best"))])
 		"cardtab":  # (polish1 item 81) "!cardtab <n>": the player card open on tab n (0 Card, 1 Stats, 2 Traits, 3 Achievements, 4 Combat Report, 5 Binder, 6 Cases)
 			session.call("_open_card")
 			var tabs_c: TabContainer = (session.get("_card_screen") as Node).get("_tabs")

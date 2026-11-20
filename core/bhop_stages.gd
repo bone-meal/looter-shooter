@@ -1,7 +1,7 @@
 # Purpose: pure layout of the bhop server's stages (polish1 item 26, data/bhop_server.json): turns a stage's recipe
 # into a course dictionary that core/course_rules.gd runs and game/bhop_course.gd builds: `center` (world), `pads`
 # (start / pad / checkpoint / finish, each `at` [x, z], `size` [w, d], `y` top height, optional `thick`) and `parts`
-# (geometry the rules do not care about: surf `ramp`s, KZ `ladder`s and the towers they lean on), plus `stages` (the
+# (geometry the rules do not care about: surf `ramp`s, KZ `ladder`s and the towers they lean on, edgebug `block`s), plus `stages` (the
 # HUD's names, the speed / strafe a hop section is built for). A seed makes every stage the same for everyone. No nodes.
 # Dependencies: data/bhop_server.json and data/course.json (handed in).
 extends RefCounted
@@ -27,8 +27,8 @@ static func course(server: Dictionary, i: int, old_course: Dictionary) -> Dictio
 			_long(out, recipe)
 		"climb":
 			_climb(out, recipe, rng)
-		"drops":
-			_drops(out, recipe, rng)
+		"edgebug":
+			_edgebugs(out, recipe, rng)
 		"surf":
 			_surf(out, recipe, rng)
 	return out
@@ -132,24 +132,42 @@ static func _climb(out: Dictionary, r: Dictionary, rng: RandomNumberGenerator) -
 		size = next_size
 
 
-# Edgebug drops (my reading): from high up, drop onto small ledges far below while moving; a miss falls past them.
-static func _drops(out: Dictionary, r: Dictionary, rng: RandomNumberGenerator) -> void:
-	var y := float(r["height"])
+# Edgebug drops (polish1, the director's "add edgebugs"): each floor is a big pad far below the one before; a short
+# PILLAR stands on it. Falling straight onto the floor (or the pillar's top) lands too hard and sends you back; clip
+# the pillar's top EDGE on the way down and the fall stops there (game/player.gd edgebug), so you slide off and drop
+# the pillar's height softly. `fall` = floor to floor, `pillar` = its height, `block` = its width, `reach` =
+# horizontal metres from the ledge you leave to the pillar's near face, `floor` = each floor's size, `edge` = how
+# lenient the edge is (game/player.gd). `bugs` lists each drop for tools/course_check.gd.
+static func _edgebugs(out: Dictionary, r: Dictionary, rng: RandomNumberGenerator) -> void:
+	var count := int(r["drops"])
+	var floor_size := float(r["floor"])
+	var block := float(r["block"])
+	var pillar := float(r["pillar"])
+	var margin := 1.5  # floor round the pillar, so a bug off any side lands on it
+	var falls: Array[float] = []
+	var y := 0.0
+	for k in count:
+		falls.append(rng.randf_range(float(r["fall"][0]), float(r["fall"][1])))
+		y += falls[k]
 	var at := Vector2.ZERO
 	var size := 6.0
 	_pad(out, 0.0, 0.0, y, size, size, "start")
+	out["bugs"] = []
 	var heading := 0.0
-	var count := int(r["drops"])
 	for k in range(1, count + 1):
-		var last := k == count
-		var kind := "finish" if last else ("checkpoint" if k % 3 == 0 else "pad")
-		var next_size := 6.0 if last else float(r["target"])
-		heading += deg_to_rad(rng.randf_range(-35.0, 35.0))
+		heading += deg_to_rad(rng.randf_range(-40.0, 40.0)) if k > 1 else 0.0
 		var dir := Vector2(sin(heading), -cos(heading))
-		at += dir * (_half(size, dir) + rng.randf_range(float(r["reach"][0]), float(r["reach"][1])) + _half(next_size, dir))
-		y -= rng.randf_range(float(r["fall"][0]), float(r["fall"][1]))
-		_pad(out, at.x, at.y, y, next_size, next_size, kind)
-		size = next_size
+		var reach := rng.randf_range(float(r["reach"][0]), float(r["reach"][1]))
+		var edge := at + dir * _half(size, dir)
+		var post := edge + dir * (reach + block * 0.5)
+		var middle := post + dir * (floor_size * 0.5 - margin - block * 0.5)
+		y -= falls[k - 1]
+		_pad(out, middle.x, middle.y, y, floor_size, floor_size, "finish" if k == count else "checkpoint")
+		(out["parts"] as Array).append({"kind": "block", "at": [snappedf(post.x, 0.01), snappedf(y + pillar * 0.5, 0.01), snappedf(post.y, 0.01)],
+			"size": [block, pillar, block], "yaw": snappedf(rad_to_deg(atan2(-dir.x, -dir.y)), 0.1)})
+		(out["bugs"] as Array).append({"from": k - 1, "to": k, "reach": snappedf(reach, 0.01), "pillar": pillar})
+		at = middle
+		size = floor_size
 
 
 # Surf: V-shaped ramps (two faces `angle` degrees steep meeting at a ridge) running downhill; you drop onto a face
