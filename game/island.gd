@@ -19,7 +19,6 @@ const ModelLibrary = preload("res://game/model_library.gd")
 const LookProps = preload("res://game/look_props.gd")
 
 const CENTER := Vector3(500, 0, 0)  # the middle of the spawn island in the world
-const CROW_POS := CENTER + Vector3(-7, 0, 3)
 const SAND := Color(0.9, 0.8, 0.55)
 const SECTORS := 96
 const KEEP_CLEAR := 5.0  # no palm, rock or plant this near a painting, the spawn or the end of a bridge
@@ -40,6 +39,9 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	for board: Dictionary in land.wall_buys:
 		clear.append(board["at"])
 	clear.append_array(land.keep_clear)
+	for id: String in ["lifeguard", "crow_perch", "crow_land"]:  # (polish1 item 18) the shore spots stay clear of palms and rocks
+		if (land.cfg["spots"] as Dictionary).has(id):
+			clear.append(land.place_of(id)["at"])
 	for hut: Dictionary in land.shelters:
 		for corner: Vector2 in [Vector2.ZERO, Vector2(3, 2.4), Vector2(-3, 2.4), Vector2(3, -2.4), Vector2(-3, -2.4), Vector2(0, 5)]:
 			clear.append((hut["at"] as Vector2) + corner.rotated(-float(hut["yaw"])))

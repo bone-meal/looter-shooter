@@ -2705,6 +2705,21 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", Vector3(500.0 + float(words[1]), 0.4, float(words[2])), 0.0)
 				await get_tree().create_timer(0.6, true, false, true).timeout
 				player.call("look_at_point", Vector3(500.0 + float(words[3]), 1.5, float(words[4])))
+		"crow":  # (polish1 C2) "!crow fly a|b": crow a (home island) flies us to the club, b back home, as after feeding / asking it; "!crow look a|b": stand 7 m from that crow looking at it; "!crow note": the flight now
+			if words.size() > 2 and words[1] == "fly":
+				if words[2] == "a":
+					session.call("_start_flight", session.get("_crow_a"), session.get("_crow_a_pos"), session.get("_crow_b_land"), session.get("_club_spawn"))
+				else:
+					session.call("_start_flight", session.get("_crow_b"), session.get("_crow_b_pos"), session.get("_crow_a_land"), session.get("_island_spawn"))
+			elif words.size() > 2 and words[1] == "look":
+				var bird: Node3D = session.get("_crow_a" if words[2] == "a" else "_crow_b")
+				var off: Vector3 = -bird.global_basis.z * 7.0
+				player.call("teleport", bird.global_position + off + Vector3(0, 0.3, 0), 0.0)
+				await get_tree().create_timer(0.6, true, false, true).timeout
+				player.call("look_at_point", bird.global_position + Vector3(0, 2.0, 0))
+			else:
+				var ride: Node3D = session.get("_ride_crow")
+				_lines.append("CROW %s: flight t %.2f phase '%s', ride crow at %s visible %s, player at %s, third %s" % [" ".join(words.slice(1)), float(session.get("_flight_t")), String(session.get("_flight_phase")), str(ride.global_position.round()), str(ride.visible), str((player as Node3D).global_position.round()), str(player.get("third_person"))])
 		"dropgun":  # "!dropgun [body] [tier]": (polish1 A1, item 67) a rolled gun on the ground 3 m in front of us, looked at
 			var fwd_d := -(player as Node3D).global_transform.basis.z
 			fwd_d.y = 0.0

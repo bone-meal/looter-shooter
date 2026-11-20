@@ -1,7 +1,16 @@
 {
-  "version": 1,
+  "version": 2,
+  "_about": "The giant crows (game/crow_model.gd, flights in game/game_session.gd). food_item / worms_needed: what the home crow wants before it flies a player to the club (the club's crow flies home for free). The home crow's perch and landing spot are archipelago spots crow_perch / crow_land (data/archipelago.json); club_perch / club_land are [x, z] metres from the club island's middle (game/club_island.gd CENTER). A flight (polish1 item 70): RISE rise_seconds on the spot (wings open, it lifts off and turns to the sea; a trip to the club builds the club's inside a piece a frame meanwhile, so the rise lasts until that is done), CRUISE flight_seconds along a curve out over the sea at about altitude metres, LAND land_seconds onto the landing spot (beside, never onto, the crow perched there), the rider steps off dismount metres to the crow's right, then the crow flies off over the sea for leave_seconds and is home again. The view: a chase camera cam_back metres behind and cam_up above the crow, easing in from the player's own view. Placeholders.",
   "food_item": "worm",
   "worms_needed": 3,
-  "flight_seconds": 7.0,
-  "altitude": 30.0
+  "flight_seconds": 8.0,
+  "altitude": 30.0,
+  "rise_seconds": 1.4,
+  "land_seconds": 1.2,
+  "leave_seconds": 4.0,
+  "dismount": 2.4,
+  "cam_back": 13.0,
+  "cam_up": 6.0,
+  "club_perch": [6.0, 20.0],
+  "club_land": [-6.0, 19.0]
 }

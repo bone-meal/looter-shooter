@@ -10,7 +10,6 @@ const StaffCrew = preload("res://game/staff_crew.gd")
 const CENTER := Vector3(1000, 0, 0)
 const RADIUS := 26.0
 const SPAWN := CENTER + Vector3(0, 0.1, 14)
-const CROW_POS := CENTER + Vector3(12, 0, 12)
 const WALL_H := 6.0
 const MAGENTA := Color(1.0, 0.1, 0.6)
 const CYAN := Color(0.1, 0.9, 1.0)
@@ -29,15 +28,23 @@ static func build_shell(parent: Node3D) -> void:
 # The club's inside, its people and the casino: built the first time the player travels to the club.
 # Returns the casino dictionary (see casino_room.gd).
 static func build_inside(parent: Node3D) -> Dictionary:
-	_anim = PartyPeople.new()
-	parent.add_child(_anim)
-	_anim.sign_label = _sign
-	_dance_floor(parent)
-	_stage(parent)
-	_bar(parent)
-	_tables(parent)
-	_people()
+	for step: Callable in inside_steps(parent):
+		step.call()
 	return CasinoRoom.build(parent, CENTER)
+
+
+# (polish1 item 70) The club's inside in pieces, one call each, so a crow flight can build it a piece a frame while it
+# takes off (no loading picture); the casino (CasinoRoom.build) is the last piece, made by the caller.
+static func inside_steps(parent: Node3D) -> Array[Callable]:
+	return [func() -> void:
+		_anim = PartyPeople.new()
+		parent.add_child(_anim)
+		_anim.sign_label = _sign
+		_dance_floor(parent),
+		func() -> void: _stage(parent),
+		func() -> void: _bar(parent),
+		func() -> void: _tables(parent),
+		func() -> void: _people()]
 
 
 static func _at(x: float, y: float, z: float) -> Vector3:

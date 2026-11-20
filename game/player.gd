@@ -1151,6 +1151,11 @@ func set_appearance(look: Dictionary) -> void:
 
 
 # Forces first/third person (used while riding the crow).
+# (polish1 item 70) Back to our own camera after another one was shown (the crow flight's chase view).
+func use_own_camera() -> void:
+	_camera.current = true
+
+
 func set_third_person(on: bool) -> void:
 	third_person = on
 	_apply_view()

@@ -23,6 +23,7 @@ const LootField = preload("res://game/loot_field.gd")
 const VENDOR_RANGE := 2.0
 const DataStore = preload("res://core/data_store.gd")
 const ClubIsland = preload("res://game/club_island.gd")
+const CasinoRoom = preload("res://game/casino_room.gd")
 const CrowModel = preload("res://game/crow_model.gd")
 const Colosseum = preload("res://game/colosseum.gd")
 const WaveDirector = preload("res://game/wave_director.gd")
@@ -368,6 +369,13 @@ var _flight_to := Vector3.ZERO
 var _flight_dest := Vector3.ZERO
 var _flight_src: Node3D  # the perched crow hidden during the flight
 var _flight_prev_view := false
+var _flight_phase := ""  # (polish1 item 70) "rise", "cruise", "land" while carrying; "leave" = the crow flies off empty
+var _flight_phase_t := 0.0
+var _flight_steps: Array[Callable] = []  # the club's inside still to build, a piece a frame during the rise
+var _flight_cam: Camera3D  # the chase view during a flight (no clipping into the crow)
+var _crow_a_land := Vector3.ZERO  # where a crow from the club lands on the home island (beside crow a, not onto it)
+var _crow_b_land := Vector3.ZERO  # where the home crow lands at the club
+var _lifeguard_pos := Vector3.ZERO
 var _chat := ChatBox.new()
 var _commands := AdminCommands.new()
 var _chat_closed_at := -1.0  # engine time the chat input last closed (the same Enter must not reopen it)
@@ -553,15 +561,21 @@ func _ready() -> void:
 	_slot_data = DataStore.load_json("res://data/slots.json")
 	_slot_math = SlotMath.new(_slot_data)
 	_jackpot = _slot_math.jackpot_seed
-	_crow_a_pos = Island.CROW_POS
-	_crow_b_pos = ClubIsland.CROW_POS
 	_crow_cfg = DataStore.load_json("res://data/crow.json")
+	_crow_a_pos = _home_spot("crow_perch")  # (polish1 item 18) the crows stand on the shore, out of the middle
+	_crow_a_land = _home_spot("crow_land")
+	_crow_b_pos = ClubIsland.CENTER + Vector3(float(_crow_cfg["club_perch"][0]), 0.0, float(_crow_cfg["club_perch"][1]))
+	_crow_b_land = ClubIsland.CENTER + Vector3(float(_crow_cfg["club_land"][0]), 0.0, float(_crow_cfg["club_land"][1]))
 	_crow_a = _place_crow(_crow_a_pos, island["spawn"])
 	_crow_b = _place_crow(_crow_b_pos, _club_spawn)
+	_flight_cam = Camera3D.new()
+	_flight_cam.far = 3000.0
+	add_child(_flight_cam)
 	var lifeguard := Lifeguard.new()
-	lifeguard.position = Lifeguard.POS
+	_lifeguard_pos = _home_spot("lifeguard")  # (polish1 item 18) on the shore, fishing into the sea
+	lifeguard.position = _lifeguard_pos
 	add_child(lifeguard)
-	lifeguard.look_at(Lifeguard.POS + (Lifeguard.POS - Island.CENTER), Vector3.UP)
+	lifeguard.look_at(_lifeguard_pos + (_lifeguard_pos - Island.CENTER) * Vector3(1.0, 0.0, 1.0), Vector3.UP)
 	var bank_box := BankBox.new()
 	_bank_pos = Island.CENTER + Vector3(float(_bank_cfg["place"][0]), 0.0, float(_bank_cfg["place"][1]))
 	bank_box.position = _bank_pos
@@ -820,6 +834,12 @@ func apply_settings() -> void:
 	_cross.show_style(_cross_styles.clean(settings.crosshair) if not settings.crosshair.is_empty() else _cross_styles.preset(0))
 
 
+# A spot of data/archipelago.json "spots" on the islands, in the world (ground height 0 on the flat).
+func _home_spot(id: String) -> Vector3:
+	var at: Vector2 = _land.place_of(id)["at"]
+	return Island.CENTER + Vector3(at.x, 0.0, at.y)
+
+
 func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 	var crow := CrowModel.build()
 	add_child(crow)
@@ -831,7 +851,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 func _unhandled_input(event: InputEvent) -> void:
 	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or (_fantasy != null and _fantasy.panel_open()):
 		return
-	if _flight_t >= 0.0:
+	if _crow_carrying():
 		return
 	if _chat.is_open():
 		return
@@ -1638,7 +1658,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _flight_t >= 0.0:
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _crow_carrying():
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1734,7 +1754,7 @@ func _prompt() -> String:
 		return "[%s] Clear the way to %s (%d points)" % [key, _land.far_side(blocked, _player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z), _land.price(blocked)]
 	if not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
 		return "[%s] Open the bank: what is in it is safe when you go down (%d of %d slots used)" % [key, _bank.used(), _bank.capacity()]
-	if _near(Lifeguard.POS, LIFEGUARD_RANGE):
+	if _near(_lifeguard_pos, LIFEGUARD_RANGE):
 		return "[%s] Talk to the lifeguard: change your look" % key
 	var drop := _field.nearest(_player.global_position)
 	if not drop.is_empty():
@@ -1838,7 +1858,7 @@ func _interact() -> void:
 		_buy_debris(_debris_here())
 	elif not _in_arena and not _in_fantasy and _near(_bank_pos, BankBox.REACH):
 		_open_bank()
-	elif _near(Lifeguard.POS, LIFEGUARD_RANGE):
+	elif _near(_lifeguard_pos, LIFEGUARD_RANGE):
 		_open_customizer()
 	elif not _field.nearest(_player.global_position).is_empty():
 		_pick_up(_field.nearest(_player.global_position))
@@ -1859,7 +1879,7 @@ func _interact() -> void:
 	elif _near(_crow_a_pos, CROW_RANGE):
 		_feed_crow()
 	elif _near(_crow_b_pos, CROW_RANGE):
-		_start_flight(_crow_b, _crow_b_pos, _crow_a_pos, _island_spawn)
+		_start_flight(_crow_b, _crow_b_pos, _crow_a_land, _island_spawn)
 	elif _port_painting_near() != "":
 		port_travel()
 	elif _near_painting_fantasy():
@@ -2009,50 +2029,131 @@ func _feed_crow() -> void:
 	if _fed >= int(_crow_cfg["worms_needed"]):
 		_fed = 0
 		_player_hud.notice("The crow gobbles it up and spreads its wings...")
-		_start_flight(_crow_a, _crow_a_pos, _crow_b_pos, _club_spawn)
+		_start_flight(_crow_a, _crow_a_pos, _crow_b_land, _club_spawn)
 	else:
 		_player_hud.notice("The crow gobbles the worm (%d/%d)" % [_fed, int(_crow_cfg["worms_needed"])])
 
 
+# (polish1 item 70) A crow carries the player from its perch `from` to the landing spot `to` (beside, never onto, the
+# crow perched over there), looked at from a chase camera: RISE on the spot (a trip to the club builds the club's inside
+# a piece a frame meanwhile: no loading picture), CRUISE out over the sea and in again, LAND, the rider steps off, then
+# the crow flies off empty and is back on its own perch. `dest_spawn` tells which way the trip goes.
 func _start_flight(source: Node3D, from: Vector3, to: Vector3, dest_spawn: Vector3) -> void:
+	if _flight_phase == "leave":  # the last crow is still flying off: it is home at once
+		_flight_src.visible = true
+	_flight_steps = []
 	if dest_spawn == _club_spawn and _casino.is_empty():
-		_build_club()  # before take-off, so the flight itself does not stall
+		_flight_steps = _club_build_steps()
 	_flight_t = 0.0
+	_flight_phase = "rise"
+	_flight_phase_t = 0.0
 	_flight_from = from
 	_flight_to = to
 	_flight_dest = dest_spawn
 	_flight_src = source
 	source.visible = false
 	_ride_crow.visible = true
-	_ride_crow.position = from
+	_ride_crow.global_transform = source.global_transform
 	_player.carried = true
 	_player.controls_enabled = false
 	_flight_prev_view = _player.third_person
-	_player.set_third_person(true)
+	_player.set_third_person(true)  # (the body shows on the crow; the chase camera is what is seen)
+	var eye := get_viewport().get_camera_3d()
+	if eye != null:
+		_flight_cam.global_transform = eye.global_transform
+		_flight_cam.fov = eye.fov
+	_flight_cam.current = true
 
 
-# Moves the crow along an arc and keeps the rider on its back; lands at the destination spawn.
+# The cruise curve (cubic Bezier): out over the sea from the perch, high over the water, then in over the sea to the
+# landing spot. u 0..1.
+func _flight_curve(u: float) -> Vector3:
+	var lift := Vector3(0.0, 3.0, 0.0)
+	var way := Vector3(_flight_to.x - _flight_from.x, 0.0, _flight_to.z - _flight_from.z).normalized()
+	var high := float(_crow_cfg["altitude"])
+	var p0 := _flight_from + lift
+	var p1 := p0 + way * 60.0 + Vector3(0.0, high, 0.0)
+	var p2 := _flight_to - way * 70.0 + Vector3(0.0, high * 0.6, 0.0)
+	var p3 := _flight_to
+	var v := 1.0 - u
+	return p0 * v * v * v + p1 * 3.0 * v * v * u + p2 * 3.0 * v * u * u + p3 * u * u * u
+
+
 func _fly(delta: float) -> void:
 	_flight_t += delta
-	var duration: float = float(_crow_cfg["flight_seconds"])
-	var u: float = clampf(_flight_t / duration, 0.0, 1.0)
-	var e := smoothstep(0.0, 1.0, u)
-	var pos := _flight_from.lerp(_flight_to, e) + Vector3(0, float(_crow_cfg["altitude"]) * sin(PI * e), 0)
-	var ahead := _flight_from.lerp(_flight_to, minf(e + 0.02, 1.0)) + Vector3(0, float(_crow_cfg["altitude"]) * sin(PI * minf(e + 0.02, 1.0)), 0)
-	_ride_crow.position = pos
-	if ahead.distance_to(pos) > 0.01:
-		_ride_crow.look_at(ahead, Vector3.UP)
-	CrowModel.pose(_ride_crow, CrowModel.FLAP, _flight_t)
+	_flight_phase_t += delta
+	var way := Vector3(_flight_to.x - _flight_from.x, 0.0, _flight_to.z - _flight_from.z).normalized()
+	match _flight_phase:
+		"rise":
+			if not _flight_steps.is_empty():  # one piece of the club a frame while the crow lifts off
+				(_flight_steps.pop_front() as Callable).call()
+			var r := clampf(_flight_phase_t / float(_crow_cfg["rise_seconds"]), 0.0, 1.0)
+			_ride_crow.global_position = _flight_from + Vector3(0.0, 3.0 * smoothstep(0.0, 1.0, r), 0.0)
+			_turn_crow_toward(_ride_crow.global_position + way, delta * 2.5)
+			CrowModel.pose(_ride_crow, CrowModel.FLAP, _flight_t)
+			if r >= 1.0 and _flight_steps.is_empty():
+				_flight_phase = "cruise"
+				_flight_phase_t = 0.0
+		"cruise":
+			var u := smoothstep(0.0, 1.0, clampf(_flight_phase_t / float(_crow_cfg["flight_seconds"]), 0.0, 1.0))
+			var pos := _flight_curve(u)
+			_ride_crow.global_position = pos
+			var ahead := _flight_curve(minf(u + 0.01, 1.0))
+			if Vector2(ahead.x - pos.x, ahead.z - pos.z).length() > 0.05:
+				_turn_crow_toward(Vector3(ahead.x, pos.y, ahead.z), delta * 6.0)
+			CrowModel.pose(_ride_crow, CrowModel.FLAP, _flight_t)
+			if u >= 1.0:
+				_flight_phase = "land"
+				_flight_phase_t = 0.0
+		"land":
+			_ride_crow.global_position = _flight_to
+			CrowModel.pose(_ride_crow, CrowModel.FLAP if _flight_phase_t < 0.4 else CrowModel.IDLE, _flight_t)
+			if _flight_phase_t >= float(_crow_cfg["land_seconds"]):
+				_step_off()
+				return
+		"leave":  # the crow, empty, flies off over the sea it came from and is back on its own perch
+			var w := _flight_phase_t
+			_ride_crow.global_position = _flight_to + Vector3(0.0, 1.5 * w + 0.6 * w * w, 0.0) - way * (2.0 * w * w + 6.0 * w)
+			_turn_crow_toward(_ride_crow.global_position - way, delta * 3.0)
+			CrowModel.pose(_ride_crow, CrowModel.FLAP, _flight_t)
+			if w >= float(_crow_cfg["leave_seconds"]):
+				_ride_crow.visible = false
+				_flight_src.visible = true
+				_flight_t = -1.0
+				_flight_phase = ""
+			return
 	_player.global_position = _ride_crow.to_global(CrowModel.SADDLE)
-	if u >= 1.0:
-		_ride_crow.visible = false
-		_flight_src.visible = true
-		_flight_t = -1.0
-		_player.carried = false
-		_player.controls_enabled = true
-		_player.set_third_person(_flight_prev_view)
-		_player.teleport(_flight_dest, 0.0)
-		_player_hud.play_fade()
+	_player.look_at_point(_ride_crow.to_global(CrowModel.SADDLE + Vector3(0.0, 1.6, -20.0)))
+	var want := _ride_crow.to_global(Vector3(0.0, float(_crow_cfg["cam_up"]), float(_crow_cfg["cam_back"])))
+	_flight_cam.global_position = _flight_cam.global_position.lerp(want, 1.0 - exp(-3.0 * delta))
+	_flight_cam.look_at(_ride_crow.to_global(Vector3(0.0, 3.0, -6.0)), Vector3.UP)
+
+
+# A crow is carrying us (its flight off afterwards, empty, leaves us free).
+func _crow_carrying() -> bool:
+	return _flight_t >= 0.0 and _flight_phase != "leave"
+
+
+func _turn_crow_toward(point: Vector3, weight: float) -> void:
+	var from := _ride_crow.global_position
+	if Vector2(point.x - from.x, point.z - from.z).length() < 0.01:
+		return
+	var aim := Transform3D(Basis.IDENTITY, from).looking_at(Vector3(point.x, from.y, point.z), Vector3.UP).basis.get_rotation_quaternion()
+	var now := _ride_crow.global_basis.get_rotation_quaternion()
+	_ride_crow.global_basis = Basis(now.slerp(aim, clampf(weight, 0.0, 1.0)))
+
+
+# The rider steps off beside the landed crow, facing inland; our own view and controls come back, then the crow leaves.
+func _step_off() -> void:
+	var side := _ride_crow.global_basis.x * float(_crow_cfg["dismount"])
+	_player.carried = false
+	_player.teleport(Vector3(_flight_to.x + side.x, _flight_to.y + 0.1, _flight_to.z + side.z), 0.0)
+	_player.look_at_point(Vector3(_flight_dest.x, _flight_dest.y + 1.6, _flight_dest.z))
+	_player.set_third_person(_flight_prev_view)
+	_player.use_own_camera()
+	_player.controls_enabled = true
+	_flight_phase = "leave"
+	_flight_phase_t = 0.0
 
 
 # Vendor kiosk within reach: its crate dictionary, or {}.
@@ -2308,8 +2409,8 @@ func _start_run(ticket: int, mods: PackedStringArray, buyer: int) -> void:
 	if buyer == _my_id():
 		_score.spend(int(entry["price"]))
 		save_profile()
-	run_note = "arena %s, aurelind %s, down %s, flying %s, on the islands %s" % [_in_arena, _in_fantasy, _player.downed, _flight_t >= 0.0, _on_island(_player.global_position)]
-	if _in_arena or _in_fantasy or _player.downed or _flight_t >= 0.0 or not _on_island(_player.global_position):
+	run_note = "arena %s, aurelind %s, down %s, flying %s, on the islands %s" % [_in_arena, _in_fantasy, _player.downed, _crow_carrying(), _on_island(_player.global_position)]
+	if _in_arena or _in_fantasy or _player.downed or _crow_carrying() or not _on_island(_player.global_position):
 		if net != null and net.can_send() and net.is_host() and not _director.running():  # the run is the host's, also when the host stays out of it
 			_run_ticket = ticket
 			_run_mods = mods
@@ -4250,7 +4351,7 @@ func _run_stats(delta: float) -> void:
 		_player.shots_hit = 0
 		_player.hurt_total = 0.0
 	var here := _player.global_position
-	if _stat_from.is_finite() and not _player.carried and _flight_t < 0.0:
+	if _stat_from.is_finite() and not _player.carried and not _crow_carrying():
 		var step := Vector2(here.x - _stat_from.x, here.z - _stat_from.z).length()
 		if step < 3.0:  # (a teleport is not a walk)
 			_stats.add("metres", step)
@@ -4612,8 +4713,23 @@ func _rest_worlds() -> void:
 func _build_club() -> void:
 	if loading != null:
 		loading.call("begin", 2)
+	for step: Callable in _club_build_steps():
+		step.call()
+	if loading != null:
+		loading.call("finish")
+
+
+# (polish1 item 70) The club's inside as pieces to call one after the other: all at once under the loading picture
+# (_build_club: /tp club, coming near) or one a frame while a crow takes off for the club (no loading picture).
+func _club_build_steps() -> Array[Callable]:
 	var first := get_child_count()
-	_casino = ClubIsland.build_inside(self)
+	var steps := ClubIsland.inside_steps(self)
+	steps.append(func() -> void: _casino = CasinoRoom.build(self, ClubIsland.CENTER))
+	steps.append(func() -> void: _club_setup(first))
+	return steps
+
+
+func _club_setup(first: int) -> void:
 	for index in range(first, get_child_count()):
 		_club_parts.append(get_child(index))
 	_pachinko = _casino["pachinko"]
@@ -4650,8 +4766,6 @@ func _build_club() -> void:
 	add_child(_jukebox)
 	_club_parts.append(_jukebox)
 	LoadClock.mark("club inside and casino")
-	if loading != null:
-		loading.call("finish")
 
 
 # How much of the land is kept around the player, by graphics tier (data/graphics.json "fantasy").

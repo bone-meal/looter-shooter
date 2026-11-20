@@ -1,6 +1,7 @@
 # Purpose: the giant crow (~4 m tall): the model from assets/models/creatures/crow.gltf (modelled in Blender by
 # tools/blender/creatures.py), or the old blocky one built here when that file is missing; plays idle, eat and flap poses.
 # Dependencies: none. Pivots: Body, Body/Head, Body/WingL, Body/WingR. Faces -Z. `SADDLE` is where the rider stands (root-local).
+# At rest the wings are folded along the body (polish1 item 18); flying flaps them open.
 extends RefCounted
 
 const MODEL := "res://assets/models/creatures/crow.gltf"
@@ -66,21 +67,26 @@ static func pose(root: Node3D, mode: int, t: float) -> void:
 	match mode:
 		FLAP:
 			var flap := sin(t * 7.0) * 0.8
-			wing_l.rotation.z = -flap
-			wing_r.rotation.z = flap
+			wing_l.basis = Basis(Vector3.BACK, -flap)
+			wing_r.basis = Basis(Vector3.BACK, flap)
 			body.position.y = absf(sin(t * 7.0)) * 0.15
-			head.rotation.x = 0.1
+			head.rotation = Vector3(0.1, 0.0, 0.0)
 		EAT:
 			body.position.y = 0.0
-			head.rotation.x = 0.3 + sin(t * 14.0) * 0.5  # quick pecks
-			wing_l.rotation.z = 0.15
-			wing_r.rotation.z = -0.15
+			head.rotation = Vector3(0.3 + sin(t * 14.0) * 0.5, 0.0, 0.0)  # quick pecks
+			_fold(wing_l, wing_r, 0.0)
 		_:
 			body.position.y = sin(t * 1.6) * 0.04
-			head.rotation.y = sin(t * 0.7) * 0.5  # looks around
-			head.rotation.x = 0.0
-			wing_l.rotation.z = 0.2 + sin(t * 1.2) * 0.04
-			wing_r.rotation.z = -0.2 - sin(t * 1.2) * 0.04
+			head.rotation = Vector3(0.0, sin(t * 0.7) * 0.5, 0.0)  # looks around
+			_fold(wing_l, wing_r, maxf(0.0, sin(t * 0.4) - 0.9) * 2.0)  # now and then a little shuffle of the wings
+
+
+# (polish1 item 18) Wings folded along the body at rest (they were held out flat like a T-pose): swept back, rolled so
+# the feathers hang down, the tips a little low, the span shortened to end near the tail. `ruffle` lifts them a bit.
+static func _fold(wing_l: Node3D, wing_r: Node3D, ruffle: float) -> void:
+	for wing: Array in [[wing_l, 1.0], [wing_r, -1.0]]:
+		var s: float = wing[1]
+		(wing[0] as Node3D).basis = Basis(Vector3.UP, s * 1.45) * Basis(Vector3.BACK, s * (0.35 - ruffle * 0.25)) * Basis(Vector3.RIGHT, 1.3) * Basis.from_scale(Vector3(0.72, 1.0, 1.0))
 
 
 static func _mat(color: Color, roughness: float) -> StandardMaterial3D:

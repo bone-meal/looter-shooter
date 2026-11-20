@@ -1,6 +1,6 @@
-Polish1 C1: hub polish
+Polish1 C2: spawn island and crow ride
 
-Starry night moon window, two turning antique globes, Corinthian capitals with acanthus leaves and volutes, cobwebs on the trophy room doorway, the pedestal story redrawn as clear carved figures, the hop-course painting from the start and the Aurelind painting after a visit, trophy cabinets the player arranges (5 switchable podium spots, pinned eye-level row, shelf buttons that turn pages; saved and shown online) and playtime under each name plate.
+The lifeguard fishes from the shore with her rod held out over the sea (no more T-pose), the crows perch on the shore with folded wings, the paintings stand on the west shore. The crow ride: no loading picture (the club inside is built a piece a frame while the crow lifts off), a chase camera behind the crow, a curve out over the sea, a landing beside the perched return crow (away from the card table parasols), the rider steps off and the crow flies away empty.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
