@@ -59,6 +59,7 @@ const Wallet = preload("res://core/wallet.gd")
 const PachinkoWall = preload("res://game/pachinko_wall.gd")
 const PrizeScreen = preload("res://game/prize_screen.gd")
 const PrizeBook = preload("res://core/prize_book.gd")
+const DartsGame = preload("res://game/darts_game.gd")
 const SlotMachine = preload("res://game/slot_machine.gd")
 const SlotScreen = preload("res://game/slot_screen.gd")
 const SlotMath = preload("res://core/slot_math.gd")
@@ -324,6 +325,7 @@ var _pachinko_cfg: Dictionary  # data/pachinko.json (pocket kinds, fever, jackpo
 var _pachinko_pot := 200.0  # (polish1 item 75) this player's pachinko jackpot pot (saved in the profile)
 var _prize_tickets := 0  # (polish1 item 75) pachinko prize tickets (saved in the profile)
 var _prize_screen := PrizeScreen.new()
+var _darts := DartsGame.new()  # (polish1 item 71) darts in the games room, set up with the club
 var _crate_sure_id := ""  # the Silver / Gold crate asked about ("Are you sure?"), bought by a second press in time
 var _crate_sure_until := 0
 var _field := LootField.new()  # gun drops lying in the world
@@ -919,7 +921,7 @@ func _place_crow(at: Vector3, facing: Vector3) -> Node3D:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _card_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or (_fantasy != null and _fantasy.panel_open()):
+	if _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _darts.is_open() or _card_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or (_fantasy != null and _fantasy.panel_open()):
 		return
 	if _crow_carrying():
 		return
@@ -981,6 +983,9 @@ func close_inventory() -> bool:
 		return true
 	if _prize_screen.visible:
 		_close_prizes()
+		return true
+	if _darts.is_open():
+		_darts.request_close()
 		return true
 	if _slot_screen.visible:
 		_slot_screen.close()
@@ -1261,7 +1266,7 @@ func _trade_target() -> int:
 
 
 func _hold_trade(delta: float) -> void:
-	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _darts.is_open() or _inventory_screen.visible or _trade_screen.visible or _chat.is_open()
 	if busy or not Input.is_action_pressed("interact") or _trade_target() == 0 or not _field.nearest(_player.global_position).is_empty():
 		_trade_hold = 0.0
 		return
@@ -1747,7 +1752,7 @@ func _near_fantasy_exit() -> bool:
 # Text for the E prompt, or "" when nothing is in reach.
 func _prompt() -> String:
 	var key := InputSetup.label(settings, "interact")
-	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _crow_carrying():
+	if _inventory_screen.visible or _customizer.visible or _card_screen.visible or _slot_screen.visible or _trade_screen.visible or _board.visible or (music_menu != null and music_menu.visible) or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _darts.is_open() or _crow_carrying():
 		return ""
 	if _seat >= 0:
 		if _seat == 0:
@@ -1865,6 +1870,8 @@ func _prompt() -> String:
 		return "[%s] %s" % [key, _ptables.prompt(_ptables.near(_player.global_position))]
 	if _shop.near(_player.global_position):
 		return "[%s] Card machine: packs, boxes and starter decks" % key
+	if _darts.near(_player.global_position) >= 0:
+		return "[%s] Play darts: 501 or Around the Clock against the house (chips optional)" % key
 	if _near_prizes():
 		return "[%s] Prize counter: trade prize tickets for card packs and crates (%d tickets)" % [key, _prize_tickets]
 	if _near_pachinko():
@@ -1969,6 +1976,9 @@ func _interact() -> void:
 		_ptables.open(_ptables.near(_player.global_position))
 	elif _shop.near(_player.global_position):
 		_shop.open()
+	elif _darts.near(_player.global_position) >= 0:
+		_darts.player_name = _profile_name
+		_darts.open(_darts.near(_player.global_position))
 	elif _near_prizes():
 		_open_prizes()
 	elif _near_pachinko():
@@ -2144,7 +2154,7 @@ func _near_pachinko() -> bool:
 
 
 func _hold_pachinko(delta: float) -> void:
-	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _inventory_screen.visible
+	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _darts.is_open() or _inventory_screen.visible
 	if busy or not Input.is_action_pressed("interact") or not _near_pachinko():
 		_pachinko_hold = 0.0
 		return
@@ -5257,6 +5267,9 @@ func _club_setup(first: int) -> void:
 	_pachinko = _casino["pachinko"]
 	_pachinko.ball_landed.connect(_on_pachinko_landed)
 	_pachinko.jackpot_won.connect(_on_pachinko_jackpot)
+	add_child(_darts)
+	_darts.setup(_wallet, _player, _player_hud, _custom_layer, _sounds, _rng, ClubIsland.CENTER)
+	_darts.finished.connect(save_profile)
 	if net != null:
 		net.slots.ask_pot()  # the lobby's slot pot on the machines
 	_pachinko.set_pot(_pachinko_pot)
@@ -5397,7 +5410,7 @@ func _process(delta: float) -> void:
 	var fps := Performance.get_monitor(Performance.TIME_FPS)
 	var draws := Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)
 	var mem_mb := Performance.get_monitor(Performance.MEMORY_STATIC) / 1048576.0
-	_hud.visible = not (_tcg.is_open() or (_ptables != null and _ptables.is_open()))  # (polish1 item 86) not under the card table's badges
+	_hud.visible = not (_tcg.is_open() or (_ptables != null and _ptables.is_open()) or _darts.is_open())  # (polish1 item 86) not under the card table's badges
 	_hud.text = "fps %d  frame %.1f ms  draws %d  mem %.0f MB\n%s move, %s jump, %s sprint, %s shoot, %s reload, %s aim, %s/%s guns, %s knife, %s inventory (hold: scoreboard), %s player card, %s view, Esc menu" % [
 		fps, 1000.0 / maxf(fps, 1.0), draws, mem_mb, _moves(), _key("jump"), _key("sprint"), _key("shoot"),
 		_key("reload"), _key("aim"), _key("weapon_1"), _key("weapon_2"), _key("knife"), _key("inventory"), _key("card"), _key("toggle_view")]

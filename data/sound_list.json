@@ -649,6 +649,23 @@
      "label": "Card reveal: foil"
     }
    ]
+  },
+  {
+   "name": "Darts and pool",
+   "sounds": [
+    {
+     "id": "dart_throw",
+     "label": "Dart thrown"
+    },
+    {
+     "id": "dart_hit",
+     "label": "Dart hits the board"
+    },
+    {
+     "id": "dart_bust",
+     "label": "Darts: bust"
+    }
+   ]
   }
  ]
 }

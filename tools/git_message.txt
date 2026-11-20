@@ -1,6 +1,6 @@
-Polish1 D3b: bigger club island and casino (item 72)
+Polish1 D3c: darts against the house (item 71)
 
-Club island radius 26 to 40. New GAMES ROOM west of the club (16 x 16 m, wooden floor, neon) through an arch in the club's left wall, for pool and darts. Casino annex grown from 11 x 13 to 20 x 18 m: pachinko wall centred on the longer back wall with neon signs either side, six slot machines, a round cocktail bar with a bartender in the new east half, the card machine moved to the north-west corner, waitress routes and ceiling lights for the new floor.
+Two dartboards on the games room's west wall: standard board face drawn once into a texture, cork and wood backboard with a lamp bar, oche at 2.37 m, chalk slate. F at a throw line: the view goes to the line, the menu picks 501 (double out, busts) or Around the Clock (double / treble skip), one of three house players (Rookie Rita, Pub Regular Pete, The Shark) and a chip stake (free to 250, a win pays the stake again). Mouse aims while the hand drifts, hold right mouse to steady for a few seconds, left mouse throws: the dart flies and sticks; scoreboard with this turn's darts and the checkout, call-outs for doubles, trebles, BUST, 100+ and 180. Pure rules in core/darts_rules.gd with tools/darts_check.gd (0 problems). New sounds dart_throw / dart_hit / dart_bust.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -133,6 +133,15 @@ def main():
     save("achievement_chime", mix(note(1047, 0.9, "sine", 0.6), at(note(1568, 1.2, "sine", 0.5), 0.11), at(note(2093, 1.0, "sine", 0.2), 0.2),
                                   band(noise(0.8), 5000, 9000) * env(n(0.8), 0.01, 3.0) * 0.04), 0.45)
 
+    darts(save)
+
+
+def darts(save):
+    """(polish1 item 71) the games room's darts: a throw's soft whoosh, a dart thudding into the sisal, a bust buzz."""
+    save("dart_throw", band(noise(0.22), 900, 3500) * env(n(0.22), 0.06, 2.2) * 0.5, 0.35)
+    save("dart_hit", mix(lowpass(noise(0.09), 1800) * env(n(0.09), 0.0005, 5) * 1.2, tone(glide(190, 120, 0.08), 0.08) * env(n(0.08), 0.001, 4) * 0.8, at(click(3200, 0.02), 0.0)), 0.7)
+    save("dart_bust", mix(lowpass(tone(110, 0.45, "saw"), 900) * env(n(0.45), 0.01, 1.6) * 0.6, lowpass(tone(116, 0.45, "saw"), 900) * env(n(0.45), 0.01, 1.6) * 0.5), 0.5)
+
 
 if __name__ == "__main__":
     main()

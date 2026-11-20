@@ -2993,6 +2993,45 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"note":
 					var gun_c: Dictionary = opening.call("winner") if opening.visible else {}
 					_lines.append("CASE %s: cases %s, chips %d, opening %s spinning %s, winner %s %s, bag guns %d" % [" ".join(words.slice(2)), str(shelf.get("counts")), int((session.get("_wallet") as RefCounted).get("balance")), opening.visible, opening.call("is_spinning"), String(gun_c.get("tier", "")), String(gun_c.get("body", "")), int((player.get("inventory") as RefCounted).call("gun_count")) if (player.get("inventory") as RefCounted).has_method("gun_count") else -1])
+		"darts":  # (polish1 item 71) "!darts open <board>" stand at its line and open the menu; "!darts start <501|clock> <ai id> <stake>";
+			# "!darts throw [target]" the player's next dart (at the hand's aim with its sway, or at a target like T20 as aimed); "!darts turn" = our whole
+			# turn at the AI's choice of targets; "!darts note"; "!darts esc"
+			var dg: Node3D = session.get("_darts")
+			match words[1]:
+				"open":
+					var bd: Node3D = (dg.get("boards") as Array)[int(words[2]) if words.size() > 2 else 0]
+					player.call("teleport", bd.call("oche_position") + Vector3(0, 0.1, 0), 0.0)
+					await get_tree().create_timer(0.3).timeout
+					dg.set("player_name", "Tester")
+					dg.call("open", int(words[2]) if words.size() > 2 else 0)
+				"start":
+					dg.call("_on_start", words[2], words[3], int(words[4]) if words.size() > 4 else 0)
+				"throw":
+					var rl: RefCounted = dg.get("rules")
+					if words.size() > 2:
+						dg.set("_aim", rl.call("target_point", words[2]))
+					var ev := InputEventMouseButton.new()
+					ev.button_index = MOUSE_BUTTON_LEFT
+					ev.pressed = true
+					dg.call("_unhandled_input", ev)
+				"turn":
+					var rl2: RefCounted = dg.get("rules")
+					for i in 3:
+						while String(dg.get("_state")) != "aim":
+							await get_tree().process_frame
+						if int(rl2.get("current")) != 0:
+							break
+						dg.set("_aim", rl2.call("target_point", rl2.call("ai_target")))
+						var ev2 := InputEventMouseButton.new()
+						ev2.button_index = MOUSE_BUTTON_LEFT
+						ev2.pressed = true
+						dg.call("_unhandled_input", ev2)
+						await get_tree().create_timer(0.5).timeout
+				"note":
+					var rl3: RefCounted = dg.get("rules")
+					_lines.append("DARTS: state %s mode %s scores %s current %d darts_left %d winner %d hits %s chips %d" % [dg.get("_state"), rl3.get("mode"), str(rl3.get("scores")), int(rl3.get("current")), int(rl3.get("darts_left")), int(rl3.get("winner")), str(rl3.get("turn_hits")), int((session.get("_wallet") as RefCounted).get("balance"))])
+				"esc":
+					dg.call("request_close")
 		"pachinko":  # "!pachinko": stand in front of the casino's pachinko wall (the chips show at the top right there)
 			# (polish1 item 75) "!pachinko launch <n>" fires n paid balls, "fever" = a FEVER pocket lands, "jackpot" = the lamps are all lit,
 			# "tickets <n>" sets the prize tickets, "prizes" = stand at the prize counter and open it, "redeem <id>", "close", "note"
