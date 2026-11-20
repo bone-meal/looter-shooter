@@ -3,48 +3,1170 @@
  "_about": "(polish1 D2) How each reworked enemy moves (game/enemy_rig.gd). An enemy uses the style named by its data 'moves' (else its 'model'). Angles in degrees on the model's pivots (Hips, Spine, Head, Jaw, ArmL / ForeL, ArmR / ForeR, LegL / ShinL, LegR / ShinR, or any other node a style names). Signs: x+ swings a hanging limb FORWARD (an arm raised in front, a leg stepping out) and tips the Spine / Head BACK; a knee bends with Shin x-; the left arm goes OUT with z-, the right with z+. gait: full_at = m/s at which the walk is at full size, cadence = steps against the usual stride (1 = normal), leg / knee / arm / elbow = swing sizes, arm_out = arms held away from the sides, arms_up = arms raised in front (the drowned reach), bob = metres the hips rise each step, sway / twist = the torso's roll / turn with the stride, lean = forward lean at full speed, crouch = bent knees and hips all the time, limp = 0..1 a dragged right leg, jerk = 0..1 a stepped rattling walk, head_loll = the head rolls about. idle: breath, look (turning the head while it stands), twitch 0..1 (sudden head jerks), jaw / jaw_rate (opening and closing). osc: extra swings [{node, axis, amp, phase (deg), rate (cycles a second; 0 = with the stride), with_speed}]. wind = the pose at the top of a wind-up, strike = right after the blow, aim = held while it shoots, recoil = on a shot. death: slump (goes limp) or crumble (falls apart). variants = how many of the model's V1_ / V2_ / V3_ sets may be shown (0 = all).",
  "styles": {
   "en_drowned": {
-   "gait": {"full_at": 3.2, "cadence": 0.8, "leg": 26, "knee": 30, "arm": 8, "elbow": 22, "arm_out": 12, "arms_up": 58, "bob": 0.03, "sway": 9, "twist": 4, "lean": 10, "limp": 0.45, "head_loll": 14},
-   "idle": {"breath": 3, "look": 18, "twitch": 0.5, "jaw": 14, "jaw_rate": 1.1},
-   "wind": {"ArmL": [70, 0, -20], "ArmR": [70, 0, 20], "ForeL": [40, 0, 0], "ForeR": [40, 0, 0], "Spine": [12, 0, 0], "Head": [10, 0, 0], "Jaw": [25, 0, 0]},
-   "strike": {"ArmL": [-30, 0, 15], "ArmR": [-30, 0, -15], "ForeL": [10, 0, 0], "ForeR": [10, 0, 0], "Spine": [-28, 0, 0], "Head": [-15, 0, 0], "Jaw": [30, 0, 0]},
+   "gait": {
+    "full_at": 3.2,
+    "cadence": 0.8,
+    "leg": 26,
+    "knee": 30,
+    "arm": 8,
+    "elbow": 22,
+    "arm_out": 12,
+    "arms_up": 58,
+    "bob": 0.03,
+    "sway": 9,
+    "twist": 4,
+    "lean": 10,
+    "limp": 0.45,
+    "head_loll": 14
+   },
+   "idle": {
+    "breath": 3,
+    "look": 18,
+    "twitch": 0.5,
+    "jaw": 14,
+    "jaw_rate": 1.1
+   },
+   "wind": {
+    "ArmL": [
+     70,
+     0,
+     -20
+    ],
+    "ArmR": [
+     70,
+     0,
+     20
+    ],
+    "ForeL": [
+     40,
+     0,
+     0
+    ],
+    "ForeR": [
+     40,
+     0,
+     0
+    ],
+    "Spine": [
+     12,
+     0,
+     0
+    ],
+    "Head": [
+     10,
+     0,
+     0
+    ],
+    "Jaw": [
+     25,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmL": [
+     -30,
+     0,
+     15
+    ],
+    "ArmR": [
+     -30,
+     0,
+     -15
+    ],
+    "ForeL": [
+     10,
+     0,
+     0
+    ],
+    "ForeR": [
+     10,
+     0,
+     0
+    ],
+    "Spine": [
+     -28,
+     0,
+     0
+    ],
+    "Head": [
+     -15,
+     0,
+     0
+    ],
+    "Jaw": [
+     30,
+     0,
+     0
+    ]
+   },
    "death": "slump"
   },
   "en_drowned_runner": {
-   "gait": {"full_at": 6.0, "cadence": 0.9, "leg": 48, "knee": 75, "arm": 50, "elbow": 70, "arm_out": 8, "bob": 0.07, "sway": 4, "twist": 12, "lean": 28, "crouch": 8, "head_loll": 6},
-   "idle": {"breath": 5, "look": 30, "twitch": 1.0, "jaw": 10, "jaw_rate": 3.0},
-   "wind": {"ArmR": [-40, 0, 25], "ForeR": [60, 0, 0], "Spine": [8, 35, 0], "Head": [-10, -20, 0]},
-   "strike": {"ArmR": [95, 0, -25], "ForeR": [10, 0, 0], "Spine": [-30, -30, 0], "LegL": [25, 0, 0], "Jaw": [30, 0, 0]},
+   "gait": {
+    "full_at": 6.0,
+    "cadence": 0.9,
+    "leg": 48,
+    "knee": 75,
+    "arm": 50,
+    "elbow": 70,
+    "arm_out": 8,
+    "bob": 0.07,
+    "sway": 4,
+    "twist": 12,
+    "lean": 28,
+    "crouch": 8,
+    "head_loll": 6
+   },
+   "idle": {
+    "breath": 5,
+    "look": 30,
+    "twitch": 1.0,
+    "jaw": 10,
+    "jaw_rate": 3.0
+   },
+   "wind": {
+    "ArmR": [
+     -40,
+     0,
+     25
+    ],
+    "ForeR": [
+     60,
+     0,
+     0
+    ],
+    "Spine": [
+     8,
+     35,
+     0
+    ],
+    "Head": [
+     -10,
+     -20,
+     0
+    ]
+   },
+   "strike": {
+    "ArmR": [
+     95,
+     0,
+     -25
+    ],
+    "ForeR": [
+     10,
+     0,
+     0
+    ],
+    "Spine": [
+     -30,
+     -30,
+     0
+    ],
+    "LegL": [
+     25,
+     0,
+     0
+    ],
+    "Jaw": [
+     30,
+     0,
+     0
+    ]
+   },
    "death": "slump"
   },
   "en_swimmer": {
-   "gait": {"full_at": 4.4, "cadence": 0.85, "leg": 32, "knee": 50, "arm": 0, "elbow": 30, "arm_out": 18, "bob": 0.05, "sway": 3, "twist": 6, "lean": 22, "crouch": 14, "head_loll": 4},
-   "idle": {"breath": 4, "look": 25, "jaw": 20, "jaw_rate": 0.8},
-   "osc": [{"node": "ArmL", "axis": "x", "amp": 55, "phase": 0, "rate": 0}, {"node": "ArmR", "axis": "x", "amp": 55, "phase": 180, "rate": 0}, {"node": "ArmL", "axis": "z", "amp": 25, "phase": 90, "rate": 0}, {"node": "ArmR", "axis": "z", "amp": -25, "phase": 270, "rate": 0}],
-   "wind": {"ArmL": [110, 0, -45], "ArmR": [110, 0, 45], "ForeL": [20, 0, 0], "ForeR": [20, 0, 0], "Spine": [10, 0, 0], "Head": [15, 0, 0], "Jaw": [35, 0, 0]},
-   "strike": {"ArmL": [55, 0, 10], "ArmR": [55, 0, -10], "ForeL": [70, 0, 0], "ForeR": [70, 0, 0], "Spine": [-35, 0, 0], "Head": [-25, 0, 0], "Jaw": [40, 0, 0]},
+   "gait": {
+    "full_at": 4.4,
+    "cadence": 0.85,
+    "leg": 32,
+    "knee": 50,
+    "arm": 0,
+    "elbow": 30,
+    "arm_out": 18,
+    "bob": 0.05,
+    "sway": 3,
+    "twist": 6,
+    "lean": 22,
+    "crouch": 14,
+    "head_loll": 4
+   },
+   "idle": {
+    "breath": 4,
+    "look": 25,
+    "jaw": 20,
+    "jaw_rate": 0.8
+   },
+   "osc": [
+    {
+     "node": "ArmL",
+     "axis": "x",
+     "amp": 55,
+     "phase": 0,
+     "rate": 0
+    },
+    {
+     "node": "ArmR",
+     "axis": "x",
+     "amp": 55,
+     "phase": 180,
+     "rate": 0
+    },
+    {
+     "node": "ArmL",
+     "axis": "z",
+     "amp": 25,
+     "phase": 90,
+     "rate": 0
+    },
+    {
+     "node": "ArmR",
+     "axis": "z",
+     "amp": -25,
+     "phase": 270,
+     "rate": 0
+    }
+   ],
+   "wind": {
+    "ArmL": [
+     110,
+     0,
+     -45
+    ],
+    "ArmR": [
+     110,
+     0,
+     45
+    ],
+    "ForeL": [
+     20,
+     0,
+     0
+    ],
+    "ForeR": [
+     20,
+     0,
+     0
+    ],
+    "Spine": [
+     10,
+     0,
+     0
+    ],
+    "Head": [
+     15,
+     0,
+     0
+    ],
+    "Jaw": [
+     35,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmL": [
+     55,
+     0,
+     10
+    ],
+    "ArmR": [
+     55,
+     0,
+     -10
+    ],
+    "ForeL": [
+     70,
+     0,
+     0
+    ],
+    "ForeR": [
+     70,
+     0,
+     0
+    ],
+    "Spine": [
+     -35,
+     0,
+     0
+    ],
+    "Head": [
+     -25,
+     0,
+     0
+    ],
+    "Jaw": [
+     40,
+     0,
+     0
+    ]
+   },
    "death": "slump"
   },
   "en_reef_crab": {
-   "gait": {"full_at": 6.0, "cadence": 2.4, "leg": 0, "knee": 0, "arm": 0, "elbow": 0, "arm_out": 0, "bob": 0.025, "sway": 0, "twist": 0, "lean": 0},
-   "idle": {"breath": 0, "look": 0},
+   "gait": {
+    "full_at": 6.0,
+    "cadence": 2.4,
+    "leg": 0,
+    "knee": 0,
+    "arm": 0,
+    "elbow": 0,
+    "arm_out": 0,
+    "bob": 0.025,
+    "sway": 0,
+    "twist": 0,
+    "lean": 0
+   },
+   "idle": {
+    "breath": 0,
+    "look": 0
+   },
    "osc": [
-    {"node": "LegL1", "axis": "y", "amp": 18, "phase": 0}, {"node": "LegL2", "axis": "y", "amp": 18, "phase": 180}, {"node": "LegL3", "axis": "y", "amp": 18, "phase": 0},
-    {"node": "LegR1", "axis": "y", "amp": 18, "phase": 180}, {"node": "LegR2", "axis": "y", "amp": 18, "phase": 0}, {"node": "LegR3", "axis": "y", "amp": 18, "phase": 180},
-    {"node": "LegL1", "axis": "z", "amp": 12, "phase": 90}, {"node": "LegL2", "axis": "z", "amp": 12, "phase": 270}, {"node": "LegL3", "axis": "z", "amp": 12, "phase": 90},
-    {"node": "LegR1", "axis": "z", "amp": -12, "phase": 270}, {"node": "LegR2", "axis": "z", "amp": -12, "phase": 90}, {"node": "LegR3", "axis": "z", "amp": -12, "phase": 270},
-    {"node": "PincerL", "axis": "x", "amp": 14, "phase": 0, "rate": 1.3, "with_speed": false}, {"node": "PincerR", "axis": "x", "amp": 14, "phase": 120, "rate": 1.1, "with_speed": false},
-    {"node": "ClawL", "axis": "x", "amp": 5, "phase": 0, "rate": 0.4, "with_speed": false}, {"node": "ClawR", "axis": "x", "amp": 5, "phase": 90, "rate": 0.45, "with_speed": false},
-    {"node": "EyeL", "axis": "z", "amp": 10, "phase": 0, "rate": 0.3, "with_speed": false}, {"node": "EyeR", "axis": "z", "amp": 10, "phase": 60, "rate": 0.35, "with_speed": false}
+    {
+     "node": "LegL1",
+     "axis": "y",
+     "amp": 18,
+     "phase": 0
+    },
+    {
+     "node": "LegL2",
+     "axis": "y",
+     "amp": 18,
+     "phase": 180
+    },
+    {
+     "node": "LegL3",
+     "axis": "y",
+     "amp": 18,
+     "phase": 0
+    },
+    {
+     "node": "LegR1",
+     "axis": "y",
+     "amp": 18,
+     "phase": 180
+    },
+    {
+     "node": "LegR2",
+     "axis": "y",
+     "amp": 18,
+     "phase": 0
+    },
+    {
+     "node": "LegR3",
+     "axis": "y",
+     "amp": 18,
+     "phase": 180
+    },
+    {
+     "node": "LegL1",
+     "axis": "z",
+     "amp": 12,
+     "phase": 90
+    },
+    {
+     "node": "LegL2",
+     "axis": "z",
+     "amp": 12,
+     "phase": 270
+    },
+    {
+     "node": "LegL3",
+     "axis": "z",
+     "amp": 12,
+     "phase": 90
+    },
+    {
+     "node": "LegR1",
+     "axis": "z",
+     "amp": -12,
+     "phase": 270
+    },
+    {
+     "node": "LegR2",
+     "axis": "z",
+     "amp": -12,
+     "phase": 90
+    },
+    {
+     "node": "LegR3",
+     "axis": "z",
+     "amp": -12,
+     "phase": 270
+    },
+    {
+     "node": "PincerL",
+     "axis": "x",
+     "amp": 14,
+     "phase": 0,
+     "rate": 1.3,
+     "with_speed": false
+    },
+    {
+     "node": "PincerR",
+     "axis": "x",
+     "amp": 14,
+     "phase": 120,
+     "rate": 1.1,
+     "with_speed": false
+    },
+    {
+     "node": "ClawL",
+     "axis": "x",
+     "amp": 5,
+     "phase": 0,
+     "rate": 0.4,
+     "with_speed": false
+    },
+    {
+     "node": "ClawR",
+     "axis": "x",
+     "amp": 5,
+     "phase": 90,
+     "rate": 0.45,
+     "with_speed": false
+    },
+    {
+     "node": "EyeL",
+     "axis": "z",
+     "amp": 10,
+     "phase": 0,
+     "rate": 0.3,
+     "with_speed": false
+    },
+    {
+     "node": "EyeR",
+     "axis": "z",
+     "amp": 10,
+     "phase": 60,
+     "rate": 0.35,
+     "with_speed": false
+    }
    ],
-   "wind": {"ClawL": [-40, 25, 0], "ClawR": [-40, -25, 0], "PincerL": [-35, 0, 0], "PincerR": [-35, 0, 0], "Hips": [-8, 0, 0]},
-   "strike": {"ClawL": [25, -10, 0], "ClawR": [25, 10, 0], "PincerL": [10, 0, 0], "PincerR": [10, 0, 0], "Hips": [6, 0, 0]},
+   "wind": {
+    "ClawL": [
+     -40,
+     25,
+     0
+    ],
+    "ClawR": [
+     -40,
+     -25,
+     0
+    ],
+    "PincerL": [
+     -35,
+     0,
+     0
+    ],
+    "PincerR": [
+     -35,
+     0,
+     0
+    ],
+    "Hips": [
+     -8,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ClawL": [
+     25,
+     -10,
+     0
+    ],
+    "ClawR": [
+     25,
+     10,
+     0
+    ],
+    "PincerL": [
+     10,
+     0,
+     0
+    ],
+    "PincerR": [
+     10,
+     0,
+     0
+    ],
+    "Hips": [
+     6,
+     0,
+     0
+    ]
+   },
    "death": "slump"
   },
   "en_tide_brute": {
-   "gait": {"full_at": 2.8, "cadence": 0.65, "leg": 24, "knee": 28, "arm": 20, "elbow": 25, "arm_out": 16, "bob": 0.09, "sway": 10, "twist": 10, "lean": 12, "crouch": 10},
-   "idle": {"breath": 5, "look": 15, "jaw": 8, "jaw_rate": 0.6},
-   "wind": {"ArmL": [165, 0, -10], "ArmR": [165, 0, 10], "ForeL": [30, 0, 0], "ForeR": [30, 0, 0], "Spine": [15, 0, 0], "Head": [10, 0, 0], "Jaw": [20, 0, 0]},
-   "strike": {"ArmL": [40, 0, 10], "ArmR": [40, 0, -10], "ForeL": [5, 0, 0], "ForeR": [5, 0, 0], "Spine": [-35, 0, 0], "Head": [-10, 0, 0], "LegL": [15, 0, 0], "LegR": [-10, 0, 0]},
+   "gait": {
+    "full_at": 2.8,
+    "cadence": 0.65,
+    "leg": 24,
+    "knee": 28,
+    "arm": 20,
+    "elbow": 25,
+    "arm_out": 16,
+    "bob": 0.09,
+    "sway": 10,
+    "twist": 10,
+    "lean": 12,
+    "crouch": 10
+   },
+   "idle": {
+    "breath": 5,
+    "look": 15,
+    "jaw": 8,
+    "jaw_rate": 0.6
+   },
+   "wind": {
+    "ArmL": [
+     165,
+     0,
+     -10
+    ],
+    "ArmR": [
+     165,
+     0,
+     10
+    ],
+    "ForeL": [
+     30,
+     0,
+     0
+    ],
+    "ForeR": [
+     30,
+     0,
+     0
+    ],
+    "Spine": [
+     15,
+     0,
+     0
+    ],
+    "Head": [
+     10,
+     0,
+     0
+    ],
+    "Jaw": [
+     20,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmL": [
+     40,
+     0,
+     10
+    ],
+    "ArmR": [
+     40,
+     0,
+     -10
+    ],
+    "ForeL": [
+     5,
+     0,
+     0
+    ],
+    "ForeR": [
+     5,
+     0,
+     0
+    ],
+    "Spine": [
+     -35,
+     0,
+     0
+    ],
+    "Head": [
+     -10,
+     0,
+     0
+    ],
+    "LegL": [
+     15,
+     0,
+     0
+    ],
+    "LegR": [
+     -10,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_skeleton_sword": {
+   "gait": {
+    "full_at": 4.5,
+    "cadence": 0.95,
+    "leg": 34,
+    "knee": 50,
+    "arm": 28,
+    "elbow": 20,
+    "arm_out": 10,
+    "bob": 0.03,
+    "sway": 5,
+    "twist": 8,
+    "lean": 10,
+    "jerk": 0.6,
+    "head_loll": 5
+   },
+   "idle": {
+    "breath": 0,
+    "look": 35,
+    "twitch": 0.8,
+    "jaw": 18,
+    "jaw_rate": 9.0
+   },
+   "wind": {
+    "ArmR": [
+     150,
+     0,
+     20
+    ],
+    "ForeR": [
+     30,
+     0,
+     0
+    ],
+    "Spine": [
+     6,
+     30,
+     0
+    ],
+    "Head": [
+     0,
+     -15,
+     0
+    ],
+    "Jaw": [
+     25,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmR": [
+     25,
+     0,
+     -25
+    ],
+    "ForeR": [
+     10,
+     0,
+     0
+    ],
+    "Spine": [
+     -22,
+     -35,
+     0
+    ],
+    "LegL": [
+     20,
+     0,
+     0
+    ]
+   },
+   "death": "crumble"
+  },
+  "en_skeleton_archer": {
+   "gait": {
+    "full_at": 3.0,
+    "cadence": 0.9,
+    "leg": 28,
+    "knee": 40,
+    "arm": 12,
+    "elbow": 15,
+    "arm_out": 8,
+    "bob": 0.025,
+    "sway": 3,
+    "twist": 4,
+    "lean": 6,
+    "jerk": 0.5
+   },
+   "idle": {
+    "breath": 0,
+    "look": 25,
+    "twitch": 0.5,
+    "jaw": 10,
+    "jaw_rate": 6.0
+   },
+   "aim": {
+    "ArmL": [
+     85,
+     15,
+     0
+    ],
+    "ForeL": [
+     0,
+     0,
+     0
+    ],
+    "ArmR": [
+     78,
+     0,
+     -30
+    ],
+    "ForeR": [
+     125,
+     0,
+     0
+    ],
+    "Spine": [
+     0,
+     -25,
+     0
+    ],
+    "Head": [
+     0,
+     15,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmR": [
+     -15,
+     0,
+     -15
+    ],
+    "ForeR": [
+     -60,
+     0,
+     0
+    ],
+    "Head": [
+     6,
+     0,
+     0
+    ]
+   },
+   "death": "crumble"
+  },
+  "en_raider": {
+   "gait": {
+    "full_at": 4.8,
+    "cadence": 0.9,
+    "leg": 42,
+    "knee": 65,
+    "arm": 40,
+    "elbow": 45,
+    "arm_out": 8,
+    "bob": 0.06,
+    "sway": 4,
+    "twist": 12,
+    "lean": 18
+   },
+   "idle": {
+    "breath": 4,
+    "look": 30,
+    "twitch": 0.3,
+    "jaw": 4,
+    "jaw_rate": 0.5
+   },
+   "wind": {
+    "ArmR": [
+     160,
+     0,
+     15
+    ],
+    "ForeR": [
+     45,
+     0,
+     0
+    ],
+    "ArmL": [
+     30,
+     0,
+     -20
+    ],
+    "Spine": [
+     10,
+     25,
+     0
+    ],
+    "Head": [
+     -5,
+     -15,
+     0
+    ]
+   },
+   "strike": {
+    "ArmR": [
+     25,
+     0,
+     -20
+    ],
+    "ForeR": [
+     5,
+     0,
+     0
+    ],
+    "Spine": [
+     -28,
+     -25,
+     0
+    ],
+    "LegL": [
+     25,
+     0,
+     0
+    ],
+    "ShinR": [
+     -30,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_feral": {
+   "gait": {
+    "full_at": 7.0,
+    "cadence": 0.8,
+    "leg": 45,
+    "knee": 80,
+    "arm": 60,
+    "elbow": 40,
+    "arm_out": 12,
+    "arms_up": 30,
+    "bob": 0.08,
+    "sway": 4,
+    "twist": 8,
+    "lean": 42,
+    "crouch": 20
+   },
+   "idle": {
+    "breath": 7,
+    "look": 40,
+    "twitch": 1.0,
+    "jaw": 22,
+    "jaw_rate": 2.5
+   },
+   "wind": {
+    "Spine": [
+     -10,
+     0,
+     0
+    ],
+    "LegL": [
+     35,
+     0,
+     0
+    ],
+    "LegR": [
+     35,
+     0,
+     0
+    ],
+    "ShinL": [
+     -70,
+     0,
+     0
+    ],
+    "ShinR": [
+     -70,
+     0,
+     0
+    ],
+    "ArmL": [
+     -20,
+     0,
+     -20
+    ],
+    "ArmR": [
+     -20,
+     0,
+     20
+    ],
+    "Head": [
+     25,
+     0,
+     0
+    ],
+    "Jaw": [
+     30,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmL": [
+     110,
+     0,
+     -15
+    ],
+    "ArmR": [
+     110,
+     0,
+     15
+    ],
+    "ForeL": [
+     20,
+     0,
+     0
+    ],
+    "ForeR": [
+     20,
+     0,
+     0
+    ],
+    "Spine": [
+     -35,
+     0,
+     0
+    ],
+    "LegR": [
+     -30,
+     0,
+     0
+    ],
+    "Head": [
+     15,
+     0,
+     0
+    ],
+    "Jaw": [
+     40,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_scav_gunner": {
+   "gait": {
+    "full_at": 3.4,
+    "cadence": 0.9,
+    "leg": 32,
+    "knee": 45,
+    "arm": 5,
+    "elbow": 15,
+    "arm_out": 6,
+    "bob": 0.04,
+    "sway": 3,
+    "twist": 4,
+    "lean": 8,
+    "crouch": 4
+   },
+   "idle": {
+    "breath": 3,
+    "look": 25,
+    "jaw": 0
+   },
+   "aim": {
+    "ArmR": [
+     25,
+     0,
+     10
+    ],
+    "ForeR": [
+     72,
+     0,
+     0
+    ],
+    "ArmL": [
+     60,
+     0,
+     25
+    ],
+    "ForeL": [
+     50,
+     0,
+     0
+    ],
+    "Spine": [
+     0,
+     -12,
+     0
+    ],
+    "Head": [
+     -4,
+     10,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmR": [
+     -12,
+     0,
+     0
+    ],
+    "ForeR": [
+     -10,
+     0,
+     0
+    ],
+    "Spine": [
+     8,
+     0,
+     0
+    ],
+    "Head": [
+     6,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_marksman": {
+   "gait": {
+    "full_at": 3.0,
+    "cadence": 0.85,
+    "leg": 28,
+    "knee": 50,
+    "arm": 4,
+    "elbow": 15,
+    "arm_out": 6,
+    "bob": 0.03,
+    "sway": 2,
+    "twist": 3,
+    "lean": 14,
+    "crouch": 12
+   },
+   "idle": {
+    "breath": 2,
+    "look": 40,
+    "jaw": 0
+   },
+   "aim": {
+    "ArmR": [
+     22,
+     0,
+     12
+    ],
+    "ForeR": [
+     75,
+     0,
+     0
+    ],
+    "ArmL": [
+     65,
+     0,
+     28
+    ],
+    "ForeL": [
+     45,
+     0,
+     0
+    ],
+    "Spine": [
+     -6,
+     -15,
+     0
+    ],
+    "Head": [
+     -8,
+     12,
+     0
+    ]
+   },
+   "recoil": {
+    "ArmR": [
+     -18,
+     0,
+     0
+    ],
+    "ForeR": [
+     -12,
+     0,
+     0
+    ],
+    "Spine": [
+     12,
+     0,
+     0
+    ],
+    "Head": [
+     10,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_brute": {
+   "gait": {
+    "full_at": 3.3,
+    "cadence": 0.65,
+    "leg": 26,
+    "knee": 30,
+    "arm": 18,
+    "elbow": 25,
+    "arm_out": 18,
+    "bob": 0.09,
+    "sway": 9,
+    "twist": 10,
+    "lean": 10,
+    "crouch": 8
+   },
+   "idle": {
+    "breath": 5,
+    "look": 15,
+    "jaw": 6,
+    "jaw_rate": 0.5
+   },
+   "wind": {
+    "ArmR": [
+     170,
+     0,
+     10
+    ],
+    "ForeR": [
+     40,
+     0,
+     0
+    ],
+    "ArmL": [
+     40,
+     0,
+     -25
+    ],
+    "Spine": [
+     15,
+     25,
+     0
+    ],
+    "Head": [
+     8,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmR": [
+     30,
+     0,
+     -15
+    ],
+    "ForeR": [
+     5,
+     0,
+     0
+    ],
+    "Spine": [
+     -35,
+     -25,
+     0
+    ],
+    "LegL": [
+     18,
+     0,
+     0
+    ],
+    "Head": [
+     -10,
+     0,
+     0
+    ]
+   },
    "death": "slump"
   }
  }

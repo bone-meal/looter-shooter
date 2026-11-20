@@ -131,7 +131,7 @@
    "attack_sound": "atk_blade"
   },
   "chaser": {
-   "model": "skeleton_sword",
+   "model": "en_skeleton_sword",
    "max_hp": 40,
    "speed": 4.5,
    "attack_type": "melee",
@@ -151,7 +151,7 @@
    "attack_sound": "atk_blade"
   },
   "shooter": {
-   "model": "skeleton_archer",
+   "model": "en_skeleton_archer",
    "max_hp": 30,
    "speed": 3.0,
    "attack_type": "ranged",
@@ -199,7 +199,7 @@
    "attack_sound": "atk_gun"
   },
   "raider": {
-   "model": "raider",
+   "model": "en_raider",
    "max_hp": 55,
    "speed": 4.8,
    "attack_type": "melee",
@@ -224,7 +224,7 @@
    "attack_sound": "atk_blade"
   },
   "feral": {
-   "model": "feral",
+   "model": "en_feral",
    "max_hp": 32,
    "speed": 7.0,
    "attack_type": "melee",
@@ -249,7 +249,7 @@
    "attack_sound": "atk_bite"
   },
   "scav_gunner": {
-   "model": "scav_gunner",
+   "model": "en_scav_gunner",
    "max_hp": 40,
    "speed": 3.4,
    "attack_type": "ranged",
@@ -278,7 +278,7 @@
    "attack_sound": "atk_gun"
   },
   "marksman": {
-   "model": "marksman",
+   "model": "en_marksman",
    "max_hp": 36,
    "speed": 3.0,
    "attack_type": "ranged",
@@ -307,7 +307,7 @@
    "attack_sound": "atk_rifle"
   },
   "brute": {
-   "model": "brute",
+   "model": "en_brute",
    "max_hp": 170,
    "speed": 3.3,
    "attack_type": "melee",

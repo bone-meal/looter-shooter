@@ -16,6 +16,12 @@
 #                       V1 barnacles, V2 a clump of weed, V3 a broken bottle lodged in its shell
 #   en_tide_brute       a 2.7 m hulking drowned: huge arms, small head sunk in the shoulders, plank armour; V1 an anchor
 #                       chain wound round its arm, V2 a ship's plank shield on its back, V3 a net with floats over its head
+# The colosseum (D2b): en_skeleton_sword (rusty sword; kettle helm / hood / round shield), en_skeleton_archer (bow and
+# quiver; hood / feathered cap / crown), en_raider (jerkin, chest plate, machete; tyre pauldron + mohawk / gas mask +
+# hood / road-sign shield), en_feral (gaunt, clawed, ragged; dreadlocks / face paint + bone necklace / chain collar),
+# en_scav_gunner (canvas coat, bandolier, drum gun, goggles; helmet / bandana / pack + bedroll), en_marksman (poncho,
+# scoped long rifle; hood + scarf / boonie hat / ghillie strips), en_brute (2.7 m, apron, nailed club; scrap mask /
+# chains / scrap plates). Guns and bows hang along the forearm at rest: the aim pose brings them level.
 # Run: python3 tools/blender/enemies.py   (ONLY=en_drowned builds just that one)
 # Dependencies: bpy, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
 import math
@@ -426,7 +432,335 @@ def tide_brute(m):
         m.ball(K("paint", (0.85, 0.5, 0.15)), 0.035, (x, y + 0.04, f - 0.08), node=v, u=10, v=7)
 
 
-MODELS = (("en_drowned", drowned), ("en_drowned_runner", drowned_runner), ("en_swimmer", swimmer), ("en_reef_crab", reef_crab), ("en_tide_brute", tide_brute))
+# ---------- weapons (in the hand of a hanging arm: x right, y up, f forward; the arm's poses lift them) ----------
+
+def grip_at(b, side):
+    wr = b.wrist(side)
+    return (wr[0], wr[1] - 0.06, wr[2] + 0.02)
+
+
+def sword(m, b, node, side=1, length=0.75, mat=None):
+    g = grip_at(b, side)
+    steel = mat or K("metal", (0.55, 0.55, 0.58))
+    m.rod(K("leather", (0.25, 0.16, 0.1)), 0.016, (g[0], g[1] + 0.06, g[2] - 0.03), (g[0], g[1] - 0.05, g[2] + 0.02), node=node, segs=8)  # grip
+    m.box(K("metal", (0.45, 0.4, 0.3)), (0.03, 0.03, 0.16), (g[0], g[1] - 0.06, g[2] + 0.02), node=node)  # cross guard
+    tip = (g[0], g[1] - 0.06 - length * 0.55, g[2] + 0.02 + length * 0.8)
+    m.loft(steel, [(g[0], g[1] - 0.07, g[2] + 0.03, 0.006, 0.026), ((g[0] + tip[0]) / 2, (g[1] + tip[1]) / 2, (g[2] + tip[2]) / 2, 0.005, 0.024), (tip[0], tip[1], tip[2], 0.002, 0.004)], node=node, segs=6, flat=True)
+
+
+def club(m, b, node, side=1, length=0.9, nails=True):
+    g = grip_at(b, side)
+    tip = (g[0], g[1] - length * 0.75, g[2] + length * 0.6)  # hangs forward and down at rest
+    m.loft(K("wood", (0.4, 0.28, 0.17)), [(g[0], g[1] + 0.06, g[2] - 0.03, 0.025, 0.025), (g[0], g[1] - 0.05, g[2] + 0.02, 0.03, 0.03), ((g[0] + tip[0]) / 2, (g[1] + tip[1]) / 2, (g[2] + tip[2]) / 2, 0.05, 0.05), (tip[0], tip[1], tip[2], 0.075, 0.075)], node=node, segs=10)
+    if nails:
+        for k in range(8):
+            a = k * 0.8
+            p = (tip[0] + math.cos(a) * 0.07, tip[1] + 0.05 * math.sin(a * 1.3), tip[2] - 0.04 + 0.03 * math.sin(a))
+            m.rod(K("metal", RUST), 0.006, p, (p[0] + math.cos(a) * 0.05, p[1] + 0.01, p[2] + 0.01), node=node, segs=5)
+
+
+def machete(m, b, node, side=1):
+    g = grip_at(b, side)
+    m.rod(K("leather", (0.2, 0.14, 0.1)), 0.017, (g[0], g[1] + 0.06, g[2] - 0.03), (g[0], g[1] - 0.04, g[2] + 0.02), node=node, segs=8)
+    m.prof(K("metal", (0.48, 0.46, 0.44)), 0.006, [(g[2] + 0.02, g[1] - 0.04), (g[2] + 0.5, g[1] - 0.32), (g[2] + 0.56, g[1] - 0.26), (g[2] + 0.06, g[1] - 0.0)], x=g[0], node=node)
+
+
+def gun(m, b, node, side=1, length=0.6, scope=False, drum=False):
+    """A scrap gun held along the forearm (pointing down at rest: the aim pose brings the forearm level)."""
+    g = grip_at(b, side)
+    x, y, f = g[0], g[1] + 0.02, g[2] + 0.05
+    metal, wood = K("metal", (0.25, 0.25, 0.27)), K("wood", (0.4, 0.27, 0.16))
+    m.loft(wood, [(x, y + 0.24, f - 0.03, 0.025, 0.04), (x, y + 0.05, f, 0.024, 0.035)], node=node, segs=8)  # stock along the forearm
+    m.box(metal, (0.05, 0.16, 0.07), (x, y - 0.04, f + 0.01), node=node)  # receiver
+    m.rod(metal, 0.016, (x, y - 0.12, f + 0.01), (x, y - 0.12 - length * 0.6, f + 0.02), node=node, segs=10)  # barrel
+    m.rod(K("leather", (0.2, 0.15, 0.1)), 0.02, (x, y - 0.02, f + 0.06), (x, y - 0.12, f + 0.06), node=node, segs=6)  # wrapped grip
+    if scope:
+        m.rod(metal, 0.022, (x, y - 0.0, f + 0.07), (x, y - 0.22, f + 0.07), node=node, segs=10)
+        m.ball(K("ice", (0.3, 0.5, 0.6)), 0.018, (x, y - 0.225, f + 0.07), node=node, u=8, v=6)
+    if drum:
+        m.lathe(metal, [(0.0, -0.03), (0.06, -0.03), (0.065, 0.0), (0.06, 0.03), (0.0, 0.03)], (x, y - 0.08, f + 0.09), node=node, segs=14, axis="x")
+
+
+def bow(m, b, node, side=-1):
+    g = grip_at(b, side)
+    x, y, f = g[0], g[1] + 0.03, g[2]
+    wood = K("wood", (0.36, 0.24, 0.14))
+    m.loft(wood, [(x, y, f - 0.62, 0.008, 0.012), (x, y - 0.06, f - 0.35, 0.014, 0.02), (x, y - 0.03, f, 0.02, 0.025), (x, y - 0.06, f + 0.35, 0.014, 0.02), (x, y, f + 0.62, 0.008, 0.012)], node=node, segs=8)
+    m.rod(K("cloth", (0.85, 0.82, 0.72)), 0.003, (x, y + 0.0, f - 0.61), (x, y + 0.0, f + 0.61), node=node, segs=4)  # string
+
+
+# ---------- bones ----------
+
+def skeleton_body(m, b, bone):
+    """A walking skeleton: skull with a hinged jaw, spine, ribcage, pelvis, limb bones, hands and feet of bones."""
+    hn = b.hunch
+    m.lathe(bone, [(0.0, -0.04), (0.08, -0.03), (0.11, 0.02), (0.09, 0.07), (0.0, 0.08)], (0.0, 0.94, 0.0), node="Hips", segs=12, squash=0.6)  # pelvis
+    for k in range(7):  # spine
+        m.ball(bone, (0.025, 0.02, 0.025), (0.0, 1.04 + k * 0.06, -0.03 + hn * k / 7.0), node="Spine", u=8, v=5)
+    for k in range(6):  # ribs
+        y = 1.2 + k * 0.045
+        w = 0.15 - abs(k - 2) * 0.012
+        m.loft(bone, [(-0.0, y, -0.04, 0.008, 0.008), (-w, y - 0.02, 0.02 + hn * 0.6, 0.009, 0.009), (-w * 0.6, y - 0.05, 0.1 + hn * 0.6, 0.008, 0.008), (0.0, y - 0.06, 0.11 + hn * 0.6, 0.008, 0.008), (w * 0.6, y - 0.05, 0.1 + hn * 0.6, 0.008, 0.008), (w, y - 0.02, 0.02 + hn * 0.6, 0.009, 0.009), (0.0, y, -0.04, 0.008, 0.008)], node="Spine", segs=6, steps=2)
+    m.loft(bone, [(-b.sx, b.shoulder_y, hn, 0.012, 0.012), (0.0, b.shoulder_y + 0.02, hn + 0.06, 0.012, 0.012), (b.sx, b.shoulder_y, hn, 0.012, 0.012)], node="Spine", segs=6)  # collarbones
+    m.rod(bone, 0.015, (0.0, b.neck_y - 0.05, hn), (0.0, b.head_y + 0.02, b.head_f), node="Spine", segs=6)
+    y, f = b.head_y, b.head_f
+    m.loft(bone, [(0.0, y + 0.06, f - 0.01, 0.07, 0.085), (0.0, y + 0.13, f, 0.085, 0.1), (0.0, y + 0.2, f - 0.01, 0.08, 0.095), (0.0, y + 0.25, f - 0.02, 0.03, 0.03)], node="Head", segs=14)  # cranium
+    m.loft(bone, [(-0.05, y + 0.08, f + 0.06, 0.02, 0.02), (0.0, y + 0.05, f + 0.08, 0.035, 0.02), (0.05, y + 0.08, f + 0.06, 0.02, 0.02)], node="Head", segs=8)  # cheeks + upper teeth
+    for side in (-1, 1):
+        m.ball(K("paint", (0.03, 0.02, 0.02)), (0.026, 0.026, 0.015), (side * 0.035, y + 0.13, f + 0.085), node="Head", u=8, v=6)  # sockets
+        m.ball((fk.GLOW, (1.0, 0.45, 0.2)), 0.009, (side * 0.035, y + 0.13, f + 0.09), node="Head", u=6, v=5)  # embers in them
+    m.prof(K("paint", (0.03, 0.02, 0.02)), 0.01, [(f + 0.08, y + 0.11), (f + 0.1, y + 0.07), (f + 0.08, y + 0.07)], x=0.0, node="Head")  # nose hole
+    m.loft(bone, [(-0.05, y + 0.06, f + 0.03, 0.012, 0.012), (0.0, y + 0.02, f + 0.075, 0.03, 0.015), (0.05, y + 0.06, f + 0.03, 0.012, 0.012)], node="Jaw", segs=8)
+    for k in range(5):
+        m.box(bone, (0.008, 0.012, 0.006), (-0.025 + k * 0.0125, y + 0.035, f + 0.075), node="Jaw", bevel=0.001)
+    for side, s in ((-1, "L"), (1, "R")):
+        sh, el, wr = b.shoulder(side), b.elbow(side), b.wrist(side)
+        m.bone(bone, 0.016, sh, el, node="Arm" + s, knob=1.6)
+        m.rod(bone, 0.011, el, wr, node="Fore" + s, segs=6)
+        m.rod(bone, 0.009, (el[0] + side * 0.012, el[1], el[2]), (wr[0] + side * 0.012, wr[1], wr[2]), node="Fore" + s, segs=6)
+        for i in range(4):  # finger bones
+            fx = wr[2] + 0.02 - i * 0.013
+            m.rod(bone, 0.005, (wr[0], wr[1] - 0.02, fx), (wr[0] + side * 0.004, wr[1] - 0.09, fx + 0.01), node="Fore" + s, segs=5)
+        hp, kn = b.hip(side), b.knee(side)
+        m.bone(bone, 0.02, (hp[0], hp[1] + 0.01, 0.0), kn, node="Leg" + s, knob=1.5)
+        m.rod(bone, 0.015, kn, (kn[0], b.ankle_y + 0.02, 0.0), node="Shin" + s, segs=6)
+        m.ball(bone, 0.024, kn, node="Shin" + s, u=8, v=6)  # kneecap
+        for i in range(4):
+            m.rod(bone, 0.007, (kn[0] - 0.02 + i * 0.013, 0.05, 0.0), (kn[0] - 0.02 + i * 0.013, 0.02, 0.14), node="Shin" + s, segs=5)
+        m.ball(bone, (0.03, 0.025, 0.04), (kn[0], 0.06, -0.02), node="Shin" + s, u=8, v=5)  # heel
+
+
+BONE = (0.86, 0.82, 0.7)
+
+
+def skeleton_sword(m):
+    rnd = random.Random(61)
+    b = Body(girth=0.8, hunch=0.03, arm=1.02, head=1.0)
+    b.nodes(m)
+    bone = K("bone", BONE)
+    skeleton_body(m, b, bone)
+    m.loft(K("cloth", (0.35, 0.18, 0.15)), [(0.0, 0.84, 0.0, 0.13, 0.1), (0.0, 0.97, 0.0, 0.12, 0.09)], node="Hips", segs=12, flat=True)  # loincloth band
+    for k in range(5):
+        a = -0.9 + k * 0.45
+        m.prof(K("cloth", (0.35, 0.18, 0.15)), 0.006, [(math.sin(a) * 0.1 - 0.03, 0.86), (math.sin(a) * 0.1 + 0.03, 0.86), (math.sin(a) * 0.1, 0.62 + rnd.uniform(0, 0.08))], x=math.cos(a) * 0.12, node="Hips", bevel=0.0)
+    sword(m, b, "ForeR", 1, 0.8, K("metal", (0.5, 0.42, 0.34)))
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Helm", "Head", (0.0, y, f))  # rusted kettle helm
+    m.lathe(K("metal", RUST), [(0.0, 0.11), (0.06, 0.1), (0.1, 0.06), (0.105, 0.0), (0.16, -0.01), (0.16, -0.02), (0.0, -0.02)], (0.0, y + 0.17, f - 0.01), node=v, segs=16)
+    v = variant(m, "V2_Hood", "Head", (0.0, y, f))
+    m.loft(K("cloth", (0.25, 0.22, 0.2)), [(0.0, y + 0.0, f - 0.06, 0.11, 0.1), (0.0, y + 0.14, f - 0.02, 0.115, 0.12), (0.0, y + 0.24, f - 0.05, 0.07, 0.08), (0.0, y + 0.28, f - 0.1, 0.02, 0.02)], node=v, segs=14)
+    v = variant(m, "V3_Shield", "ForeL", b.elbow(-1))
+    el = b.elbow(-1)
+    m.lathe(K("wood", (0.4, 0.3, 0.2)), [(0.0, 0.0), (0.24, 0.0), (0.25, 0.03), (0.0, 0.035)], (el[0] - 0.06, el[1] - 0.12, el[2]), node=v, segs=18, axis="x")
+    m.lathe(K("metal", RUST), [(0.0, 0.03), (0.06, 0.035), (0.0, 0.07)], (el[0] - 0.06, el[1] - 0.12, el[2]), node=v, segs=12, axis="x")
+    m.lathe(K("metal", RUST), [(0.24, -0.005), (0.26, 0.015), (0.24, 0.04)], (el[0] - 0.06, el[1] - 0.12, el[2]), node=v, segs=18, axis="x")
+
+
+def skeleton_archer(m):
+    rnd = random.Random(71)
+    b = Body(girth=0.78, hunch=0.02, arm=1.04, head=0.98)
+    b.nodes(m)
+    bone = K("bone", (0.82, 0.8, 0.72))
+    skeleton_body(m, b, bone)
+    m.loft(K("cloth", (0.22, 0.3, 0.2)), [(0.0, 0.84, 0.0, 0.13, 0.1), (0.0, 0.97, 0.0, 0.12, 0.09)], node="Hips", segs=12, flat=True)
+    bow(m, b, "ForeL", -1)
+    for k in range(3):  # a quiver on the back
+        pass
+    m.lathe(K("leather", (0.35, 0.22, 0.12)), [(0.0, 0.0), (0.05, 0.0), (0.05, 0.42), (0.0, 0.42)], (0.1, 1.05, -0.12), node="Spine", segs=10)
+    for k in range(5):
+        p = (0.08 + rnd.uniform(-0.02, 0.03), 1.47, -0.12 + rnd.uniform(-0.02, 0.02))
+        m.rod(K("wood", WOOD), 0.004, (p[0], 1.3, p[2]), p, node="Spine", segs=4)
+        m.prof(K("cloth", (0.8, 0.25, 0.2)), 0.002, [(p[2] - 0.01, p[1]), (p[2] + 0.01, p[1]), (p[2], p[1] + 0.06)], x=p[0], node="Spine", bevel=0.0)
+    m.rod(K("leather", (0.35, 0.22, 0.12)), 0.012, (-0.15, 1.45, 0.05), (0.15, 1.05, 0.1), node="Spine", segs=6)  # strap
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Hood", "Head", (0.0, y, f))
+    m.loft(K("cloth", (0.2, 0.28, 0.18)), [(0.0, y + 0.0, f - 0.06, 0.11, 0.1), (0.0, y + 0.14, f - 0.02, 0.115, 0.12), (0.0, y + 0.24, f - 0.05, 0.07, 0.08), (0.0, y + 0.3, f - 0.12, 0.02, 0.02)], node=v, segs=14)
+    v = variant(m, "V2_Cap", "Head", (0.0, y, f))
+    m.lathe(K("cloth", (0.5, 0.3, 0.15)), [(0.0, 0.07), (0.07, 0.065), (0.1, 0.02), (0.11, 0.0), (0.0, 0.0)], (0.0, y + 0.19, f - 0.01), node=v, segs=14)
+    m.prof(K("cloth", (0.9, 0.85, 0.75)), 0.004, [(f - 0.05, y + 0.24), (f - 0.2, y + 0.38), (f - 0.15, y + 0.4), (f - 0.03, y + 0.26)], x=0.07, node=v)  # feather
+    v = variant(m, "V3_Crown", "Head", (0.0, y, f))
+    m.lathe(K("metal", (0.6, 0.48, 0.22)), [(0.095, 0.0), (0.1, 0.03), (0.095, 0.035)], (0.0, y + 0.2, f - 0.01), node=v, segs=14)
+    for k in range(6):
+        a = k * math.tau / 6
+        m.rod(K("metal", (0.6, 0.48, 0.22)), 0.01, (math.sin(a) * 0.097, y + 0.23, f - 0.01 + math.cos(a) * 0.097), (math.sin(a) * 0.1, y + 0.28, f - 0.01 + math.cos(a) * 0.1), r2=0.002, node=v, segs=5)
+
+
+# ---------- the wasteland's people ----------
+
+LEATHER = (0.3, 0.2, 0.13)
+SCRAP = (0.4, 0.38, 0.35)
+SKIN_W = (0.5, 0.37, 0.29)
+
+
+def boots(m, b, mat):
+    for side, s in ((-1, "L"), (1, "R")):
+        kn = b.knee(side)
+        m.loft(mat, [(kn[0], 0.32, 0.0, 0.058, 0.062), (kn[0], 0.1, 0.0, 0.05, 0.055)], node="Shin" + s, segs=10, flat=True)
+        x = kn[0]
+        m.loft(mat, [(x, 0.08, -0.045, 0.048, 0.045), (x, 0.06, 0.06, 0.052, 0.04), (x, 0.045, 0.17, 0.045, 0.03)], node="Shin" + s, segs=10)
+
+
+def scrap_plate(m, mat, at, size, node, tilt=0.0):
+    m.box(mat, size, at, tilt=tilt, node=node, bevel=0.006)
+    for dx in (-1, 1):
+        m.ball(K("metal", (0.5, 0.48, 0.44)), 0.007, (at[0] + dx * size[0] * 0.38, at[1] + size[1] * 0.35, at[2] + size[2] * 0.5), node=node, u=6, v=4)
+
+
+def raider(m):
+    rnd = random.Random(81)
+    b = Body(girth=1.02, shoulders=1.05, hunch=0.03)
+    b.nodes(m)
+    skin = K("leather", SKIN_W)
+    flesh(m, b, skin, eye=(1.0, 0.5, 0.2), eyes_glow=False, brow=1.3)
+    shirt(m, b, K("leather", LEATHER), sleeves=0.3, seed=11)  # leather jerkin
+    trousers(m, b, K("cloth", (0.3, 0.27, 0.22)), seed=12)
+    boots(m, b, K("leather", (0.18, 0.13, 0.09)))
+    belt(m, b, K("leather", (0.15, 0.1, 0.07)), knot=False)
+    m.box(K("metal", (0.6, 0.55, 0.4)), (0.05, 0.04, 0.02), (0.0, 1.015, 0.13), node="Hips")  # buckle
+    for k in range(3):  # pouches
+        m.box(K("leather", (0.25, 0.17, 0.11)), (0.06, 0.08, 0.04), (-0.14 + k * 0.05, 0.96, 0.08 - k * 0.06), node="Hips")
+    scrap_plate(m, K("metal", SCRAP), (0.0, 1.28, b.hunch * 0.6 + 0.135), (0.22, 0.18, 0.02), "Spine", tilt=-6)  # chest plate
+    for side, s in ((-1, "L"), (1, "R")):  # bracers
+        el = b.elbow(side)
+        m.loft(K("leather", (0.22, 0.15, 0.1)), [(el[0], el[1] - 0.05, el[2], 0.05, 0.05), (el[0], el[1] - 0.2, el[2] + 0.01, 0.042, 0.04)], node="Fore" + s, segs=10, flat=True)
+    machete(m, b, "ForeR", 1)
+    sh = b.shoulder(-1)
+    v = variant(m, "V1_Tyre", "ArmL", sh)  # a tyre-tread pauldron + a mohawk
+    m.lathe(K("leather", (0.08, 0.08, 0.09)), [(0.0, 0.0), (0.12, 0.0), (0.13, 0.05), (0.08, 0.1), (0.0, 0.1)], (sh[0] - 0.02, sh[1] - 0.02, sh[2]), node=v, segs=14, squash=0.8)
+    y, f = b.head_y, b.head_f
+    v2 = variant(m, "V1_Mohawk", "Head", (0.0, y, f))
+    for k in range(8):
+        m.prof(K("cloth", (0.75, 0.2, 0.15)), 0.02, [(f + 0.07 - k * 0.025, y + 0.24 - k * 0.006), (f + 0.06 - k * 0.025, y + 0.32 - abs(k - 3) * 0.008), (f + 0.04 - k * 0.025, y + 0.235 - k * 0.006)], x=0.0, node=v2)
+    v = variant(m, "V2_Mask", "Head", (0.0, y, f))  # gas mask + hood
+    m.lathe(K("leather", (0.15, 0.15, 0.14)), [(0.0, 0.0), (0.075, 0.0), (0.08, 0.05), (0.05, 0.08), (0.0, 0.085)], (0.0, y + 0.08, f + 0.07), node=v, segs=14, axis="f")
+    for side in (-1, 1):
+        m.lathe(K("ice", (0.5, 0.15, 0.1)), [(0.0, 0.0), (0.022, 0.0), (0.022, 0.01), (0.0, 0.011)], (side * 0.036, y + 0.13, f + 0.1), node=v, segs=10, axis="f")
+    m.lathe(K("metal", SCRAP), [(0.0, 0.0), (0.03, 0.0), (0.035, 0.05), (0.0, 0.06)], (0.0, y + 0.05, f + 0.14), node=v, segs=10, axis="f")  # filter
+    m.loft(K("cloth", (0.35, 0.3, 0.24)), [(0.0, y + 0.0, f - 0.06, 0.11, 0.1), (0.0, y + 0.14, f - 0.03, 0.12, 0.125), (0.0, y + 0.24, f - 0.05, 0.08, 0.09), (0.0, y + 0.28, f - 0.11, 0.02, 0.02)], node=v, segs=14)
+    v = variant(m, "V3_Sign", "ForeL", b.elbow(-1))  # a road sign for a shield
+    el = b.elbow(-1)
+    m.lathe(K("paint", (0.8, 0.12, 0.1)), [(0.0, 0.0), (0.22, 0.0), (0.22, 0.012), (0.0, 0.012)], (el[0] - 0.06, el[1] - 0.12, el[2]), node=v, segs=8, axis="x")
+    m.box(K("paint", (0.95, 0.95, 0.92)), (0.018, 0.05, 0.26), (el[0] - 0.07, el[1] - 0.12, el[2]), node=v)
+
+
+def feral(m):
+    rnd = random.Random(91)
+    b = Body(girth=0.84, shoulders=0.95, hips=0.9, hunch=0.11, arm=1.16, arm_r=0.85, leg_r=0.88, head=0.95, neck=1.1)
+    b.nodes(m)
+    skin = K("leather", (0.42, 0.34, 0.27))
+    flesh(m, b, skin, eye=(0.9, 0.95, 0.4), brow=1.6, gaunt=1.0)
+    for side, s in ((-1, "L"), (1, "R")):
+        hand(m, b, side, skin, "Fore" + s, claws=K("bone", (0.22, 0.2, 0.17)))
+    for k in range(5):  # ribs and a long scar
+        m.loft(K("leather", (0.46, 0.38, 0.3)), [(-0.11, 1.15 + k * 0.045, b.hunch * 0.5 + 0.09, 0.008, 0.006), (0.0, 1.16 + k * 0.045, b.hunch * 0.5 + 0.115, 0.009, 0.006), (0.11, 1.15 + k * 0.045, b.hunch * 0.5 + 0.09, 0.008, 0.006)], node="Spine", segs=6)
+    m.loft(K("leather", (0.45, 0.15, 0.12)), [(-0.12, 1.38, b.hunch + 0.08, 0.006, 0.004), (0.05, 1.2, b.hunch * 0.5 + 0.12, 0.006, 0.004), (0.13, 1.05, 0.11, 0.005, 0.004)], node="Spine", segs=5)
+    trousers(m, b, K("cloth", (0.33, 0.3, 0.24)), length=0.55, torn=1.0, seed=13)
+    m.loft(K("cloth", (0.33, 0.3, 0.24)), [(0.0, 0.98, 0.0, 0.15, 0.11), (0.0, 1.04, 0.0, 0.145, 0.107)], node="Hips", segs=12, steps=1, flat=True)
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Dreads", "Head", (0.0, y, f))
+    for k in range(12):
+        a = -1.6 + k * 0.28
+        start = (math.sin(a) * 0.085, y + 0.2, f - 0.02 + math.cos(a) * 0.06 - 0.04)
+        m.loft(K("cloth", (0.15, 0.12, 0.1)), [(start[0], start[1], start[2], 0.012, 0.012), (start[0] * 1.3, start[1] - 0.12, start[2] - 0.05, 0.011, 0.011), (start[0] * 1.4, start[1] - 0.26, start[2] - 0.06, 0.008, 0.008)], node=v, segs=6)
+    v = variant(m, "V2_Paint", "Head", (0.0, y, f))  # face paint + bone necklace
+    for side in (-1, 1):
+        m.prof(K("paint", (0.85, 0.82, 0.75)), 0.004, [(f + 0.085, y + 0.16), (f + 0.08, y + 0.08), (f + 0.07, y + 0.08), (f + 0.075, y + 0.16)], x=side * 0.04, node=v)
+    v3 = variant(m, "V2_Necklace", "Spine", (0.0, b.neck_y, b.hunch))
+    for k in range(9):
+        a = -1.1 + k * 0.275
+        p = (math.sin(a) * 0.09, b.neck_y - 0.07 - math.cos(a) * 0.03, b.hunch + math.cos(a) * 0.08)
+        m.rod(K("bone", BONE), 0.006, p, (p[0], p[1] - 0.05, p[2] + 0.01), r2=0.002, node=v3, segs=5)
+    v = variant(m, "V3_Collar", "Spine", (0.0, b.neck_y, b.hunch))
+    m.lathe(K("metal", RUST), [(0.065, -0.02), (0.07, 0.0), (0.065, 0.02)], (0.0, b.neck_y - 0.02, b.hunch * 0.95), node=v, segs=14)
+    chain(m, K("metal", RUST), [(0.0, b.neck_y - 0.06, b.hunch + 0.07), (0.0, b.neck_y - 0.14, b.hunch + 0.1), (0.02, b.neck_y - 0.22, b.hunch + 0.11), (0.03, b.neck_y - 0.3, b.hunch + 0.1)], v)
+
+
+def scav_gunner(m):
+    rnd = random.Random(101)
+    b = Body(girth=1.04, shoulders=1.02, belly=0.02, hunch=0.03)
+    b.nodes(m)
+    skin = K("leather", (0.47, 0.35, 0.27))
+    flesh(m, b, skin, eyes_glow=False, brow=1.1)
+    shirt(m, b, K("cloth", (0.42, 0.4, 0.3)), sleeves=0.9, seed=14)  # canvas coat
+    m.loft(K("cloth", (0.42, 0.4, 0.3)), [(0.0, 1.0, 0.0, 0.17, 0.13), (0.0, 0.7, 0.0, 0.2, 0.15)], node="Hips", segs=14, flat=True)  # coat skirt
+    trousers(m, b, K("cloth", (0.25, 0.26, 0.22)), seed=15)
+    boots(m, b, K("leather", (0.16, 0.12, 0.08)))
+    for k in range(4):  # an ammo bandolier
+        m.box(K("metal", (0.6, 0.5, 0.25)), (0.03, 0.05, 0.03), (-0.12 + k * 0.07, 1.42 - k * 0.09, b.hunch * 0.6 + 0.13), node="Spine")
+    m.rod(K("leather", LEATHER), 0.018, (-0.16, 1.45, b.hunch * 0.6 + 0.11), (0.16, 1.05, 0.13), node="Spine", segs=6)
+    scrap_plate(m, K("metal", SCRAP), (b.sx + 0.03, b.shoulder_y + 0.02, b.hunch), (0.12, 0.04, 0.14), "ArmR")
+    gun(m, b, "ForeR", 1, 0.55, drum=True)
+    y, f = b.head_y, b.head_f
+    for side in (-1, 1):  # goggles up on the forehead (always)
+        m.lathe(K("metal", (0.35, 0.33, 0.3)), [(0.0, 0.0), (0.025, 0.0), (0.025, 0.02), (0.0, 0.022)], (side * 0.035, y + 0.19, f + 0.075), node="Head", segs=10, axis="f")
+    v = variant(m, "V1_Helmet", "Head", (0.0, y, f))
+    m.lathe(K("metal", (0.33, 0.36, 0.3)), [(0.0, 0.1), (0.07, 0.095), (0.105, 0.05), (0.11, 0.0), (0.13, -0.01), (0.0, -0.01)], (0.0, y + 0.17, f - 0.01), node=v, segs=16)
+    v = variant(m, "V2_Bandana", "Head", (0.0, y, f))
+    m.loft(K("cloth", (0.6, 0.3, 0.15)), [(0.0, y + 0.03, f + 0.02, 0.09, 0.1), (0.0, y + 0.1, f + 0.01, 0.095, 0.105)], node=v, segs=14, flat=True)
+    v = variant(m, "V3_Pack", "Spine", (0.0, 1.25, -0.15))
+    m.box(K("cloth", (0.32, 0.3, 0.22)), (0.28, 0.34, 0.16), (0.0, 1.25, -0.2), node=v, bevel=0.03)
+    m.lathe(K("cloth", (0.28, 0.26, 0.2)), [(0.0, 0.0), (0.06, 0.0), (0.06, 0.3), (0.0, 0.3)], (-0.15, 1.47, -0.2), node=v, segs=10, axis="x")  # bedroll
+
+
+def marksman(m):
+    rnd = random.Random(111)
+    b = Body(girth=0.95, hunch=0.05, arm=1.02, leg_r=0.95)
+    b.nodes(m)
+    skin = K("leather", (0.42, 0.31, 0.24))
+    flesh(m, b, skin, eyes_glow=False, brow=1.0)
+    shirt(m, b, K("cloth", (0.3, 0.33, 0.26)), sleeves=0.95, seed=16)
+    trousers(m, b, K("cloth", (0.28, 0.27, 0.22)), seed=17)
+    boots(m, b, K("leather", (0.17, 0.12, 0.08)))
+    # a long poncho over the shoulders
+    m.loft(K("cloth", (0.36, 0.34, 0.26)), [(0.0, 1.48, b.hunch, 0.16, 0.11), (0.0, 1.3, b.hunch * 0.6, 0.26, 0.17), (0.0, 1.0, 0.0, 0.27, 0.18)], node="Spine", segs=16, flat=True)
+    m.box(K("leather", LEATHER), (0.16, 0.05, 0.06), (0.0, 0.98, 0.14), node="Hips")
+    gun(m, b, "ForeR", 1, 1.0, scope=True)
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Hood", "Head", (0.0, y, f))
+    m.loft(K("cloth", (0.36, 0.34, 0.26)), [(0.0, y - 0.0, f - 0.06, 0.11, 0.1), (0.0, y + 0.14, f - 0.02, 0.12, 0.125), (0.0, y + 0.24, f - 0.05, 0.08, 0.09), (0.0, y + 0.28, f - 0.11, 0.02, 0.02)], node=v, segs=14)
+    m.loft(K("cloth", (0.3, 0.28, 0.22)), [(0.0, y + 0.03, f + 0.02, 0.09, 0.1), (0.0, y + 0.1, f + 0.01, 0.095, 0.105)], node=v, segs=14, flat=True)  # scarf over the mouth
+    v = variant(m, "V2_Boonie", "Head", (0.0, y, f))
+    m.lathe(K("cloth", (0.35, 0.36, 0.25)), [(0.0, 0.08), (0.08, 0.075), (0.1, 0.02), (0.17, -0.01), (0.17, -0.02), (0.0, -0.02)], (0.0, y + 0.18, f - 0.01), node=v, segs=16)
+    v = variant(m, "V3_Ghillie", "Spine", (0.0, 1.3, 0.0))
+    for k in range(26):
+        a = rnd.uniform(0, math.tau)
+        p = (math.cos(a) * 0.24, rnd.uniform(1.05, 1.45), math.sin(a) * 0.16)
+        m.loft(K("cloth", (0.3 + rnd.uniform(-0.05, 0.05), 0.36, 0.2)), [(p[0], p[1], p[2], 0.015, 0.004), (p[0] * 1.1, p[1] - 0.12, p[2] * 1.1, 0.01, 0.003)], node=v, segs=4)
+
+
+def brute(m):
+    rnd = random.Random(121)
+    b = Body(girth=1.45, shoulders=1.5, hips=1.2, belly=0.09, hunch=0.1, arm=1.12, arm_r=1.3, leg_r=1.2, head=0.9, neck=0.7)
+    b.nodes(m)
+    skin = K("leather", (0.45, 0.34, 0.29))
+    flesh(m, b, skin, eyes_glow=False, brow=1.8)
+    trousers(m, b, K("leather", (0.25, 0.18, 0.12)), length=0.8, seed=18)
+    boots(m, b, K("leather", (0.14, 0.1, 0.07)))
+    m.loft(K("leather", (0.4, 0.3, 0.2)), [(0.0, 1.35, b.hunch * 0.75 + 0.16, 0.22, 0.02), (0.0, 0.85, 0.2, 0.24, 0.02)], node="Spine", segs=6, flat=True)  # a heavy apron
+    belt(m, b, K("leather", (0.14, 0.1, 0.07)), knot=False)
+    for k in range(4):  # stitched scars
+        p = (rnd.uniform(-0.15, 0.15), rnd.uniform(1.15, 1.4), b.hunch * 0.6 + 0.17)
+        for i in range(4):
+            m.box(K("leather", (0.25, 0.12, 0.1)), (0.004, 0.02, 0.004), (p[0] + i * 0.012, p[1], p[2]), node="Spine", bevel=0.0)
+    club(m, b, "ForeR", 1, 0.7)
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Mask", "Head", (0.0, y, f))  # a welded scrap mask
+    m.loft(K("metal", SCRAP), [(0.0, y + 0.02, f + 0.06, 0.08, 0.04), (0.0, y + 0.12, f + 0.075, 0.09, 0.04), (0.0, y + 0.2, f + 0.065, 0.08, 0.035)], node=v, segs=12)
+    for side in (-1, 1):
+        m.box(K("paint", (0.05, 0.03, 0.03)), (0.03, 0.012, 0.01), (side * 0.035, y + 0.13, f + 0.11), node=v)
+    v = variant(m, "V2_Chains", "Spine", (0.0, 1.3, 0.0))
+    chain(m, K("metal", RUST), [(-0.25, 1.48, 0.0), (-0.15, 1.38, 0.18), (0.0, 1.28, 0.24), (0.15, 1.18, 0.22), (0.25, 1.08, 0.12), (0.27, 1.0, 0.0)], v, 0.045)
+    v = variant(m, "V3_Plates", "Spine", (0.0, 1.3, 0.0))
+    scrap_plate(m, K("metal", SCRAP), (-0.1, 1.32, b.hunch * 0.6 + 0.19), (0.18, 0.22, 0.025), v, tilt=-8)
+    scrap_plate(m, K("metal", (0.45, 0.32, 0.22)), (0.1, 1.3, b.hunch * 0.6 + 0.19), (0.17, 0.2, 0.025), v, tilt=-6)
+    for side, s in ((-1, "L"), (1, "R")):
+        sh = b.shoulder(side)
+        scrap_plate(m, K("metal", SCRAP), (sh[0] + side * 0.05, sh[1] + 0.06, sh[2]), (0.2, 0.05, 0.22), variant(m, "V3_Pad" + s, "Arm" + s, sh))
+
+
+MODELS = (("en_drowned", drowned), ("en_drowned_runner", drowned_runner), ("en_swimmer", swimmer), ("en_reef_crab", reef_crab), ("en_tide_brute", tide_brute),
+          ("en_skeleton_sword", skeleton_sword), ("en_skeleton_archer", skeleton_archer), ("en_raider", raider), ("en_feral", feral),
+          ("en_scav_gunner", scav_gunner), ("en_marksman", marksman), ("en_brute", brute))
 
 
 def main():

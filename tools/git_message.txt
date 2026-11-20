@@ -1,4 +1,4 @@
-Polish1 D2a: reworked island enemies (drowned, runner, swimmer, reef crab, tide brute) as rigid models with variants and their own animation, folded into one skinned mesh each
+Polish1 D2b: reworked colosseum enemies (skeleton swordsman and archer, raider, feral, scav gunner, marksman, brute) with variants and their own animation
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
