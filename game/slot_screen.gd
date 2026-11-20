@@ -76,6 +76,12 @@ func set_busy(busy: bool) -> void:
 	queue_redraw()
 
 
+# The pot alone (the lobby's pot grew while we watch), keeping the message.
+func set_pot(pot: float) -> void:
+	_pot = pot
+	queue_redraw()
+
+
 func show_state(coins: int, pot: float, message: String) -> void:
 	if coins > _coins and not _busy:
 		_won_at = _t

@@ -1,6 +1,6 @@
-Polish1 D3a: pachinko rewards (item 75)
+Shared slot jackpot for the whole lobby
 
-11 pockets with kinds: FEVER drops 4 free gold balls, 3 gold balls of one fever in the JACKPOT pocket win the pachinko pot (5 percent of every ball, saved per player) plus 25 prize tickets, TICKET pockets give prize tickets. Prize counter beside the console (ui_skin window, core/prize_book.gd): crates and card packs for tickets. Return checked with tools/pachinko_check.gd: 0.92-0.95 of the stake. Dev: !pachinko launch / fever / jackpot / prizes / redeem / note.
+Online the slot pot is the lobby's, kept by the host (game/net_slots.gd): a client's spin is an intent, the host rolls it, grows the one pot and pays a jackpot out of it at once; the pot is sent to everyone after every spin and a jackpot is told to the lobby chat. A client keeps its own saved pot aside; a refused or unanswered spin gives the chips back. Pair set slotpot: the guest saw the host's spin grow the pot, the guest's jackpot reset it on both machines.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

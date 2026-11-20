@@ -315,7 +315,8 @@ var _power_field := PowerupField.new()  # ... and the ones lying around
 var _power_id := 0  # the last one dropped here (alone or hosting)
 var _blasting := false  # the nuke is killing: what dies of it leaves nothing
 var _watched := 0  # online, out of the round: the teammate our camera follows (0 = nobody)
-var _jackpot := 500.0  # this player's progressive slot pot (saved in the profile)
+var _jackpot := 500.0  # the progressive slot pot shown (online: the LOBBY's pot, kept by the host; alone: ours, saved)
+var _solo_jackpot := -1.0  # online as a client: our own saved pot, kept aside while the lobby's pot shows
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
 var _pachinko_hold := 0.0
@@ -792,6 +793,11 @@ func _ready() -> void:
 		net.chat.line.connect(func(sender: String, text: String) -> void: _chat.add_line("%s: %s" % [sender, text]))
 		net.chat.unboxed.connect(func(sender: String, text: String) -> void: _chat.add_line("%s unboxed %s" % [sender, text], Color(1.0, 0.82, 0.3)))
 		net.chat.reply.connect(func(text: String) -> void: _chat.add_line(text, Color(0.75, 0.9, 1.0)))
+		net.slots.host_spin = _host_slot_spin
+		net.slots.host_pot = func() -> float: return _jackpot
+		net.slots.pot.connect(_on_lobby_pot)
+		net.slots.spun.connect(_on_slot_rolled)
+		net.slots.jackpot.connect(func(sender: String, won: int) -> void: _chat.add_line("%s hit the SLOTS JACKPOT: +%d chips!" % [sender, won], Color(1.0, 0.82, 0.3)))
 		net.chat.op_changed.connect(func(on: bool) -> void: _chat.add_line("The host %s commands." % ("lets you use" if on else "took away your"), Color(1.0, 0.85, 0.4)))
 		net.chat.world_command = _run_world_command
 		net.chat.tp_ordered.connect(func(target: Dictionary, by: String) -> void:
@@ -1673,7 +1679,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -2006,6 +2012,7 @@ func _slot_near() -> SlotMachine:
 func _update_pots() -> void:
 	for m in _slot_machines:
 		m.set_pot(_jackpot)
+	_slot_screen.set_pot(_jackpot)
 
 
 func _open_slots(machine: SlotMachine) -> void:
@@ -2018,9 +2025,15 @@ func _open_slots(machine: SlotMachine) -> void:
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	_slot_screen.open(_wallet.balance, _jackpot)
+	if net != null:
+		net.slots.ask_pot()
 
 
 func _close_slots() -> void:
+	if _slot_pending.has("asked"):  # left before the host answered: the chips come back
+		_wallet.add(int(_slot_pending["cost"]))
+		_slot_pending = {}
+		_slot_screen.set_busy(false)
 	_player.controls_enabled = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	_slot_machine.set_screen("FREE PLAY  -  press F")
@@ -2029,17 +2042,76 @@ func _close_slots() -> void:
 
 func _on_slot_spin(bet: int) -> void:
 	var cost := _slot_math.cost(bet)
-	if _slot_machine.is_busy() or not _wallet.spend(cost):
+	if _slot_machine.is_busy() or not _slot_pending.is_empty() or not _wallet.spend(cost):
 		return
-	var grown := _slot_math.grow_pool(_jackpot, cost)
+	if net != null and net.slots.is_client():  # online the host keeps the lobby's pot and rolls our spin
+		var ask_id := Time.get_ticks_msec()
+		_slot_pending = {"asked": bet, "cost": cost, "id": ask_id}
+		_slot_screen.set_busy(true)
+		_slot_screen.show_state(_wallet.balance, _jackpot, "Spinning...")
+		net.slots.ask_spin(bet)
+		get_tree().create_timer(5.0).timeout.connect(func() -> void:  # no answer (the host left): chips back
+			if _slot_pending.has("asked") and int(_slot_pending["id"]) == ask_id:
+				_on_slot_rolled([], -1, false))
+		return
+	var r := _host_slot_spin(bet)
+	_slot_pending = {"result": {"total": r["total"], "jackpot_won": r["jackpot_won"]}}
+	if net != null:
+		net.slots.tell_pot(_jackpot)
+		if bool(r["jackpot_won"]):
+			net.slots.tell_jackpot(int(r["total"]))
+	_start_reels(r["stops"], cost)
+
+
+# Rolls one spin against the pot (ours alone, the lobby's as host): grows the pot by the stake, and a jackpot empties
+# it back to the seed at once (so two spins can never both take it). {} when the bet is not one of the machine's.
+func _host_slot_spin(bet: int) -> Dictionary:
+	var allowed := false
+	for b: Variant in _slot_math.bets:
+		allowed = allowed or int(b) == bet
+	if not allowed:
+		return {}
+	var grown := _slot_math.grow_pool(_jackpot, _slot_math.cost(bet))
 	var stops := _slot_math.random_stops(_rng)
-	_slot_pending = {"result": _slot_math.evaluate(stops, bet, grown), "grown": grown, "bet": bet}
-	_jackpot = grown
+	var result := _slot_math.evaluate(stops, bet, grown)
+	_jackpot = _slot_math.jackpot_seed if bool(result["jackpot_won"]) else grown
 	_update_pots()
+	return {"stops": stops, "total": int(result["total"]), "jackpot_won": bool(result["jackpot_won"])}
+
+
+# Client: the host's roll of our spin.
+func _on_slot_rolled(stops: Array, total: int, jackpot_won: bool) -> void:
+	if not _slot_pending.has("asked"):
+		return
+	var cost := int(_slot_pending["cost"])
+	if total < 0 or stops.size() != 3:  # refused (too quick, or the host did not know the bet): chips back
+		_wallet.add(cost)
+		_slot_pending = {}
+		_slot_screen.set_busy(false)
+		_slot_screen.show_state(_wallet.balance, _jackpot, "Try again.")
+		return
+	_slot_pending = {"result": {"total": total, "jackpot_won": jackpot_won}}
+	var typed: Array[int] = []
+	for v: Variant in stops:
+		typed.append(int(v))
+	_start_reels(typed, cost)
+
+
+func _start_reels(stops: Array[int], cost: int) -> void:
 	_slot_screen.set_busy(true)
 	_slot_screen.show_state(_wallet.balance, _jackpot, "Spinning...")
 	_slot_machine.set_screen("BET %d   spinning..." % cost)
 	_slot_machine.spin_to(stops)
+
+
+# The lobby's pot from the host (a client keeps its own saved pot aside while online).
+func _on_lobby_pot(value: float) -> void:
+	if net == null or not net.slots.is_client():
+		return
+	if _solo_jackpot < 0.0:
+		_solo_jackpot = _jackpot
+	_jackpot = value
+	_update_pots()
 
 
 func _on_slot_finished() -> void:
@@ -2053,13 +2125,11 @@ func _on_slot_finished() -> void:
 	if won > 0:
 		_wallet.add(won)
 		message = "You win %d chips!" % won
-	if result["jackpot_won"]:
+	if result["jackpot_won"]:  # (the pot was emptied when the spin was rolled)
 		big = true
 		_progress.count("jackpots", 1)
 		_progress_notices(0)
-		_jackpot = _slot_math.jackpot_seed
 		message = "JACKPOT!  +%d chips" % won
-		_update_pots()
 	if won > 0:
 		_slot_machine.flash_win(big)
 	_slot_machine.set_screen("WIN %d" % won if won > 0 else "no win")
@@ -5187,6 +5257,8 @@ func _club_setup(first: int) -> void:
 	_pachinko = _casino["pachinko"]
 	_pachinko.ball_landed.connect(_on_pachinko_landed)
 	_pachinko.jackpot_won.connect(_on_pachinko_jackpot)
+	if net != null:
+		net.slots.ask_pot()  # the lobby's slot pot on the machines
 	_pachinko.set_pot(_pachinko_pot)
 	_slot_machines = _casino["slots"]
 	for m in _slot_machines:

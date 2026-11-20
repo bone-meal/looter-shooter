@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 12;!go club;!wait 16;!casino pot;!wait 6;!casino pot;!casino slot 1;!wait 1;!casino press bet 20;!casino press spin;!wait 5;!casino pot;!wait 14;!casino press spin;!wait 6;!casino pot;!snap g_slots;!wait 4

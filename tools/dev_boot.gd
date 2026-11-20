@@ -2880,6 +2880,24 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					player.call("teleport", m.global_position + m.global_basis.z * 1.3 + Vector3(0, 0.1, 0), 0.0)
 					await get_tree().create_timer(0.4).timeout
 					session.call("_open_slots", m)
+				"rigjack":  # (shared slot jackpot) the NEXT spin this machine rolls (its own, or a client's as host) hits the jackpot
+					var math: RefCounted = session.get("_slot_math")
+					var srng: RandomNumberGenerator = session.get("_rng")
+					var probe := RandomNumberGenerator.new()
+					probe.seed = 7
+					for i in 400000:
+						var st := probe.state
+						if bool(math.call("evaluate", math.call("random_stops", probe), int(math.get("jackpot_bet")), 1.0)["jackpot_won"]):
+							srng.state = st
+							srng.seed = probe.seed
+							srng.state = st
+							_lines.append("CASINO rigjack: next roll is a jackpot (try %d)" % i)
+							break
+				"pot":
+					var cards_s: Array = []
+					for m2: Node3D in (session.get("_casino") as Dictionary).get("slots"):
+						cards_s.append(String((m2.get("_pot_label") as Label3D).text))
+					_lines.append("CASINO pot %.1f solo %.1f machines %s chips %d" % [float(session.get("_jackpot")), float(session.get("_solo_jackpot")), ", ".join(cards_s), int((session.get("_wallet") as RefCounted).get("balance"))])
 				"press":
 					var key := " ".join(words.slice(2))
 					var hit := false
