@@ -222,6 +222,24 @@ func _hair_tab() -> Control:
 	var label := Label.new()
 	label.text = "Hair color"
 	tab.add_child(label)
+	var swatches := GridContainer.new()  # (polish1 item 6) the 16 preset colours (data/characters.json hair_colors); the wheel for any other
+	swatches.columns = 8
+	for preset: Dictionary in RiggedBody.data().get("hair_colors", []) if _rigged else []:
+		var swatch := Button.new()
+		swatch.custom_minimum_size = Vector2(30, 30)
+		swatch.tooltip_text = String(preset["name"])
+		for state: String in ["normal", "hover", "pressed", "focus"]:
+			var box := StyleBoxFlat.new()
+			box.bg_color = Color.html(String(preset["color"]))
+			box.set_corner_radius_all(15)
+			box.set_border_width_all(2 if state == "normal" else 3)
+			box.border_color = Color(0.1, 0.1, 0.1, 0.8) if state == "normal" else Color(1.0, 0.85, 0.4)
+			swatch.add_theme_stylebox_override(state, box)
+		swatch.pressed.connect(func() -> void:
+			_picker.color = Color.html(String(preset["color"]))
+			_on_hair_color(_picker.color))
+		swatches.add_child(swatch)
+	tab.add_child(swatches)
 	_picker.picker_shape = ColorPicker.SHAPE_HSV_WHEEL
 	_picker.edit_alpha = false
 	_picker.presets_visible = false

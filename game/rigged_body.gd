@@ -554,7 +554,7 @@ func _clip(clip_name: String) -> AnimationNodeAnimation:
 
 # Eyebrows or a hairstyle: a model from the hair folder that follows the head bone.
 func _add_head_piece(model_file: String, texture_id: String, color: Color) -> void:
-	var scene := _open(String(data()["packs"]) + String(data()["hair_folder"]) + model_file)
+	var scene := _open(model_file if model_file.begins_with("res://") else String(data()["packs"]) + String(data()["hair_folder"]) + model_file)  # (polish1 item 6) our own hairstyles live in assets/models/hair
 	if scene == null:
 		return
 	var from := _find_skeleton(scene)
@@ -647,7 +647,8 @@ static func _hair_material(texture_id: String, color: Color) -> StandardMaterial
 	if not _hair_materials.has(key):
 		var textures: Dictionary = data()["hair_textures"]
 		var material := StandardMaterial3D.new()
-		material.albedo_texture = _texture(String(data()["packs"]) + String(textures.get(texture_id, "")))
+		var texture := String(textures.get(texture_id, ""))
+		material.albedo_texture = _texture(texture if texture.begins_with("res://") else String(data()["packs"]) + texture)
 		material.albedo_color = color
 		material.roughness = 0.6
 		material.cull_mode = BaseMaterial3D.CULL_DISABLED  # hair cards are single-sided sheets

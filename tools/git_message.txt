@@ -1,4 +1,4 @@
-Polish1 C7b: Source-style edgebugs on the edgebug stages (pillars, hard landings), bhop best times shared with the lobby on the hub board and portals
+Polish1 D1a: 10 new rigged hairstyles (15 in all) and 16 preset hair colours in the customize menu
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

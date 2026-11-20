@@ -10,6 +10,7 @@ const RiggedBody = preload("res://game/rigged_body.gd")
 const PER_SHOT := 6
 
 var _bodies: Array = []
+var hair_mode := false  # (polish1 item 6) tools/hair_shot.tscn: one hairstyle per character (peasant clothes), close on the heads, preset colours
 
 
 func _ready() -> void:
@@ -45,7 +46,8 @@ func _ready() -> void:
 	add_child(camera)
 	camera.current = true
 	SurfaceLibrary.configure(true, "1k", 2)
-	var ids: Array = (RiggedBody.data()["outfits"] as Dictionary).keys()
+	var ids: Array = (RiggedBody.data()["hair" if hair_mode else "outfits"] as Dictionary).keys()
+	var colours: Array = RiggedBody.data().get("hair_colors", [{"color": "#4a3324"}])
 	if not only.is_empty():
 		ids = Array(only)
 	var lines := PackedStringArray()
@@ -61,6 +63,8 @@ func _ready() -> void:
 			var id := String(ids[shot * PER_SHOT + i])
 			for row in 2:
 				var look := {"gender": "female" if row == 0 else "male", "rig_outfit": id, "rig_hair": "long" if row == 0 else "parted", "skin": (i * 3 + row * 4) % 10, "hair_color": "#4a3324"}
+				if hair_mode:
+					look.merge({"rig_outfit": "peasant", "rig_hair": id, "hair_color": String(colours[(shot * PER_SHOT + i + row * 5) % colours.size()]["color"])}, true)
 				var body := RiggedBody.build(look, not merged)  # a body with shape sliders cannot be merged
 				if body == null:
 					lines.append("%s %s: NOT BUILT" % [id, look["gender"]])
@@ -78,6 +82,9 @@ func _ready() -> void:
 			var side := 1.0 if view == "front" else -1.0
 			camera.position = Vector3(middle + 0.3, 2.0, (2.8 + 0.9 * float(count)) * side - 0.65)
 			camera.look_at(Vector3(middle + 0.3, 0.9, -0.65))
+			if hair_mode:  # head height, closer
+				camera.position = Vector3(middle + 0.3, 1.85, (1.4 + 0.62 * float(count)) * side - 0.65)
+				camera.look_at(Vector3(middle + 0.3, 1.45, -0.65))
 			for body: Node3D in _bodies:
 				body.rotation.y = PI  # they keep facing the front camera: the back view shows their backs
 				body.call("animate", 0.0, false)
@@ -85,7 +92,7 @@ func _ready() -> void:
 				for body: Node3D in _bodies:
 					body.call("animate", 0.0, false)
 				await RenderingServer.frame_post_draw
-			get_viewport().get_texture().get_image().save_jpg("res://tools/shots/outfits_%d_%s.jpg" % [shot, view], 0.9)
+			get_viewport().get_texture().get_image().save_jpg("res://tools/shots/%s_%d_%s.jpg" % ["hair" if hair_mode else "outfits", shot, view], 0.9)
 			lines.append("shot %d %s (%s): draws=%d tris=%d" % [shot, view, ",".join(PackedStringArray(ids.slice(shot * PER_SHOT, shot * PER_SHOT + count))), int(Performance.get_monitor(Performance.RENDER_TOTAL_DRAW_CALLS_IN_FRAME)), int(Performance.get_monitor(Performance.RENDER_TOTAL_PRIMITIVES_IN_FRAME))])
 	lines.append("OUTFIT_SHOT_DONE")
 	var f := FileAccess.open("res://tools/outfit_shot.log", FileAccess.WRITE)
