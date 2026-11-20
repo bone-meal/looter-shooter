@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp club;!wait 8;!case give gold 1;!case tab;!wait 0.5;!case press open gold;!wait 0.6;!snap c5_case;!case press done;!wait 0.3;!case close;!case close;!casino view 0 -6 0 -40;!wait 1.5;!snap c5_spots;!casino view 0 1.5 0 10;!wait 1;!snap c5_beams;!casino view 17.5 5 30 -12;!wait 1;!snap c5_casino;!casino view 15 2.7 270 -10;!wait 1.5;!snap c5_crates
+!uncap;!wait 2;/tp club;!wait 8;/give chips 20000;!casino bj;!wait 1.2;!casino press bet 50;!casino press deal;!wait 3;!snap c5_bj_round;!casino press stand;!wait 4;!snap c5_bj_done

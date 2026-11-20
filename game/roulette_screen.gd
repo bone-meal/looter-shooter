@@ -43,8 +43,8 @@ func _ready() -> void:
 	set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
 	offset_left = -PANEL.x * 0.5
 	offset_right = PANEL.x * 0.5
-	offset_top = -PANEL.y - 14.0
-	offset_bottom = -14.0
+	offset_top = -PANEL.y - 110.0  # clear of the HUD's bottom bar
+	offset_bottom = -110.0
 
 
 # cfg = the "roulette" section of data/casino.json

@@ -149,6 +149,7 @@ func _on_deal(bet: int) -> void:
 	_bj_shown = [0, 0]
 	_bj_dealer_shown = 0
 	_bj_hole_hidden = true
+	_bj_show_cards()
 	_crew.deal_flick(_bj_dealer)
 	_place_player_card(0)
 	await get_tree().create_timer(0.35).timeout
@@ -169,6 +170,7 @@ func _place_player_card(hand: int) -> void:
 	var idx := _bj_shown[hand]
 	_bj_table.place("p%d:%d" % [hand, idx], cards[idx], true)
 	_bj_shown[hand] = idx + 1
+	_bj_show_cards()
 
 
 # A dealer card; face_up false = the hole card, dealt face down.
@@ -176,6 +178,18 @@ func _place_dealer_card(face_up: bool) -> void:
 	var idx := _bj_dealer_shown
 	_bj_table.place("d:%d" % idx, _bj.dealer[idx], face_up)
 	_bj_dealer_shown = idx + 1
+	_bj_show_cards()
+
+
+# (polish1 C5) The screen shows the same cards as the table, as they are dealt.
+func _bj_show_cards() -> void:
+	var dealer: Array[int] = []
+	for i in mini(_bj_dealer_shown, _bj.dealer.size()):
+		dealer.append(_bj.dealer[i])
+	var hands: Array = []
+	for h in _bj.hands.size():
+		hands.append(_bj.hand_cards(h).slice(0, _bj_shown[h] if h < _bj_shown.size() else 0))
+	_bj_screen.show_hands(dealer, _bj_hole_hidden, hands, _bj.active)
 
 
 func _on_action(action: String) -> void:
@@ -228,6 +242,7 @@ func _bj_finish() -> void:
 	# reveal the hole card, then the dealer draws until the rules stop him
 	_bj_table.reveal("d:1")
 	_bj_hole_hidden = false
+	_bj_show_cards()
 	await get_tree().create_timer(0.6).timeout
 	while _bj.phase == "dealer":
 		var more := _bj.dealer_step()

@@ -1,10 +1,8 @@
-Polish1 C5: casino lamps, table screens as real UI, club neon and spotlights, crate models, Cases tab and CS:GO opening
+Polish1 C5 fix: blackjack and slot screens
 
-- Casino: pendant lamps light the blackjack and roulette felts (two small shadowless spots)
-- Roulette, blackjack and slot screens redrawn with ui_skin: felt layout with chip stacks per bet, hovered bet lights its numbers and pays line, real chip pickers, last numbers, buttons inside the panel, jackpot and paytable cards
-- Club: neon strips along floor and ceiling of every inner wall, upright tubes, four moving spotlights as beams and floor discs (no real lights: Compatibility draws every lit mesh once more per light)
-- Crates: Bronze ammo crate, Silver weapon case, Gold treasure chest modelled (tools/blender/crates.py), turning on the kiosks; bought crates go to the new Cases tab on the player card; opening screen with lifting lid, reel with ticks easing onto the winner, rarity chime; gold and up announced to the lobby in chat
-- Dev steps !casino and !case
+- Blackjack screen shows the dealer's and your cards as card faces, dealt in step with the table, totals in badges (soft totals while you choose), busts in red, the outcome large on the felt, bigger chips with the selected one ringed, bet chip with its amount
+- Slot screen as a gold-rimmed cabinet strip: big glittering jackpot, result line that flashes on a win, bigger bet chips and the spin cost spelled out, bigger SPIN, Leave in the corner, paytable card at the left edge
+- Roulette, blackjack and slot panels stand clear of the HUD's bottom bar
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
