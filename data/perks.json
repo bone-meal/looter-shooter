@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "The islands' perks (core/perk_state.gd; game/perk_machine.gd is the machine). limit = most perks carried at once (the boss's perk power-up ignores it); all are lost when you go down. Each perk: name, price in points, island + at [x, z] from that island's middle (its machine; it faces the island's middle), color, desc (shown at the machine), and its numbers. Machines work once the power is on. Every name, price and number is the director's to change.",
+ "_about": "The islands' perks (core/perk_state.gd; game/perk_machine.gd is the machine). limit = most perks carried at once (the boss's perk power-up ignores it); all are lost when you go down. Each perk: name, price in points, island + at [x, z] from that island's middle (its machine; it faces the island's middle), color, desc (shown at the machine), and its numbers. Machines work once the power is on. Every name, price and number is the director's to change. (polish1 item 37) Each machine has its own model (tools/blender/perk_machines.py: size, shape and this colour tell them apart from afar); colours were spread so no two are alike. Quick Revive (batch 2-3): alone it gets you up by yourself `self_revives` times a game, then its machine is gone; online, down, you hold on `down_time_mult` times as long before you bleed out (the perks go when you go down, so it is read at that moment).",
  "limit": 6,
  "reach": 2.6,
  "perks": {
@@ -117,7 +117,7 @@
     -6.2,
     16.9
    ],
-   "color": "#59c46a",
+   "color": "#8a3dff",
    "desc": "Reloads take half as long.",
    "reload_time_mult": 0.5
   },
@@ -129,7 +129,7 @@
     -14.6,
     -10.6
    ],
-   "color": "#d6c15a",
+   "color": "#a8a832",
    "desc": "Some kills hand you rounds for the gun in hand; power-ups last half again as long.",
    "ammo_chance": 0.15,
    "ammo_share": 0.1,
@@ -171,7 +171,7 @@
     -17.4,
     -4.6
    ],
-   "color": "#6aa9ff",
+   "color": "#3d5bff",
    "desc": "The first shot after 3 s without firing hits twice as hard and goes exactly where you aim.",
    "calm_seconds": 3.0,
    "calm_mult": 2.0,
@@ -197,10 +197,24 @@
     17.4,
     4.6
    ],
-   "color": "#58d68d",
+   "color": "#2fbf4f",
    "desc": "One kill in ten pays double; power-ups drop a quarter more often.",
    "double_kill_chance": 0.1,
    "power_drop_mult": 1.25
+  },
+  "quick_revive": {
+   "name": "Quick Revive",
+   "price": 1500,
+   "island": "home",
+   "at": [
+    -10.0,
+    10.0
+   ],
+   "color": "#ff5a6e",
+   "desc": "Down, you hold on twice as long for a teammate. Alone: you get back up by yourself, three times a game; after the third the machine is gone.",
+   "down_time_mult": 2.0,
+   "self_revives": 3,
+   "self_revive_seconds": 3.0
   }
  }
 }

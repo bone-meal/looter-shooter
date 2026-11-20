@@ -1,6 +1,6 @@
-Polish1 C2: spawn island and crow ride
+Polish1 C3: zombie island small
 
-The lifeguard fishes from the shore with her rod held out over the sea (no more T-pose), the crows perch on the shore with folded wings, the paintings stand on the west shore. The crow ride: no loading picture (the club inside is built a piece a frame while the crow lifts off), a chase camera behind the crow, a curve out over the sea, a landing beside the perched return crow (away from the card table parasols), the rider steps off and the crow flies away empty.
+Every perk machine has its own model (lighthouse, bullet, windmill, bomb, stove, obelisk, chest, stopwatch, hourglass, claw machine, kiln, shield, ice crystals, gun cabinet, horseshoe, heart) lit in its own colour; Quick Revive as the 16th perk (alone three self-revives a game, then the machine is gone; online you hold on longer); styled call-outs when anybody goes down, gets up or bleeds out, and COD-style markers over downed teammates; a real fire pit (stone ring, ash, pyres, embers, licking flames); the pink earthworm drop as a worm; the skiff builds itself piece by piece with a banner; dead crabs stay and gulls peck them away.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

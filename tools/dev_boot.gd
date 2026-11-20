@@ -2705,6 +2705,43 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				player.call("teleport", Vector3(500.0 + float(words[1]), 0.4, float(words[2])), 0.0)
 				await get_tree().create_timer(0.6, true, false, true).timeout
 				player.call("look_at_point", Vector3(500.0 + float(words[3]), 1.5, float(words[4])))
+		"c3":  # (polish1 C3) "!c3 at x z tx tz" / "perk <id> [m]" / "boat": stand and look (island metres); "!c3 worm x z": a worm drop there; "!c3 fire on|off": the fire pit burns (looks only); "!c3 crab x z": a crab there, killed at once (its remains and the gulls); "!c3 skiff": the skiff builds itself (looks only); "!c3 note": quick revive, perks, down
+			match words[1] if words.size() > 1 else "note":
+				"at":  # "!c3 at x z tx tz": stand there (island metres) and, once there, look at tx tz (1 m up)
+					player.call("teleport", Vector3(500.0 + float(words[2]), 0.15, float(words[3])), 0.0)
+					await get_tree().create_timer(0.4, true, false, true).timeout
+					player.call("look_at_point", Vector3(500.0 + float(words[4]), 1.0, float(words[5])))
+				"perk":  # "!c3 perk <id> [m]": stand m (default 5) in front of that perk's machine, looking at it
+					var spot3: Vector2 = (session.get("_perk_spots") as Dictionary)[words[2]]
+					var land3: RefCounted = session.get("_land")
+					var mid3: Vector2 = (land3.get("islands") as Array)[int(land3.call("island_near", spot3.x, spot3.y))]["at"]
+					var front3 := spot3 + (mid3 - spot3).normalized() * (float(words[3]) if words.size() > 3 else 5.0)
+					player.call("teleport", Vector3(500.0 + front3.x, 0.15, front3.y), 0.0)
+					await get_tree().create_timer(0.4, true, false, true).timeout
+					player.call("look_at_point", Vector3(500.0 + spot3.x, 1.9, spot3.y))
+				"boat":  # "!c3 boat": stand on the shore 7 m from where the skiff lies, looking at it
+					var b3: RefCounted = session.get("_boat")
+					var shore3: Vector3 = session.call("boat_shore")
+					player.call("teleport", shore3, 0.0)
+					await get_tree().create_timer(0.4, true, false, true).timeout
+					player.call("look_at_point", Vector3(500.0 + float(b3.get("x")), 0.8, float(b3.get("z"))))
+				"worm":  # "!c3 worm x z": a worm drop there
+					(session.get("_field") as Node).call("spawn_item", "worm", "Pink Earthworm", Color(0.95, 0.55, 0.6), Vector3(500.0 + float(words[2]), 0.1, float(words[3])))
+				"fire":
+					var cfg3: Array = (session.get("_trap_cfg") as Dictionary)["traps"]
+					for i3 in cfg3.size():
+						if String(cfg3[i3]["kind"]) == "fire":
+							(session.get("_trap_nodes") as Node).call("show_running", i3, words.size() > 2 and words[2] == "on")
+				"crab":  # "!c3 crab x z": a crab there, killed at once
+					var rounds3: Node = session.get("_rounds")
+					var crab: Node3D = rounds3.call("send_at", "sea_crawler", Vector3(500.0 + float(words[2]), 0.1, float(words[3])), 1)
+					await get_tree().create_timer(0.5, true, false, true).timeout
+					if is_instance_valid(crab):
+						crab.call("on_hit", 1000000.0, crab.global_position + Vector3(0, 0.3, 0), Vector3.UP)
+				"skiff":
+					session.call("_assemble_boat")
+				_:
+					_lines.append("C3 %s: perks %s, quick revives used %d, down %s, health %d, round %d, feasts %d, building %s" % [" ".join(words.slice(1)), str((session.get("_perks") as RefCounted).get("owned")), int(session.get("_quick_revives_used")), str(player.get("downed")), roundi(float(player.get("health").hp)), int(session.call("_island_round")), get_tree().get_nodes_in_group("gull_feasts").size(), str(session.get("_boat_building") != null)])
 		"crow":  # (polish1 C2) "!crow fly a|b": crow a (home island) flies us to the club, b back home, as after feeding / asking it; "!crow look a|b": stand 7 m from that crow looking at it; "!crow note": the flight now
 			if words.size() > 2 and words[1] == "fly":
 				if words[2] == "a":

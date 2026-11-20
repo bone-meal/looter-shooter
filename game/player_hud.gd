@@ -57,6 +57,7 @@ var notice_text := ""  # short pickup message, fades after a few seconds (see no
 var level := 0  # player level (0 = hidden) and progress to the next
 var xp_ratio := 0.0
 var coins := -1  # casino chips (saved as "coins"); -1 = hidden
+var downed_marks: Array = []  # (batch 2-3) downed teammates: {"at": Vector3, "name", "progress" 0..1} (game_session _downed_marks)
 var prompt_text := ""  # interaction prompt shown near the crosshair, e.g. "[F] Enter"
 var round_number := 0  # the island round or the colosseum wave being fought; 0 = hidden
 var round_of := 0  # the colosseum: how many waves there are ("3 / 8"); 0 = endless rounds, shown as tallies
@@ -212,6 +213,7 @@ func _draw() -> void:
 	_draw_top(view)
 	_draw_menu_keys()
 	_draw_hit_marks(view)
+	_draw_downed(view)
 	callouts.draw(self, view)
 	if course_text != "":
 		_text(Vector2(0, 92.0), course_text, HORIZONTAL_ALIGNMENT_CENTER, view.x, 24, Color(0.75, 0.95, 1.0))
@@ -342,6 +344,50 @@ func _draw_flash(view: Vector2) -> void:
 
 # (polish1 items 42 and 52) The hit-direction marker (a red arc round the crosshair, turning with the view while it
 # fades) and the faint red X of a crit.
+# (batch 2-3) A COD-style marker over every downed teammate: a red badge with a white cross, seen through walls; off
+# the screen (or behind us) it sits at the screen edge with a pointer toward them; a white ring fills while we help
+# them up; the name and the distance under it.
+func _draw_downed(view: Vector2) -> void:
+	if downed_marks.is_empty():
+		return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var edge := 46.0
+	var pulse := 0.85 + 0.15 * sin(Time.get_ticks_msec() * 0.008)
+	for mark: Dictionary in downed_marks:
+		var at: Vector3 = mark["at"]
+		var p := cam.unproject_position(at)
+		var behind := cam.is_position_behind(at)
+		if behind:
+			p = view - p  # behind us: mirrored, then pushed to the edge
+		var inside := Rect2(Vector2(edge, edge), view - Vector2(edge, edge) * 2.0)
+		var clamped := behind or not inside.has_point(p)
+		if clamped:
+			var mid := view * 0.5
+			var d := p - mid
+			if behind and d.length() < 1.0:
+				d = Vector2(0.0, 1.0)
+			var s := minf(absf((view.x * 0.5 - edge) / maxf(absf(d.x), 0.001)), absf((view.y * 0.5 - edge) / maxf(absf(d.y), 0.001)))
+			p = mid + d * minf(s, 1.0 if not behind else s)
+			var dir := d.normalized()
+			var tip := p + dir * 30.0
+			draw_colored_polygon(PackedVector2Array([tip, p + dir.rotated(PI * 0.5) * 9.0 + dir * 18.0, p + dir.rotated(-PI * 0.5) * 9.0 + dir * 18.0]), Color(0.95, 0.22, 0.2, 0.9))
+		var r := 17.0 * pulse
+		draw_circle(p, r + 3.0, Color(0, 0, 0, 0.55))
+		draw_circle(p, r, Color(0.55, 0.06, 0.05, 0.92))
+		draw_arc(p, r, 0.0, TAU, 32, Color(0.95, 0.22, 0.2), 2.5, true)
+		draw_rect(Rect2(p + Vector2(-3.0, -10.0), Vector2(6.0, 20.0)), Color.WHITE)
+		draw_rect(Rect2(p + Vector2(-10.0, -3.0), Vector2(20.0, 6.0)), Color.WHITE)
+		var progress := float(mark.get("progress", 0.0))
+		if progress > 0.0:
+			draw_arc(p, r + 6.0, -PI * 0.5, -PI * 0.5 + TAU * progress, 40, Color.WHITE, 4.0, true)
+		var far := int(round((cam.global_position - at).length()))
+		var label := "%s  %d m" % [String(mark.get("name", "")), far]
+		draw_string_outline(_font, p + Vector2(-80.0, r + 18.0), label, HORIZONTAL_ALIGNMENT_CENTER, 160.0, 13, 4, Color(0, 0, 0, 0.8))
+		draw_string(_font, p + Vector2(-80.0, r + 18.0), label, HORIZONTAL_ALIGNMENT_CENTER, 160.0, 13, Color(1.0, 0.85, 0.82))
+
+
 func _draw_hit_marks(view: Vector2) -> void:
 	var mid := view * 0.5
 	if _hit_time > 0.0:

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 22;!go island;!wait 8;!c3 at 0 14 0 2;!wait 3;!hurt 999;!wait 0.8;!snap g_down;!downs note g_down;!wait 12;!downs note g_after;!snap g_after;!wait 5

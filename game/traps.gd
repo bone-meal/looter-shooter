@@ -1,10 +1,11 @@
 # Purpose: the islands' traps as things in the world: a coil on a hut's roof or a fire pit, each with a lever post
 # where it is switched on; a running trap flickers. Draws only: core/trap_state.gd keeps the time and the session
 # does the hurting.
-# Dependencies: game/surface_library.gd. `add(kind, centre, lever)` per trap, `show_running(index, on)`.
+# Dependencies: game/surface_library.gd, game/fantasy_models.gd (the fire pit model, polish1 item 32). `add(kind, centre, lever)` per trap, `show_running(index, on)`.
 extends Node3D
 
 const SurfaceLibrary = preload("res://game/surface_library.gd")
+const FantasyModels = preload("res://game/fantasy_models.gd")
 
 var _glows: Array[StandardMaterial3D] = []
 var _flames: Array[Node3D] = []
@@ -52,6 +53,37 @@ func add(kind: String, centre: Vector3, lever: Vector3, radius: float) -> void:
 		ring.rings = 48
 		ring.ring_segments = 6
 		_piece(flames, ring, glow, centre + Vector3(0, 0.12, 0)).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	elif FantasyModels.has_model("fire_pit"):  # (polish1 item 32) a real fire pit: stone ring, ash, log pyres, embers
+		var pit := FantasyModels.scene("fire_pit")
+		pit.scale = Vector3.ONE * (radius / 6.0)
+		pit.position = centre
+		add_child(pit)
+		for found in pit.find_children("Glow*", "MeshInstance3D", true, false):
+			(found as MeshInstance3D).material_override = glow
+		var flame := CylinderMesh.new()
+		flame.top_radius = 0.0
+		flame.bottom_radius = 0.4
+		flame.height = 1.6
+		flame.radial_segments = 6
+		var heaps := [Vector2.ZERO]
+		for k in 3:
+			var a := TAU * (float(k) + 0.3) / 3.0
+			heaps.append(Vector2(cos(a), sin(a)) * 3.2 * (radius / 6.0))
+		for h: Vector2 in heaps:  # flames on the pyres, and licking the ash between them
+			for n in 3:
+				var o := Vector2(cos(TAU * float(n) / 3.0), sin(TAU * float(n) / 3.0)) * 0.35
+				var lick := _piece(flames, flame, glow, centre + Vector3(h.x + o.x, 0.85, h.y + o.y))
+				lick.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+				lick.set_meta("base", centre.y + 0.05)
+		var board := Label3D.new()  # the lever says what it is
+		board.text = "FIRE PIT"
+		board.font_size = 48
+		board.pixel_size = 0.004
+		board.outline_size = 8
+		board.modulate = Color(1.0, 0.62, 0.25)
+		board.billboard = BaseMaterial3D.BILLBOARD_FIXED_Y
+		board.position = lever + Vector3(0, 1.75, 0)
+		add_child(board)
 	else:
 		var stones := TorusMesh.new()
 		stones.inner_radius = radius - 0.35
@@ -78,7 +110,10 @@ func add(kind: String, centre: Vector3, lever: Vector3, radius: float) -> void:
 func show_running(index: int, on: bool) -> void:
 	_running[index] = on
 	_flames[index].visible = on
-	_glows[index].emission_enabled = on
+	var embers := _fire_reach[index] > 0.0  # (polish1 item 32) a cold fire pit's embers still glow a little: it reads as a fire pit
+	_glows[index].emission_enabled = on or embers
+	if embers and not on:
+		_glows[index].emission_energy_multiplier = 0.35
 
 
 func _process(delta: float) -> void:
@@ -86,6 +121,14 @@ func _process(delta: float) -> void:
 	for i in _running.size():
 		if _running[i]:
 			_glows[i].emission_energy_multiplier = 1.6 + 1.4 * absf(sin(_t * 17.0 + float(i)))
+			if _fire_reach[i] > 0.0:  # (polish1 item 32) the flames lick up and down, each on its own beat
+				var k := 0
+				for flame: Node3D in _flames[i].get_children():
+					var tall := 0.6 + 0.55 * absf(sin(_t * (5.0 + float(k % 4)) + float(k) * 1.7))
+					flame.scale = Vector3(1.0, tall, 1.0)
+					if flame.has_meta("base"):  # grows from its foot, not its middle
+						flame.position.y = float(flame.get_meta("base")) + 0.8 * tall
+					k += 1
 
 
 func _piece(parent: Node3D, mesh: Mesh, material: Material, at: Vector3) -> MeshInstance3D:

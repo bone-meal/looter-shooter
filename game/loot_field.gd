@@ -1,5 +1,5 @@
 # Purpose: gun drops lying in the world: each is a floating gun model with a tier-coloured light beam, a name tag and a chime. Capped, despawns over time, animates the rainbow/pony colours.
-# Dependencies: game/weapon_models.gd, game/tier_style.gd, game/tier_sound.gd, core/gun_db.gd, core/gun_stats.gd. Config: data/drops.json (cap, despawn times, pickup range).
+# Dependencies: game/weapon_models.gd, game/fantasy_models.gd (item models: item_<id>), game/tier_style.gd, game/tier_sound.gd, core/gun_db.gd, core/gun_stats.gd. Config: data/drops.json (cap, despawn times, pickup range).
 extends Node3D
 
 const WeaponModels = preload("res://game/weapon_models.gd")
@@ -11,6 +11,7 @@ const GunStats = preload("res://core/gun_stats.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
 const LootFilter = preload("res://core/loot_filter.gd")
+const FantasyModels = preload("res://game/fantasy_models.gd")
 
 var gun_db: RefCounted
 var cfg: Dictionary
@@ -106,6 +107,10 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 # (polish1 item 66) A small model of the piece itself (tools/blender/armour_drops.py, by its equipment slot) in its colour,
 # its trim darker; anything without one (a slot-less item) is the old box.
 func _piece_model(id: String, color: Color) -> Node3D:
+	if FantasyModels.has_model("item_" + id):  # (polish1 item 34) an item with a model of its own (the pink earthworm)
+		var own := FantasyModels.scene("item_" + id)
+		own.scale = Vector3.ONE * 1.6
+		return own
 	var slot := String(items.call("equip_slot", id)) if items != null and bool(items.call("has_item", id)) else ""
 	var path := "res://assets/models/armour/%s.gltf" % slot
 	if slot != "" and ResourceLoader.exists(path):

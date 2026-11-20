@@ -103,6 +103,7 @@ const TrophyShelves = preload("res://core/trophy_shelves.gd")
 const Jukebox = preload("res://game/jukebox.gd")
 const MusicLibrary = preload("res://game/music_library.gd")
 const TextBook = preload("res://core/text_book.gd")
+const BoatAssembly = preload("res://game/boat_assembly.gd")
 const Boat = preload("res://game/boat.gd")
 const PowerupField = preload("res://game/powerup_field.gd")
 const DroppedPack = preload("res://game/dropped_pack.gd")
@@ -121,6 +122,7 @@ const JUKEBOX_YAW := -PI * 0.5  # its front (-Z) toward the middle of the room
 const PAINTING_RANGE := 4.5
 const REWARD_RANGE := 3.0
 const CROW_RANGE := 6.0
+const DOWN_RED := Color(0.95, 0.22, 0.2)
 const LIFEGUARD_RANGE := 3.2
 const PACHINKO_RANGE := 2.8
 const PACHINKO_HOLD_DELAY := 0.25
@@ -265,6 +267,7 @@ var _build_parts: Array = []  # per thing: Array[Vector2], where its parts lie (
 var _build_benches: Array[Vector2] = []  # per thing: its bench
 var _boat: BoatRules  # the buildable boat (data/boat.json): where it is, who sits in it
 var _boat_node := Boat.new()
+var _boat_building: Node3D = null  # (polish1 item 40) the skiff assembling itself at the slipway (game/boat_assembly.gd)
 var _boat_thing := -1  # its number among the buildables
 var _boat_start := Vector2.ZERO  # where it floats once built, and the way its bow points there
 var _boat_start_yaw := 0.0
@@ -279,6 +282,8 @@ var _trap_shown: Array[bool] = []
 var _trap_tick := 0.0
 var _second_wind_used := false  # alone: the one self-revive of this run is spent
 var _self_revive_at := -1.0  # alone with Second Wind: when we get back up (-1 = not lying)
+var _quick_revives_used := 0  # (batch 2-3) alone: Quick Revive self-revives used this game (its machine goes after the last)
+var _down_seen := {}  # (batch 2-3) peer -> state last told, so a call-out marks each change once
 var _shelters := Shelters.new()  # the huts and their window boards
 var _nail_at := 0.0  # as a client: when we may next ask the host to nail a board
 var _last_isle := 0  # the island we last stood on (where the sea carries us back to)
@@ -470,6 +475,7 @@ func _ready() -> void:
 	BhopCourse.build_door(self, _course_door, _toward_middle(_course_spot))
 	for id: String in _perk_spots:
 		var machine := PerkMachine.new()
+		machine.perk_id = id
 		machine.title = _perks.name_of(id)
 		machine.price = _perks.price(id)
 		machine.tint = _perks.color_of(id)
@@ -1715,7 +1721,7 @@ func _prompt() -> String:
 			return "%s: no power. The switch is built on %s from %d parts lying on %s." % [_perks.name_of(perk), _land.islands[_land.island_near(_bench_spot.x, _bench_spot.y)]["name"], _part_spots.size(), _land.islands[_land.island_near(_part_spots[0].x, _part_spots[0].y)]["name"]]
 		if _perks.has(perk):
 			return "%s: you carry it" % _perks.name_of(perk)
-		if perk == "second_wind" and _second_wind_used:
+		if (perk == "second_wind" and _second_wind_used) or _quick_revive_gone(perk):
 			return "%s: sold out for this run" % _perks.name_of(perk)
 		if _perks.refusal(perk) == "limit":
 			return "You carry %d perks already" % _perks.limit()
@@ -2898,7 +2904,12 @@ func _goes_down() -> bool:
 		return true
 	if _in_arena or _in_fantasy or not _on_island(_player.global_position) or _island_round() <= 0:
 		return false
-	return (net != null and net.can_send()) or (_perks.has("second_wind") and not _second_wind_used)  # online; or alone with the one self-revive
+	return (net != null and net.can_send()) or (_perks.has("second_wind") and not _second_wind_used) or _quick_revive_left()  # online; or alone with a self-revive
+
+
+# (batch 2-3) Alone with Quick Revive and a self-revive of this game still left.
+func _quick_revive_left() -> bool:
+	return _perks.has("quick_revive") and _quick_revives_used < int(_perks.cfg["perks"]["quick_revive"].get("self_revives", 3))
 
 
 func _island_round() -> int:
@@ -2914,15 +2925,24 @@ func _on_went_down() -> void:
 		_sea.dungeons.boss.report("down")
 		_player_hud.notice("You are down: a teammate can help you up")
 		return
-	if net == null or not net.can_send():  # alone with Second Wind: up again by ourselves in a moment, this once
-		_second_wind_used = true
-		_self_revive_at = _time + _perks.num("self_revive_seconds", 3.0)
+	if net == null or not net.can_send():  # alone: Quick Revive (three a game) or Second Wind (once) gets us up in a moment
+		if _quick_revive_left():
+			_quick_revives_used += 1
+			var left := int(_perks.cfg["perks"]["quick_revive"].get("self_revives", 3)) - _quick_revives_used
+			_self_revive_at = _time + float(_perks.cfg["perks"]["quick_revive"].get("self_revive_seconds", 3.0))
+			_player_hud.callout("DOWN! QUICK REVIVE: %s" % ("%d LEFT" % left if left > 0 else "THE LAST ONE"), DOWN_RED, "cross")
+			if left <= 0 and _perk_machines.has("quick_revive"):
+				(_perk_machines["quick_revive"] as Node3D).visible = false  # COD-style: after the last self-revive the machine is gone
+		else:
+			_second_wind_used = true
+			_self_revive_at = _time + _perks.num("self_revive_seconds", 3.0)
+			_player_hud.callout("DOWN! SECOND WIND", DOWN_RED, "cross")
 		_down_until = INF
 		_lose_perks()
-		_player_hud.notice("Second Wind: hold on ...")
 		return
+	var hold_on := float(_perks.cfg["perks"]["quick_revive"].get("down_time_mult", 1.0)) if _perks.has("quick_revive") else 1.0  # (batch 2-3) Quick Revive online: hold on longer
 	_lose_perks()
-	_down_until = _time + float(_rounds.config()["downs"]["seconds"])
+	_down_until = _time + float(_rounds.config()["downs"]["seconds"]) * hold_on
 	net.downs.report("down")
 
 
@@ -2996,6 +3016,20 @@ func _on_party_over(reached: int) -> void:
 
 # Other players lying down are shown lying down; those who are out are not shown at all until they are back.
 func _show_downs() -> void:
+	for id: int in net.roster:  # (batch 2-3) a styled call-out for everyone when somebody goes down, is helped up or bleeds out
+		var now: String = net.downs.state_of(id)
+		var was := String(_down_seen.get(id, "up"))
+		if now != was:
+			var who := "YOU" if id == net.my_id() else String(net.roster[id]).to_upper()
+			match now:
+				"down":
+					_player_hud.callout("%s %s DOWN" % [who, "ARE" if id == net.my_id() else "IS"], DOWN_RED, "cross")
+				"out":
+					_player_hud.callout("%s BLED OUT" % who, Color(0.6, 0.6, 0.62), "skull")
+				_:
+					if was == "down":
+						_player_hud.callout("%s %s BACK UP" % [who, "ARE" if id == net.my_id() else "IS"], Color(0.45, 0.9, 0.5), "heart")
+			_down_seen[id] = now
 	for id: int in net.roster:
 		var body: Node3D = net.player_node(id)
 		if id != net.my_id() and body != null and body.has_method("set_down"):
@@ -3029,6 +3063,23 @@ func _hold_revive(delta: float) -> void:
 			_sea.dungeons.boss.ask_revive(_revive_target)
 		else:
 			net.downs.ask_revive(_revive_target)
+
+
+# (batch 2-3) Downed teammates for the HUD's markers (seen through walls, held at the screen edge when off it): where
+# each lies, the name, and how far our own help has got (0..1).
+func _downed_marks() -> Array:
+	var out: Array = []
+	if net == null or not net.can_send():
+		return out
+	var boss := _boss_here()
+	var hold := (float(_sea.dungeons.boss.downs_cfg()["hold"]) if boss else float(_rounds.config()["downs"]["hold"])) * _perks.num("revive_mult", 1.0)
+	for id: int in (_sea.dungeons.boss.down_peers() if boss else net.downs.states.keys()):
+		var lying: bool = _sea.dungeons.boss.state_of(id) == "down" if boss else net.downs.state_of(id) == "down"
+		var body: Node3D = net.player_node(id)
+		if id == net.my_id() or not lying or body == null:
+			continue
+		out.append({"at": body.global_position + Vector3(0.0, 0.7, 0.0), "name": String(net.roster.get(id, "")), "progress": clampf(_revive_hold / maxf(hold, 0.01), 0.0, 1.0) if id == _revive_target else 0.0})
+	return out
 
 
 # --- the island's rounds (game/island_rounds.gd runs them; core/round_rules.gd decides) ---
@@ -3266,6 +3317,9 @@ func _close_debris() -> void:
 	_lose_perks()
 	_second_wind_used = false
 	_self_revive_at = -1.0
+	_quick_revives_used = 0
+	if _perk_machines.has("quick_revive"):
+		(_perk_machines["quick_revive"] as Node3D).visible = true
 	_builds.reset()
 	_quest.reset()
 	_show_quest()
@@ -3292,6 +3346,11 @@ func _toward_middle(spot: Vector2) -> float:
 
 
 # The perk whose machine our player stands at, "" = none.
+# (batch 2-3) Alone, after the last of Quick Revive's self-revives its machine is gone for the rest of the game.
+func _quick_revive_gone(id: String) -> bool:
+	return id == "quick_revive" and (net == null or not net.can_send()) and _quick_revives_used >= int(_perks.cfg["perks"]["quick_revive"].get("self_revives", 3))
+
+
 func _perk_here() -> String:
 	if not _island_side():
 		return ""
@@ -3303,7 +3362,7 @@ func _perk_here() -> String:
 
 
 func _buy_perk(id: String) -> void:
-	if not _power.on or _perks.refusal(id) != "" or (id == "second_wind" and _second_wind_used):
+	if not _power.on or _perks.refusal(id) != "" or (id == "second_wind" and _second_wind_used) or _quick_revive_gone(id):
 		return
 	if not _score.spend(_perks.price(id)):
 		_player_hud.notice("%s costs %d points (you have %d)." % [_perks.name_of(id), _perks.price(id), _score.points])
@@ -3462,7 +3521,9 @@ func _builds_changed(code: int) -> void:
 	if code < 0 or not _island_side():
 		return
 	var thing := BuildState.thing_of(code)
-	if BuildState.part_of(code) == BuildState.BENCH:
+	if BuildState.part_of(code) == BuildState.BENCH and thing == _boat_thing:  # (polish1 item 40) the skiff builds itself, piece by piece
+		_assemble_boat()
+	elif BuildState.part_of(code) == BuildState.BENCH:
 		_sounds.call("play", "build_done")
 		_player_hud.callout("%s built" % _builds.names[thing], Color(1.0, 0.85, 0.45))
 	else:
@@ -3473,9 +3534,26 @@ func _builds_changed(code: int) -> void:
 func _show_builds() -> void:
 	for thing in _builds.ids.size():
 		_build_site.show_state(thing, _builds.found(thing), _builds.built(thing))
-	_boat_node.visible = _builds.built(_boat_thing)
+	_boat_node.visible = _builds.built(_boat_thing) and _boat_building == null
 	if _boat_node.visible:
 		_boat_node.show_at(Island.CENTER + Vector3(_boat.x, _land.sea_level, _boat.z), _boat.yaw, _time)
+
+
+# (polish1 item 40) The skiff's pieces fly onto the slipway one after another; the banner when it stands finished.
+func _assemble_boat() -> void:
+	if _boat_building != null:
+		return
+	var build := BoatAssembly.new()
+	build.at = Island.CENTER + Vector3(_boat.x, _land.sea_level, _boat.z)
+	build.yaw = _boat.yaw
+	build.sounds = _sounds
+	_boat_building = build
+	build.finished.connect(func() -> void:
+		_boat_building = null
+		_show_builds()
+		_player_hud.callout("THE %s IS BUILT" % String(_builds.names[_boat_thing]).to_upper(), Color(1.0, 0.85, 0.45), "sail"))
+	add_child(build)
+	_show_builds()
 
 
 # --- the boat (core/boat_rules.gd decides; alone or hosting we sail it, a client shows what the host says) ---
@@ -4835,7 +4913,7 @@ func _process(delta: float) -> void:
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
 		_self_revive_at = -1.0
 		_player.revive(1.0)
-		_player_hud.notice("You are back on your feet. That was your one Second Wind.")
+		_player_hud.callout("BACK ON YOUR FEET", Color(0.45, 0.9, 0.5), "heart")
 	if _island_side():
 		_mind_the_sea()
 		_hold_nailing()
@@ -4845,6 +4923,7 @@ func _process(delta: float) -> void:
 	if not _in_arena and not _in_fantasy and _time - _hurt_at >= float(regen["delay"]) and _player.health.hp > 0.0 and _player.health.hp < _player.health.max_hp:
 		_player.health.heal(float(regen["per_second"]) * delta)
 	_player_hud.prompt_text = _prompt()
+	_player_hud.downed_marks = _downed_marks()
 	_player_hud.coins = _wallet.balance if _pachinko != null and _near(_pachinko.global_position, 30.0) else -1
 	if _coins_dirty and (_pachinko == null or _pachinko.balls_in_play() == 0):
 		_coins_dirty = false

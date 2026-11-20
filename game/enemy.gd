@@ -8,6 +8,7 @@ signal puppet_hit(damage: float)  # a puppet was shot (online: the damage goes t
 signal felled(enemy: Node)  # killed by another creature, not by a player: nobody is paid (the fantasy tribes fighting each other)
 signal puppet_effect(kind: String, amount: float, seconds: float)  # a puppet was slowed, burned, frozen, weakened or pushed (the host decides if it sticks)
 
+const GullFeast = preload("res://game/gull_feast.gd")
 const HealthState = preload("res://core/health_state.gd")
 const EnemyBrain = preload("res://core/enemy_brain.gd")
 const CharacterModels = preload("res://game/character_models.gd")
@@ -547,6 +548,9 @@ func fall() -> void:
 	if _model == null:
 		queue_free()
 		return
+	if String(_stats.get("remains", "")) == "gulls" and _pulse == null and GullFeast.room(get_tree()):
+		_gull_remains()
+		return
 	var tween := create_tween()
 	if _pulse != null:
 		tween.tween_property(_model, "scale", _model.scale * Vector3(1.5, 0.06, 1.5), 0.45).set_ease(Tween.EASE_IN)
@@ -554,6 +558,20 @@ func fall() -> void:
 		tween.tween_property(_model, "rotation:z", (PI * 0.48) * (1.0 if randf() < 0.5 else -1.0), 0.45).set_ease(Tween.EASE_IN).set_trans(Tween.TRANS_QUAD)
 	tween.tween_interval(1.6)
 	tween.tween_property(self, "position:y", position.y - maxf(_size.y, _size.x) * 0.9, 1.2)
+	tween.tween_callback(queue_free)
+
+
+# (polish1 item 36) A crab's body stays: it flips onto its back, the gulls come down on it (game/gull_feast.gd) and it
+# shrinks away while they peck, then is gone.
+func _gull_remains() -> void:
+	var feast := GullFeast.new()
+	feast.at = global_position
+	get_parent().add_child(feast)
+	var tween := create_tween()
+	tween.tween_property(_model, "rotation:z", PI * (1.0 if randf() < 0.5 else -1.0), 0.5).set_ease(Tween.EASE_OUT).set_trans(Tween.TRANS_BACK)
+	tween.parallel().tween_property(_model, "position:y", _size.y * 0.55, 0.5)
+	tween.tween_interval(GullFeast.ARRIVE + 0.6)
+	tween.tween_property(_model, "scale", _model.scale * 0.05, GullFeast.PECK - 0.6).set_ease(Tween.EASE_IN)
 	tween.tween_callback(queue_free)
 
 
