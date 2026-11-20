@@ -1,0 +1,416 @@
+{
+ "version": 1,
+ "_about": "(polish1 item 26) THE BHOP SERVER: the hop island became a CS-style bhop server. `hub` = the floating plaza you arrive on (world metres, y = its top), with one gate per stage `type` round it (name, colour) and three portals each; `exit` = where on the hub the arch back to the islands stands. `stages`: 6 types x 3 tiers; each has an `id` (saved best times are kept by it), a `name`, a `tier` (1 easy .. 3 hard) and a `recipe` that core/bhop_stages.gd turns into its platforms: fixed = data/course.json (today's course is classic 1); hops = pads one after another (`pads`, pad size, edge-to-edge `gap` range, `turn` degrees between hops (alternate = left / right), `rise` up / down range, a checkpoint every `every` pads, `speed` / `strafe` = what the hops are built for, as in course.json); surf = slanted ramps (`ramps`, `length`, `angle` from the ground, `drop` per ramp, `gap` between, `width`, `bend` degrees the run turns); long = long jumps off runways (`jumps` gaps in metres, `runway`, `landing`, `width`); climb = KZ: blocks that rise (`rise` range per step, `gap`, `block` size) with LADDERS between (metres tall each); drops = edgebug drops (`drops`, start `height`, `fall` and `reach` ranges per drop, `target` = landing ledge size). `seed` makes a stage the same for everyone. `ring` = how far from the hub the stages stand; `fall_below` as in course.json; `ladder_speed` (units/s) climbing.",
+ "hub": {
+  "at": [
+   1620.0,
+   60.0,
+   80.0
+  ],
+  "radius": 26.0,
+  "exit": [
+   0.0,
+   22.0
+  ]
+ },
+ "ring": 300.0,
+ "fall_below": 3.0,
+ "thickness": 1.0,
+ "edge_reach": 0.28,
+ "ladder_speed": 200.0,
+ "types": [
+  {
+   "id": "classic",
+   "name": "CLASSIC BHOP",
+   "color": "#e8b04a"
+  },
+  {
+   "id": "surf",
+   "name": "SURF",
+   "color": "#4fc3f7"
+  },
+  {
+   "id": "air",
+   "name": "AIR STRAFE",
+   "color": "#b388ff"
+  },
+  {
+   "id": "long",
+   "name": "LONG JUMP",
+   "color": "#ff8a65"
+  },
+  {
+   "id": "kz",
+   "name": "KZ CLIMB",
+   "color": "#81c784"
+  },
+  {
+   "id": "edge",
+   "name": "EDGEBUG DROPS",
+   "color": "#f06292"
+  }
+ ],
+ "stages": [
+  {
+   "id": "classic_1",
+   "type": "classic",
+   "tier": 1,
+   "name": "The Old Course",
+   "recipe": {
+    "kind": "fixed"
+   }
+  },
+  {
+   "id": "classic_2",
+   "type": "classic",
+   "tier": 2,
+   "name": "Zigzag",
+   "recipe": {
+    "kind": "hops",
+    "pads": 18,
+    "pad": 2.6,
+    "gap": [
+     3.0,
+     4.4
+    ],
+    "turn": 35,
+    "rise": 0.0,
+    "every": 6,
+    "speed": 400
+   },
+   "seed": 12
+  },
+  {
+   "id": "classic_3",
+   "type": "classic",
+   "tier": 3,
+   "name": "Sawtooth",
+   "recipe": {
+    "kind": "hops",
+    "pads": 22,
+    "pad": 1.8,
+    "gap": [
+     4.0,
+     5.4
+    ],
+    "turn": 55,
+    "rise": 0.3,
+    "every": 6,
+    "speed": 430
+   },
+   "seed": 13
+  },
+  {
+   "id": "surf_1",
+   "type": "surf",
+   "tier": 1,
+   "name": "First Wave",
+   "recipe": {
+    "kind": "surf",
+    "ramps": 3,
+    "length": 32,
+    "angle": 55,
+    "drop": 9,
+    "gap": 6,
+    "width": 7
+   },
+   "seed": 21
+  },
+  {
+   "id": "surf_2",
+   "type": "surf",
+   "tier": 2,
+   "name": "Undertow",
+   "recipe": {
+    "kind": "surf",
+    "ramps": 4,
+    "length": 42,
+    "angle": 60,
+    "drop": 11,
+    "gap": 9,
+    "width": 6,
+    "bend": 20
+   },
+   "seed": 22
+  },
+  {
+   "id": "surf_3",
+   "type": "surf",
+   "tier": 3,
+   "name": "Riptide",
+   "recipe": {
+    "kind": "surf",
+    "ramps": 5,
+    "length": 52,
+    "angle": 64,
+    "drop": 13,
+    "gap": 12,
+    "width": 5,
+    "bend": 35
+   },
+   "seed": 23
+  },
+  {
+   "id": "air_1",
+   "type": "air",
+   "tier": 1,
+   "name": "Curveball",
+   "recipe": {
+    "kind": "hops",
+    "pads": 10,
+    "pad": 3.0,
+    "gap": [
+     3.4,
+     4.0
+    ],
+    "turn": 60,
+    "alternate": true,
+    "every": 5,
+    "speed": 400
+   },
+   "seed": 31
+  },
+  {
+   "id": "air_2",
+   "type": "air",
+   "tier": 2,
+   "name": "Corkscrew",
+   "recipe": {
+    "kind": "hops",
+    "pads": 12,
+    "pad": 2.5,
+    "gap": [
+     4.0,
+     4.8
+    ],
+    "turn": 80,
+    "alternate": true,
+    "every": 4,
+    "speed": 430
+   },
+   "seed": 32
+  },
+  {
+   "id": "air_3",
+   "type": "air",
+   "tier": 3,
+   "name": "Hairpins",
+   "recipe": {
+    "kind": "hops",
+    "pads": 14,
+    "pad": 2.2,
+    "gap": [
+     4.6,
+     5.6
+    ],
+    "turn": 100,
+    "alternate": true,
+    "every": 5,
+    "speed": 470
+   },
+   "seed": 33
+  },
+  {
+   "id": "long_1",
+   "type": "long",
+   "tier": 1,
+   "name": "Runway",
+   "recipe": {
+    "kind": "long",
+    "jumps": [
+     4.5,
+     5.0,
+     5.5,
+     5.9,
+     6.2
+    ],
+    "runway": 16,
+    "landing": 6,
+    "width": 4,
+    "speed": 400
+   },
+   "seed": 41
+  },
+  {
+   "id": "long_2",
+   "type": "long",
+   "tier": 2,
+   "name": "Stretch",
+   "recipe": {
+    "kind": "long",
+    "jumps": [
+     6.2,
+     6.5,
+     6.8,
+     7.0,
+     7.2
+    ],
+    "runway": 20,
+    "landing": 6,
+    "width": 3,
+    "speed": 450
+   },
+   "seed": 42
+  },
+  {
+   "id": "long_3",
+   "type": "long",
+   "tier": 3,
+   "name": "Gap Year",
+   "recipe": {
+    "kind": "long",
+    "jumps": [
+     8.3,
+     8.4,
+     8.5,
+     8.6,
+     8.7
+    ],
+    "runway": 26,
+    "landing": 7,
+    "width": 2.5,
+    "speed": 480,
+    "strafe": true
+   },
+   "seed": 43
+  },
+  {
+   "id": "kz_1",
+   "type": "kz",
+   "tier": 1,
+   "name": "Steps",
+   "recipe": {
+    "kind": "climb",
+    "steps": 10,
+    "rise": [
+     0.8,
+     1.0
+    ],
+    "gap": [
+     1.4,
+     2.2
+    ],
+    "block": 2.4,
+    "ladders": [
+     5
+    ],
+    "every": 5
+   },
+   "seed": 51
+  },
+  {
+   "id": "kz_2",
+   "type": "kz",
+   "tier": 2,
+   "name": "Tower",
+   "recipe": {
+    "kind": "climb",
+    "steps": 14,
+    "rise": [
+     1.0,
+     1.15
+    ],
+    "gap": [
+     1.8,
+     2.8
+    ],
+    "block": 1.8,
+    "ladders": [
+     7,
+     8
+    ],
+    "every": 5
+   },
+   "seed": 52
+  },
+  {
+   "id": "kz_3",
+   "type": "kz",
+   "tier": 3,
+   "name": "Summit",
+   "recipe": {
+    "kind": "climb",
+    "steps": 18,
+    "rise": [
+     1.1,
+     1.25
+    ],
+    "gap": [
+     2.4,
+     3.3
+    ],
+    "block": 1.4,
+    "ladders": [
+     8,
+     10,
+     10
+    ],
+    "every": 6
+   },
+   "seed": 53
+  },
+  {
+   "id": "edge_1",
+   "type": "edge",
+   "tier": 1,
+   "name": "Ledges",
+   "recipe": {
+    "kind": "drops",
+    "drops": 6,
+    "height": 36,
+    "fall": [
+     4,
+     6
+    ],
+    "reach": [
+     3,
+     4.5
+    ],
+    "target": 2.6
+   },
+   "seed": 61
+  },
+  {
+   "id": "edge_2",
+   "type": "edge",
+   "tier": 2,
+   "name": "Freefall",
+   "recipe": {
+    "kind": "drops",
+    "drops": 8,
+    "height": 56,
+    "fall": [
+     5,
+     8
+    ],
+    "reach": [
+     4,
+     5.5
+    ],
+    "target": 1.8
+   },
+   "seed": 62
+  },
+  {
+   "id": "edge_3",
+   "type": "edge",
+   "tier": 3,
+   "name": "Needles",
+   "recipe": {
+    "kind": "drops",
+    "drops": 10,
+    "height": 80,
+    "fall": [
+     6,
+     9
+    ],
+    "reach": [
+     4.5,
+     6.5
+    ],
+    "target": 1.2
+   },
+   "seed": 63
+  }
+ ]
+}

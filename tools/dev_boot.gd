@@ -2897,6 +2897,34 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var yaw_c := deg_to_rad(float(words[4]))
 					var pitch_c := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
 					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_c) * cos(pitch_c), sin(pitch_c), -cos(yaw_c) * cos(pitch_c)) * 20.0)
+		"bhop":  # (polish1 C7) "!bhop hub" | "!bhop stage <i>" | "!bhop pad <n>" (stand on that pad of the stage) | "!bhop note" | "!bhop at x y z" | "!bhop walk <s> [keys]"
+			match words[1]:
+				"hub":
+					session.call("_go_to_course")
+				"stage":
+					session.call("_enter_stage", int(words[2]))
+				"pad":
+					session.call("_put_on_course", int(words[2]))
+				"at":  # "!bhop at <x> <y> <z>": stand at that spot of the stage (the view keeps its way)
+					player.global_position = (session.get("_course_root") as Node3D).global_position + Vector3(float(words[2]), float(words[3]), float(words[4]))
+					player.velocity = Vector3.ZERO
+				"walk":  # "!bhop walk <seconds> [keys]": hold forward (or keys like right, forward+right) that long (a ladder climb, a surf ride)
+					var keys_b := (words[3] if words.size() > 3 else "forward").split("+")
+					for key_b in keys_b:
+						Input.action_press("move_" + key_b)
+					var left_b := float(words[2])
+					while left_b > 0.0:  # a line every 0.2 s: where the feet are against the stage, and the speed
+						await get_tree().create_timer(minf(left_b, 0.2)).timeout
+						left_b -= 0.2
+						var root_w: Node3D = session.get("_course_root")
+						_lines.append("  walk: feet %s, floor %s, wall %s, velocity %s" % [str((player.global_position - root_w.global_position).snapped(Vector3.ONE * 0.01)), str(player.is_on_floor()), str(player.is_on_wall()), str(player.velocity.snapped(Vector3.ONE * 0.1))])
+					for key_b in keys_b:
+						Input.action_release("move_" + key_b)
+				_:
+					var rules_b: RefCounted = session.get("_course")
+					var root_b: Node3D = session.get("_course_root")
+					var local_b: Vector3 = player.global_position - (root_b.global_position if root_b != null else Vector3.ZERO)
+					_lines.append("BHOP %s: stage %d, state %s, time %.2f, pad under %d, feet %s, ladder %s, on floor %s, speed %d u/s, bests %s" % [words[1], int(session.get("_stage")), String(rules_b.get("state")), float(rules_b.get("time")), int(rules_b.call("pad_at", local_b.x, local_b.z, local_b.y)), str(local_b.snapped(Vector3.ONE * 0.01)), str(player.get("ladder")), str(player.is_on_floor()), int(player.call("speed_units")), str(session.get("_bhop_best"))])
 		"cardtab":  # (polish1 item 81) "!cardtab <n>": the player card open on tab n (0 Card, 1 Stats, 2 Traits, 3 Achievements, 4 Combat Report, 5 Binder, 6 Cases)
 			session.call("_open_card")
 			var tabs_c: TabContainer = (session.get("_card_screen") as Node).get("_tabs")

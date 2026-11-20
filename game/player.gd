@@ -231,6 +231,7 @@ var inspect_moves := InspectMoves.new()  # data/inspect.json: the inspect key's 
 var shots_fired := 0  # since the session last took them into the record
 var shots_hit := 0
 var hurt_total := 0.0  # damage taken, likewise
+var ladder := false  # (polish1 item 26) inside a KZ ladder's reach (game_session sets it): climbing, no gravity
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
@@ -508,6 +509,9 @@ func _move_tick(input: Vector2) -> void:
 	elif swimming:
 		velocity = _swim_step(input)
 		_fall_speed = 0.0
+	elif ladder and not grounded or (ladder and input.y < 0.0):
+		velocity = _ladder_step(input)
+		_fall_speed = 0.0
 	elif tool_pull.is_finite():  # the Grapple Hook hauls the body to its ring (game/sea_tools.gd sets and clears it)
 		velocity = (tool_pull - global_position).normalized() * tool_pull_speed
 		_fall_speed = 0.0
@@ -549,12 +553,32 @@ func _move_tick(input: Vector2) -> void:
 	velocity *= stretch
 	move_and_slide()
 	velocity /= stretch
+	if even_ground and not is_on_floor():  # (polish1 item 24) surf: Godot counts a too-steep ramp as an upright wall and lets
+		for hit in get_slide_collision_count():  # the fall go on through it; the ramp's own slope carries the fall off sideways
+			var n := get_slide_collision(hit).get_normal()
+			if n.y > 0.05 and n.y < cos(floor_max_angle) and velocity.dot(n) < 0.0:
+				velocity = velocity.slide(n)
 	if not cheat_fly and not carried:  # (polish1 item 110) out of a hill or a wedge before the player notices
 		unstuck.step(self, _capsule, _capsule_node, wanted, global_position - before, move.tick)
 	if _shove != Vector3.ZERO:  # what blew or dragged the body is not its own speed
 		var flat := Vector2(velocity.x - _shove.x, velocity.z - _shove.z).limit_length(own)
 		velocity = Vector3(flat.x, velocity.y, flat.y)
 		_shove = _shove.move_toward(Vector3.ZERO, SHOVE_FADE * move.tick)
+
+
+# (polish1 item 26) On a ladder, Source style: forward climbs while looking level or up and goes down while looking
+# down, back the other way, the side keys edge along it, jump lets go with a push away from it.
+func _ladder_step(input: Vector2) -> Vector3:
+	var speed := float(_move_cfg.get("ladder_speed", 200.0)) * move.unit
+	if _now() <= _jump_until:
+		_jump_until = 0.0
+		var away := Basis(Vector3.UP, _yaw) * Vector3(0, 0, 1)
+		return away * 4.0 + Vector3(0, 2.5, 0)
+	var looking_down := _head.rotation.x < -0.45
+	var climb := -input.y * (-1.0 if looking_down else 1.0)
+	var side := Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, 0) * 0.5
+	var into := Basis(Vector3.UP, _yaw) * Vector3(0, 0, -1) * 0.6 if climb > 0.0 else Vector3.ZERO  # pressed to the rungs
+	return (Vector3(0, climb, 0) + side) * speed + into
 
 
 # Crouching: the view sinks, the body gets shorter (it fits under things) and walking slows. Standing up waits for head room.

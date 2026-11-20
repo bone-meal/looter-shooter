@@ -1,1 +1,1 @@
-!uncap;!wait 2;/tp club;!wait 8;!place 1015.0 0.1 -4.6 90;!wait 0.5;!look 90 -12;!wait 0.6;!snap c6_vendor;!place 1016.2 0.1 -3.2 60;!wait 0.5;!look 55 -8;!wait 0.6;!snap c6_vendor_side
+!uncap;!wait 2;/tp course;!wait 3;!bhop stage 3;!wait 1;!bhop at -0.5 35 -8;!bhop walk 2 right;!bhop note s_right;!bhop stage 3;!wait 1;!bhop at -0.5 35 -8;!bhop walk 1.4;!bhop note s_none;!bhop stage 3;!wait 1;!bhop at 3.5 35 -8;!bhop walk 1 left;!snap c7_surf_left;!bhop walk 1 left;!bhop note s_left

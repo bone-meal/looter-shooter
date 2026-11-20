@@ -95,10 +95,15 @@ static func _place(parent: Node3D, mesh: Mesh, surface: Material, pos: Vector3) 
 	return mi
 
 
+const OCEAN := 6000.0  # metres across the sea plane (wider than the longest view distance both ways)
+
+
 static func _ocean(parent: Node3D, land: Archipelago) -> void:
 	var plane := PlaneMesh.new()
-	plane.size = Vector2(700, 700)
+	plane.size = Vector2(OCEAN, OCEAN)  # (polish1 item 25) one sea for the whole gun side (islands, club, hop course), moved
+	# under the camera by the session so it never ends in view (the waves are in world space: moving it shows nothing)
 	var water := _place(parent, plane, WaterSurface.material(Color(0.1, 0.45, 0.7)), _world(land.middle()) + Vector3(0, land.sea_level, 0))
+	water.name = "Ocean"
 	water.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	for isle: Dictionary in land.islands:
 		var shallows := CylinderMesh.new()

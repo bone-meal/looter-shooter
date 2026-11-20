@@ -41,6 +41,7 @@ const AchievementReader = preload("res://core/achievement_reader.gd")
 const CombatReport = preload("res://game/combat_report.gd")
 const CourseRules = preload("res://core/course_rules.gd")
 const BhopCourse = preload("res://game/bhop_course.gd")
+const BhopStages = preload("res://core/bhop_stages.gd")
 const SettingsState = preload("res://core/settings_state.gd")
 const ProfileIO = preload("res://game/profile_io.gd")
 const Lifeguard = preload("res://game/lifeguard.gd")
@@ -171,6 +172,13 @@ var _course_root: Node3D  # built on the first trip there
 var _course_door := Vector3.ZERO  # the arch on Home Sand
 var _course_spot := Vector2.ZERO
 var _on_course := false
+var _server := {}  # (polish1 item 26) data/bhop_server.json: the hub and its 18 stages
+var _hub_root: Node3D  # the server's hub, built on the first trip
+var _stage := -1  # the stage being run (index into _server.stages), -1 = on the hub
+var _stage_roots := {}  # stage index -> its built Node3D (built when first entered)
+var _bhop_best := {}  # stage id -> best time of this character (saved "bhop_best"; classic_1 is the old "course_best")
+var _ocean: Node3D  # (polish1 item 25) the gun side's one sea, kept under the camera
+var _course_fog := false  # the server's horizon haze is on
 const COURSE_DOOR_REACH := 2.6
 var _hud_timer := 0.0
 var _painting := Vector3.ZERO
@@ -1576,7 +1584,14 @@ func _load_profile() -> void:
 		_smoke.left = clampf(float(extra.get("cigarette_left", 0.0)), 0.0, _smoke.full())
 		_songs.from_list(extra.get("songs"))
 		_stats.from_dict(extra.get("stats"))
-		_course.best = maxf(float(extra.get("course_best", 0.0)), 0.0) if (extra.get("course_best") is float or extra.get("course_best") is int) else 0.0
+		_bhop_best = {}
+		if extra.get("bhop_best") is Dictionary:
+			for id: Variant in extra["bhop_best"]:
+				if (extra["bhop_best"][id] is float or extra["bhop_best"][id] is int) and float(extra["bhop_best"][id]) > 0.0:
+					_bhop_best[String(id)] = float(extra["bhop_best"][id])
+		var old_best := maxf(float(extra.get("course_best", 0.0)), 0.0) if (extra.get("course_best") is float or extra.get("course_best") is int) else 0.0
+		if old_best > 0.0 and not _bhop_best.has("classic_1"):
+			_bhop_best["classic_1"] = old_best
 		_bank.from_dict(extra.get("bank"), _player.inventory)
 		_cards.from_dict(extra.get("tcg"), CardDb.from_files())
 		var lying: Variant = extra.get("pack")
@@ -1635,7 +1650,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict()}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict()}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -1832,8 +1847,10 @@ func _prompt() -> String:
 	if _near(_crow_b_pos, CROW_RANGE):
 		return "[%s] Ride the crow home" % key
 	if _island_side() and _near(_course_door, COURSE_DOOR_REACH):
-		return "[%s] The hop course%s" % [key, ("  (your best %s)" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""]
+		return "[%s] The bhop server: 18 stages" % key
 	if _course_exit_here():
+		return "[%s] Back to the hub" % key
+	if _hub_exit_here():
 		return "[%s] Back to the islands" % key
 	if _near_painting():
 		return "[%s] The colosseum: buy a ticket for the party" % key
@@ -1844,7 +1861,7 @@ func _prompt() -> String:
 	if _near_painting_fantasy():
 		return "[%s] Step into the painting: the wheat fields of Aurelind" % key
 	if _hub_course.is_finite() and _near(_hub_course, PAINTING_RANGE):
-		return "[%s] Step into the painting: the hop course%s" % [key, ("  (your best %s)" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""]
+		return "[%s] Step into the painting: the bhop server" % key
 	if _sea_painting.is_finite() and _near(_sea_painting, PAINTING_RANGE):
 		return ("[%s] Step into the painting: the open sea" % key) if _sea_open() else "The open sea. Follow the U-boat from Gull Rock once to open it."
 	if _ng_lectern.is_finite() and _near(_ng_lectern, 2.5):
@@ -1896,6 +1913,8 @@ func _interact() -> void:
 	elif _island_side() and _near(_course_door, COURSE_DOOR_REACH):
 		travel("course")
 	elif _course_exit_here():
+		_go_to_course()  # (polish1 item 24) the stage's start or finish pad: back to the hub
+	elif _hub_exit_here():
 		travel("island")
 	elif _wall_buy_here() >= 0:
 		_buy_from_wall(_wall_buy_here())
@@ -4446,13 +4465,46 @@ func _close_jukebox() -> void:
 
 # Every frame: a worn cigarette burns while we are on the gun side (the islands, the colosseum; not the club, the
 # casino or Aurelind); when it is done it turns into a butt in the mouth. The HUD shows what is left.
-# --- the hop course (core/course_rules.gd decides, game/bhop_course.gd builds it; data/course.json) ---
+# --- the BHOP SERVER (polish1 items 24-26): a hub with 18 stages (data/bhop_server.json, core/bhop_stages.gd lays
+# them out, game/bhop_course.gd builds them); core/course_rules.gd runs the stage you are on (clock, checkpoints,
+# falls, the finish); best times per stage ---
 
+# To the hub (from the islands, the hub painting, a stage's start or finish pad).
 func _go_to_course() -> void:
-	if _course_root == null:
-		_course_root = BhopCourse.build(self, _course)
-	_course.reset()
+	if _server.is_empty():
+		_server = DataStore.load_json("res://data/bhop_server.json")
+	if _hub_root == null:
+		_hub_root = BhopCourse.build_hub(self, _server)
+		_show_bests()
+	_stage = -1
+	_player.ladder = false
+	_player.teleport(_hub_root.position + Vector3(0, 0.1, 8.0), 0.0)
+
+
+# Into a stage through its portal on the hub.
+func _enter_stage(i: int) -> void:
+	var cfg := BhopStages.course(_server, i, DataStore.load_json("res://data/course.json"))
+	_course.setup(cfg)
+	if not _stage_roots.has(i):
+		_stage_roots[i] = BhopCourse.build(self, _course)
+	_course_root = _stage_roots[i]
+	_stage = i
+	_course.best = float(_bhop_best.get(_stage_id(), 0.0))
 	_put_on_course(_course.start_index())
+	_player_hud.notice("%s  %s" % [_stage_title(i), ("  your best %s" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""])
+
+
+func _stage_id() -> String:
+	return String(_server["stages"][_stage]["id"]) if _stage >= 0 else ""
+
+
+func _stage_title(i: int) -> String:
+	var st: Dictionary = _server["stages"][i]
+	var type_name := ""
+	for t: Dictionary in _server["types"]:
+		if String(t["id"]) == String(st["type"]):
+			type_name = String(t["name"])
+	return "%s %d: %s" % [type_name, int(st["tier"]), String(st["name"])]
 
 
 func _put_on_course(index: int) -> void:
@@ -4460,28 +4512,74 @@ func _put_on_course(index: int) -> void:
 	_player.teleport(_course_root.position + (spot["at"] as Vector3) + Vector3(0, 0.1, 0), float(spot["yaw"]))
 
 
+# On a stage's start or finish pad (interact = back to the hub).
 func _course_exit_here() -> bool:
-	if not _on_course or not _player.is_on_floor():
+	if not _on_course or _stage < 0 or not _player.is_on_floor() or _course_root == null:
 		return false
 	var local := _player.global_position - _course_root.position
-	var under := _course.pad_at(local.x, local.z)
+	var under := _course.pad_at(local.x, local.z, local.y)
 	return under >= 0 and under in [_course.start_index(), _course.finish_index()]
 
 
-# Every frame: is the player on the course (everybody moves the same there), the clock, falls, checkpoints, the finish.
+# At the hub's arch back to the islands.
+func _hub_exit_here() -> bool:
+	return _on_course and _stage < 0 and _hub_root != null and _near(_hub_root.position + (_hub_root.get_meta("exit") as Vector3), COURSE_DOOR_REACH)
+
+
+# The portal labels (stage, tier stars, your best) and the BEST TIMES board in the middle of the hub.
+func _show_bests() -> void:
+	if _hub_root == null:
+		return
+	var labels: Dictionary = _hub_root.get_meta("labels")
+	var lines := PackedStringArray(["BEST TIMES"])
+	for t: Dictionary in _server["types"]:
+		var row := PackedStringArray()
+		for i in (_server["stages"] as Array).size():
+			var st: Dictionary = _server["stages"][i]
+			if String(st["type"]) != String(t["id"]):
+				continue
+			var best := float(_bhop_best.get(String(st["id"]), 0.0))
+			row.append(CourseRules.clock(best) if best > 0.0 else "--")
+			if labels.has(i):
+				(labels[i] as Label3D).text = "%s\n%s\n%s" % [String(st["name"]), "*".repeat(int(st["tier"])), ("best " + CourseRules.clock(best)) if best > 0.0 else "no time yet"]
+		lines.append("%s   %s" % [String(t["name"]), "  |  ".join(row)])
+	(_hub_root.get_meta("board") as Label3D).text = "\n".join(lines)
+
+
+# Every frame: on the server (everybody moves the same there), the hub's portals, the stage's clock, falls,
+# checkpoints, the finish, ladders; and the gun side's sea kept under the camera.
 func _run_course(delta: float) -> void:
-	var local := (_player.global_position - _course_root.position) if _course_root != null else Vector3(0, -1000, 0)
-	var here := _course_root != null and Vector2(local.x, local.z).length() < 400.0 and local.y > -60.0
+	_follow_ocean()
+	var hub_at := _hub_root.position if _hub_root != null else Vector3(0, -10000, 0)
+	var off := _player.global_position - hub_at
+	var here := _hub_root != null and Vector2(off.x, off.z).length() < float(_server.get("ring", 300.0)) + 260.0 and off.y > -160.0
 	if here != _on_course:
 		_on_course = here
 		_player.even_ground = here
+		_player.ladder = false
 		_player_hud.course_text = ""
-		if here:
-			_course.reset()
+		_haze(here)
+		if not here:
+			_stage = -1
 	if not here:
 		return
-	var under := _course.pad_at(local.x, local.z) if _player.is_on_floor() and local.y > -0.6 else -1
-	var fallen := local.y < -float(_course.cfg.get("fall_below", 3.0))
+	if _stage < 0:  # the hub: walk onto a portal
+		_player_hud.course_text = "BHOP SERVER   walk onto a portal to run its stage   knife out is fastest"
+		if _player.is_on_floor():
+			for portal: Array in _hub_root.get_meta("portals"):
+				var spot := _hub_root.position + (portal[1] as Vector3)
+				if Vector2(_player.global_position.x - spot.x, _player.global_position.z - spot.z).length() < 0.95 and absf(_player.global_position.y - spot.y) < 1.0:
+					_enter_stage(int(portal[0]))
+					return
+		return
+	var local := _player.global_position - _course_root.position
+	var ladder := false
+	for box: AABB in _course_root.get_meta("ladders", []):
+		if box.has_point(local):
+			ladder = true
+	_player.ladder = ladder
+	var under := _course.pad_at(local.x, local.z, local.y) if _player.is_on_floor() else -1
+	var fallen := local.y < _course.lowest() - float(_course.cfg.get("fall_below", 3.0))
 	match _course.update(delta, under, fallen):
 		"fell":
 			_put_on_course(_course.checkpoint)
@@ -4500,15 +4598,49 @@ func _run_course(delta: float) -> void:
 			_stats.add("course_runs")
 			_sounds.call("play", "course_finish")
 			_player_hud.callout("New best  %s" % CourseRules.clock(_course.best), Color(1.0, 0.85, 0.3))
+			_bhop_best[_stage_id()] = _course.best
+			_show_bests()
 			save_profile()
 	var best := ("   best %s" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""
+	var title := _stage_title(_stage)
 	match _course.state:
 		CourseRules.READY:
-			_player_hud.course_text = "HOP COURSE  leave the start pad to start the clock (knife out is fastest)%s" % best
+			_player_hud.course_text = "%s   leave the start pad to start the clock   [%s] on the pad: back to the hub%s" % [title, InputSetup.label(settings, "interact"), best]
 		CourseRules.RUNNING:
-			_player_hud.course_text = "%s   %s   stage %d / %d%s" % [CourseRules.clock(_course.time), _course.stage_name(maxi(_course.checkpoint + 1, 1)), _course.stage_of(maxi(_course.checkpoint + 1, 1)), _course.stage_count(), best]
+			_player_hud.course_text = "%s   %s%s" % [title, CourseRules.clock(_course.time), best]
 		_:
-			_player_hud.course_text = "Finished in %s%s   walk back onto the start pad to go again" % [CourseRules.clock(_course.last), best]
+			_player_hud.course_text = "%s   finished in %s%s   [%s] here: back to the hub, or walk back to the start" % [title, CourseRules.clock(_course.last), best, InputSetup.label(settings, "interact")]
+
+
+# (polish1 item 25) The one sea of the gun side follows the camera over the islands, the club and the server (not
+# into the colosseum or the hub hall, which stand away from it), so the sea never ends in view.
+func _follow_ocean() -> void:
+	if _ocean == null:
+		_ocean = find_child("Ocean", true, false) as Node3D
+		if _ocean == null:
+			return
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var at := cam.global_position
+	var outside := at.x > 100.0 and at.x < 2400.0 and absf(at.z) < 1200.0
+	_ocean.visible = outside
+	if outside:
+		_ocean.global_position = Vector3(snappedf(at.x, 8.0), _ocean.global_position.y, snappedf(at.z, 8.0))
+
+
+# On the server, high up: a haze toward the horizon's colour so the sea fades into the sky instead of ending.
+func _haze(on: bool) -> void:
+	if on == _course_fog:
+		return
+	_course_fog = on
+	if not on:
+		apply_settings()
+		return
+	_render_style.env.fog_enabled = true
+	_render_style.env.fog_density = 0.0016
+	_render_style.env.fog_light_color = Color(0.5, 0.66, 0.84)
+	_render_style.env.fog_sky_affect = 0.0
 
 
 # --- the record of everything (core/stat_book.gd; shown by game/combat_report.gd on the card) ---
@@ -4562,7 +4694,7 @@ func _run_stats(delta: float) -> void:
 
 # Stat achievements (data/achievements.json "stat"): reads every key from the record and unlocks what reached its goal.
 func _read_achievements() -> void:
-	var extra := {"best_round": _best_round, "course_best": _course.best}
+	var extra := {"best_round": _best_round, "course_best": float(_bhop_best.get("classic_1", 0.0))}
 	if _fantasy != null:
 		extra["quests_done"] = (_fantasy.quests.done as Array).size()
 		var levels: Dictionary = _fantasy.skills.levels()
@@ -4591,7 +4723,7 @@ func _combat_report() -> Dictionary:
 		"leader_name": func(id: String) -> String: return String(((_card_screen.card_db.get("leaders") as Dictionary).get(id, {}) as Dictionary).get("name", id.capitalize())),
 		"tcg_record": _cards.record if _cards != null else {},
 		"best_round": _best_round,
-		"course_best": _course.best,
+		"course_best": float(_bhop_best.get("classic_1", 0.0)),
 		"quests_done": (_fantasy.quests.done as Array).size() if _fantasy != null else 0,
 		"level": _progress.level(),
 	}

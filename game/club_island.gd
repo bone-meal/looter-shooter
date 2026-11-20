@@ -95,15 +95,8 @@ static func _cyl(parent: Node3D, radius: float, height: float, pos: Vector3, mat
 
 
 static func _island(parent: Node3D) -> void:
-	var water := PlaneMesh.new()
-	water.size = Vector2(600, 600)
-	var wm := _mat(Color(0.1, 0.45, 0.7))
-	wm.roughness = 0.3
-	var w := MeshInstance3D.new()
-	w.mesh = water
-	w.material_override = wm
-	w.position = _at(0, -0.4, 0)
-	parent.add_child(w)
+	# (polish1 item 25) no sea of its own any more: the islands' one sea reaches here (two planes at the same height
+	# flickered white where they overlapped, between the club and the islands)
 	var sand := CylinderMesh.new()
 	sand.top_radius = RADIUS
 	sand.bottom_radius = RADIUS + 1.0

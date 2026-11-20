@@ -7,6 +7,7 @@ extends Node
 
 const CourseRules = preload("res://core/course_rules.gd")
 const DataStore = preload("res://core/data_store.gd")
+const BhopStages = preload("res://core/bhop_stages.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -44,6 +45,40 @@ func _ready() -> void:
 	_say("times read like 1:05.07", CourseRules.clock(65.07) == "1:05.07" and CourseRules.clock(0.0) == "0:00.00" and CourseRules.clock(600.999) == "10:01.00")
 	var spot := course.stand_on(first)
 	_say("the start faces the first hop", absf(float(spot["yaw"])) < 0.01 and course.pad_at(0.0, 0.0) == first and course.pad_at(0.0, -5.0) == -1)
+
+	# (polish1 C7) the bhop server: every stage laid out whole, the hop stages fit the movement, the rest sane
+	var server: Dictionary = DataStore.load_json("res://data/bhop_server.json")
+	var move: Dictionary = DataStore.load_json("res://data/movement.json")
+	var sprint := float(DataStore.load_json("res://data/player.json")["sprint_multiplier"])
+	var old: Dictionary = DataStore.load_json("res://data/course.json")
+	var types := {}
+	for i in (server["stages"] as Array).size():
+		var st: Dictionary = server["stages"][i]
+		types[String(st["type"])] = int(types.get(String(st["type"]), 0)) + 1
+		var c := CourseRules.new()
+		c.setup(BhopStages.course(server, i, old))
+		var bad := c.problems()
+		var kind := String(st["recipe"]["kind"])
+		var note := ""
+		if kind in ["hops", "long", "fixed"]:
+			var h := c.hop_problems(move, sprint)
+			bad.append_array(h[0])
+		var low := c.lowest()
+		var high := -INF
+		for k in c.pads.size():
+			high = maxf(high, c.top_of(k))
+		if kind == "climb":
+			var steps_ok := true
+			for k in range(1, c.pads.size()):
+				var rise := c.top_of(k) - c.top_of(k - 1)
+				steps_ok = steps_ok and (rise <= 1.3 or (c.cfg["parts"] as Array).size() > 0)
+			note = "%d ladders" % (c.cfg["parts"] as Array).size()
+			if not steps_ok:
+				bad.append("a step higher than a jump without a ladder")
+		if kind == "surf":
+			note = "%d ramp faces" % (c.cfg["parts"] as Array).size()
+		_say("%s (%s %d): %d pads from %.1f to %.1f m%s%s" % [st["id"], st["type"], int(st["tier"]), c.pads.size(), low, high, (", " + note) if note != "" else "", "" if bad.is_empty() else "  PROBLEMS: " + "; ".join(bad)], bad.is_empty() and c.start_index() == 0 and c.finish_index() == c.pads.size() - 1)
+	_say("6 types x 3 stages: %s" % str(types), types.size() == 6 and types.values().all(func(n: int) -> bool: return n == 3))
 
 	_lines.append("COURSE_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/course_check.log", FileAccess.WRITE)

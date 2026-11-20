@@ -1,12 +1,4 @@
-Polish1 C6: card game rest - unopened packs kept apart, starter decks above slots, binder inspect and cover, vending machine goods, player card revamp
-
-- Bought packs stay separate unopened items (singles, 5-packs, 10-packs, boxes); Open packs shows that list first; a bundle or box opens all its packs with one tear; older saves keep their packs as singles and boxes
-- The five starter decks stand above the deck slots: load one owned, buy one not owned (2000 chips) and load it
-- Binder lies closed and swings open; clicking an owned card opens an inspect view (spin, tip, zoom, compare Plain / Rainbow / Pony); foil filter
-- Card vending machine: clear glass over a lit inside with the real goods - single packs on coils, 5 and 10 pack bundles, boxes, prices, keypad and chip slot
-- Player card in the game skin: pill tabs and buttons, panels, gradient backdrop, stat pips, a richer banner with a medallion and level shield
-- Hover cards on the 3D table checked through the real input path for the dealer's board cards
-- Checks: tcg_rules_check covers the unopened items (0 problems)
+Polish1 C7: bhop server hub with 18 stages (classic, surf, air strafe, long jump, KZ ladders, edgebug drops), one ocean, surf ramp physics
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

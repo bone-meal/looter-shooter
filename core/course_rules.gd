@@ -40,20 +40,36 @@ func finish_index() -> int:
 
 
 # The pad whose top the flat spot (x, z) stands over (0.15 m to spare at the rims, the body is round), or -1.
-func pad_at(x: float, z: float) -> int:
+# `y` (the feet, from the course's centre; NAN = any height) picks the pad at that height (polish1 C7: stages climb and drop).
+func pad_at(x: float, z: float, y: float = NAN) -> int:
 	for i in pads.size():
 		var p: Dictionary = pads[i]
+		if not is_nan(y) and absf(y - top_of(i)) > 0.7:
+			continue
 		if absf(x - float(p["at"][0])) <= float(p["size"][0]) * 0.5 + 0.15 and absf(z - float(p["at"][1])) <= float(p["size"][1]) * 0.5 + 0.15:
 			return i
 	return -1
 
 
+# A pad's top height (0 = the course's centre height).
+func top_of(index: int) -> float:
+	return float(pads[clampi(index, 0, pads.size() - 1)].get("y", 0.0))
+
+
+# The lowest pad top: under it by fall_below you have fallen.
+func lowest() -> float:
+	var low := INF
+	for i in pads.size():
+		low = minf(low, top_of(i))
+	return low if low < INF else 0.0
+
+
 # Where to stand on a pad (its middle, y 0) and which way to face: toward the next pad.
 func stand_on(index: int) -> Dictionary:
 	var p: Dictionary = pads[clampi(index, 0, pads.size() - 1)]
-	var at := Vector3(float(p["at"][0]), 0.0, float(p["at"][1]))
+	var at := Vector3(float(p["at"][0]), float(p.get("y", 0.0)), float(p["at"][1]))
 	var ahead: Dictionary = pads[mini(index + 1, pads.size() - 1)]
-	var way := Vector3(float(ahead["at"][0]), 0.0, float(ahead["at"][1])) - at
+	var way := Vector3(float(ahead["at"][0]), at.y, float(ahead["at"][1])) - at
 	return {"at": at, "yaw": atan2(-way.x, -way.z) if way.length() > 0.1 else 0.0}
 
 
