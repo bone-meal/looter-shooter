@@ -46,6 +46,10 @@ const ProfileIO = preload("res://game/profile_io.gd")
 const Lifeguard = preload("res://game/lifeguard.gd")
 const ProgressState = preload("res://core/progress_state.gd")
 const CardScreen = preload("res://game/card_screen.gd")
+const CaseShelf = preload("res://core/case_shelf.gd")
+const CaseTab = preload("res://game/case_tab.gd")
+const CaseOpening = preload("res://game/case_opening.gd")
+const ItemIcons = preload("res://game/item_icons.gd")
 const NpcChatter = preload("res://game/npc_chatter.gd")
 const RenderStyle = preload("res://game/render_style.gd")
 const CustomizeMenu = preload("res://game/customize_menu.gd")
@@ -204,6 +208,10 @@ var _reward: RewardArea
 var _customizer := CustomizeMenu.new()
 var _progress := ProgressState.new(DataStore.load_json("res://data/progression.json"), DataStore.load_json("res://data/achievements.json"))  # level, stats, traits, achievements, card (saved in the profile)
 var _card_screen := CardScreen.new()
+var _cases := CaseShelf.new()  # (polish1 item 72) crates bought and not opened yet (saved "cases")
+var _case_tab := CaseTab.new()  # the player card's Cases tab
+var _opening := CaseOpening.new()  # the CS:GO-style opening screen
+var _crates: Array = []  # data/gun_loot.json "vendor"
 var _render_style := RenderStyle.new()
 var _wallet := Wallet.new()  # casino coins (saved in the profile)
 var _doubloons := Wallet.new()  # the sea's money (sea step 6; saved in the profile)
@@ -663,6 +671,19 @@ func _ready() -> void:
 	_card_screen.changed.connect(_on_card_changed)
 	_card_screen.closed.connect(_on_card_closed)
 	custom_layer.add_child(_card_screen)
+	_crates = DataStore.load_json("res://data/gun_loot.json")["vendor"]
+	_case_tab.crates = _crates
+	_case_tab.shelf = _cases
+	_case_tab.gun_db = _player.gun_db
+	_case_tab.open_requested.connect(_show_case)
+	_card_screen.cases_tab = _case_tab
+	_opening.gun_db = _player.gun_db
+	_opening.sounds = _sounds
+	_opening.open_pressed.connect(_open_case)
+	_opening.landed.connect(_case_landed)
+	_opening.again.connect(_show_case)
+	_opening.closed.connect(func() -> void: _case_tab.refresh())
+	custom_layer.add_child(_opening)
 	custom_layer.add_child(_slot_screen)
 	custom_layer.add_child(_trade_screen)
 	_colosseum = ColosseumRules.new(DataStore.load_json("res://data/colosseum.json"))
@@ -740,6 +761,7 @@ func _ready() -> void:
 	_chat.closed.connect(_on_chat_closed)
 	if net != null:
 		net.chat.line.connect(func(sender: String, text: String) -> void: _chat.add_line("%s: %s" % [sender, text]))
+		net.chat.unboxed.connect(func(sender: String, text: String) -> void: _chat.add_line("%s unboxed %s" % [sender, text], Color(1.0, 0.82, 0.3)))
 		net.chat.reply.connect(func(text: String) -> void: _chat.add_line(text, Color(0.75, 0.9, 1.0)))
 		net.chat.op_changed.connect(func(on: bool) -> void: _chat.add_line("The host %s commands." % ("lets you use" if on else "took away your"), Color(1.0, 0.85, 0.4)))
 		net.chat.world_command = _run_world_command
@@ -904,6 +926,9 @@ func _unhandled_input(event: InputEvent) -> void:
 # Closes the inventory if it is open (main.gd calls this on Esc). Returns true if it did.
 func close_inventory() -> bool:
 	if _fantasy != null and _fantasy.close_panel():
+		return true
+	if _opening.visible:  # (a turning reel ignores it)
+		_opening.close()
 		return true
 	if _card_screen.visible:
 		_card_screen.close()
@@ -1537,6 +1562,7 @@ func _load_profile() -> void:
 			_wallet.balance = maxi(int(extra["coins"]), 0)
 			_jackpot = float(extra.get("jackpot", _jackpot))
 		_doubloons.balance = maxi(int(extra.get("doubloons", 0)), 0)
+		_cases.from_dict(extra.get("cases"), _crates.map(func(c: Dictionary) -> String: return String(c["id"])))
 		_progress.from_dict(extra.get("progress", {}))
 		_score.from_dict(extra.get("score"))
 		_player.pools.from_dict(extra.get("ammo"))
@@ -1603,7 +1629,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict(), "tcg": _cards.to_dict()}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": _course.best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict()}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -2190,17 +2216,63 @@ func _buy_crate(crate: Dictionary) -> void:
 		_player_hud.notice("Are you sure? Press [%s] again to buy the %s for %d chips." % [InputSetup.label(settings, "interact"), crate["name"], price])
 		return
 	_crate_sure_id = ""
-	var band := ItemLevel.island_band()
-	var gun := GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]), ItemLevel.roll(_rng, band.x, band.y))
-	if not _player.inventory.add_gun(gun):
-		_player_hud.notice("Inventory full: make room first.")
-		return
-	_wallet.spend(price)
-	_player.refresh_held()
+	_wallet.spend(price)  # (polish1 item 72) the crate goes to the Cases tab, opened there
+	_cases.add(String(crate["id"]))
 	_progress.count("vendor_buys", 1)
 	_progress_notices(0)
 	save_profile()
-	_player_hud.notice("%s: %s" % [crate["name"], GunStats.display_name(_player.gun_db, gun)])
+	_player_hud.notice("%s added to your cases (%d). Open it on your player card [%s] > Cases." % [crate["name"], _cases.count(String(crate["id"])), InputSetup.label(settings, "card")])
+
+
+# --- crates: the Cases tab and the opening screen (polish1 item 72) ---
+
+func _crate_def(id: String) -> Dictionary:
+	for c: Dictionary in _crates:
+		if String(c["id"]) == id:
+			return c
+	return {}
+
+
+func _show_case(id: String) -> void:
+	if _cases.count(id) <= 0:
+		_opening.close()
+		return
+	_opening.show_case(_crate_def(id), _cases.count(id))
+
+
+# OPEN: the crate is spent and its gun rolled and put in the bag at once (saved: quitting mid-spin loses nothing);
+# the reel then shows it. The reel's other guns are rolled the same way, so it shows what the crate can give.
+func _open_case(id: String) -> void:
+	var crate := _crate_def(id)
+	if crate.is_empty() or _free_slots() == 0:
+		_player_hud.notice("Inventory full: make room first.")
+		return
+	if not _cases.take(id):
+		return
+	var band := ItemLevel.island_band()
+	var roll := func() -> Dictionary: return GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]), ItemLevel.roll(_rng, band.x, band.y))
+	var gun: Dictionary = roll.call()
+	_player.inventory.add_gun(gun)
+	_player.refresh_held()
+	save_profile()
+	var reel: Array = []
+	var win := 40 + _rng.randi_range(0, 4)
+	for i in win + 6:
+		reel.append(gun if i == win else roll.call())
+	_opening.left = _cases.count(id)
+	_opening.spin(reel, win)
+
+
+func _case_landed(id: String) -> void:
+	var gun := _opening.winner()
+	var tier := String(gun.get("tier", "grey"))
+	var line := "a %s from a %s" % [GunStats.display_name(_player.gun_db, gun), String(_crate_def(id).get("name", "crate"))]
+	if ItemIcons.TIER_ORDER.find(tier) >= ItemIcons.TIER_ORDER.find("gold"):  # gold and up: told to the lobby
+		if net == null or not net.can_send() or net.is_host():  # (a joiner hears its own line back from the host)
+			_chat.add_line("%s unboxed %s!" % [_profile_name, line], Color(1.0, 0.82, 0.3))
+		if net != null:
+			net.chat.announce_unbox(line + "!")
+	_case_tab.refresh()
 
 
 func _pick_up(drop: Dictionary) -> void:

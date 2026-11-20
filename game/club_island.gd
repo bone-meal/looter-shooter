@@ -1,4 +1,4 @@
-# Purpose: builds the second island: a neon dance club (dance floor with color-cycling tiles, stage with performers, DJ booth, bar with bartender, tables, crowd), a disco ball and a glowing sign.
+# Purpose: builds the second island: a neon dance club (dance floor with color-cycling tiles, stage with performers, DJ booth, bar with bartender, tables, crowd), a disco ball and a glowing sign; neon strips and moving spotlights inside (polish1 item 71).
 # In two steps: build_shell (what is seen from afar, at session start) and build_inside (the rest, on the first trip there).
 # Dependencies: game/party_people.gd (characters and all animation), game/casino_room.gd (the casino annex). Walls, floor and bar have colliders; the rest is visual.
 extends RefCounted
@@ -44,6 +44,7 @@ static func inside_steps(parent: Node3D) -> Array[Callable]:
 		func() -> void: _stage(parent),
 		func() -> void: _bar(parent),
 		func() -> void: _tables(parent),
+		func() -> void: _lights(parent),
 		func() -> void: _people()]
 
 
@@ -206,6 +207,85 @@ static func _tables(parent: Node3D) -> void:
 		_cyl(parent, 0.7, 0.08, _at(7.5, 0.95, z), _mat(Color(0.25, 0.2, 0.3)))
 		_cyl(parent, 0.08, 0.95, _at(7.5, 0.47, z), _mat(Color(0.2, 0.2, 0.22)))
 		_cyl(parent, 0.04, 0.05, _at(7.5, 1.02, z), _mat(MAGENTA, true))  # candle glow
+
+
+# (polish1 item 71) Keep the dark mood, but make the room readable: neon strips along the floor and the ceiling of
+# every inner wall, upright tubes on the side walls, and four moving spotlights from the ceiling corners: faint beams
+# and a lit disc where each meets the floor. None of it is a real light (on the Compatibility renderer every light
+# draws what it touches once more); it is all glowing meshes.
+static func _lights(parent: Node3D) -> void:
+	var pink := _mat(MAGENTA, true)
+	var blue := _mat(CYAN, true)
+	for y: float in [0.16, WALL_H - 0.35]:
+		var low := y < 1.0
+		_box(parent, Vector3(19.4, 0.07, 0.07), _at(0, y, -13.7), blue if low else pink)  # back wall
+		_box(parent, Vector3(0.07, 0.07, 15.4), _at(-9.7, y, -6), pink if low else blue)  # left wall
+		_box(parent, Vector3(0.07, 0.07, 15.4), _at(9.7, y, -6), pink if low else blue)  # right wall
+		_box(parent, Vector3(7.0, 0.07, 0.07), _at(-6.2, y, 1.7), blue if low else pink)  # front wall, both sides of the door
+		_box(parent, Vector3(7.0, 0.07, 0.07), _at(6.2, y, 1.7), blue if low else pink)
+	for i in 4:
+		var z := -12.0 + float(i) * 3.6
+		_box(parent, Vector3(0.07, WALL_H - 1.2, 0.07), _at(-9.7, WALL_H * 0.5, z), blue if i % 2 == 0 else pink)
+		_box(parent, Vector3(0.07, WALL_H - 1.2, 0.07), _at(9.7, WALL_H * 0.5, z), pink if i % 2 == 0 else blue)
+	var rigs := [[Vector3(-9.0, 5.6, -13.0), Color(1.0, 0.15, 0.6)], [Vector3(9.0, 5.6, -13.0), Color(0.15, 0.85, 1.0)], [Vector3(-9.0, 5.6, 1.0), Color(0.6, 0.3, 1.0)], [Vector3(9.0, 5.6, 1.0), Color(1.0, 0.7, 0.2)]]
+	for i in rigs.size():
+		var from: Vector3 = rigs[i][0]
+		var colour: Color = rigs[i][1]
+		var to := Vector3(0, 0, -6.0) - from
+		var pivot := Node3D.new()
+		pivot.position = _at(from.x, from.y, from.z)
+		parent.add_child(pivot)
+		_box(pivot, Vector3(0.3, 0.3, 0.45), Vector3(0, 0, 0.1), _mat(Color(0.08, 0.08, 0.1)))  # the lamp's can
+		var pool := MeshInstance3D.new()  # where the beam meets the floor: a soft lit disc that follows it (not a real light)
+		var disc := PlaneMesh.new()
+		disc.size = Vector2(2.6, 2.6)
+		pool.mesh = disc
+		var pool_mat := StandardMaterial3D.new()
+		pool_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		pool_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		pool_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		pool_mat.albedo_texture = _soft_disc()
+		pool_mat.albedo_color = Color(colour, 0.55)
+		pool.material_override = pool_mat
+		pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		parent.add_child(pool)
+		var cone := CylinderMesh.new()
+		cone.top_radius = 0.1
+		cone.bottom_radius = 2.2
+		cone.height = 9.0
+		cone.radial_segments = 12
+		cone.rings = 1
+		cone.cap_top = false
+		cone.cap_bottom = false
+		var beam_mat := StandardMaterial3D.new()
+		beam_mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		beam_mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
+		beam_mat.blend_mode = BaseMaterial3D.BLEND_MODE_ADD
+		beam_mat.cull_mode = BaseMaterial3D.CULL_DISABLED
+		beam_mat.albedo_color = Color(colour, 0.13)
+		var beam := MeshInstance3D.new()
+		beam.mesh = cone
+		beam.material_override = beam_mat
+		beam.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+		beam.position = Vector3(0, 0, -4.5)
+		beam.rotation_degrees.x = 90.0  # narrow end at the lamp, opening along the light
+		pivot.add_child(beam)
+		_anim.spots.append([pivot, float(i) * 1.6, atan2(-to.x, -to.z), pool])
+
+
+static var _disc_tex: GradientTexture2D
+static func _soft_disc() -> GradientTexture2D:
+	if _disc_tex == null:
+		var grad := Gradient.new()
+		grad.colors = PackedColorArray([Color(1, 1, 1, 1), Color(1, 1, 1, 0)])
+		_disc_tex = GradientTexture2D.new()
+		_disc_tex.gradient = grad
+		_disc_tex.fill = GradientTexture2D.FILL_RADIAL
+		_disc_tex.fill_from = Vector2(0.5, 0.5)
+		_disc_tex.fill_to = Vector2(0.5, 0.0)
+		_disc_tex.width = 64
+		_disc_tex.height = 64
+	return _disc_tex
 
 
 static func _add(parent_node: Node3D, role: String, pos: Vector3, yaw_deg: float, phase: float, shirt: Color, pants: Color, skin: Color, hair: Color, skirt: bool = false) -> void:

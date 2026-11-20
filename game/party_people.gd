@@ -15,6 +15,7 @@ const HIDE_BEYOND := 150.0  # metres from the camera to the club people
 var tiles: Array[StandardMaterial3D] = []  # dance-floor tile materials, recolored on a beat
 var ball: Node3D  # disco ball (spins)
 var sign_label: Label3D  # neon sign (flickers)
+var spots: Array = []  # (polish1 item 71) [Node3D pivot, phase, sweep, Node3D floor disc]: the club's moving spotlights, swung slowly
 
 var _people: Array[Dictionary] = []  # {"node", "role", "phase"}
 var _beat := 0.0
@@ -41,6 +42,15 @@ func _process(delta: float) -> void:
 			_animate(p["node"], p["role"], _time + p["phase"])
 	if ball != null:
 		ball.rotation.y += delta * 0.8
+	if near:
+		for spot: Array in spots:
+			var pivot: Node3D = spot[0]
+			var ph := float(spot[1])
+			pivot.rotation = Vector3(-0.7 + 0.22 * sin(_time * 0.5 + ph), float(spot[2]) + 0.6 * sin(_time * 0.37 + ph * 1.7), 0.0)
+			var pool: Node3D = spot[3]
+			var ray := -pivot.global_basis.z
+			if ray.y < -0.05:  # the lit disc where the beam meets the floor
+				pool.global_position = pivot.global_position + ray * ((pivot.global_position.y - 0.15) / -ray.y)
 	if sign_label != null:
 		sign_label.modulate.a = 0.85 + 0.15 * sin(_time * 9.0) * sin(_time * 2.3)
 	_beat += delta

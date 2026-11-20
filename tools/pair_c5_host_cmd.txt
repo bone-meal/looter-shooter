@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 15;!case heard h1;!wait 10;!case heard h2;!snap h_chat;!wait 10;!case heard h3

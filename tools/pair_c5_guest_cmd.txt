@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 22;!case say a Legendary Kestrel Works Test Rifle from a Gold Crate!;!wait 12;!case say a Pony Brawn Test Shotgun from a Gold Crate!;!wait 3;!case heard g;!wait 12

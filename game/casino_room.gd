@@ -1,4 +1,5 @@
-# Purpose: builds the casino annex on the club island (east of the club): shell with a door, carpet, neon, the giant pachinko machine that IS the back wall, four slot machines along the east wall, the blackjack and roulette tables with their dealers and two waitresses.
+# Purpose: builds the casino annex on the club island (east of the club): shell with a door, carpet, neon, lamps that
+# light the tables (polish1 item 73), the giant pachinko machine that IS the back wall, four slot machines along the east wall, the blackjack and roulette tables with their dealers and two waitresses.
 # Also the card table on the beach outside the door with its House Dealer (data/tcg/table.json) and the card vending machine.
 # Dependencies: game/pachinko_wall.gd, game/slot_machine.gd, game/staff_crew.gd, game/blackjack_table.gd, game/roulette_table.gd, game/tcg/beach_table.gd, game/tcg/card_vendor.gd. Walls and floor have colliders; decoration is visual only.
 extends RefCounted
@@ -192,3 +193,53 @@ static func _ceiling_lights(root: Node3D) -> void:
 	for ix in 3:
 		for iz in 3:
 			_box(root, Vector3(1.4, 0.08, 1.4), Vector3(14.0 + ix * 3.5, H - 0.05, -4.0 + iz * 4.5), warm)
+	# (polish1 item 73) the room was too dark to see the tables: pendant lamps whose warm spot lights really light the
+	# blackjack and roulette felts. Only these two: on the Compatibility renderer every light draws the meshes it
+	# touches once more (a room-wide fill and two more spots cost ~800 draw calls), so they stay small and shadowless.
+	_pendant(root, Vector3(15.2, 0.0, 2.6), 3.2, 2.4)  # blackjack
+	_pendant(root, Vector3(15.5, 0.0, -1.4), 3.2, 2.6)  # roulette
+
+
+# A lamp hanging over a table: cord, a brass shade with a glowing rim, and a warm spot light onto the felt.
+static func _pendant(root: Node3D, table: Vector3, height: float, energy: float) -> void:
+	var top := table + Vector3(0, height, 0)
+	_box(root, Vector3(0.03, H - height, 0.03), top + Vector3(0, (H - height) * 0.5, 0), _mat(Color(0.1, 0.1, 0.1)))
+	var shade := CylinderMesh.new()
+	shade.top_radius = 0.18
+	shade.bottom_radius = 0.75
+	shade.height = 0.4
+	shade.radial_segments = 16
+	shade.rings = 1
+	var brass := StandardMaterial3D.new()
+	brass.albedo_color = Color(0.55, 0.38, 0.12)
+	brass.roughness = 0.4
+	var s := MeshInstance3D.new()
+	s.mesh = shade
+	s.material_override = brass
+	s.position = top
+	root.add_child(s)
+	var rim := CylinderMesh.new()
+	rim.top_radius = 0.7
+	rim.bottom_radius = 0.7
+	rim.height = 0.02
+	rim.radial_segments = 16
+	rim.rings = 1
+	var glow := MeshInstance3D.new()
+	glow.mesh = rim
+	glow.material_override = _mat(Color(1.0, 0.9, 0.65), true)
+	glow.position = top - Vector3(0, 0.2, 0)
+	root.add_child(glow)
+	_spot(root, top - Vector3(0, 0.15, 0), table + Vector3(0, 0.9, 0), Color(1.0, 0.88, 0.7), energy, 48.0)
+
+
+static func _spot(root: Node3D, from: Vector3, to: Vector3, colour: Color, energy: float, angle: float) -> void:
+	var spot := SpotLight3D.new()
+	root.add_child(spot)
+	spot.position = from
+	spot.basis = Basis.looking_at(to - from, Vector3.FORWARD if absf((to - from).normalized().y) > 0.99 else Vector3.UP)
+	spot.light_color = colour
+	spot.light_energy = energy
+	spot.spot_range = from.distance_to(to) + 1.2
+	spot.spot_angle = angle
+	spot.spot_attenuation = 0.5
+	spot.shadow_enabled = false

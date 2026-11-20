@@ -1,8 +1,12 @@
-# Purpose: a casino kiosk that sells one kind of crate (a random rolled gun with a tier floor) for chips. Draws only; game_session handles the purchase.
-# Dependencies: none. Crate data comes from data/gun_loot.json `vendor`.
+# Purpose: a casino kiosk that sells one kind of crate (a random rolled gun with a tier floor) for chips; the crate's own
+# model turns on top (polish1 item 72). Draws only; game_session handles the purchase.
+# Dependencies: game/fantasy_models.gd (crate_<id> from tools/blender/crates.py). Crate data comes from data/gun_loot.json `vendor`.
 extends Node3D
 
+const FantasyModels = preload("res://game/fantasy_models.gd")
+
 var crate: Dictionary = {}  # {"id", "name", "price", "luck", "min_tier", "color"}; set before add_child
+var _shown: Node3D  # the crate model on top (assets/models/fantasy/crate_<id>.gltf)
 
 
 func _ready() -> void:
@@ -34,18 +38,30 @@ func _ready() -> void:
 	glow.material_override = gmat
 	glow.position.y = 1.16
 	add_child(glow)
-	var crate_box := MeshInstance3D.new()
-	var cm := BoxMesh.new()
-	cm.size = Vector3(0.3, 0.3, 0.4)
-	crate_box.mesh = cm
-	var cmat := StandardMaterial3D.new()
-	cmat.albedo_color = color
-	cmat.emission_enabled = true
-	cmat.emission = color
-	cmat.emission_energy_multiplier = 0.6
-	crate_box.material_override = cmat
-	crate_box.position = Vector3(0.0, 1.45, 0.0)
-	add_child(crate_box)
+	if FantasyModels.has_model("crate_" + String(crate["id"])):  # (polish1 item 72) the crate's own model, turning slowly on the kiosk
+		_shown = FantasyModels.scene("crate_" + String(crate["id"]))
+		var lit := StandardMaterial3D.new()
+		lit.albedo_color = color
+		lit.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		for found in _shown.find_children("*", "MeshInstance3D", true, false):
+			if String(found.name).begins_with("Glow") or String(found.get_parent().name).begins_with("Glow"):
+				(found as MeshInstance3D).material_override = lit
+		_shown.position = Vector3(0.0, 1.24, 0.0)
+		_shown.scale = Vector3.ONE * 0.62
+		add_child(_shown)
+	else:
+		var crate_box := MeshInstance3D.new()
+		var cm := BoxMesh.new()
+		cm.size = Vector3(0.3, 0.3, 0.4)
+		crate_box.mesh = cm
+		var cmat := StandardMaterial3D.new()
+		cmat.albedo_color = color
+		cmat.emission_enabled = true
+		cmat.emission = color
+		cmat.emission_energy_multiplier = 0.6
+		crate_box.material_override = cmat
+		crate_box.position = Vector3(0.0, 1.45, 0.0)
+		add_child(crate_box)
 	var label := Label3D.new()
 	label.text = "%s\n%d chips\n[F] buy" % [crate["name"], int(crate["price"])]
 	label.font_size = 36
@@ -55,6 +71,11 @@ func _ready() -> void:
 	label.rotation_degrees.y = 90.0
 	label.position = Vector3(0.27, 0.75, 0.0)
 	add_child(label)
+
+
+func _process(delta: float) -> void:
+	if _shown != null:
+		_shown.rotation.y += delta * 0.5
 
 
 func console_position() -> Vector3:

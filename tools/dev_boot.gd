@@ -2864,6 +2864,68 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var slot := String((player.get("items") as RefCounted).call("equip_slot", words[1]))
 			(bag.get("equipment") as Dictionary)[slot] = {"id": words[1], "count": 1}
 			session.call("_on_inventory_changed")
+		"casino":  # (polish1 C5) "!casino bj | roulette | slot [n]": stand at that table / machine and sit (its screen opens); "!casino press <key>": press a control of the open screen;
+			# "!casino leave": Esc there; "!casino view x z yaw pitch": stand at club x z (metres from the club's centre) looking that way
+			var games: Node = session.get("_games")
+			var club := Vector3(1000, 0, 0)
+			match words[1]:
+				"bj", "roulette":
+					var table: Node3D = (session.get("_casino") as Dictionary).get("blackjack" if words[1] == "bj" else "roulette")
+					player.call("teleport", table.global_position + Vector3(1.6, 0.1, 0.0), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					games.call("open", "blackjack" if words[1] == "bj" else "roulette")
+				"slot":
+					var machines: Array = (session.get("_casino") as Dictionary).get("slots")
+					var m: Node3D = machines[int(words[2]) if words.size() > 2 else 0]
+					player.call("teleport", m.global_position + m.global_basis.z * 1.3 + Vector3(0, 0.1, 0), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					session.call("_open_slots", m)
+				"press":
+					var key := " ".join(words.slice(2))
+					var hit := false
+					for screen: Node in [games.get("_bj_screen"), games.get("_rt_screen"), session.get("_slot_screen")]:
+						if (screen as Control).visible and screen.has_method("press"):
+							hit = bool(screen.call("press", key))
+					_lines.append("CASINO press %s: %s, chips %d" % [key, hit, int((session.get("_wallet") as RefCounted).get("balance"))])
+				"leave":
+					games.call("request_close")
+					if (session.get("_slot_screen") as Control).visible:
+						session.get("_slot_screen").call("close")
+				"view":
+					player.call("teleport", club + Vector3(float(words[2]), 0.1, float(words[3])), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					var yaw_c := deg_to_rad(float(words[4]))
+					var pitch_c := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
+					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_c) * cos(pitch_c), sin(pitch_c), -cos(yaw_c) * cos(pitch_c)) * 20.0)
+		"case":  # (polish1 item 72) "!case give <id> [n]": crates into our cases; "!case tab": the player card on its Cases tab; "!case press <key>": a control of the
+			# Cases tab ("open <id>") or of the opening screen ("open", "skip", "again", "done"); "!case buy <id>": buy at that kiosk as a player would (twice for Are you sure); "!case note"
+			var shelf: RefCounted = session.get("_cases")
+			var opening: Control = session.get("_opening")
+			match words[1]:
+				"give":
+					shelf.call("add", words[2], int(words[3]) if words.size() > 3 else 1)
+				"tab":
+					session.call("_open_card")
+					var tabs: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
+					tabs.current_tab = tabs.get_tab_count() - 1
+				"press":
+					var key_c := " ".join(words.slice(2))
+					var target: Node = opening if opening.visible else session.get("_case_tab")
+					_lines.append("CASE press %s: %s" % [key_c, target.call("press", key_c)])
+				"buy":
+					for c: Dictionary in session.get("_crates"):
+						if String(c["id"]) == words[2]:
+							session.call("_buy_crate", c)
+				"heard":  # "!case heard": the chat box's last lines (did an unboxing reach us?)
+					var kept: Array = (session.get("_chat") as Node).get("_lines")
+					_lines.append("CASE heard: %s" % " | ".join(kept.slice(maxi(kept.size() - 4, 0)).map(func(l: Array) -> String: return String(l[0]))))
+				"close":  # "!case close": Esc as a player would (the opening screen, then the player card)
+					session.call("close_inventory")
+				"say":  # "!case say <text>": tell the lobby an unboxing (the announcement path alone)
+					(session.get("net") as Node).get("chat").call("announce_unbox", " ".join(words.slice(2)))
+				"note":
+					var gun_c: Dictionary = opening.call("winner") if opening.visible else {}
+					_lines.append("CASE %s: cases %s, chips %d, opening %s spinning %s, winner %s %s, bag guns %d" % [" ".join(words.slice(2)), str(shelf.get("counts")), int((session.get("_wallet") as RefCounted).get("balance")), opening.visible, opening.call("is_spinning"), String(gun_c.get("tier", "")), String(gun_c.get("body", "")), int((player.get("inventory") as RefCounted).call("gun_count")) if (player.get("inventory") as RefCounted).has_method("gun_count") else -1])
 		"pachinko":  # "!pachinko": stand in front of the casino's pachinko wall (the chips show at the top right there)
 			var wall: Node3D = session.get("_pachinko")
 			if wall != null:

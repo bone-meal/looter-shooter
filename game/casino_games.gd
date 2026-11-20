@@ -312,6 +312,6 @@ func _on_roulette_finished() -> void:
 		verdict = "You win %d (net %s%d)" % [back, "+" if net >= 0 else "", net]
 	var message := "%d %s.  %s" % [number, Roulette.color_of(number), verdict]
 	_rt_screen.set_busy(false)
-	_rt_screen.show_state(_wallet.balance, message)
+	_rt_screen.show_state(_wallet.balance, message, number)
 	round_finished.emit()
 

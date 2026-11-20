@@ -10,6 +10,7 @@ const ChatCommand = preload("res://core/chat_command.gd")
 signal line(sender: String, text: String)  # a chat line to show (also our own, echoed)
 signal reply(text: String)  # the host's answer to a command we sent
 signal op_changed(allowed: bool)  # the host gave or took our right to use commands
+signal unboxed(sender: String, text: String)  # (polish1 item 72) someone opened a crate and got gold or better: told to everyone
 signal tp_ordered(target: Dictionary, by: String)  # an operator teleports us: {"kind": "player", "id"} or {"kind": "pos", "world", "at"}
 
 const MIN_GAP := 0.4  # host: seconds a client must leave between lines
@@ -33,6 +34,37 @@ func say(text: String) -> void:
 		line.emit(net.local_name(), clean)
 	else:
 		_say_to_host.rpc_id(1, clean)
+
+
+# (polish1 item 72) Tells the lobby what we unboxed ("a Legendary ... from a Gold Crate"); the host relays it under our
+# roster name. Our own machine shows its line itself.
+func announce_unbox(text: String) -> void:
+	var clean := ChatCommand.clean(text)
+	if clean == "" or not net.can_send():
+		return
+	if net.is_host():
+		_unbox_show.rpc(net.local_name(), clean)
+	else:
+		_unbox_to_host.rpc_id(1, clean)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _unbox_to_host(text: String) -> void:
+	if not net.is_host():
+		return
+	var id := multiplayer.get_remote_sender_id()
+	var now := Time.get_ticks_msec() / 1000.0
+	if not net.roster.has(id) or now - float(_last.get(id, -10.0)) < MIN_GAP:
+		return
+	_last[id] = now
+	var clean := ChatCommand.clean(text)
+	_unbox_show.rpc(String(net.roster[id]), clean)
+	unboxed.emit(String(net.roster[id]), clean)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _unbox_show(sender: String, text: String) -> void:
+	unboxed.emit(sender, ChatCommand.clean(text))
 
 
 # A client asks the host to run a command that changes the shared world.

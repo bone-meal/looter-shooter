@@ -1,10 +1,10 @@
-Polish1 C4: colosseum board sells itself, rotating banner tickets, Second Wind rework
+Polish1 C5: casino lamps, table screens as real UI, club neon and spotlights, crate models, Cases tab and CS:GO opening
 
-- Board redrawn with game/ui_skin.gd: ticket cards with sample guns on tier plates under tier beams and vague odds hints (colosseum_rules ticket_odds, data board words), modifier pills, Go in, Run it again, Back
-- Two rotating banner tickets every 15 minutes, the same for everyone by the UTC clock (core/colosseum_banners.gd, data/colosseum_banners.json, 30 recipes): their own ticket length and modifiers plus boosts (maker / gun, luck, armour, treasure, pony, chest guns); the host rebuilds a client's banner run
-- gun_gen generate takes a maker; kill_tiers takes a pony boost; net_rounds carries the banner id
-- Second Wind no longer self-revives (director option 3): below 30 percent health it heals and speeds you up, 45 s cooldown
-- colosseum_check covers banners and hints; dev !ticket open / press / note / points
+- Casino: pendant lamps light the blackjack and roulette felts (two small shadowless spots)
+- Roulette, blackjack and slot screens redrawn with ui_skin: felt layout with chip stacks per bet, hovered bet lights its numbers and pays line, real chip pickers, last numbers, buttons inside the panel, jackpot and paytable cards
+- Club: neon strips along floor and ceiling of every inner wall, upright tubes, four moving spotlights as beams and floor discs (no real lights: Compatibility draws every lit mesh once more per light)
+- Crates: Bronze ammo crate, Silver weapon case, Gold treasure chest modelled (tools/blender/crates.py), turning on the kiosks; bought crates go to the new Cases tab on the player card; opening screen with lifting lid, reel with ticks easing onto the winner, rarity chime; gold and up announced to the lobby in chat
+- Dev steps !casino and !case
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

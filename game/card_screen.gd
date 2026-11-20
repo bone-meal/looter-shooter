@@ -1,4 +1,4 @@
-# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards), the Combat Report (everything done, with a portrait) and the card game Binder (the banner hides there to give the pages room). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
+# Purpose: full-screen player card menu (key P): the card banner plus tabs for the Card (callsign, emblem, title), Stats (spend points), Traits (slots), Achievements (progress and rewards), the Combat Report (everything done, with a portrait), the card game Binder (the banner hides there to give the pages room) and the Cases (unopened crates, game/case_tab.gd). Edits a core/progress_state.gd and emits `changed` so the session can apply bonuses and save.
 # Dependencies: core/progress_state.gd (set `progress` before open), game/player_card.gd, game/emblem_art.gd, game/menu_widgets.gd, game/achievement_grid.gd, game/combat_report_tab.gd, game/tcg/binder_tab.gd (set `cards` and `card_db`).
 extends Control
 
@@ -22,6 +22,7 @@ var _card: Control
 var _tabs: TabContainer
 var _info := ""  # one stats line shown on the card (set by the session)
 var _binder: Control  # kept between openings: its page, filters and the deck being built
+var cases_tab: Control  # (polish1 item 72) game/case_tab.gd, set by the session; shown next to the Binder
 
 
 # Small clickable emblem tile.
@@ -81,7 +82,7 @@ func _refresh() -> void:
 	var current := _tabs.current_tab
 	for child in _tabs.get_children():
 		_tabs.remove_child(child)
-		if child != _binder:
+		if child != _binder and child != cases_tab:
 			child.queue_free()
 	_show_card()
 	_tabs.add_child(_card_tab())
@@ -101,6 +102,10 @@ func _refresh() -> void:
 		_tabs.add_child(_binder)
 		_binder.refresh()
 		names.append("Binder")
+	if cases_tab != null:
+		_tabs.add_child(cases_tab)
+		cases_tab.call("refresh")
+		names.append("Cases")
 	for i in names.size():
 		_tabs.set_tab_title(i, names[i])
 	_tabs.current_tab = clampi(current, 0, names.size() - 1)
