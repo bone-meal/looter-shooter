@@ -26,6 +26,7 @@ static var _head_meshes := {}  # body id -> ArrayMesh with only the head and nec
 static var _skin_materials := {}  # "body:tone" -> StandardMaterial3D
 static var _merged := {}  # body kind + how its surfaces group by material -> {"mesh", "skin"} (merge_pieces); {} = could not be merged
 static var _hair_materials := {}  # "texture:colour" -> StandardMaterial3D
+static var _retex_materials := {}  # (polish1 item 7) pack material name -> its re-textured copy (data retexture)
 static var _tinted_materials := {}  # "material id:colour" -> Material
 
 var _model: Node3D
@@ -135,6 +136,7 @@ func setup(look: Dictionary) -> bool:
 	for child in _skeleton.get_children():
 		var piece := child as MeshInstance3D
 		if piece != null:
+			_retexture(piece)
 			if not shape.is_empty() and piece.mesh is ArrayMesh:  # body sliders live in the clothes
 				piece.mesh = BodyShape.shaped(piece.mesh as ArrayMesh, shape)
 				BodyShape.apply(piece, float(look.get("weight", 1.0)), float(look.get("bust", 0.0)), float(look.get("glutes", 0.0)), float(shape.get("neutral", 0.0)))
@@ -615,6 +617,44 @@ func _named_skin(original: Skin, from: Skeleton3D, fit: bool) -> Skin:
 			pose = _skeleton.get_bone_global_rest(bone).affine_inverse()
 		named.add_named_bind(bone_name, pose)
 	return named
+
+
+# (polish1 item 7) The pack's outfit materials swapped for the re-textured ones (data/characters.json retexture), on the
+# shared imported mesh: once per mesh, every body wearing it gets the cloth, leather and metal detail; tinting and
+# colourways copy that material, so they keep it.
+static func _retexture(piece: MeshInstance3D) -> void:
+	var table: Dictionary = data().get("retexture", {})
+	if piece.mesh == null or table.is_empty() or piece.has_meta("own_colours"):
+		return
+	for surface in piece.mesh.get_surface_count():
+		var material := piece.mesh.surface_get_material(surface) as BaseMaterial3D
+		if material != null and table.has(material.resource_name) and not material.has_meta("retextured"):
+			piece.mesh.surface_set_material(surface, _retex_material(material, table[material.resource_name]))
+
+
+static func _retex_material(original: BaseMaterial3D, maps: Dictionary) -> BaseMaterial3D:
+	if _retex_materials.has(original.resource_name):
+		return _retex_materials[original.resource_name]
+	var albedo := _texture(String(maps.get("albedo", "")))
+	var normal := _texture(String(maps.get("normal", "")))
+	var orm := _texture(String(maps.get("orm", "")))
+	if albedo == null or normal == null or orm == null:
+		return original  # not imported yet: keep the pack's look
+	var made := original.duplicate() as BaseMaterial3D
+	made.resource_name = original.resource_name
+	made.set_meta("retextured", true)
+	made.albedo_texture = albedo
+	made.normal_enabled = true
+	made.normal_texture = normal
+	if made is ORMMaterial3D:
+		(made as ORMMaterial3D).orm_texture = orm
+	else:
+		made.roughness_texture = orm
+		made.roughness_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_GREEN
+		made.metallic_texture = orm
+		made.metallic_texture_channel = BaseMaterial3D.TEXTURE_CHANNEL_BLUE  # (the pack's own occlusion is not used: it blackened the boots)
+	_retex_materials[original.resource_name] = made
+	return made
 
 
 # Outfit meshes show bare skin on some surfaces (hands, forearms): those take the chosen skin tone.

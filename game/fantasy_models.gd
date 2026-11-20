@@ -151,7 +151,7 @@ static func surface(kind: String) -> StandardMaterial3D:
 static func worn(kind: String) -> StandardMaterial3D:
 	if not KINDS.has(kind):
 		return paint()
-	var m := SurfaceLibrary.material_uv("fx_" + kind, Color.WHITE)
+	var m := SurfaceLibrary.material_uv("fx_garment" if kind == "cloth" else "fx_" + kind, Color.WHITE)  # (polish1 item 7) clothes get a fine weave, not the props' sacking
 	m.vertex_color_use_as_albedo = true
 	m.vertex_color_is_srgb = true
 	return m

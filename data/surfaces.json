@@ -148,6 +148,12 @@
    "grain": true
   },
   {
+   "id": "fx_garment",
+   "set": "garment_weave",
+   "tile": 0.2,
+   "grain": true
+  },
+  {
    "id": "fx_cloth",
    "set": "hessian_230",
    "tile": 0.9,

@@ -1,4 +1,4 @@
-Polish1 D1a: 10 new rigged hairstyles (15 in all) and 16 preset hair colours in the customize menu
+Polish1 D1b: outfit re-texture (woven cloth, leather grain, brushed metal, fold shading on every outfit colourway; fine garment weave for the sewn pieces)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
