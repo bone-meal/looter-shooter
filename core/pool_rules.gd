@@ -145,3 +145,19 @@ func _left_before(i: int, on_table: PackedByteArray, pocketed: Array) -> Array:
 		if on_table[b] == 1 or down.has(b):
 			out.append(b)
 	return out
+
+
+# (online) the state the host sends after a shot; the players' copies follow with from_dict().
+func to_dict() -> Dictionary:
+	return {"current": current, "groups": groups.duplicate(), "break_shot": break_shot, "ball_in_hand": ball_in_hand, "winner": winner, "message": message, "foul": foul}
+
+
+func from_dict(d: Dictionary) -> void:
+	current = int(d["current"])
+	groups = (d["groups"] as Array).duplicate()
+	break_shot = bool(d["break_shot"])
+	ball_in_hand = bool(d["ball_in_hand"])
+	winner = int(d["winner"])
+	message = String(d["message"])
+	foul = String(d["foul"])
+

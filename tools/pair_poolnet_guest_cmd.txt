@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 12;!go club;!wait 22;!pool open 0;!wait 1.5;!pool join;!wait 3;!pool note;!pool auto;!wait 1;!snap g_shot;!pool note;!wait 8;!pool note;!snap g_mid;!pool esc;!wait 2;!pool note

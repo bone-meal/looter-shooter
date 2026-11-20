@@ -5284,6 +5284,8 @@ func _club_setup(first: int) -> void:
 	_pool.setup(_wallet, _player, _player_hud, _custom_layer, _sounds, _rng, ClubIsland.CENTER)
 	_pool.finished.connect(save_profile)
 	if net != null:
+		_pool.set_link(net.pool, func() -> int: return net.my_id())
+	if net != null:
 		_darts.set_link(net.darts, func() -> int: return net.my_id())
 	if net != null:
 		net.slots.ask_pot()  # the lobby's slot pot on the machines

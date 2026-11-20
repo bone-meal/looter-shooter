@@ -3020,7 +3020,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var prules: RefCounted = pg.get("rules")
 					if String(pg.get("_state")) == "place":
 						var Ai: GDScript = load("res://core/pool_ai.gd")
-						psim.call("place", 0, Ai.call("place_cue", psim, prules, int(prules.get("current"))))
+						var spot: Vector2 = Ai.call("place_cue", psim, prules, int(prules.get("current")))
+						psim.call("place", 0, spot)
+						pg.set("_placed", spot)
 						pg.set("_state", "aim")
 					if String(pg.get("_state")) != "aim":
 						return
@@ -3049,13 +3051,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					pg.call("_take_shot", ang, pw, sp, called)
 				"cam":
 					pg.set("_top_view", not bool(pg.get("_top_view")))
+				"join":
+					pg.call("_on_join")
 				"note":
 					var nsim: RefCounted = pg.get("_sim")
 					var nrules: RefCounted = pg.get("rules")
 					var on := 0
 					for i in 16:
 						on += int((nsim.get("on_table") as PackedByteArray)[i])
-					_lines.append("POOL: state %s current %d groups %s in hand %s break %s winner %d on table %d message '%s' chips %d" % [pg.get("_state"), int(nrules.get("current")), str(nrules.get("groups")), str(nrules.get("ball_in_hand")), str(nrules.get("break_shot")), int(nrules.get("winner")), on, nrules.get("message"), int((session.get("_wallet") as RefCounted).get("balance"))])
+					_lines.append("POOL: net %s me %d tables %s | state %s current %d groups %s in hand %s break %s winner %d on table %d message '%s' chips %d" % [str(pg.get("_net")), int(pg.get("_me")), str((pg.get("link") as Node).get("tables")) if pg.get("link") != null else "-", pg.get("_state"), int(nrules.get("current")), str(nrules.get("groups")), str(nrules.get("ball_in_hand")), str(nrules.get("break_shot")), int(nrules.get("winner")), on, nrules.get("message"), int((session.get("_wallet") as RefCounted).get("balance"))])
 				"esc":
 					pg.call("request_close")
 		"darts":  # (polish1 item 71) "!darts open <board>" stand at its line and open the menu; "!darts start <501|clock> <ai id> <stake>";

@@ -286,7 +286,7 @@ func place(ball: int, at: Vector2) -> bool:
 
 # The state for the network / a copy for the AI.
 func to_dict() -> Dictionary:
-	return {"pos": pos, "on": on_table}
+	return {"pos": pos.duplicate(), "on": on_table.duplicate()}
 
 
 func from_dict(d: Dictionary) -> void:

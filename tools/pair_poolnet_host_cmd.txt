@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!go club;!wait 16;!pool open 0;!wait 1;!pool start player 50;!wait 14;!pool note;!pool shot 90 0.3;!wait 6;!pool note;!wait 14;!pool note;!snap h_after_guest;!wait 12;!pool note;!snap h_end

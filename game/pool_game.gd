@@ -6,9 +6,12 @@
 # ball in hand the mouse moves the cue ball and a click puts it down. A shot clock runs out into a foul. The house
 # player thinks, places, aims and shoots with its skill. Physics core/pool_sim.gd, rules core/pool_rules.gd, the
 # house core/pool_ai.gd. Chips: the stake leaves the wallet at the start, a win pays it back twice.
+# ONLINE (game/net_pool.gd, `link`): "Another player" opens the table; someone else there gets Join. The host plays
+# every shot with its own physics: ours sends only the cue ball spot (if in hand), angle, power, spin and the called
+# pocket; every machine plays the host's shot on its own table and snaps to the host's end. Others watch the balls.
 # Dependencies: core/pool_sim.gd, core/pool_rules.gd, core/pool_ai.gd, game/pool_table.gd, game/pool_screen.gd,
 # data/pool.json, core/data_store.gd, core/wallet.gd (handed in), game/player.gd, game/player_hud.gd,
-# game/fantasy_sounds.gd (sounds pool_strike / pool_click / pool_cushion / pool_pocket).
+# game/fantasy_sounds.gd (sounds pool_strike / pool_click / pool_cushion / pool_pocket), game/net_pool.gd (optional).
 extends Node3D
 
 const Sim = preload("res://core/pool_sim.gd")
@@ -61,6 +64,14 @@ var _last_opp := ""
 var _cam_pos := Vector3.ZERO
 var _cam_look := Vector3.ZERO
 var _sound_gap := 0.0
+var link: Node = null  # game/net_pool.gd in a lobby
+var my_peer := Callable()
+var _net := false
+var _placed := Vector2.INF  # where we put the cue ball with ball in hand (sent with the shot online)
+var _net_shot: Dictionary = {}  # the host's shot being played on our table
+var _pending_end: Dictionary = {}  # the host's result, shown once the last shot has rolled
+var _watch := {}  # table -> the host's shot rolling there for us as onlookers
+var _sent_at := 0.0
 
 
 func setup(wallet: RefCounted, player: CharacterBody3D, hud: Control, layer: CanvasLayer, sounds: Node, rng: RandomNumberGenerator, club_centre: Vector3) -> void:
@@ -90,6 +101,27 @@ func setup(wallet: RefCounted, player: CharacterBody3D, hud: Control, layer: Can
 	_cam.fov = 55.0
 	_cam.near = 0.03
 	add_child(_cam)
+	_screen.join.connect(_on_join)
+
+
+func set_link(net_pool: Node, peer_of_me: Callable) -> void:
+	link = net_pool
+	my_peer = peer_of_me
+	link.started.connect(_on_net_started)
+	link.shot.connect(_on_net_shot)
+	link.ended.connect(_on_net_ended)
+	link.refused.connect(_on_net_refused)
+
+
+func _online() -> bool:
+	return link != null and bool(link.call("online"))
+
+
+func _table_state(i: int) -> Dictionary:
+	if not _online():
+		return {}
+	var t: Array = link.get("tables")
+	return t[i] if i < t.size() else {}
 
 
 func near(pos: Vector3) -> int:
@@ -118,12 +150,25 @@ func open(i: int) -> void:
 	_top_view = true
 	_place_camera(true)
 	_cam.make_current()
-	_screen.show_menu(int(_wallet.get("balance")), false)
+	var t := _table_state(i)
+	if t.is_empty():
+		_screen.show_menu(int(_wallet.get("balance")), _online())
+	elif String(t["state"]) == "open":
+		_screen.show_offer("%s waits for a challenger:\n8-ball for %s" % [String((t["names"] as Array)[0]), "fun (no chips)" if int(t["stake"]) == 0 else "%d chips" % int(t["stake"])])
+	else:
+		_screen.show_result("%s and %s are playing here." % [String((t["names"] as Array)[0]), String((t["names"] as Array)[1])], false, false)
 
 
 func close() -> void:
 	if _state == "":
 		return
+	if _online() and (_net or _state == "waiting"):
+		link.call("ask_leave", _t_i)  # a running match is lost (the other wins), an open table is taken down
+	if _state == "waiting" and _paid:
+		_wallet.call("add", _stake)
+	_net = false
+	_net_shot = {}
+	_pending_end = {}
 	_token += 1
 	_state = ""
 	_paid = false
@@ -146,6 +191,13 @@ func request_close() -> void:
 
 
 func _on_start(opponent: String, stake: int) -> void:
+	if opponent == "player":
+		_open_for_player(stake)
+		return
+	if not _table_state(_t_i).is_empty():
+		_screen.callout("This table is in use", Color(1.0, 0.45, 0.4))
+		return
+	_net = false
 	_ai = {}
 	for a: Dictionary in cfg["ai"]:
 		if String(a["id"]) == opponent:
@@ -179,6 +231,7 @@ func _next_shot() -> void:
 	_pulling = false
 	_clock = float(cfg["shot_clock"])
 	_called = -1
+	_placed = Vector2.INF
 	_angle = _default_angle()
 	_screen.message(rules.message.replace("{p0}", String(_names[0])).replace("{p1}", String(_names[1])))
 	if rules.current == _me:
@@ -191,8 +244,9 @@ func _next_shot() -> void:
 		_state = "wait"
 		_table.hide_guides()
 		_table.show_cue(false)
-		_screen.hint("")
-		_house_shot(_token)
+		_screen.hint("" if not _net else "%s is shooting..." % String(_names[rules.current]))
+		if not _net:
+			_house_shot(_token)
 
 
 func _default_angle() -> float:  # toward the nearest legal ball (or along the table on the break)
@@ -268,6 +322,7 @@ func _unhandled_input(event: InputEvent) -> void:
 	if _state == "place":
 		if click.button_index == MOUSE_BUTTON_LEFT and click.pressed:
 			if _sim.place(0, _sim.pos[0]):
+				_placed = _sim.pos[0]
 				_state = "aim"
 				_angle = _default_angle()
 				_hints()
@@ -310,6 +365,17 @@ func _called_for_shot() -> int:
 # ------------------------------------------------------------------ the shot
 
 func _take_shot(angle: float, power: float, spin: Vector2, called: int) -> void:
+	if _net:  # the host plays it; it rolls here when its answer comes
+		_state = "sent"
+		_table.hide_guides()
+		_table.show_cue(false)
+		_table.show_place(false)
+		_screen.show_power = false
+		_screen.hint("")
+		_sounds.call("play", "pool_strike", _table.to_world(_sim.pos[0]))
+		link.call("ask_shot", _t_i, _placed, angle, power, spin, called)
+		_sent_at = Time.get_ticks_msec() / 1000.0
+		return
 	_state = "rolling"
 	_shot_called = called
 	_table.hide_guides()
@@ -322,8 +388,11 @@ func _take_shot(angle: float, power: float, spin: Vector2, called: int) -> void:
 
 
 func _process(delta: float) -> void:
+	_watch_step(delta)
 	if _state == "":
 		return
+	if _state == "sent" and Time.get_ticks_msec() / 1000.0 - _sent_at > 5.0:  # the host did not take it: shoot again
+		_state = "aim"
 	_sound_gap = maxf(_sound_gap - delta, 0.0)
 	if _state == "rolling":
 		var hits_before := _sim.pocketed.size()
@@ -339,11 +408,14 @@ func _process(delta: float) -> void:
 		if _sim.pocketed.size() > hits_before:
 			_sounds.call("play", "pool_pocket", at)
 		if not _sim.moving:
-			_shot_done(_token, false)
+			if _net:
+				_net_shot_done(_token)
+			else:
+				_shot_done(_token, false)
 	elif _state == "aim":
 		if rules.current == _me:
 			_clock -= delta
-			if _clock <= 0.0:
+			if _clock <= 0.0 and not _net:  # (online the host calls the time)
 				_shot_done(_token, true)
 				return
 		var target := _table.show_guides(_angle)
@@ -363,7 +435,7 @@ func _process(delta: float) -> void:
 				ok = false
 		_table.show_place(true, _sim.pos[0], ok)
 		_table.update_balls(0.0)
-		if _clock <= 0.0:
+		if _clock <= 0.0 and not _net:
 			_shot_done(_token, true)
 			return
 	_screen.power = _power
@@ -481,6 +553,169 @@ func _end_game(won: bool) -> void:
 	_screen.callout("GAME", Color(1.0, 0.85, 0.35))
 	_screen.show_result(text, won)
 	finished.emit()
+
+
+# ------------------------------------------------------------------ online
+
+func _open_for_player(stake: int) -> void:
+	if not _online():
+		return
+	if not _table_state(_t_i).is_empty():
+		_screen.callout("This table is in use", Color(1.0, 0.45, 0.4))
+		return
+	if stake > 0 and not bool(_wallet.call("spend", stake)):
+		_screen.callout("Not enough chips", Color(1.0, 0.45, 0.4))
+		return
+	_stake = stake
+	_paid = stake > 0
+	_state = "waiting"
+	link.call("ask_open", _t_i, stake)
+	_screen.show_waiting("Waiting for a challenger at this table...\n8-ball for %s\n(another player walks up to this table and joins)" % ("fun" if stake == 0 else "%d chips" % stake))
+
+
+func _on_join() -> void:
+	var t := _table_state(_t_i)
+	if t.is_empty() or String(t["state"]) != "open":
+		_screen.show_result("Nobody is waiting here any more.", false, false)
+		return
+	var stake := int(t["stake"])
+	if stake > 0 and not bool(_wallet.call("spend", stake)):
+		_screen.callout("Not enough chips (%d)" % stake, Color(1.0, 0.45, 0.4))
+		return
+	_stake = stake
+	_paid = stake > 0
+	_state = "waiting"
+	link.call("ask_join", _t_i)
+	_screen.show_waiting("Joining...")
+
+
+func _on_net_started(table: int, players: Array, names: Array, start: Dictionary, rules_d: Dictionary) -> void:
+	var me := int(my_peer.call()) if my_peer.is_valid() else 0
+	if table == _t_i and _state == "waiting" and players.has(me):
+		_token += 1
+		_net = true
+		_me = players.find(me)
+		_names = names.duplicate()
+		_sim.from_dict(start)
+		rules.from_dict(rules_d)
+		_table.update_balls(0.0)
+		_screen.show_play()
+		_screen.callout("GAME ON", Color(1.0, 0.85, 0.35))
+		_top_view = false
+		_next_shot()
+	elif table < sims.size() and not (_state != "" and table == _t_i):  # onlookers see the new rack
+		(sims[table] as Sim).from_dict(start)
+		tables[table].update_balls(0.0)
+
+
+func _on_net_shot(table: int, data: Dictionary) -> void:
+	if _net and table == _t_i:
+		_net_shot = data
+		_sim.from_dict(data["start"])
+		var params: Array = data["params"]
+		if params.is_empty():  # the shot clock ran out
+			_net_shot_done(_token)
+			return
+		_state = "rolling"
+		_table.hide_guides()
+		_table.show_cue(false)
+		var p := float(params[1])
+		_angle = float(params[0])
+		_sim.shoot(float(params[0]), p * p * 0.85 + p * 0.15, params[2])
+		if int(data["shooter"]) != _me:
+			_sounds.call("play", "pool_strike", _table.to_world(_sim.pos[0]))
+	elif table < sims.size() and not (_state != "" and table == _t_i):
+		var sim: Sim = sims[table]
+		sim.from_dict(data["start"])
+		var params2: Array = data["params"]
+		if params2.is_empty():
+			sim.from_dict(data["end"])
+			tables[table].update_balls(0.0)
+			return
+		var p2 := float(params2[1])
+		sim.shoot(float(params2[0]), p2 * p2 * 0.85 + p2 * 0.15, params2[2])
+		_watch[table] = data
+
+
+func _watch_step(delta: float) -> void:
+	for t: int in _watch.keys():
+		var sim: Sim = sims[t]
+		sim.step(delta)
+		tables[t].update_balls(delta)
+		if not sim.moving:
+			sim.from_dict((_watch[t] as Dictionary)["end"])
+			tables[t].update_balls(0.0)
+			_watch.erase(t)
+
+
+func _net_shot_done(token: int) -> void:
+	if token != _token or _net_shot.is_empty():
+		return
+	var data := _net_shot
+	_net_shot = {}
+	_sim.from_dict(data["end"])
+	rules.from_dict(data["rules"])
+	_table.update_balls(0.0)
+	_table.show_called(-1)
+	_table.show_place(false)
+	if not _pending_end.is_empty() or rules.winner >= 0:
+		_state = "wait"
+		if not _pending_end.is_empty():
+			_show_net_end()
+		return
+	if rules.foul != "":
+		_screen.callout("FOUL", Color(1.0, 0.4, 0.35))
+	elif rules.current == int(data["shooter"]):
+		_screen.callout("NICE", Color(0.6, 1.0, 0.6))
+	_state = "wait"
+	await get_tree().create_timer(0.9).timeout
+	if token != _token:
+		return
+	_next_shot()
+
+
+func _on_net_ended(table: int, winner_peer: int, reason: String) -> void:
+	if table != _t_i or not _net:
+		return
+	var me := int(my_peer.call()) if my_peer.is_valid() else 0
+	var won := winner_peer == me
+	var stake := _stake if _paid else 0
+	if won and stake > 0:  # paid at once; shown once the last shot has rolled
+		_wallet.call("add", stake * 2)
+	_paid = false
+	finished.emit()
+	_pending_end = {"won": won, "reason": reason, "stake": stake}
+	if reason != "won" or (_net_shot.is_empty() and _state != "rolling"):
+		_show_net_end()
+
+
+func _show_net_end() -> void:
+	var e := _pending_end
+	_pending_end = {}
+	_net = false
+	_state = "result"
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	_table.hide_guides()
+	_table.show_cue(false)
+	var other := String(_names[1 - _me])
+	var won := bool(e["won"])
+	var text := ("YOU WIN!" if String(e["reason"]) == "won" else "%s left: YOU WIN!" % other) if won else "%s wins." % other
+	if String(e["reason"]) == "won":
+		text += "\n" + rules.message
+	var stake := int(e["stake"])
+	if stake > 0:
+		text += ("\n+%d chips" % stake) if won else ("\nYou lose %d chips." % stake)
+	_screen.show_result(text, won, false)
+
+
+func _on_net_refused(text: String) -> void:
+	if _state != "waiting":
+		return
+	if _paid:
+		_wallet.call("add", _stake)
+		_paid = false
+	_state = "menu"
+	_screen.show_result(text, false, false)
 
 
 # ------------------------------------------------------------------ camera
