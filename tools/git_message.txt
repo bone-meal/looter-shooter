@@ -1,11 +1,1 @@
-Polish1 stage A: quick fixes everywhere (A1-A7)
-
-A1 icons, first-run renderer, hub clock pause, HUD sizes, W kills plate, Keen Eye.
-A2 island bridge rails, ramps, sandbar caps, deeper posts, power bench.
-A3/A4 TCG and casino fixes (sharp text, targeting messages, leader glow, summons call-out, owned mats, odds panel, prices, crate confirm).
-A5 automatic unstuck, walkable slopes, furniture trims, clear door exits, clutter drawn with its collision, health regen.
-A6 quest flow: talk-step lines, lay-and-light fires, make steps, mining success, one boss kill counts for every quest, quest marks, findable givers, all 41 quests audited.
-A7 Lanternwick stall on the ground facing the dock, lanternfry hop, real models for false lures and marsh wisps.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.12
