@@ -26,8 +26,8 @@ signal power_taken(kind: String)  # on a client: somebody took it, so the whole 
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
 signal nail_paid(points: int)  # on a client: the host let us nail a board back and this is what it pays
-signal run_asked(peer: int, ticket: int, modifiers: PackedStringArray)  # on the host: a client standing at the colosseum painting buys a run
-signal run_started(ticket: int, modifiers: PackedStringArray, buyer: int)  # on a client: the party goes into the colosseum; `buyer` pays
+signal run_asked(peer: int, ticket: int, modifiers: PackedStringArray, banner: String)  # on the host: a client standing at the colosseum painting buys a run (banner "" = a plain ticket)
+signal run_started(ticket: int, modifiers: PackedStringArray, buyer: int, banner: String)  # on a client: the party goes into the colosseum; `buyer` pays
 signal quest_asked(peer: int, action: String, index: int)  # on the host: a client did something for the main quest (it stood there: checked)
 signal quest_told(state: Dictionary, news: int)  # on a client: the quest as the host has it; news = the step that was just finished (-1 = none)
 signal seat_asked(peer: int, aboard: bool)  # on the host: a client standing by the boat wants a seat, or gives its seat up
@@ -444,27 +444,27 @@ func _quest_state(state: Dictionary, news: int) -> void:
 
 # --- a colosseum run: one player buys the ticket at the painting, the host sends the whole party in ---
 
-func ask_run(ticket: int, modifiers: PackedStringArray) -> void:
+func ask_run(ticket: int, modifiers: PackedStringArray, banner: String = "") -> void:
 	if is_client():
-		_run_ask.rpc_id(1, ticket, modifiers)
+		_run_ask.rpc_id(1, ticket, modifiers, banner)
 
 
-func tell_run(ticket: int, modifiers: PackedStringArray, buyer: int) -> void:
+func tell_run(ticket: int, modifiers: PackedStringArray, buyer: int, banner: String = "") -> void:
 	if net.can_send() and net.is_host():
-		_run.rpc(ticket, modifiers, buyer)
+		_run.rpc(ticket, modifiers, buyer, banner)
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _run_ask(ticket: int, modifiers: PackedStringArray) -> void:
+func _run_ask(ticket: int, modifiers: PackedStringArray, banner: String) -> void:
 	var peer := multiplayer.get_remote_sender_id()
 	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
-	if body != null and modifiers.size() <= 64 and painting_near.is_valid() and bool(painting_near.call(body.global_position)):
-		run_asked.emit(peer, ticket, modifiers)
+	if body != null and modifiers.size() <= 64 and banner.length() <= 64 and painting_near.is_valid() and bool(painting_near.call(body.global_position)):
+		run_asked.emit(peer, ticket, modifiers, banner)  # the host checks the banner is on the board
 
 
 @rpc("authority", "call_remote", "reliable")
-func _run(ticket: int, modifiers: PackedStringArray, buyer: int) -> void:
-	run_started.emit(ticket, modifiers, buyer)
+func _run(ticket: int, modifiers: PackedStringArray, buyer: int, banner: String) -> void:
+	run_started.emit(ticket, modifiers, buyer, banner)
 
 
 # --- the boat: the host sails it; a client asks for a seat and, at the tiller, sends what its keys say ---

@@ -1,6 +1,10 @@
-Polish1 C3: zombie island small
+Polish1 C4: colosseum board sells itself, rotating banner tickets, Second Wind rework
 
-Every perk machine has its own model (lighthouse, bullet, windmill, bomb, stove, obelisk, chest, stopwatch, hourglass, claw machine, kiln, shield, ice crystals, gun cabinet, horseshoe, heart) lit in its own colour; Quick Revive as the 16th perk (alone three self-revives a game, then the machine is gone; online you hold on longer); styled call-outs when anybody goes down, gets up or bleeds out, and COD-style markers over downed teammates; a real fire pit (stone ring, ash, pyres, embers, licking flames); the pink earthworm drop as a worm; the skiff builds itself piece by piece with a banner; dead crabs stay and gulls peck them away.
+- Board redrawn with game/ui_skin.gd: ticket cards with sample guns on tier plates under tier beams and vague odds hints (colosseum_rules ticket_odds, data board words), modifier pills, Go in, Run it again, Back
+- Two rotating banner tickets every 15 minutes, the same for everyone by the UTC clock (core/colosseum_banners.gd, data/colosseum_banners.json, 30 recipes): their own ticket length and modifiers plus boosts (maker / gun, luck, armour, treasure, pony, chest guns); the host rebuilds a client's banner run
+- gun_gen generate takes a maker; kill_tiers takes a pony boost; net_rounds carries the banner id
+- Second Wind no longer self-revives (director option 3): below 30 percent health it heals and speeds you up, 45 s cooldown
+- colosseum_check covers banners and hints; dev !ticket open / press / note / points
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!wait 22;!go island;!wait 8;!ticket points 30000;!ticket goto;!wait 0.6;!ticket open;!wait 1;!ticket press banner 1;!wait 0.3;!snap g_board;!ticket press go;!wait 5;!ticket note g_run;!snap g_run;!wait 8

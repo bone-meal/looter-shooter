@@ -2384,8 +2384,19 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var me: Vector3 = player.global_position - Vector3(500, 0, 0)
 				_lines.append("BOAT %s: %s | we are at %.1f %.1f %.1f" % [" ".join(words.slice(1)), String(session.call("boat_note")), me.x, me.y, me.z])
-		"ticket":  # "!ticket goto": stand at the colosseum painting; "!ticket buy 1 [mod,mod]": choose that ticket (0 = the shortest) and those modifiers on the board and press Go in
-			if words.size() > 1 and words[1] == "goto":
+		"ticket":  # "!ticket goto": stand at the colosseum painting; "!ticket buy 1 [mod,mod]": choose that ticket (0 = the shortest) and those modifiers on the board and press Go in;
+			# "!ticket points n"; "!ticket open": the board; "!ticket press <key>": press a board control (go, again, back, ticket 1, banner 0, mod <id>); "!ticket note": the banners on the board now
+			if words.size() > 2 and words[1] == "points":  # "!ticket points n": n points more (online /give is the host's)
+				(session.call("score") as RefCounted).call("give", int(words[2]))
+			elif words.size() > 1 and words[1] == "open":
+				session.call("_open_board")
+			elif words.size() > 2 and words[1] == "press":
+				_lines.append("TICKET press %s: %s" % [" ".join(words.slice(2)), (session.get("_board") as Control).call("press", " ".join(words.slice(2)))])
+			elif words.size() > 1 and words[1] == "note":
+				var banners: RefCounted = session.get("_banners")
+				var now := Time.get_unix_time_from_system()
+				_lines.append("TICKET banners now %s, %d s left; run banner '%s', mods %s" % [str((banners.call("live", now) as Array).map(func(b: Dictionary) -> String: return String(b["id"]))), int(banners.call("seconds_left", now)), String((session.get("_run_banner") as Dictionary).get("id", "")), str(session.get("_run_mods"))])
+			elif words.size() > 1 and words[1] == "goto":
 				var painting: Vector3 = session.get("_painting")
 				player.call("teleport", painting + Vector3(1.5, 0.15, 1.5), 0.0)
 				player.call("look_at_point", painting + Vector3(0, 1.6, 0))
@@ -2393,7 +2404,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var board: Control = session.get("_board")
 				var mods := PackedStringArray(words[3].split(",", false)) if words.size() > 3 else PackedStringArray()
 				board.call("choose", int(words[2]), mods)
-				board.emit_signal("chosen", int(words[2]), mods)
+				board.emit_signal("chosen", int(words[2]), mods, "")
 		"quest":  # "!quest goto <step id>": stand at that step's spot; "!quest lamp n": shoot lamp n; "!quest jump n": the quest is at step n (host); "!quest <note>": where it stands
 			if words.size() > 2 and words[1] == "goto":
 				var to: Vector2 = (session.get("_quest_spots") as Dictionary)[words[2]]

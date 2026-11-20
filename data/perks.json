@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "The islands' perks (core/perk_state.gd; game/perk_machine.gd is the machine). limit = most perks carried at once (the boss's perk power-up ignores it); all are lost when you go down. Each perk: name, price in points, island + at [x, z] from that island's middle (its machine; it faces the island's middle), color, desc (shown at the machine), and its numbers. Machines work once the power is on. Every name, price and number is the director's to change. (polish1 item 37) Each machine has its own model (tools/blender/perk_machines.py: size, shape and this colour tell them apart from afar); colours were spread so no two are alike. Quick Revive (batch 2-3): alone it gets you up by yourself `self_revives` times a game, then its machine is gone; online, down, you hold on `down_time_mult` times as long before you bleed out (the perks go when you go down, so it is read at that moment).",
+ "_about": "The islands' perks (core/perk_state.gd; game/perk_machine.gd is the machine). limit = most perks carried at once (the boss's perk power-up ignores it); all are lost when you go down. Each perk: name, price in points, island + at [x, z] from that island's middle (its machine; it faces the island's middle), color, desc (shown at the machine), and its numbers. Machines work once the power is on. Every name, price and number is the director's to change. (polish1 item 37) Each machine has its own model (tools/blender/perk_machines.py: size, shape and this colour tell them apart from afar); colours were spread so no two are alike. Second Wind (polish1, director's option 3): no self-revive any more (that is Quick Revive's); below `burst_below` of your health a burst: `burst_seconds` at `burst_speed` and `burst_heal` of your health back, at most once every `burst_cooldown` s. Quick Revive (batch 2-3): alone it gets you up by yourself `self_revives` times a game, then its machine is gone; online, down, you hold on `down_time_mult` times as long before you bleed out (the perks go when you go down, so it is read at that moment).",
  "limit": 6,
  "reach": 2.6,
  "perks": {
@@ -13,9 +13,13 @@
     10.5
    ],
    "color": "#7fd4ff",
-   "desc": "Help a teammate up twice as fast. Alone: once a run you get back up by yourself.",
+   "desc": "Help a teammate up twice as fast. When your health drops below 30 %: a second wind (4 s of running faster and a quarter of your health back), at most once every 45 s.",
    "revive_mult": 0.5,
-   "self_revive_seconds": 3.0
+   "burst_below": 0.3,
+   "burst_seconds": 4.0,
+   "burst_speed": 1.3,
+   "burst_heal": 0.25,
+   "burst_cooldown": 45.0
   },
   "hair_trigger": {
    "name": "Hair Trigger",

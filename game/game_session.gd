@@ -93,6 +93,7 @@ const BuildState = preload("res://core/build_state.gd")
 const BuildSite = preload("res://game/build_site.gd")
 const BoatRules = preload("res://core/boat_rules.gd")
 const ColosseumRules = preload("res://core/colosseum_rules.gd")
+const ColosseumBanners = preload("res://core/colosseum_banners.gd")
 const ColosseumBoard = preload("res://game/colosseum_board.gd")
 const CigaretteState = preload("res://core/cigarette_state.gd")
 const QuestState = preload("res://core/quest_state.gd")
@@ -280,7 +281,7 @@ var _trap_centres: Array[Vector2] = []
 var _trap_levers: Array[Vector2] = []
 var _trap_shown: Array[bool] = []
 var _trap_tick := 0.0
-var _second_wind_used := false  # alone: the one self-revive of this run is spent
+var _wind_ready := 0.0  # (polish1) Second Wind's next burst may come from this time on
 var _self_revive_at := -1.0  # alone with Second Wind: when we get back up (-1 = not lying)
 var _quick_revives_used := 0  # (batch 2-3) alone: Quick Revive self-revives used this game (its machine goes after the last)
 var _down_seen := {}  # (batch 2-3) peer -> state last told, so a call-out marks each change once
@@ -319,6 +320,8 @@ var _shop := CardShop.new()  # the card vending machine in the casino (built wit
 var _tcg_mats: Dictionary = JSON.parse_string(FileAccess.get_file_as_string("res://data/tcg/mats.json"))  # for the card game's achievement readings
 var _ptables := PlayerTable.new()  # the card tables where players play each other online: the hub's two, then the club's three
 var _colosseum: ColosseumRules  # tickets, tougher waves, the loot by wave (data/colosseum.json)
+var _banners: ColosseumBanners  # the two rotating banner tickets on the board (data/colosseum_banners.json)
+var _run_banner := {}  # the banner of this run ({} = a plain ticket): its boosts change the drops
 var _board := ColosseumBoard.new()  # the ticket board at the painting
 var _run_ticket := 0  # the ticket of the colosseum run we are in
 var _run_mods := PackedStringArray()  # and its modifiers
@@ -663,7 +666,10 @@ func _ready() -> void:
 	custom_layer.add_child(_slot_screen)
 	custom_layer.add_child(_trade_screen)
 	_colosseum = ColosseumRules.new(DataStore.load_json("res://data/colosseum.json"))
+	_banners = ColosseumBanners.new(DataStore.load_json("res://data/colosseum_banners.json"))
 	_board.rules = _colosseum
+	_board.banners = _banners
+	_board.gun_db = _player.gun_db
 	_board.tier_name = func(tier: String) -> String: return String(_player.gun_db.tier(tier)["name"])
 	_board.chosen.connect(_on_ticket_chosen)
 	_board.closed.connect(_close_board)
@@ -777,9 +783,10 @@ func _ready() -> void:
 		net.rounds.quest_asked.connect(func(_peer: int, action: String, index: int) -> void: _quest_do(action, index))
 		net.rounds.quest_told.connect(_on_quest_told)
 		net.rounds.painting_near = func(at: Vector3) -> bool: return at.distance_to(_painting) <= PAINTING_RANGE + 1.5
-		net.rounds.run_asked.connect(func(peer: int, ticket: int, mods: PackedStringArray) -> void:
-			_start_run(ticket, mods, peer)
-			net.rounds.tell_run(ticket, mods, peer))
+		net.rounds.run_asked.connect(func(peer: int, ticket: int, mods: PackedStringArray, banner: String) -> void:
+			var run := _banner_run(ticket, mods, banner)  # never a client's word for what a banner holds
+			_start_run(int(run[0]), run[1], peer, String(run[2]))
+			net.rounds.tell_run(int(run[0]), run[1], peer, String(run[2])))
 		net.rounds.run_started.connect(_start_run)
 		net.rounds.in_run = func() -> bool: return _in_arena
 		net.rounds.seat_asked.connect(_on_seat_asked)
@@ -1721,7 +1728,7 @@ func _prompt() -> String:
 			return "%s: no power. The switch is built on %s from %d parts lying on %s." % [_perks.name_of(perk), _land.islands[_land.island_near(_bench_spot.x, _bench_spot.y)]["name"], _part_spots.size(), _land.islands[_land.island_near(_part_spots[0].x, _part_spots[0].y)]["name"]]
 		if _perks.has(perk):
 			return "%s: you carry it" % _perks.name_of(perk)
-		if (perk == "second_wind" and _second_wind_used) or _quick_revive_gone(perk):
+		if _quick_revive_gone(perk):
 			return "%s: sold out for this run" % _perks.name_of(perk)
 		if _perks.refusal(perk) == "limit":
 			return "You carry %d perks already" % _perks.limit()
@@ -2316,19 +2323,20 @@ func _colosseum_drops(where: Vector3, enemy_id: String, elite: bool, wave: int) 
 		if _player.global_position.distance_to(where) <= float(_run_fx["death_blast_radius"]):
 			_player.struck_from = where
 			_player.take_damage(float(_run_fx["death_blast_damage"]), "fire")
-	var loot := _luck_mult() * _colosseum.loot_mult(_run_mods)
+	var loot := _luck_mult() * _colosseum.loot_mult(_run_mods) * float(_banners.boost(_run_banner, "luck"))
 	var guns: Array = []
-	for tier: String in _colosseum.kill_tiers(_rng, wave, kind, loot):
-		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", tier, "", ItemLevel.for_wave(wave)))
+	for tier: String in _colosseum.kill_tiers(_rng, wave, kind, loot, float(_banners.boost(_run_banner, "pony"))):
+		var pick := _banners.gun_pick(_run_banner, _rng)  # a banner's maker / gun for most of them
+		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, pick[1], tier, "", ItemLevel.for_wave(wave), pick[0]))
 	var things: Array[String] = []
-	if _colosseum.armour_drops(_rng, kind, loot):  # a rolled piece (sea step 1f): the wave's tier band and item level
+	if _colosseum.armour_drops(_rng, kind, loot * float(_banners.boost(_run_banner, "armour"))):  # a rolled piece (sea step 1f): the wave's tier band and item level
 		var pieces := _player.items.armour_drops()
 		var piece := pieces[_rng.randi_range(0, pieces.size() - 1)]
 		var rare := "%s+%s" % [piece, String(_colosseum.cfg["loot"]["armour"]["slot_trait"])]
 		var base := rare if (_colosseum.armour_has_slot(_rng) and _player.items.has_item(rare)) else piece
 		var tier := GunGen.pick_tier(_player.gun_db, _rng, 0.0, _colosseum.band_tier(wave))
 		_drop_armour(ArmourGen.generate(_player.items, _rng, tier, ItemLevel.for_wave(wave), base), where + Vector3(0.7, 0.0, 0.0))
-	var treasure := _colosseum.treasure(_rng, wave, kind, loot)
+	var treasure := _colosseum.treasure(_rng, wave, kind, loot * float(_banners.boost(_run_banner, "treasure")))
 	if treasure != "":
 		things.append(treasure)
 		_player_hud.callout(_player.items.item_name(treasure), Color(1.0, 0.85, 0.3))
@@ -2360,8 +2368,12 @@ func _open_chest() -> void:
 		var left: int = _player.inventory.add(drop["id"], drop["count"])
 		lost = lost or left > 0
 		found.append("%s x%d" % [_player.items.item_name(drop["id"]), drop["count"] - left])
-	for tier: String in _colosseum.chest_tiers(int(_colosseum.ticket(_run_ticket)["waves"]), _run_mods):  # by the ticket: one tier above its last wave
-		var gun := GunGen.generate(_player.gun_db, _rng, 0.0, "", tier, "", ItemLevel.for_wave(int(_colosseum.ticket(_run_ticket)["waves"])))
+	var chest := _colosseum.chest_tiers(int(_colosseum.ticket(_run_ticket)["waves"]), _run_mods)  # by the ticket: one tier above its last wave
+	for _more in int(_banners.boost(_run_banner, "chest_guns", 0)):  # a banner's fuller chest
+		chest.append(chest[0])
+	for tier: String in chest:
+		var pick := _banners.gun_pick(_run_banner, _rng)
+		var gun := GunGen.generate(_player.gun_db, _rng, 0.0, pick[1], tier, "", ItemLevel.for_wave(int(_colosseum.ticket(_run_ticket)["waves"])), pick[0])
 		if _player.inventory.add_gun(gun):
 			found.append(GunStats.display_name(_player.gun_db, gun))
 		else:
@@ -2392,25 +2404,43 @@ func _close_board() -> void:
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 
-# "Go in" on the board: the buyer pays and the whole party goes. Online the host sends everybody.
-func _on_ticket_chosen(ticket: int, mods: PackedStringArray) -> void:
+# "Go in" on the board: the buyer pays and the whole party goes. Online the host sends everybody. banner = the id of
+# a rotating banner ticket ("" = a plain one).
+func _on_ticket_chosen(ticket: int, mods: PackedStringArray, banner: String = "") -> void:
+	var run := _banner_run(ticket, mods, banner)
+	ticket = int(run[0])
+	mods = run[1]
+	banner = String(run[2])
 	var price := int(_colosseum.ticket(ticket)["price"])
 	if not _score.can_afford(price):
 		_player_hud.notice("That ticket costs %d points (you have %d)." % [price, _score.points])
 		return
 	_close_board()
 	if net != null and net.rounds.is_client():
-		net.rounds.ask_run(ticket, mods)
+		net.rounds.ask_run(ticket, mods, banner)
 		return
-	_start_run(ticket, mods, _my_id())
+	_start_run(ticket, mods, _my_id(), banner)
 	if net != null:
-		net.rounds.tell_run(ticket, mods, _my_id())
+		net.rounds.tell_run(ticket, mods, _my_id(), banner)
+
+
+# A banner run as [ticket, modifiers, banner id]: the banner's ticket length and its modifiers on top of the ticked
+# ones. A banner no longer on the board (or unknown) is a plain run of the ticket asked for.
+func _banner_run(ticket: int, mods: PackedStringArray, banner: String) -> Array:
+	var entry := _banners.find(banner) if banner != "" and _banners.is_live(banner, Time.get_unix_time_from_system()) else {}
+	if entry.is_empty():
+		return [ticket, mods, ""]
+	for i in _colosseum.ticket_count():
+		if int(_colosseum.ticket(i)["waves"]) == int(entry["waves"]):
+			ticket = i
+	return [ticket, _banners.run_mods(entry, mods), banner]
 
 
 # The party goes into the colosseum: whoever bought the ticket pays; everybody on the islands and on his feet goes.
-func _start_run(ticket: int, mods: PackedStringArray, buyer: int) -> void:
+func _start_run(ticket: int, mods: PackedStringArray, buyer: int, banner: String = "") -> void:
 	if ticket < 0 or ticket >= _colosseum.ticket_count():
 		return
+	_run_banner = _banners.find(banner)
 	var entry: Dictionary = _colosseum.ticket(ticket)
 	if buyer == _my_id():
 		_score.spend(int(entry["price"]))
@@ -2430,7 +2460,7 @@ func _start_run(ticket: int, mods: PackedStringArray, buyer: int) -> void:
 		_close_board()
 	_stats.add("colosseum_runs")
 	_enter_arena(ticket, mods)
-	_player_hud.notice("%s: %d waves%s" % [String(entry["name"]), int(entry["waves"]), "" if buyer == _my_id() else " (%s bought the ticket)" % String(net.roster.get(buyer, "a teammate"))])
+	_player_hud.notice("%s: %d waves%s" % [String(_run_banner.get("title", entry["name"])), int(entry["waves"]), "" if buyer == _my_id() else " (%s bought the ticket)" % String(net.roster.get(buyer, "a teammate"))])
 
 
 # Into the arena for a run of that ticket. Dying there sends you back to the island with nothing lost.
@@ -2904,7 +2934,19 @@ func _goes_down() -> bool:
 		return true
 	if _in_arena or _in_fantasy or not _on_island(_player.global_position) or _island_round() <= 0:
 		return false
-	return (net != null and net.can_send()) or (_perks.has("second_wind") and not _second_wind_used) or _quick_revive_left()  # online; or alone with a self-revive
+	return (net != null and net.can_send()) or _quick_revive_left()  # online; or alone with a Quick Revive self-revive left
+
+
+# (polish1, director's option 3) Second Wind: low on health, a burst of speed and some health back, now and then.
+func _second_wind_check() -> void:
+	if not _perks.has("second_wind") or _player.downed or _time < _wind_ready or _player.health.hp <= 0.0:
+		return
+	if _player.health.hp / _player.health.max_hp >= _perks.num("burst_below", 0.3):
+		return
+	_wind_ready = _time + _perks.num("burst_cooldown", 45.0)
+	_player.health.heal(_player.health.max_hp * _perks.num("burst_heal", 0.25))
+	_player.second_wind(_perks.num("burst_seconds", 4.0))
+	_player_hud.callout("SECOND WIND", Color(0.5, 0.83, 1.0), "feather")
 
 
 # (batch 2-3) Alone with Quick Revive and a self-revive of this game still left.
@@ -2925,18 +2967,13 @@ func _on_went_down() -> void:
 		_sea.dungeons.boss.report("down")
 		_player_hud.notice("You are down: a teammate can help you up")
 		return
-	if net == null or not net.can_send():  # alone: Quick Revive (three a game) or Second Wind (once) gets us up in a moment
-		if _quick_revive_left():
-			_quick_revives_used += 1
-			var left := int(_perks.cfg["perks"]["quick_revive"].get("self_revives", 3)) - _quick_revives_used
-			_self_revive_at = _time + float(_perks.cfg["perks"]["quick_revive"].get("self_revive_seconds", 3.0))
-			_player_hud.callout("DOWN! QUICK REVIVE: %s" % ("%d LEFT" % left if left > 0 else "THE LAST ONE"), DOWN_RED, "cross")
-			if left <= 0 and _perk_machines.has("quick_revive"):
-				(_perk_machines["quick_revive"] as Node3D).visible = false  # COD-style: after the last self-revive the machine is gone
-		else:
-			_second_wind_used = true
-			_self_revive_at = _time + _perks.num("self_revive_seconds", 3.0)
-			_player_hud.callout("DOWN! SECOND WIND", DOWN_RED, "cross")
+	if net == null or not net.can_send():  # alone: Quick Revive (three a game) gets us up in a moment
+		_quick_revives_used += 1
+		var left := int(_perks.cfg["perks"]["quick_revive"].get("self_revives", 3)) - _quick_revives_used
+		_self_revive_at = _time + float(_perks.cfg["perks"]["quick_revive"].get("self_revive_seconds", 3.0))
+		_player_hud.callout("DOWN! QUICK REVIVE: %s" % ("%d LEFT" % left if left > 0 else "THE LAST ONE"), DOWN_RED, "cross")
+		if left <= 0 and _perk_machines.has("quick_revive"):
+			(_perk_machines["quick_revive"] as Node3D).visible = false  # COD-style: after the last self-revive the machine is gone
 		_down_until = INF
 		_lose_perks()
 		return
@@ -3315,7 +3352,7 @@ func _close_debris() -> void:
 	_box_node.stand(_flat(_box_spots[0]))
 	_traps.reset()
 	_lose_perks()
-	_second_wind_used = false
+	_wind_ready = 0.0
 	_self_revive_at = -1.0
 	_quick_revives_used = 0
 	if _perk_machines.has("quick_revive"):
@@ -3362,7 +3399,7 @@ func _perk_here() -> String:
 
 
 func _buy_perk(id: String) -> void:
-	if not _power.on or _perks.refusal(id) != "" or (id == "second_wind" and _second_wind_used) or _quick_revive_gone(id):
+	if not _power.on or _perks.refusal(id) != "" or _quick_revive_gone(id):
 		return
 	if not _score.spend(_perks.price(id)):
 		_player_hud.notice("%s costs %d points (you have %d)." % [_perks.name_of(id), _perks.price(id), _score.points])
@@ -4910,6 +4947,7 @@ func _process(delta: float) -> void:
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)
 	_host_run(delta)
+	_second_wind_check()
 	if _self_revive_at >= 0.0 and _time >= _self_revive_at:
 		_self_revive_at = -1.0
 		_player.revive(1.0)

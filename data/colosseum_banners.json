@@ -1,0 +1,429 @@
+{
+ "version": 1,
+ "_about": "(polish1 item 58) The colosseum's ROTATING BANNER TICKETS (core/colosseum_rules.gd banners; drafted by me, the director's to rewrite). Every `minutes` minutes of real-world (UTC) time two of these are on the board, the same two for everyone (picked from the clock, nothing sent online). A banner = a ticket of `waves` waves with its modifiers ticked (more may be added) and a boost: maker (most guns from that maker, `share` of them, default 0.7), body (most guns of that kind), luck (every drop chance x), armour (armour drop chance x), treasure (Phoon's Treasure chance x), chest_guns (more guns in the end chest), pony (the last boss's pony weight x). title / icon (a shape of data/icons.json) / color / line are what the board shows.",
+ "minutes": 15,
+ "share": 0.7,
+ "banners": [
+  {
+   "id": "kestrel_week",
+   "title": "Kestrel Week",
+   "icon": "arrow",
+   "color": "#e8b04a",
+   "waves": 8,
+   "mods": [],
+   "boost": {
+    "maker": "kestrel"
+   },
+   "line": "Kestrel Works guns everywhere: most drops come from their benches."
+  },
+  {
+   "id": "brawn_brawl",
+   "title": "The Brawn Brawl",
+   "icon": "hammer",
+   "color": "#c0623a",
+   "waves": 8,
+   "mods": [
+    "heavy_hitters"
+   ],
+   "boost": {
+    "maker": "brawn"
+   },
+   "line": "Brawn & Sons send their heavy iron, and the arena hits back hard."
+  },
+  {
+   "id": "zephyr_gale",
+   "title": "Zephyr Gale",
+   "icon": "feather",
+   "color": "#7fd4ff",
+   "waves": 4,
+   "mods": [
+    "quick_feet"
+   ],
+   "boost": {
+    "maker": "zephyr"
+   },
+   "line": "A short, fast run; Zephyr Labs guns ride the wind in."
+  },
+  {
+   "id": "moss_bloom",
+   "title": "Moss Bloom",
+   "icon": "herb",
+   "color": "#7bbf4a",
+   "waves": 8,
+   "mods": [
+    "toxic_sand"
+   ],
+   "boost": {
+    "maker": "moss"
+   },
+   "line": "The sand turns sour, and Moss Dynamics guns sprout from it."
+  },
+  {
+   "id": "vantor_siege",
+   "title": "Vantor Siege",
+   "icon": "anvil",
+   "color": "#8a94a6",
+   "waves": 12,
+   "mods": [
+    "thick_hides"
+   ],
+   "boost": {
+    "maker": "vantor"
+   },
+   "line": "Twelve waves of tough hides; Vantor Ordnance pays for every one."
+  },
+  {
+   "id": "halyard_tide",
+   "title": "Halyard High Tide",
+   "icon": "shell",
+   "color": "#4fa3c8",
+   "waves": 8,
+   "mods": [
+    "packed_house"
+   ],
+   "boost": {
+    "maker": "halyard"
+   },
+   "line": "A packed house at high tide, and Halyard Marine guns wash in with it."
+  },
+  {
+   "id": "cinder_forge",
+   "title": "Cinderwright Forge",
+   "icon": "flame",
+   "color": "#ff7a2e",
+   "waves": 8,
+   "mods": [
+    "bad_blood"
+   ],
+   "boost": {
+    "maker": "cinder"
+   },
+   "line": "Enemies burst where they fall; the Foundry's guns come out of the fire."
+  },
+  {
+   "id": "lumen_eye",
+   "title": "Lumen's Eye",
+   "icon": "gem",
+   "color": "#c8a7ff",
+   "waves": 8,
+   "mods": [
+    "fog_bank"
+   ],
+   "boost": {
+    "maker": "lumen"
+   },
+   "line": "Fog over the sand, and Lumen Optics guns to see through it."
+  },
+  {
+   "id": "sniper_season",
+   "title": "Sniper Season",
+   "icon": "sk_lance",
+   "color": "#f2efe4",
+   "waves": 8,
+   "mods": [
+    "lead_boots"
+   ],
+   "boost": {
+    "body": "sniper_basic"
+   },
+   "line": "Heavy feet, long barrels: mostly sniper rifles drop."
+  },
+  {
+   "id": "shotgun_wedding",
+   "title": "Shotgun Wedding",
+   "icon": "heart",
+   "color": "#ff7aa8",
+   "waves": 4,
+   "mods": [
+    "packed_house"
+   ],
+   "boost": {
+    "body": "shotgun_double"
+   },
+   "line": "Close quarters, crowded house, double barrels for everyone."
+  },
+  {
+   "id": "rocket_day",
+   "title": "Rocket Day",
+   "icon": "spark",
+   "color": "#ff9a3d",
+   "waves": 8,
+   "mods": [
+    "twin_bosses"
+   ],
+   "boost": {
+    "body": "rocket_launcher"
+   },
+   "line": "Two bosses a boss wave, and rocket launchers to answer them."
+  },
+  {
+   "id": "bullet_hose",
+   "title": "Bullet Hose",
+   "icon": "sk_clip",
+   "color": "#ffd23f",
+   "waves": 4,
+   "mods": [
+    "quick_feet"
+   ],
+   "boost": {
+    "body": "smg"
+   },
+   "line": "Fast feet, fast guns: submachine guns rain down."
+  },
+  {
+   "id": "high_noon",
+   "title": "High Noon",
+   "icon": "coin",
+   "color": "#e2b85a",
+   "waves": 8,
+   "mods": [
+    "one_life"
+   ],
+   "boost": {
+    "body": "revolver"
+   },
+   "line": "One life to live and a revolver to live it with."
+  },
+  {
+   "id": "frontier_rifles",
+   "title": "Frontier Rifles",
+   "icon": "rod",
+   "color": "#b08850",
+   "waves": 8,
+   "mods": [
+    "closing_ring"
+   ],
+   "boost": {
+    "body": "lever_rifle"
+   },
+   "line": "The ring closes in; lever rifles keep it honest."
+  },
+  {
+   "id": "harpoon_hunt",
+   "title": "Harpoon Hunt",
+   "icon": "sk_harpoon",
+   "color": "#59c4d6",
+   "waves": 8,
+   "mods": [
+    "berserkers"
+   ],
+   "boost": {
+    "body": "harpoon_gun"
+   },
+   "line": "Berserkers charge, harpoon guns pin them down."
+  },
+  {
+   "id": "flame_festival",
+   "title": "Flame Festival",
+   "icon": "flame",
+   "color": "#ff5a2a",
+   "waves": 4,
+   "mods": [
+    "short_fuse"
+   ],
+   "boost": {
+    "body": "flamethrower"
+   },
+   "line": "A short fuse and a long flame: flamethrowers for all."
+  },
+  {
+   "id": "crossbow_court",
+   "title": "Crossbow Court",
+   "icon": "arrow",
+   "color": "#a0c060",
+   "waves": 8,
+   "mods": [
+    "slow_hands"
+   ],
+   "boost": {
+    "body": "crossbow"
+   },
+   "line": "Slow hands, quiet bolts: mostly crossbows drop."
+  },
+  {
+   "id": "blunderbuss_bash",
+   "title": "Blunderbuss Bash",
+   "icon": "pot",
+   "color": "#c49a5a",
+   "waves": 4,
+   "mods": [
+    "heavy_hitters"
+   ],
+   "boost": {
+    "body": "blunderbuss"
+   },
+   "line": "They hit hard, you hit harder: blunderbusses galore."
+  },
+  {
+   "id": "lucky_hour",
+   "title": "Lucky Hour",
+   "icon": "star",
+   "color": "#ffe066",
+   "waves": 8,
+   "mods": [],
+   "boost": {
+    "luck": 1.6
+   },
+   "line": "No tricks, just luck: every drop chance is up by more than half."
+  },
+  {
+   "id": "glass_gamble",
+   "title": "The Glass Gamble",
+   "icon": "crystal",
+   "color": "#9fe8ff",
+   "waves": 8,
+   "mods": [
+    "glass_jaw",
+    "one_life"
+   ],
+   "boost": {
+    "luck": 2.0
+   },
+   "line": "Half health, one life, double luck. Feeling brave?"
+  },
+  {
+   "id": "elite_parade",
+   "title": "Elite Parade",
+   "icon": "sword",
+   "color": "#e0c070",
+   "waves": 12,
+   "mods": [
+    "all_elite"
+   ],
+   "boost": {
+    "luck": 1.4
+   },
+   "line": "Every enemy an elite, all twelve waves long, and luck to match."
+  },
+  {
+   "id": "boss_rush",
+   "title": "Boss Rush",
+   "icon": "skull",
+   "color": "#d84a4a",
+   "waves": 8,
+   "mods": [
+    "twin_bosses",
+    "bulletproof_bosses"
+   ],
+   "boost": {
+    "chest_guns": 1
+   },
+   "line": "Twin bosses that only fear headshots; a fuller chest at the end."
+  },
+  {
+   "id": "armour_fair",
+   "title": "Armour Fair",
+   "icon": "chestplate",
+   "color": "#8fa3b8",
+   "waves": 8,
+   "mods": [],
+   "boost": {
+    "armour": 3.0
+   },
+   "line": "Armour drops three times as often."
+  },
+  {
+   "id": "phoons_hoard",
+   "title": "Phoon's Hoard",
+   "icon": "relic",
+   "color": "#f5c542",
+   "waves": 12,
+   "mods": [
+    "no_breather"
+   ],
+   "boost": {
+    "treasure": 3.0
+   },
+   "line": "No breather between waves, but Phoon's Treasure is three times as likely."
+  },
+  {
+   "id": "pony_pilgrimage",
+   "title": "Pony Pilgrimage",
+   "icon": "paw",
+   "color": "#ff9ad5",
+   "waves": 12,
+   "mods": [
+    "vampires"
+   ],
+   "boost": {
+    "pony": 2.0
+   },
+   "line": "Twelve waves among vampires; the last boss's pony chance is doubled."
+  },
+  {
+   "id": "lights_out",
+   "title": "Lights Out",
+   "icon": "dots",
+   "color": "#5a5f8a",
+   "waves": 8,
+   "mods": [
+    "blackout"
+   ],
+   "boost": {
+    "luck": 1.5
+   },
+   "line": "Fight in the dark for half again the luck."
+  },
+  {
+   "id": "iron_rations",
+   "title": "Iron Rations",
+   "icon": "bag",
+   "color": "#a8a832",
+   "waves": 4,
+   "mods": [
+    "dry_mags"
+   ],
+   "boost": {
+    "chest_guns": 1
+   },
+   "line": "Half the ammo going in, one more gun in the chest coming out."
+  },
+  {
+   "id": "the_long_haul",
+   "title": "The Long Haul",
+   "icon": "clock",
+   "color": "#7f9fbf",
+   "waves": 12,
+   "mods": [
+    "no_breather"
+   ],
+   "boost": {
+    "luck": 1.3,
+    "chest_guns": 1
+   },
+   "line": "Twelve waves without a breath: better luck and a fuller chest."
+  },
+  {
+   "id": "hardcore_hour",
+   "title": "Hardcore Hour",
+   "icon": "skull",
+   "color": "#ff3b3b",
+   "waves": 12,
+   "mods": [
+    "one_life",
+    "glass_jaw",
+    "heavy_hitters"
+   ],
+   "boost": {
+    "luck": 2.5
+   },
+   "line": "One life, half health, heavy hits. Two and a half times the luck."
+  },
+  {
+   "id": "mixed_bag",
+   "title": "Mixed Bag",
+   "icon": "crate",
+   "color": "#c98a4b",
+   "waves": 8,
+   "mods": [
+    "quick_feet",
+    "thick_hides"
+   ],
+   "boost": {
+    "luck": 1.25,
+    "armour": 1.5
+   },
+   "line": "A bit of everything: quicker, tougher enemies, a bit more of every drop."
+  }
+ ]
+}

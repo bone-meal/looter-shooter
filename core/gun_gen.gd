@@ -32,14 +32,15 @@ static func pick_tier(db: RefCounted, rng: RandomNumberGenerator, luck: float = 
 	return String(db.tiers[db.tiers.size() - 1]["id"])
 
 
-# body "" = random body, tier_id "" = rolled by pick_tier (with the min_tier floor); lvl = the item level where it drops.
-static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0.0, body: String = "", tier_id: String = "", min_tier: String = "", lvl: int = 1) -> Dictionary:
+# body "" = random body, tier_id "" = rolled by pick_tier (with the min_tier floor); lvl = the item level where it drops;
+# maker "" = a random manufacturer (a colosseum banner names one).
+static func generate(db: RefCounted, rng: RandomNumberGenerator, luck: float = 0.0, body: String = "", tier_id: String = "", min_tier: String = "", lvl: int = 1, maker: String = "") -> Dictionary:
 	var body_ids: Array = db.bodies.keys()
 	var body_id := body if body != "" else String(body_ids[rng.randi_range(0, body_ids.size() - 1)])
 	var tid := tier_id if tier_id != "" else pick_tier(db, rng, luck, min_tier)
 	var tier: Dictionary = db.tier(tid)
 	var maker_ids: Array = db.makers.keys()
-	var maker_id := String(maker_ids[rng.randi_range(0, maker_ids.size() - 1)])
+	var maker_id := maker if db.makers.has(maker) else String(maker_ids[rng.randi_range(0, maker_ids.size() - 1)])
 	var q_lo: float = float(tier["quality"][0])
 	var q_hi: float = float(tier["quality"][1])
 	var gun := {"v": VERSION, "lvl": clampi(lvl, 1, ItemLevel.max_level()), "body": body_id, "maker": maker_id, "tier": tid, "parts": {}, "rolls": {}, "buffs": [], "skills": [], "traits": []}

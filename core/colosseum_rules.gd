@@ -110,12 +110,16 @@ func tier_up(tier: String, steps: int) -> String:
 
 
 # The tiers of the guns a kill leaves (often none). kind = "trash", "elite" or "boss".
-func kill_tiers(rng: RandomNumberGenerator, wave: int, kind: String, luck: float = 1.0) -> Array[String]:
+# `pony` multiplies the last boss's pony weight (a banner's boost).
+func kill_tiers(rng: RandomNumberGenerator, wave: int, kind: String, luck: float = 1.0, pony: float = 1.0) -> Array[String]:
 	var out: Array[String] = []
 	var last: Dictionary = _loot["final_boss"]
 	if kind == "boss" and wave == int(last["wave"]):
+		var weights: Dictionary = (last["tiers"] as Dictionary).duplicate()
+		if weights.has("pony"):
+			weights["pony"] = float(weights["pony"]) * pony
 		for _gun in int(last["guns"]):
-			out.append(_weighted(rng, last["tiers"]))
+			out.append(_weighted(rng, weights))
 		return out
 	if kind == "trash" and rng.randf() >= float(_loot["trash_chance"]) * luck:
 		return out
@@ -171,6 +175,40 @@ func chest_tiers(last_wave: int, chosen: PackedStringArray = PackedStringArray()
 	var extra := floori((loot_mult(chosen) - 1.0) / maxf(float(chest.get("gun_per_loot", 1.0)), 0.01))
 	for _gun in int(chest["guns"]) + extra:
 		out.append(tier_up(band_tier(last_wave), int(chest["tiers_up"])))
+	return out
+
+
+# What the board hints a ticket of `waves` waves may give, best last: [{tier, word}]. Vague on purpose (data
+# "board" words): the kills' tiers, the bosses' and chest's tier, and the last boss's weights as "likely" / "a fair
+# chance" / "a whisper". `pony` = a banner's pony boost.
+func ticket_odds(waves: int, pony: float = 1.0) -> Array:
+	var words: Dictionary = cfg.get("board", {}).get("words", {})
+	var out: Array = []
+	var seen := {}
+	for band: Dictionary in _loot["bands"]:
+		var tier := String(band["tier"])
+		if not seen.has(tier):
+			seen[tier] = true
+			out.append({"tier": tier, "word": String(words.get("kills", "from the waves"))})
+		if waves <= int(band["to_wave"]):
+			break
+	var top := tier_up(band_tier(waves), 1)
+	if not seen.has(top):
+		seen[top] = true
+		out.append({"tier": top, "word": String(words.get("chest", "from bosses and the chest"))})
+	var last: Dictionary = _loot["final_boss"]
+	if waves >= int(last["wave"]):
+		var weights: Dictionary = (last["tiers"] as Dictionary).duplicate()
+		if weights.has("pony"):
+			weights["pony"] = float(weights["pony"]) * pony
+		var total := 0.0
+		for id: String in weights:
+			total += float(weights[id])
+		for id: String in weights:
+			var share := float(weights[id]) / maxf(total, 0.001)
+			var word := String(words.get("likely", "likely")) if share >= 0.5 else (String(words.get("fair", "a fair chance")) if share >= 0.2 else String(words.get("whisper", "a whisper of a chance")))
+			out = out.filter(func(e: Dictionary) -> bool: return String(e["tier"]) != id)
+			out.append({"tier": id, "word": "%s %s" % [word, String(words.get("last_boss", "from the last boss"))]})
 	return out
 
 

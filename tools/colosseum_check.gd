@@ -1,6 +1,7 @@
 # Purpose: developer check of the colosseum's rules (core/colosseum_rules.gd with data/colosseum.json, data/waves.json,
 # data/gun_loot.json, data/items.json): tickets, tougher waves, the loot by wave, the last boss, the chest, armour
-# drops and their variant with a holster, the modifiers. Log tools/colosseum_check.log (ends COLOSSEUM_CHECK_DONE problems=n).
+# drops and their variant with a holster, the modifiers, the rotating banner tickets (core/colosseum_banners.gd) and the
+# board's odds hints. Log tools/colosseum_check.log (ends COLOSSEUM_CHECK_DONE problems=n).
 # Dependencies: core/colosseum_rules.gd, core/wave_state.gd, core/item_db.gd, core/data_store.gd.
 extends Node
 
@@ -9,6 +10,7 @@ const WaveState = preload("res://core/wave_state.gd")
 const ItemDb = preload("res://core/item_db.gd")
 const CigaretteState = preload("res://core/cigarette_state.gd")
 const DataStore = preload("res://core/data_store.gd")
+const ColosseumBanners = preload("res://core/colosseum_banners.gd")
 
 var _lines := PackedStringArray()
 var _problems := 0
@@ -129,6 +131,44 @@ func _ready() -> void:
 	smoke.light()
 	_say("it warns near the end, burns out once, and only then the next one starts full", out and is_equal_approx(smoke.left, 1800.0))
 	_say("reward chests: one cigarette after 4 or 8 waves, two after 12", smoke.chest_count(4, 12) == 1 and smoke.chest_count(8, 12) == 1 and smoke.chest_count(12, 12) == 2)
+
+	# polish1 C4: banners and the board's hints
+	var banners := ColosseumBanners.new(DataStore.load_json("res://data/colosseum_banners.json"))
+	var mod_ids: Array = rules.modifiers().map(func(m: Dictionary) -> String: return String(m["id"]))
+	var lengths: Array = []
+	for i in rules.ticket_count():
+		lengths.append(int(rules.ticket(i)["waves"]))
+	var makers: Array = (DataStore.load_json("res://data/manufacturers.json")["makers"] as Dictionary).keys()
+	var bodies: Array = (DataStore.load_json("res://data/gun_parts.json")["bodies"] as Dictionary).keys()
+	var shapes: Array = (DataStore.load_json("res://data/icons.json")["shapes"] as Dictionary).keys()
+	var bad := banners.problems(mod_ids, lengths, makers, bodies, shapes)
+	_say("%d banners, all sound%s" % [(banners.cfg["banners"] as Array).size(), "" if bad.is_empty() else ": " + "; ".join(bad)], bad.is_empty())
+	var pairs_ok := true
+	var shown := {}
+	for slot in 400:
+		var pair: Array = banners.live(float(slot * 900 + 30))
+		pairs_ok = pairs_ok and pair.size() == 2 and String(pair[0]["id"]) != String(pair[1]["id"]) and banners.live(float(slot * 900 + 899)) == pair
+		pairs_ok = pairs_ok and banners.is_live(String(pair[0]["id"]), float(slot * 900 + 30)) and banners.is_live(String(pair[1]["id"]), float((slot + 1) * 900 + 5))
+		shown[String(pair[0]["id"])] = true
+		shown[String(pair[1]["id"])] = true
+	_say("two different banners every 15 minutes, the same all slot long, a bought one still good just after the change; %d of them seen in 100 hours" % shown.size(), pairs_ok and shown.size() == (banners.cfg["banners"] as Array).size())
+	_say("the countdown: 900 s at a change, 1 s before the next", banners.seconds_left(1800.0) == 900 and banners.seconds_left(2699.0) == 1)
+	var hardcore := banners.find("hardcore_hour")
+	_say("a banner's modifiers come with it, ticked ones are added once", banners.run_mods(hardcore, PackedStringArray(["one_life", "fog_bank"])) == PackedStringArray(["one_life", "glass_jaw", "heavy_hitters", "fog_bank"]))
+	var kes := banners.find("kestrel_week")
+	var same := 0
+	for _n in 10000:
+		same += 1 if banners.gun_pick(kes, rng)[0] == "kestrel" else 0
+	_say("a maker banner: %.0f %% of guns from that maker (data share 70 %%, plus the random rest)" % (same / 100.0), absf(float(same) / 10000.0 - 0.7) < 0.03 and banners.gun_pick(banners.find("lucky_hour"), rng) == (["", ""] as Array[String]))
+	var ponies := 0
+	for _n in 20000:
+		ponies += rules.kill_tiers(rng, 12, "boss", 1.0, 2.0).count("pony")
+	_say("a pony boost of 2 makes the last boss's pony %.1f %% of its guns (20 of 110 weight = 18.2 %%)" % (ponies / 600.0), absf(float(ponies) / 60000.0 - 20.0 / 110.0) < 0.01)
+	var hints := PackedStringArray()
+	for waves_n: int in [4, 8, 12]:
+		hints.append("%d: %s" % [waves_n, ", ".join(rules.ticket_odds(waves_n).map(func(e: Dictionary) -> String: return "%s %s" % [e["tier"], e["word"]]))])
+	var odds12: Array = rules.ticket_odds(12)
+	_say("the board's hints | %s" % " | ".join(hints), String(odds12[odds12.size() - 1]["tier"]) == "pony" and String(odds12[odds12.size() - 1]["word"]).begins_with("a whisper") and not str(rules.ticket_odds(4)).contains("pony"))
 
 	_lines.append("COLOSSEUM_CHECK_DONE problems=%d" % _problems)
 	var file := FileAccess.open("res://tools/colosseum_check.log", FileAccess.WRITE)

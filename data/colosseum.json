@@ -287,5 +287,33 @@
     "no_sprint": true
    }
   }
- ]
+ ],
+ "board": {
+  "_about": "(polish1 item 57) the words the board hints a ticket's loot with: vague on purpose, no numbers (core/colosseum_rules.gd ticket_odds). samples = the gun pictures on each ticket's card, shortest ticket first.",
+  "words": {
+   "kills": "from the waves",
+   "chest": "from bosses and the end chest",
+   "likely": "likely",
+   "fair": "a fair chance",
+   "whisper": "a whisper of a chance",
+   "last_boss": "from the last boss"
+  },
+  "samples": [
+   [
+    "pistol_basic",
+    "smg",
+    "revolver"
+   ],
+   [
+    "ak47",
+    "shotgun_double",
+    "lever_rifle"
+   ],
+   [
+    "sniper_basic",
+    "rocket_launcher",
+    "m60"
+   ]
+  ]
+ }
 }

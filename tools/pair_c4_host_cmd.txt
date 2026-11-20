@@ -1,0 +1,1 @@
+!uncap;!wait 2;!net wait_guest;!wait 20;!go island;!wait 8;/perk second_wind;!wait 0.3;!hurt 95;!wait 0.5;!snap h_wind;!perk h_wind;!wait 14;!ticket note h_run;!arena h_arena;!snap h_run;!wait 6

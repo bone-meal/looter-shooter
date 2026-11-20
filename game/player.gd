@@ -221,6 +221,7 @@ var struck_from := Vector3.INF  # where a hit without an attacker node comes fro
 var hurt_from := Vector3.INF  # (polish1 item 42) where the last blow that hurt us came from (INF = unknown): the HUD's hit-direction marker
 var _pace := 1.0  # walking speed multiplier set from outside (warding slows)
 var _rush_until := 0.0  # gun buff Adrenaline: faster after a kill until then
+var _wind_until := 0.0  # (polish1) Second Wind's burst: faster until then
 var _rush_pct := 0.0
 var _crowd := 0  # gun buff Crowd Pleaser: enemies within 10 m, counted once per shot
 var allies_close := 0  # teammates within 15 m (set by the session a few times a second): gun trait Pack Hunter
@@ -493,7 +494,7 @@ func _move_tick(input: Vector2) -> void:
 	var aiming := Input.is_action_pressed("aim")
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
-	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * _traits.speed_mult(_now())
+	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * _traits.speed_mult(_now()) * (_perk("burst_speed", 1.0) if _now() < _wind_until else 1.0)
 	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * (1.0 + _armour_bonus("speed_pct") / 100.0) * (1.0 + skill_speed_pct / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
@@ -1151,6 +1152,11 @@ func set_appearance(look: Dictionary) -> void:
 
 
 # Forces first/third person (used while riding the crow).
+# (polish1) Second Wind's burst: faster for `seconds` (the session decides when).
+func second_wind(seconds: float) -> void:
+	_wind_until = _now() + seconds
+
+
 # (polish1 item 70) Back to our own camera after another one was shown (the crow flight's chase view).
 func use_own_camera() -> void:
 	_camera.current = true
