@@ -1,6 +1,6 @@
-Polish1 D5b part 2: the 28 knife powers and host-rolled boss knife drops
+Polish1 D5c part 1: the Plague Doctor as the first game mask
 
-core/knife_fx.gd turns knife blows, kills and incoming damage into power actions; game/knife_powers.gd plays them in the world; the session handles loot pull, chips, party ammo, Club Lights, Party Revive and slot outcomes. Bosses give each player a 2 percent knife roll, rolled by the host. Dev commands and knife_check cover every power.
+Scripted Blender sculpt (the approved v4) baked to a game mesh with colour, normal, ORM and eye-glow maps; masks as part of the look so others see them; Masks tab on the player card; Morse flashing eyes, mist and flies; quality tiers for mesh, textures and effects.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

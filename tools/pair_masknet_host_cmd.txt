@@ -1,0 +1,1 @@
+!uncap;!net wait_guest;!wait 4;!mask give plague_doctor;!mask wear plague_doctor;!wait 14;!mask ghosts h_sees_guest;!third;!wait 1;!snap h_third

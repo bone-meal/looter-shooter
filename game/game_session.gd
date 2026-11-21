@@ -58,6 +58,9 @@ const CamoTab = preload("res://game/camo_tab.gd")
 const SkinsMenu = preload("res://game/skins_menu.gd")
 const KnifeTab = preload("res://game/knife_tab.gd")
 const KnifeLocker = preload("res://core/knife_locker.gd")
+const MaskTab = preload("res://game/mask_tab.gd")
+const MaskLocker = preload("res://core/mask_locker.gd")
+const MaskModel = preload("res://game/mask_model.gd")
 const KnifeSkin = preload("res://game/knife_skin.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
 const NpcChatter = preload("res://game/npc_chatter.gd")
@@ -250,6 +253,8 @@ var _last_gun_kill := -99.0  # when the gun in hand last killed (s, camo "multi"
 var _camo_tab := CamoTab.new()  # the player card's Camos tab
 var _knife_locker := KnifeLocker.new(KnifeSkin.rules())  # (polish1 D5b) owned skinned knives (saved "knives")
 var _knife_tab := KnifeTab.new()  # the player card's Knives tab
+var _mask_locker := MaskLocker.new(MaskModel.db())  # (polish1 D5c) owned masks + the worn one (saved "masks")
+var _mask_tab := MaskTab.new()  # the player card's Masks tab
 var _force_knife := false  # (dev) the next crate gives a knife
 var _skins_menu := SkinsMenu.new()  # (polish1 D5a part 3) a gun's skins menu (C on its card in the inventory)
 var _skins_where := {}  # the gun the skins menu shows: {"holster": i} or {"slot": i}
@@ -820,6 +825,9 @@ func _ready() -> void:
 	_knife_tab.gun_db = _player.gun_db
 	_knife_tab.equip_requested.connect(_equip_knife)
 	_card_screen.knives_tab = _knife_tab
+	_mask_tab.locker = _mask_locker
+	_mask_tab.wear_requested.connect(_wear_mask)
+	_card_screen.masks_tab = _mask_tab
 	_skins_menu.chal = _camo_chal
 	_skins_menu.watch = _inventory_screen
 	_skins_menu.locker = _camo_locker
@@ -1043,6 +1051,9 @@ func _ready() -> void:
 func apply_settings() -> void:
 	_player.apply_settings()
 	_render_style.apply(settings.graphics, settings.shaders, settings.picks)
+	for i in (RenderStyle.presets()["graphics"] as Array).size():  # (polish1 D5c) masks' mesh / texture / effects level
+		if String((RenderStyle.presets()["graphics"][i] as Dictionary)["id"]) == settings.graphics:
+			MaskModel.tier = i
 	if _hub_dark:
 		_darken_for_hub()  # before the weather reads the look's light as its base
 	_weather.look_changed(settings.graphics, _island_side())
@@ -1271,6 +1282,8 @@ func _close_customizer() -> void:
 
 
 func _on_look_applied(look: Dictionary) -> void:
+	look = look.duplicate()
+	look["mask"] = _mask_locker.worn  # (polish1 D5c) the customizer does not take the mask off
 	_player.set_appearance(look)
 	save_profile()
 	look_changed.emit(_player.appearance)
@@ -1819,6 +1832,11 @@ func _load_profile() -> void:
 		_player.set_knife_skin(_knife_locker.carried())
 		_knife_tab.own_knife = _player.knife
 		_hook_knife_powers()
+		_mask_locker.from_dict(extra.get("masks"))  # (polish1 D5c) the owned masks; the look wears the worn one
+		if String(_player.appearance.get("mask", "")) != _mask_locker.worn:
+			var masked: Dictionary = _player.appearance.duplicate()
+			masked["mask"] = _mask_locker.worn
+			_player.set_appearance(masked)
 		_fantasy_saved = extra.get("fantasy")
 		_salvage_saved = extra.get("salvage")
 		_chart_saved = extra.get("sea_chart")
@@ -1869,7 +1887,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "knives": _knife_locker.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "knives": _knife_locker.to_dict(), "masks": _mask_locker.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -2799,6 +2817,31 @@ func _on_knife_given(item: Dictionary) -> void:
 		net.chat.announce_unbox(line + "!")
 	_knife_tab.refresh()
 	save_profile()
+
+
+# (polish1 D5c) The Masks tab: wear mask `id` ("" = take it off); the look goes to the lobby like any look change.
+func _wear_mask(id: String) -> void:
+	if not _mask_locker.wear(id):
+		return
+	var look: Dictionary = _player.appearance.duplicate()
+	look["mask"] = id
+	_player.set_appearance(look)
+	look_changed.emit(_player.appearance)
+	_mask_tab.refresh()
+	_sounds.call("play", "upgrade_done")
+	_player_hud.notice("Wearing the %s mask" % MaskModel.db().name_of(id) if id != "" else "Mask off")
+	save_profile()
+
+
+# (polish1 D5c) A mask comes to this player (boss drop, reward, trade): kept, told, and the tab redrawn.
+func give_mask(id: String, why: String) -> bool:
+	if not _mask_locker.add(id):
+		return false
+	_player_hud.callout("MASK: %s" % MaskModel.db().name_of(id).to_upper(), Color(1.0, 0.82, 0.3), "star")
+	_chat.add_line("%s got the %s mask%s!" % [_profile_name, MaskModel.db().name_of(id), (" " + why) if why != "" else ""], Color(1.0, 0.82, 0.3))
+	_mask_tab.refresh()
+	save_profile()
+	return true
 
 
 # (polish1 D5b) The Knives tab: carry skinned knife `index` (-1 = the character's own rolled knife).

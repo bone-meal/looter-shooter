@@ -5,6 +5,7 @@
 # Dependencies: the running game (finds the player by its set_third_person method).
 extends Node
 
+const MaskModelDev = preload("res://game/mask_model.gd")
 const Threat = preload("res://core/sea/threat_rules.gd")
 const DeckWalkDev = preload("res://core/sea/deck_walk.gd")
 
@@ -3008,6 +3009,44 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"mask":  # (polish1 D5c) masks: "!mask give <id>", "!mask wear <id>", "!mask off", "!mask tab", "!mask press <key>", "!mask tier <0-4>", "!mask <note>": owned, worn, what the body wears
+			var lk_m: RefCounted = session.get("_mask_locker")
+			match words[1] if words.size() > 1 else "":
+				"give":
+					_lines.append("MASK give %s: %s" % [words[2], str(session.call("give_mask", words[2], "(dev)"))])
+				"wear":
+					session.call("_wear_mask", words[2])
+				"off":
+					session.call("_wear_mask", "")
+				"tier":
+					MaskModelDev.tier = int(words[2])
+				"ghosts":  # what the other players' bodies wear on their heads here
+					var seen_m := PackedStringArray()
+					for g_m: Node in session.get("net").call("target_nodes"):
+						var mod_m: Node = g_m.get("_model")
+						var anc_m: Node = mod_m.call("head_anchor") if mod_m != null and mod_m.has_method("head_anchor") else null
+						seen_m.append("%s look '%s' mask on head %s" % [g_m.name, String((g_m.get("appearance") as Dictionary).get("mask", "")), str(anc_m != null and anc_m.get_node_or_null("Mask") != null)])
+					_lines.append("MASK ghosts %s: %s" % [" ".join(words.slice(2)), "; ".join(seen_m)])
+				"tab":
+					session.call("_open_card")
+					var tabs_m2: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
+					for t_m2 in tabs_m2.get_tab_count():
+						if tabs_m2.get_tab_title(t_m2) == "Masks":
+							tabs_m2.current_tab = t_m2
+				"press":
+					var key_m2 := " ".join(words.slice(2))
+					_lines.append("MASK press %s: %s" % [key_m2, (session.get("_mask_tab") as Control).call("press", key_m2)])
+				_:
+					var body_m: Node = player.get("_body")
+					var anchor_m: Node = body_m.call("head_anchor") if body_m != null and body_m.has_method("head_anchor") else null
+					var on_m: Node = anchor_m.get_node_or_null("Mask") if anchor_m != null else null
+					var mesh_m: MeshInstance3D = on_m.get_node_or_null("MaskMesh") if on_m != null else null
+					var hair_m := 0
+					if body_m != null and body_m.has_method("skeleton"):
+						for c_m in (body_m.call("skeleton") as Node).get_children():
+							if c_m is MeshInstance3D and (String(c_m.name).to_lower().contains("hair") or String(c_m.name) == "Eyes"):
+								hair_m += 1
+					_lines.append("MASK %s: owned %s, worn '%s', look mask '%s', on the head %s, mesh %s tris, fx %d, hair / eye pieces left %d" % [" ".join(words.slice(1)), str(lk_m.get("owned")), String(lk_m.get("worn")), String((player.get("appearance") as Dictionary).get("mask", "")), str(on_m != null), str(floori(mesh_m.mesh.get_faces().size() / 3.0)) if mesh_m != null and mesh_m.mesh != null else "-", on_m.get_child_count() - 1 if on_m != null else 0, hair_m])
 		"knife":  # (polish1 D5b) skinned knives: "!knife give <finish|roll> [pattern] [type] [kills]", "!knife force" (the next crate gives one), "!knife tab", "!knife press <key>", "!knife equip <i>", "!knife kills <n>" (the carried one), "!knife <note>": the locker and what is carried
 			var lk_k: RefCounted = session.get("_knife_locker")
 			var rules_k: RefCounted = lk_k.get("rules")

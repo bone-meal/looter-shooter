@@ -1,0 +1,32 @@
+{
+	"version": 1,
+	"_note": "Masks (polish1 D5c, diary/DECISIONS_SKINS.md + diary/MASK_PROCESS.md). Each mask: name, source (boss / elite / loot / playtime / achievement), base shape, covers (full = the character's hair, brows, eyes and head wear are left off under it), trade (drop masks trade), model = assets/masks/<id>/ made by tools/blender/mask_bake.py, fx = the game's own effects. Morse messages are the director's to rewrite. detail = per graphics tier (potato .. ultimate): mesh hi / lo, textures full / half, effects share.",
+	"detail": [
+		{"mesh": "lo", "tex": "half", "fx": 0.25},
+		{"mesh": "lo", "tex": "half", "fx": 0.5},
+		{"mesh": "hi", "tex": "half", "fx": 0.75},
+		{"mesh": "hi", "tex": "full", "fx": 1.0},
+		{"mesh": "hi", "tex": "full", "fx": 1.0}
+	],
+	"masks": {
+		"plague_doctor": {
+			"name": "Plague Doctor",
+			"source": "boss",
+			"base": "plague",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "Aged leather, a 17th-century hat and a hooked beak. The eyes flash messages in Morse code; a green death cloud and flies drift from the beak.",
+			"fx": {
+				"glow": [0.35, 1.0, 0.3],
+				"glow_strength": 6.0,
+				"morse": ["MEMENTO MORI", "THE AIR IS POISON", "STAY BACK", "BURN THE BEDDING", "NO CURE ONLY DISTANCE", "SOS"],
+				"morse_unit": 0.16,
+				"mist": {"at": [0.0, -0.01, -0.33], "color": [0.4, 1.0, 0.3, 0.32], "amount": 22, "size": 0.09},
+				"flies": {"at": [0.0, -0.02, -0.3], "amount": 10},
+				"sway": 0.003,
+				"breathe": 0.0012
+			}
+		}
+	}
+}

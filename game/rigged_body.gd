@@ -17,6 +17,7 @@ const RiggedPose = preload("res://game/rigged_pose.gd")
 const BodyShape = preload("res://game/body_shape.gd")
 const RiggedJiggle = preload("res://game/rigged_jiggle.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
+const MaskModel = preload("res://game/mask_model.gd")
 
 const DATA_PATH := "res://data/characters.json"
 
@@ -88,6 +89,7 @@ static func build(appearance: Dictionary, soft := true) -> Node3D:
 		"weight": float(appearance.get("weight", 1.0)),
 		"bust": float(appearance.get("bust", 0.0)),
 		"glutes": float(appearance.get("glutes", 0.0)),
+		"mask": String(appearance.get("mask", "")),
 		"soft": soft,
 	})
 	if not built:
@@ -150,21 +152,27 @@ func setup(look: Dictionary) -> bool:
 		var albedo := String(outfit["albedo"])
 		_outfit_albedo = _texture(albedo if albedo.begins_with("res://") else packs + albedo)
 		tint_outfit(Color.WHITE)
+	var mask_id := String(look.get("mask", ""))
+	var masked := MaskModel.covers_head(mask_id)  # (polish1 D5c) a full mask: no eyes, brows, hair or head wear under it
+	var at: Array = body.get("head_anchor", [0.0, 1.55, 0.0])
+	var neck_cut := float(at[1]) + MaskModel.neck_cut(mask_id) if masked else INF
 	var donor_skeleton := _find_skeleton(donor)
 	var head := MeshInstance3D.new()
 	head.name = "Head"
 	var donor_body := donor_skeleton.get_node_or_null(String(body["body_mesh"])) as MeshInstance3D
 	if donor_body != null:
-		head.mesh = _head_mesh(body_id, body, donor_body, donor_skeleton)
+		head.mesh = _head_mesh(body_id, body, donor_body, donor_skeleton, neck_cut)
 		head.skin = _named_skin(donor_body.skin, donor_skeleton, true)
 		head.material_override = skin
 		_skeleton.add_child(head)
 		head.skeleton = NodePath("..")  # a new MeshInstance3D has no skeleton path in Godot 4.6: without this it is not skinned
-	_adopt(donor_skeleton.get_node_or_null("Eyes") as MeshInstance3D, null, donor_skeleton, true)
+	if not masked:
+		_adopt(donor_skeleton.get_node_or_null("Eyes") as MeshInstance3D, null, donor_skeleton, true)
 	donor.free()
 	var hair_color := Color.html(String(look.get("hair_color", "#4a3324")))
 	var brows: Dictionary = (d["eyebrows"] as Dictionary)[body_id]
-	_add_head_piece(String(brows["model"]), String(brows["texture"]), hair_color)
+	if not masked:
+		_add_head_piece(String(brows["model"]), String(brows["texture"]), hair_color)
 	var styles: Dictionary = d["hair"]
 	var hair_id := String(look.get("hair", ""))
 	if not styles.has(hair_id):
@@ -173,24 +181,27 @@ func setup(look: Dictionary) -> bool:
 	if under_hood.has(body_id) and hair_id != "none":
 		hair_id = String(under_hood[body_id])
 	var style: Dictionary = styles[hair_id]
-	_kind = "%s|%s|%s" % [body_id, outfit_id, hair_id]
+	_kind = "%s|%s|%s%s" % [body_id, outfit_id, hair_id, "|masked" if masked else ""]
 	var hair_models: Dictionary = style.get("models", {})
-	if hair_models.has(body_id):
+	if hair_models.has(body_id) and not masked:
 		_add_head_piece(String(hair_models[body_id]), String(style.get("texture", "1")), hair_color)
 	_anchor = Node3D.new()
 	var socket := BoneAttachment3D.new()
 	_skeleton.add_child(socket)
 	socket.bone_name = "Head"
-	var at: Array = body.get("head_anchor", [0.0, 1.55, 0.0])
 	_anchor.transform = _skeleton.get_bone_global_rest(_skeleton.find_bone("Head")).affine_inverse() * Transform3D(Basis(Vector3.UP, PI), Vector3(float(at[0]), float(at[1]), float(at[2])))
 	socket.add_child(_anchor)
-	for id: String in outfit.get("wear", []):  # rigid things on the head (tools/blender/wear.py)
+	for id: String in ([] if masked else outfit.get("wear", [])):  # rigid things on the head (tools/blender/wear.py)
 		var thing: Dictionary = wear.get(id, {})
 		var made := FantasyModels.scene(String(thing["model"])) if thing.has("model") else null
 		if made != null:
 			var lift: Array = thing.get("at", [0.0, 0.0, 0.0])
 			made.position = Vector3(float(lift[0]), float(lift[1]), float(lift[2]))
 			_anchor.add_child(made)
+	if mask_id != "":  # (polish1 D5c) the worn mask (tools/blender/mask_bake.py: built in this anchor's space)
+		var mask := MaskModel.build(mask_id)
+		if mask != null:
+			_anchor.add_child(mask)
 	_hand = Node3D.new()
 	var palm := BoneAttachment3D.new()
 	_skeleton.add_child(palm)
@@ -697,9 +708,11 @@ static func _hair_material(texture_id: String, color: Color) -> StandardMaterial
 
 
 # The head and neck of a base body: the body mesh with only the triangles whose corners all hang on the head bones.
-static func _head_mesh(body_id: String, body: Dictionary, donor_body: MeshInstance3D, donor_skeleton: Skeleton3D) -> ArrayMesh:
-	if _head_meshes.has(body_id):
-		return _head_meshes[body_id]
+# `below` (polish1 D5c): under a full mask only the neck under the mask's collar is kept (skeleton-space height).
+static func _head_mesh(body_id: String, body: Dictionary, donor_body: MeshInstance3D, donor_skeleton: Skeleton3D, below := INF) -> ArrayMesh:
+	var cache := body_id if below == INF else "%s<%.3f" % [body_id, below]
+	if _head_meshes.has(cache):
+		return _head_meshes[cache]
 	var wanted: Array = body.get("head_bones", ["Head"])
 	var is_head := {}  # skin bind index -> true
 	var skin := donor_body.skin
@@ -725,7 +738,7 @@ static func _head_mesh(body_id: String, body: Dictionary, donor_body: MeshInstan
 	var indices: PackedInt32Array = arrays[Mesh.ARRAY_INDEX]
 	var kept := PackedInt32Array()
 	for i in range(0, indices.size() - 2, 3):
-		if on_head[indices[i]] + on_head[indices[i + 1]] + on_head[indices[i + 2]] == 3:
+		if on_head[indices[i]] + on_head[indices[i + 1]] + on_head[indices[i + 2]] == 3 and maxf(vertices[indices[i]].y, maxf(vertices[indices[i + 1]].y, vertices[indices[i + 2]].y)) < below:
 			kept.append_array([indices[i], indices[i + 1], indices[i + 2]])
 	arrays[Mesh.ARRAY_INDEX] = kept
 	for extra in [Mesh.ARRAY_CUSTOM0, Mesh.ARRAY_CUSTOM1, Mesh.ARRAY_CUSTOM2, Mesh.ARRAY_CUSTOM3]:
@@ -733,7 +746,7 @@ static func _head_mesh(body_id: String, body: Dictionary, donor_body: MeshInstan
 	var flags := Mesh.ARRAY_FLAG_USE_8_BONE_WEIGHTS if per_vertex == 8 else 0
 	var mesh := ArrayMesh.new()
 	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays, [], {}, flags)
-	_head_meshes[body_id] = mesh
+	_head_meshes[cache] = mesh
 	return mesh
 
 

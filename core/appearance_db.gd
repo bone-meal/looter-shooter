@@ -1,5 +1,5 @@
 # Purpose: pure lookup + validation of character appearance (gender, body sliders, skin, hair, face expression, outfit). `sanitize` turns ANY input into a valid appearance, so saves and other players' data can never carry unknown IDs or out-of-range numbers.
-# Rigged bodies (data/characters.json, optional 4th argument) add `rig_outfit` and `rig_hair`.
+# Rigged bodies (data/characters.json, optional 4th argument) add `rig_outfit` and `rig_hair`; a worn `mask` must be one of `mask_ids`.
 # Dependencies: none. Built from data/appearance.json, data/outfits.json, data/expressions.json, data/characters.json (parsed Dictionaries passed in).
 extends RefCounted
 
@@ -18,6 +18,7 @@ var _face_index := {}
 var _hair_ids := {}
 var _hex := RegEx.new()
 var _rig_defaults := {}  # gender -> {rig_outfit, rig_hair}
+var mask_ids := {}  # (polish1 D5c) masks that may be worn (data/masks.json ids), set by game/appearance_data.gd
 
 
 func _init(main: Dictionary, outfit_data: Dictionary, face_data: Dictionary, rig_data: Dictionary = {}) -> void:
@@ -88,6 +89,9 @@ func sanitize(raw: Variant) -> Dictionary:
 	var outfit_id: Variant = src.get("outfit")
 	if outfit_id is String and _outfit_index.has(outfit_id):
 		out["outfit"] = outfit_id
+	var mask_id: Variant = src.get("mask")  # (polish1 D5c) the worn mask's id, known to data/masks.json
+	if mask_id is String and mask_ids.has(mask_id):
+		out["mask"] = mask_id
 	if _rig_defaults.has(gender):
 		for key: String in ["rig_outfit", "rig_hair"]:
 			var picked: Variant = src.get(key)

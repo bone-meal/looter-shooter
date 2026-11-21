@@ -3,11 +3,12 @@
 # (by body + parts + camo). Until a picture is ready the plain icon is drawn. Also a camo's own swatch picture (the
 # camo on a rifle) for the crate's camo reel and the CAMOS tab. One instance lives in the session (`instance`).
 # Also skinned knives' pictures (polish1 D5b).
-# Dependencies: game/weapon_models.gd, game/gun_parts_view.gd, game/camo_skin.gd, game/knife_models.gd, game/knife_skin.gd.
+# Dependencies: game/weapon_models.gd, game/gun_parts_view.gd, game/camo_skin.gd, game/knife_models.gd, game/knife_skin.gd, game/mask_model.gd.
 extends Node
 
 const WeaponModels = preload("res://game/weapon_models.gd")
 const GunPartsView = preload("res://game/gun_parts_view.gd")
+const MaskModel = preload("res://game/mask_model.gd")
 const CamoSkin = preload("res://game/camo_skin.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const KnifeSkin = preload("res://game/knife_skin.gd")
@@ -62,6 +63,8 @@ func _exit_tree() -> void:
 
 
 static func key_of(gun: Dictionary) -> String:
+	if gun.get("mask") is String:  # (polish1 D5c) a mask
+		return "mask|" + String(gun["mask"])
 	if gun.get("knife") is Dictionary:  # (polish1 D5b) a skinned knife: its look (not its kills)
 		var k: Dictionary = gun["knife"]
 		return "knife|%s|%s|%d|%.2f" % [String(k.get("type", "")), String(k.get("finish", "")), int(k.get("pattern", 0)), float(k.get("wear", 0.0))]
@@ -80,6 +83,13 @@ static func knife(item: Dictionary, asker: CanvasItem = null) -> Texture2D:
 	if instance == null or item.is_empty():
 		return null
 	return instance.call("_want", {"knife": item}, asker)
+
+
+# (polish1 D5c) A mask's picture (three-quarter view from the front).
+static func mask(id: String, asker: CanvasItem = null) -> Texture2D:
+	if instance == null or id == "":
+		return null
+	return instance.call("_want", {"mask": id}, asker)
 
 
 # A camo's swatch: the camo on a rifle.
@@ -126,6 +136,30 @@ func _process(_delta: float) -> void:
 	var job: Array = _queue.pop_front()
 	var gun: Dictionary = job[1]
 	var model: Node3D
+	if gun.get("mask") is String:  # (polish1 D5c) the mask alone, turned three quarters toward the camera, fitted
+		var worn := MaskModel.build(String(gun["mask"]))
+		if worn == null:
+			_done[String(job[0])] = null
+			return
+		for fx in worn.get_children():
+			if fx is CPUParticles3D:
+				fx.free()
+		_stage.add_child(worn)
+		worn.rotation_degrees = Vector3(0, 180 - 32, 0)
+		var mb := AABB()
+		var mfirst := true
+		for found in worn.find_children("*", "MeshInstance3D", true, false):
+			var mm := found as MeshInstance3D
+			var bb := mm.global_transform * mm.get_aabb()
+			mb = bb if mfirst else mb.merge(bb)
+			mfirst = false
+		var fit := 0.92 / maxf(maxf(mb.size.y, mb.size.x * float(SIZE.y) / float(SIZE.x)), 0.001)
+		worn.scale = Vector3.ONE * fit
+		worn.position = -mb.get_center() * fit
+		_view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
+		_busy = String(job[0])
+		_wait = 3
+		return
 	if gun.get("knife") is Dictionary:
 		model = KnifeModels.build(String((gun["knife"] as Dictionary).get("type", "combat")))
 		_stage.add_child(model)
