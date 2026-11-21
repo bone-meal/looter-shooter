@@ -1,5 +1,5 @@
 # Purpose: the masks (polish1 D5c, diary/DECISIONS_SKINS.md + diary/MASK_PROCESS.md): the list from data/masks.json,
-# one mask's data, the graphics-tier detail (mesh / texture size / effects share) and the Morse code of a message as
+# one mask's data, drop rolls (any mask of a source at the data's chance), the graphics-tier detail (mesh / texture size / effects share) and the Morse code of a message as
 # on / off units (the eyes of the Plague Doctor flash it). A data check for tools/mask_check.gd. Pure rules.
 # Dependencies: none (data/masks.json passed in).
 extends RefCounted
@@ -36,6 +36,23 @@ func name_of(id: String) -> String:
 
 func tradable(id: String) -> bool:
 	return bool(mask(id).get("trade", false))
+
+
+# Every mask that comes from `source` (boss / elite / loot / playtime / achievement).
+func of_source(source: String) -> Array:
+	var out: Array = []
+	for id: String in ids():
+		if String(mask(id).get("source", "")) == source:
+			out.append(id)
+	return out
+
+
+# A drop roll: "" or the id of one mask of `source`, at the data's chance `drop_key` (boss / elite / chest).
+func roll_drop(drop_key: String, source: String, rng: RandomNumberGenerator) -> String:
+	var pool := of_source(source)
+	if pool.is_empty() or rng.randf() >= float((cfg.get("drops", {}) as Dictionary).get(drop_key, 0.0)):
+		return ""
+	return String(pool[rng.randi() % pool.size()])
 
 
 # The detail row of graphics tier `tier` (0 potato .. 4 ultimate).

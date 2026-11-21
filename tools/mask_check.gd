@@ -28,6 +28,20 @@ func _init() -> void:
 	for u: bool in sos:
 		bits += "1" if u else "0"
 	say("SOS in Morse %s" % bits, bits.begins_with("10101000111011101110001010100"))
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var drops: Dictionary = db.cfg["drops"]
+	var keep := float(drops["boss"])
+	drops["boss"] = 1.0
+	var sure := db.roll_drop("boss", "boss", rng)
+	drops["boss"] = 0.0
+	var never := db.roll_drop("boss", "boss", rng)
+	drops["boss"] = keep
+	var hits := 0
+	for i in 20000:
+		if db.roll_drop("boss", "boss", rng) != "":
+			hits += 1
+	say("drops: sure -> %s, none at 0, boss rate %.4f (data %.4f), no elite masks yet -> '%s'" % [sure, float(hits) / 20000.0, keep, db.roll_drop("elite", "elite", rng)], sure == "plague_doctor" and never == "" and absf(float(hits) / 20000.0 - keep) < 0.005)
 	var lk := MaskLocker.new(db)
 	var ok := lk.add("plague_doctor") and lk.add("plague_doctor") and not lk.add("no_such_mask")
 	ok = ok and lk.wear("plague_doctor") and lk.remove("plague_doctor") and lk.worn == "plague_doctor" and lk.remove("plague_doctor") and lk.worn == ""

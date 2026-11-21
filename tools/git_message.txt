@@ -1,6 +1,6 @@
-Polish1 D5c part 1: the Plague Doctor as the first game mask
+Polish1 D5c part 2: mask drops and mask trading
 
-Scripted Blender sculpt (the approved v4) baked to a game mesh with colour, normal, ORM and eye-glow maps; masks as part of the look so others see them; Masks tab on the player card; Morse flashing eyes, mist and flies; quality tiers for mesh, textures and effects.
+Any boss can drop any boss mask (2 percent per player, rolled by the host), elites drop elite masks, colosseum chests loot masks. Drop masks trade in a MASKS tab of the trade window; the worn mask comes off with its last copy. Seen online: the guest saw the host's mask, the mask traded, the host saw the guest wear it.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -2770,6 +2770,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						if not g.is_empty():
 							ts.offered.emit({"ref": slot, "gun": g})
 							break
+				"mask":  # (polish1 D5c) "!trade mask <id>": offer one copy of a mask, as a click on its tile would
+					(ts.get("offered_masks") as Dictionary)[700000] = words[2]
+					ts.offered.emit({"ref": 700000, "mask": words[2]})
 				"knife":  # (polish1 D5b) "!trade knife": offer the first skinned knife
 					var kl: Array = (session.get("_knife_locker") as RefCounted).get("items")
 					if not kl.is_empty():

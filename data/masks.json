@@ -1,6 +1,7 @@
 {
 	"version": 1,
 	"_note": "Masks (polish1 D5c, diary/DECISIONS_SKINS.md + diary/MASK_PROCESS.md). Each mask: name, source (boss / elite / loot / playtime / achievement), base shape, covers (full = the character's hair, brows, eyes and head wear are left off under it), trade (drop masks trade), model = assets/masks/<id>/ made by tools/blender/mask_bake.py, fx = the game's own effects. Morse messages are the director's to rewrite. detail = per graphics tier (potato .. ultimate): mesh hi / lo, textures full / half, effects share.",
+	"drops": {"_note": "chance per player: boss kill -> a boss mask, elite kill -> an elite mask (both rolled by the host / a lone player), colosseum end chest -> a loot mask; the mask is any of that source's masks (director 2026-11-21: B, any boss can drop any boss mask)", "boss": 0.02, "elite": 0.002, "chest": 0.01},
 	"detail": [
 		{"mesh": "lo", "tex": "half", "fx": 0.25},
 		{"mesh": "lo", "tex": "half", "fx": 0.5},

@@ -23,7 +23,8 @@ signal round_ended(number: int, kind: String)
 signal power_dropped(id: int, kind: String, at: Vector3)  # on a client: a power-up lies there now
 signal power_gone(id: int)  # on a client: it was taken or its time ran out
 signal power_taken(kind: String)  # on a client: somebody took it, so the whole party has it
-signal knife_given(item: Dictionary)  # (polish1 D5b) on a client: the host rolled us a skinned knife from a boss
+signal knife_given(item: Dictionary)
+signal mask_given(id: String)  # (polish1 D5c) on a client: the host rolled us a mask (boss / elite drop)  # (polish1 D5b) on a client: the host rolled us a skinned knife from a boss
 signal debris_opened(index: int, show_it: bool)  # on a client: that way is clear (show_it false = it already was when we came)
 signal window_set(window: int, boards: int)  # on a client (and on the host after a client nailed one): that window has this many boards now
 signal nail_paid(points: int)
@@ -696,6 +697,17 @@ func give_knife(peer: int, item: Dictionary) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _knife(item: Dictionary) -> void:
 	knife_given.emit(item)
+
+
+# (polish1 D5c) The host rolled this player a mask from a boss or an elite.
+func give_mask(peer: int, id: String) -> void:
+	if net.can_send() and net.is_host() and net.roster.has(peer):
+		_mask.rpc_id(peer, id)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _mask(id: String) -> void:
+	mask_given.emit(id)
 
 
 func tell_power_drop(id: int, kind: String, at: Vector3) -> void:

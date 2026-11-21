@@ -840,6 +840,7 @@ func _ready() -> void:
 	_card_screen.camos_tab = _camo_tab
 	_trade_screen.camos = _camo_locker
 	_trade_screen.knives = _knife_locker
+	_trade_screen.masks = _mask_locker
 	_card_screen.buy_starter = func(sid: String) -> String:  # (polish1 item 80) a starter deck bought from the binder
 		var why := String(PackShop.buy("starter:" + sid, _wallet, _cards, DataStore.load_json("res://data/tcg/packs.json"), DataStore.load_json("res://data/tcg/starters.json")["starters"]))
 		if why == "":
@@ -972,6 +973,7 @@ func _ready() -> void:
 		net.rounds.round_ended.connect(_on_round_ended)
 		net.rounds.power_dropped.connect(_on_power_dropped)
 		net.rounds.knife_given.connect(_on_knife_given)
+		net.rounds.mask_given.connect(func(id: String) -> void: give_mask(id, "from the host's roll"))
 		net.rounds.power_gone.connect(_power_field.remove)
 		net.rounds.power_taken.connect(_apply_power)
 		net.rounds.land = _land
@@ -1405,6 +1407,8 @@ func _legal_thing(thing: Dictionary) -> bool:
 		return not _camo_locker.clean(thing["camo"]).is_empty()
 	if thing.has("knife"):  # (polish1 D5b) a skinned knife of the data, sane numbers
 		return KnifeSkin.rules().check(thing["knife"]) == ""
+	if thing.has("mask"):  # (polish1 D5c) a drop mask of the data (achievement / playtime masks do not trade)
+		return MaskModel.db().has(String(thing["mask"])) and MaskModel.db().tradable(String(thing["mask"]))
 	if thing.has("gun"):
 		return _legal_gun(thing["gun"])
 	if thing.has("card"):
@@ -1518,6 +1522,10 @@ func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 					mine.remove_at(i)
 					break
 			continue
+		if _trade_screen.offered_masks.has(int(ref)):  # (polish1 D5c) one copy of this mask out (a worn last copy comes off)
+			if _mask_locker.remove(String(_trade_screen.offered_masks[int(ref)])) and String(_player.appearance.get("mask", "")) != _mask_locker.worn:
+				_wear_mask(_mask_locker.worn)
+			continue
 		if _trade_screen.offered_knives.has(int(ref)):  # (polish1 D5b) this very knife out of the locker
 			var gone_k: Dictionary = _trade_screen.offered_knives[int(ref)]
 			for i in _knife_locker.items.size():
@@ -1551,6 +1559,9 @@ func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 				_drop_armour(piece, _player.global_position + _player.global_basis.z * -1.0)
 		elif given.has("id") and _player.items.has_item(String(given["id"])):
 			_player.inventory.add(String(given["id"]), 1)
+		elif given.has("mask") and _legal_thing(given):  # (polish1 D5c)
+			_mask_locker.add(String(given["mask"]))
+			_mask_tab.refresh()
 		elif given.has("knife") and KnifeSkin.rules().check(given["knife"]) == "":  # (polish1 D5b) keeps its level and kills (locked)
 			_knife_locker.add((given["knife"] as Dictionary).duplicate(true))
 		elif given.has("camo") and not _camo_locker.clean(given["camo"]).is_empty():
@@ -2790,6 +2801,20 @@ func _knife_wants(a: Dictionary) -> void:
 			_player_hud.callout(String(a["text"]), Color(1.0, 0.82, 0.3), "star")
 
 
+# (polish1 D5c) Alone or hosting: every player in the session has the data's chance of a mask of `source`; ours is
+# kept here, the others' are sent (the host decides loot).
+func _roll_masks(drop_key: String, source: String, why: String) -> void:
+	var peers: Array = [0] if (net == null or not net.can_send()) else (net.roster as Dictionary).keys()
+	for peer: Variant in peers:
+		var id := MaskModel.db().roll_drop(drop_key, source, _rng)
+		if id == "":
+			continue
+		if int(peer) == 0 or int(peer) == net.my_id():
+			give_mask(id, why)
+		else:
+			net.rounds.give_mask(int(peer), id)
+
+
 # (polish1 D5b) A boss died: alone or hosting, every player in the session has the boss chance of a skinned knife.
 func _boss_knives() -> void:
 	var odds := float((KnifeSkin.rules().cfg.get("drops", {}) as Dictionary).get("boss", 0.0))
@@ -2979,6 +3004,9 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		_player.knife_powers.call("on_kill", where)
 	if enemy_id.begins_with("boss") and (net == null or not net.can_send() or net.is_host()):  # (polish1 D5b) the host rolls each player a knife from a boss
 		_boss_knives()
+		_roll_masks("boss", "boss", "from a boss")  # (polish1 D5c) and a boss mask
+	elif elite != "" and (net == null or not net.can_send() or net.is_host()):
+		_roll_masks("elite", "elite", "from an elite")
 	if by_knife and paid > 0:  # (polish1 D5b) the carried skinned knife counts it: its level comes from these
 		var up := _knife_locker.count_kill()
 		if up > 0:
@@ -3119,6 +3147,9 @@ func _open_chest() -> void:
 		lost = lost or left_over > 0
 		if left_over < smokes:
 			found.append("%s x%d" % [_player.items.item_name(String(_smoke.cfg["item"])), smokes - left_over])
+	var chest_mask := MaskModel.db().roll_drop("chest", "loot", _rng)  # (polish1 D5c) a world-loot mask now and then
+	if chest_mask != "" and give_mask(chest_mask, "from a chest"):
+		found.append("the %s mask" % MaskModel.db().name_of(chest_mask))
 	_player.refresh_held()
 	save_profile()
 	_player_hud.notice("Found: " + ", ".join(found) + ("  (inventory full, some was left behind)" if lost else ""))
