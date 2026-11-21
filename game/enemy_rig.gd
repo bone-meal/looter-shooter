@@ -28,6 +28,9 @@ var _t := 0.0
 var _recoil := 0.0
 var _dying := -1.0
 var _scatter: PackedVector3Array = PackedVector3Array()
+var climbing := false  # (polish1 D4d) set by game/enemy.gd while it climbs: the arms reach up hand over hand, the legs push
+var _tilt := Vector3.ZERO  # (polish1 D4d) a whole-body turn on Hips (a glider hangs face down in the air)
+var _climb := {}  # style "climb": arm (reach up, degrees), swing, leg, rate (cycles a second)
 
 
 static func rigged(model: Node3D) -> bool:
@@ -39,6 +42,9 @@ func setup(model: Node3D, style: Dictionary, rng: RandomNumberGenerator) -> void
 	_g = style.get("gait", {})
 	_i = style.get("idle", {})
 	_death = String(style.get("death", "slump"))
+	var tilt: Array = style.get("tilt", [0, 0, 0])
+	_tilt = Vector3(deg_to_rad(float(tilt[0])), deg_to_rad(float(tilt[1])), deg_to_rad(float(tilt[2])))
+	_climb = style.get("climb", {"arm": 150.0, "swing": 35.0, "leg": 40.0, "rate": 2.2})
 	var names: Array = PIVOTS.duplicate()
 	for o: Dictionary in style.get("osc", []):
 		if not names.has(String(o["node"])):
@@ -176,6 +182,23 @@ func pose(delta: float, speed: float, phase: float, tell: float, lunge: float, s
 		var v := Vector3.ZERO
 		v[int(o[1])] = amount
 		_add(int(o[0]), v)
+	_add(HIPS, _tilt)
+	if climbing:  # hand over hand up a trunk: arms reach high in turn, knees come up in turn, the head looks up
+		var cp := _t * TAU * float(_climb.get("rate", 2.2))
+		var reach := deg_to_rad(float(_climb.get("arm", 150.0)))
+		var sw := deg_to_rad(float(_climb.get("swing", 35.0)))
+		var lg := deg_to_rad(float(_climb.get("leg", 40.0)))
+		for k in [ARM_L, ARM_R, LEG_L, LEG_R, FORE_L, FORE_R, SHIN_L, SHIN_R]:
+			_rot[k] = Vector3.ZERO
+		_add(ARM_L, Vector3(reach + sw * sin(cp), 0, -0.2))
+		_add(ARM_R, Vector3(reach - sw * sin(cp), 0, 0.2))
+		_add(FORE_L, Vector3(0.5 + 0.4 * maxf(-sin(cp), 0.0), 0, 0))
+		_add(FORE_R, Vector3(0.5 + 0.4 * maxf(sin(cp), 0.0), 0, 0))
+		_add(LEG_L, Vector3(lg * (0.6 + 0.4 * sin(cp)), 0, 0))
+		_add(LEG_R, Vector3(lg * (0.6 - 0.4 * sin(cp)), 0, 0))
+		_add(SHIN_L, Vector3(-lg * 1.6 * (0.6 + 0.4 * sin(cp)), 0, 0))
+		_add(SHIN_R, Vector3(-lg * 1.6 * (0.6 - 0.4 * sin(cp)), 0, 0))
+		_add(HEAD, Vector3(0.35, 0, 0))
 	# attack
 	var wind := tell if tell > 0.0 else (clampf((swing - 0.5) * 2.0, 0.0, 1.0) if swing > 0.0 else 0.0)
 	var strike := maxf(lunge, clampf(1.0 - swing * 2.0, 0.0, 1.0) if swing > 0.0 else 0.0)

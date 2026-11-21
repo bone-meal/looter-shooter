@@ -1675,6 +1675,350 @@
     ]
    },
    "death": "slump"
+  },
+  "en_climber": {
+   "gait": {
+    "full_at": 5.5,
+    "cadence": 0.85,
+    "leg": 42,
+    "knee": 70,
+    "arm": 55,
+    "elbow": 30,
+    "arm_out": 14,
+    "arms_up": -10,
+    "bob": 0.07,
+    "sway": 5,
+    "twist": 10,
+    "lean": 34,
+    "crouch": 18
+   },
+   "idle": {
+    "breath": 6,
+    "look": 45,
+    "twitch": 0.8,
+    "jaw": 18,
+    "jaw_rate": 2.0
+   },
+   "climb": {
+    "arm": 155,
+    "swing": 40,
+    "leg": 45,
+    "rate": 2.6
+   },
+   "wind": {
+    "Spine": [
+     -8,
+     0,
+     0
+    ],
+    "ArmL": [
+     150,
+     0,
+     -25
+    ],
+    "ArmR": [
+     150,
+     0,
+     25
+    ],
+    "ForeL": [
+     30,
+     0,
+     0
+    ],
+    "ForeR": [
+     30,
+     0,
+     0
+    ],
+    "Head": [
+     20,
+     0,
+     0
+    ],
+    "Jaw": [
+     30,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmL": [
+     40,
+     0,
+     -10
+    ],
+    "ArmR": [
+     40,
+     0,
+     10
+    ],
+    "ForeL": [
+     10,
+     0,
+     0
+    ],
+    "ForeR": [
+     10,
+     0,
+     0
+    ],
+    "Spine": [
+     -40,
+     0,
+     0
+    ],
+    "Head": [
+     10,
+     0,
+     0
+    ],
+    "Jaw": [
+     35,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
+  },
+  "en_glider": {
+   "tilt": [
+    -70,
+    0,
+    0
+   ],
+   "gait": {
+    "full_at": 7.0,
+    "cadence": 0.5,
+    "leg": 8,
+    "knee": 12,
+    "arm": 0,
+    "elbow": 0,
+    "arm_out": 0,
+    "bob": 0.0,
+    "sway": 2,
+    "twist": 0,
+    "lean": 0
+   },
+   "idle": {
+    "breath": 3,
+    "look": 15,
+    "jaw": 15,
+    "jaw_rate": 3.0
+   },
+   "osc": [
+    {
+     "node": "ArmL",
+     "axis": "z",
+     "amp": 16,
+     "rate": 2.2,
+     "with_speed": false
+    },
+    {
+     "node": "ArmR",
+     "axis": "z",
+     "amp": -16,
+     "rate": 2.2,
+     "with_speed": false
+    },
+    {
+     "node": "ForeL",
+     "axis": "z",
+     "amp": 10,
+     "rate": 2.2,
+     "phase": 40,
+     "with_speed": false
+    },
+    {
+     "node": "ForeR",
+     "axis": "z",
+     "amp": -10,
+     "rate": 2.2,
+     "phase": 40,
+     "with_speed": false
+    },
+    {
+     "node": "Tail",
+     "axis": "x",
+     "amp": 14,
+     "rate": 1.4,
+     "with_speed": false
+    },
+    {
+     "node": "Tail",
+     "axis": "y",
+     "amp": 10,
+     "rate": 0.9,
+     "with_speed": false
+    }
+   ],
+   "wind": {
+    "ArmL": [
+     0,
+     25,
+     -20
+    ],
+    "ArmR": [
+     0,
+     -25,
+     20
+    ],
+    "LegL": [
+     -20,
+     0,
+     0
+    ],
+    "LegR": [
+     -20,
+     0,
+     0
+    ],
+    "Head": [
+     25,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "LegL": [
+     85,
+     0,
+     0
+    ],
+    "LegR": [
+     85,
+     0,
+     0
+    ],
+    "ShinL": [
+     -20,
+     0,
+     0
+    ],
+    "ShinR": [
+     -20,
+     0,
+     0
+    ],
+    "ArmL": [
+     0,
+     -35,
+     10
+    ],
+    "ArmR": [
+     0,
+     35,
+     -10
+    ],
+    "Head": [
+     -15,
+     0,
+     0
+    ],
+    "Jaw": [
+     35,
+     0,
+     0
+    ]
+   },
+   "climb": {
+    "arm": 0,
+    "swing": 0,
+    "leg": 0,
+    "rate": 1.0
+   },
+   "death": "slump"
+  },
+  "en_rope_cutter": {
+   "gait": {
+    "full_at": 6.0,
+    "cadence": 1.5,
+    "leg": 40,
+    "knee": 65,
+    "arm": 35,
+    "elbow": 35,
+    "arm_out": 10,
+    "arms_up": 5,
+    "bob": 0.06,
+    "sway": 6,
+    "twist": 12,
+    "lean": 30,
+    "crouch": 14
+   },
+   "idle": {
+    "breath": 5,
+    "look": 55,
+    "twitch": 1.2,
+    "jaw": 25,
+    "jaw_rate": 7.0
+   },
+   "osc": [
+    {
+     "node": "Tail",
+     "axis": "y",
+     "amp": 22,
+     "rate": 3.0,
+     "with_speed": false
+    },
+    {
+     "node": "Tail",
+     "axis": "x",
+     "amp": 10,
+     "rate": 1.7,
+     "with_speed": false
+    }
+   ],
+   "climb": {
+    "arm": 150,
+    "swing": 45,
+    "leg": 50,
+    "rate": 3.2
+   },
+   "wind": {
+    "ArmR": [
+     120,
+     0,
+     30
+    ],
+    "ForeR": [
+     40,
+     0,
+     0
+    ],
+    "Spine": [
+     -5,
+     25,
+     0
+    ],
+    "Head": [
+     15,
+     0,
+     0
+    ]
+   },
+   "strike": {
+    "ArmR": [
+     30,
+     0,
+     -20
+    ],
+    "ForeR": [
+     10,
+     0,
+     0
+    ],
+    "Spine": [
+     -30,
+     -30,
+     0
+    ],
+    "Jaw": [
+     40,
+     0,
+     0
+    ]
+   },
+   "death": "slump"
   }
  }
 }

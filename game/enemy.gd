@@ -525,6 +525,8 @@ func _climbing(delta: float) -> void:
 		if absf(d.y) < 0.1:
 			rotation.y = atan2(-d.x, -d.z)
 	velocity = d.normalized() * float(_stats.get("climb_speed", 3.0))  # (drives the limbs)
+	if _rig != null:
+		_rig.climbing = not _climb.is_empty()
 	_animate(delta)
 
 

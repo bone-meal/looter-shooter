@@ -1,1 +1,1 @@
-!uncap;!wait 2;!immortal;!wait 20;!net guest_in;!wait 2;!tree give 5000;!tree way home_ladder_t1 0;!wait 1;!tree use;!wait 3;!tree note g_bought;!tree way home_lift_p2 0;!wait 1;!tree use;!wait 3;!tree use;!wait 2;!snap trees_guest_ride;!wait 4;!tree note g_rode
+!uncap;!wait 2;!immortal;!wait 20;!net guest_in;!wait 2;!tree give 5000;!tree way home_ladder_t1 0;!wait 1;!tree use;!wait 3;!tree note g_bought;!tree way home_lift_p2 0;!wait 1;!tree use;!wait 3;!tree use;!wait 2;!snap trees_guest_ride;!wait 4;!tree note g_rode;!tree cuts g_end

@@ -1,13 +1,10 @@
-Polish1 D4d part 1: tree enemies climb, glide and cut ropes
+Polish1 D4d part 2: climber, glider and rope-cutter models
 
-Climbers go up trunks and stilts to the treetop decks by planned routes
-(climb spots per deck, bridges, stairs and catwalks between), gliders
-come out of the sky and swoop, rope-cutters go for bought rope bridges
-and ladders and cut them (players mend them free by holding interact).
-Tough climbing versions of the drowned, runner and brute. While the prey
-stands up high a share of the round (and every crab) comes from that
-layer's tree mix. No melee through the planks. Models are stand-ins
-until part 2.
+Three new rigid-part models with three variants each: the mangrove
+creeper (climber), the frond glider (leaf membranes, tail) and the
+gnawer (rope-cutter: big ears, buck teeth, hooked blade, rat's tail).
+Their own motions: a loping creep, a spread glide with flapping and a
+tail, a scurry with gnashing teeth; any enemy now climbs hand over hand.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

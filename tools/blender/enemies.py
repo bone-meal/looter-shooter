@@ -22,6 +22,9 @@
 # en_scav_gunner (canvas coat, bandolier, drum gun, goggles; helmet / bandana / pack + bedroll), en_marksman (poncho,
 # scoped long rifle; hood + scarf / boonie hat / ghillie strips), en_brute (2.7 m, apron, nailed club; scrap mask /
 # chains / scrap plates). Guns and bows hang along the forearm at rest: the aim pose brings them level.
+# The tree enemies (D4d): en_climber (mangrove creeper: bark, root tendrils, long arms; rope coil / lantern / crab-shell
+# pauldron), en_glider (frond glider, built spread with leaf membranes and a Tail pivot; torn rags / shells / frond
+# crest), en_rope_cutter (gnawer: big ears, buck teeth, hooked blade, Tail; sack / rope + grapnel / pot helmet).
 # Run: python3 tools/blender/enemies.py   (ONLY=en_drowned builds just that one)
 # Dependencies: bpy, tools/blender/kit.py, tools/blender/fantasy_kit.py. No game code.
 import math
@@ -1050,11 +1053,153 @@ def overseer(m):
         m.ball((fk.GLOW, (1.0, 0.9, 0.6)), (0.045, 0.045, 0.015), (sh[0], sh[1] + 0.08, sh[2] + 0.125), node=v, u=10, v=6)
 
 
+# ---------- the tree enemies (polish1 D4d): they come for players up in the treetop village ----------
+
+def climber(m):
+    """A mangrove creeper: a drowned thing grown over with bark and roots, arms to its knees and hooked claws."""
+    rnd = random.Random(301)
+    b = Body(girth=0.82, shoulders=1.0, hips=0.9, hunch=0.14, arm=1.42, arm_r=0.8, leg_r=0.85, head=0.95, neck=1.15)
+    b.nodes(m)
+    skin = K("leather", (0.36, 0.34, 0.24))
+    bark = K("wood", (0.3, 0.22, 0.14))
+    moss = K("leaf", (0.24, 0.38, 0.14))
+    flesh(m, b, skin, eye=(0.6, 1.0, 0.35), brow=1.5, gaunt=1.0)
+    for side, s in ((-1, "L"), (1, "R")):
+        hand(m, b, side, skin, "Fore" + s, claws=K("bone", (0.2, 0.17, 0.12)))
+        wr, el, sh = b.wrist(side), b.elbow(side), b.shoulder(side)
+        for k in range(3):  # root tendrils wound round the forearm
+            t0, t1 = 0.15 + k * 0.28, 0.3 + k * 0.28
+            a, c = [el[i] + (wr[i] - el[i]) * t0 for i in range(3)], [el[i] + (wr[i] - el[i]) * t1 for i in range(3)]
+            m.loft(bark, [(a[0] + side * 0.04, a[1], a[2] + 0.03, 0.012, 0.012), (c[0] - side * 0.04, c[1], c[2] - 0.03, 0.011, 0.011)], node="Fore" + s, segs=6)
+        m.ball(bark, (0.07, 0.05, 0.08), (sh[0] + side * 0.03, sh[1] + 0.03, sh[2]), node="Arm" + s, u=8, v=6)  # bark plate on the shoulder
+        m.ball(bark, (0.05, 0.1, 0.05), ((sh[0] + el[0]) / 2 + side * 0.025, (sh[1] + el[1]) / 2, sh[2] - 0.02), node="Arm" + s, u=8, v=6)
+        m.ball(bark, (0.05, 0.09, 0.05), (side * (b.hx + 0.03), 0.72, -0.02), node="Leg" + s, u=8, v=6)
+    for k in range(6):  # bark plates down the back like a trunk's
+        m.ball(bark, (0.11 - k * 0.006, 0.06, 0.05), (rnd.uniform(-0.03, 0.03), 1.42 - k * 0.07, b.hunch * (0.9 - k * 0.12) - 0.1), node="Spine", u=10, v=6)
+    trousers(m, b, K("cloth", (0.22, 0.2, 0.16)), length=0.5, torn=1.0, seed=31)
+    weeds(m, rnd, moss, [(-0.12, 1.44, 0.0), (0.1, 1.38, -0.08), (0.0, 1.1, -0.15), (0.15, 1.2, 0.06)], "Spine", (0.08, 0.2))
+    weeds(m, rnd, moss, [(-0.04, b.head_y + 0.22, b.head_f - 0.05), (0.05, b.head_y + 0.2, b.head_f - 0.08)], "Head", (0.06, 0.14))
+    y, f = b.head_y, b.head_f
+    v = variant(m, "V1_Rope", "Spine", (0.0, 1.3, 0.0))  # a coil of rope over one shoulder, across the chest
+    for k in range(3):
+        m.loft(K("cloth", ROPE), [(-0.16, 1.47 - k * 0.012, b.hunch + 0.02, 0.012, 0.012), (0.0, 1.25 - k * 0.012, b.hunch * 0.5 + 0.13, 0.012, 0.012), (0.17, 1.02 - k * 0.012, 0.1, 0.012, 0.012)], node=v, segs=6)
+    v = variant(m, "V2_Lantern", "Hips", (0.0, 0.95, 0.0))  # a drowned lantern hanging from its hip
+    m.lathe(K("metal", RUST), [(0.0, 0.0), (0.05, 0.0), (0.055, 0.12), (0.03, 0.15), (0.0, 0.16)], (0.17, 0.72, 0.03), node=v, segs=10)
+    m.ball((fk.GLOW, (0.6, 1.0, 0.4)), 0.03, (0.17, 0.79, 0.03), node=v, u=8, v=6)
+    v = variant(m, "V3_Shell", "Spine", (0.0, 1.4, 0.0))  # a crab shell grown on as a pauldron
+    m.ball(K("bone", (0.7, 0.32, 0.2)), (0.1, 0.05, 0.11), (-b.sx - 0.03, b.shoulder_y + 0.06, b.hunch), node=v, u=10, v=6)
+    barnacles(m, rnd, [(-b.sx - 0.06, b.shoulder_y + 0.1, b.hunch + 0.04)], v, 0.8)
+
+
+def glider(m):
+    """A frond glider: a light, long-fingered thing with leaf membranes from its arms to its ankles; it hangs spread out
+    in the air (built spread: the arms reach out sideways at rest), a long leafy tail behind."""
+    rnd = random.Random(311)
+    skin = K("leather", (0.62, 0.55, 0.3))
+    leaf = K("leaf", (0.3, 0.5, 0.18))
+    vein = K("wood", (0.4, 0.3, 0.16))
+    m.node("Hips", (0.0, 0.9, 0.0))
+    m.node("Spine", (0.0, 0.98, 0.0), parent="Hips")
+    m.node("Head", (0.0, 1.36, 0.04), parent="Spine")
+    m.node("Jaw", (0.0, 1.4, 0.12), parent="Head")
+    m.node("Tail", (0.0, 0.88, -0.08), parent="Hips")
+    for side, s in ((-1, "L"), (1, "R")):
+        m.node("Arm" + s, (side * 0.13, 1.28, 0.0), parent="Spine")
+        m.node("Fore" + s, (side * 0.48, 1.28, 0.0), parent="Arm" + s)
+        m.node("Leg" + s, (side * 0.08, 0.88, 0.0), parent="Hips")
+        m.node("Shin" + s, (side * 0.09, 0.5, 0.02), parent="Leg" + s)
+    m.loft(skin, [(0.0, 0.84, 0.0, 0.1, 0.08), (0.0, 0.98, 0.01, 0.12, 0.09), (0.0, 1.16, 0.02, 0.13, 0.09), (0.0, 1.3, 0.02, 0.1, 0.07)], node="Spine", segs=12)
+    m.loft(skin, [(0.0, 1.28, 0.03, 0.045, 0.045), (0.0, 1.38, 0.05, 0.04, 0.04)], node="Spine", segs=8)  # neck
+    # a round head with a short snout and big night eyes
+    m.ball(skin, (0.1, 0.095, 0.1), (0.0, 1.46, 0.05), node="Head", u=14, v=10)
+    m.loft(skin, [(0.0, 1.44, 0.12, 0.05, 0.04), (0.0, 1.42, 0.2, 0.025, 0.022)], node="Head", segs=8)
+    m.loft(skin, [(0.0, 1.405, 0.11, 0.045, 0.03), (0.0, 1.395, 0.19, 0.02, 0.015)], node="Jaw", segs=8)
+    for side in (-1, 1):
+        m.ball(K("paint", (0.06, 0.05, 0.03)), (0.04, 0.04, 0.02), (side * 0.055, 1.48, 0.12), node="Head", u=10, v=8)
+        m.ball((fk.GLOW, (1.0, 0.82, 0.3)), (0.03, 0.03, 0.012), (side * 0.055, 1.48, 0.135), node="Head", u=8, v=6)
+        m.prof(leaf, 0.006, [(side * 0.06, 1.52), (side * 0.15, 1.64), (side * 0.1, 1.5)], x=0.0, node="Head", across="f")  # ear fronds
+    for side, s in ((-1, "L"), (1, "R")):
+        # arms straight out: upper arm, forearm, three long finger spines fanning back
+        m.loft(skin, [(side * 0.13, 1.28, 0.0, 0.04, 0.04), (side * 0.48, 1.28, 0.0, 0.03, 0.03)], node="Arm" + s, segs=8)
+        m.loft(skin, [(side * 0.48, 1.28, 0.0, 0.03, 0.03), (side * 0.85, 1.28, 0.02, 0.02, 0.02)], node="Fore" + s, segs=8)
+        tips = [(side * 1.25, 1.3, 0.02), (side * 1.18, 1.24, -0.18), (side * 1.02, 1.18, -0.32)]
+        for t in tips:
+            m.rod(vein, 0.012, (side * 0.85, 1.28, 0.02), t, r2=0.004, node="Fore" + s, segs=5)
+            m.rod(K("bone", (0.25, 0.22, 0.16)), 0.006, t, (t[0] + side * 0.04, t[1] - 0.02, t[2] + 0.02), r2=0.001, node="Fore" + s, segs=4)
+        # the membranes: from the finger tips back along the forearm (Fore) and from the elbow to the flank (Arm)
+        m.prof(leaf, 0.008, [(side * 0.48, 1.28), (side * 0.85, 1.29), (side * 1.25, 1.3), (side * 1.18, 1.24), (side * 1.02, 1.18), (side * 0.6, 1.08)], x=-0.02, node="Fore" + s, across="f")
+        m.prof(leaf, 0.008, [(side * 0.12, 1.27), (side * 0.48, 1.28), (side * 0.6, 1.08), (side * 0.12, 0.9)], x=-0.02, node="Arm" + s, across="f")
+        for k in range(3):  # leaf veins over the membrane
+            m.rod(vein, 0.004, (side * (0.3 + k * 0.25), 1.27, -0.01), (side * (0.32 + k * 0.22), 1.06 + k * 0.03, -0.01), node="Arm" + s if k == 0 else "Fore" + s, segs=4)
+        # short legs with talons
+        m.loft(skin, [(side * 0.08, 0.88, 0.0, 0.035, 0.04), (side * 0.09, 0.52, 0.02, 0.03, 0.03)], node="Leg" + s, segs=8)
+        m.loft(skin, [(side * 0.09, 0.52, 0.02, 0.026, 0.026), (side * 0.09, 0.2, 0.0, 0.02, 0.02)], node="Shin" + s, segs=8)
+        for k in range(3):
+            a = -0.5 + k * 0.5
+            m.rod(K("bone", (0.25, 0.22, 0.16)), 0.01, (side * 0.09, 0.2, 0.0), (side * 0.09 + math.sin(a) * 0.06, 0.13, 0.07), r2=0.002, node="Shin" + s, segs=5)
+    # the tail: a long whip ending in a leafy fin
+    m.loft(skin, [(0.0, 0.88, -0.08, 0.04, 0.04), (0.0, 0.7, -0.4, 0.025, 0.025), (0.0, 0.58, -0.8, 0.012, 0.012)], node="Tail", segs=8)
+    m.prof(leaf, 0.006, [(-0.75, 0.6), (-0.95, 0.66), (-1.05, 0.56), (-0.85, 0.54)], x=0.0, node="Tail")  # (f, y): the fin at the tail's end
+    v = variant(m, "V1_Frayed", "Spine", (0.0, 1.1, 0.0))  # torn leaf rags on its back
+    for k in range(4):
+        m.prof(leaf, 0.005, [(-0.07, 1.22 - k * 0.08), (-0.16 - rnd.uniform(0, 0.06), 1.18 - k * 0.08), (-0.08, 1.12 - k * 0.08)], x=rnd.uniform(-0.06, 0.06), node=v)
+    v = variant(m, "V2_Shells", "Spine", (0.0, 1.3, 0.0))  # a string of shells round its neck
+    for k in range(7):
+        a = -1.0 + k * 0.33
+        m.ball(K("bone", (0.92, 0.82, 0.7)), (0.018, 0.022, 0.012), (math.sin(a) * 0.07, 1.31 - math.cos(a) * 0.02, 0.06 + math.cos(a) * 0.04), node=v, u=6, v=5)
+    v = variant(m, "V3_Crest", "Head", (0.0, 1.46, 0.05))  # a crest of fronds over the head
+    for k in range(5):
+        m.prof(leaf, 0.005, [(0.08 - k * 0.04, 1.55), (0.06 - k * 0.05, 1.72 - abs(k - 2) * 0.04), (0.04 - k * 0.04, 1.54)], x=0.0, node=v, across="f")
+
+
+def rope_cutter(m):
+    """A gnawer: a small, hunched beach scavenger with big ears, buck teeth and a rat's tail, a rusty hooked blade in
+    its fist for ropes (and ankles)."""
+    rnd = random.Random(321)
+    b = Body(girth=0.9, shoulders=0.85, hips=0.9, belly=0.02, hunch=0.16, arm=1.05, arm_r=0.85, leg_r=0.9, head=1.35, neck=0.9)
+    b.nodes(m)
+    m.node("Tail", (0.0, 0.92, -0.1), parent="Hips")
+    skin = K("leather", (0.5, 0.4, 0.32))
+    fur = K("cloth", (0.32, 0.25, 0.19))
+    flesh(m, b, skin, eye=(1.0, 0.55, 0.2), brow=1.3, gaunt=0.6, ears=False)
+    y, f, k = b.head_y, b.head_f, b.head
+    for side in (-1, 1):  # big round ears, pink inside
+        m.ball(skin, (0.012, 0.07, 0.06), (side * 0.12, y + 0.18, f - 0.02), node="Head", yaw=side * 20.0, u=10, v=8)
+        m.ball(K("paint", (0.75, 0.45, 0.45)), (0.006, 0.05, 0.042), (side * 0.125, y + 0.18, f - 0.01), node="Head", yaw=side * 20.0, u=8, v=6)
+    for side in (-1, 1):  # two long buck teeth under the snout
+        m.box(K("bone", (0.92, 0.86, 0.6)), (0.018, 0.045, 0.01), (side * 0.011, y + 0.07, f + 0.115 * k), node="Head", bevel=0.003)
+    m.loft(skin, [(0.0, y + 0.12, f + 0.09 * k, 0.04, 0.03), (0.0, y + 0.1, f + 0.14 * k, 0.025, 0.02)], node="Head", segs=8)  # snout
+    m.ball(K("paint", (0.1, 0.06, 0.06)), (0.014, 0.01, 0.01), (0.0, y + 0.11, f + 0.145 * k), node="Head", u=6, v=5)  # nose
+    for k2 in range(8):  # scruffy fur tufts
+        p = (rnd.uniform(-0.14, 0.14), rnd.uniform(1.05, 1.42), b.hunch * 0.5 + rnd.uniform(-0.12, 0.05))
+        m.ball(fur, (0.06, 0.05, 0.05), p, node="Spine", u=8, v=6)
+    trousers(m, b, K("cloth", (0.28, 0.24, 0.2)), length=0.55, torn=1.0, seed=41)
+    belt(m, b, K("cloth", ROPE))
+    for side, s in ((-1, "L"), (1, "R")):
+        hand(m, b, side, skin, "Fore" + s, claws=K("bone", (0.2, 0.17, 0.12)))
+    g = grip_at(b, 1)  # the hooked blade in its right fist
+    m.rod(K("wood", WOOD), 0.016, (g[0], g[1] + 0.05, g[2] - 0.02), (g[0], g[1] - 0.06, g[2] + 0.02), node="ForeR", segs=8)
+    m.loft(K("metal", RUST), [(g[0], g[1] - 0.06, g[2] + 0.03, 0.004, 0.02), (g[0], g[1] - 0.2, g[2] + 0.2, 0.004, 0.024), (g[0], g[1] - 0.14, g[2] + 0.34, 0.003, 0.016), (g[0], g[1] - 0.04, g[2] + 0.36, 0.002, 0.004)], node="ForeR", segs=6, flat=True)
+    m.loft(skin, [(0.0, 0.92, -0.1, 0.03, 0.03), (0.0, 0.5, -0.35, 0.018, 0.018), (0.05, 0.1, -0.5, 0.008, 0.008)], node="Tail", segs=8)  # the rat's tail
+    v = variant(m, "V1_Sack", "Spine", (0.0, 1.2, -0.1))  # a lumpy sack on its back
+    m.ball(K("cloth", (0.6, 0.52, 0.36)), (0.13, 0.16, 0.1), (0.0, 1.2, b.hunch * 0.5 - 0.2), node=v, u=10, v=8)
+    m.loft(K("cloth", ROPE), [(0.0, 1.38, b.hunch * 0.6 - 0.18, 0.02, 0.02), (0.0, 1.42, b.hunch * 0.6 - 0.16, 0.012, 0.012)], node=v, segs=6)
+    v = variant(m, "V2_Hook", "Spine", (0.0, 1.2, 0.0))  # a coil of rope and a grappling hook on its hip
+    m.lathe(K("cloth", ROPE), [(0.07, -0.02), (0.09, 0.0), (0.07, 0.02)], (-0.17, 1.0, 0.0), node=v, segs=12, axis="x")
+    m.rod(K("metal", RUST), 0.01, (-0.2, 0.95, 0.06), (-0.2, 0.8, 0.08), node=v, segs=6)
+    for a in (-0.7, 0.0, 0.7):
+        m.rod(K("metal", RUST), 0.008, (-0.2, 0.8, 0.08), (-0.2 + math.sin(a) * 0.05, 0.78, 0.08 + math.cos(a) * 0.05), node=v, segs=5)
+    v = variant(m, "V3_Pot", "Head", (0.0, y, f))  # an old cooking pot for a helmet
+    m.lathe(K("metal", (0.38, 0.36, 0.34)), [(0.11 * k, 0.0), (0.12 * k, 0.01), (0.11 * k, 0.12), (0.0, 0.13)], (0.0, y + 0.21, f - 0.02), node=v, segs=16)
+    m.rod(K("metal", (0.3, 0.28, 0.27)), 0.01, (0.12 * k, y + 0.27, f - 0.02), (0.2 * k, y + 0.28, f - 0.02), node=v, segs=6)
+
+
 MODELS = (("en_drowned", drowned), ("en_drowned_runner", drowned_runner), ("en_swimmer", swimmer), ("en_reef_crab", reef_crab), ("en_tide_brute", tide_brute),
           ("en_skeleton_sword", skeleton_sword), ("en_skeleton_archer", skeleton_archer), ("en_raider", raider), ("en_feral", feral),
           ("en_scav_gunner", scav_gunner), ("en_marksman", marksman), ("en_brute", brute),
           ("en_clockwork_bear", clockwork_bear), ("en_boss_butcher", butcher), ("en_boss_dome_beast", dome_beast), ("en_boss_tyrant", tyrant),
-          ("en_boss_warlord", warlord), ("en_boss_overseer", overseer))
+          ("en_boss_warlord", warlord), ("en_boss_overseer", overseer),
+          ("en_climber", climber), ("en_glider", glider), ("en_rope_cutter", rope_cutter))
 
 
 def main():

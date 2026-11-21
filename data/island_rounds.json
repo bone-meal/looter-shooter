@@ -359,7 +359,7 @@
    "tough_of": "tide_brute"
   },
   "climber": {
-   "model": "en_drowned_runner",
+   "model": "en_climber",
    "max_hp": 34,
    "speed": 5.4,
    "attack_type": "melee",
@@ -392,7 +392,7 @@
    "climb_speed": 3.2
   },
   "glider": {
-   "model": "en_swimmer",
+   "model": "en_glider",
    "max_hp": 22,
    "speed": 7.0,
    "attack_type": "melee",
@@ -401,9 +401,9 @@
    "attack_interval": 1.6,
    "attack_windup": 0.2,
    "size": [
-    0.9,
-    1.4,
-    0.9
+    1.0,
+    1.5,
+    1.0
    ],
    "color": [
     0.95,
@@ -426,7 +426,7 @@
    "comes": "sky"
   },
   "rope_cutter": {
-   "model": "en_drowned",
+   "model": "en_rope_cutter",
    "max_hp": 20,
    "speed": 6.0,
    "attack_type": "melee",
@@ -436,7 +436,7 @@
    "attack_windup": 0.2,
    "size": [
     0.7,
-    1.3,
+    1.35,
     0.7
    ],
    "color": [

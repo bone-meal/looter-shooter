@@ -1,1 +1,1 @@
-!uncap;!wait 2;/god;!net wait_guest;!wait 6;!tree note h_start;!wait 40;!tree note h_end
+!uncap;!wait 2;/god;!net wait_guest;!wait 6;!tree note h_start;!wait 30;!tree note h_mid;!tree cuts h_mid;!wait 30;!tree note h_end;!tree cuts h_end
