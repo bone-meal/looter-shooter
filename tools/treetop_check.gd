@@ -105,6 +105,32 @@ func _init() -> void:
 			var why_s := _why_not_clear(p, 0.6)
 			if why_s != "":
 				_problem("deck %s: a stilt at (%.1f, %.1f): %s" % [d["id"], p.x, p.y, why_s])
+	# (part 3) the buys up high: each on its deck with room in front, guns once across the islands and up here, real perks
+	var weapons: Dictionary = DataStore.load_json("res://data/weapons.json")["weapons"]
+	var perks: Dictionary = DataStore.load_json("res://data/perks.json")["perks"]
+	var guns := {}
+	for wb: Dictionary in _land.wall_buys:
+		guns[String(wb["gun"])] = true
+	var reforges := 0
+	for b: Dictionary in tops.buys:
+		var at: Vector2 = b["at"]
+		var y := float(b["y"])
+		var front := at + Vector2(sin(float(b["yaw"])), cos(float(b["yaw"]))) * 1.8
+		if tops.deck_at(at.x, y, at.y) != int(b["deck"]) or tops.deck_at(front.x, y, front.y) != int(b["deck"]):
+			_problem("buy %s %s: it or the spot in front of it is off its deck" % [b["kind"], b["gun"] + b["perk"]])
+		match String(b["kind"]):
+			"wall":
+				if not weapons.has(String(b["gun"])) or guns.has(String(b["gun"])) or int(b["price"]) <= 0:
+					_problem("wall buy %s: unknown, priced %d, or a second board of that gun" % [b["gun"], int(b["price"])])
+				guns[String(b["gun"])] = true
+			"perk":
+				if not perks.has(String(b["perk"])):
+					_problem("perk %s up high does not exist" % b["perk"])
+			"reforge":
+				reforges += 1
+	if reforges > 1:
+		_problem("%d Re-forges up high (one machine)" % reforges)
+	print("TREETOP %d buys up high, %d guns on boards in all" % [tops.buys.size(), guns.size()])
 	var opened := 0
 	for i in tops.ways.size():
 		opened += 1 if tops.open(i) else 0

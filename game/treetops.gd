@@ -27,8 +27,8 @@ var _baskets: Array = []  # per way: the lift's basket (Node3D) or null
 var _offshore: Offshore
 
 
-func setup(config: Dictionary, land: RefCounted) -> void:
-	rules = TreetopRules.new(config, land)
+func setup(config: Dictionary, land: RefCounted, made: TreetopRules = null) -> void:
+	rules = made if made != null else TreetopRules.new(config, land)
 	_wood = SurfaceLibrary.material("painting_post", Color(0.4, 0.28, 0.15))
 	_thatch = SurfaceLibrary.material("fx_thatch", Color(0.72, 0.62, 0.36))
 	_rope = StandardMaterial3D.new()

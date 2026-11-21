@@ -113,9 +113,7 @@
   {"gun": "ak47", "price": 1200, "island": "painter", "at": [24.0, 8.0]},
   {"gun": "m16", "price": 1200, "island": "painter", "at": [-4.0, -28.0]},
   {"gun": "sniper_basic", "price": 1500, "island": "shoal", "at": [16.0, -20.0]},
-  {"gun": "grenade_launcher", "price": 2000, "island": "shoal", "at": [12.0, 24.0]},
-  {"gun": "m60", "price": 2500, "island": "wreck", "at": [-16.0, 20.0]},
-  {"gun": "rocket_launcher", "price": 3000, "island": "wreck", "at": [20.0, 12.0]}
+  {"gun": "grenade_launcher", "price": 2000, "island": "shoal", "at": [12.0, 24.0]}
  ],
  "spots": {
   "spawn": {"island": "home", "at": [0.0, 8.0]},

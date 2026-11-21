@@ -986,5 +986,93 @@
     "deck": "flare"
    }
   ]
- }
+ },
+ "buys": [
+  {
+   "kind": "wall",
+   "gun": "revolver",
+   "price": 1250,
+   "deck": "home_p1"
+  },
+  {
+   "kind": "wall",
+   "gun": "flare_gun",
+   "price": 1500,
+   "deck": "painter_p1"
+  },
+  {
+   "kind": "wall",
+   "gun": "harpoon_gun",
+   "price": 2250,
+   "deck": "shoal_p1"
+  },
+  {
+   "kind": "wall",
+   "gun": "m60",
+   "price": 2500,
+   "deck": "wreck_p1"
+  },
+  {
+   "kind": "perk",
+   "perk": "hair_trigger",
+   "deck": "home_p2"
+  },
+  {
+   "kind": "perk",
+   "perk": "deep_pockets",
+   "deck": "painter_p2"
+  },
+  {
+   "kind": "perk",
+   "perk": "quickhands",
+   "deck": "shoal_p2"
+  },
+  {
+   "kind": "perk",
+   "perk": "lucky_strike",
+   "deck": "wreck_p2"
+  },
+  {
+   "kind": "reforge",
+   "deck": "rig_main",
+   "at": [
+    104.0,
+    -2.6
+   ],
+   "yaw": 180
+  },
+  {
+   "kind": "perk",
+   "perk": "third_holster",
+   "deck": "rig_heli",
+   "at": [
+    105.4,
+    -9.4
+   ],
+   "yaw": 315
+  },
+  {
+   "kind": "wall",
+   "gun": "flamethrower",
+   "price": 3500,
+   "deck": "quarters",
+   "at": [
+    101.3,
+    17.35
+   ],
+   "yaw": 180
+  },
+  {
+   "kind": "wall",
+   "gun": "rocket_launcher",
+   "price": 3000,
+   "deck": "flare",
+   "at": [
+    108.35,
+    -28.0
+   ],
+   "yaw": 90
+  }
+ ],
+ "_about_buys": "(polish1 D4c part 3, director: the best buys high) `buys`: what stands up in the village and on the offshore complex: kind wall (a wall buy: gun, price), perk (that perk's machine moves up here from its spot in data/perks.json), reforge (the Re-forge moves here from data/upgrade_machine.json). On a stilt deck with no `at` it stands in the hut's middle, facing the deck's first opening; otherwise `at` = world-plan metres (islands' frame) and `yaw` degrees (0 = its front toward +z). A wall buy listed here is not in data/archipelago.json's wall_buys (each gun once)."
 }

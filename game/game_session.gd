@@ -88,6 +88,7 @@ const IslandRounds = preload("res://game/island_rounds.gd")
 const IslandNav = preload("res://game/island_nav.gd")
 const AmmoCrate = preload("res://game/ammo_crate.gd")
 const Treetops = preload("res://game/treetops.gd")
+const TreetopRules = preload("res://core/treetop_rules.gd")
 const PowerupRules = preload("res://core/powerup_rules.gd")
 const Archipelago = preload("res://core/archipelago.gd")
 const WallBuy = preload("res://game/wall_buy.gd")
@@ -277,6 +278,9 @@ var _box_owner := 0  # who spun it (a peer id; 1 alone)
 var _box_gun := {}  # the gun on offer
 var _upgrade_cfg: Dictionary  # data/upgrade_machine.json
 var _upgrade_spot := Vector2.ZERO
+var _upgrade_y := 0.0  # (polish1 D4c) the Re-forge's floor height (0 = the ground; it stands on the offshore complex)
+var _perk_y := {}  # (polish1 D4c) perk id -> floor height of its machine (only the ones up in the village / on the complex)
+var _tops_rules: TreetopRules  # (polish1 D4c) the treetop village's rules, made with the land (its buys move things up)
 var _upgrade_node := PerkMachine.new()
 var _traps: TrapState
 var _trap_cfg: Dictionary  # data/traps.json
@@ -439,11 +443,22 @@ func _ready() -> void:
 	LoadClock.mark("colosseum")
 	_land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
 	_perks = PerkState.new(DataStore.load_json("res://data/perks.json"))
+	_tops_rules = TreetopRules.new(DataStore.load_json("res://data/treetops.json"), _land)
+	var high_yaw := {}  # perk id -> yaw, for the machines up high
+	for buy: Dictionary in _tops_rules.buys:  # (polish1 D4c part 3) the best buys high: wall buys join the land's list
+		if buy["kind"] == "wall":
+			_land.wall_buys.append({"gun": buy["gun"], "price": buy["price"], "island": int(_tops_rules.decks[int(buy["deck"])]["island"]), "at": buy["at"], "yaw": buy["yaw"], "y": buy["y"]})
 	for id: String in _perks.ids():
 		_perk_spots[id] = _land.on_island(String(_perks.cfg["perks"][id]["island"]), _perks.cfg["perks"][id]["at"])
 		if _land.hut_perks.has(id):  # (polish1 D4b) this perk stands inside a hold-out hut
 			_perk_spots[id] = _land.hut_perks[id]["at"]
-		_land.keep_clear.append(_perk_spots[id])
+		for buy: Dictionary in _tops_rules.buys:
+			if buy["kind"] == "perk" and buy["perk"] == id:
+				_perk_spots[id] = buy["at"]
+				_perk_y[id] = buy["y"]
+				high_yaw[id] = buy["yaw"]
+		if not _perk_y.has(id):
+			_land.keep_clear.append(_perk_spots[id])
 	_power_cfg = DataStore.load_json("res://data/power.json")
 	_power = PowerState.new(_power_cfg)
 	for part: Dictionary in _power_cfg["parts"]:
@@ -498,7 +513,14 @@ func _ready() -> void:
 	_land.keep_clear.append_array(_box_spots)
 	_upgrade_cfg = DataStore.load_json("res://data/upgrade_machine.json")
 	_upgrade_spot = _land.on_island(String(_upgrade_cfg["island"]), _upgrade_cfg["at"])
-	_land.keep_clear.append(_upgrade_spot)
+	var upgrade_yaw := INF
+	for buy: Dictionary in _tops_rules.buys:
+		if buy["kind"] == "reforge":
+			_upgrade_spot = buy["at"]
+			_upgrade_y = buy["y"]
+			upgrade_yaw = buy["yaw"]
+	if _upgrade_y == 0.0:
+		_land.keep_clear.append(_upgrade_spot)
 	_trap_cfg = DataStore.load_json("res://data/traps.json")
 	_traps = TrapState.new(_trap_cfg["traps"])
 	for trap: Dictionary in _trap_cfg["traps"]:
@@ -522,8 +544,8 @@ func _ready() -> void:
 		machine.title = _perks.name_of(id)
 		machine.price = _perks.price(id)
 		machine.tint = _perks.color_of(id)
-		machine.position = _flat(_perk_spots[id])
-		machine.rotation.y = float(_land.hut_perks[id]["yaw"]) if _land.hut_perks.has(id) else _toward_middle(_perk_spots[id])
+		machine.position = _flat(_perk_spots[id]) + Vector3(0, float(_perk_y.get(id, 0.0)), 0)
+		machine.rotation.y = float(_land.hut_perks[id]["yaw"]) if _land.hut_perks.has(id) else (float(high_yaw[id]) if high_yaw.has(id) else _toward_middle(_perk_spots[id]))
 		add_child(machine)
 		_perk_machines[id] = machine
 	var parts: Array[Vector3] = []
@@ -558,8 +580,8 @@ func _ready() -> void:
 	_upgrade_node.title = "Re-forge"
 	_upgrade_node.price = int(_upgrade_cfg["reroll"])
 	_upgrade_node.tint = Color(0.75, 0.35, 0.95)
-	_upgrade_node.position = _flat(_upgrade_spot)
-	_upgrade_node.rotation.y = _toward_middle(_upgrade_spot)
+	_upgrade_node.position = _flat(_upgrade_spot) + Vector3(0, _upgrade_y, 0)
+	_upgrade_node.rotation.y = upgrade_yaw if upgrade_yaw != INF else _toward_middle(_upgrade_spot)
 	add_child(_upgrade_node)
 	add_child(_trap_nodes)
 	for i in _trap_centres.size():
@@ -570,7 +592,7 @@ func _ready() -> void:
 	add_child(_shelters)
 	_treetops = Treetops.new()
 	_treetops.position = Island.CENTER
-	_treetops.setup(DataStore.load_json("res://data/treetops.json"), _land)
+	_treetops.setup(DataStore.load_json("res://data/treetops.json"), _land, _tops_rules)
 	add_child(_treetops)
 	for crate: Dictionary in _land.ammo_crates:  # (polish1 D4b) one in every hold-out hut
 		var c := AmmoCrate.new()
@@ -583,7 +605,7 @@ func _ready() -> void:
 		var stand := WallBuy.new()
 		stand.gun = String(board["gun"])
 		stand.price = int(board["price"])
-		stand.position = Island.CENTER + Vector3((board["at"] as Vector2).x, 0.0, (board["at"] as Vector2).y)
+		stand.position = Island.CENTER + Vector3((board["at"] as Vector2).x, float(board.get("y", 0.0)), (board["at"] as Vector2).y)
 		stand.rotation.y = float(board["yaw"])
 		add_child(stand)
 	LoadClock.mark("island")
@@ -3570,7 +3592,7 @@ func _on_round_ended(number: int, kind: String) -> void:
 func _wall_buy_here() -> int:
 	if _in_arena or _in_fantasy or not _on_island(_player.global_position):
 		return -1
-	return _land.wall_buy_near(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z, WallBuy.REACH)
+	return _land.wall_buy_near(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z, WallBuy.REACH, _player.global_position.y - Island.CENTER.y)
 
 
 # True when one of our ready guns is of this body (plain or looted).
@@ -3727,7 +3749,7 @@ func _perk_here() -> String:
 		return ""
 	var at := Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z)
 	for id: String in _perk_spots:
-		if at.distance_to(_perk_spots[id]) <= float(_perks.cfg["reach"]):
+		if at.distance_to(_perk_spots[id]) <= float(_perks.cfg["reach"]) and absf(_player.global_position.y - Island.CENTER.y - float(_perk_y.get(id, 0.0))) < 1.6:
 			return id
 	return ""
 
@@ -4203,7 +4225,7 @@ func _keep_gun(gun: Dictionary) -> void:
 
 
 func _at_upgrade() -> bool:
-	return _island_side() and Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z).distance_to(_upgrade_spot) <= float(_upgrade_cfg["reach"])
+	return _island_side() and Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z).distance_to(_upgrade_spot) <= float(_upgrade_cfg["reach"]) and absf(_player.global_position.y - Island.CENTER.y - _upgrade_y) < 1.6
 
 
 # What the upgrade machine can do with the gun in hand: {"why": text} when nothing, else "reroll" (points, -1 = not

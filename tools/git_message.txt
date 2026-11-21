@@ -1,12 +1,11 @@
-Polish1 D4c part 2: the offshore complex in the middle sea
+Polish1 D4c part 3: the best buys high
 
-An oil-platform complex (director: like Mother Base) between the four
-ring islands: a cellar deck, main deck and helideck over each other, a
-quarters rig with a roof deck, a tank deck and a flare deck, joined by
-free stairs and catwalks and filled with a derrick, cranes, containers,
-tanks, pipes, pumps, lifeboats, a helipad and a burning flare. Each
-village's top ring joins it by a long catwalk on pylons, bought like a
-door. Leaves kept above the top rings. Walk tests clean.
+Up in the treetop village and on the offshore complex: the village huts
+hold the Revolver, Flare Gun, Harpoon Gun and M60 (7 m platforms) and
+Hair Trigger, Deep Pockets, Quickhands and Lucky Strike (13 m platforms);
+the complex holds the Re-forge (main deck), Third Holster (helideck), the
+Flamethrower (quarters) and the Rocket Launcher (flare deck). Wall buys,
+perk machines and the Re-forge now know their height.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

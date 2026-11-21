@@ -2281,8 +2281,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				_lines.append("BOX %s: %s on spot %d, offers %s, ready [%s], points %d" % [" ".join(words.slice(1)), String(box.get("state")), int(box.get("spot")), str((session.get("_box_gun") as Dictionary).get("tier", "-")) + " " + str((session.get("_box_gun") as Dictionary).get("body", "")), ", ".join(held), int((session.call("score") as RefCounted).get("points"))])
 		"upgrade":  # "!upgrade goto": stand at the upgrade machine
 			var spot: Vector2 = session.get("_upgrade_spot")
-			player.call("teleport", Vector3(500.0 + spot.x + 1.2, 0.15, spot.y + 1.2), 0.0)
-			player.call("look_at_point", Vector3(500.0 + spot.x, 1.2, spot.y))
+			var uy := float(session.get("_upgrade_y"))
+			var uyaw := float((session.get("_upgrade_node") as Node3D).rotation.y)
+			var ufront := spot + Vector2(sin(uyaw), cos(uyaw)) * 1.6 if uy > 0.0 else spot + Vector2(1.2, 1.2)  # (polish1 D4c: up on the complex, in front of it)
+			player.call("teleport", Vector3(500.0 + ufront.x, uy + 0.15, ufront.y), 0.0)
+			await get_tree().create_timer(0.3).timeout
+			player.call("look_at_point", Vector3(500.0 + spot.x, uy + 1.2, spot.y))
 		"trap":  # "!trap goto 3": stand at trap n's lever; "!trap <note>": which run, the living enemies, health
 			if words.size() > 2 and words[1] == "goto":
 				var spot: Vector2 = (session.get("_trap_levers") as Array)[int(words[2])]
@@ -2300,8 +2304,13 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var spot: Vector2 = (session.get("_perk_spots") as Dictionary)[words[2]]
 				var mid: Vector2 = ((session.get("_land") as RefCounted).get("islands") as Array)[int((session.get("_land") as RefCounted).call("island_near", spot.x, spot.y))]["at"]
 				var front := spot + (mid - spot).normalized() * 1.8
-				player.call("teleport", Vector3(500.0 + front.x, 0.15, front.y), 0.0)
-				player.call("look_at_point", Vector3(500.0 + spot.x, 1.3, spot.y))
+				var py := float((session.get("_perk_y") as Dictionary).get(words[2], 0.0))
+				if py > 0.0:  # (polish1 D4c) up high: in front of the machine (it faces the deck's opening)
+					var pyaw := float(((session.get("_perk_machines") as Dictionary)[words[2]] as Node3D).rotation.y)
+					front = spot + Vector2(sin(pyaw), cos(pyaw)) * 1.8
+				player.call("teleport", Vector3(500.0 + front.x, py + 0.15, front.y), 0.0)
+				await get_tree().create_timer(0.3).timeout
+				player.call("look_at_point", Vector3(500.0 + spot.x, py + 1.3, spot.y))
 			else:
 				var power: RefCounted = session.get("_power")
 				_lines.append("PERK %s: carried %s, health %d / %d, ready slots %d, power parts %d on %s, points %d" % [" ".join(words.slice(1)), str((session.get("_perks") as RefCounted).get("owned")), roundi(float(player.get("health").hp)), roundi(float(player.get("health").max_hp)),
@@ -2425,8 +2434,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var board: Dictionary = (land.get("wall_buys") as Array)[int(words[2])]
 			var at: Vector2 = board["at"]
 			var front := Vector2(sin(float(board["yaw"])), cos(float(board["yaw"])))
-			player.call("teleport", Vector3(500.0 + at.x + front.x * 2.2, 0.15, at.y + front.y * 2.2), 0.0)
-			player.call("look_at_point", Vector3(500.0 + at.x, 1.5, at.y))
+			var by := float(board.get("y", 0.0))  # (polish1 D4c: some stand up in the village / on the complex)
+			player.call("teleport", Vector3(500.0 + at.x + front.x * 2.2, by + 0.15, at.y + front.y * 2.2), 0.0)
+			await get_tree().create_timer(0.3).timeout
+			player.call("look_at_point", Vector3(500.0 + at.x, by + 1.5, at.y))
 		"debris":  # "!debris goto 0": stand 2.5 m before debris n on its first island's side, looking at it; "!debris <note>": where we are and what is cleared
 			var land: RefCounted = session.get("_land")
 			if words.size() > 2 and words[1] == "goto":
@@ -3270,9 +3281,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 									runs_d.append([Vector3(p0.x, y, p0.y), Vector3(p1.x, y, p1.y), "%s round" % dk["id"]])
 						elif dk["kind"] == "stilts":
 							var h2: Vector2 = dk["outer"]
-							for corner: Vector2 in [Vector2(1, 0), Vector2(0, 1)]:  # along the middle lines (the hut's posts stand at its corners)
-								var p0 := c - corner * (h2 - Vector2(0.8, 0.8))
-								var p1 := c + corner * (h2 - Vector2(0.8, 0.8))
+							for corner: Vector2 in [Vector2(1, 0), Vector2(0, 1)]:  # along the hut's sides, between its posts and the railing (its buy stands in the middle)
+								var side_off := Vector2(corner.y, corner.x) * (h2.x - 0.75)
+								var p0 := c - corner * (h2 - Vector2(0.8, 0.8)) + side_off
+								var p1 := c + corner * (h2 - Vector2(0.8, 0.8)) + side_off
 								runs_d.append([Vector3(p0.x, y, p0.y), Vector3(p1.x, y, p1.y), "%s across" % dk["id"]])
 					for w: Dictionary in tr2.get("ways"):
 						var on_isle := int((tr2.get("decks") as Array)[int(w["to"])]["island"]) == isle_d

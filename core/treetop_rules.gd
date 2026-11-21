@@ -16,6 +16,7 @@ const STAND := 0.9  # where a player stands to use a way end: this far from it
 var cfg: Dictionary
 var decks: Array = []  # {"id", "island": int, "kind": "ring" | "stilts", "layer": 1-3, "y": deck top, "at": Vector2 (ring: the trunk's middle at that height), "outer": ring reach / stilts half size Vector2, "inner": ring hole, "hut": bool, "gaps": [Vector2: openings in the railing], "busy": [Vector2: spots taken by a lift or a ladder's foot, no opening]}
 var ways: Array = []  # {"id", "kind", "from": deck index or -1 (ground), "to": deck index, "price", "ends": [Vector3, Vector3] (stand spots: low / from end first), "open": bool, + geometry: ladder "foot" / "top" Vector3 + "face" Vector2 (toward the deck); bridge "a" / "b" Vector3; lift "foot" / "top" Vector3 + "face"}
+var buys: Array = []  # (part 3) {"kind": "wall" | "perk" | "reforge", "gun", "price", "perk", "deck": index, "at": Vector2, "y": float, "yaw": radians}
 var _deck_index := {}
 
 
@@ -66,6 +67,17 @@ func _init(config: Dictionary, land: RefCounted) -> void:
 			_place_climb(way, land)
 		elif way["kind"] == "catwalk":
 			way["pylons"] = _pylons(way, land)
+	for b: Dictionary in cfg.get("buys", []):  # (part 3) the best buys high
+		var di := int(_deck_index[String(b["deck"])])
+		var deck: Dictionary = decks[di]
+		var at: Vector2 = deck["at"]
+		var yaw := deg_to_rad(float(b.get("yaw", 0.0)))
+		if b.has("at"):
+			at = Vector2(float(b["at"][0]), float(b["at"][1]))
+		elif not (deck["gaps"] as Array).is_empty():  # in the hut's middle, its front toward the deck's first opening
+			var to: Vector2 = (deck["gaps"] as Array)[0] - at
+			yaw = atan2(to.x, to.y)
+		buys.append({"kind": String(b["kind"]), "gun": String(b.get("gun", "")), "price": int(b.get("price", 0)), "perk": String(b.get("perk", "")), "deck": di, "at": at, "y": float(deck["y"]), "yaw": yaw})
 
 
 # A long catwalk's pylons, about every 15 m: in the sea, or on flat land clear of rocks and trees (nudged along the

@@ -14,7 +14,7 @@ var cfg: Dictionary
 var sea_level: float
 var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "grass", "palms", "scatter", "hills": [[at, radius, height]]}
 var blocks: Array = []  # every ridge / ruin / boulder / giant tree in world-plan metres: {"kind", "island", "a": Vector2, "b": Vector2, "half_width", "height"} (+ trees: "core", "girth")
-var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)}
+var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)} (+ "y" for the treetop / offshore ones, added by the session)
 var shelters: Array = []  # {"island": int, "at": Vector2, "yaw": the way its door faces (toward its island's middle)}
 # (polish1 D4b hold-out huts) what stands inside each hut: its wall buy joins `wall_buys` (on the back wall, facing in),
 # its perk machine and its ammo crate are here: perk id -> {"at", "yaw"}; [{"at", "yaw", "price"}]
@@ -229,9 +229,9 @@ func ammo_price(wall_buy: int) -> int:
 
 
 # The wall buy within `metres` of a spot, -1 = none.
-func wall_buy_near(x: float, z: float, metres: float) -> int:
+func wall_buy_near(x: float, z: float, metres: float, y := 0.0) -> int:
 	for i in wall_buys.size():
-		if Vector2(x, z).distance_to(wall_buys[i]["at"]) <= metres:
+		if Vector2(x, z).distance_to(wall_buys[i]["at"]) <= metres and absf(y - float(wall_buys[i].get("y", 0.0))) < 1.6:  # (polish1 D4c: some stand up high)
 			return i
 	return -1
 
