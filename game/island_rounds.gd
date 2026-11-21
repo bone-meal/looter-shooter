@@ -27,6 +27,8 @@ var land: RefCounted  # core/archipelago.gd: where the islands are and where an 
 var shelters: Node3D  # game/shelters.gd: where an enemy goes when its prey sits in a hut (null = there are none)
 var one_blow := Callable()  # func() -> bool, handed to every enemy sent in (game/enemy.gd `one_blow`)
 var nav: Node  # (polish1 D4a) game/island_nav.gd: its map is handed to every enemy sent in (they follow paths)
+var treetops: RefCounted  # (polish1 D4d) core/treetop_rules.gd: decks, climbs, ropes (null = no treetop village)
+signal way_cut(way: int)  # (polish1 D4d) a rope-cutter cut this treetop way (the session drops it for everybody)
 var active := true  # false on a machine that only watches (a client): the host runs the rounds
 
 var _cfg: Dictionary
@@ -149,10 +151,11 @@ func _put_away() -> void:
 
 
 func _send_in(id: String, here: Array) -> void:
-	var base: Dictionary = _cfg["enemies"][id] if (_cfg["enemies"] as Dictionary).has(id) else _bosses[id]
-	var stats := stats_of(id, rules.number)
 	var prey: Node3D = here[_rng.randi() % here.size()]
 	var at := prey.global_position - Island.CENTER
+	id = _up_high(id, at)
+	var base: Dictionary = _cfg["enemies"][id] if (_cfg["enemies"] as Dictionary).has(id) else _bosses[id]
+	var stats := stats_of(id, rules.number)
 	var isle: int = land.island_near(at.x, at.z)
 	var to_prey: Vector2 = Vector2(at.x, at.z) - (land.islands[isle]["at"] as Vector2)
 	var bearing := atan2(to_prey.y, to_prey.x) if to_prey.length() > 2.0 else NAN  # out of the sea on the prey's side of the island
@@ -161,7 +164,10 @@ func _send_in(id: String, here: Array) -> void:
 	if not spot.is_finite():
 		rules.put_back([id])  # no room in the sea just now: it comes a moment later
 		return
+	if String(base.get("comes", "")) == "sky":  # (polish1 D4d) a glider comes down out of the sky over the sea
+		spot.y = maxf(at.y, 0.0) + 22.0
 	var enemy: Node3D = director.call("spawn_custom", id, stats, Island.CENTER + spot + Vector3(0, 0.2, 0))
+	_tree_wits(enemy, base)
 	enemy.set_meta("island", true)
 	enemy.set_meta("tier", rules.number)
 	enemy.set("one_blow", one_blow)
@@ -177,6 +183,7 @@ func _send_in(id: String, here: Array) -> void:
 # enemy of the round it is host-run and shown to the others; it carries meta "quest_boss". Returns it.
 func send_at(id: String, at: Vector3, number: int) -> Node3D:
 	var enemy: Node3D = director.call("spawn_custom", id, stats_of(id, number), at)
+	_tree_wits(enemy, _cfg["enemies"][id] if (_cfg["enemies"] as Dictionary).has(id) else _bosses.get(id, {}))
 	enemy.set_meta("island", true)
 	enemy.set_meta("tier", number)
 	enemy.set_meta("quest_boss", true)
@@ -190,6 +197,57 @@ func send_at(id: String, at: Vector3, number: int) -> Node3D:
 	_alive.append(enemy)
 	spawned.emit(enemy)
 	return enemy
+
+
+# (polish1 D4d) While the prey stands up on a deck, some of the round's enemies (and every crab) come from that layer's
+# tree mix: climbers, gliders, rope-cutters and the tough ones. `at` = the prey in the islands' frame.
+func _up_high(id: String, at: Vector3) -> String:
+	if treetops == null or id.begins_with("boss") or not _cfg.has("tree_mix"):
+		return id
+	var deck := int(treetops.call("deck_at", at.x, at.y, at.z))
+	if deck < 0:
+		return id
+	var d: Dictionary = (treetops.get("decks") as Array)[deck]
+	var layer := 3 if d["kind"] == "rig" else int(d["layer"])
+	if id != "sea_crawler" and _rng.randf() >= float(_cfg.get("tree_share", 0.6)):
+		return id if String(_cfg["enemies"][id].get("comes", "")) != "nearest_shore" else "climber"
+	var weights := {}
+	for row: Dictionary in _cfg["tree_mix"]:
+		if int(row["layer"]) == layer and rules.number >= int(row["from"]):
+			weights = row["enemies"]
+	if weights.is_empty():
+		return "climber" if id == "sea_crawler" else id
+	var total := 0.0
+	for k: String in weights:
+		total += float(weights[k])
+	var roll := _rng.randf() * total
+	for k: String in weights:
+		roll -= float(weights[k])
+		if roll <= 0.0:
+			return k
+	return String(weights.keys()[0])
+
+
+# (polish1 D4d) Climbers get the treetop rules' routes, rope-cutters their ropes (in world spots).
+func _tree_wits(enemy: Node3D, base: Dictionary) -> void:
+	if treetops == null:
+		return
+	if bool(base.get("climbs", false)):
+		enemy.set("route", func(from: Vector3, to: Vector3) -> Dictionary:
+			var plan: Dictionary = treetops.call("route", from - Island.CENTER, to - Island.CENTER, float(land.height_at(from.x - Island.CENTER.x, from.z - Island.CENTER.z)))
+			for k: String in ["goal"]:
+				if plan.has(k):
+					plan[k] = (plan[k] as Vector3) + Island.CENTER
+			if plan.has("climb"):
+				plan["climb"] = [(plan["climb"][0] as Vector3) + Island.CENTER, (plan["climb"][1] as Vector3) + Island.CENTER]
+			return plan)
+	if bool(base.get("cuts", false)):
+		enemy.set("cut_job", func(from: Vector3) -> Dictionary:
+			var job: Dictionary = treetops.call("cut_target", from - Island.CENTER)
+			if job.has("at"):
+				job["at"] = (job["at"] as Vector3) + Island.CENTER
+			return job)
+		enemy.connect("cut_done", func(way: int) -> void: way_cut.emit(way))
 
 
 # The nuke: everything of the round that is ashore dies; a boss loses `boss_share` of its full health instead.

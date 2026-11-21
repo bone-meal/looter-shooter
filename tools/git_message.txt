@@ -1,11 +1,13 @@
-Polish1 D4c part 3: the best buys high
+Polish1 D4d part 1: tree enemies climb, glide and cut ropes
 
-Up in the treetop village and on the offshore complex: the village huts
-hold the Revolver, Flare Gun, Harpoon Gun and M60 (7 m platforms) and
-Hair Trigger, Deep Pockets, Quickhands and Lucky Strike (13 m platforms);
-the complex holds the Re-forge (main deck), Third Holster (helideck), the
-Flamethrower (quarters) and the Rocket Launcher (flare deck). Wall buys,
-perk machines and the Re-forge now know their height.
+Climbers go up trunks and stilts to the treetop decks by planned routes
+(climb spots per deck, bridges, stairs and catwalks between), gliders
+come out of the sky and swoop, rope-cutters go for bought rope bridges
+and ladders and cut them (players mend them free by holding interact).
+Tough climbing versions of the drowned, runner and brute. While the prey
+stands up high a share of the round (and every crab) comes from that
+layer's tree mix. No melee through the planks. Models are stand-ins
+until part 2.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

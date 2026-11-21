@@ -25,6 +25,11 @@ func move_sign(distance: float) -> int:
 	return 0
 
 
+# (polish1 D4d) True when the next attack may come (a glider waits for it before it swoops).
+func ready_at(now: float) -> bool:
+	return now >= _next_attack_time
+
+
 # Returns true if an attack fires now (cooldown started).
 func try_attack(distance: float, now: float) -> bool:
 	if distance > attack_range or now < _next_attack_time:

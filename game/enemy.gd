@@ -6,7 +6,8 @@ signal died(enemy: Node)
 signal attacked(origin: Vector3, aim: Vector3)  # a ranged attack started (online: the host tells other machines to show it)
 signal puppet_hit(damage: float)  # a puppet was shot (online: the damage goes to the host as an intent)
 signal felled(enemy: Node)  # killed by another creature, not by a player: nobody is paid (the fantasy tribes fighting each other)
-signal puppet_effect(kind: String, amount: float, seconds: float)  # a puppet was slowed, burned, frozen, weakened or pushed (the host decides if it sticks)
+signal puppet_effect(kind: String, amount: float, seconds: float)
+signal cut_done(way: int)  # (polish1 D4d) a rope-cutter finished cutting this treetop way (the host's island rounds pass it on)  # a puppet was slowed, burned, frozen, weakened or pushed (the host decides if it sticks)
 
 const GullFeast = preload("res://game/gull_feast.gd")
 const HealthState = preload("res://core/health_state.gd")
@@ -36,6 +37,17 @@ var net_pos := Vector3.ZERO
 var net_yaw := 0.0
 var walker: Callable  # fantasy world: (from, step) -> where the body ends up. When set the enemy moves by it without physics: around houses, trees and deep water, the same on every machine
 var nav_map := RID()  # (polish1 D4a) island enemies: the islands' navigation map (game/island_nav.gd); unset = straight at the target
+var route := Callable()  # (polish1 D4d) climbing enemies: func(from: Vector3, to: Vector3) -> Dictionary (core/treetop_rules.gd route, world spots)
+var cut_job := Callable()  # (polish1 D4d) rope-cutters: func(from: Vector3) -> {"way", "at": Vector3 world} or {} (the nearest bought rope way)
+var _plan := {}
+var _plan_at := 0.0
+var _climb := {}  # while climbing: {"points": [Vector3 world ...], "i": int}
+var _cut := {}
+var _cut_held := 0.0
+var _orbit := 0.0  # gliders: where round its prey it cruises
+var _swoop := false
+var _climb_at := 0.0  # (no climbing again for a moment after one: it may have to walk off first)
+var _cut_rest := 0.0  # a rope-cutter hunts players until this engine time after each cut
 var _path := PackedVector3Array()
 var _path_i := 0
 var _path_at := 0.0
@@ -301,9 +313,8 @@ func set_run_fx(fx: Dictionary) -> void:
 
 # The way to the target along the navigation path (asked again every half second or when the target has moved),
 # flat; ZERO when there is no path (then it goes straight as before).
-func _nav_step() -> Vector3:
+func _nav_step(goal: Vector3) -> Vector3:
 	var now := Time.get_ticks_msec() / 1000.0
-	var goal := _target.global_position
 	if now >= _path_at or goal.distance_to(_path_goal) > 2.0 or _path_i >= _path.size():
 		_path = NavigationServer3D.map_get_path(nav_map, global_position, goal, true)
 		_path_i = 1
@@ -339,26 +350,44 @@ func _physics_process(delta: float) -> void:
 		return
 	if not is_instance_valid(_target):
 		return
+	if not _climb.is_empty():  # (polish1 D4d) up or down a trunk or a stilt
+		_climbing(delta)
+		return
+	if bool(_stats.get("flies", false)):  # (polish1 D4d) a glider
+		_fly(delta)
+		return
 	if not walker.is_valid() and not is_on_floor():
 		velocity.y -= _gravity * delta
 	if _temper != "" and _roam(delta):
 		return
 
-	var flat := (space.to_local(_target.global_position) - position) if space != null else _target.global_position - global_position
+	var goal := _errand()  # (polish1 D4d) climbers and rope-cutters may walk somewhere else first
+	var errand := goal.is_finite()
+	if not errand:
+		goal = _target.global_position
+	var to_target := (space.to_local(_target.global_position) - position) if space != null else _target.global_position - global_position
+	to_target.y = 0.0
+	var flat := (space.to_local(goal) - position) if space != null else goal - global_position
 	flat.y = 0.0
 	var distance := flat.length()
 	var dir := flat / distance if distance > 0.01 else Vector3.ZERO
-	if nav_map.is_valid() and distance > 2.5:  # (polish1 D4a) round ridges, ruins, huts and up hills by the islands' navigation mesh
-		var step := _nav_step()
+	if nav_map.is_valid() and distance > (0.6 if errand else 2.5):  # (polish1 D4a) round ridges, ruins, huts and up hills by the islands' navigation mesh
+		var step := _nav_step(goal)
 		if step != Vector3.ZERO:
 			dir = step
+	if errand:
+		distance = maxf(distance, to_target.length())  # (it keeps walking to its errand; blows are for its prey only)
+		if _at_cut(delta):
+			dir = Vector3.ZERO
 	if distance > 0.01:
 		rotation.y = atan2(-dir.x, -dir.z)
 	var now := Time.get_ticks_msec() / 1000.0
 	var level := _level_with(_target)  # (a target up on a ledge: keep going for it, the dungeon walker climbs)
 	if not level and distance < 0.4:
 		dir = Vector3(-sin(rotation.y), 0.0, -cos(rotation.y))  # (right under him at the ledge's foot: on the way it faced)
-	var move: float = (float(_brain.move_sign(distance)) if level else 1.0) * _speed * (1.0 - _slow_amount if now < _slow_until else 1.0)
+	var move: float = (1.0 if errand else (float(_brain.move_sign(distance)) if level else 1.0)) * _speed * (1.0 - _slow_amount if now < _slow_until else 1.0)
+	if dir == Vector3.ZERO:
+		move = 0.0
 	if now < _burn_until and now >= _burn_tick:
 		_burn_tick = now + 0.5
 		on_hit(_burn_dps * 0.5)
@@ -407,9 +436,11 @@ func _physics_process(delta: float) -> void:
 	if frozen:
 		return
 	_animate(delta)
+	if errand:
+		distance = to_target.length()
 	if _strike_at > 0.0 and now >= _strike_at:
 		_strike_at = 0.0
-		_land_blow(distance)
+		_land_blow(distance if _level_with(_target) else INF)
 	elif not busy and (order_attack or not ordered) and level and _brain.try_attack(distance, now):
 		_attack()
 
@@ -417,9 +448,117 @@ func _physics_process(delta: float) -> void:
 # A melee foe in a dungeon's space reaches only a target about level with it, not one on a ledge above or below it
 # (sea step 9c-2).
 func _level_with(target: Node3D) -> bool:
-	if space == null or not space.has_method("usable_at") or String(_stats.get("attack_type", "")) != "melee":
+	if String(_stats.get("attack_type", "")) != "melee":
+		return true
+	if space == null:  # (polish1 D4d) no clawing a player on a deck above (or below) through the planks
+		return bool(_stats.get("flies", false)) or absf(target.global_position.y - global_position.y) <= 2.2
+	if not space.has_method("usable_at"):
 		return true  # (only in a dungeon's space: decks keep their old reach)
 	return absf(space.to_local(target.global_position).y - position.y) <= 1.2
+
+
+# (polish1 D4d) A climber's or rope-cutter's next place to walk to (world), INF = straight for its prey. Starts a climb
+# when it stands at one.
+func _errand() -> Vector3:
+	var now := Time.get_ticks_msec() / 1000.0
+	var wants := _target.global_position
+	if bool(_stats.get("cuts", false)) and cut_job.is_valid() and now >= _cut_rest:
+		if now >= _plan_at or _cut.is_empty():
+			_cut = cut_job.call(global_position)
+		if not _cut.is_empty():
+			wants = _cut["at"]
+	if not bool(_stats.get("climbs", false)) or not route.is_valid():
+		return wants if not _cut.is_empty() else Vector3.INF
+	if now >= _plan_at:
+		_plan_at = now + randf_range(0.4, 0.6)
+		_plan = route.call(global_position, wants)
+	if _plan.has("climb") and now >= _climb_at:
+		var start: Vector3 = _plan["climb"][0]
+		var end: Vector3 = _plan["climb"][1]
+		if Vector2(start.x - global_position.x, start.z - global_position.z).length() < 0.9 and absf(start.y - global_position.y) < 1.4:
+			var over := maxf(start.y, end.y) + 1.4  # over the railing
+			var pts: Array = [Vector3(start.x, over, start.z), Vector3(end.x, over, end.z), end] if end.y > start.y else [Vector3(start.x, over, start.z), Vector3(end.x, over, end.z), end]
+			_climb = {"points": pts, "i": 0}
+			collision_mask = 0  # (through the railing and leaves while it climbs; bullets still find it)
+			_plan = {}
+			return Vector3.INF
+	if _plan.has("goal"):
+		return _plan["goal"]
+	return wants if not _cut.is_empty() else Vector3.INF
+
+
+# A rope-cutter at its rope: it stands and cuts; when done the way falls (cut_done). True while it is cutting.
+func _at_cut(delta: float) -> bool:
+	if _cut.is_empty():
+		return false
+	var at: Vector3 = _cut["at"]
+	if Vector2(at.x - global_position.x, at.z - global_position.z).length() > 1.3 or absf(at.y - global_position.y) > 1.5:
+		_cut_held = 0.0
+		return false
+	_cut_held += delta
+	if _cut_held >= float(_stats.get("cut_seconds", 2.5)):
+		_cut_held = 0.0
+		cut_done.emit(int(_cut["way"]))
+		_cut = {}
+		_plan_at = 0.0
+		_cut_rest = Time.get_ticks_msec() / 1000.0 + 12.0
+	return true
+
+
+# Up or down along its climbing points at climb_speed, then back to walking.
+func _climbing(delta: float) -> void:
+	var pts: Array = _climb["points"]
+	var i := int(_climb["i"])
+	var to: Vector3 = pts[i]
+	var step := float(_stats.get("climb_speed", 3.0)) * delta
+	var d := to - global_position
+	if d.length() <= step:
+		global_position = to
+		_climb["i"] = i + 1
+		if i + 1 >= pts.size():
+			_climb = {}
+			collision_mask = 3
+			velocity = Vector3.ZERO
+			_climb_at = Time.get_ticks_msec() / 1000.0 + 1.0
+	else:
+		global_position += d / d.length() * step
+		if absf(d.y) < 0.1:
+			rotation.y = atan2(-d.x, -d.z)
+	velocity = d.normalized() * float(_stats.get("climb_speed", 3.0))  # (drives the limbs)
+	_animate(delta)
+
+
+# (polish1 D4d) A glider: cruises a few metres over its prey, circling, swoops in for a blow and climbs away again.
+func _fly(delta: float) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	var prey := _target.global_position + Vector3(0, 1.2, 0)
+	var me := global_position + Vector3(0, _size.y * 0.5, 0)
+	_orbit += delta * 0.6
+	var goal := prey + Vector3(cos(_orbit) * 6.0, float(_stats.get("cruise", 4.0)), sin(_orbit) * 6.0)
+	if not _swoop and _brain.ready_at(now) and me.distance_to(prey) < 14.0:
+		_swoop = true
+	if _swoop:
+		goal = prey
+	var to := goal - me
+	var pace := _speed * (1.0 - _slow_amount if now < _slow_until else 1.0)
+	if now < _freeze_until:
+		pace = 0.0
+	velocity = to.normalized() * minf(pace, to.length() * 3.0) + _push
+	_push = _push.move_toward(Vector3.ZERO, PUSH_DECAY * delta)
+	move_and_slide()
+	if is_on_wall() or is_on_ceiling():
+		global_position.y += 2.0 * delta  # (over what is in the way)
+	if Vector2(velocity.x, velocity.z).length() > 0.3:
+		rotation.y = atan2(-velocity.x, -velocity.z)
+	_animate(delta)
+	if _strike_at > 0.0 and now >= _strike_at:
+		_strike_at = 0.0
+		_land_blow(me.distance_to(prey))
+		_swoop = false
+	elif _swoop and me.distance_to(prey) <= float(_stats["attack_range"]) and _brain.try_attack(me.distance_to(prey), now):
+		_attack()
+		if _strike_at <= 0.0:
+			_swoop = false
 
 
 func on_hit(damage: float, point: Vector3 = Vector3.ZERO, normal: Vector3 = Vector3.UP) -> void:

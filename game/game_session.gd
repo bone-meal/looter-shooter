@@ -191,6 +191,7 @@ var _bhop_best := {}  # stage id -> best time of this character (saved "bhop_bes
 var _ocean: Node3D  # (polish1 item 25) the gun side's one sea, kept under the camera
 var _course_fog := false  # the server's horizon haze is on
 const COURSE_DOOR_REACH := 2.6
+const MEND_SECONDS := 3.0  # (polish1 D4d) holding interact this long mends a rope a rope-cutter cut
 var _hud_timer := 0.0
 var _painting := Vector3.ZERO
 var _painting_fantasy := Vector3.ZERO
@@ -245,6 +246,7 @@ var _knife_rolled := false  # this character has its knife type
 var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
 var _ammo_crates: Array = []  # (polish1 D4b) game/ammo_crate.gd, one per hold-out hut
 var _treetops: Treetops  # (polish1 D4c) the treetop village: decks, ladders, rope bridges, lifts
+var _mend_held := 0.0  # (polish1 D4d) seconds interact has been held at a cut rope
 var _lift_ride: Dictionary = {}  # (polish1 D4c) while riding a lift: {"way", "up": bool, "t": 0..1}
 var _island_nav := IslandNav.new()  # (polish1 D4a) the islands' navigation mesh: island enemies path round obstacles
 var _first_look := false  # a new character is still in its first customize menu: the rounds wait
@@ -811,6 +813,8 @@ func _ready() -> void:
 	add_child(_island_nav)
 	_island_nav.setup(self, _land, Island.CENTER)
 	_rounds.nav = _island_nav
+	_rounds.treetops = _tops_rules  # (polish1 D4d) climbers, gliders and rope-cutters go up there
+	_rounds.way_cut.connect(_on_way_cut)
 	_island_nav.rebuild.call_deferred()  # once everything on the islands stands
 	_player.unstuck.ground_height = _island_ground  # (director: no getting stuck, as in Aurelind) under the islands' ground = back on top
 	_rounds.shelters = _shelters
@@ -916,6 +920,8 @@ func _ready() -> void:
 		net.rounds.way_opened.connect(_on_way_opened)
 		net.rounds.way_billed.connect(_on_way_billed)
 		net.rounds.lift_ridden.connect(_on_lift_ridden)
+		net.rounds.way_cut_told.connect(_on_way_cut_told)  # (polish1 D4d)
+		net.rounds.mend_asked.connect(_mend_way)
 		var downs: Dictionary = _rounds.config()["downs"]
 		net.downs.reach = float(downs["reach"])
 		net.downs.health_share = float(downs["health"])
@@ -1901,6 +1907,8 @@ func _prompt() -> String:
 	var way := _treetop_way_here()
 	if way >= 0:  # (polish1 D4c) a ladder / rope bridge / lift of the treetop village
 		var w: Dictionary = _treetops.rules.ways[way]
+		if _treetops.rules.cut.has(way):  # (polish1 D4d) a rope-cutter cut it: mended free by holding interact
+			return "[hold %s] Mend the cut %s (%d%%)" % [key, "rope bridge" if String(w["kind"]) == "bridge" else "rope ladder", roundi(_mend_held / MEND_SECONDS * 100.0)]
 		var names := {"ladder": "Lower the rope ladder", "bridge": "Lay the rope bridge", "lift": "Rig the lift", "catwalk": "Build the catwalk to the platform"}
 		if not _treetops.rules.is_open(way):
 			return "[%s] %s (%d points)" % [key, names[String(w["kind"])], _treetops.rules.price(way)]
@@ -2032,7 +2040,7 @@ func _interact() -> void:
 		travel("island")
 	elif _window_here() >= 0 and _shelters.rules.is_door(_window_here()) and (_shelters.rules.open[_window_here()] == 1 or _shelters.rules.boards[_window_here()] >= _shelters.rules.full_of(_window_here())):
 		_toggle_door(_window_here())
-	elif _treetop_way_here() >= 0 and (not _treetops.rules.is_open(_treetop_way_here()) or String(_treetops.rules.ways[_treetop_way_here()]["kind"]) == "lift"):
+	elif _treetop_way_here() >= 0 and not _treetops.rules.cut.has(_treetop_way_here()) and (not _treetops.rules.is_open(_treetop_way_here()) or String(_treetops.rules.ways[_treetop_way_here()]["kind"]) == "lift"):
 		_use_treetop_way(_treetop_way_here())
 	elif _ammo_crate_here() >= 0:
 		_use_ammo_crate(_ammo_crate_here())
@@ -4467,8 +4475,14 @@ func _use_treetop_way(way: int) -> void:
 
 
 func _open_way(way: int, show_it: bool) -> void:
+	if _treetops.rules.cut.has(way):  # (polish1 D4d) the host mended it
+		_treetops.rules.mend(way)
+		_treetops.show_way(way)
+		_after_way_change()
+		return
 	if _treetops.rules.open(way):
 		_treetops.show_way(way)
+		_after_way_change()
 		if show_it and _island_side():
 			_sounds.call("play", "wall_buy")
 
@@ -4491,6 +4505,56 @@ func _on_lift_ridden(way: int, up: bool) -> void:
 	var tw := create_tween()
 	tw.tween_method(func(t: float) -> void: _treetops.set_basket(way, t), 0.0 if up else 1.0, 1.0 if up else 0.0, float(_treetops.rules.cfg["lift_seconds"]))
 	tw.tween_callback(func() -> void: _treetops.set_basket(way, 0.0))
+
+
+# (polish1 D4d) Where the rounds run: a rope-cutter cut a rope bridge or ladder. It drops for everybody.
+func _on_way_cut(way: int) -> void:
+	if _treetops.rules.cut_way(way):
+		_treetops.show_way(way)
+		_after_way_change()
+		if _island_side():
+			_sounds.call("play", "board_tear")
+			_player_hud.notice("A rope-cutter cut the %s! Hold %s at it to mend it." % ["rope bridge" if String(_treetops.rules.ways[way]["kind"]) == "bridge" else "rope ladder", _key("interact")])
+		if net != null:
+			net.rounds.tell_cut(way)
+
+
+# As a client: the host says a way was cut.
+func _on_way_cut_told(way: int) -> void:
+	if _treetops != null and way >= 0 and way < _treetops.rules.ways.size() and _treetops.rules.cut_way(way):
+		_treetops.show_way(way)
+		_player_hud.notice("A rope-cutter cut a %s!" % ("rope bridge" if String(_treetops.rules.ways[way]["kind"]) == "bridge" else "rope ladder"))
+
+
+# Holding interact at a cut rope mends it (free); online the host checks we stand there and mends it for all.
+func _hold_mending(delta: float) -> void:
+	var way := _treetop_way_here()
+	if way < 0 or not _treetops.rules.cut.has(way) or _player.downed or not Input.is_action_pressed("interact"):
+		_mend_held = 0.0
+		return
+	_mend_held += delta
+	if _mend_held < MEND_SECONDS:
+		return
+	_mend_held = 0.0
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_mend(way)
+		return
+	_mend_way(way)
+
+
+func _mend_way(way: int) -> void:
+	if _treetops.rules.mend(way):
+		_treetops.show_way(way)
+		_after_way_change()
+		_sounds.call("play", "board_fix")
+		if net != null:
+			net.rounds.tell_way(way)
+
+
+# A bridge or catwalk came or went: the enemies' navigation mesh follows (in the background).
+func _after_way_change() -> void:
+	if _island_nav != null:
+		get_tree().create_timer(0.2).timeout.connect(_island_nav.rebuild)
 
 
 # Every frame: ladders of the village climb (Source style, like the bhop course's), a lift ride carries the rider.
@@ -4518,6 +4582,8 @@ func _run_treetops(delta: float) -> void:
 		return
 	var p := _player.global_position - Island.CENTER
 	_player.ladder = _island_side() and _treetops.rules.on_ladder(p.x, p.y, p.z)
+	if _island_side():
+		_hold_mending(delta)
 
 
 # (polish1 D4b) The ammo crate our player stands at, -1 = none.

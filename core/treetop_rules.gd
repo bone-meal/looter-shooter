@@ -16,6 +16,8 @@ const STAND := 0.9  # where a player stands to use a way end: this far from it
 var cfg: Dictionary
 var decks: Array = []  # {"id", "island": int, "kind": "ring" | "stilts", "layer": 1-3, "y": deck top, "at": Vector2 (ring: the trunk's middle at that height), "outer": ring reach / stilts half size Vector2, "inner": ring hole, "hut": bool, "gaps": [Vector2: openings in the railing], "busy": [Vector2: spots taken by a lift or a ladder's foot, no opening]}
 var ways: Array = []  # {"id", "kind", "from": deck index or -1 (ground), "to": deck index, "price", "ends": [Vector3, Vector3] (stand spots: low / from end first), "open": bool, + geometry: ladder "foot" / "top" Vector3 + "face" Vector2 (toward the deck); bridge "a" / "b" Vector3; lift "foot" / "top" Vector3 + "face"}
+var climbs: Array = []  # (polish1 D4d) where climbing enemies go up / down: {"deck": index, "from": lower deck index or -1 (ground), "foot": Vector3 (where it starts, at the bottom), "top": Vector3 (where it steps off on the deck)}
+var cut := {}  # (polish1 D4d) way index -> true while a rope-cutter has cut it (players mend it for free)
 var buys: Array = []  # (part 3) {"kind": "wall" | "perk" | "reforge", "gun", "price", "perk", "deck": index, "at": Vector2, "y": float, "yaw": radians}
 var _deck_index := {}
 
@@ -67,6 +69,7 @@ func _init(config: Dictionary, land: RefCounted) -> void:
 			_place_climb(way, land)
 		elif way["kind"] == "catwalk":
 			way["pylons"] = _pylons(way, land)
+	_place_climbs(land)
 	for b: Dictionary in cfg.get("buys", []):  # (part 3) the best buys high
 		var di := int(_deck_index[String(b["deck"])])
 		var deck: Dictionary = decks[di]
@@ -220,6 +223,148 @@ func _place_climb(way: Dictionary, land: RefCounted) -> void:
 	way["ends"] = [Vector3(below.x, foot_y, below.y), Vector3(above.x, float(top["y"]), above.y)]
 
 
+# (polish1 D4d) Climbing spots: a ring is climbed from the ring below (the first from the ground) just outside its own
+# edge, over the railing; a platform on stilts from the ground at the middle of its freest side. Offshore decks have
+# none (climbers reach them by the catwalks).
+func _place_climbs(land: RefCounted) -> void:
+	for i in decks.size():
+		var deck: Dictionary = decks[i]
+		if deck["kind"] == "rig":
+			continue
+		var below := -1
+		if deck["kind"] == "ring" and int(deck["layer"]) > 1:
+			for j in decks.size():
+				if decks[j]["kind"] == "ring" and int(decks[j]["island"]) == int(deck["island"]) and int(decks[j]["layer"]) == int(deck["layer"]) - 1:
+					below = j
+		var at: Vector2 = deck["at"]
+		var best := Vector2.ZERO
+		var best_score := -INF
+		for k in 24:
+			var dir := Vector2(cos(TAU * float(k) / 24.0), sin(TAU * float(k) / 24.0))
+			if deck["kind"] == "stilts" and k % 6 != 0:
+				continue
+			var edge := edge_toward(deck, at + dir * 50.0)
+			var score := 12.0
+			for g: Vector2 in deck["gaps"] + deck["busy"]:
+				score = minf(score, g.distance_to(edge))
+			var foot2 := edge + dir * 0.6
+			if below >= 0:
+				for g: Vector2 in decks[below]["gaps"] + decks[below]["busy"]:
+					score = minf(score, g.distance_to(foot2) + 0.5)
+			elif float(land.call("height_at", foot2.x, foot2.y)) < -0.05 or bool(land.call("blocked", foot2.x, foot2.y, 0.5, true)):
+				score -= 100.0
+			if score > best_score:
+				best_score = score
+				best = edge
+		var out := (best - at).normalized()
+		var foot := best + out * 0.6
+		var foot_y: float = float(decks[below]["y"]) if below >= 0 else float(land.call("height_at", foot.x, foot.y))
+		var top := best - out * 0.9
+		climbs.append({"deck": i, "from": below, "foot": Vector3(foot.x, foot_y, foot.y), "top": Vector3(top.x, float(deck["y"]), top.y)})
+		(deck["busy"] as Array).append(best)
+
+
+# (polish1 D4d) Where a climbing enemy at `from` should head for a prey at `to` (both in the islands' frame): {} = walk
+# straight at it (the navigation mesh joins them: same deck, bridges, stairs, catwalks); {"goal": Vector3} = walk
+# there first; with "climb": [start, end] = once there, climb from start to end (up or down). `node_of` decides where a
+# spot is: a deck, the ground (-1) or nowhere useful (-2: on a bridge or stair: just keep going).
+func route(from: Vector3, to: Vector3, ground_y: float) -> Dictionary:
+	var a := _node_of(from, ground_y)
+	var b := _node_of(to, ground_y)
+	if a == b or a == -2 or b == -2:
+		return {}
+	var prev := {a: a}  # breadth first over decks (-1 = the ground)
+	var how := {}  # node -> [climb index or -1 (a walk), from node]
+	var queue := [a]
+	while not queue.is_empty():
+		var n: int = queue.pop_front()
+		if n == b:
+			break
+		for step: Array in _steps_from(n):
+			var m := int(step[0])
+			if not prev.has(m):
+				prev[m] = n
+				how[m] = step[1]
+				queue.append(m)
+	if not prev.has(b):
+		return {}  # no way up there (yet): go as near as it can
+	var chain: Array = []
+	var n2 := b
+	while n2 != a:
+		chain.push_front([n2, how[n2]])
+		n2 = int(prev[n2])
+	for link: Array in chain:  # the first climb on the way decides; walks before it are done by the navigation mesh
+		var c := int(link[1])
+		if c >= 0:
+			var cl: Dictionary = climbs[c]
+			var up := int(link[0]) == int(cl["deck"])
+			var start: Vector3 = cl["foot"] if up else cl["top"]
+			var end: Vector3 = cl["top"] if up else cl["foot"]
+			return {"goal": start, "climb": [start, end]}
+	return {}
+
+
+func _node_of(p: Vector3, ground_y: float) -> int:
+	var d := deck_at(p.x, p.y, p.z)
+	if d >= 0:
+		return d
+	return -1 if p.y < ground_y + 1.6 else -2
+
+
+# The decks one step from a node: climbs (both ways) and open / free walks between decks.
+func _steps_from(n: int) -> Array:
+	var out: Array = []
+	for i in climbs.size():
+		var cl: Dictionary = climbs[i]
+		if int(cl["from"]) == n:
+			out.append([int(cl["deck"]), i])
+		elif int(cl["deck"]) == n:
+			out.append([int(cl["from"]), i])
+	for w: Dictionary in ways:
+		if w["kind"] in ["ladder", "lift"] or not bool(w["open"]):
+			continue  # (ladders and lifts are the players' ways)
+		if int(w["from"]) == n:
+			out.append([int(w["to"]), -1])
+		elif int(w["to"]) == n:
+			out.append([int(w["from"]), -1])
+	return out
+
+
+# (polish1 D4d) A rope-cutter's errand: the nearest bought rope bridge or rope ladder to `from` and the spot (on a deck)
+# where it cuts it: {"way": index, "at": Vector3}, or {} when there is none.
+func cut_target(from: Vector3) -> Dictionary:
+	var best := {}
+	var best_d := INF
+	for i in ways.size():
+		var w: Dictionary = ways[i]
+		if not bool(w["open"]) or not (w["kind"] in ["bridge", "ladder"]):
+			continue
+		var at: Vector3 = w["ends"][0] if w["kind"] == "bridge" else w["ends"][1]
+		var d := from.distance_to(at)
+		if d < best_d:
+			best_d = d
+			best = {"way": i, "at": at}
+	return best
+
+
+# A rope-cutter cut this way: it falls (not bought any more) until a player mends it. True when it changed.
+func cut_way(way: int) -> bool:
+	if not is_open(way) or not (ways[way]["kind"] in ["bridge", "ladder"]):
+		return false
+	ways[way]["open"] = false
+	cut[way] = true
+	return true
+
+
+# A player mended a cut way: open again, free.
+func mend(way: int) -> bool:
+	if not cut.has(way):
+		return false
+	cut.erase(way)
+	ways[way]["open"] = true
+	return true
+
+
 func deck_of(id: String) -> int:
 	return int(_deck_index.get(id, -1))
 
@@ -266,6 +411,7 @@ func open(way: int) -> bool:
 
 
 func close_all() -> void:
+	cut.clear()
 	for w: Dictionary in ways:
 		w["open"] = bool(w.get("free", false))  # (the offshore complex's own stairs and links are always there)
 

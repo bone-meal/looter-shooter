@@ -2408,6 +2408,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					session.call("_use_treetop_way", int(session.call("_treetop_way_here")))
 				"give":
 					(session.call("score") as RefCounted).call("give", int(words[2]))
+				"spawn":  # (polish1 D4d) "!tree spawn <enemy id> <x> <z> [y]": one island enemy there (islands' frame), as in round 5, after the nearest player
+					var rounds_s: Node = session.get("_rounds")
+					var e_s: Node3D = rounds_s.call("send_at", words[2], Vector3(500.0 + float(words[3]), float(words[5]) if words.size() > 5 else 0.3, float(words[4])), 5)
+					e_s.remove_meta("quest_boss")
+				"cuts":
+					_lines.append("TREE cuts %s: cut %s, open %d" % [" ".join(words.slice(2)), str((tops_r.get("cut") as Dictionary).keys()), (tops_r.call("open_list") as PackedInt32Array).size()])
 				"climb":
 					var ci := int(find_way.call(words[2]))
 					var cw: Dictionary = ways_t[ci]
@@ -3333,7 +3339,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					for e: Variant in ((session.get("_rounds") as Node).get("_alive") as Array):
 						if is_instance_valid(e):
 							var p3 := (e as Node3D).global_position - centre
-							spots.append("(%.0f, %.1f, %.0f)%s" % [p3.x, p3.y, p3.z, " nav" if (e.get("nav_map") as RID).is_valid() else ""])
+							spots.append("%s (%.0f, %.1f, %.0f)%s" % [String(e.get("enemy_id")), p3.x, p3.y, p3.z, " nav" if (e.get("nav_map") as RID).is_valid() else ""])
 					_lines.append("NAV enemies %d: %s" % [spots.size(), " ".join(spots)])
 		"pool":  # (polish1 item 71) "!pool open <table>" (stand there, open the menu); "!pool start <ai id> <stake>"; "!pool auto" = our next
 			# shot as the Shark would play it (waits for our turn; places the cue ball first if in hand); "!pool shot <deg> <power> [spin x] [spin y]";

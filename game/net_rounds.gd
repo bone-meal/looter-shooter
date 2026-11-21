@@ -43,7 +43,9 @@ signal trap_started(trap: int, by: int)  # on a client: that trap runs now, swit
 signal debris_billed(index: int)
 signal way_opened(way: int, show_it: bool)  # (polish1 D4c) on a client: a treetop way is bought (show_it false = it already was)
 signal way_billed(way: int)  # on a client: the host opened the way we asked for; we pay its price
-signal lift_ridden(way: int, up: bool)  # somebody rides a lift (its basket moves on every machine)  # on a client: the host cleared the debris we asked for; we pay its price
+signal lift_ridden(way: int, up: bool)  # somebody rides a lift (its basket moves on every machine)
+signal way_cut_told(way: int)  # (polish1 D4d) on a client: a rope-cutter cut this way
+signal mend_asked(way: int)  # on the host: a client stands at this cut rope and mended it (checked)  # on a client: the host cleared the debris we asked for; we pay its price
 
 var net: Node3D
 var rounds: Node  # game/island_rounds.gd of this machine (it runs only on the host)
@@ -371,6 +373,35 @@ func _way_bill(way: int) -> void:
 @rpc("any_peer", "call_remote", "unreliable_ordered")
 func _lift_go(way: int, up: bool) -> void:
 	lift_ridden.emit(way, up)
+
+
+func tell_cut(way: int) -> void:
+	if net.can_send() and net.is_host():
+		_way_cut.rpc(way)
+
+
+func ask_mend(way: int) -> void:
+	if is_client():
+		_mend_ask.rpc_id(1, way)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _way_cut(way: int) -> void:
+	way_cut_told.emit(way)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _mend_ask(way: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	if not net.is_host() or treetops == null or not net.roster.has(peer) or way < 0 or way >= (treetops.get("ways") as Array).size():
+		return
+	var body: Node3D = net.player_node(peer)
+	if body == null or not (treetops.get("cut") as Dictionary).has(way):
+		return
+	var at := body.global_position - ORIGIN
+	if int(treetops.call("way_near", at.x, at.y, at.z)) != way:
+		return
+	mend_asked.emit(way)
 
 
 # --- window boards: the host's enemies tear them, anybody may nail one back (the host checks they stand there) ---
@@ -708,6 +739,9 @@ func _ask_all() -> void:
 	if treetops != null:
 		for way: int in treetops.call("open_list"):
 			_way_open.rpc_id(peer, way, false)
+		for way: int in (treetops.get("cut") as Dictionary):  # (open, then cut: so the joiner sees it cut)
+			_way_open.rpc_id(peer, way, false)
+			_way_cut.rpc_id(peer, way)
 	if power != null:
 		_power_bits.rpc_id(peer, int(power.call("to_bits")))
 	if builds != null:

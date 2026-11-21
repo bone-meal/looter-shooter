@@ -131,6 +131,32 @@ func _init() -> void:
 	if reforges > 1:
 		_problem("%d Re-forges up high (one machine)" % reforges)
 	print("TREETOP %d buys up high, %d guns on boards in all" % [tops.buys.size(), guns.size()])
+	# (polish1 D4d) the climbers' spots and routes
+	for cl: Dictionary in tops.climbs:
+		var foot: Vector3 = cl["foot"]
+		var deck_id := String(tops.decks[int(cl["deck"])]["id"])
+		if int(cl["from"]) < 0:
+			var why := _why_not_clear(Vector2(foot.x, foot.z), 0.4)
+			if why != "":
+				_problem("climb up to %s: its foot at (%.1f, %.1f): %s" % [deck_id, foot.x, foot.z, why])
+		elif tops.deck_at(foot.x, foot.y, foot.z) != int(cl["from"]):
+			_problem("climb up to %s: its foot is not on the deck below" % deck_id)
+		var top: Vector3 = cl["top"]
+		if tops.deck_at(top.x, top.y, top.z) != int(cl["deck"]):
+			_problem("climb up to %s: it steps off beside the deck" % deck_id)
+	var unreached := PackedStringArray()
+	for i in tops.decks.size():  # every village deck has a first step from the ground with every way still closed
+		var d: Dictionary = tops.decks[i]
+		if d["kind"] == "rig":
+			continue
+		var isle: Dictionary = _land.islands[int(d["island"])]
+		var from := Vector3((isle["at"] as Vector2).x, 0.0, (isle["at"] as Vector2).y)
+		var target := Vector3((d["at"] as Vector2).x, float(d["y"]), (d["at"] as Vector2).y) + (Vector3(float(d["outer"]) - 0.6, 0, 0) if d["kind"] == "ring" else Vector3.ZERO)
+		if not tops.route(from, target, 0.0).has("climb"):
+			unreached.append(String(d["id"]))
+	if not unreached.is_empty():
+		_problem("climbers find no way up to %s" % ", ".join(unreached))
+	print("TREETOP %d climbing spots" % tops.climbs.size())
 	var opened := 0
 	for i in tops.ways.size():
 		opened += 1 if tops.open(i) else 0
