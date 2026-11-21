@@ -78,6 +78,11 @@ func power_is_on(on: bool) -> bool:
 	return kind() == "power" and on
 
 
+# (polish1 D4f) the Re-forge is awake.
+func reforge_awake(awake: bool) -> bool:
+	return kind() == "reforge" and awake
+
+
 func built(thing: String) -> bool:
 	return kind() == "build" and String(current()["thing"]) == thing
 

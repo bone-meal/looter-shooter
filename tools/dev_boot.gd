@@ -2513,14 +2513,26 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"quest":  # "!quest goto <step id>": stand at that step's spot; "!quest lamp n": shoot lamp n; "!quest jump n": the quest is at step n (host); "!quest <note>": where it stands
 			if words.size() > 2 and words[1] == "goto":
 				var to: Vector2 = (session.get("_quest_spots") as Dictionary)[words[2]]
-				player.call("teleport", Vector3(500.0 + to.x + 1.2, 0.15, to.y + 1.2), 0.0)
-				player.call("look_at_point", Vector3(500.0 + to.x, 0.4, to.y))
+				var up_q := float((session.get("_quest_heights") as Dictionary).get(words[2], (session.get("_land") as RefCounted).call("height_at", to.x, to.y)))  # (polish1 D4f) decks, the Re-forge, hills
+				var off_q := Vector2(1.2, 1.2)
+				if words[2] == "key":
+					var fwd_q := (session.get("_upgrade_node") as Node3D).global_basis.z
+					off_q = Vector2(fwd_q.x, fwd_q.z) * 2.6
+				var step_q: Dictionary = (session.get("_quest") as RefCounted).call("steps")[int(session.call("_quest_step_of", words[2]))]
+				if step_q.has("deck"):  # stand on the deck, toward the trunk
+					var tops_q: RefCounted = session.get("_tops_rules")
+					var deck_q: Dictionary = (tops_q.get("decks") as Array)[int(tops_q.call("deck_of", String(step_q["deck"])))]
+					off_q = ((deck_q["at"] as Vector2) - to).normalized() * 1.1
+				player.call("teleport", Vector3(500.0 + to.x + off_q.x, up_q + 0.5, to.y + off_q.y), 0.0)  # (above a deck's planks: inside them the unstuck would move us)
+				player.call("look_at_point", Vector3(500.0 + to.x, up_q + 0.4, to.y))
 			elif words.size() > 2 and words[1] == "lamp":
 				session.call("_on_lamp_shot", int(words[2]))
 			elif words.size() > 2 and words[1] == "jump":
 				var quest: RefCounted = session.get("_quest")
 				quest.call("from_dict", {"step": int(words[2])})
 				session.call("_show_quest")
+				if session.get("net") != null:  # (polish1 D4f) online: the clients hear of the jump
+					((session.get("net") as Node).get("rounds") as Node).call("tell_quest", quest.call("to_dict"), -1)
 			else:
 				var quest: RefCounted = session.get("_quest")
 				_lines.append("QUEST %s: step %d (%s, %s), count %d, lamps %s, boss out %s, tracker '%s', points %d" % [" ".join(words.slice(1)), int(quest.get("step")), String((quest.call("current") as Dictionary).get("id", "done")), String(quest.call("kind")), int(quest.get("count")), str(quest.get("shot")), str(quest.get("boss_out")),
@@ -3307,7 +3319,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							hut_stalls.append("hut %d: walked in through the SHUT door" % hut)
 						session.call("_toggle_door", door_e)
 					_lines.append("NAV huts %s: %d runs, %d stalls, got inside by the door %d%s" % [words[2] if words.size() > 2 else "home", hut_runs, hut_stalls.size(), inside_ok, ("; " + "; ".join(hut_stalls)) if not hut_stalls.is_empty() else ""])
-				"reforge":  # (polish1 D4e) "!nav reforge": run past the Re-forge (on the rig's main deck) and the three pieces of its quest
+				"reforge":  # (polish1 D4e) "!nav reforge": run past the Re-forge (on the rig's main deck), the three pieces of its quest and the main quest's jars, bell and logbook (D4f)
 					# on all four sides both ways, grazing them; a line per stall (under 1.5 m in 1.5 s)
 					var land_r: RefCounted = session.get("_land")
 					var things: Array = []  # [centre Vector2, half size, floor y, label]
@@ -3317,6 +3329,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					for id: String in (session.get("_reforge_spots") as Dictionary):
 						var at_r: Vector2 = (session.get("_reforge_spots") as Dictionary)[id]
 						things.append([at_r, float(halves.get(id, 2.0)), float(land_r.call("height_at", at_r.x, at_r.y)), id])
+					for id_q: String in ["jars", "bell", "log"]:  # (polish1 D4f) the main quest's things on the ground
+						if (session.get("_quest_spots") as Dictionary).has(id_q):
+							var at_q: Vector2 = (session.get("_quest_spots") as Dictionary)[id_q]
+							things.append([at_q, {"jars": 1.1, "bell": 1.8, "log": 0.6}[id_q], float(land_r.call("height_at", at_q.x, at_q.y)), "quest " + id_q])
 					var runs_r := 0
 					var stalls_r: PackedStringArray = []
 					for thing: Array in things:

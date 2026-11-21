@@ -382,6 +382,8 @@ var _reforge_spots := {}  # piece id -> Vector2 on the land's map
 var _lens_spots: Array[Vector2] = []
 var _crank_held := 0.0  # seconds our player has held the foghorn's crank
 var _lamp_spots: Array[Vector3] = []  # the shoot step's lamps, world positions (their tops)
+var _lamp_feet: Array[Vector2] = []  # (polish1 D4f) where their posts stand
+var _quest_heights := {}  # (polish1 D4f) step id -> metres up (a use step on a deck or at the Re-forge)
 var _songs := SongBook.new()  # the hidden songs (data/zombies/songs.json)
 var _song_floats := SongFloats.new()
 var _song_spots: Array = []  # [secret][thing] -> world position
@@ -499,12 +501,16 @@ func _ready() -> void:
 	_boat_node.setup(boat_cfg)
 	_quest.setup(DataStore.load_json("res://data/zombies/quest.json"), TextBook.read_files(PackedStringArray(["res://data/zombies/writing/quest.txt"])))
 	for entry: Dictionary in _quest.steps():
-		if entry.has("at"):
+		if entry.has("deck"):  # (polish1 D4f) up on a treetop / offshore deck: plan metres, the deck's height
+			_quest_spots[String(entry["id"])] = Vector2(float(entry["at"][0]), float(entry["at"][1]))
+			_quest_heights[String(entry["id"])] = float(_tops_rules.decks[_tops_rules.deck_of(String(entry["deck"]))]["y"])
+		elif entry.has("at"):
 			_quest_spots[String(entry["id"])] = _land.on_island(String(entry["island"]), entry["at"])
 			_land.keep_clear.append(_quest_spots[String(entry["id"])])
 		for lamp: Dictionary in entry.get("spots", []):
 			var foot := _land.on_island(String(lamp["island"]), lamp["at"])
 			_land.keep_clear.append(foot)
+			_lamp_feet.append(foot)
 			_lamp_spots.append(_flat(foot) + Vector3(0, float(lamp["height"]), 0))
 	for piece: Dictionary in _reforge.cfg["pieces"]:  # (polish1 D4e) the Re-forge quest's lighthouse, foghorn and tide wheel
 		_reforge_spots[String(piece["id"])] = _land.on_island(String(piece["island"]), piece["at"])
@@ -538,6 +544,10 @@ func _ready() -> void:
 			upgrade_yaw = buy["yaw"]
 	if _upgrade_y == 0.0:
 		_land.keep_clear.append(_upgrade_spot)
+	for entry: Dictionary in _quest.steps():  # (polish1 D4f) a step at the Re-forge
+		if bool(entry.get("forge", false)):
+			_quest_spots[String(entry["id"])] = _upgrade_spot
+			_quest_heights[String(entry["id"])] = _upgrade_y
 	_trap_cfg = DataStore.load_json("res://data/traps.json")
 	_traps = TrapState.new(_trap_cfg["traps"])
 	for trap: Dictionary in _trap_cfg["traps"]:
@@ -579,10 +589,20 @@ func _ready() -> void:
 		sites.append({"id": _builds.ids[thing], "parts": spots, "bench": _flat(_build_benches[thing]), "yaw": _toward_middle(_build_benches[thing])})
 	_build_site.setup(sites)
 	add_child(_build_site)
-	var quest_places := {"lamps": _lamp_spots}
+	var lamp_places: Array = []  # (polish1 D4f) the things are models now, each turned to its island's middle
+	for foot: Vector2 in _lamp_feet:
+		lamp_places.append({"at": _flat(foot) + Vector3(0, _land.height_at(foot.x, foot.y), 0), "yaw": _face_middle(foot)})
+	var quest_places := {"lamps": lamp_places}
 	for id: String in ["log", "jars", "bell"]:
 		if _quest_spots.has(id):
-			quest_places[id] = _flat(_quest_spots[id])
+			var here: Vector2 = _quest_spots[id]
+			quest_places[id] = {"at": _flat(here) + Vector3(0, _land.height_at(here.x, here.y), 0), "yaw": _face_middle(here)}
+	if _quest_spots.has("spyglass"):
+		var glass: Vector2 = _quest_spots["spyglass"]
+		var to: Vector2 = _land.islands[_land.index_of(String(_quest.steps()[_quest_step_of("spyglass")].get("look_at", "gull")))]["at"]
+		quest_places["spyglass"] = {"at": _flat(glass) + Vector3(0, float(_quest_heights.get("spyglass", 0.0)), 0), "yaw": _face_middle(glass) + PI, "look": atan2((to - glass).x, (to - glass).y)}
+	if _quest_spots.has("key"):
+		quest_places["key"] = _flat(_upgrade_spot) + Vector3(0, _upgrade_y, 0) + Basis(Vector3.UP, upgrade_yaw if upgrade_yaw != INF else _toward_middle(_upgrade_spot)) * Vector3(0.0, 1.3, 1.74)
 	_quest_things.setup(quest_places, _on_lamp_shot)
 	add_child(_quest_things)
 	var reforge_places: Array = []
@@ -1883,7 +1903,7 @@ func _prompt() -> String:
 				return "%s: for whoever spun the box" % GunStats.display_name(_player.gun_db, _box_gun)
 			_:
 				return "The box is spinning ..."
-	if _at_upgrade():
+	if _at_upgrade() and _quest_use_here() == "":  # (polish1 D4f: forging the bell key at the Re-forge comes first)
 		return _upgrade_prompt(key)
 	var reforge_text := _reforge_prompt(key)
 	if reforge_text != "":
@@ -4781,15 +4801,31 @@ func _quest_use_here() -> String:
 	if not _island_side() or _quest.kind() != "use":
 		return ""
 	var id := String(_quest.current()["id"])
-	var spot := Vector2(_player.global_position.x - Island.CENTER.x, _player.global_position.z - Island.CENTER.z)
-	return id if spot.distance_to(_quest_spots[id]) <= float(_quest.cfg["reach"]) else ""
+	return id if _quest_at_use(_player.global_position, id, float(_quest.cfg["reach"])) else ""
+
+
+# (polish1 D4f) Stands at a use step's spot: its height too (a deck, the Re-forge: no use through a floor); at the
+# Re-forge only once it is awake with the power on; the Re-forge's body is bigger, so its reach is too.
+func _quest_at_use(at: Vector3, id: String, reach: float) -> bool:
+	var spot := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
+	var forge := bool(_quest.current().get("forge", false))
+	if forge and not (_reforge.awake() and _power.on):
+		return false
+	var height := float(_quest_heights.get(id, _land.height_at(spot.x, spot.y)))
+	return spot.distance_to(_quest_spots[id]) <= reach + (float(_upgrade_cfg["reach"]) - reach if forge else 0.0) and absf(at.y - Island.CENTER.y - height) < 2.2
+
+
+# The yaw that turns a model's front (+Z) toward the middle of the island a spot is on.
+func _face_middle(spot: Vector2) -> float:
+	var middle: Vector2 = _land.islands[_land.island_near(spot.x, spot.y)]["at"]
+	return atan2((middle - spot).x, (middle - spot).y)
 
 
 # Host: does that spot fit a client's claim? (use: at the step's spot; lamp: within a long shot of it)
 func _quest_fits(at: Vector3, action: String, index: int) -> bool:
 	var spot := Vector2(at.x - Island.CENTER.x, at.z - Island.CENTER.z)
 	if action == "use" and _quest.kind() == "use":
-		return spot.distance_to(_quest_spots[String(_quest.current()["id"])]) <= float(_quest.cfg["reach"]) + 1.5
+		return _quest_at_use(at, String(_quest.current()["id"]), float(_quest.cfg["reach"]) + 1.5) and spot.is_finite()
 	if action == "lamp" and index >= 0 and index < _lamp_spots.size():
 		return at.distance_to(_lamp_spots[index]) <= 120.0
 	return false
@@ -4830,6 +4866,8 @@ func _quest_advance() -> void:
 	_on_quest_told(_quest.to_dict(), finished)
 	if net != null:
 		net.rounds.tell_quest(_quest.to_dict(), finished)
+	if _quest.power_is_on(_power.on) or _quest.reforge_awake(_reforge.awake()):  # (polish1 D4f) already true when it comes: passed at once
+		_quest_advance()
 
 
 # The quest as it now is; `news` = the step just finished (its done line, then the next step's lines), -1 = none.
@@ -4841,6 +4879,16 @@ func _on_quest_told(state: Dictionary, news: int) -> void:
 		return
 	var old_id := String(_quest.steps()[news]["id"])
 	_sounds.call("play", "quest_step")
+	_quest_things.play(old_id)  # (polish1 D4f) its thing moves: pages flip, the spyglass turns, the bell swings
+	match old_id:
+		"key":
+			_upgrade_node.strike()
+			_sounds.call("play", "reforge_strike")
+			get_tree().create_timer(0.7).timeout.connect(func() -> void: _upgrade_node.strike())
+		"bell":
+			_sounds.call("play", "bell_toll")
+		"spyglass", "log":
+			_sounds.call("play", "book_page" if old_id == "log" else "secret_clink")
 	if news == 0:
 		_player_hud.callout(_quest.quest_line("name"), Color(0.55, 0.85, 1.0))
 	_player_hud.notice(_quest.line(old_id, "done"))
@@ -5018,6 +5066,8 @@ func _reforge_news(news: String, was_awake: bool) -> void:
 	if _reforge.awake() and not was_awake:
 		_sounds.call("play", "reforge_wake")
 		_player_hud.callout(String(lines["awake"]), Color(0.85, 0.55, 1.0))
+		if _quest_host() and _quest.reforge_awake(true):  # (polish1 D4f) the main quest waited for it
+			_quest_advance()
 
 
 func _show_reforge() -> void:
@@ -5068,7 +5118,10 @@ func _show_quest() -> void:
 	elif _quest.step > _quest_step_of("jars"):
 		fill = 1.0
 	var lamps: Array = _quest.shot if _quest.kind() == "shoot" else ([true, true, true] if _quest.step > _quest_step_of("lamps") else [])
-	_quest_things.show_state(fill, lamps, _quest.kind() == "shoot")
+	var finished := {}
+	for i in mini(_quest.step, _quest.steps().size()):
+		finished[String(_quest.steps()[i]["id"])] = true
+	_quest_things.show_state(fill, lamps, _quest.kind() == "shoot", finished, finished.has("key") and not finished.has("bell"))
 	if _quest.step <= 0 or _quest.done():
 		_player_hud.quest_text = ""
 		return

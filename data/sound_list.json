@@ -195,6 +195,14 @@
      "label": "The Re-forge's hammer strikes"
     },
     {
+     "id": "bell_toll",
+     "label": "The drowned bell tolls (main quest)"
+    },
+    {
+     "id": "book_page",
+     "label": "The keeper's logbook is read (main quest)"
+    },
+    {
      "id": "trap_zap",
      "label": "An electric trap runs"
     },

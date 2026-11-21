@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 20;!net guest_in;!wait 12;!quest g0;!quest goto spyglass;!wait 1.5;!reforge use;!wait 3;!quest g1;!wait 25;!quest g2;!reforge goto forge 2.6;!wait 1.5;!reforge g_atkey;!reforge use;!wait 3;!snap quest_guest_key;!quest g3

@@ -14,6 +14,11 @@
 #   says:   WHAT IS SAID when the step BEGINS (one line each, in order).
 #   done:   the line shown when the step is finished.
 #
+# THING / HOW notes (polish1 D4f): under each step a "# THING:" note says what stands in the world for it (its model,
+# tools/blender/quest_main.py) and how it moves, and "# HOW:" says what the players do. They are notes: the game reads
+# only the lines without #. Rewrite them too if you want a thing changed or gone, and send the file back: the models
+# follow your words.
+#
 # WHAT FINISHES A STEP and WHERE ITS THINGS STAND is not here: it is in data/zombies/quest.json (the designers'
 # file). The steps below are in the same order. If the game cannot read a step here, it names it when the game
 # starts ("quest.txt: step jars has no what line") and tools/colosseum_check.tscn lists it too.
@@ -28,7 +33,9 @@ finished: The bell is silent. For one night, the sea keeps its dead.
 reward: The Keeper's chest washes up at your feet.
 
 [step log]
-# Found by interacting with a sea-stained logbook half buried in the sand on Home Sand.
+# THING: a sea-stained leather logbook lying open against a driftwood stump in a little mound of sand, a brass clasp,
+#   a faint blue glint on its last page (the map). Its pages flip when it is read.
+# HOW: walk up to it on Home Sand (south-west) and press interact. This is how the quest is found: nothing shows before.
 what: Read the keeper's logbook
 where: in the sand on Home Sand, south-west
 who: Keeper's logbook
@@ -38,6 +45,8 @@ says: Day 45. If anyone reads this: light the islands, and the old lamps, and ta
 done: The logbook's last page is a map of a rock far out at sea.
 
 [step power]
+# THING: the power switch and its parts (they already exist).
+# HOW: find the switch's parts and throw the switch. If the power is already on, this step passes at once.
 what: Bring light back to the islands
 where: the power switch (its parts lie on Home Sand)
 who: Keeper's logbook
@@ -45,6 +54,9 @@ says: The switch is on Painter's Key. The parts are where the storm left them.
 done: The islands hum. Somewhere far out, the bell answers.
 
 [step jars]
+# THING: three clay jars bound with rope on a plank rack by the wreck; a crack down each jar's front where glowing
+#   blue-green brine shows. The brine rises in the cracks and glows brighter with every kill.
+# HOW: kill enemies close to the jars (15 kills within 8 m).
 what: Fill the brine jars on Wreck Cay
 where: the jars by the wreck on Wreck Cay
 who: Keeper's logbook
@@ -52,13 +64,48 @@ says: The drowned carry the sea in them. Let them spill it into the jars.
 done: The jars are full and glowing.
 
 [step lamps]
+# THING: three crooked wooden posts, each with a crossarm and a hanging iron lantern that burns warm yellow. A shot
+#   lantern jerks, swings itself still and goes dark.
+# HOW: shoot the three lanterns (Painter's Key, Far Shoal, Home Sand). Only this step's lanterns take shots.
 what: Shoot out the three old lamps
 where: on posts on Painter's Key, Far Shoal and Home Sand
 who: Keeper's logbook
 says: The old lamps guide them home. Put them out.
 done: The last lamp bursts. The bell rings once, very close.
 
+[step spyglass]
+# THING: the keeper's brass spyglass on a wooden tripod at the very top of Wreck Cay's giant tree (the top ring deck,
+#   19 m up). Looked through, it turns slowly to point at Gull Rock.
+# HOW: climb Wreck Cay's treetop village to its top ring (buy the ladders) and press interact at the spyglass.
+what: Look through the keeper's spyglass
+where: the top of Wreck Cay's great tree
+who: Keeper's logbook
+says: From the top of the tree you can see the rock. I watched them walk out of the sea there every night.
+done: Far out past Wreck Cay: a black rock, and a bell hanging in chains. The chains have a lock.
+
+[step reforge]
+# THING: the Re-forge on the oil rig's main deck (it already exists, with its own quest: the lighthouse, the cliff
+#   foghorn and the tide wheel). If it is already awake, this step passes at once.
+# HOW: wake the Re-forge: power the lighthouse (find its lens), crank the foghorn and turn the tide wheel.
+what: Wake the Re-forge
+where: the oil rig's main deck (light the lighthouse, the foghorn and the tide wheel)
+who: Keeper's logbook
+says: The lock was cast in the old forge out on the rig. Only the forge can cut its key. Wake it.
+done: The Re-forge roars. Its hammer is waiting.
+
+[step key]
+# THING: the bell key: a long iron key with a glowing brine-blue bit. The Re-forge's hammer strikes it out on the anvil
+#   and it rises over the forge's tray, turning and glowing, until the bell is opened.
+# HOW: stand at the awake Re-forge (power on) and press interact.
+what: Forge the bell key
+where: at the Re-forge on the oil rig
+who: Keeper's logbook
+says: Lay the jars' brine on the anvil. Strike it. A key of the sea, for a lock of the sea.
+done: The key glows like the jars. It is cold to hold.
+
 [step boat]
+# THING: the slipway and the boat's parts (they already exist; the skiff builds piece by piece).
+# HOW: collect the boat's parts and build it at the slipway.
 what: Build the boat
 where: the slipway on Wreck Cay (its parts lie on three islands)
 who: Keeper's logbook
@@ -66,13 +113,19 @@ says: The rock is past Wreck Cay, where no bridge goes. Build a boat.
 done: The boat floats.
 
 [step bell]
-what: Find the bell on Gull Rock
+# THING: the drowned bell on Gull Rock: a big barnacled bronze bell with a green band, hanging from a driftwood beam
+#   between two stone piers, bound by chains to the piers with a padlock whose keyhole glows brine-blue. The key drops
+#   the chains; the bell swings and tolls three times across the sea.
+# HOW: sail to Gull Rock and press interact at the bell.
+what: Unlock the bell on Gull Rock
 where: Gull Rock, past Wreck Cay (by boat)
 who: Keeper's logbook
 says: There it is. Do not ring it. Ring it.
-done: The bell rings.
+done: The chains fall. The bell rings.
 
 [step warden]
+# THING: the Bell Warden (the tyrant boss model) rises out of the sea on Gull Rock, as strong as a boss ten rounds on.
+# HOW: beat it.
 what: Defeat what answers the bell
 where: Gull Rock
 who: The Bell Warden

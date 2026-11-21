@@ -35,6 +35,8 @@
   "foghorn_blast": {"volume": -5, "pitch": [1.0, 1.0], "range": 0},
   "reforge_wake": {"volume": -4, "pitch": [1.0, 1.0], "range": 0},
   "reforge_strike": {"volume": -7, "pitch": [0.95, 1.05], "range": 0},
+  "bell_toll": {"volume": -3, "pitch": [1.0, 1.0], "range": 0},
+  "book_page": {"volume": -8, "pitch": [0.95, 1.05], "range": 0},
   "trap_zap": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
   "trap_fire": {"volume": -7, "pitch": [1.0, 1.0], "range": 0},
   "thunder": {"volume": -4, "pitch": [0.8, 1.12], "range": 0},

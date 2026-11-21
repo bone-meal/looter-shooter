@@ -26,7 +26,7 @@ func _ready() -> void:
 	var where := PackedStringArray()
 	for entry: Dictionary in quest.steps():
 		var places: Array = entry.get("spots", []).duplicate()
-		if entry.has("at"):
+		if entry.has("at") and not entry.has("deck"):  # (a deck step stands up in the treetops / on the rig: tools/treetop_check)
 			places.append(entry)
 		for place: Dictionary in places:
 			var spot := land.on_island(String(place["island"]), place["at"])
@@ -46,7 +46,7 @@ func _ready() -> void:
 	_say("its buildable and its boss exist", known)
 
 	_say("it starts at the first step, nothing done", quest.step == 0 and quest.kind() == "use" and not quest.done())
-	_say("the wrong things do not finish a step", not quest.power_is_on(true) and not quest.built("boat") and not quest.killed_near() and not quest.lamp_out(0) and not quest.boss_killed() and not quest.used("bell"))
+	_say("the wrong things do not finish a step", not quest.power_is_on(true) and not quest.built("boat") and not quest.killed_near() and not quest.lamp_out(0) and not quest.boss_killed() and not quest.used("bell") and not quest.reforge_awake(true))
 	var walked := PackedStringArray()
 	var guard := 0
 	while not quest.done() and guard < 20:
@@ -58,6 +58,8 @@ func _ready() -> void:
 				finished = quest.used(String(entry["id"]))
 			"power":
 				finished = quest.power_is_on(true)
+			"reforge":  # (polish1 D4f)
+				finished = not quest.power_is_on(true) and quest.reforge_awake(true)
 			"build":
 				finished = quest.built(String(entry["thing"]))
 			"kills":

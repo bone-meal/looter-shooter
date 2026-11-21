@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "_about": "The islands' main quest (core/quest_state.gd decides, game/quest_things.gd shows its things). Every word the player reads is in data/zombies/writing/quest.txt, one [step <id>] section per step here. Steps run in order; the whole party shares one quest and the host decides; game over starts it again from the first step. A step's kind says what finishes it: use = interact at its spot (island + [x, z] from that island's middle); power = the islands' power is on; kills = `count` enemies die within `radius` metres of its spot; shoot = every lamp in `spots` is shot (each [x, z] from its island's middle and `height` metres up a post); build = the buildable `thing` (data/buildables.json) is built; boss = the enemy `enemy` (data/enemies.json) comes out of the sea at its spot, as strong as an island boss `rounds_ahead` rounds after the round being fought, and dies. reward: `unique` = a hand-made unique of data/gun_uniques.json for every player on the islands (\"any\" = a random one), `points` to everybody there. reach = metres to a `use` spot.",
+  "_about": "The islands' main quest (core/quest_state.gd decides, game/quest_things.gd shows its things). Every word the player reads is in data/zombies/writing/quest.txt, one [step <id>] section per step here. Steps run in order; the whole party shares one quest and the host decides; game over starts it again from the first step. A step's kind says what finishes it: use = interact at its spot (island + [x, z] from that island's middle); power = the islands' power is on; kills = `count` enemies die within `radius` metres of its spot; shoot = every lamp in `spots` is shot (each [x, z] from its island's middle and `height` metres up a post); build = the buildable `thing` (data/buildables.json) is built; reforge = the Re-forge is awake (data/reforge_quest.json; already awake = passed at once); boss = the enemy `enemy` (data/enemies.json) comes out of the sea at its spot, as strong as an island boss `rounds_ahead` rounds after the round being fought, and dies. reward: `unique` = a hand-made unique of data/gun_uniques.json for every player on the islands (\"any\" = a random one), `points` to everybody there. reach = metres to a `use` spot. A use step with `deck` stands on that treetop / offshore deck (data/treetops.json): its `at` is then world-plan metres (the islands' frame) and the deck's height counts; `look_at` = an island the thing there turns to when used; `forge`: true = the spot is the Re-forge (it must be awake, with power). A step already true when it comes (power on, Re-forge awake) is passed at once. Polish1 D4f: the things are tools/blender/quest_main.py models (game/quest_things.gd).",
   "reach": 2.6,
   "steps": [
     {"id": "log", "kind": "use", "island": "home", "at": [-52.0, -36.0]},
@@ -11,6 +11,9 @@
       {"island": "shoal", "at": [36.0, 20.0], "height": 3.2},
       {"island": "home", "at": [66.0, -16.0], "height": 3.2}
     ]},
+    {"id": "spyglass", "kind": "use", "deck": "wreck_t3", "at": [91.4, 90.71], "look_at": "gull"},
+    {"id": "reforge", "kind": "reforge"},
+    {"id": "key", "kind": "use", "forge": true},
     {"id": "boat", "kind": "build", "thing": "boat"},
     {"id": "bell", "kind": "use", "island": "gull", "at": [0.0, 12.0]},
     {"id": "warden", "kind": "boss", "enemy": "boss_tyrant", "island": "gull", "at": [0.0, -10.0], "rounds_ahead": 10}

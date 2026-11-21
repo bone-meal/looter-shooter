@@ -1,1 +1,10 @@
-Release v1.14
+Polish1 D4f: the main easter egg The Drowned Bell fully built (models, motion, 10 playable steps, quest.txt)
+
+- data/zombies/quest.json: 10 steps; new spyglass (use on Wreck Cay's top ring, turns to Gull Rock), reforge (the Re-forge awake), key (forge the bell key at the Re-forge); steps already true when they come pass at once
+- tools/blender/quest_main.py: logbook, brine jars (rising brine), lamp posts (swinging lanterns), spyglass, bell key, drowned bell (chains + padlock, swings); game/quest_things.gd draws and animates them (box stand-ins gone)
+- data/zombies/writing/quest.txt: every step's words + THING / HOW notes for the director to rewrite
+- sounds bell_toll, book_page (tools/make_quest_sounds.py); use spots check height; key prompt before the reroll prompt
+- tools/quest_check plays all 10; dev !quest goto on decks / at the forge, jump tells clients; !nav reforge covers jars / bell / log; pair set quest works
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
