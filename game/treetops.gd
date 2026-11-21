@@ -4,11 +4,13 @@
 # lifts (a basket in a frame of posts, ridden up / down once bought). The fixed parts of every village are merged
 # into one mesh per material; each way has its own small "bought" / "not bought" meshes. Colliders are plain boxes,
 # cylinders and convex deck pieces (nothing to wedge in); a rope across an opening stops falls until its way is bought.
-# Dependencies: core/treetop_rules.gd, game/surface_library.gd (painting_post wood, fx_thatch).
+# The offshore complex and its catwalks are game/offshore.gd (a child of this node).
+# Dependencies: core/treetop_rules.gd, game/surface_library.gd (painting_post wood, fx_thatch), game/offshore.gd.
 extends Node3D
 
 const TreetopRules = preload("res://core/treetop_rules.gd")
 const SurfaceLibrary = preload("res://game/surface_library.gd")
+const Offshore = preload("res://game/offshore.gd")
 
 const SEGMENTS := 16  # a ring deck's pieces
 const THICK := 0.25  # deck planks
@@ -22,6 +24,7 @@ var _thatch: Material
 var _body: StaticBody3D
 var _looks: Array = []  # per way: [bought Node3D, not bought Node3D, barrier CollisionShape3D or null, walk shapes (bridge) Array]
 var _baskets: Array = []  # per way: the lift's basket (Node3D) or null
+var _offshore: Offshore
 
 
 func setup(config: Dictionary, land: RefCounted) -> void:
@@ -41,13 +44,16 @@ func setup(config: Dictionary, land: RefCounted) -> void:
 	for deck: Dictionary in rules.decks:
 		if deck["kind"] == "ring":
 			_ring_deck(wood_st, deck)
-		else:
+		elif deck["kind"] == "stilts":
 			_stilt_deck(wood_st, roof_st, deck, land)
 	for pair: Array in [[wood_st, _wood], [roof_st, _thatch]]:
 		var mi := MeshInstance3D.new()
 		mi.mesh = (pair[0] as SurfaceTool).commit()
 		mi.material_override = pair[1]
 		add_child(mi)
+	_offshore = Offshore.new()
+	add_child(_offshore)
+	_offshore.setup(rules, land)
 	for i in rules.ways.size():
 		_build_way(i)
 		show_way(i)
@@ -143,6 +149,10 @@ func _near_gap(deck: Dictionary, p: Vector2, within: float) -> bool:
 
 func _build_way(i: int) -> void:
 	var w: Dictionary = rules.ways[i]
+	if String(w["kind"]) in ["catwalk", "stairs", "link"]:  # (game/offshore.gd's)
+		_looks.append(null)
+		_baskets.append(null)
+		return
 	var bought := Node3D.new()
 	var shut := Node3D.new()
 	add_child(bought)
@@ -169,6 +179,9 @@ func _build_way(i: int) -> void:
 
 # Draws a way bought or not, and turns its walking surfaces / barriers on or off to match.
 func show_way(i: int) -> void:
+	if _looks[i] == null:
+		_offshore.show_way(i)
+		return
 	var open := rules.is_open(i)
 	var look: Array = _looks[i]
 	(look[0] as Node3D).visible = open

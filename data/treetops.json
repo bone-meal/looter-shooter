@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "(polish1 D4c) The TREETOP VILLAGE on the four ring islands (core/treetop_rules.gd, game/treetops.gd). Each village hangs on one giant tree of its island (`tree` = that tree's spot in data/archipelago.json features, island-local metres) and a few platforms on stilts. `layers` = deck heights over the ground (m) for layer 1-3. `rings` = how far a ring deck round the trunk reaches from the trunk's middle per layer (a ladder up from a ring hangs over the ring below with room to stand behind it, so they shrink). A deck: `on` tree (a ring round the trunk at its layer) or stilts (`at` island-local, `size` m, `hut` a thatched hut on it). A WAY is bought like a door, in any order (director): `kind` ladder (climbed, from the ground or the deck below), lift (a basket ride from the ground), bridge (a rope bridge between two decks of the same layer); `from` / `to` deck ids (ground = the island floor), `price` points. Ways are bought for everybody (online the host checks the buyer stands at one end) and reset when the run ends.",
+ "_about": "(polish1 D4c) The TREETOP VILLAGE on the four ring islands (core/treetop_rules.gd, game/treetops.gd). Each village hangs on one giant tree of its island (`tree` = that tree's spot in data/archipelago.json features, island-local metres) and a few platforms on stilts. `layers` = deck heights over the ground (m) for layer 1-3. `rings` = how far a ring deck round the trunk reaches from the trunk's middle per layer (a ladder up from a ring hangs over the ring below with room to stand behind it, so they shrink). A deck: `on` tree (a ring round the trunk at its layer) or stilts (`at` island-local, `size` m, `hut` a thatched hut on it). A WAY is bought like a door, in any order (director): `kind` ladder (climbed, from the ground or the deck below), lift (a basket ride from the ground), bridge (a rope bridge between two decks of the same layer), catwalk (a long steel catwalk on pylons from a top ring to a deck of the offshore complex, see `offshore`); `from` / `to` deck ids (ground = the island floor), `price` points. Ways are bought for everybody (online the host checks the buyer stands at one end) and reset when the run ends.",
  "layers": [
   7.0,
   13.0,
@@ -114,6 +114,13 @@
      "from": "home_t2",
      "to": "home_t3",
      "price": 2000
+    },
+    {
+     "id": "home_catwalk",
+     "kind": "catwalk",
+     "from": "home_t3",
+     "to": "rig_main",
+     "price": 3000
     }
    ]
   },
@@ -217,6 +224,13 @@
      "from": "painter_t2",
      "to": "painter_t3",
      "price": 2500
+    },
+    {
+     "id": "painter_catwalk",
+     "kind": "catwalk",
+     "from": "painter_t3",
+     "to": "flare",
+     "price": 3500
     }
    ]
   },
@@ -319,6 +333,13 @@
      "kind": "ladder",
      "from": "shoal_t2",
      "to": "shoal_t3",
+     "price": 3000
+    },
+    {
+     "id": "shoal_catwalk",
+     "kind": "catwalk",
+     "from": "shoal_t3",
+     "to": "rig_main",
      "price": 3000
     }
    ]
@@ -423,8 +444,547 @@
      "from": "wreck_t2",
      "to": "wreck_t3",
      "price": 3500
+    },
+    {
+     "id": "wreck_catwalk",
+     "kind": "catwalk",
+     "from": "wreck_t3",
+     "to": "quarters",
+     "price": 3500
     }
    ]
   }
- ]
+ ],
+ "offshore": {
+  "_about": "(polish1 D4c, director: 'like an oil platform design, like motherbase: all kinds of levels and connections, really filled in, asymmetric but logical') The OFFSHORE COMPLEX in the middle sea, in the islands' frame (world-plan metres, y up; the sea's free water is about x 90..125, z -38..38). `decks`: rect [x0, z0, x1, z1] at height y, on `legs` to the sea bed or standing `on` a lower deck (columns). `stairs` (always there): a flight on the lower deck from `start` (plan, at the lower deck) to `end` (at the upper deck's height, a landing joins it to the upper deck). `links`: steel catwalks between decks, always there. `props`: what fills the decks (kind, at, size / yaw: containers, tanks, pipe racks, a derrick, a crane, the quarters block, the flare boom, lifeboats, lamps, the helipad). The village top rings join the complex by CATWALK ways in the villages' `ways` lists (bought like doors).",
+  "decks": [
+   {
+    "id": "rig_cellar",
+    "name": "Cellar deck",
+    "rect": [
+     94,
+     -14,
+     118,
+     6
+    ],
+    "y": 13.0,
+    "legs": true
+   },
+   {
+    "id": "rig_main",
+    "name": "Main deck",
+    "rect": [
+     96,
+     -12,
+     114,
+     2
+    ],
+    "y": 19.0,
+    "on": "rig_cellar"
+   },
+   {
+    "id": "rig_heli",
+    "name": "Helideck",
+    "rect": [
+     97,
+     -11,
+     107,
+     -1
+    ],
+    "y": 25.0,
+    "on": "rig_main"
+   },
+   {
+    "id": "quarters",
+    "name": "Quarters",
+    "rect": [
+     93,
+     14,
+     108,
+     26
+    ],
+    "y": 19.0,
+    "legs": true
+   },
+   {
+    "id": "quarters_roof",
+    "name": "Quarters roof",
+    "rect": [
+     95,
+     17,
+     103,
+     25
+    ],
+    "y": 25.0,
+    "on": "quarters"
+   },
+   {
+    "id": "tanks",
+    "name": "Tank deck",
+    "rect": [
+     112,
+     12,
+     124,
+     22
+    ],
+    "y": 13.0,
+    "legs": true
+   },
+   {
+    "id": "flare",
+    "name": "Flare deck",
+    "rect": [
+     102,
+     -33,
+     114,
+     -23
+    ],
+    "y": 19.0,
+    "legs": true
+   }
+  ],
+  "stairs": [
+   {
+    "from": "rig_cellar",
+    "to": "rig_main",
+    "start": [
+     116.0,
+     -12.6
+    ],
+    "end": [
+     116.0,
+     -3.6
+    ],
+    "width": 2.0
+   },
+   {
+    "from": "rig_main",
+    "to": "rig_heli",
+    "start": [
+     112.5,
+     0.9
+    ],
+    "end": [
+     103.0,
+     0.9
+    ],
+    "width": 1.8
+   },
+   {
+    "from": "quarters",
+    "to": "quarters_roof",
+    "start": [
+     105.5,
+     15.6
+    ],
+    "end": [
+     105.5,
+     25.0
+    ],
+    "width": 2.0
+   }
+  ],
+  "links": [
+   {
+    "from": "rig_main",
+    "to": "quarters",
+    "at": [
+     100.0,
+     2.0
+    ],
+    "to_at": [
+     100.0,
+     14.0
+    ]
+   },
+   {
+    "from": "rig_cellar",
+    "to": "tanks",
+    "at": [
+     116.0,
+     6.0
+    ],
+    "to_at": [
+     116.0,
+     12.0
+    ]
+   },
+   {
+    "from": "rig_main",
+    "to": "flare",
+    "at": [
+     108.0,
+     -12.0
+    ],
+    "to_at": [
+     108.0,
+     -23.0
+    ]
+   }
+  ],
+  "props": [
+   {
+    "kind": "pipes",
+    "at": [
+     100.0,
+     -6.0
+    ],
+    "size": [
+     10.0,
+     1.2,
+     2.0
+    ],
+    "yaw": 0,
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "pump",
+    "at": [
+     110.0,
+     -9.0
+    ],
+    "size": [
+     2.4,
+     1.8,
+     1.6
+    ],
+    "yaw": 0,
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "pump",
+    "at": [
+     106.0,
+     3.5
+    ],
+    "size": [
+     2.4,
+     1.8,
+     1.6
+    ],
+    "yaw": 90,
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "drums",
+    "at": [
+     96.5,
+     4.0
+    ],
+    "size": [
+     2.0,
+     1.0,
+     2.0
+    ],
+    "yaw": 0,
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "drums",
+    "at": [
+     112.0,
+     -13.0
+    ],
+    "size": [
+     2.0,
+     1.0,
+     1.4
+    ],
+    "yaw": 0,
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "derrick",
+    "at": [
+     111.0,
+     -6.5
+    ],
+    "size": [
+     5.0,
+     20.0,
+     5.0
+    ],
+    "yaw": 0,
+    "deck": "rig_main"
+   },
+   {
+    "kind": "container",
+    "at": [
+     99.0,
+     -6.0
+    ],
+    "size": [
+     6.0,
+     2.6,
+     2.4
+    ],
+    "yaw": 0,
+    "deck": "rig_main",
+    "color": [
+     0.72,
+     0.2,
+     0.16
+    ]
+   },
+   {
+    "kind": "container",
+    "at": [
+     112.0,
+     -10.6
+    ],
+    "size": [
+     4.0,
+     2.6,
+     2.4
+    ],
+    "yaw": 0,
+    "deck": "rig_main",
+    "color": [
+     0.16,
+     0.36,
+     0.62
+    ]
+   },
+   {
+    "kind": "cabin",
+    "at": [
+     104.0,
+     -9.5
+    ],
+    "size": [
+     4.0,
+     2.8,
+     3.0
+    ],
+    "yaw": 0,
+    "deck": "rig_main"
+   },
+   {
+    "kind": "helipad",
+    "at": [
+     102.0,
+     -6.0
+    ],
+    "size": [
+     9.0,
+     0.05,
+     9.0
+    ],
+    "yaw": 0,
+    "deck": "rig_heli"
+   },
+   {
+    "kind": "block",
+    "at": [
+     99.0,
+     21.0
+    ],
+    "size": [
+     7.0,
+     5.7,
+     7.0
+    ],
+    "yaw": 0,
+    "deck": "quarters"
+   },
+   {
+    "kind": "lifeboat",
+    "at": [
+     94.2,
+     19.0
+    ],
+    "size": [
+     1.4,
+     1.4,
+     4.2
+    ],
+    "yaw": 0,
+    "deck": "quarters"
+   },
+   {
+    "kind": "lifeboat",
+    "at": [
+     94.2,
+     24.0
+    ],
+    "size": [
+     1.4,
+     1.4,
+     3.2
+    ],
+    "yaw": 0,
+    "deck": "quarters"
+   },
+   {
+    "kind": "container",
+    "at": [
+     96.0,
+     15.5
+    ],
+    "size": [
+     6.0,
+     2.6,
+     2.4
+    ],
+    "yaw": 0,
+    "deck": "quarters",
+    "color": [
+     0.85,
+     0.62,
+     0.12
+    ]
+   },
+   {
+    "kind": "antenna",
+    "at": [
+     101.5,
+     23.5
+    ],
+    "size": [
+     0.6,
+     7.0,
+     0.6
+    ],
+    "yaw": 0,
+    "deck": "quarters_roof"
+   },
+   {
+    "kind": "tank",
+    "at": [
+     115.5,
+     18.0
+    ],
+    "size": [
+     4.0,
+     5.0,
+     4.0
+    ],
+    "yaw": 0,
+    "deck": "tanks"
+   },
+   {
+    "kind": "tank",
+    "at": [
+     120.5,
+     16.0
+    ],
+    "size": [
+     3.6,
+     4.4,
+     3.6
+    ],
+    "yaw": 0,
+    "deck": "tanks"
+   },
+   {
+    "kind": "pipes",
+    "at": [
+     118.0,
+     20.8
+    ],
+    "size": [
+     8.0,
+     0.8,
+     0.8
+    ],
+    "yaw": 0,
+    "deck": "tanks"
+   },
+   {
+    "kind": "flare_boom",
+    "at": [
+     112.5,
+     -31.5
+    ],
+    "size": [
+     2.0,
+     16.0,
+     2.0
+    ],
+    "yaw": 135,
+    "deck": "flare"
+   },
+   {
+    "kind": "container",
+    "at": [
+     105.0,
+     -28.0
+    ],
+    "size": [
+     6.0,
+     2.6,
+     2.4
+    ],
+    "yaw": 0,
+    "deck": "flare",
+    "color": [
+     0.2,
+     0.5,
+     0.25
+    ]
+   },
+   {
+    "kind": "crane",
+    "at": [
+     103.5,
+     -24.3
+    ],
+    "size": [
+     1.6,
+     6.0,
+     14.0
+    ],
+    "yaw": 300,
+    "deck": "flare"
+   },
+   {
+    "kind": "lamp",
+    "at": [
+     94.8,
+     -13.2
+    ],
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "lamp",
+    "at": [
+     117.2,
+     5.2
+    ],
+    "deck": "rig_cellar"
+   },
+   {
+    "kind": "lamp",
+    "at": [
+     113.2,
+     1.4
+    ],
+    "deck": "rig_main"
+   },
+   {
+    "kind": "lamp",
+    "at": [
+     107.2,
+     25.2
+    ],
+    "deck": "quarters"
+   },
+   {
+    "kind": "lamp",
+    "at": [
+     123.2,
+     12.8
+    ],
+    "deck": "tanks"
+   },
+   {
+    "kind": "lamp",
+    "at": [
+     102.8,
+     -23.8
+    ],
+    "deck": "flare"
+   }
+  ]
+ }
 }

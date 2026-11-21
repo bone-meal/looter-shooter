@@ -12,6 +12,7 @@ const TreeShape = preload("res://core/tree_shape.gd")
 
 const SEGS := 14  # round the trunk
 const ROOTS := 7
+const CLEAR_UNDER := 22.5  # no leaves below this height near the trunk (the top deck at 19 m + head room)
 const SECTIONS := [-0.6, 0.6, 1.8, 4.2, 9.0, 16.0, 24.0]  # the trunk's convex collider pieces (heights from the ground; short at the
 # flared foot so each shell hugs the curve instead of bulging out past it)
 
@@ -135,14 +136,26 @@ static func _tree(bark: SurfaceTool, leaves: SurfaceTool, body: StaticBody3D, at
 		var fa := a + (0.65 if rng.randf() < 0.5 else -0.65)
 		var fork_tip := fork_at + Vector3(cos(fa), rng.randf_range(0.3, 0.6), sin(fa)) * rng.randf_range(5.0, 7.0)
 		_limb(bark, fork_at, fork_tip, girth * 0.22, girth * 0.1)
-		_clump(leaves, base.lerp(tip, 0.55) + Vector3(0, 1.8, 0), rng.randf_range(3.4, 4.4), rng)
-		_clump(leaves, fork_tip + Vector3(0, 0.8, 0), rng.randf_range(3.6, 4.8), rng)
+		var r_mid := rng.randf_range(3.4, 4.4)
+		_clump(leaves, _above_top_deck(base.lerp(tip, 0.55) + Vector3(0, 1.8, 0), r_mid, at, ground), r_mid, rng)
+		var r_fork := rng.randf_range(3.6, 4.8)
+		_clump(leaves, _above_top_deck(fork_tip + Vector3(0, 0.8, 0), r_fork, at, ground), r_fork, rng)
 		for c in rng.randi_range(2, 3):
 			var off := Vector3(rng.randf_range(-2.2, 2.2), rng.randf_range(0.2, 1.6), rng.randf_range(-2.2, 2.2))
-			_clump(leaves, tip + off, rng.randf_range(4.0, 5.6), rng)
+			var r_tip := rng.randf_range(4.0, 5.6)
+			_clump(leaves, _above_top_deck(tip + off, r_tip, at, ground), r_tip, rng)
 	for c in 3:
 		var off := Vector3(rng.randf_range(-3.0, 3.0), rng.randf_range(1.5, 3.5), rng.randf_range(-3.0, 3.0))
 		_clump(leaves, trunk_top + off, rng.randf_range(5.0, 6.4), rng)
+
+
+# (polish1 D4c) A leaf clump near the trunk is lifted until its underside clears the treetop village's top deck height
+# (19 m + head room), so the top ring and its catwalk are not inside the leaves.
+static func _above_top_deck(c: Vector3, r: float, at: Vector2, ground: float) -> Vector3:
+	var clear_y := ground + CLEAR_UNDER
+	if Vector2(c.x - at.x, c.z - at.y).length() < r + 7.0 and c.y - r * 0.7 < clear_y:
+		return Vector3(c.x, clear_y + r * 0.7, c.z)
+	return c
 
 
 # One root piece from a to b (plan), a hump with a ridge of height h and a foot of half width w at each end.

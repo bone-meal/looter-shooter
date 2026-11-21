@@ -60,6 +60,8 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	for way: Dictionary in tops.ways:
 		if way.has("foot") and int(way["from"]) < 0:
 			clear.append(Vector2((way["foot"] as Vector3).x, (way["foot"] as Vector3).z))
+		for pylon: Vector2 in way.get("pylons", []):  # (the offshore catwalks' pylons on the land)
+			clear.append(pylon)
 	_ocean(parent, land)
 	var patches := PackedVector3Array()
 	for isle: Dictionary in land.islands:

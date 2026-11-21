@@ -2376,6 +2376,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var at_d: Vector2 = dk["at"]
 					var spot_d := at_d + (Vector2(float(dk["outer"]) - 1.0, 0.0) if dk["kind"] == "ring" else Vector2(0.0, 0.0))
 					player.call("teleport", Vector3(500.0 + spot_d.x, float(dk["y"]) + 0.2, spot_d.y), 0.0)
+					if words.size() > 3:  # "!tree goto <deck> <yaw deg> [pitch deg]": look that way (as !nav view)
+						await get_tree().create_timer(0.4).timeout
+						var yaw_g := deg_to_rad(float(words[3]))
+						var pitch_g := deg_to_rad(float(words[4]) if words.size() > 4 else 0.0)
+						player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_g) * cos(pitch_g), sin(pitch_g), -cos(yaw_g) * cos(pitch_g)) * 20.0)
 				"way":
 					var wi := int(find_way.call(words[2]))
 					var e := int(words[3]) if words.size() > 3 else 0
@@ -2384,6 +2389,12 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					await get_tree().create_timer(0.3).timeout
 					var look_at: Vector3 = ways_t[wi]["ends"][1 - e] if ways_t[wi]["kind"] == "bridge" else ((ways_t[wi]["foot"] as Vector3) + (ways_t[wi]["top"] as Vector3)) * 0.5
 					player.call("look_at_point", Vector3(500.0 + look_at.x, look_at.y + 1.4, look_at.z))
+				"at":  # "!tree at <x> <y> <z> [yaw] [pitch]": stand at a spot of the islands' frame (decks, the platform), looking that way
+					player.call("teleport", Vector3(500.0 + float(words[2]), float(words[3]) + 0.2, float(words[4])), 0.0)
+					await get_tree().create_timer(0.4).timeout
+					var yaw_a := deg_to_rad(float(words[5]) if words.size() > 5 else 0.0)
+					var pitch_a := deg_to_rad(float(words[6]) if words.size() > 6 else 0.0)
+					player.call("look_at_point", player.global_position + Vector3(0, 1.6, 0) + Vector3(-sin(yaw_a) * cos(pitch_a), sin(pitch_a), -cos(yaw_a) * cos(pitch_a)) * 20.0)
 				"use":
 					session.call("_use_treetop_way", int(session.call("_treetop_way_here")))
 				"give":
@@ -3239,7 +3250,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					# each bridge both ways; a line per stall (under 1.5 m in 1.5 s) or fall (more than 2 m down)
 					var tt2: Node3D = session.get("_treetops")
 					var tr2: RefCounted = tt2.get("rules")
-					var isle_d := int((session.get("_land") as RefCounted).call("index_of", words[2] if words.size() > 2 else "home"))
+					var isle_d := -1 if words.size() > 2 and words[2] == "sea" else int((session.get("_land") as RefCounted).call("index_of", words[2] if words.size() > 2 else "home"))  # "sea" = the offshore complex
 					for i in (tr2.get("ways") as Array).size():
 						session.call("_open_way", i, false)
 					await get_tree().create_timer(0.5).timeout
@@ -3257,16 +3268,32 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 									var p0 := c + Vector2(cos(a0), sin(a0)) * mid_r
 									var p1 := c + Vector2(cos(a0 + 0.9 * way_s), sin(a0 + 0.9 * way_s)) * mid_r
 									runs_d.append([Vector3(p0.x, y, p0.y), Vector3(p1.x, y, p1.y), "%s round" % dk["id"]])
-						else:
+						elif dk["kind"] == "stilts":
 							var h2: Vector2 = dk["outer"]
 							for corner: Vector2 in [Vector2(1, 0), Vector2(0, 1)]:  # along the middle lines (the hut's posts stand at its corners)
 								var p0 := c - corner * (h2 - Vector2(0.8, 0.8))
 								var p1 := c + corner * (h2 - Vector2(0.8, 0.8))
 								runs_d.append([Vector3(p0.x, y, p0.y), Vector3(p1.x, y, p1.y), "%s across" % dk["id"]])
 					for w: Dictionary in tr2.get("ways"):
-						if w["kind"] == "bridge" and int((tr2.get("decks") as Array)[int(w["to"])]["island"]) == isle_d:
+						var on_isle := int((tr2.get("decks") as Array)[int(w["to"])]["island"]) == isle_d
+						if (w["kind"] == "bridge" or w["kind"] == "catwalk") and on_isle:
 							runs_d.append([w["ends"][0], w["ends"][1], "%s over" % w["id"]])
 							runs_d.append([w["ends"][1], w["ends"][0], "%s back" % w["id"]])
+						elif w["kind"] == "link" and on_isle:
+							var la: Vector3 = w["a"]
+							var lb: Vector3 = w["b"]
+							var ld := (lb - la).normalized()
+							runs_d.append([la - ld * 1.5, lb + ld * 1.5, "%s over" % w["id"]])
+							runs_d.append([lb + ld * 1.5, la - ld * 1.5, "%s back" % w["id"]])
+						elif w["kind"] == "stairs" and on_isle:
+							var sa: Vector3 = w["start"]
+							var sb: Vector3 = w["end"]
+							var sd := Vector3(sb.x - sa.x, 0, sb.z - sa.z).normalized()
+							var jn: Vector3 = w["join"]
+							var past: Vector3 = jn + (Vector3(jn.x - sb.x, 0, jn.z - sb.z).normalized() * 1.5 if Vector2(jn.x - sb.x, jn.z - sb.z).length() > 0.1 else sd * 1.5)
+							runs_d.append([sa - sd * 1.0, sb, "%s up" % w["id"]])
+							runs_d.append([sb, sa - sd * 1.0, "%s down" % w["id"]])
+							runs_d.append([sb, past, "%s onto the deck" % w["id"]])
 					var bad_d: PackedStringArray = []
 					for run: Array in runs_d:
 						var s3: Vector3 = run[0]
@@ -3284,7 +3311,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						Input.action_release("move_forward")
 						await get_tree().create_timer(0.3).timeout
 						var moved_d := Vector2(player.global_position.x - from_d.x, player.global_position.z - from_d.z).length()
-						if player.global_position.y < from_d.y - 2.0:
+						if player.global_position.y < minf(s3.y, g3.y) - 2.0:  # (going down stairs drops by design)
 							bad_d.append("%s FELL to y %.1f at %.1f %.1f" % [run[2], player.global_position.y, player.global_position.x - 500.0, player.global_position.z])
 						elif moved_d < minf(1.5, want_d - 0.5):
 							bad_d.append("%s moved %.2f, in front: %s, touching: %s" % [run[2], moved_d, _what_ahead(player), _touching(player)])

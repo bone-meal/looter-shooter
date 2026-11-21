@@ -34,7 +34,7 @@ func _init() -> void:
 			if (f < 0 or reached.has(f)) and not reached.has(t):
 				reached[t] = true
 				grew = true
-			if w["kind"] == "bridge" and reached.has(t) and not reached.has(f):
+			if w["kind"] in ["bridge", "catwalk", "link", "stairs"] and reached.has(t) and f >= 0 and not reached.has(f):
 				reached[f] = true
 				grew = true
 	for i in tops.decks.size():
@@ -43,13 +43,26 @@ func _init() -> void:
 	for i in tops.ways.size():
 		var w: Dictionary = tops.ways[i]
 		var id := String(w["id"])
+		if bool(w.get("free", false)):
+			_check_free(tops, w)
+			continue
 		match String(w["kind"]):
-			"bridge":
+			"bridge", "catwalk":
 				var a: Vector3 = w["a"]
 				var b: Vector3 = w["b"]
 				var flat := Vector2(b.x - a.x, b.z - a.z).length()
-				if int(tops.decks[int(w["from"])]["layer"]) != int(tops.decks[int(w["to"])]["layer"]) or flat < 2.0 or flat > 30.0 or absf(a.y - b.y) > flat * 0.15:
-					_problem("bridge %s: %.1f m long, rises %.1f m between layers %d / %d" % [id, flat, b.y - a.y, int(tops.decks[int(w["from"])]["layer"]), int(tops.decks[int(w["to"])]["layer"])])
+				var longest := 30.0 if w["kind"] == "bridge" else 70.0
+				if flat < 2.0 or flat > longest or absf(a.y - b.y) > flat * 0.15:
+					_problem("%s %s: %.1f m long, rises %.1f m" % [w["kind"], id, flat, b.y - a.y])
+				if w["kind"] == "catwalk":  # its pylons: on clear ground or in the sea, never in an island thing; no span over 24 m
+					var last := Vector2(a.x, a.z)
+					for p: Vector2 in (w["pylons"] as Array) + [Vector2(b.x, b.z)]:
+						if p.distance_to(last) > 24.0:
+							_problem("catwalk %s: a %.1f m span without a pylon" % [id, p.distance_to(last)])
+						last = p
+					for p: Vector2 in w["pylons"]:
+						if _land.height_at(p.x, p.y) >= -0.05 and _why_not_clear(p, 0.8) != "":
+							_problem("catwalk %s: a pylon at (%.1f, %.1f): %s" % [id, p.x, p.y, _why_not_clear(p, 0.8)])
 			_:
 				var foot: Vector3 = w["foot"]
 				if int(w["from"]) < 0:
@@ -73,6 +86,15 @@ func _init() -> void:
 				_problem("way %s end %d stands off its deck" % [id, e])
 			if want < 0 and _why_not_clear(Vector2(stand.x, stand.z), 0.5) != "":
 				_problem("way %s end %d (ground) at (%.1f, %.1f) is not clear flat ground: %s" % [id, e, stand.x, stand.z, _why_not_clear(Vector2(stand.x, stand.z), 0.5)])
+	for d: Dictionary in tops.decks:  # the offshore decks with legs stand in open water, 8 m off every shore
+		if d["kind"] == "rig" and bool(d["legs"]):
+			var at_r: Vector2 = d["at"]
+			var half_r: Vector2 = d["outer"]
+			for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1), Vector2.ZERO]:
+				var q := at_r + corner * half_r
+				for isle: Dictionary in _land.islands:
+					if q.distance_to(isle["at"]) < float(isle["radius"]) + 8.0:
+						_problem("deck %s: its corner (%.1f, %.1f) is within 8 m of %s's shore" % [d["id"], q.x, q.y, isle["id"]])
 	for d: Dictionary in tops.decks:
 		if d["kind"] != "stilts":
 			continue
@@ -126,6 +148,24 @@ func _why_not_clear(p: Vector2, margin: float) -> String:
 		if (s[0] as Vector2).distance_to(p) < float(s[1]) + margin:
 			return "a placed thing at %s" % str(s[0])
 	return ""
+
+
+# The offshore complex's own stairs and links: they join the decks they say, a stair climbs no steeper than 35 deg.
+func _check_free(tops: TreetopRules, w: Dictionary) -> void:
+	if w["kind"] == "stairs":
+		var s0: Vector3 = w["start"]
+		var s1: Vector3 = w["end"]
+		var run := Vector2(s1.x - s0.x, s1.z - s0.z).length()
+		var rise := s1.y - s0.y
+		if run < 1.0 or rad_to_deg(atan2(rise, run)) > 35.0:
+			_problem("%s: rises %.1f m over %.1f m" % [w["id"], rise, run])
+		if tops.deck_at(s0.x, s0.y, s0.z) != int(w["from"]):
+			_problem("%s: starts off its lower deck" % w["id"])
+	else:
+		var a: Vector3 = w["a"]
+		var b: Vector3 = w["b"]
+		if tops.deck_at(a.x, a.y, a.z) != int(w["from"]) or tops.deck_at(b.x, b.y, b.z) != int(w["to"]) or absf(a.y - b.y) > 0.1:
+			_problem("%s: its ends are not on its decks (or not level)" % w["id"])
 
 
 func _crowded(p: Vector2, margin: float) -> bool:

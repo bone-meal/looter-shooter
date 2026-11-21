@@ -1879,7 +1879,7 @@ func _prompt() -> String:
 	var way := _treetop_way_here()
 	if way >= 0:  # (polish1 D4c) a ladder / rope bridge / lift of the treetop village
 		var w: Dictionary = _treetops.rules.ways[way]
-		var names := {"ladder": "Lower the rope ladder", "bridge": "Lay the rope bridge", "lift": "Rig the lift"}
+		var names := {"ladder": "Lower the rope ladder", "bridge": "Lay the rope bridge", "lift": "Rig the lift", "catwalk": "Build the catwalk to the platform"}
 		if not _treetops.rules.is_open(way):
 			return "[%s] %s (%d points)" % [key, names[String(w["kind"])], _treetops.rules.price(way)]
 		if String(w["kind"]) == "lift":

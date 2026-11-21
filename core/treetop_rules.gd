@@ -1,6 +1,7 @@
 # Purpose: (polish1 D4c) the treetop village's plain rules (data/treetops.json): the decks (rings round a giant tree's
 # trunk at three heights, platforms on stilts) and the WAYS between them (ladders, lifts, rope bridges) bought like
-# doors in any order. Works out where every deck and every way's ends are (world-plan metres, the islands' frame:
+# doors in any order, and (part 2) the OFFSHORE complex in the middle sea (rig decks on legs or on lower decks, free stairs
+# and catwalk links between them) joined to the villages' top rings by bought CATWALKS. Works out where every deck and every way's ends are (world-plan metres, the islands' frame:
 # x / z from game/island.gd CENTER, y up), which way end a spot is at, which ways are open, the ladders' climb boxes.
 # Pure: no nodes, no drawing.
 # Dependencies: core/tree_shape.gd; an Archipelago (core/archipelago.gd) for islands, trees and ground heights.
@@ -47,15 +48,80 @@ func _init(config: Dictionary, land: RefCounted) -> void:
 			_deck_index[deck["id"]] = decks.size()
 			decks.append(deck)
 		for w: Dictionary in v["ways"]:
+			if String(w["kind"]) == "catwalk":
+				continue  # (added once the offshore decks exist)
 			var way := {"id": String(w["id"]), "kind": String(w["kind"]), "price": int(w["price"]), "open": false,
 				"from": -1 if String(w["from"]) == "ground" else int(_deck_index[String(w["from"])]), "to": int(_deck_index[String(w["to"])])}
 			ways.append(way)
+	_offshore(cfg.get("offshore", {}))
+	for v: Dictionary in cfg["villages"]:  # the villages' catwalks to the offshore complex (its decks exist now)
+		for w: Dictionary in v["ways"]:
+			if String(w["kind"]) == "catwalk":
+				ways.append({"id": String(w["id"]), "kind": "catwalk", "price": int(w["price"]), "open": false, "from": int(_deck_index[String(w["from"])]), "to": int(_deck_index[String(w["to"])])})
 	for way: Dictionary in ways:  # bridges first: they fix where decks meet; ladders and lifts then take free sides
-		if way["kind"] == "bridge":
+		if way["kind"] == "bridge" or way["kind"] == "catwalk":
 			_place_bridge(way)
 	for way: Dictionary in ways:
-		if way["kind"] != "bridge":
+		if way["kind"] == "ladder" or way["kind"] == "lift":
 			_place_climb(way, land)
+		elif way["kind"] == "catwalk":
+			way["pylons"] = _pylons(way, land)
+
+
+# A long catwalk's pylons, about every 15 m: in the sea, or on flat land clear of rocks and trees (nudged along the
+# catwalk until they are; a beach slope is skipped).
+func _pylons(way: Dictionary, land: RefCounted) -> Array:
+	var a: Vector3 = way["a"]
+	var b: Vector3 = way["b"]
+	var flat := Vector2(b.x - a.x, b.z - a.z).length()
+	var n := maxi(1, floori(flat / 15.0))
+	var out: Array = []
+	for k in range(1, n + 1):
+		for nudge: float in [0.0, 2.5, -2.5, 5.0, -5.0]:
+			var t := clampf((float(k) / float(n + 1)) + nudge / flat, 0.08, 0.92)
+			var p := Vector2(lerpf(a.x, b.x, t), lerpf(a.z, b.z, t))
+			var h := float(land.call("height_at", p.x, p.y))
+			var in_sea := h < float(land.get("sea_level")) - 0.5
+			if in_sea or (is_zero_approx(h) and not bool(land.call("blocked", p.x, p.y, 1.2, true))):
+				out.append(p)
+				break
+	return out
+
+
+# (polish1 D4c part 2) The offshore complex: decks on legs or on lower decks, free stairs and catwalk links between them.
+func _offshore(o: Dictionary) -> void:
+	for d: Dictionary in o.get("decks", []):
+		var r: Array = d["rect"]
+		var deck := {"id": String(d["id"]), "island": -1, "kind": "rig", "layer": 0, "y": float(d["y"]), "gaps": [], "busy": [], "hut": false,
+			"at": Vector2((float(r[0]) + float(r[2])) * 0.5, (float(r[1]) + float(r[3])) * 0.5), "outer": Vector2(absf(float(r[2]) - float(r[0])), absf(float(r[3]) - float(r[1]))) * 0.5,
+			"legs": bool(d.get("legs", false)), "on": int(_deck_index.get(String(d.get("on", "")), -1)), "name": String(d.get("name", ""))}
+		_deck_index[deck["id"]] = decks.size()
+		decks.append(deck)
+	for st: Dictionary in o.get("stairs", []):
+		var low: Dictionary = decks[int(_deck_index[String(st["from"])])]
+		var high: Dictionary = decks[int(_deck_index[String(st["to"])])]
+		var start := Vector2(float(st["start"][0]), float(st["start"][1]))
+		var end := Vector2(float(st["end"][0]), float(st["end"][1]))
+		var join := _nearest_on(high, end)  # where the landing at the top meets the upper deck's edge
+		(high["gaps"] as Array).append(join)
+		ways.append({"id": "stairs_%s_%s" % [low["id"], high["id"]], "kind": "stairs", "price": 0, "open": true, "free": true, "from": int(_deck_index[low["id"]]), "to": int(_deck_index[high["id"]]),
+			"start": Vector3(start.x, float(low["y"]), start.y), "end": Vector3(end.x, float(high["y"]), end.y), "join": Vector3(join.x, float(high["y"]), join.y), "width": float(st.get("width", 2.0)), "ends": []})
+	for l: Dictionary in o.get("links", []):
+		var a: Dictionary = decks[int(_deck_index[String(l["from"])])]
+		var b: Dictionary = decks[int(_deck_index[String(l["to"])])]
+		var pa := Vector2(float(l["at"][0]), float(l["at"][1]))
+		var pb := Vector2(float(l["to_at"][0]), float(l["to_at"][1]))
+		(a["gaps"] as Array).append(pa)
+		(b["gaps"] as Array).append(pb)
+		ways.append({"id": "link_%s_%s" % [a["id"], b["id"]], "kind": "link", "price": 0, "open": true, "free": true, "from": int(_deck_index[a["id"]]), "to": int(_deck_index[b["id"]]),
+			"a": Vector3(pa.x, float(a["y"]), pa.y), "b": Vector3(pb.x, float(b["y"]), pb.y), "ends": []})
+
+
+# The point of a rectangular deck's edge nearest a plan point outside it (or the point itself when inside).
+func _nearest_on(deck: Dictionary, p: Vector2) -> Vector2:
+	var at: Vector2 = deck["at"]
+	var half: Vector2 = deck["outer"]
+	return Vector2(clampf(p.x, at.x - half.x, at.x + half.x), clampf(p.y, at.y - half.y, at.y + half.y))
 
 
 func _tree_block(land: RefCounted, at: Vector2) -> Dictionary:
@@ -153,6 +219,8 @@ func way_near(x: float, y: float, z: float) -> int:
 	var best := -1
 	var best_d := reach
 	for i in ways.size():
+		if bool(ways[i].get("free", false)):
+			continue
 		for e: Vector3 in ways[i]["ends"]:
 			if absf(e.y - y) > 1.6:
 				continue
@@ -179,7 +247,7 @@ func price(way: int) -> int:
 
 
 func open(way: int) -> bool:
-	if way < 0 or way >= ways.size() or is_open(way):
+	if way < 0 or way >= ways.size() or is_open(way) or bool(ways[way].get("free", false)):
 		return false
 	ways[way]["open"] = true
 	return true
@@ -187,13 +255,13 @@ func open(way: int) -> bool:
 
 func close_all() -> void:
 	for w: Dictionary in ways:
-		w["open"] = false
+		w["open"] = bool(w.get("free", false))  # (the offshore complex's own stairs and links are always there)
 
 
 func open_list() -> PackedInt32Array:
 	var out := PackedInt32Array()
 	for i in ways.size():
-		if is_open(i):
+		if is_open(i) and not bool(ways[i].get("free", false)):
 			out.append(i)
 	return out
 
