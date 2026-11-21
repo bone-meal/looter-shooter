@@ -4,7 +4,9 @@
 # sway and leather breathing, and the mask's own effects (Plague Doctor: green death mist and flies from the beak), all
 # by the graphics tier (`tier`, set by the session: mesh level, texture size, how many particles). Meshes, textures
 # and materials are shared between everyone wearing the same mask. A moving part (FX blue: Iron Reaper's jaw) turns about
-# its hinge in the vertex shader; masks without Morse can pulse their glow.
+# its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
+# an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
+# in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask.
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
 
@@ -33,6 +35,10 @@ uniform float jaw_angle = 0.0;  // radians at full grind
 uniform float jaw_every = 5.0;  // seconds between grinds
 uniform vec3 slide = vec3(0.0);  // instead of turning: the moving part slides out by this much (a tongue flick)
 uniform float blink_every = 0.0;  // glow group R blinks shut, one side then the other (0 = never)
+instance uniform float moving = 0.0;  // this wearer: 0 standing still .. 1 running (game/rigged_body.gd)
+uniform float move_pulse = 0.0;  // the pulse quickens to pulse_hz + this while moving (Iron Reaper)
+uniform vec2 stillness = vec2(1.0);  // glow x this when still / moving (Ashen King: embers brighter standing still)
+uniform float heal_every = 0.0;  // glow group G = cracks that open and heal, along their length, every n seconds
 varying float side;
 
 void vertex() {
@@ -74,7 +80,9 @@ void fragment() {
 	int i = int(mod(TIME / morse_unit, float(max(morse_len, 1))));
 	float on = texelFetch(morse_tex, ivec2(i, 0), 0).r;
 	if (pulse_hz > 0.0) {
-		on = 0.72 + 0.28 * sin(TIME * 6.2832 * pulse_hz);
+		float slow = 0.72 + 0.28 * sin(TIME * 6.2832 * pulse_hz);
+		float fast = 0.8 + 0.2 * sin(TIME * 6.2832 * (pulse_hz + move_pulse));
+		on = move_pulse > 0.0 ? mix(slow, fast, moving) : slow;
 	}
 	float shut = 0.0;
 	if (blink_every > 0.0) {
@@ -82,8 +90,13 @@ void fragment() {
 		shut = smoothstep(0.0, 0.05, ph) * (1.0 - smoothstep(0.14, 0.22, ph)) * fx.r;
 		ALBEDO = mix(ALBEDO, vec3(0.01, 0.02, 0.01), shut);
 	}
-	float lit = fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + fx.g * mix(0.1, 0.75, on);
-	EMISSION = glow_color * lit * glow_strength;
+	float g_lit = mix(0.1, 0.75, on);
+	if (heal_every > 0.0) {
+		float ph = sin(TIME * 6.2832 / heal_every + UV.x * 17.0 + UV.y * 11.0);
+		g_lit = smoothstep(-0.25, 0.65, ph) * mix(0.5, 1.0, on);
+	}
+	float lit = fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + fx.g * g_lit;
+	EMISSION = glow_color * lit * glow_strength * mix(stillness.x, stillness.y, moving);
 }
 """
 
@@ -154,6 +167,8 @@ static func build(id: String) -> Node3D:
 	var share := float(detail.get("fx", 1.0))
 	if fx.get("mist") is Dictionary and share > 0.0:
 		root.add_child(_mist(fx["mist"], share))
+	if fx.get("ash") is Dictionary and share > 0.0:
+		root.add_child(_mist(fx["ash"], share))
 	if fx.get("flies") is Dictionary and share > 0.0:
 		root.add_child(_flies(fx["flies"], share))
 	if fx.get("sparks") is Dictionary and share > 0.0:
@@ -209,6 +224,10 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	m.set_shader_parameter("breathe", float(fx.get("breathe", 0.0)))
 	m.set_shader_parameter("pulse_hz", float(fx.get("pulse_hz", 0.0)))
 	m.set_shader_parameter("blink_every", float(fx.get("blink_every", 0.0)))
+	m.set_shader_parameter("move_pulse", float(fx.get("move_pulse", 0.0)))
+	var still: Array = fx.get("stillness", [1.0, 1.0])
+	m.set_shader_parameter("stillness", Vector2(float(still[0]), float(still[1])))
+	m.set_shader_parameter("heal_every", float(fx.get("heal_every", 0.0)))
 	var flick: Dictionary = fx.get("flick", {})
 	if not flick.is_empty():
 		m.set_shader_parameter("slide", _vec(flick.get("by"), Vector3.ZERO))
@@ -249,15 +268,15 @@ static func _mist(cfg: Dictionary, share: float) -> CPUParticles3D:
 	p.name = "MaskMist"
 	p.position = _vec(cfg.get("at"), Vector3.ZERO)
 	p.amount = maxi(roundi(float(cfg.get("amount", 20)) * share), 3)
-	p.lifetime = 2.8
+	p.lifetime = float(cfg.get("life", 2.8))
 	p.local_coords = false
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 0.025
-	p.direction = Vector3(0, -0.35, -1)
+	p.emission_sphere_radius = float(cfg.get("radius", 0.025))
+	p.direction = _vec(cfg.get("dir"), Vector3(0, -0.35, -1))  # (ash: up)
 	p.spread = 40.0
 	p.initial_velocity_min = 0.03
 	p.initial_velocity_max = 0.1
-	p.gravity = Vector3(0, -0.035, 0)
+	p.gravity = Vector3(0, float(cfg.get("rise", -0.035)), 0)
 	p.damping_min = 0.02
 	p.damping_max = 0.05
 	p.scale_amount_min = 0.6
@@ -325,8 +344,8 @@ static func _sparks(cfg: Dictionary, at: Vector3, share: float) -> CPUParticles3
 	p.lifetime = float(cfg.get("life", 0.9))
 	p.local_coords = false
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 0.015 if not cfg.has("drip") else 0.002
-	p.direction = Vector3(0, -0.4, -1) if not cfg.has("drip") else Vector3(0, -1, 0)
+	p.emission_sphere_radius = float(cfg.get("radius", 0.015)) if not cfg.has("drip") else 0.002
+	p.direction = _vec(cfg.get("dir"), Vector3(0, -0.4, -1)) if not cfg.has("drip") else Vector3(0, -1, 0)  # (embers: up)
 	p.spread = 55.0 if not cfg.has("drip") else 5.0
 	p.initial_velocity_min = 0.08 if not cfg.has("drip") else 0.0
 	p.initial_velocity_max = 0.35 if not cfg.has("drip") else 0.05

@@ -2,6 +2,7 @@
 # is left off), pictures from the 3/4 front, side and back close on the heads, the mask alone at each graphics detail
 # (hi / lo mesh), and triangles / draw calls, to res://tools/shots/mask_<id>_<view>.jpg + tools/mask_shot.log.
 # `-- --id=<mask>` (else tools/mask_shot_id.txt, else plague_doctor), `--tier=<0-4>`, `--wait=<frames>` (particles settle).
+# The woman stands still, the man is shown as if running (the mask shader's per-wearer `moving`).
 # Dependencies: game/rigged_body.gd, game/mask_model.gd, game/surface_library.gd.
 extends Node3D
 
@@ -75,6 +76,9 @@ func _ready() -> void:
 			for _i in wait:
 				for b: Node3D in bodies:
 					b.call("animate", 0.0, false)
+					var mm := (b.call("head_anchor") as Node3D).get_node_or_null("Mask/MaskMesh") as MeshInstance3D
+					if mm != null and bodies.find(b) == 1:  # the man's pictures show the mask as if he were running
+						mm.set_instance_shader_parameter("moving", 1.0)
 				await get_tree().process_frame
 			await RenderingServer.frame_post_draw
 			var file := "res://tools/shots/mask_%s_%s_%s.jpg" % [id, view, "f" if bodies.find(body) == 0 else "m"]

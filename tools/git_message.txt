@@ -1,6 +1,6 @@
-Polish1 D5c part 4: Venom Sovereign, the third boss mask
+Polish1 D5c part 5: Ashen King, the fourth boss mask
 
-A cobra head sculpted as a signed distance field: hood flared behind the head with ribs and eye-spot markings on its back, sunk slit-pupil eyes that glow and blink, fangs that drip glowing venom, a forked tongue that flicks out on a timer in the shader.
+A scowling porcelain face charred black under a crown of ceramic spikes, a chunk broken out of one cheek with fire inside, ember cracks walked over the surface and cut into it. In the game its cracks heal and split again, ash and embers rise off the crown, and the embers burn brighter while the wearer stands still: masks now know how fast their wearer moves (the Iron Reaper's eyes pulse faster on the move).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

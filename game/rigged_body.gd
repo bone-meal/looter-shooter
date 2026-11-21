@@ -43,6 +43,8 @@ var _grip: TwoBoneIK3D  # right arm reaching for the grip of a gun carried on th
 var _grip_target: Node3D
 var _handles: RiggedPose
 var _hold_amount := 0.0
+var _mask_mesh: MeshInstance3D  # (polish1 D5c) the worn mask, told how fast we move
+var _mask_move := 0.0
 var _held_clip := ""  # hold() asked for before the body was in the scene; applied in _ready
 var _held_time := 0.0
 var _outfit_albedo: Texture2D  # the outfit's alternative colour texture, if it has one
@@ -198,10 +200,12 @@ func setup(look: Dictionary) -> bool:
 			var lift: Array = thing.get("at", [0.0, 0.0, 0.0])
 			made.position = Vector3(float(lift[0]), float(lift[1]), float(lift[2]))
 			_anchor.add_child(made)
+	_mask_mesh = null
 	if mask_id != "":  # (polish1 D5c) the worn mask (tools/blender/mask_bake.py: built in this anchor's space)
 		var mask := MaskModel.build(mask_id)
 		if mask != null:
 			_anchor.add_child(mask)
+			_mask_mesh = mask.get_node_or_null("MaskMesh") as MeshInstance3D
 	_hand = Node3D.new()
 	var palm := BoneAttachment3D.new()
 	_skeleton.add_child(palm)
@@ -229,6 +233,9 @@ func animate(move: float, holding: bool) -> void:
 	_tree.active = true
 	_tree.set("parameters/move/blend_position", clampf(move, 0.0, 1.0))
 	_tree.set("parameters/hold/blend_amount", _hold_amount)
+	if _mask_mesh != null:  # (polish1 D5c) the mask's glow follows how fast this wearer moves
+		_mask_move = move_toward(_mask_move, clampf(move, 0.0, 1.0), get_process_delta_time() * 1.5)
+		_mask_mesh.set_instance_shader_parameter("moving", _mask_move)
 
 
 # A node that follows a bone (bone space), for things worn on the body.

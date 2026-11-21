@@ -41,6 +41,7 @@
 				"glow": [1.0, 0.42, 0.05],
 				"glow_strength": 7.0,
 				"pulse_hz": 0.6,
+				"move_pulse": 2.4,
 				"jaw": {"hinge": [0.069, -0.056], "angle": 5.0, "every": 6.0},
 				"sparks": {"at": [[0.0, -0.02, -0.14], [0.04, 0.1, -0.11], [-0.04, 0.1, -0.11]], "amount": 6, "color": [1.0, 0.55, 0.12]}
 			}
@@ -60,6 +61,24 @@
 				"blink_every": 4.5,
 				"flick": {"by": [0.0, 0.0, -0.07], "every": 3.5},
 				"sparks": {"at": [[0.0195, 0.027, -0.223], [-0.0195, 0.027, -0.223]], "amount": 3, "drip": 0.0035, "life": 1.4, "gravity": 1.2, "glow": 4.0, "color": [0.35, 1.0, 0.15]}
+			}
+		},
+		"ashen_king": {
+			"name": "Ashen King",
+			"source": "boss",
+			"base": "payday",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A scowling porcelain face charred black under a crown of ceramic spikes, a chunk of one cheek broken away and fire inside. Its cracks heal and split again, ash rises off the crown, and the embers burn brighter while the wearer stands still.",
+			"fx": {
+				"glow": [1.0, 0.3, 0.04],
+				"glow_strength": 3.0,
+				"pulse_hz": 0.35,
+				"stillness": [1.6, 0.45],
+				"heal_every": 7.0,
+				"ash": {"at": [0.0, 0.2, -0.015], "radius": 0.07, "amount": 14, "dir": [0.0, 1.0, 0.0], "rise": 0.05, "life": 3.2, "size": 0.03, "color": [0.32, 0.3, 0.28, 0.5]},
+				"sparks": {"at": [[0.0, 0.2, -0.015]], "radius": 0.07, "amount": 6, "dir": [0.0, 1.0, 0.0], "gravity": -0.25, "life": 1.6, "glow": 4.0, "color": [1.0, 0.45, 0.1]}
 			}
 		}
 	}
