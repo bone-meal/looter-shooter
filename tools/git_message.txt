@@ -1,10 +1,1 @@
-Polish1 D4e: the Re-forge's own forge-press + its lighthouse / foghorn / tide-wheel quest
-
-- game/reforge_machine.gd: the Re-forge is its own big machine (furnace, brass dome + gauges, glass tubes, drop hammer that strikes per use, ship's-wheel crank, anchor); cold until woken; moved to the rig main deck (102, -3.6) under the helideck
-- data/reforge_quest.json + core/reforge_quest.gd: three maritime pieces in any order with the power on: lighthouse (find the brass lens at one of 4 spots, fit it), cliff foghorn (hold interact 5 s), tide wheel (set turning, 14 kills within 9 m in 60 s); all three wake the Re-forge
-- game/reforge_things.gd: pieces (smooth colliders), lighthouse beam, the lens; tools/blender/reforge_quest.py models; tools/make_reforge_sounds.py (foghorn_blast, reforge_wake, reforge_strike)
-- online host-run (net_rounds ask_reforge / tell_reforge, joiners get the state); pair set reforge works
-- dev !reforge, !nav reforge (0 prop stalls); layout check allows hill_top
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Release v1.14
