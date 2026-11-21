@@ -1,7 +1,7 @@
 # Purpose: developer check of the game masks (polish1 D5c): a woman and a man wearing the mask (hair given, to show it
 # is left off), pictures from the 3/4 front, side and back close on the heads, the mask alone at each graphics detail
 # (hi / lo mesh), and triangles / draw calls, to res://tools/shots/mask_<id>_<view>.jpg + tools/mask_shot.log.
-# `-- --id=<mask>` (default plague_doctor), `--tier=<0-4>`, `--wait=<frames>` (particles settle).
+# `-- --id=<mask>` (else tools/mask_shot_id.txt, else plague_doctor), `--tier=<0-4>`, `--wait=<frames>` (particles settle).
 # Dependencies: game/rigged_body.gd, game/mask_model.gd, game/surface_library.gd.
 extends Node3D
 
@@ -12,6 +12,8 @@ const MaskModel = preload("res://game/mask_model.gd")
 
 func _ready() -> void:
 	var id := "plague_doctor"
+	if FileAccess.file_exists("res://tools/mask_shot_id.txt"):  # (run from the editor / MCP without arguments)
+		id = FileAccess.get_file_as_string("res://tools/mask_shot_id.txt").strip_edges()
 	var wait := 40
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--id="):
@@ -21,10 +23,12 @@ func _ready() -> void:
 		elif arg.begins_with("--wait="):
 			wait = int(arg.trim_prefix("--wait="))
 	var env := Environment.new()
-	env.background_mode = Environment.BG_COLOR
-	env.background_color = Color(0.09, 0.1, 0.13)
-	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
-	env.ambient_light_color = Color(0.45, 0.47, 0.52)
+	var sky := Sky.new()  # a sky, as in the game: metals need something to reflect
+	sky.sky_material = ProceduralSkyMaterial.new()
+	env.sky = sky
+	env.background_mode = Environment.BG_SKY
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_SKY
+	env.reflected_light_source = Environment.REFLECTION_SOURCE_SKY
 	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
 	env.glow_enabled = true
 	var we := WorldEnvironment.new()

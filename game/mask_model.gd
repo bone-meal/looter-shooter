@@ -3,7 +3,8 @@
 # colour / normal / ORM / FX maps (FX = where the eyes glow: they flash the mask's Morse messages), a slight hat-brim
 # sway and leather breathing, and the mask's own effects (Plague Doctor: green death mist and flies from the beak), all
 # by the graphics tier (`tier`, set by the session: mesh level, texture size, how many particles). Meshes, textures
-# and materials are shared between everyone wearing the same mask.
+# and materials are shared between everyone wearing the same mask. A moving part (FX blue: Iron Reaper's jaw) turns about
+# its hinge in the vertex shader; masks without Morse can pulse their glow.
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
 
@@ -26,8 +27,23 @@ uniform float glow_strength = 6.0;
 uniform float sway = 0.0;
 uniform float breathe = 0.0;
 uniform vec3 head_mid = vec3(0.0, 0.1, -0.02);
+uniform float pulse_hz = 0.0;  // steady glow that pulses (masks without Morse)
+uniform vec2 jaw_hinge = vec2(0.07, -0.056);  // the moving part (FX blue) turns about the X axis through (y, z)
+uniform float jaw_angle = 0.0;  // radians at full grind
+uniform float jaw_every = 5.0;  // seconds between grinds
 
 void vertex() {
+	float jaw = textureLod(fx_tex, UV, 0.0).b;
+	if (jaw_angle > 0.0 && jaw > 0.5) {
+		float ph = mod(TIME, jaw_every);
+		float open = smoothstep(0.0, 0.25, ph) * (1.0 - smoothstep(0.9, 1.4, ph));
+		float a = jaw_angle * open * (0.75 + 0.25 * sin(TIME * 47.0));
+		vec2 q = VERTEX.yz - jaw_hinge;
+		float c = cos(a), s = sin(a);
+		VERTEX.yz = jaw_hinge + vec2(q.x * c + q.y * s, -q.x * s + q.y * c);
+		NORMAL.yz = vec2(NORMAL.y * c + NORMAL.z * s, -NORMAL.y * s + NORMAL.z * c);
+		VERTEX.x += sin(TIME * 31.0) * 0.0015 * open;
+	}
 	vec3 rel = VERTEX - head_mid;
 	float r = length(rel.xz);
 	float brim = smoothstep(0.15, 0.21, r) * smoothstep(0.04, 0.07, rel.y);
@@ -48,6 +64,9 @@ void fragment() {
 	NORMAL_MAP = texture(nrm_tex, UV).rgb;
 	int i = int(mod(TIME / morse_unit, float(max(morse_len, 1))));
 	float on = texelFetch(morse_tex, ivec2(i, 0), 0).r;
+	if (pulse_hz > 0.0) {
+		on = 0.72 + 0.28 * sin(TIME * 6.2832 * pulse_hz);
+	}
 	float lit = fx.r * mix(0.22, 1.0, on) + fx.g * mix(0.1, 0.75, on);
 	EMISSION = glow_color * lit * glow_strength;
 }
@@ -122,6 +141,9 @@ static func build(id: String) -> Node3D:
 		root.add_child(_mist(fx["mist"], share))
 	if fx.get("flies") is Dictionary and share > 0.0:
 		root.add_child(_flies(fx["flies"], share))
+	if fx.get("sparks") is Dictionary and share > 0.0:
+		for at: Variant in (fx["sparks"] as Dictionary).get("at", []):
+			root.add_child(_sparks(fx["sparks"], _vec(at, Vector3.ZERO), share))
 	return root
 
 
@@ -170,6 +192,13 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	m.set_shader_parameter("glow_strength", float(fx.get("glow_strength", 0.0)))
 	m.set_shader_parameter("sway", float(fx.get("sway", 0.0)))
 	m.set_shader_parameter("breathe", float(fx.get("breathe", 0.0)))
+	m.set_shader_parameter("pulse_hz", float(fx.get("pulse_hz", 0.0)))
+	var jaw: Dictionary = fx.get("jaw", {})
+	if not jaw.is_empty():
+		var h: Array = jaw.get("hinge", [0.07, -0.056])
+		m.set_shader_parameter("jaw_hinge", Vector2(float(h[0]), float(h[1])))
+		m.set_shader_parameter("jaw_angle", deg_to_rad(float(jaw.get("angle", 4.0))))
+		m.set_shader_parameter("jaw_every", float(jaw.get("every", 5.0)))
 	_materials[key] = m
 	return m
 
@@ -264,4 +293,35 @@ static func _flies(cfg: Dictionary, share: float) -> CPUParticles3D:
 	mat.roughness = 0.3
 	body.material = mat
 	p.mesh = body
+	return p
+
+
+# Sparks and metal shavings that drop from a point (Iron Reaper's jaw and eyes): tiny glowing streaks, a few dark flakes.
+static func _sparks(cfg: Dictionary, at: Vector3, share: float) -> CPUParticles3D:
+	var p := CPUParticles3D.new()
+	p.name = "MaskSparks"
+	p.position = at
+	p.amount = maxi(roundi(float(cfg.get("amount", 8)) * share), 2)
+	p.lifetime = 0.9
+	p.local_coords = false
+	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = 0.015
+	p.direction = Vector3(0, -0.4, -1)
+	p.spread = 55.0
+	p.initial_velocity_min = 0.08
+	p.initial_velocity_max = 0.35
+	p.gravity = Vector3(0, -2.2, 0)
+	p.randomness = 0.6
+	var c: Array = cfg.get("color", [1.0, 0.55, 0.12])
+	var bit := BoxMesh.new()
+	bit.size = Vector3(0.0025, 0.012, 0.0025)  # long along Y: particle_flag_align_y turns it along its flight
+	var mat := StandardMaterial3D.new()
+	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	mat.albedo_color = Color(float(c[0]), float(c[1]), float(c[2]))
+	mat.emission_enabled = true
+	mat.emission = mat.albedo_color
+	mat.emission_energy_multiplier = 3.0
+	bit.material = mat
+	p.mesh = bit
+	p.particle_flag_align_y = true
 	return p

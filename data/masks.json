@@ -28,6 +28,22 @@
 				"sway": 0.003,
 				"breathe": 0.0012
 			}
+		},
+		"iron_reaper": {
+			"name": "Iron Reaper",
+			"source": "boss",
+			"base": "skull",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A heavy industrial skull welded from steel plates. Molten eyes glow behind visor slats; the jaw grinds on its pistons and sheds sparks and shavings.",
+			"fx": {
+				"glow": [1.0, 0.42, 0.05],
+				"glow_strength": 7.0,
+				"pulse_hz": 0.6,
+				"jaw": {"hinge": [0.069, -0.056], "angle": 5.0, "every": 6.0},
+				"sparks": {"at": [[0.0, -0.02, -0.14], [0.04, 0.1, -0.11], [-0.04, 0.1, -0.11]], "amount": 6, "color": [1.0, 0.55, 0.12]}
+			}
 		}
 	}
 }

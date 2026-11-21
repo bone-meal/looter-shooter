@@ -1,6 +1,6 @@
-Polish1 D5c part 2: mask drops and mask trading
+Polish1 D5c part 3: Iron Reaper, the second boss mask
 
-Any boss can drop any boss mask (2 percent per player, rolled by the host), elites drop elite masks, colosseum chests loot masks. Drop masks trade in a MASKS tab of the trade window; the worn mask comes off with its last copy. Seen online: the guest saw the host's mask, the mask traded, the host saw the guest wear it.
+A welded steel skull sculpted as a signed distance field and cut into plates, baked into the game like the Plague Doctor: molten eyes that pulse, a jaw that grinds on its hinge in the shader, sparks from jaw and eyes. Shared mask kit for the next masks; the baker unhooks driven metal, brightens game metals and takes glow and moving-part channels from material names.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

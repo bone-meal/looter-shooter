@@ -1,1 +1,1 @@
-!uncap;!wait 2;!mask give plague_doctor;!mask tab;!wait 2;!mask press pick plague_doctor;!wait 1;!mask press wear;!wait 3;!snap m_tab;!mask worn
+!uncap;!wait 2;!mask give iron_reaper;!mask give plague_doctor;!mask wear iron_reaper;!mask worn_ir;!mask tab;!wait 2;!mask press pick iron_reaper;!wait 3;!snap m_tab_ir

@@ -1,7 +1,8 @@
 # Purpose: developer-time. Turns a scripted mask sculpt (tools/blender/mask_<id>.py, built by diary/MASK_PROCESS.md
 # = the HIGH poly) into the game mask (MASK_PROCESS step 12): a LOW poly in two levels (hi / lo), UVs, and textures
-# baked from the high poly: colour, tangent normal, ORM (R 1, G roughness, B metal) and FX (R left eye glow, G right eye
-# glow). Written to assets/masks/<id>/ as OBJ (already in the head anchor's space: metres, -Z forward, Y up) + PNG at
+# baked from the high poly: colour, tangent normal, ORM (R 1, G roughness, B metal from each material's Metallic) and
+# FX (materials named fxR_ / fxG_ glow as the two glow groups (the Plague Doctor's lensglow28 / 5 too), fxB_ = the part
+# that moves, a jaw). Written to assets/masks/<id>/ as OBJ (already in the head anchor's space: metres, -Z forward, Y up) + PNG at
 # full size and half size (the lower quality tiers). Small parts (stitches, studs, eyelets, lacing) live only in the
 # baked maps; glass is left out (the game draws the lens). Thick sheets (solidified leather, brim) are one sheet in
 # the low poly: the game draws masks two-sided. Effects (mist, flies) are the game's (game/mask_model.gd).
@@ -23,7 +24,7 @@ os.makedirs(OUT, exist_ok=True)
 script = os.path.join(HERE, "mask_%s.py" % ID)
 os.environ["MASK_GAME"] = "1"
 sys.argv = [script, "/tmp/mask_unused"]
-NS = {"__name__": "mask_build"}
+NS = {"__name__": "mask_build", "__file__": script}
 try:
     exec(compile(open(script).read(), script, "exec"), NS)
 except SystemExit:
@@ -36,7 +37,6 @@ from PIL import Image  # noqa: E402
 
 SC = bpy.context.scene
 FIT = NS.get("GAME_FIT", {"scale": 0.13, "lift": 0.1, "back": 0.0})
-METAL_MATS = ("brass", "iron")
 THIN = 0.025  # parts thinner than this (sculpt units) or smaller than SMALL live only in the baked maps
 SMALL = 0.15
 
@@ -198,21 +198,38 @@ def emit_restore(saved):
 
 normal_png = bake("NORMAL", "nrm", 4, "Non-Color", normal_space="TANGENT")
 metal_saved = {}
-for m in high.data.materials:  # colour without the metal look: metals keep their base colour
+metal_links = {}
+for m in high.data.materials:  # colour without the metal look: metals keep their base colour (a driven Metallic is unhooked)
     p = principled(m)
     if p is not None:
         metal_saved[m.name] = p.inputs["Metallic"].default_value
+        if p.inputs["Metallic"].links:
+            metal_links[m.name] = p.inputs["Metallic"].links[0].from_socket
+            m.node_tree.links.remove(p.inputs["Metallic"].links[0])
         p.inputs["Metallic"].default_value = 0.0
 col_png = bake("DIFFUSE", "col", 8, pass_filter={"COLOR"})
 for m in high.data.materials:
     p = principled(m)
     if p is not None:
         p.inputs["Metallic"].default_value = metal_saved[m.name]
+        if m.name in metal_links:
+            m.node_tree.links.new(metal_links[m.name], p.inputs["Metallic"])
 rough_png = bake("ROUGHNESS", "rough", 4, "Non-Color")
-s = emit_swap(lambda n: (1.0, 1.0, 1.0) if n.split(".")[0] in METAL_MATS else (0.0, 0.0, 0.0))
+METALLIC = {m.name: metal_saved.get(m.name, 0.0) for m in high.data.materials}
+s = emit_swap(lambda n: (1.0, 1.0, 1.0) if METALLIC.get(n, 0.0) > 0.5 else (0.0, 0.0, 0.0))
 metal_png = bake("EMIT", "metal", 2, "Non-Color")
 emit_restore(s)
-s = emit_swap(lambda n: (1.0, 0.0, 0.0) if n == "lensglow28" else ((0.0, 1.0, 0.0) if n == "lensglow5" else (0.0, 0.0, 0.0)))
+def fx_of(n):  # material name -> FX channels: R / G = the two glow groups (eyes), B = the moving part (a jaw)
+    if n == "lensglow28" or n.startswith("fxR_"):
+        return (1.0, 0.0, 0.0)
+    if n == "lensglow5" or n.startswith("fxG_"):
+        return (0.0, 1.0, 0.0)
+    if n.startswith("fxB_"):
+        return (0.0, 0.0, 1.0)
+    return (0.0, 0.0, 0.0)
+
+
+s = emit_swap(fx_of)
 fx_png = bake("EMIT", "fx_raw", 2, "Non-Color")
 emit_restore(s)
 
@@ -223,10 +240,19 @@ def load(path):
 
 r = load(rough_png)[:, :, 0]
 mt = load(metal_png)[:, :, 0]
+# Game metals: the sculpt's dark steel reads right in a lit studio but goes black in a game scene with little to
+# reflect: metal texels get a reflectance colour of at least METAL_LUM (hue kept) and metallic 0.78.
+METAL_LUM = 0.26
+col = load(col_png).astype(np.float32) / 255.0
+lum = col[:, :, 0] * 0.2126 + col[:, :, 1] * 0.7152 + col[:, :, 2] * 0.0722
+gain = np.clip(METAL_LUM / np.maximum(lum, 0.02), 1.0, 3.0)
+is_metal = (mt > 127)[:, :, None]
+col = np.where(is_metal, np.clip(col * gain[:, :, None], 0.0, 1.0), col)
+Image.fromarray((col * 255.0).astype(np.uint8)).save(col_png)
+mt = np.where(mt > 127, 200, 0).astype(np.uint8)
 orm = np.stack([np.full_like(r, 255), r, mt], -1)
 Image.fromarray(orm).save(os.path.join(OUT, "orm.png"))
 fx = load(fx_png)
-fx[:, :, 2] = 0
 Image.fromarray(fx).save(os.path.join(OUT, "fx.png"))
 for f in ("rough", "metal", "fx_raw"):
     os.remove(os.path.join(OUT, f + ".png"))

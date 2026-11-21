@@ -41,7 +41,7 @@ func _init() -> void:
 	for i in 20000:
 		if db.roll_drop("boss", "boss", rng) != "":
 			hits += 1
-	say("drops: sure -> %s, none at 0, boss rate %.4f (data %.4f), no elite masks yet -> '%s'" % [sure, float(hits) / 20000.0, keep, db.roll_drop("elite", "elite", rng)], sure == "plague_doctor" and never == "" and absf(float(hits) / 20000.0 - keep) < 0.005)
+	say("drops: sure -> %s, none at 0, boss rate %.4f (data %.4f), no elite masks yet -> '%s'" % [sure, float(hits) / 20000.0, keep, db.roll_drop("elite", "elite", rng)], db.of_source("boss").has(sure) and never == "" and absf(float(hits) / 20000.0 - keep) < 0.005)
 	var lk := MaskLocker.new(db)
 	var ok := lk.add("plague_doctor") and lk.add("plague_doctor") and not lk.add("no_such_mask")
 	ok = ok and lk.wear("plague_doctor") and lk.remove("plague_doctor") and lk.worn == "plague_doctor" and lk.remove("plague_doctor") and lk.worn == ""
