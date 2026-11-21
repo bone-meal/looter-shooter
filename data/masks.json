@@ -44,6 +44,23 @@
 				"jaw": {"hinge": [0.069, -0.056], "angle": 5.0, "every": 6.0},
 				"sparks": {"at": [[0.0, -0.02, -0.14], [0.04, 0.1, -0.11], [-0.04, 0.1, -0.11]], "amount": 6, "color": [1.0, 0.55, 0.12]}
 			}
+		},
+		"venom_sovereign": {
+			"name": "Venom Sovereign",
+			"source": "boss",
+			"base": "animal",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A king cobra's head with its hood flared. The slit eyes blink one at a time, the forked tongue flicks out, and glowing venom drips from the fangs.",
+			"fx": {
+				"glow": [0.75, 1.0, 0.15],
+				"glow_strength": 5.0,
+				"pulse_hz": 0.25,
+				"blink_every": 4.5,
+				"flick": {"by": [0.0, 0.0, -0.07], "every": 3.5},
+				"sparks": {"at": [[0.0195, 0.027, -0.223], [-0.0195, 0.027, -0.223]], "amount": 3, "drip": 0.0035, "life": 1.4, "gravity": 1.2, "glow": 4.0, "color": [0.35, 1.0, 0.15]}
+			}
 		}
 	}
 }

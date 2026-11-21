@@ -31,9 +31,18 @@ uniform float pulse_hz = 0.0;  // steady glow that pulses (masks without Morse)
 uniform vec2 jaw_hinge = vec2(0.07, -0.056);  // the moving part (FX blue) turns about the X axis through (y, z)
 uniform float jaw_angle = 0.0;  // radians at full grind
 uniform float jaw_every = 5.0;  // seconds between grinds
+uniform vec3 slide = vec3(0.0);  // instead of turning: the moving part slides out by this much (a tongue flick)
+uniform float blink_every = 0.0;  // glow group R blinks shut, one side then the other (0 = never)
+varying float side;
 
 void vertex() {
+	side = VERTEX.x;
 	float jaw = textureLod(fx_tex, UV, 0.0).b;
+	if (length(slide) > 0.0 && jaw > 0.5) {
+		float ph = mod(TIME, jaw_every);
+		float out_ = smoothstep(0.0, 0.08, ph) * (1.0 - smoothstep(0.35, 0.5, ph)) + smoothstep(0.55, 0.62, ph) * (1.0 - smoothstep(0.8, 0.95, ph));
+		VERTEX += slide * (out_ - 1.0);  // drawn back into the mouth, out on the flick
+	}
 	if (jaw_angle > 0.0 && jaw > 0.5) {
 		float ph = mod(TIME, jaw_every);
 		float open = smoothstep(0.0, 0.25, ph) * (1.0 - smoothstep(0.9, 1.4, ph));
@@ -67,7 +76,13 @@ void fragment() {
 	if (pulse_hz > 0.0) {
 		on = 0.72 + 0.28 * sin(TIME * 6.2832 * pulse_hz);
 	}
-	float lit = fx.r * mix(0.22, 1.0, on) + fx.g * mix(0.1, 0.75, on);
+	float shut = 0.0;
+	if (blink_every > 0.0) {
+		float ph = mod(TIME + (side > 0.0 ? 0.0 : blink_every * 0.37), blink_every);
+		shut = smoothstep(0.0, 0.05, ph) * (1.0 - smoothstep(0.14, 0.22, ph)) * fx.r;
+		ALBEDO = mix(ALBEDO, vec3(0.01, 0.02, 0.01), shut);
+	}
+	float lit = fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + fx.g * mix(0.1, 0.75, on);
 	EMISSION = glow_color * lit * glow_strength;
 }
 """
@@ -193,6 +208,11 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	m.set_shader_parameter("sway", float(fx.get("sway", 0.0)))
 	m.set_shader_parameter("breathe", float(fx.get("breathe", 0.0)))
 	m.set_shader_parameter("pulse_hz", float(fx.get("pulse_hz", 0.0)))
+	m.set_shader_parameter("blink_every", float(fx.get("blink_every", 0.0)))
+	var flick: Dictionary = fx.get("flick", {})
+	if not flick.is_empty():
+		m.set_shader_parameter("slide", _vec(flick.get("by"), Vector3.ZERO))
+		m.set_shader_parameter("jaw_every", float(flick.get("every", 4.0)))
 	var jaw: Dictionary = fx.get("jaw", {})
 	if not jaw.is_empty():
 		var h: Array = jaw.get("hinge", [0.07, -0.056])
@@ -298,29 +318,37 @@ static func _flies(cfg: Dictionary, share: float) -> CPUParticles3D:
 
 # Sparks and metal shavings that drop from a point (Iron Reaper's jaw and eyes): tiny glowing streaks, a few dark flakes.
 static func _sparks(cfg: Dictionary, at: Vector3, share: float) -> CPUParticles3D:
-	var p := CPUParticles3D.new()
+	var p := CPUParticles3D.new()  # ("drip": radius = falling drops instead: venom)
 	p.name = "MaskSparks"
 	p.position = at
 	p.amount = maxi(roundi(float(cfg.get("amount", 8)) * share), 2)
-	p.lifetime = 0.9
+	p.lifetime = float(cfg.get("life", 0.9))
 	p.local_coords = false
 	p.emission_shape = CPUParticles3D.EMISSION_SHAPE_SPHERE
-	p.emission_sphere_radius = 0.015
-	p.direction = Vector3(0, -0.4, -1)
-	p.spread = 55.0
-	p.initial_velocity_min = 0.08
-	p.initial_velocity_max = 0.35
-	p.gravity = Vector3(0, -2.2, 0)
+	p.emission_sphere_radius = 0.015 if not cfg.has("drip") else 0.002
+	p.direction = Vector3(0, -0.4, -1) if not cfg.has("drip") else Vector3(0, -1, 0)
+	p.spread = 55.0 if not cfg.has("drip") else 5.0
+	p.initial_velocity_min = 0.08 if not cfg.has("drip") else 0.0
+	p.initial_velocity_max = 0.35 if not cfg.has("drip") else 0.05
+	p.gravity = Vector3(0, -float(cfg.get("gravity", 2.2)), 0)
 	p.randomness = 0.6
 	var c: Array = cfg.get("color", [1.0, 0.55, 0.12])
-	var bit := BoxMesh.new()
-	bit.size = Vector3(0.0025, 0.012, 0.0025)  # long along Y: particle_flag_align_y turns it along its flight
+	var box := BoxMesh.new()
+	box.size = Vector3(0.0025, 0.012, 0.0025)  # long along Y: particle_flag_align_y turns it along its flight
+	var bit: PrimitiveMesh = box
+	if cfg.has("drip"):  # (venom) round drops that stretch as they fall
+		var drop := SphereMesh.new()
+		drop.radius = float(cfg.get("drip", 0.004))
+		drop.height = drop.radius * 3.0
+		drop.radial_segments = 8
+		drop.rings = 4
+		bit = drop
 	var mat := StandardMaterial3D.new()
 	mat.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
 	mat.albedo_color = Color(float(c[0]), float(c[1]), float(c[2]))
 	mat.emission_enabled = true
 	mat.emission = mat.albedo_color
-	mat.emission_energy_multiplier = 3.0
+	mat.emission_energy_multiplier = float(cfg.get("glow", 3.0))
 	bit.material = mat
 	p.mesh = bit
 	p.particle_flag_align_y = true

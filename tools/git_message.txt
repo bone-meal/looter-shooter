@@ -1,6 +1,6 @@
-Polish1 D5c part 3: Iron Reaper, the second boss mask
+Polish1 D5c part 4: Venom Sovereign, the third boss mask
 
-A welded steel skull sculpted as a signed distance field and cut into plates, baked into the game like the Plague Doctor: molten eyes that pulse, a jaw that grinds on its hinge in the shader, sparks from jaw and eyes. Shared mask kit for the next masks; the baker unhooks driven metal, brightens game metals and takes glow and moving-part channels from material names.
+A cobra head sculpted as a signed distance field: hood flared behind the head with ribs and eye-spot markings on its back, sunk slit-pupil eyes that glow and blink, fangs that drip glowing venom, a forked tongue that flicks out on a timer in the shader.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
