@@ -418,7 +418,7 @@ func _process(delta: float) -> void:
 			if _clock <= 0.0 and not _net:  # (online the host calls the time)
 				_shot_done(_token, true)
 				return
-		var target := _table.show_guides(_angle)
+		var target := _table.show_guides(_angle, _power, _spin)
 		if rules.on_the_eight(rules.current, _sim.on_table):
 			if _called < 0:
 				_called = _nearest_pocket_from(target)

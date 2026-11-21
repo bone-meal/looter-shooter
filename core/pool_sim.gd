@@ -82,6 +82,25 @@ func _init(data: Dictionary = {}) -> void:
 		[Vector2(hx, -hy + c), Vector2(hx, hy - c)]]  # foot rail (x +)
 
 
+# (bug update) A copy with the same table and physics numbers and the same ball positions, nothing moving: for the aim
+# guide's preview of a shot (game/pool_table.gd).
+func copy_still() -> RefCounted:
+	var c: RefCounted = get_script().new()
+	for key in ["length", "width", "r", "max_speed", "slide", "rolling", "side_decay", "ball_e", "cushion_e", "english_effect",
+			"corner_mouth", "side_mouth", "corner_r", "side_r"]:
+		c.set(key, get(key))
+	c.set("pockets", pockets.duplicate())
+	c.set("rails", rails.duplicate(true))
+	c.set("pos", pos.duplicate())
+	c.set("on_table", on_table.duplicate())
+	return c
+
+
+# One step of the preview (STEP seconds), whatever `moving` says.
+func tick_once() -> void:
+	_tick()
+
+
 func head_spot() -> Vector2:
 	return Vector2(-length * 0.25, 0.0)
 

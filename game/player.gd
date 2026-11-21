@@ -238,6 +238,7 @@ var shots_fired := 0  # since the session last took them into the record
 var shots_hit := 0
 var hurt_total := 0.0  # damage taken, likewise
 var ladder := false  # (polish1 item 26) inside a KZ ladder's reach (game_session sets it): climbing, no gravity
+var ladder_top := INF  # (bug update) height of that ladder's top: near it a climb carries the body forward onto the deck
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var edgebug_cfg := {}  # (polish1 edgebugs) set by game_session on edgebug stages: min_fall, push (m/s) and edge (normal height); {} = off
 var edgebug_at := -10.0  # when the latest edgebug happened (_now() seconds)
@@ -512,7 +513,7 @@ func _move_tick(input: Vector2) -> void:
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
 	var sprint_top := top * _sprint_multiplier * _perk("sprint_mult", 1.0)
-	move.no_fatigue = armor["abilities"].has("auto_bhop") and not even_ground
+	move.no_fatigue = (armor["abilities"].has("auto_bhop") and not even_ground) or move.surf  # (surf: landings off a ramp do not tire)
 	if even_ground:  # the hop course: the gun's own speed and the sprint, nothing else
 		top = (_aim_units if aiming and _aim_units > 0.0 else _top_units) * move.unit * cheat_speed
 		sprint_top = top * _sprint_multiplier
@@ -564,10 +565,30 @@ func _move_tick(input: Vector2) -> void:
 	var before := global_position
 	var falling := -velocity.y
 	velocity *= stretch
+	var surfing := move.surf and even_ground and not grounded and not ladder and not cheat_fly
+	var min_slide := wall_min_slide_angle
+	if surfing:  # (bug update) in the air on a surf stage every surface clips the velocity along itself (Source):
+		motion_mode = CharacterBody3D.MOTION_MODE_FLOATING  # grounded mode treats a steep ramp as an upright wall, so the
+		wall_min_slide_angle = 0.0  # fall went on beside it and the speed into it was thrown away
 	move_and_slide()
 	velocity /= stretch
+	if surfing:
+		motion_mode = CharacterBody3D.MOTION_MODE_GROUNDED
+		wall_min_slide_angle = min_slide
+		var landed := false
+		for hit in get_slide_collision_count():
+			var n := get_slide_collision(hit).get_normal()
+			if n.y >= cos(floor_max_angle):
+				landed = true
+			if velocity.dot(n) < 0.0:  # floating mode slides the body but leaves the velocity alone: clip it (PM_ClipVelocity)
+				velocity = velocity.slide(n)
+		if landed:  # a floor under us: one small step down in grounded mode so is_on_floor() knows it
+			var keep := Vector3(velocity.x, 0.0, velocity.z)
+			velocity = Vector3(0.0, -0.5, 0.0)
+			move_and_slide()
+			velocity = keep
 	var bugged := not edgebug_cfg.is_empty() and falling >= float(edgebug_cfg["min_fall"]) and _edgebug()
-	if even_ground and not is_on_floor() and not bugged:  # (polish1 item 24) surf: Godot counts a too-steep ramp as an upright wall and lets
+	if even_ground and not is_on_floor() and not bugged and not surfing:  # (polish1 item 24) surf: Godot counts a too-steep ramp as an upright wall and lets
 		for hit in get_slide_collision_count():  # the fall go on through it; the ramp's own slope carries the fall off sideways
 			var n := get_slide_collision(hit).get_normal()
 			if n.y > 0.05 and n.y < cos(floor_max_angle) and velocity.dot(n) < 0.0:
@@ -617,6 +638,8 @@ func _ladder_step(input: Vector2) -> Vector3:
 	var climb := -input.y * (-1.0 if looking_down else 1.0)
 	var side := Basis(Vector3.UP, _yaw) * Vector3(input.x, 0, 0) * 0.5
 	var into := Basis(Vector3.UP, _yaw) * Vector3(0, 0, -1) * 0.6 if climb > 0.0 else Vector3.ZERO  # pressed to the rungs
+	if climb > 0.0 and global_position.y > ladder_top - 0.7:  # (bug update) the top: over the lip and onto the deck in one go
+		return Vector3(0, maxf(climb * speed, 2.6), 0) + Basis(Vector3.UP, _yaw) * Vector3(0, 0, -1) * 3.2
 	return (Vector3(0, climb, 0) + side) * speed + into
 
 
@@ -1721,11 +1744,10 @@ func _shoot() -> void:
 	var reach := float(data.get("range", SHOT_RANGE))  # the flamethrower's cone ends at its range
 	var falloff: Dictionary = data.get("falloff", {})
 	_fire_ends.clear()
+	var parted := get_tree().get_nodes_in_group("hit_parts")  # (bug update) reworked enemies: shot at their pieces
 	for pellet in weapon.pellets:
 		var dir := (forward + right * randf_range(-spread, spread) + up * randf_range(-spread, spread)).normalized()
-		var query := PhysicsRayQueryParameters3D.create(origin, origin + dir * reach)
-		query.exclude = [get_rid()]
-		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		var hit := _shot_ray(origin, origin + dir * reach, parted)
 		_fire_ends.append(hit.position if not hit.is_empty() else origin + dir * minf(reach, FIRE_TRACER_M))
 		if not hit.is_empty() and hit.collider.has_method("on_hit"):
 			var near := 1.0
@@ -1796,6 +1818,32 @@ func credit_kill(target: Node, at: Vector3, dealt: float) -> bool:
 		elif _sig_node.has_method("on_target_hit"):
 			_sig_node.call("on_target_hit", target, at, dealt, true)
 	return true
+
+
+# (bug update) A gunshot's ray: the world as before, but a reworked enemy (group hit_parts, game/enemy.gd ray_parts) is
+# hit only where one of its pieces really is this frame - not its movement box, which a leaning head or a glider's
+# wings stick out of and which has empty corners. Returns intersect_ray's dictionary (collider, position, normal).
+func _shot_ray(from: Vector3, to: Vector3, parted: Array) -> Dictionary:
+	var space := get_world_3d().direct_space_state
+	var query := PhysicsRayQueryParameters3D.create(from, to)
+	var skip: Array[RID] = [get_rid()]
+	query.exclude = skip
+	var hit := space.intersect_ray(query)
+	var tries := 0
+	while not hit.is_empty() and hit.collider is Node and (hit.collider as Node).is_in_group("hit_parts") and tries < 8:
+		skip.append(hit.rid)  # its box: the pieces are tested below
+		query.exclude = skip
+		hit = space.intersect_ray(query)
+		tries += 1
+	var end: Vector3 = to if hit.is_empty() else hit.position
+	for e: Node in parted:
+		if not is_instance_valid(e):
+			continue
+		var part: Dictionary = e.call("ray_parts", from, end)
+		if not part.is_empty():
+			end = part["position"]
+			hit = {"collider": e, "position": end, "normal": part["normal"], "rid": (e as CollisionObject3D).get_rid()}
+	return hit
 
 
 # One pellet (or projectile) landing on an enemy: damage with headshot, situational buffs and traits, the hit

@@ -273,7 +273,7 @@ static func build_hub(parent: Node, server: Dictionary) -> Node3D:
 	board.position = Vector3(0, 4.2, 0)
 	root.add_child(board)
 	var exit_at := Vector3(float(hub["exit"][0]), 0.0, float(hub["exit"][1]))
-	var door := build_door(root, exit_at, 0.0)
+	var door := build_door(root, exit_at, PI)  # its words face the plaza (yaw 0 showed them mirrored from inside)
 	(door.get_child(door.get_child_count() - 1) as Label3D).text = "BACK TO THE ISLANDS"
 	root.set_meta("portals", portals)
 	root.set_meta("labels", labels)

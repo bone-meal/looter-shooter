@@ -5006,6 +5006,7 @@ func _run_treetops(delta: float) -> void:
 		return
 	var p := _player.global_position - Island.CENTER
 	_player.ladder = _island_side() and _treetops.rules.on_ladder(p.x, p.y, p.z)
+	_player.ladder_top = _treetops.rules.ladder_top(p.x, p.y, p.z) + Island.CENTER.y if _player.ladder else INF
 	if _island_side():
 		_hold_mending(delta)
 
@@ -5582,6 +5583,8 @@ func _enter_stage(i: int) -> void:
 	_course_root = _stage_roots[i]
 	_stage = i
 	_edgebugs_on(String(_server["stages"][i]["recipe"]["kind"]) == "edgebug")
+	_player.move.surf = String(_server["stages"][i]["recipe"]["kind"]) == "surf"  # (bug update) surf servers' air control
+	_player.move.surf_air = float(_server.get("surf_air_accelerate", 150.0))
 	_course.best = float(_bhop_best.get(_stage_id(), 0.0))
 	_put_on_course(_course.start_index())
 	_player_hud.notice("%s  %s" % [_stage_title(i), ("  your best %s" % CourseRules.clock(_course.best)) if _course.best > 0.0 else ""])
@@ -5683,6 +5686,7 @@ func _run_course(delta: float) -> void:
 		if not here:
 			_stage = -1
 			_edgebugs_on(false)
+			_player.move.surf = false
 	if not here:
 		return
 	if _stage < 0:  # the hub: walk onto a portal
@@ -5696,10 +5700,13 @@ func _run_course(delta: float) -> void:
 		return
 	var local := _player.global_position - _course_root.position
 	var ladder := false
+	var ladder_top := INF
 	for box: AABB in _course_root.get_meta("ladders", []):
 		if box.has_point(local):
 			ladder = true
+			ladder_top = box.end.y - 0.8 + _course_root.position.y  # (the box reaches 0.8 over the tower's top)
 	_player.ladder = ladder
+	_player.ladder_top = ladder_top
 	var on_floor := _player.is_on_floor()
 	var hard := false
 	if not _player.edgebug_cfg.is_empty():

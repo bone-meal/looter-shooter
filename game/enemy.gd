@@ -97,6 +97,11 @@ var _flaps: Array[Node3D] = []  # wings (FlapL, FlapR)
 var _pulse: Node3D  # the part of a blob or spirit that breathes
 var _model: Node3D  # a fantasy creature's body (leans when hit, sinks when it dies)
 var _rig: EnemyRig  # (polish1 D2) a reworked enemy's own animation (game/enemy_rig.gd), null for the older models
+var _skin: Skeleton3D  # (bug update) the folded model: shots are tested against its pieces where they are this frame
+var _boxes: Array = []  # each bone's piece box (bone space), game/rigid_skin.gd parts()
+var _heads := PackedByteArray()
+var _reach := 0.0  # metres from the feet to the farthest piece (scaled)
+var _pad := 0.03  # a piece's box grows this much (bone units) so thin parts are not missed
 static var _moves := {}  # data/enemy_moves.json styles, read once
 static var _glow_material: StandardMaterial3D  # Keeper's Lantern glow, shared by every enemy
 var _glowing := false
@@ -200,8 +205,80 @@ func crawling() -> bool:
 # True when a hit at `point` landed on the head: the top `share` of the height (the enemy's own "head_share" in
 # data/enemies.json wins; 0 = this thing has no head).
 func head_hit(point: Vector3, share: float) -> bool:
+	if _skin != null and not _boxes.is_empty():  # (bug update) a reworked enemy: the point is on (or by) a head piece
+		var sk := _skin.global_transform
+		for i in _boxes.size():
+			if _heads[i] == 0 or (_boxes[i] as AABB).size == Vector3.ZERO:
+				continue
+			var xf := sk * _skin.get_bone_global_pose(i)
+			if xf.basis.x.length_squared() < 1e-6:
+				continue
+			if (_boxes[i] as AABB).grow(_pad * 3.0).has_point(xf.affine_inverse() * point):
+				return true
+		return false
 	var part := float(_stats.get("head_share", share))
 	return part > 0.0 and point.y >= global_position.y + _size.y * (1.0 - part)
+
+
+# (bug update) Where its head is now (the middle of the head piece; the old head zone for older models).
+func head_point() -> Vector3:
+	if _skin != null and not _boxes.is_empty():
+		var hb := _skin.find_bone("Head")
+		if hb >= 0 and (_boxes[hb] as AABB).size != Vector3.ZERO:
+			return _skin.global_transform * _skin.get_bone_global_pose(hb) * (_boxes[hb] as AABB).get_center()
+	return global_position + Vector3(0.0, _size.y * 0.93, 0.0)
+
+
+# (bug update) The top of the shown pieces at rest, in the model's own (unscaled) space.
+func _parts_top() -> float:
+	var top := 0.0
+	for i in _boxes.size():
+		var box: AABB = _boxes[i]
+		if box.size == Vector3.ZERO:
+			continue
+		var xf := _skin.get_bone_global_pose(i)
+		if xf.basis.x.length_squared() < 1e-6:
+			continue
+		for c in 8:
+			top = maxf(top, (xf * box.get_endpoint(c)).y)
+	return top
+
+
+# (bug update) Where the segment from..to first meets one of this enemy's pieces as they stand this frame:
+# {position, normal, head} or {} (missed, dead, or not a reworked model). Used for gunshots (game/player.gd _shot_ray).
+func ray_parts(from: Vector3, to: Vector3) -> Dictionary:
+	if _skin == null or _boxes.is_empty() or health.is_dead():
+		return {}
+	var centre := global_position + Vector3(0.0, _reach * 0.5, 0.0)
+	var seg := to - from
+	var along := clampf((centre - from).dot(seg) / maxf(seg.length_squared(), 1e-6), 0.0, 1.0)
+	if (from + seg * along).distance_to(centre) > _reach * 0.8 + 0.5:
+		return {}
+	var sk := _skin.global_transform
+	var best := {}
+	var best_d := INF
+	var head := {}
+	var head_d := INF
+	for i in _boxes.size():
+		var box: AABB = _boxes[i]
+		if box.size == Vector3.ZERO:
+			continue
+		var xf := sk * _skin.get_bone_global_pose(i)
+		if xf.basis.x.length_squared() < 1e-6:  # a variant not shown (its bones shrink to nothing)
+			continue
+		var inv := xf.affine_inverse()
+		var met: Variant = box.grow(_pad).intersects_segment(inv * from, inv * to)
+		if met == null:
+			continue
+		var point: Vector3 = xf * (met as Vector3)
+		var d := from.distance_squared_to(point)
+		if _heads[i] == 1 and d < head_d:  # a shot through a head piece counts on the head even where a bulky body
+			head_d = d  # piece's box (armour, a hump, a collar) wraps round it
+			head = {"position": point, "normal": (point - xf * box.get_center()).normalized(), "head": true}
+		if d < best_d:
+			best_d = d
+			best = {"position": point, "normal": (point - xf * box.get_center()).normalized(), "head": _heads[i] == 1}
+	return head if not head.is_empty() else best
 
 
 func _ready() -> void:
@@ -280,9 +357,21 @@ func _ready() -> void:
 				_moves = JSON.parse_string(FileAccess.get_file_as_string("res://data/enemy_moves.json"))
 			var dice := RandomNumberGenerator.new()
 			dice.randomize()
-			RigidSkin.fold(creature, model_name)  # one skinned mesh instead of a mesh per pivot
+			_skin = RigidSkin.fold(creature, model_name)  # one skinned mesh instead of a mesh per pivot
+			var parts := RigidSkin.parts(model_name)
 			_rig = EnemyRig.new()
 			_rig.setup(creature, (_moves.get("styles", {}) as Dictionary).get(String(_stats.get("moves", model_name)), {}), dice)
+			if _skin != null and parts.has("boxes"):  # (bug update) hit volumes = the pieces themselves
+				_boxes = parts["boxes"]
+				_heads = parts["heads"]
+				# FantasyModels.bounds reads each piece in its pivot's space, which made the reworked models ~1.35x
+				# their data height (heads above the box): measured again on the shown variant's pieces
+				var top := _parts_top()
+				if top > 0.1:
+					creature.scale = Vector3.ONE * (_size.y / top)
+				_reach = float(parts["reach"]) * creature.scale.x
+				_pad = 0.03 / maxf(creature.scale.x, 0.05)
+				add_to_group("hit_parts")
 		elif _stats["attack_type"] == "melee":
 			_sword_arm = creature.find_child("ArmR", true, false) as Node3D
 	else:
@@ -388,6 +477,8 @@ func _physics_process(delta: float) -> void:
 	var move: float = (1.0 if errand else (float(_brain.move_sign(distance)) if level else 1.0)) * _speed * (1.0 - _slow_amount if now < _slow_until else 1.0)
 	if dir == Vector3.ZERO:
 		move = 0.0
+	if not level and not errand and space == null and distance < 2.0:  # (bug update) its prey up on a deck it cannot climb to:
+		move = 0.0  # it waits below instead of walking back and forth on the spot under him
 	if now < _burn_until and now >= _burn_tick:
 		_burn_tick = now + 0.5
 		on_hit(_burn_dps * 0.5)

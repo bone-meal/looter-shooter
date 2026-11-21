@@ -17,6 +17,8 @@ var _friction := 0.0
 var _stop_speed := 0.0
 var _accelerate := 0.0
 var _air_accelerate := 0.0
+var surf := false  # (bug update) on a surf stage: strong air control, no bunny-hop speed cap (data/bhop_server.json surf)
+var surf_air := 150.0  # air_accelerate while surfing (surf servers run ~150)
 var _air_cap := 0.0
 var _bunny_cap := 0.0
 var _stamina_max := 0.0
@@ -63,7 +65,7 @@ func step(velocity: Vector3, wish: Vector3, top: float, cap_top: float, grounded
 	if grounded and jump:
 		fall *= 0.5  # half a tick of gravity on the way off the ground, so the jump tops out where the numbers say (57 units)
 		var speed := flat.length()
-		if _bunny_cap > 0.0 and speed > cap_top * _bunny_cap:
+		if _bunny_cap > 0.0 and not surf and speed > cap_top * _bunny_cap:
 			flat *= cap_top * _bunny_cap / speed
 		up = jump_speed * maxf(1.0 - stamina / 100.0, 0.0)
 		if not no_fatigue:
@@ -75,7 +77,7 @@ func step(velocity: Vector3, wish: Vector3, top: float, cap_top: float, grounded
 		flat = _rub(flat)
 		flat = _push(flat, wish, top, top, _accelerate)
 	else:
-		flat = _push(flat, wish, minf(top, _air_cap), top, _air_accelerate)
+		flat = _push(flat, wish, minf(top, _air_cap), top, surf_air if surf else _air_accelerate)
 		up -= fall
 	return Vector3(flat.x, up, flat.z)
 

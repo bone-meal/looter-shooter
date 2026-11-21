@@ -2,7 +2,8 @@
 # (Hips, Spine, ArmL ...) becomes a bone and every part hangs 100 % on its own pivot's bone, so it still moves as rigid
 # pieces (game/enemy_rig.gd turns the bones) but draws as one surface per material (about 4-6 draw calls instead of
 # ~22 node meshes, each again in every shadow pass). The folded mesh and skin are built once per model and shared;
-# each enemy keeps its own materials (tint, hit flash) as surface overrides.
+# each enemy keeps its own materials (tint, hit flash) as surface overrides. Each piece's box is kept as its hit volume
+# (parts(): game/enemy.gd ray_parts shoots against the pieces where they really are, the head pieces count as the head).
 # Dependencies: none (works on any instantiated model whose meshes sit on named Node3D pivots). Used by game/enemy.gd.
 extends RefCounted
 
@@ -112,12 +113,37 @@ static func _build(model: Node3D) -> Dictionary:
 				st2.set_bones(PackedInt32Array([b, 0, 0, 0]))
 				st2.set_weights(PackedFloat32Array([1.0, 0.0, 0.0, 0.0]))
 				st2.add_vertex(to_root * verts[v])
+	# (bug update) hit volumes: every piece's own box in its bone's space, which pieces are the head, how far it reaches
+	var boxes: Array[AABB] = []
+	var heads := PackedByteArray()
+	var reach := 0.0
+	for b in pivots.size():
+		var piece := pivots[b] as MeshInstance3D
+		boxes.append(piece.mesh.get_aabb() if piece != null and piece.mesh != null else AABB())
+		var up := b
+		var head := 0
+		while up >= 0:
+			if bones[up] == "Head" or bones[up] == "Jaw":
+				head = 1
+				break
+			up = parents[up]
+		heads.append(head)
+		if piece != null and piece.mesh != null:
+			var box := piece.mesh.get_aabb()
+			for c in 8:
+				reach = maxf(reach, (globals[b] * box.get_endpoint(c)).length())
 	var mesh := ArrayMesh.new()
 	for k in tools.size():
 		tools[k].generate_tangents()  # the materials' normal maps need them
 		tools[k].commit(mesh)
 		mesh.surface_set_material(k, materials[k])
-	return {"mesh": mesh, "skin": skin, "bones": bones, "parents": parents, "rests": rests, "kinds": kinds}
+	return {"mesh": mesh, "skin": skin, "bones": bones, "parents": parents, "rests": rests, "kinds": kinds, "boxes": boxes, "heads": heads, "reach": reach}
+
+
+# (bug update) The folded model's hit volumes (see _build): {boxes: Array[AABB] per bone, heads: 1 = head piece, reach:
+# metres from the model's root to its farthest point, unscaled}; empty before fold() made it.
+static func parts(id: String) -> Dictionary:
+	return _made.get(id, {})
 
 
 # Every Node3D under the model, parents before children (the model root itself is not a bone).

@@ -431,7 +431,7 @@ func on_ladder(x: float, y: float, z: float) -> bool:
 			continue
 		var foot: Vector3 = w["foot"]
 		var top: Vector3 = w["top"]
-		if y < foot.y - 0.2 or y > top.y + 0.5:
+		if y < foot.y - 0.2 or y > top.y + 0.9:  # (bug update: 0.5 let gravity take the body back before its feet were over the lip)
 			continue
 		var face: Vector2 = w["face"]
 		var off := Vector2(x - foot.x, z - foot.z)
@@ -440,6 +440,23 @@ func on_ladder(x: float, y: float, z: float) -> bool:
 		if side < 0.55 and along > -0.75 and along < 0.55:
 			return true
 	return false
+
+
+# (bug update) The top height of the open ladder at a plan spot (see on_ladder), INF when on none.
+func ladder_top(x: float, y: float, z: float) -> float:
+	for w: Dictionary in ways:
+		if w["kind"] != "ladder" or not bool(w["open"]):
+			continue
+		var foot: Vector3 = w["foot"]
+		var top: Vector3 = w["top"]
+		if y < foot.y - 0.2 or y > top.y + 0.9:
+			continue
+		var face: Vector2 = w["face"]
+		var off := Vector2(x - foot.x, z - foot.z)
+		var along := off.dot(face)
+		if absf(off.dot(Vector2(-face.y, face.x))) < 0.55 and along > -0.75 and along < 0.55:
+			return top.y
+	return INF
 
 
 # The deck a plan spot at height y stands on, -1 = none (the ground, the water, a bridge).

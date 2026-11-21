@@ -1,6 +1,6 @@
-Polish1 D5c part 5: Ashen King, the fourth boss mask
+Bug update: hitboxes, headshots, enemy size, surf, ladder tops, pool guide, hub sign
 
-A scowling porcelain face charred black under a crown of ceramic spikes, a chunk broken out of one cheek with fire inside, ember cracks walked over the surface and cut into it. In the game its cracks heal and split again, ash and embers rise off the crown, and the embers burn brighter while the wearer stands still: masks now know how fast their wearer moves (the Iron Reaper's eyes pulse faster on the move).
+Reworked enemies were drawn about 1.35x their data height (their size was measured from pieces in their pivots' space), so heads stood above the hit box: models now fit their box and gunshots hit the pieces where they really are this frame (head pieces count as the head; gliders, leaning heads and arms included). Surf stages: in the air the body clips its velocity on the ramp (Source style), surf air control, no hop speed cap or fatigue. Ladder tops carry you onto the deck. Pool aim guide plays the shot ahead with power and spin: the cue ball's real path and the object ball's. The Back to the islands sign faces the plaza. Enemies under a deck wait instead of walking back and forth.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,7 +1,7 @@
 # Purpose: (polish1 item 71) one pool table in the games room: a 9 ft table (green cloth, cushions, leather pockets,
 # wooden frame with pearl sights, legs, a lamp over it), its 16 numbered balls (one MultiMesh: a picture atlas drawn
 # once, each ball rolls round its own axis), the cue stick, the aiming guide (line, ghost ball, the object ball's and
-# the cue ball's paths), a ring on the called pocket and a ring where a ball in hand would go. Draws only:
+# the cue ball's paths, played ahead on a copy of the table), a ring on the called pocket and a ring where a ball in hand would go. Draws only:
 # core/pool_sim.gd moves the balls. Sim coordinates (x along, y across) are this node's local x / z on the cloth.
 # Dependencies: core/pool_sim.gd (sizes, pockets, positions).
 extends Node3D
@@ -23,6 +23,11 @@ var _obj_line: MeshInstance3D
 var _cue_line: MeshInstance3D
 var _called: MeshInstance3D
 var _place_ring: MeshInstance3D
+var _paths: MeshInstance3D  # (bug update) where the cue ball and the ball it hits really go: the shot played ahead
+var _paths_mesh: ImmediateMesh
+var _path_key := Vector4(INF, 0, 0, 0)  # angle, power, spin x, spin y of the drawn preview
+var _path_at := 0.0
+var _path_hit := -1
 
 
 func setup(pool_sim: RefCounted) -> void:
@@ -382,6 +387,14 @@ func _build_guides() -> void:
 	_place_ring.mesh = ring
 	_place_ring.material_override = _mat(Color(0.4, 1.0, 0.5), 0.5, true)
 	add_child(_place_ring)
+	_paths_mesh = ImmediateMesh.new()
+	_paths = MeshInstance3D.new()
+	_paths.mesh = _paths_mesh
+	_paths.material_override = _mat(Color(1, 1, 1), 0.5, true)
+	(_paths.material_override as StandardMaterial3D).vertex_color_use_as_albedo = true
+	(_paths.material_override as StandardMaterial3D).cull_mode = BaseMaterial3D.CULL_DISABLED
+	_paths.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	add_child(_paths)
 	hide_guides()
 	show_called(-1)
 	show_place(false)
@@ -409,15 +422,93 @@ func _place_bar(n: MeshInstance3D, a: Vector2, b: Vector2, thick := 0.004) -> vo
 
 
 func hide_guides() -> void:
+	_paths.visible = false
+	_path_key = Vector4(INF, 0, 0, 0)
 	_guide_line.visible = false
 	_obj_line.visible = false
 	_cue_line.visible = false
 	_ghost.visible = false
 
 
-# The aiming guide for a shot along `angle`: to the first ball (ghost ball + both paths) or the first cushion.
-# Returns the ball it would hit first (-1 none).
-func show_guides(angle: float) -> int:
+# The aiming guide for a shot along `angle` with the power and spin set now (bug update: the lines are the shot played
+# ahead on a copy of the table with only the cue ball and the ball it meets: the cue ball's path from the ball to past
+# the contact, follow / draw / english included, and the object ball's path toward its pocket; with no power set yet a
+# medium shot is shown). Returns the ball it would hit first (-1 none).
+func show_guides(angle: float, power := 0.0, spin := Vector2.ZERO) -> int:
+	var hit := _straight_guides(angle)
+	_guide_line.visible = false  # the preview path replaces the straight line and the short stubs
+	_obj_line.visible = false
+	_cue_line.visible = false
+	var key := Vector4(angle, maxf(power, 0.45), spin.x, spin.y)
+	var now := Time.get_ticks_msec() / 1000.0
+	if (key - _path_key).length() > 0.002 and now - _path_at > 0.06:
+		_path_key = key
+		_path_at = now
+		_path_hit = hit
+		_draw_paths(angle, key.y, spin, hit)
+	_paths.visible = true
+	return hit
+
+
+func _draw_paths(angle: float, power: float, spin: Vector2, hit: int) -> void:
+	var p: RefCounted = sim.call("copy_still")
+	var on: PackedByteArray = p.get("on_table")
+	for j in on.size():
+		if j != 0 and j != hit:
+			on[j] = 0
+	p.set("on_table", on)
+	p.call("shoot", angle, power, spin)
+	var cue := PackedVector3Array([_cloth(p, 0)])
+	var obj := PackedVector3Array()
+	var cue_after := 0.0
+	var obj_run := 0.0
+	var t := 0.0
+	while t < 4.0:
+		p.call("tick_once")
+		t += 1.0 / 240.0
+		var on_now: PackedByteArray = p.get("on_table")
+		var touched := int(p.get("first_hit")) >= 0
+		if on_now[0] == 1 and cue_after < 0.55:
+			var c := _cloth(p, 0)
+			if c.distance_to(cue[cue.size() - 1]) > 0.02:
+				if touched:
+					cue_after += c.distance_to(cue[cue.size() - 1])
+				cue.append(c)
+		if hit >= 0 and touched and on_now[hit] == 1 and obj_run < 1.1:
+			var o := _cloth(p, hit)
+			if obj.is_empty() or o.distance_to(obj[obj.size() - 1]) > 0.02:
+				if not obj.is_empty():
+					obj_run += o.distance_to(obj[obj.size() - 1])
+				obj.append(o)
+		var still := (p.get("vel") as PackedVector2Array)[0] == Vector2.ZERO
+		if (cue_after >= 0.55 or on_now[0] == 0 or still) and (hit < 0 or obj_run >= 1.1 or on_now[hit] == 0 or (touched and (p.get("vel") as PackedVector2Array)[hit] == Vector2.ZERO)):
+			break
+		if not touched and hit >= 0 and t > 3.0:
+			break
+	_paths_mesh.clear_surfaces()
+	_paths_mesh.surface_begin(Mesh.PRIMITIVE_TRIANGLES)
+	_strip(cue, Color(1, 1, 1, 1), 0.007)
+	_strip(obj, Color(1.0, 0.85, 0.3, 1), 0.007)
+	_paths_mesh.surface_end()
+
+
+func _cloth(p: RefCounted, ball: int) -> Vector3:
+	var at: Vector2 = (p.get("pos") as PackedVector2Array)[ball]
+	return Vector3(at.x, CLOTH_Y + 0.003, at.y)
+
+
+# A flat ribbon along the points, `w` wide, on the cloth.
+func _strip(pts: PackedVector3Array, color: Color, w: float) -> void:
+	for i in range(pts.size() - 1):
+		var a := pts[i]
+		var b := pts[i + 1]
+		var side := (b - a).cross(Vector3.UP).normalized() * w * 0.5
+		for v: Vector3 in [a - side, a + side, b + side, a - side, b + side, b - side]:
+			_paths_mesh.surface_set_color(color)
+			_paths_mesh.surface_add_vertex(v)
+
+
+func _straight_guides(angle: float) -> int:
 	var pos: PackedVector2Array = sim.get("pos")
 	var on: PackedByteArray = sim.get("on_table")
 	var r := float(sim.get("r"))

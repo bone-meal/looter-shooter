@@ -171,7 +171,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var sig_f: Node = player.get("_sig_node")
 				if sig_f != null and sig_f.has_method("on_fired"):
 					sig_f.call("on_fired")  # as the real trigger does (Hot Potato heat)
-				_lines.append("FIRE shot (%d left)" % int(w.get("ammo")))
+				_lines.append("FIRE shot (%d left), head %s" % [int(w.get("ammo")), str(player.get("_last_head"))])
 			else:
 				_lines.append("FIRE could not shoot: hand %d held %s ammo %s reloading %s paused %s" % [int(player.get("_hand")), String(player.call("held_id")), str(w.get("ammo")) if w != null else "-", str(w.call("is_reloading")) if w != null else "-", str(get_tree().paused)])
 		"balls":  # "!balls <note>": beach balls on this machine (own / copies) and the net counts; "!balls wait" waits up to 40 s for a copy of somebody else's
@@ -3714,7 +3714,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("NAV enemies %d: %s" % [spots.size(), " ".join(spots)])
 		"pool":  # (polish1 item 71) "!pool open <table>" (stand there, open the menu); "!pool start <ai id> <stake>"; "!pool auto" = our next
 			# shot as the Shark would play it (waits for our turn; places the cue ball first if in hand); "!pool shot <deg> <power> [spin x] [spin y]";
-			# "!pool cam" (switch the view); "!pool note"; "!pool wait" (until our turn or the end, 60 s); "!pool esc"
+			# "!pool cam" (switch the view); "!pool note"; "!pool wait" (until our turn or the end, 60 s); "!pool esc"; "!pool aim ..." (below)
 			var pg: Node3D = session.get("_pool")
 			match words[1]:
 				"open":
@@ -3725,6 +3725,24 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					pg.call("open", int(words[2]) if words.size() > 2 else 0)
 				"start":
 					pg.call("_on_start", words[2], int(words[3]) if words.size() > 3 else 0)
+				"aim":  # (bug update) "!pool aim <deg> [power] [spin x] [spin y]": aim without shooting (a picture of the guide); "!pool aim ball <n>" = at ball n
+					if words[2] == "ai":  # "!pool aim ai": the shot the Shark would pick, aimed but not played
+						var Ai3: GDScript = load("res://core/pool_ai.gd")
+						var rules3: RefCounted = pg.get("rules")
+						var sh3: Dictionary = Ai3.call("choose", pg.get("_sim"), rules3, int(rules3.get("current")), {"aim_error": 0.0, "power_error": 0.0}, RandomNumberGenerator.new())
+						pg.set("_angle", float(sh3["angle"]))
+						pg.set("_power", sqrt(float(sh3["power"])))
+						pg.set("_spin", sh3["spin"])
+						return
+					if words[2] == "ball":
+						var psa: RefCounted = pg.get("_sim")
+						var pp: PackedVector2Array = psa.get("pos")
+						pg.set("_angle", (pp[int(words[3])] - pp[0]).angle() + (deg_to_rad(float(words[4])) if words.size() > 4 else 0.0))
+					else:
+						pg.set("_angle", deg_to_rad(float(words[2])))
+					var o_a := 2 if words[2] == "ball" else 0  # ("!pool aim ball <n> <deg off> [power] [spin x] [spin y]")
+					pg.set("_power", float(words[3 + o_a]) if words.size() > 3 + o_a else 0.0)
+					pg.set("_spin", Vector2(float(words[4 + o_a]), float(words[5 + o_a])) if words.size() > 5 + o_a else Vector2.ZERO)
 				"wait":
 					var wt := 0.0
 					while wt < 60.0 and String(pg.get("_state")) not in ["aim", "place", "result", ""]:
@@ -4724,7 +4742,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					nearest = enemy
 			if nearest != null and words.size() > 1 and words[1] == "away":  # "!face away" turns our back on it
 				player.call("look_at_point", player.global_position * 2.0 - nearest.global_position + Vector3(0, 1.6, 0))
-			elif nearest != null:  # "!face head" aims at its head
+			elif nearest != null and words.size() > 1 and words[1] == "head" and nearest.has_method("head_point"):  # "!face head" aims at its head (bug update: the head piece where it is)
+				player.call("look_at_point", nearest.call("head_point"))
+				_lines.append("FACE head of %s %.1f m away" % [String(nearest.get("enemy_id")), nearest.global_position.distance_to(player.global_position)])
+			elif nearest != null:  # (chest height)
 				player.call("look_at_point", nearest.global_position + Vector3(0, float(nearest.call("head_height")) * (0.93 if words.size() > 1 and words[1] == "head" else 0.55), 0))
 		"fight":  # fantasy world: health, mana, ward and the creatures around, for the log
 			var hub: Node = session.call("fantasy")
