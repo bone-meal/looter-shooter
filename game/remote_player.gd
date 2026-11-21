@@ -14,6 +14,7 @@ const KnifeModels = preload("res://game/knife_models.gd")
 const ShieldModel = preload("res://game/shield_model.gd")
 const DataStore = preload("res://core/data_store.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
+const CamoSkin = preload("res://game/camo_skin.gd")
 const LanternGlow = preload("res://game/lantern_glow.gd")
 const Mixtape = preload("res://game/signatures/mixtape.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
@@ -213,6 +214,17 @@ func set_held(shown: String) -> void:
 	var id := shown.trim_suffix("|shield")
 	if id == _held_shown:
 		return
+	var camo := {}  # (polish1 D5a) "~<id>.<wear %>.<pattern>.<challenge>" after the gun: its camo
+	if id.contains("~"):
+		var bits := id.get_slice("~", 1).split(".")
+		if bits.size() == 4:
+			camo = {"id": bits[0], "wear": clampf(float(bits[1].to_int()) / 100.0, 0.0, 1.0), "seed": clampi(bits[2].to_int(), 0, 1000), "challenge": bits[3] == "1"}
+		var plain := id.get_slice("~", 0)
+		if _held_shown.get_slice("~", 0) == plain and _held_model != null and is_instance_valid(_held_model):
+			_held_shown = id  # same gun, another camo: only the paint changes
+			CamoSkin.dress(_held_model, {"camo": camo})
+			return
+		id = plain  # a new gun: built plain below, painted on the next state (one frame later)
 	if id.begins_with("tool:"):  # a sea tool in his hand (sea step 9b): a new use count plays its move
 		var tool := id.trim_prefix("tool:").get_slice("#", 0)
 		if _held_model != null and is_instance_valid(_held_model) and _held_shown.begins_with("tool:" + tool + "#"):

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!net wait_guest;!wait 18;!net to_other;!wait 3;!skins ghosts a;!snap skinsnet_guest;!wait 22;!skins ghosts b;!snap skinsnet_guest2

@@ -5,6 +5,7 @@ extends RefCounted
 
 const SkillState = preload("res://core/skill_state.gd")
 const ItemLevel = preload("res://core/item_level.gd")
+const CamoChallenges = preload("res://core/camo_challenges.gd")
 const WKILLS_MAX := 9999999  # the counter shows 7 digits
 const RECORD_MAX := 1e12  # Fish Story's biggest hit can be no bigger
 const OWNERS_MAX := 8  # (polish1 item 63) previous owners a gold+ gun remembers
@@ -178,6 +179,13 @@ static func _weighted(options: Array, weights: Dictionary, rng: RandomNumberGene
 
 # Returns "" when the gun is legal, otherwise a short reason. The host calls this before trusting a gun from a client or a save.
 static func validate(db: RefCounted, gun: Dictionary) -> String:
+	var chal_problem := CamoChallenges.check(gun)  # (polish1 D5a part 3) the gun's own camo challenges: shape only (before the camo is set aside)
+	if chal_problem != "":
+		return chal_problem
+	if gun.has("chal") or gun.has("chal_done"):
+		gun = gun.duplicate()
+		gun.erase("chal")
+		gun.erase("chal_done")
 	if gun.has("camo"):  # (polish1 D5a) a camo on the gun: looks only, checked for shape (data/camos.json ids)
 		var camo: Variant = gun["camo"]
 		if not camo is Dictionary or not (camo as Dictionary).get("id") is String or String(camo["id"]).length() > 40 \

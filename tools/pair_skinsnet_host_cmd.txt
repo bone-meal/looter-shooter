@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;!net wait_guest;!skins grant green 15;!camo gold;!wait 30;!camo galaxy;!wait 20;!snap skinsnet_host;!wait 15

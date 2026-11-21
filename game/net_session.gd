@@ -868,7 +868,7 @@ func _state_to_host(pos: Vector3, yaw: float, held: String, smoking: bool, emote
 	if not is_host():
 		return
 	var id := multiplayer.get_remote_sender_id()
-	if not roster.has(id) or not pos.is_finite() or not is_finite(yaw) or pos.length() > 60000.0 or held.length() > 40 or emote.length() > 24:  # the fantasy world lies 20 km out; the sea's dungeon spaces (sea step 9) up to ~45 km (shared = -20 km anchor + sea x)
+	if not roster.has(id) or not pos.is_finite() or not is_finite(yaw) or pos.length() > 60000.0 or held.length() > 96 or emote.length() > 24:  # the fantasy world lies 20 km out; the sea's dungeon spaces (sea step 9) up to ~45 km (shared = -20 km anchor + sea x)
 		return
 	_apply_state(id, pos, yaw, held, smoking, emote)
 	_state_broadcast.rpc(id, pos, yaw, held, smoking, emote)

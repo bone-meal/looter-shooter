@@ -3003,6 +3003,74 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"skins":  # (polish1 D5a part 3) a gun's skins menu + camo challenges: "!skins key" presses the skins key in the open inventory; "!skins open" opens the menu of the gun in hand (a plain gun becomes a rolled one); "!skins press <key>"; "!skins kill <n> [head] [aim] [air] [low] [dist <m>] [boss] [elite]" counts n kills with the gun in hand; "!skins grant <tier> <n>" earns the first n camos of a tier on it; "!skins <note>": its challenges
+			var hand_s := int(player.call("hand_index"))
+			var bag_s: RefCounted = player.get("inventory")
+			var chal_s: RefCounted = session.get("_camo_chal")
+			var gun_s: Dictionary = bag_s.call("holster_gun", hand_s) if hand_s >= 0 else {}
+			if gun_s.is_empty() and hand_s >= 0 and words.size() > 1 and words[1] in ["open", "kill", "grant"]:
+				gun_s = load("res://core/gun_gen.gd").call("generate", player.get("gun_db"), RandomNumberGenerator.new(), 0.0, String(bag_s.call("holster_body", hand_s)), "purple")
+				bag_s.call("set_holster_gun", hand_s, gun_s)
+				player.call("refresh_held")
+			match words[1] if words.size() > 1 else "":
+				"key":
+					var ev_s := InputEventAction.new()
+					ev_s.action = "gun_skins"
+					ev_s.pressed = true
+					Input.parse_input_event(ev_s)
+					await get_tree().process_frame
+					_lines.append("SKINS key: menu open %s" % str((session.get("_skins_menu") as Control).visible))
+				"open":
+					if not (session.get("_inventory_screen") as Control).visible:
+						session.call("_toggle_inventory")
+					session.call("_open_skins", {"holster": hand_s})
+				"press":
+					var key_s := " ".join(words.slice(2))
+					_lines.append("SKINS press %s: %s" % [key_s, (session.get("_skins_menu") as Control).call("press", key_s)])
+				"kill":
+					var head_s := words.has("head")
+					player.set("dev_aim", words.has("aim"))
+					var dist_s := 10.0
+					if words.has("dist"):
+						dist_s = float(words[words.find("dist") + 1])
+					var hp_s: RefCounted = player.get("health")
+					var keep_hp := float(hp_s.get("hp"))
+					if words.has("low"):
+						hp_s.set("hp", float(hp_s.get("max_hp")) * 0.2)
+					await get_tree().process_frame  # (aim_held follows dev_aim in the player's frame)
+					var score_s: RefCounted = session.get("_score")
+					for k_s in int(words[2]):
+						score_s.set("blow", "headshot" if head_s else "")
+						session.call("_camo_kill", gun_s, (player as Node3D).global_position + Vector3(dist_s, 0, 0), "champion" if words.has("elite") else "", "boss_x" if words.has("boss") else "drowned")
+					score_s.set("blow", "")
+					hp_s.set("hp", keep_hp)
+					player.set("dev_aim", false)
+					_lines.append("SKINS kill %s: mastery %d, under way %s" % [" ".join(words.slice(2)), int(chal_s.call("mastery", gun_s)), str(gun_s.get("chal", {}))])
+				"ghosts":  # what the other players' copies hold here, and whether a camo is painted on it
+					var link_s: Node = session.get("net")
+					for id_g: int in (link_s.get("roster") as Dictionary):
+						var body_g: Node = link_s.call("player_node", id_g)
+						if body_g != null and body_g.has_method("set_held"):
+							var held_g: Node = body_g.get("_held_model")
+							var painted := false
+							if held_g != null:
+								for mi_g in held_g.find_children("*", "MeshInstance3D", true, false):
+									for si_g in (mi_g as MeshInstance3D).get_surface_override_material_count():
+										var mat_g: Material = (mi_g as MeshInstance3D).get_surface_override_material(si_g)
+										if mat_g is ShaderMaterial and (mat_g as ShaderMaterial).shader == load("res://game/camo_skin.gd").call("shader"):
+											painted = true
+							_lines.append("SKINS ghost %d: holds '%s', camo painted %s, fx %s" % [id_g, String(body_g.get("_held_shown")), str(painted), str(held_g != null and held_g.get_node_or_null("CamoFx") != null)])
+				"grant":
+					var ids_s: Array = chal_s.call("ids_of", words[2])
+					var have_s: Array = gun_s.get("chal_done", [])
+					for id_s: String in ids_s.slice(0, int(words[3])):
+						if not have_s.has(id_s):
+							have_s.append(id_s)
+					gun_s["chal_done"] = have_s
+				_:
+					_lines.append("SKINS %s: gun %s, mastery %d, open %s, under way %s, camo %s, menu %s, valid '%s'" % [" ".join(words.slice(1)), String(gun_s.get("body", "-")), int(chal_s.call("mastery", gun_s)) if not gun_s.is_empty() else 0,
+						str(["green", "blue", "purple", "gold", "pony"].filter(func(t: String) -> bool: return not gun_s.is_empty() and bool(chal_s.call("is_open", gun_s, t)))), str(gun_s.get("chal", {})), str(gun_s.get("camo", "none")),
+						str((session.get("_skins_menu") as Control).visible), String(load("res://core/gun_gen.gd").call("validate", player.get("gun_db"), gun_s)) if not gun_s.is_empty() else "-"])
 		"wkills":  # "!wkills 5": the rolled gun in hand gets the W kills counter at 5 (a plain gun becomes a rolled one first); "!wkills <note>": what it shows
 			var hand_now := int(player.call("hand_index"))
 			var bag: RefCounted = player.get("inventory")

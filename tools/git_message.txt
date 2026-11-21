@@ -1,6 +1,6 @@
-Polish1 D5a part 2: camos as items
+Polish1 D5a part 3: skins menu and per-gun camo challenges
 
-Each crate spin rolls a camo on a second reel. Owned camos live in a locker (uses 3 / 2 / 1 by tier) and are applied from the new Camos tab to a rolled gun. Icons and swatches render the gun wearing its camo, the gun card names the skin, and unboxed camos trade in a CAMOS trade tab.
+C on a gun in the inventory opens the Gunsmith skins menu: a tier ladder (BO3 style, each tier opens after enough of the one below), a turning preview of the gun wearing the camo under the mouse, challenge tiles with progress, the locker of unboxed camos, apply and remove. Kills with a rolled gun count on its open challenges (57 draft challenges in data/camo_challenges.json) and earned camos are called out. Other players now see the camo on the gun in your hands.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

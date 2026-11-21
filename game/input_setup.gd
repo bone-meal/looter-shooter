@@ -43,6 +43,7 @@ const ACTIONS := [
 	["inspect", "Inspect what is in hand"],
 	["sight_switch", "Sniper: scope / red dot on top"],
 	["gun_history", "Inventory: previous owners of a gun (hold)"],
+	["gun_skins", "Inventory: the gun's skins menu"],
 	["photo_mode", "Photo mode"],
 	["logbook", "Salvage logbook (at sea)"],
 	["tool_use", "Use the chosen sea tool (at sea)"],
@@ -88,6 +89,7 @@ static func default_code(action: String) -> String:
 		"inspect": return "key:%d" % KEY_V
 		"sight_switch": return "mouse:%d" % MOUSE_BUTTON_MIDDLE  # (polish1 item 59)
 		"gun_history": return "key:%d" % KEY_H  # (polish1 item 63) only read while the inventory is open
+		"gun_skins": return "key:%d" % KEY_C  # (polish1 D5a) only read in the inventory: shares C with crouch (DECISIONS_SKINS 8)
 		"photo_mode": return "key:%d" % KEY_F10
 		"logbook": return "key:%d" % KEY_J
 		"tool_use": return "key:%d" % KEY_T
@@ -97,6 +99,7 @@ static func default_code(action: String) -> String:
 	return ""
 
 
+const MENU_KEYS := ["gun_history", "gun_skins"]  # read only while the inventory is open
 const SLOTS := 3  # how many keys, mouse buttons or wheel directions one control can have
 
 
@@ -149,6 +152,8 @@ static func bind(settings: RefCounted, action: String, slot: int, code: String) 
 		var other: String = entry[0]
 		if other.begins_with("element_") != action.begins_with("element_"):
 			continue
+		if MENU_KEYS.has(other) != MENU_KEYS.has(action):
+			continue  # (polish1 D5a) keys read only inside the inventory may share keys with the game's controls
 		if other != action and [action, other].has("inventory") and [action, other].has("scoreboard"):
 			continue  # (polish1 item 136) tap and hold of one key: they may share it
 		var theirs := codes(settings, other)

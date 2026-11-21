@@ -52,8 +52,10 @@ const PackShop = preload("res://core/tcg/pack_shop.gd")
 const CaseTab = preload("res://game/case_tab.gd")
 const CaseOpening = preload("res://game/case_opening.gd")
 const CamoLocker = preload("res://core/camo_locker.gd")
+const CamoChallenges = preload("res://core/camo_challenges.gd")
 const CamoIcons = preload("res://game/camo_icons.gd")
 const CamoTab = preload("res://game/camo_tab.gd")
+const SkinsMenu = preload("res://game/skins_menu.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
 const NpcChatter = preload("res://game/npc_chatter.gd")
 const RenderStyle = preload("res://game/render_style.gd")
@@ -239,7 +241,12 @@ var _cases := CaseShelf.new()  # (polish1 item 72) crates bought and not opened 
 var _case_tab := CaseTab.new()  # the player card's Cases tab
 var _camo_locker := CamoLocker.new(DataStore.load_json("res://data/camos.json"))  # (polish1 D5a) unboxed camos not used up yet (saved "camos")
 var _camo_icons := CamoIcons.new()  # renders guns wearing their camo for icons
+var _camo_chal := CamoChallenges.new(DataStore.load_json("res://data/camo_challenges.json"), _camo_locker.cfg)  # (polish1 D5a part 3) per-gun camo challenges
+var _clean_kills := 0  # kills in a row without being hit (camo "streak" challenges)
+var _last_gun_kill := -99.0  # when the gun in hand last killed (s, camo "multi" challenges)
 var _camo_tab := CamoTab.new()  # the player card's Camos tab
+var _skins_menu := SkinsMenu.new()  # (polish1 D5a part 3) a gun's skins menu (C on its card in the inventory)
+var _skins_where := {}  # the gun the skins menu shows: {"holster": i} or {"slot": i}
 var _opening := CaseOpening.new()  # the CS:GO-style opening screen
 var _crates: Array = []  # data/gun_loot.json "vendor"
 var _render_style := RenderStyle.new()
@@ -803,6 +810,15 @@ func _ready() -> void:
 	_camo_tab.inventory = _player.inventory
 	_camo_tab.gun_db = _player.gun_db
 	_camo_tab.apply_requested.connect(_apply_camo)
+	_skins_menu.chal = _camo_chal
+	_skins_menu.watch = _inventory_screen
+	_skins_menu.locker = _camo_locker
+	_skins_menu.gun_db = _player.gun_db
+	_skins_menu.apply_challenge.connect(_skins_apply_challenge)
+	_skins_menu.apply_locker.connect(func(index: int) -> void: _apply_camo(index, _skins_where); _skins_menu.refresh())
+	_skins_menu.remove_camo.connect(_skins_remove)
+	_skins_menu.closed.connect(func() -> void: _inventory_screen.covered = false)
+	_inventory_screen.skins_requested.connect(_open_skins)
 	_card_screen.camos_tab = _camo_tab
 	_trade_screen.camos = _camo_locker
 	_card_screen.buy_starter = func(sid: String) -> String:  # (polish1 item 80) a starter deck bought from the binder
@@ -1266,6 +1282,7 @@ func _menu_keys() -> Array:
 func _toggle_inventory() -> void:
 	_inv_seen = _player.inventory.arrived  # (polish1 item 55) what came in has been seen
 	if _inventory_screen.visible:
+		_skins_menu.close()
 		_inventory_screen.close()
 		_player.controls_enabled = true
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -1861,6 +1878,7 @@ func _inventory_screen_layer() -> CanvasLayer:
 	var layer := CanvasLayer.new()
 	layer.layer = 5
 	layer.add_child(_inventory_screen)
+	layer.add_child(_skins_menu)  # (polish1 D5a part 3) over the inventory window
 	return layer
 
 
@@ -2669,6 +2687,47 @@ func _apply_camo(index: int, where: Dictionary) -> void:
 	_camo_tab.refresh()
 
 
+# (polish1 D5a part 3) The skins menu of a rolled gun in a holster or the backpack.
+func _open_skins(where: Dictionary) -> void:
+	var gun := _skins_gun(where)
+	if gun.is_empty():
+		return
+	_skins_where = where
+	_inventory_screen.covered = true
+	_skins_menu.open(gun)
+
+
+func _skins_gun(where: Dictionary) -> Dictionary:
+	return _player.inventory.holster_gun(int(where["holster"])) if where.has("holster") else _player.inventory.gun_at(int(where.get("slot", -1)))
+
+
+func _skins_apply_challenge(id: String) -> void:
+	var gun := _skins_gun(_skins_where)
+	if gun.is_empty() or not _camo_chal.done(gun, id):
+		return
+	gun["camo"] = CamoChallenges.camo_for(gun, id)
+	_skins_changed(gun, "%s applied" % String(_camo_locker.look(id).get("name", id)))
+
+
+func _skins_remove() -> void:
+	var gun := _skins_gun(_skins_where)
+	if gun.is_empty() or not gun.has("camo"):
+		return
+	gun.erase("camo")
+	_skins_changed(gun, "Camo removed")
+
+
+func _skins_changed(gun: Dictionary, note: String) -> void:
+	if _skins_where.has("holster"):
+		_player.inventory.set_holster_gun(int(_skins_where["holster"]), gun)
+	_player.refresh_held()
+	_sounds.call("play", "upgrade_done")
+	_player_hud.notice(note)
+	save_profile()
+	_skins_menu.refresh()
+	_camo_tab.refresh()
+
+
 func _pick_up(drop: Dictionary) -> void:
 	if int(drop["shared"]) != 0:  # a gun another player may be reaching for too: the host says who gets it (_on_drop_granted)
 		if _free_slots() == 0:
@@ -2724,6 +2783,8 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 	if by_gun and paid > 0 and GunGen.count_kill(in_hand_gun):
 		_player.refresh_wkills()  # W kills: the gun in hand counts it
 		_stats.best("wkills_best", float(in_hand_gun["wkills"]))
+	if by_gun and paid > 0 and not in_hand_gun.is_empty():
+		_camo_kill(in_hand_gun, where, elite, enemy_id)
 	if lucky:
 		_score.mult = maxi(_score.mult >> 1, 1)
 	if paid > 0 and _player.hand_index() >= 0 and _rng.randf() < _perks.num("ammo_chance", 0.0):  # Scavenger: rounds for the gun in hand
@@ -5488,6 +5549,26 @@ func _haze(on: bool) -> void:
 # --- the record of everything (core/stat_book.gd; shown by game/combat_report.gd on the card) ---
 
 # One of our kills: by what, of what, where.
+# (polish1 D5a part 3) A kill made with the rolled gun in hand counts on its open camo challenges; a camo earned by it
+# is called out (in its tier colour) and saved.
+func _camo_kill(gun: Dictionary, where: Vector3, elite: String, enemy_id: String) -> void:
+	var now := Time.get_ticks_msec() / 1000.0
+	_clean_kills += 1
+	var health: RefCounted = _player.health
+	var kill := {"head": String(_score.blow) == "headshot", "elite": elite != "", "boss": enemy_id.begins_with("boss"),
+		"dist": where.distance_to(_player.global_position), "aim": _player.aim_held, "air": not _player.is_on_floor(),
+		"health": float(health.get("hp")) / maxf(float(health.get("max_hp")), 1.0), "since": now - _last_gun_kill, "streak": _clean_kills,
+		"place": "arena" if _in_arena else ("sea" if _in_sea else ("" if _in_fantasy else "island"))}
+	_last_gun_kill = now
+	var earned := _camo_chal.count(gun, kill)
+	if earned.is_empty():
+		return
+	for id: String in earned:
+		var look := _camo_locker.look(id)
+		_player_hud.callout("CAMO UNLOCKED: %s" % String(look.get("name", id)).to_upper(), TierStyle.color(_player.gun_db, String(look.get("tier", "green")), 0.0), "star")
+	save_profile()
+
+
 func _count_kill(enemy_id: String, elite: String, blow: String) -> void:
 	_stats.add("kills")
 	_stats.add_to("kills_by_enemy", enemy_id)
@@ -5511,6 +5592,8 @@ func _count_kill(enemy_id: String, elite: String, blow: String) -> void:
 func _run_stats(delta: float) -> void:
 	_stats.tick(delta)
 	if _player.shots_fired > 0 or _player.hurt_total > 0.0:  # what the player counted since the last frame
+		if _player.hurt_total > 0.0:
+			_clean_kills = 0  # (camo "streak" challenges) hit: the run of clean kills starts again
 		_stats.add("shots_fired", float(_player.shots_fired))
 		_stats.add("shots_hit", float(_player.shots_hit))
 		_stats.add("damage_taken", _player.hurt_total)

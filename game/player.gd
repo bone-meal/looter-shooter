@@ -237,6 +237,8 @@ var even_ground := false  # the hop course (game_session): everybody moves the s
 var edgebug_cfg := {}  # (polish1 edgebugs) set by game_session on edgebug stages: min_fall, push (m/s) and edge (normal height); {} = off
 var edgebug_at := -10.0  # when the latest edgebug happened (_now() seconds)
 var _camo_mat: ShaderMaterial = null  # (polish1 D5a) the camo on the gun in hand, when it is one that reacts
+var aim_held := false  # aiming down the sights this frame (read by camo challenges)
+var dev_aim := false  # (dev) act as if aiming
 var _camo_pulse := Vector3.ZERO  # shoot, reload, kill pulses for it (fade out)
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
@@ -913,7 +915,7 @@ func held_weapon() -> WeaponState:
 
 
 # What is in hand, for other machines to show: a gun's body id, "knife:<type>" for the knife, "shield" for the
-# shield held up, "" for nothing; "|shield" is added while the shield hangs on the back.
+# shield held up, "" for nothing; "|shield" is added while the shield hangs on the back; "~..." = the gun's camo.
 func held_id() -> String:
 	if tool_in_hand != "":
 		return "tool:%s#%d" % [tool_in_hand, tool_uses]
@@ -929,7 +931,11 @@ func held_id() -> String:
 			unique += "#%d" % int(_held_gun["record"])  # Fish Story's biggest hit: others' copy of the tag shows it too
 		elif _sig_node != null and _sig_node.has_method("held_suffix") and String(_sig_node.call("held_suffix")) != "":
 			unique += "#" + String(_sig_node.call("held_suffix"))  # Keeper's Lantern thrown: "out"
-	return (inventory.holster_body(_hand) + unique if _holding else "") + slung
+	var camo := ""  # (polish1 D5a) its camo for others to see: "~<id>.<wear %>.<pattern>.<1 = challenge>"
+	if _holding and _held_gun.get("camo") is Dictionary:
+		var c: Dictionary = _held_gun["camo"]
+		camo = "~%s.%d.%d.%d" % [String(c.get("id", "")).left(24), roundi(float(c.get("wear", 0.0)) * 100.0), int(c.get("seed", 1)), 1 if bool(c.get("challenge", false)) else 0]
+	return (inventory.holster_body(_hand) + unique + camo if _holding else "") + slung
 
 
 # The rolled gun in hand ({} for a plain weapon, the knife or nothing).
@@ -1303,7 +1309,8 @@ func _animate_weapon(delta: float) -> void:
 		elif _shield_out:
 			_animate_shield()
 		return
-	var aiming := Input.is_action_pressed("aim") and _mouse_held() and controls_enabled
+	var aiming := (Input.is_action_pressed("aim") and _mouse_held() and controls_enabled) or dev_aim
+	aim_held = aiming  # (polish1 D5a part 3) camo challenges ask whether a kill was made aiming
 	if third_person and aiming and sight_kind() == "scope" and not _scope_first:  # (polish1 item 65) a scope is looked through in first person
 		_scope_first = true
 		third_person = false

@@ -155,6 +155,9 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		if not look.is_empty():
 			lines.append(["- %s skin applied%s   (%s, pattern %d)" % [String(look["name"]), "  [challenge]" if bool(camo.get("challenge", false)) else "", CamoSkin.wear_name(float(camo.get("wear", 0.0))), int(camo.get("seed", 1))],
 				TierStyle.color(db, String(look["tier"]), t), false, ""])
+	if InputMap.has_action("gun_skins"):  # (polish1 D5a) the skins menu's key
+		var done_n := (gun.get("chal_done", []) as Array).size()
+		lines.append(["Press [%s]: skins%s" % [_key_text("gun_skins"), "  (%d camos earned)" % done_n if done_n > 0 else ""], UiSkin.ACCENT, false, ""])
 	var past: Array = gun.get("owners", [])
 	if not past.is_empty():  # (polish1 item 63) a gold+ gun's previous owners: a hint, the list while the key is held
 		var key := _key_text("gun_history")

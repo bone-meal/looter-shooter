@@ -25,6 +25,7 @@ const PortraitView = preload("res://game/portrait_view.gd")
 
 signal changed
 signal dropped(gun: Dictionary)  # a rolled gun left the inventory: the session lays it on the ground
+signal skins_requested(where: Dictionary)  # (polish1 D5a) C on a rolled gun: {"holster": i} or {"slot": i}
 signal bank_upgrade  # the bank's "more slots" button was clicked: the session takes the price and upgrades it
 
 const EQUIP_BASE := 100  # slot indices >= this are equipment slots (index - EQUIP_BASE into EQUIP_SLOTS)
@@ -62,6 +63,7 @@ var tab := "all"
 var sort_by := "slot"
 var _mouse := Vector2.ZERO
 var _font: Font = ThemeDB.fallback_font
+var covered := false  # (polish1 D5a) the skins menu lies over the window: it takes no keys
 var _focus := -1  # the slot whose card is docked on the right (it stays after the mouse leaves)
 var _order: Array[int] = []  # the backpack as shown: cell -> real slot (-1 = an empty cell)
 var _buttons: Array = []  # the card's buttons from the last frame: [[Rect2, action]]
@@ -525,7 +527,19 @@ func _close_by_button() -> void:
 
 # The drop key: the gun on the mouse, else the gun under it.
 func _input(event: InputEvent) -> void:
-	if visible and event.is_action_pressed("drop_item"):
+	if not visible or covered:
+		return
+	if event.is_action_pressed("gun_skins") and inventory.cursor.is_empty():  # (polish1 D5a) the gun's skins menu
+		var under := _slot_at(_mouse)
+		var slot := under if not _gun_at(under).is_empty() else _focus
+		if slot >= HOLSTER_BASE and slot < KNIFE_SLOT and not _gun_at(slot).is_empty():
+			skins_requested.emit({"holster": slot - HOLSTER_BASE})
+			get_viewport().set_input_as_handled()
+		elif slot >= 0 and slot < inventory.SIZE and not _gun_at(slot).is_empty():
+			skins_requested.emit({"slot": slot})
+			get_viewport().set_input_as_handled()
+		return
+	if event.is_action_pressed("drop_item"):
 		_drop(-1 if not inventory.cursor.is_empty() else _slot_at(_mouse))
 		get_viewport().set_input_as_handled()
 
