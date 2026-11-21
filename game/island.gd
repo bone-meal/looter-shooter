@@ -20,6 +20,7 @@ const ModelLibrary = preload("res://game/model_library.gd")
 const LookProps = preload("res://game/look_props.gd")
 const IslandTerrain = preload("res://game/island_terrain.gd")
 const GiantTrees = preload("res://game/giant_trees.gd")
+const TreetopRules = preload("res://core/treetop_rules.gd")
 
 const CENTER := Vector3(500, 0, 0)  # the middle of the spawn island in the world
 const SAND := Color(0.9, 0.8, 0.55)
@@ -51,6 +52,14 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	for bridge: Dictionary in land.bridges:
 		clear.append(bridge["a"])
 		clear.append(bridge["b"])
+	var tops := TreetopRules.new(DataStore.load_json("res://data/treetops.json"), land)  # (polish1 D4c) under the village's stilts, ladders and lifts
+	for deck: Dictionary in tops.decks:
+		if deck["kind"] == "stilts":
+			for corner: Vector2 in [Vector2.ZERO, Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+				clear.append((deck["at"] as Vector2) + corner * (deck["outer"] as Vector2))
+	for way: Dictionary in tops.ways:
+		if way.has("foot") and int(way["from"]) < 0:
+			clear.append(Vector2((way["foot"] as Vector3).x, (way["foot"] as Vector3).z))
 	_ocean(parent, land)
 	var patches := PackedVector3Array()
 	for isle: Dictionary in land.islands:

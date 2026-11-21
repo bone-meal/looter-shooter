@@ -2354,6 +2354,61 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						inside += 1
 				_lines.append("HUT %s: boards %s, doors open %s, player in hut %d, enemies inside huts %d of %d, points %d" % [" ".join(words.slice(1)), str(hut_rules.get("boards")), str(Array(hut_rules.get("open") as PackedByteArray)), int(hut_rules.call("hut_of", player.global_position.x - 500.0, player.global_position.z)), inside,
 					(session.call("director").call("enemy_list") as Array).size(), int((session.call("score") as RefCounted).get("points"))])
+		"tree":  # (polish1 D4c) the treetop village: "!tree open all|<way id>", "!tree goto <deck id>", "!tree way <way id> [end 0/1]" (stand at
+			# that end facing the way), "!tree use" (interact with the way here), "!tree climb <ladder id>" (from its foot, climb, report), "!tree note"
+			var tt: Node3D = session.get("_treetops")
+			var tops_r: RefCounted = tt.get("rules")
+			var ways_t: Array = tops_r.get("ways")
+			var find_way := func(id: String) -> int:
+				for i in ways_t.size():
+					if String(ways_t[i]["id"]) == id:
+						return i
+				return -1
+			match words[1]:
+				"open":
+					for i in ways_t.size():
+						if words[2] == "all" or String(ways_t[i]["id"]) == words[2]:
+							session.call("_open_way", i, false)
+							if session.get("net") != null:
+								(session.get("net") as Node).get("rounds").call("tell_way", i)
+				"goto":
+					var dk: Dictionary = (tops_r.get("decks") as Array)[int(tops_r.call("deck_of", words[2]))]
+					var at_d: Vector2 = dk["at"]
+					var spot_d := at_d + (Vector2(float(dk["outer"]) - 1.0, 0.0) if dk["kind"] == "ring" else Vector2(0.0, 0.0))
+					player.call("teleport", Vector3(500.0 + spot_d.x, float(dk["y"]) + 0.2, spot_d.y), 0.0)
+				"way":
+					var wi := int(find_way.call(words[2]))
+					var e := int(words[3]) if words.size() > 3 else 0
+					var stand: Vector3 = ways_t[wi]["ends"][e]
+					player.call("teleport", Vector3(500.0 + stand.x, stand.y + 0.15, stand.z), 0.0)
+					await get_tree().create_timer(0.3).timeout
+					var look_at: Vector3 = ways_t[wi]["ends"][1 - e] if ways_t[wi]["kind"] == "bridge" else ((ways_t[wi]["foot"] as Vector3) + (ways_t[wi]["top"] as Vector3)) * 0.5
+					player.call("look_at_point", Vector3(500.0 + look_at.x, look_at.y + 1.4, look_at.z))
+				"use":
+					session.call("_use_treetop_way", int(session.call("_treetop_way_here")))
+				"give":
+					(session.call("score") as RefCounted).call("give", int(words[2]))
+				"climb":
+					var ci := int(find_way.call(words[2]))
+					var cw: Dictionary = ways_t[ci]
+					var foot: Vector3 = cw["foot"]
+					var face: Vector2 = cw["face"]
+					var start_c := Vector2(foot.x, foot.z) - face * 0.6
+					player.call("teleport", Vector3(500.0 + start_c.x, foot.y + 0.15, start_c.y), 0.0)
+					await get_tree().create_timer(0.3).timeout
+					player.call("look_at_point", Vector3(500.0 + foot.x + face.x * 2.0, foot.y + 4.0, foot.z + face.y * 2.0))
+					var t0_c := Time.get_ticks_msec()
+					Input.action_press("move_forward")
+					while Time.get_ticks_msec() - t0_c < 12000 and player.global_position.y < (cw["top"] as Vector3).y + 0.5:
+						await get_tree().process_frame
+					await get_tree().create_timer(0.8).timeout
+					Input.action_release("move_forward")
+					await get_tree().create_timer(0.5).timeout
+					var pc := player.global_position - Vector3(500.0, 0.0, 0.0)
+					_lines.append("TREE climb %s: %.1f s, now at y %.1f (top %.1f), on deck %d (wanted %d), on floor %s" % [words[2], (Time.get_ticks_msec() - t0_c) / 1000.0, pc.y, (cw["top"] as Vector3).y, int(tops_r.call("deck_at", pc.x, pc.y, pc.z)), int(cw["to"]), str(player.is_on_floor())])
+				_:
+					var pn := player.global_position - Vector3(500.0, 0.0, 0.0)
+					_lines.append("TREE %s: at (%.1f, %.1f, %.1f) deck %d, ladder %s, way here %d, open %d of %d, points %d" % [" ".join(words.slice(1)), pn.x, pn.y, pn.z, int(tops_r.call("deck_at", pn.x, pn.y, pn.z)), str(player.get("ladder")), int(session.call("_treetop_way_here")), (tops_r.call("open_list") as PackedInt32Array).size(), ways_t.size(), int((session.call("score") as RefCounted).get("points"))])
 		"wall":  # "!wall goto 3": stand in front of wall buy n, looking at its board
 			var land: RefCounted = session.get("_land")
 			var board: Dictionary = (land.get("wall_buys") as Array)[int(words[2])]
@@ -3180,6 +3235,60 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							hut_stalls.append("hut %d: walked in through the SHUT door" % hut)
 						session.call("_toggle_door", door_e)
 					_lines.append("NAV huts %s: %d runs, %d stalls, got inside by the door %d%s" % [words[2] if words.size() > 2 else "home", hut_runs, hut_stalls.size(), inside_ok, ("; " + "; ".join(hut_stalls)) if not hut_stalls.is_empty() else ""])
+				"decks":  # (polish1 D4c) "!nav decks <island>": every way open first; round each ring deck both ways, across each stilt deck, over
+					# each bridge both ways; a line per stall (under 1.5 m in 1.5 s) or fall (more than 2 m down)
+					var tt2: Node3D = session.get("_treetops")
+					var tr2: RefCounted = tt2.get("rules")
+					var isle_d := int((session.get("_land") as RefCounted).call("index_of", words[2] if words.size() > 2 else "home"))
+					for i in (tr2.get("ways") as Array).size():
+						session.call("_open_way", i, false)
+					await get_tree().create_timer(0.5).timeout
+					var runs_d: Array = []  # [from Vector3, to Vector3, label]
+					for dk: Dictionary in tr2.get("decks"):
+						if int(dk["island"]) != isle_d:
+							continue
+						var c: Vector2 = dk["at"]
+						var y := float(dk["y"])
+						if dk["kind"] == "ring":
+							var mid_r := (float(dk["outer"]) + float(dk["inner"])) * 0.5
+							for k in 4:
+								var a0 := TAU * float(k) / 4.0
+								for way_s: float in [1.0, -1.0]:
+									var p0 := c + Vector2(cos(a0), sin(a0)) * mid_r
+									var p1 := c + Vector2(cos(a0 + 0.9 * way_s), sin(a0 + 0.9 * way_s)) * mid_r
+									runs_d.append([Vector3(p0.x, y, p0.y), Vector3(p1.x, y, p1.y), "%s round" % dk["id"]])
+						else:
+							var h2: Vector2 = dk["outer"]
+							for corner: Vector2 in [Vector2(1, 0), Vector2(0, 1)]:  # along the middle lines (the hut's posts stand at its corners)
+								var p0 := c - corner * (h2 - Vector2(0.8, 0.8))
+								var p1 := c + corner * (h2 - Vector2(0.8, 0.8))
+								runs_d.append([Vector3(p0.x, y, p0.y), Vector3(p1.x, y, p1.y), "%s across" % dk["id"]])
+					for w: Dictionary in tr2.get("ways"):
+						if w["kind"] == "bridge" and int((tr2.get("decks") as Array)[int(w["to"])]["island"]) == isle_d:
+							runs_d.append([w["ends"][0], w["ends"][1], "%s over" % w["id"]])
+							runs_d.append([w["ends"][1], w["ends"][0], "%s back" % w["id"]])
+					var bad_d: PackedStringArray = []
+					for run: Array in runs_d:
+						var s3: Vector3 = run[0]
+						var g3: Vector3 = run[1]
+						player.call("teleport", Vector3(500.0 + s3.x, s3.y + 0.2, s3.z), 0.0)
+						await get_tree().create_timer(0.3).timeout
+						player.call("look_at_point", Vector3(500.0 + g3.x, g3.y + 1.6, g3.z))
+						var from_d := player.global_position
+						var want_d := Vector2(g3.x - s3.x, g3.z - s3.z).length()
+						Input.action_press("move_forward")
+						var held_d := 0.0
+						while held_d < maxf(1.5, want_d / 4.5) and Vector2(player.global_position.x - from_d.x, player.global_position.z - from_d.z).length() < want_d - 0.4:
+							await get_tree().process_frame
+							held_d += get_process_delta_time()
+						Input.action_release("move_forward")
+						await get_tree().create_timer(0.3).timeout
+						var moved_d := Vector2(player.global_position.x - from_d.x, player.global_position.z - from_d.z).length()
+						if player.global_position.y < from_d.y - 2.0:
+							bad_d.append("%s FELL to y %.1f at %.1f %.1f" % [run[2], player.global_position.y, player.global_position.x - 500.0, player.global_position.z])
+						elif moved_d < minf(1.5, want_d - 0.5):
+							bad_d.append("%s moved %.2f, in front: %s, touching: %s" % [run[2], moved_d, _what_ahead(player), _touching(player)])
+					_lines.append("NAV decks %s: %d runs, %d problems%s" % [words[2] if words.size() > 2 else "home", runs_d.size(), bad_d.size(), ("; " + "; ".join(bad_d)) if not bad_d.is_empty() else ""])
 				"enemies":
 					var spots: PackedStringArray = []
 					for e: Variant in ((session.get("_rounds") as Node).get("_alive") as Array):

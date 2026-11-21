@@ -1,0 +1,140 @@
+# Purpose: (polish1 D4c) developer check of the treetop village (core/treetop_rules.gd with data/treetops.json and
+# data/archipelago.json): every deck can be reached from the ground, ways join what they say, bridges are short and
+# level enough, ladders and lifts stand on dry flat ground (or on the deck below), stilts and way feet are clear of
+# rocks, trees and the things placed on the islands, every way end is found where a player stands to use it.
+# Run: godot --headless --path . --script res://tools/treetop_check.gd  (TREETOP lines, ends "problems n").
+# Dependencies: core/treetop_rules.gd, core/archipelago.gd, core/data_store.gd.
+extends SceneTree
+
+const Archipelago = preload("res://core/archipelago.gd")
+const DataStore = preload("res://core/data_store.gd")
+const TreetopRules = preload("res://core/treetop_rules.gd")
+const FILES := ["perks", "traps", "upgrade_machine", "power", "buildables", "mystery_box", "zombies/quest", "archipelago"]
+
+var _problems := 0
+var _land: Archipelago
+var _spots: Array = []  # [Vector2, how near nothing may stand]
+
+
+func _init() -> void:
+	_land = Archipelago.new(DataStore.load_json("res://data/archipelago.json"))
+	for f: String in FILES:
+		_walk(DataStore.load_json("res://data/%s.json" % f), f)
+	for wb: Dictionary in _land.wall_buys:
+		_spots.append([wb["at"], 1.5])
+	var tops := TreetopRules.new(DataStore.load_json("res://data/treetops.json"), _land)
+	# reach: every deck from the ground
+	var reached := {}
+	var grew := true
+	while grew:
+		grew = false
+		for w: Dictionary in tops.ways:
+			var f := int(w["from"])
+			var t := int(w["to"])
+			if (f < 0 or reached.has(f)) and not reached.has(t):
+				reached[t] = true
+				grew = true
+			if w["kind"] == "bridge" and reached.has(t) and not reached.has(f):
+				reached[f] = true
+				grew = true
+	for i in tops.decks.size():
+		if not reached.has(i):
+			_problem("deck %s cannot be reached from the ground" % tops.decks[i]["id"])
+	for i in tops.ways.size():
+		var w: Dictionary = tops.ways[i]
+		var id := String(w["id"])
+		match String(w["kind"]):
+			"bridge":
+				var a: Vector3 = w["a"]
+				var b: Vector3 = w["b"]
+				var flat := Vector2(b.x - a.x, b.z - a.z).length()
+				if int(tops.decks[int(w["from"])]["layer"]) != int(tops.decks[int(w["to"])]["layer"]) or flat < 2.0 or flat > 30.0 or absf(a.y - b.y) > flat * 0.15:
+					_problem("bridge %s: %.1f m long, rises %.1f m between layers %d / %d" % [id, flat, b.y - a.y, int(tops.decks[int(w["from"])]["layer"]), int(tops.decks[int(w["to"])]["layer"])])
+			_:
+				var foot: Vector3 = w["foot"]
+				if int(w["from"]) < 0:
+					var why := _why_not_clear(Vector2(foot.x, foot.z), 0.8)
+					if why != "":
+						_problem("%s %s: its foot at (%.1f, %.1f) is not on clear flat ground: %s" % [w["kind"], id, foot.x, foot.z, why])
+				elif tops.deck_at(foot.x, foot.y, foot.z) != int(w["from"]):
+					_problem("%s %s: its foot is not on its lower deck" % [w["kind"], id])
+				else:
+					var low: Dictionary = tops.decks[int(w["from"])]
+					var behind := Vector2(foot.x, foot.z) - (w["face"] as Vector2) * 0.55  # where a climber stands behind it: still 0.5 m (a body) inside the railing
+					if tops.deck_at(behind.x, foot.y, behind.y) != int(w["from"]) or (low["kind"] == "ring" and behind.distance_to(low["at"]) > float(low["outer"]) - 0.5):
+						_problem("%s %s: no room to stand behind its foot on the lower deck" % [w["kind"], id])
+		for e in 2:
+			var stand: Vector3 = w["ends"][e]
+			if tops.way_near(stand.x, stand.y, stand.z) != i:
+				_problem("way %s end %d: standing there finds way %d" % [id, e, tops.way_near(stand.x, stand.y, stand.z)])
+			var deck_here := tops.deck_at(stand.x, stand.y, stand.z)
+			var want := int(w["to"]) if e == 1 else int(w["from"])
+			if want >= 0 and deck_here != want:
+				_problem("way %s end %d stands off its deck" % [id, e])
+			if want < 0 and _why_not_clear(Vector2(stand.x, stand.z), 0.5) != "":
+				_problem("way %s end %d (ground) at (%.1f, %.1f) is not clear flat ground: %s" % [id, e, stand.x, stand.z, _why_not_clear(Vector2(stand.x, stand.z), 0.5)])
+	for d: Dictionary in tops.decks:
+		if d["kind"] != "stilts":
+			continue
+		var at: Vector2 = d["at"]
+		var half: Vector2 = d["outer"]
+		for corner: Vector2 in [Vector2(1, 1), Vector2(-1, 1), Vector2(1, -1), Vector2(-1, -1)]:
+			var p := at + corner * (half - Vector2(0.45, 0.45))
+			var why_s := _why_not_clear(p, 0.6)
+			if why_s != "":
+				_problem("deck %s: a stilt at (%.1f, %.1f): %s" % [d["id"], p.x, p.y, why_s])
+	var opened := 0
+	for i in tops.ways.size():
+		opened += 1 if tops.open(i) else 0
+	var on_any := 0
+	for w: Dictionary in tops.ways:
+		if w["kind"] == "ladder":
+			var mid: Vector3 = ((w["foot"] as Vector3) + (w["top"] as Vector3)) * 0.5
+			on_any += 1 if tops.on_ladder(mid.x, mid.y, mid.z) else 0
+	print("TREETOP %d villages, %d decks, %d ways (%d ladders climbable in the middle), all opened %d" % [(tops.cfg["villages"] as Array).size(), tops.decks.size(), tops.ways.size(), on_any, opened])
+	print("TREETOP_DONE problems=%d" % _problems)
+	quit()
+
+
+func _walk(v: Variant, where: String) -> void:
+	if v is Dictionary:
+		var d: Dictionary = v
+		if d.get("island") is String and d.get("at") is Array and _land.index_of(String(d["island"])) >= 0:
+			_spots.append([_land.on_island(String(d["island"]), d["at"]), 7.5 if where.contains("shelters") else 1.5])
+		for k: Variant in d:
+			_walk(d[k], "%s.%s" % [where, str(k)])
+	elif v is Array:
+		for x: Variant in v:
+			_walk(x, where)
+
+
+# "" when a plan spot is dry, flat (hills count) and clear of rocks / tree trunks (a giant tree's low roots are fine)
+# and of the things placed on the islands; else what is in the way.
+func _why_not_clear(p: Vector2, margin: float) -> String:
+	if _land.height_at(p.x, p.y) < -0.05:
+		return "water"
+	if not is_zero_approx(_land.height_at(p.x, p.y)):
+		return "a slope"
+	for b: Dictionary in _land.blocks:
+		var reach := float(b["core"]) + 0.6 if String(b["kind"]) == "tree" else float(b["half_width"])
+		var a: Vector2 = b["a"]
+		var e: Vector2 = b["b"]
+		var t := 0.0 if a.distance_squared_to(e) < 0.001 else clampf((p - a).dot(e - a) / a.distance_squared_to(e), 0.0, 1.0)
+		if p.distance_to(a.lerp(e, t)) < reach + margin:
+			return "a %s" % b["kind"]
+	for s: Array in _spots:
+		if (s[0] as Vector2).distance_to(p) < float(s[1]) + margin:
+			return "a placed thing at %s" % str(s[0])
+	return ""
+
+
+func _crowded(p: Vector2, margin: float) -> bool:
+	for s: Array in _spots:
+		if (s[0] as Vector2).distance_to(p) < float(s[1]) + margin:
+			return true
+	return false
+
+
+func _problem(text: String) -> void:
+	_problems += 1
+	print("TREETOP PROBLEM " + text)

@@ -40,13 +40,17 @@ signal box_asked(peer: int, action: int)  # on the host: a client standing at th
 signal box_state(state: String, spot: int, owner: int, gun: Dictionary, took: bool)  # on a client: what the box does now
 signal trap_asked(peer: int, trap: int)  # on the host: a client standing at a trap's lever wants it on
 signal trap_started(trap: int, by: int)  # on a client: that trap runs now, switched on by that player
-signal debris_billed(index: int)  # on a client: the host cleared the debris we asked for; we pay its price
+signal debris_billed(index: int)
+signal way_opened(way: int, show_it: bool)  # (polish1 D4c) on a client: a treetop way is bought (show_it false = it already was)
+signal way_billed(way: int)  # on a client: the host opened the way we asked for; we pay its price
+signal lift_ridden(way: int, up: bool)  # somebody rides a lift (its basket moves on every machine)  # on a client: the host cleared the debris we asked for; we pay its price
 
 var net: Node3D
 var rounds: Node  # game/island_rounds.gd of this machine (it runs only on the host)
 var director: Node3D
 var card: RefCounted  # our own score card
 var land: RefCounted  # core/archipelago.gd of this machine (which debris is cleared)
+var treetops: RefCounted  # (polish1 D4c) core/treetop_rules.gd of this machine (which ways are bought)
 var shelters: RefCounted  # core/shelter_rules.gd of this machine (the host decides about boards)
 var power: RefCounted  # core/power_state.gd of this machine
 var builds: RefCounted  # core/build_state.gd of this machine
@@ -319,6 +323,54 @@ func _debris_open(index: int, show_it: bool) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _debris_bill(index: int) -> void:
 	debris_billed.emit(index)
+
+
+# --- (polish1 D4c) treetop ways: a client asks, the host checks it stands at an end and opens it for everybody ---
+
+func ask_way(way: int) -> void:
+	if is_client():
+		_way_ask.rpc_id(1, way)
+
+
+func tell_way(way: int) -> void:
+	if net.can_send() and net.is_host():
+		_way_open.rpc(way, true)
+
+
+func tell_lift(way: int, up: bool) -> void:
+	if net.can_send():
+		_lift_go.rpc(way, up)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _way_ask(way: int) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	if not net.is_host() or treetops == null or not net.roster.has(peer) or way < 0 or way >= (treetops.get("ways") as Array).size():
+		return
+	var body: Node3D = net.player_node(peer)
+	if body == null or bool(treetops.call("is_open", way)):
+		return
+	var at := body.global_position - ORIGIN
+	if int(treetops.call("way_near", at.x, at.y, at.z)) != way:
+		return  # not standing at it
+	_way_bill.rpc_id(peer, way)
+	_way_open.rpc(way, true)
+	way_opened.emit(way, true)  # the host's own session opens it too
+
+
+@rpc("authority", "call_remote", "reliable")
+func _way_open(way: int, show_it: bool) -> void:
+	way_opened.emit(way, show_it)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _way_bill(way: int) -> void:
+	way_billed.emit(way)
+
+
+@rpc("any_peer", "call_remote", "unreliable_ordered")
+func _lift_go(way: int, up: bool) -> void:
+	lift_ridden.emit(way, up)
 
 
 # --- window boards: the host's enemies tear them, anybody may nail one back (the host checks they stand there) ---
@@ -653,6 +705,9 @@ func _ask_all() -> void:
 	if land != null:
 		for index: int in land.call("open_list"):
 			_debris_open.rpc_id(peer, index, false)
+	if treetops != null:
+		for way: int in treetops.call("open_list"):
+			_way_open.rpc_id(peer, way, false)
 	if power != null:
 		_power_bits.rpc_id(peer, int(power.call("to_bits")))
 	if builds != null:

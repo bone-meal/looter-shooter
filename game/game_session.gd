@@ -87,6 +87,7 @@ const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
 const IslandNav = preload("res://game/island_nav.gd")
 const AmmoCrate = preload("res://game/ammo_crate.gd")
+const Treetops = preload("res://game/treetops.gd")
 const PowerupRules = preload("res://core/powerup_rules.gd")
 const Archipelago = preload("res://core/archipelago.gd")
 const WallBuy = preload("res://game/wall_buy.gd")
@@ -242,6 +243,8 @@ const TAB_TAP_S := 0.22  # shorter than this is a tap (the scoreboard waits as l
 var _knife_rolled := false  # this character has its knife type
 var _rounds := IslandRounds.new()  # the island's endless rounds (run here when alone or hosting)
 var _ammo_crates: Array = []  # (polish1 D4b) game/ammo_crate.gd, one per hold-out hut
+var _treetops: Treetops  # (polish1 D4c) the treetop village: decks, ladders, rope bridges, lifts
+var _lift_ride: Dictionary = {}  # (polish1 D4c) while riding a lift: {"way", "up": bool, "t": 0..1}
 var _island_nav := IslandNav.new()  # (polish1 D4a) the islands' navigation mesh: island enemies path round obstacles
 var _first_look := false  # a new character is still in its first customize menu: the rounds wait
 var _hurt_at := 0.0  # when the local player was last hurt (the island heals whoever is left alone for a while)
@@ -565,6 +568,10 @@ func _ready() -> void:
 	_shelters.setup(_land.shelters, _land.cfg["windows"])
 	_shelters.tore.connect(_on_board_torn)
 	add_child(_shelters)
+	_treetops = Treetops.new()
+	_treetops.position = Island.CENTER
+	_treetops.setup(DataStore.load_json("res://data/treetops.json"), _land)
+	add_child(_treetops)
 	for crate: Dictionary in _land.ammo_crates:  # (polish1 D4b) one in every hold-out hut
 		var c := AmmoCrate.new()
 		c.price = int(crate["price"])
@@ -883,6 +890,10 @@ func _ready() -> void:
 		net.rounds.window_set.connect(_on_window_set)
 		net.rounds.nail_paid.connect(_on_nail_paid)
 		net.rounds.door_asked.connect(_on_door_asked)
+		net.rounds.treetops = _treetops.rules  # (polish1 D4c)
+		net.rounds.way_opened.connect(_on_way_opened)
+		net.rounds.way_billed.connect(_on_way_billed)
+		net.rounds.lift_ridden.connect(_on_lift_ridden)
 		var downs: Dictionary = _rounds.config()["downs"]
 		net.downs.reach = float(downs["reach"])
 		net.downs.health_share = float(downs["health"])
@@ -1865,6 +1876,14 @@ func _prompt() -> String:
 		return "[%s] %s the door" % [key, "Shut" if _shelters.rules.open[window] == 1 else "Open"] + ("" if planks >= whole else "  (hold %s after: nail planks back, %d of %d)" % [key, planks, whole])
 	if window >= 0 and _shelters.rules.boards[window] < _shelters.rules.full_of(window):
 		return "[hold %s] Nail a board back (%d of %d)" % [key, _shelters.rules.boards[window], _shelters.rules.full_of(window)]
+	var way := _treetop_way_here()
+	if way >= 0:  # (polish1 D4c) a ladder / rope bridge / lift of the treetop village
+		var w: Dictionary = _treetops.rules.ways[way]
+		var names := {"ladder": "Lower the rope ladder", "bridge": "Lay the rope bridge", "lift": "Rig the lift"}
+		if not _treetops.rules.is_open(way):
+			return "[%s] %s (%d points)" % [key, names[String(w["kind"])], _treetops.rules.price(way)]
+		if String(w["kind"]) == "lift":
+			return "[%s] Ride the lift %s" % [key, "down" if _treetop_end() == 1 else "up"]
 	var crate := _ammo_crate_here()
 	if crate >= 0:
 		return "[%s] Ammo crate: refill every gun's spare ammo (%d points)" % [key, int(_land.ammo_crates[crate]["price"])]
@@ -1991,6 +2010,8 @@ func _interact() -> void:
 		travel("island")
 	elif _window_here() >= 0 and _shelters.rules.is_door(_window_here()) and (_shelters.rules.open[_window_here()] == 1 or _shelters.rules.boards[_window_here()] >= _shelters.rules.full_of(_window_here())):
 		_toggle_door(_window_here())
+	elif _treetop_way_here() >= 0 and (not _treetops.rules.is_open(_treetop_way_here()) or String(_treetops.rules.ways[_treetop_way_here()]["kind"]) == "lift"):
+		_use_treetop_way(_treetop_way_here())
 	elif _ammo_crate_here() >= 0:
 		_use_ammo_crate(_ammo_crate_here())
 	elif _wall_buy_here() >= 0:
@@ -3649,6 +3670,10 @@ func _on_debris_billed(index: int) -> void:
 # Game over: every way is blocked again and every window is whole.
 func _close_debris() -> void:
 	_land.close_all()
+	if _treetops != null:  # (polish1 D4c) the village's ladders roll up, its bridges come down again
+		_treetops.rules.close_all()
+		for i in _treetops.rules.ways.size():
+			_treetops.show_way(i)
 	for pile: Variant in _debris:
 		(pile as Node).call("set_open", false)
 	get_tree().create_timer(0.2).timeout.connect(_island_nav.rebuild)
@@ -4380,6 +4405,97 @@ func _on_door_asked(entry: int) -> void:
 	if _shelters.rules.toggle_door(entry):
 		_shelters.refresh()
 		net.rounds.tell_window(entry, _shelters.rules.encoded(entry))
+
+
+# (polish1 D4c) The treetop way whose end our player stands at, -1 = none.
+func _treetop_way_here() -> int:
+	if _treetops == null or _in_arena or _in_fantasy or not _lift_ride.is_empty() or not _on_island(_player.global_position):
+		return -1
+	var p := _player.global_position - Island.CENTER
+	return _treetops.rules.way_near(p.x, p.y, p.z)
+
+
+# Which end of the way here we stand at (0 = the low one).
+func _treetop_end() -> int:
+	var p := _player.global_position - Island.CENTER
+	return _treetops.rules.end_at(_treetop_way_here(), p.x, p.y, p.z)
+
+
+# Interact at a treetop way: buy it (online the host decides and bills us), or ride an open lift.
+func _use_treetop_way(way: int) -> void:
+	if _treetops.rules.is_open(way):
+		if String(_treetops.rules.ways[way]["kind"]) == "lift":
+			_lift_ride = {"way": way, "up": _treetop_end() == 0, "t": 0.0}
+			_player.carried = true
+			_sounds.call("play", "board_fix")
+			if net != null:
+				net.rounds.tell_lift(way, bool(_lift_ride["up"]))
+		return
+	var cost := _treetops.rules.price(way)
+	if not _score.can_afford(cost):
+		_player_hud.notice("That costs %d points (you have %d)." % [cost, _score.points])
+		return
+	if net != null and net.rounds.is_client():
+		net.rounds.ask_way(way)
+		return
+	_score.spend(cost)
+	_open_way(way, true)
+	if net != null:
+		net.rounds.tell_way(way)
+
+
+func _open_way(way: int, show_it: bool) -> void:
+	if _treetops.rules.open(way):
+		_treetops.show_way(way)
+		if show_it and _island_side():
+			_sounds.call("play", "wall_buy")
+
+
+# As a client: the host opened a way (ours or somebody's), or tells us what is open as we arrive.
+func _on_way_opened(way: int, show_it: bool) -> void:
+	if _treetops != null and way >= 0 and way < _treetops.rules.ways.size():
+		_open_way(way, show_it)
+
+
+func _on_way_billed(way: int) -> void:
+	if _treetops != null and way >= 0 and way < _treetops.rules.ways.size():
+		_score.spend(_treetops.rules.price(way))
+
+
+# Somebody else rides a lift: its basket goes along on this machine too (looks only).
+func _on_lift_ridden(way: int, up: bool) -> void:
+	if _treetops == null or way < 0 or way >= _treetops.rules.ways.size():
+		return
+	var tw := create_tween()
+	tw.tween_method(func(t: float) -> void: _treetops.set_basket(way, t), 0.0 if up else 1.0, 1.0 if up else 0.0, float(_treetops.rules.cfg["lift_seconds"]))
+	tw.tween_callback(func() -> void: _treetops.set_basket(way, 0.0))
+
+
+# Every frame: ladders of the village climb (Source style, like the bhop course's), a lift ride carries the rider.
+func _run_treetops(delta: float) -> void:
+	if _treetops == null:
+		return
+	if not _lift_ride.is_empty():
+		var way := int(_lift_ride["way"])
+		var w: Dictionary = _treetops.rules.ways[way]
+		_lift_ride["t"] = minf(float(_lift_ride["t"]) + delta / float(_treetops.rules.cfg["lift_seconds"]), 1.0)
+		var t := float(_lift_ride["t"]) if bool(_lift_ride["up"]) else 1.0 - float(_lift_ride["t"])
+		var smooth := t * t * (3.0 - 2.0 * t)
+		_treetops.set_basket(way, smooth)
+		var foot: Vector3 = w["foot"]
+		var top: Vector3 = w["top"]
+		_player.global_position = Island.CENTER + foot.lerp(top, smooth) + Vector3(0, 0.12, 0)
+		if float(_lift_ride["t"]) >= 1.0:
+			var stand: Vector3 = w["ends"][1 if bool(_lift_ride["up"]) else 0]
+			_player.carried = false
+			_player.teleport(Island.CENTER + stand + Vector3(0, 0.1, 0), _player.rotation.y)
+			_treetops.set_basket(way, 0.0)
+			_lift_ride = {}
+		return
+	if _on_course:
+		return
+	var p := _player.global_position - Island.CENTER
+	_player.ladder = _island_side() and _treetops.rules.on_ladder(p.x, p.y, p.z)
 
 
 # (polish1 D4b) The ammo crate our player stands at, -1 = none.
@@ -5486,6 +5602,7 @@ func _process(delta: float) -> void:
 	if _island_side():
 		_mind_the_sea()
 		_hold_nailing()
+	_run_treetops(delta)
 	_score.mult = _powerups.points_mult(_time) if _island_side() else 1
 	_player_hud.power_now = _time
 	var regen: Dictionary = _rounds.config()["regen"]  # the classic way: left alone for a moment, you get your breath back

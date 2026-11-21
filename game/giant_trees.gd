@@ -4,15 +4,14 @@
 # the trees (bark, leaves: two draw calls). Colliders are smooth on purpose (director: no getting stuck): the trunk
 # is a stack of convex shells (the flare is a steep cone: a wall, nothing to wedge in), each root a low convex hump
 # you walk over; limbs and leaves have none (out of reach). The navigation mesh sees the same colliders.
-# Dependencies: game/surface_library.gd (fx_bark, fx_leaf: grain surfaces coloured by the mesh).
+# Dependencies: game/surface_library.gd (fx_bark, fx_leaf: grain surfaces coloured by the mesh), core/tree_shape.gd.
 extends RefCounted
 
 const SurfaceLibrary = preload("res://game/surface_library.gd")
+const TreeShape = preload("res://core/tree_shape.gd")
 
 const SEGS := 14  # round the trunk
 const ROOTS := 7
-const FLARE := 0.55  # the foot is this much wider than the trunk ...
-const FLARE_FALL := 1.4  # ... fading over about this many metres up
 const SECTIONS := [-0.6, 0.6, 1.8, 4.2, 9.0, 16.0, 24.0]  # the trunk's convex collider pieces (heights from the ground; short at the
 # flared foot so each shell hugs the curve instead of bulging out past it)
 
@@ -32,7 +31,7 @@ static func build(parent: Node3D, land: RefCounted, centre: Vector3) -> void:
 			continue
 		any = true
 		var at: Vector2 = b["a"]
-		_tree(bark, leaves, body, at, float(land.call("height_at", at.x, at.y)), float(b["height"]), float(b["girth"]), int(absf(at.x * 7.0 + at.y * 13.0)))
+		_tree(bark, leaves, body, at, float(land.call("height_at", at.x, at.y)), float(b["height"]), float(b["girth"]), TreeShape.seed_of(at))
 	if not any:
 		return
 	for pair: Array in [[bark, "fx_bark"], [leaves, "fx_leaf"]]:
@@ -47,7 +46,7 @@ static func build(parent: Node3D, land: RefCounted, centre: Vector3) -> void:
 
 # How wide the trunk is at height y (from the ground) for a tree of this height and girth (radius).
 static func radius_at(y: float, height: float, girth: float) -> float:
-	return girth * (1.0 - 0.45 * clampf(y / height, 0.0, 1.0)) * (1.0 + FLARE * exp(-maxf(y, 0.0) / FLARE_FALL))
+	return TreeShape.radius_at(y, height, girth)
 
 
 static func _tree(bark: SurfaceTool, leaves: SurfaceTool, body: StaticBody3D, at: Vector2, ground: float, height: float, girth: float, seed_n: int) -> void:
@@ -56,7 +55,7 @@ static func _tree(bark: SurfaceTool, leaves: SurfaceTool, body: StaticBody3D, at
 	var noise := FastNoiseLite.new()
 	noise.seed = seed_n
 	noise.frequency = 0.35
-	var top := height * 0.78
+	var top := height * TreeShape.TOP_SHARE
 	# the trunk: rings up to the crown, bulged by noise, leaning a little
 	var rings: Array = []
 	var heights: Array[float] = []

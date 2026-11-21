@@ -1,0 +1,430 @@
+{
+ "version": 1,
+ "_about": "(polish1 D4c) The TREETOP VILLAGE on the four ring islands (core/treetop_rules.gd, game/treetops.gd). Each village hangs on one giant tree of its island (`tree` = that tree's spot in data/archipelago.json features, island-local metres) and a few platforms on stilts. `layers` = deck heights over the ground (m) for layer 1-3. `rings` = how far a ring deck round the trunk reaches from the trunk's middle per layer (a ladder up from a ring hangs over the ring below with room to stand behind it, so they shrink). A deck: `on` tree (a ring round the trunk at its layer) or stilts (`at` island-local, `size` m, `hut` a thatched hut on it). A WAY is bought like a door, in any order (director): `kind` ladder (climbed, from the ground or the deck below), lift (a basket ride from the ground), bridge (a rope bridge between two decks of the same layer); `from` / `to` deck ids (ground = the island floor), `price` points. Ways are bought for everybody (online the host checks the buyer stands at one end) and reset when the run ends.",
+ "layers": [
+  7.0,
+  13.0,
+  19.0
+ ],
+ "rings": [
+  8.4,
+  6.4,
+  4.6
+ ],
+ "reach": 2.2,
+ "lift_seconds": 4.0,
+ "villages": [
+  {
+   "island": "home",
+   "tree": [
+    44,
+    -2
+   ],
+   "decks": [
+    {
+     "id": "home_t1",
+     "on": "tree",
+     "layer": 1
+    },
+    {
+     "id": "home_t2",
+     "on": "tree",
+     "layer": 2
+    },
+    {
+     "id": "home_t3",
+     "on": "tree",
+     "layer": 3
+    },
+    {
+     "id": "home_p1",
+     "on": "stilts",
+     "layer": 1,
+     "at": [
+      50.6,
+      -15.5
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    },
+    {
+     "id": "home_p2",
+     "on": "stilts",
+     "layer": 2,
+     "at": [
+      40.1,
+      -16.5
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    }
+   ],
+   "ways": [
+    {
+     "id": "home_ladder_t1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "home_t1",
+     "price": 750
+    },
+    {
+     "id": "home_ladder_p1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "home_p1",
+     "price": 500
+    },
+    {
+     "id": "home_bridge_t1_p1",
+     "kind": "bridge",
+     "from": "home_t1",
+     "to": "home_p1",
+     "price": 750
+    },
+    {
+     "id": "home_lift_p2",
+     "kind": "lift",
+     "from": "ground",
+     "to": "home_p2",
+     "price": 1500
+    },
+    {
+     "id": "home_bridge_t2_p2",
+     "kind": "bridge",
+     "from": "home_t2",
+     "to": "home_p2",
+     "price": 1000
+    },
+    {
+     "id": "home_ladder_t1_t2",
+     "kind": "ladder",
+     "from": "home_t1",
+     "to": "home_t2",
+     "price": 1250
+    },
+    {
+     "id": "home_ladder_t2_t3",
+     "kind": "ladder",
+     "from": "home_t2",
+     "to": "home_t3",
+     "price": 2000
+    }
+   ]
+  },
+  {
+   "island": "painter",
+   "tree": [
+    -2.0,
+    20.0
+   ],
+   "decks": [
+    {
+     "id": "painter_t1",
+     "on": "tree",
+     "layer": 1
+    },
+    {
+     "id": "painter_t2",
+     "on": "tree",
+     "layer": 2
+    },
+    {
+     "id": "painter_t3",
+     "on": "tree",
+     "layer": 3
+    },
+    {
+     "id": "painter_p1",
+     "on": "stilts",
+     "layer": 1,
+     "at": [
+      -16.5,
+      16.1
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    },
+    {
+     "id": "painter_p2",
+     "on": "stilts",
+     "layer": 2,
+     "at": [
+      5.5,
+      7.0
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    }
+   ],
+   "ways": [
+    {
+     "id": "painter_ladder_t1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "painter_t1",
+     "price": 950
+    },
+    {
+     "id": "painter_ladder_p1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "painter_p1",
+     "price": 600
+    },
+    {
+     "id": "painter_bridge_t1_p1",
+     "kind": "bridge",
+     "from": "painter_t1",
+     "to": "painter_p1",
+     "price": 950
+    },
+    {
+     "id": "painter_lift_p2",
+     "kind": "lift",
+     "from": "ground",
+     "to": "painter_p2",
+     "price": 1900
+    },
+    {
+     "id": "painter_bridge_t2_p2",
+     "kind": "bridge",
+     "from": "painter_t2",
+     "to": "painter_p2",
+     "price": 1250
+    },
+    {
+     "id": "painter_ladder_t1_t2",
+     "kind": "ladder",
+     "from": "painter_t1",
+     "to": "painter_t2",
+     "price": 1550
+    },
+    {
+     "id": "painter_ladder_t2_t3",
+     "kind": "ladder",
+     "from": "painter_t2",
+     "to": "painter_t3",
+     "price": 2500
+    }
+   ]
+  },
+  {
+   "island": "shoal",
+   "tree": [
+    -40.0,
+    14
+   ],
+   "decks": [
+    {
+     "id": "shoal_t1",
+     "on": "tree",
+     "layer": 1
+    },
+    {
+     "id": "shoal_t2",
+     "on": "tree",
+     "layer": 2
+    },
+    {
+     "id": "shoal_t3",
+     "on": "tree",
+     "layer": 3
+    },
+    {
+     "id": "shoal_p1",
+     "on": "stilts",
+     "layer": 1,
+     "at": [
+      -25.5,
+      10.1
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    },
+    {
+     "id": "shoal_p2",
+     "on": "stilts",
+     "layer": 2,
+     "at": [
+      -43.9,
+      -0.5
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    }
+   ],
+   "ways": [
+    {
+     "id": "shoal_ladder_t1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "shoal_t1",
+     "price": 1100
+    },
+    {
+     "id": "shoal_ladder_p1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "shoal_p1",
+     "price": 750
+    },
+    {
+     "id": "shoal_bridge_t1_p1",
+     "kind": "bridge",
+     "from": "shoal_t1",
+     "to": "shoal_p1",
+     "price": 1100
+    },
+    {
+     "id": "shoal_lift_p2",
+     "kind": "lift",
+     "from": "ground",
+     "to": "shoal_p2",
+     "price": 2250
+    },
+    {
+     "id": "shoal_bridge_t2_p2",
+     "kind": "bridge",
+     "from": "shoal_t2",
+     "to": "shoal_p2",
+     "price": 1500
+    },
+    {
+     "id": "shoal_ladder_t1_t2",
+     "kind": "ladder",
+     "from": "shoal_t1",
+     "to": "shoal_t2",
+     "price": 1900
+    },
+    {
+     "id": "shoal_ladder_t2_t3",
+     "kind": "ladder",
+     "from": "shoal_t2",
+     "to": "shoal_t3",
+     "price": 3000
+    }
+   ]
+  },
+  {
+   "island": "wreck",
+   "tree": [
+    -20.0,
+    -14.0
+   ],
+   "decks": [
+    {
+     "id": "wreck_t1",
+     "on": "tree",
+     "layer": 1
+    },
+    {
+     "id": "wreck_t2",
+     "on": "tree",
+     "layer": 2
+    },
+    {
+     "id": "wreck_t3",
+     "on": "tree",
+     "layer": 3
+    },
+    {
+     "id": "wreck_p1",
+     "on": "stilts",
+     "layer": 1,
+     "at": [
+      -34.5,
+      -17.9
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    },
+    {
+     "id": "wreck_p2",
+     "on": "stilts",
+     "layer": 2,
+     "at": [
+      -16.1,
+      -28.5
+     ],
+     "size": [
+      7.0,
+      7.0
+     ],
+     "hut": true
+    }
+   ],
+   "ways": [
+    {
+     "id": "wreck_ladder_t1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "wreck_t1",
+     "price": 1300
+    },
+    {
+     "id": "wreck_ladder_p1",
+     "kind": "ladder",
+     "from": "ground",
+     "to": "wreck_p1",
+     "price": 900
+    },
+    {
+     "id": "wreck_bridge_t1_p1",
+     "kind": "bridge",
+     "from": "wreck_t1",
+     "to": "wreck_p1",
+     "price": 1300
+    },
+    {
+     "id": "wreck_lift_p2",
+     "kind": "lift",
+     "from": "ground",
+     "to": "wreck_p2",
+     "price": 2600
+    },
+    {
+     "id": "wreck_bridge_t2_p2",
+     "kind": "bridge",
+     "from": "wreck_t2",
+     "to": "wreck_p2",
+     "price": 1750
+    },
+    {
+     "id": "wreck_ladder_t1_t2",
+     "kind": "ladder",
+     "from": "wreck_t1",
+     "to": "wreck_t2",
+     "price": 2200
+    },
+    {
+     "id": "wreck_ladder_t2_t3",
+     "kind": "ladder",
+     "from": "wreck_t2",
+     "to": "wreck_t3",
+     "price": 3500
+    }
+   ]
+  }
+ ]
+}

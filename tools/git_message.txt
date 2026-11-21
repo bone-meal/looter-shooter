@@ -1,10 +1,12 @@
-Polish1 D4b: giant trees
+Polish1 D4c part 1: treetop village decks, ladders, rope bridges, lifts
 
-Ten giant trees (Home Sand 3, Painter's Key, Far Shoal, Wreck Cay 2 each,
-Gull Rock 1), 26-32 m tall with flared trunks, low roots, long forked
-limbs and broad leaf crowns, built in code into two merged meshes. Smooth
-colliders: convex trunk shells, low walkable root humps. Nav sweep runs
-round every trunk: no stalls on any island.
+On each of the four ring islands a village hangs on one giant tree: ring
+decks round the trunk at 7, 13 and 19 m and two platforms on stilts with
+open thatched huts. Rope ladders, rope bridges and lifts are bought like
+doors in any order (rolled up / just ropes until bought, a rope across
+the deck opening until then); open lifts are ridden. Bought for everybody
+online (client asks, host checks), reset when the run ends. Ladders climb
+Source style. tools/treetop_check, dev !tree and !nav decks.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
