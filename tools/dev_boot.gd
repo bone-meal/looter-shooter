@@ -3055,6 +3055,29 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							continue
 						var a2: Vector2 = b["a"]
 						var b2: Vector2 = b["b"]
+						if String(b["kind"]) == "tree":  # (polish1 D4b) round the trunk over the roots, both ways, leaning in; and in over the roots at it
+							for k in 10:
+								var ang := TAU * float(k % 5) / 5.0
+								var way := 1.0 if k < 5 else -1.0
+								var ring_r := float(b["core"]) + 1.0
+								var start_t := a2 + Vector2(cos(ang), sin(ang)) * ring_r
+								var tangent := Vector2(-sin(ang), cos(ang)) * way
+								var goal_t := a2 + (start_t + tangent * 5.0 - a2).normalized() * (ring_r - 0.6)
+								if k % 5 == 4:  # straight in from outside the roots, aimed past the trunk's side
+									start_t = a2 + Vector2(cos(ang), sin(ang)) * (float(b["half_width"]) + 1.5)
+									goal_t = a2 + Vector2(cos(ang + 0.5 * way), sin(ang + 0.5 * way)) * (float(b["core"]) + 0.5)
+								player.call("teleport", centre + Vector3(start_t.x, float(land2.call("height_at", start_t.x, start_t.y)) + 0.6, start_t.y), 0.0)
+								await get_tree().create_timer(0.3).timeout
+								player.call("look_at_point", centre + Vector3(goal_t.x, float(land2.call("height_at", goal_t.x, goal_t.y)) + 1.6, goal_t.y))
+								var from_t := player.global_position
+								Input.action_press("move_forward")
+								await get_tree().create_timer(1.5).timeout
+								Input.action_release("move_forward")
+								tries += 1
+								var moved_t := Vector2(player.global_position.x - from_t.x, player.global_position.z - from_t.z).length()
+								if moved_t < 1.5:
+									stalls.append("tree at (%.0f, %.0f) run %d moved %.2f, in front: %s, touching: %s, at %.1f %.1f" % [a2.x, a2.y, k, moved_t, _what_ahead(player), _touching(player), player.global_position.x - centre.x, player.global_position.z - centre.z])
+							continue
 						var mid2 := (a2 + b2) * 0.5
 						var along2 := (b2 - a2).normalized() if a2.distance_to(b2) > 0.01 else Vector2(1, 0)
 						var side2 := Vector2(-along2.y, along2.x)

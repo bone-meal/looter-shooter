@@ -29,7 +29,10 @@
     {"kind": "boulder", "at": [-0.0, 49.3], "size": 1.4},
     {"kind": "boulder", "at": [24.6, -15.5], "size": 1.5},
     {"kind": "boulder", "at": [-0.4, -23.2], "size": 1.8},
-    {"kind": "boulder", "at": [-25.8, 39.9], "size": 2.5}
+    {"kind": "boulder", "at": [-25.8, 39.9], "size": 2.5},
+    {"kind": "tree", "at": [44.0, -2.0], "height": 32, "girth": 2.0},
+    {"kind": "tree", "at": [24.0, 64.0], "height": 28, "girth": 1.7},
+    {"kind": "tree", "at": [8.0, -70.0], "height": 29, "girth": 1.8}
   ]},
   {"id": "painter", "name": "Painter's Key", "at": [112.9, -101.8], "radius": 52.0, "grass": 34.0, "palms": 10, "scatter": 0.9, "features": [
     {"kind": "hill", "at": [-11.8, -0.2], "radius": 10.9, "height": 3.9},
@@ -43,7 +46,9 @@
     {"kind": "boulder", "at": [-12.6, 26.3], "size": 2.2},
     {"kind": "boulder", "at": [-11.0, 33.3], "size": 1.9},
     {"kind": "boulder", "at": [0.7, 33.2], "size": 2.4},
-    {"kind": "boulder", "at": [24.9, -25.0], "size": 1.8}
+    {"kind": "boulder", "at": [24.9, -25.0], "size": 1.8},
+    {"kind": "tree", "at": [-2.0, 20.0], "height": 30, "girth": 1.8},
+    {"kind": "tree", "at": [20.0, -38.0], "height": 27, "girth": 1.6}
   ]},
   {"id": "shoal", "name": "Far Shoal", "at": [186.9, 0.0], "radius": 52.0, "grass": 32.0, "palms": 8, "scatter": 0.9, "features": [
     {"kind": "hill", "at": [-1.5, 0.5], "radius": 12.3, "height": 5.0},
@@ -57,7 +62,9 @@
     {"kind": "boulder", "at": [-12.3, -10.9], "size": 1.4},
     {"kind": "boulder", "at": [-6.4, -16.4], "size": 2.2},
     {"kind": "boulder", "at": [8.5, 28.5], "size": 1.5},
-    {"kind": "boulder", "at": [-27.2, -16.2], "size": 2.1}
+    {"kind": "boulder", "at": [-27.2, -16.2], "size": 2.1},
+    {"kind": "tree", "at": [-40.0, 14.0], "height": 30, "girth": 1.8},
+    {"kind": "tree", "at": [8.0, 42.0], "height": 27, "girth": 1.6}
   ]},
   {"id": "wreck", "name": "Wreck Cay", "at": [112.9, 101.8], "radius": 52.0, "grass": 30.0, "palms": 8, "scatter": 0.9, "features": [
     {"kind": "hill", "at": [-14.0, 8.0], "radius": 9.6, "height": 3.8},
@@ -71,7 +78,9 @@
     {"kind": "boulder", "at": [39.2, -14.5], "size": 2.4},
     {"kind": "boulder", "at": [12.0, -21.0], "size": 2.2},
     {"kind": "boulder", "at": [30.6, 22.5], "size": 2.6},
-    {"kind": "boulder", "at": [13.4, -39.8], "size": 2.5}
+    {"kind": "boulder", "at": [13.4, -39.8], "size": 2.5},
+    {"kind": "tree", "at": [-20.0, -14.0], "height": 30, "girth": 1.8},
+    {"kind": "tree", "at": [-40.0, 14.0], "height": 27, "girth": 1.6}
   ]},
   {"id": "gull", "name": "Gull Rock", "at": [175.8, 342.2], "radius": 36.0, "grass": 20.0, "palms": 6, "scatter": 0.65, "features": [
     {"kind": "hill", "at": [-20.7, -5.2], "radius": 7, "height": 2.8},
@@ -79,7 +88,8 @@
     {"kind": "ruin", "from": [-4.9, -19.4], "to": [2.5, -15.6], "height": 2.4},
     {"kind": "boulder", "at": [15.2, 0.3], "size": 1.8},
     {"kind": "boulder", "at": [5.3, 12.8], "size": 2.1},
-    {"kind": "boulder", "at": [24.2, 4.2], "size": 1.8}
+    {"kind": "boulder", "at": [24.2, 4.2], "size": 1.8},
+    {"kind": "tree", "at": [24.0, -8.0], "height": 26, "girth": 1.6}
   ]}
  ],
  "bridges": [

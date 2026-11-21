@@ -21,6 +21,8 @@ static func build(parent: Node3D, land: RefCounted, centre: Vector3) -> void:
 	rng.seed = 41
 	for b: Dictionary in land.get("blocks"):
 		var kind := String(b["kind"])
+		if kind == "tree":  # (polish1 D4b) game/giant_trees.gd builds those
+			continue
 		var key := "%d:%s" % [int(b["island"]), "rock" if kind != "ruin" else "ruin"]
 		if not per.has(key):
 			var st := SurfaceTool.new()

@@ -13,7 +13,7 @@ const TRIES := 12
 var cfg: Dictionary
 var sea_level: float
 var islands: Array = []  # {"id", "name", "at": Vector2, "radius", "flat", "grass", "palms", "scatter", "hills": [[at, radius, height]]}
-var blocks: Array = []  # every ridge / ruin / boulder in world-plan metres: {"kind", "island", "a": Vector2, "b": Vector2, "half_width", "height"}
+var blocks: Array = []  # every ridge / ruin / boulder / giant tree in world-plan metres: {"kind", "island", "a": Vector2, "b": Vector2, "half_width", "height"} (+ trees: "core", "girth")
 var wall_buys: Array = []  # {"gun", "price": int, "island": int, "at": Vector2, "yaw": the way its board faces (toward its island's middle)}
 var shelters: Array = []  # {"island": int, "at": Vector2, "yaw": the way its door faces (toward its island's middle)}
 # (polish1 D4b hold-out huts) what stands inside each hut: its wall buy joins `wall_buys` (on the back wall, facing in),
@@ -43,6 +43,10 @@ func _init(config: Dictionary) -> void:
 			var kind := String(f["kind"])
 			if kind == "hill":
 				hills.append([mid + Vector2(float(f["at"][0]), float(f["at"][1])), float(f["radius"]), float(f["height"])])
+			elif kind == "tree":  # (polish1 D4b) a giant tree: `half_width` = how far its roots reach, `core` = its flared foot
+				var tc := mid + Vector2(float(f["at"][0]), float(f["at"][1]))
+				var girth := float(f["girth"])
+				blocks.append({"kind": kind, "island": islands.size(), "a": tc, "b": tc, "half_width": girth * 1.55 + 4.6, "core": girth * 1.55, "girth": girth, "height": float(f["height"])})
 			elif kind == "boulder":
 				var c := mid + Vector2(float(f["at"][0]), float(f["at"][1]))
 				blocks.append({"kind": kind, "island": islands.size(), "a": c, "b": c, "half_width": float(f["size"]), "height": float(f["size"]) * 1.4})

@@ -19,6 +19,7 @@ const PalmBuilder = preload("res://game/palm_builder.gd")
 const ModelLibrary = preload("res://game/model_library.gd")
 const LookProps = preload("res://game/look_props.gd")
 const IslandTerrain = preload("res://game/island_terrain.gd")
+const GiantTrees = preload("res://game/giant_trees.gd")
 
 const CENTER := Vector3(500, 0, 0)  # the middle of the spawn island in the world
 const SAND := Color(0.9, 0.8, 0.55)
@@ -60,6 +61,7 @@ static func build(parent: Node3D, land: Archipelago = null) -> Dictionary:
 	_palms(parent, land, clear)
 	_rocks(parent, land, clear)
 	IslandTerrain.build(parent, land, CENTER)
+	GiantTrees.build(parent, land, CENTER)
 	_plants(parent, land, clear)
 	var debris: Array = []
 	for i in land.bridges.size():

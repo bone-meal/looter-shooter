@@ -1,12 +1,10 @@
-Polish1 D4b: hold-out huts
+Polish1 D4b: giant trees
 
-Huts 12 x 9 m with a real plank door you open and shut (enemies bash it
-plank by plank like the window boards, walk through when open), four
-boarded windows, pitched thatch roof with gable boards. Inside each hut:
-a wall buy, an ammo crate (refills every gun's spare ammo) and one perk.
-A fourth hut on Painter's Key. Door synced online (client asks, host
-checks). Chalk outlines for every gun body. Boulder colliders without
-undercut. Features moved clear of the huts; dev !nav huts sweep.
+Ten giant trees (Home Sand 3, Painter's Key, Far Shoal, Wreck Cay 2 each,
+Gull Rock 1), 26-32 m tall with flared trunks, low roots, long forked
+limbs and broad leaf crowns, built in code into two merged meshes. Smooth
+colliders: convex trunk shells, low walkable root humps. Nav sweep runs
+round every trunk: no stalls on any island.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
