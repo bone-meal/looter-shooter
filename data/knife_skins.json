@@ -1,0 +1,669 @@
+{
+	"version": 1,
+	"_about": "Skinned knives (polish1 D5b, DECISIONS_SKINS + diary/DESIGN_KNIVES.md, the director's draft to edit). A skinned knife = its own item {finish, type, pattern, wear, strength, kills}: finish = an id below (look + power), type = a knife type of data/knives.json, pattern 0-999 decides how the family's pattern lands (and its chase names), wear 0-1, strength = the power's roll (0.9-1.1). families: the look (kind = the shader's pattern) and its chase names by pattern (`chase`: [name, share of patterns], first match wins; phases = names for the rest by pattern). tiers: odds of a drop's tier. levels: kills needed from level n to n+1 = base + step * n, up to max; power strength from power_min to 1 and knife damage from 1 to damage_max across the levels. drops: chance of a knife from each crate (it takes the gun's place). powers: name + text; {n} = the number at full strength (level 30, strength 1), shown scaled by the knife's level and roll. The powers' effects are built in a later step (D5b part 2).",
+	"tiers": {
+		"blue": 0.6,
+		"purple": 0.28,
+		"gold": 0.1,
+		"pony": 0.02
+	},
+	"levels": {
+		"max": 30,
+		"base": 5,
+		"step": 3,
+		"power_min": 0.4,
+		"damage_max": 3.0
+	},
+	"strength": [
+		0.9,
+		1.1
+	],
+	"drops": {
+		"bronze": 0.0,
+		"silver": 0.003,
+		"gold": 0.01
+	},
+	"collections": {
+		"foundry": "The Foundry Collection",
+		"deep": "The Deep Collection",
+		"wild": "The Wild Collection",
+		"carnival": "The Carnival Collection"
+	},
+	"families": {
+		"case_hardened": {
+			"name": "Case Hardened",
+			"kind": "case",
+			"chase": [
+				[
+					"Bluegem",
+					0.012
+				],
+				[
+					"Blue Top",
+					0.03
+				]
+			]
+		},
+		"fade": {
+			"name": "Fade",
+			"kind": "fade",
+			"chase": [
+				[
+					"Full Fade",
+					0.04
+				]
+			]
+		},
+		"prism_melt": {
+			"name": "Prism Melt",
+			"kind": "prism",
+			"chase": [
+				[
+					"Nightpearl",
+					0.01
+				],
+				[
+					"Abyssal",
+					0.02
+				],
+				[
+					"Bloodmoon",
+					0.02
+				]
+			],
+			"phases": [
+				"Phase 1",
+				"Phase 2",
+				"Phase 3",
+				"Phase 4"
+			]
+		},
+		"venom_melt": {
+			"name": "Venom Melt",
+			"kind": "venom",
+			"chase": [
+				[
+					"Viper's Eye",
+					0.03
+				]
+			],
+			"phases": [
+				"Phase 1",
+				"Phase 2",
+				"Phase 3",
+				"Phase 4"
+			]
+		},
+		"tidewater": {
+			"name": "Tidewater",
+			"kind": "tide",
+			"chase": [
+				[
+					"Rogue Wave",
+					0.015
+				]
+			]
+		},
+		"ember_crack": {
+			"name": "Ember Crack",
+			"kind": "ember",
+			"chase": [
+				[
+					"Heartfire",
+					0.015
+				]
+			]
+		},
+		"aurora": {
+			"name": "Aurora",
+			"kind": "aurora",
+			"chase": [
+				[
+					"Full Corona",
+					0.015
+				]
+			]
+		},
+		"mossback": {
+			"name": "Mossback",
+			"kind": "moss",
+			"chase": [
+				[
+					"In Bloom",
+					0.015
+				]
+			]
+		},
+		"candy_cane": {
+			"name": "Candy Cane",
+			"kind": "candy",
+			"chase": [
+				[
+					"Perfect Twist",
+					0.015
+				]
+			]
+		},
+		"jackpot": {
+			"name": "Jackpot",
+			"kind": "jackpot",
+			"chase": [
+				[
+					"777",
+					0.015
+				]
+			]
+		}
+	},
+	"finishes": [
+		{
+			"id": "quench",
+			"name": "Quench",
+			"collection": "foundry",
+			"tier": "blue",
+			"family": "case_hardened",
+			"colors": [
+				"#2c5bd6",
+				"#c9a24a",
+				"#7a4fb0",
+				"#9aa0a8"
+			],
+			"power": "whetstone"
+		},
+		{
+			"id": "heat_fade",
+			"name": "Heat Fade",
+			"collection": "foundry",
+			"tier": "blue",
+			"family": "fade",
+			"colors": [
+				"#ffd34a",
+				"#ff6a3c",
+				"#b23c9a",
+				"#5a3aa8"
+			],
+			"power": "second_breath"
+		},
+		{
+			"id": "slag",
+			"name": "Slag",
+			"collection": "foundry",
+			"tier": "purple",
+			"family": "ember_crack",
+			"colors": [
+				"#1c1a1a",
+				"#ff7a1a",
+				"#ffd060",
+				"#3a2a24"
+			],
+			"power": "spark_shower"
+		},
+		{
+			"id": "temper_line",
+			"name": "Temper Line",
+			"collection": "foundry",
+			"tier": "purple",
+			"family": "case_hardened",
+			"colors": [
+				"#3a6ff0",
+				"#e0b040",
+				"#a04ad0",
+				"#b8bec6"
+			],
+			"power": "hardened"
+		},
+		{
+			"id": "blast_furnace",
+			"name": "Blast Furnace",
+			"collection": "foundry",
+			"tier": "gold",
+			"family": "ember_crack",
+			"colors": [
+				"#120e0e",
+				"#ff4a10",
+				"#ffe080",
+				"#401812"
+			],
+			"power": "meltdown"
+		},
+		{
+			"id": "anvil_king",
+			"name": "Anvil King",
+			"collection": "foundry",
+			"tier": "gold",
+			"family": "fade",
+			"colors": [
+				"#fff1a0",
+				"#ffb020",
+				"#d04a20",
+				"#401a10"
+			],
+			"power": "anvil_drop"
+		},
+		{
+			"id": "molten_core",
+			"name": "Molten Core",
+			"collection": "foundry",
+			"tier": "pony",
+			"family": "ember_crack",
+			"colors": [
+				"#0c0808",
+				"#ff3000",
+				"#fff0a0",
+				"#ff9020"
+			],
+			"power": "living_metal"
+		},
+		{
+			"id": "sea_glass",
+			"name": "Sea Glass",
+			"collection": "deep",
+			"tier": "blue",
+			"family": "tidewater",
+			"colors": [
+				"#6fd3c4",
+				"#2a8f9a",
+				"#d8f4ee",
+				"#1a4a5a"
+			],
+			"power": "undertow"
+		},
+		{
+			"id": "brine",
+			"name": "Brine",
+			"collection": "deep",
+			"tier": "blue",
+			"family": "fade",
+			"colors": [
+				"#e8fbff",
+				"#5ad0e8",
+				"#2a6ad0",
+				"#14205a"
+			],
+			"power": "salt_wound"
+		},
+		{
+			"id": "prism_melt",
+			"name": "Prism Melt",
+			"collection": "deep",
+			"tier": "purple",
+			"family": "prism_melt",
+			"colors": [
+				"#ff3a8a",
+				"#5a3aff",
+				"#2ad0ff",
+				"#ffd040"
+			],
+			"power": "refraction"
+		},
+		{
+			"id": "kelp_wrap",
+			"name": "Kelp Wrap",
+			"collection": "deep",
+			"tier": "purple",
+			"family": "tidewater",
+			"colors": [
+				"#3a7a3a",
+				"#1a3a24",
+				"#9ad06a",
+				"#0e2a2a"
+			],
+			"power": "drag_down"
+		},
+		{
+			"id": "quartermasters_hook",
+			"name": "Quartermaster's Hook",
+			"collection": "deep",
+			"tier": "gold",
+			"family": "tidewater",
+			"colors": [
+				"#e8c070",
+				"#1a5a7a",
+				"#fff4d0",
+				"#0e2438"
+			],
+			"power": "party_ammo"
+		},
+		{
+			"id": "abyss_lantern",
+			"name": "Abyss Lantern",
+			"collection": "deep",
+			"tier": "gold",
+			"family": "prism_melt",
+			"colors": [
+				"#0a2a6a",
+				"#14a0c0",
+				"#a0fff0",
+				"#2a0a5a"
+			],
+			"power": "deep_light"
+		},
+		{
+			"id": "leviathans_tooth",
+			"name": "Leviathan's Tooth",
+			"collection": "deep",
+			"tier": "pony",
+			"family": "tidewater",
+			"colors": [
+				"#0a1a3a",
+				"#40e0ff",
+				"#e0ffff",
+				"#5a20c0"
+			],
+			"power": "the_bite"
+		},
+		{
+			"id": "mossback",
+			"name": "Mossback",
+			"collection": "wild",
+			"tier": "blue",
+			"family": "mossback",
+			"colors": [
+				"#4a7a2a",
+				"#2a4a1a",
+				"#a0c060",
+				"#f0b0d0"
+			],
+			"power": "regrowth"
+		},
+		{
+			"id": "venom_melt",
+			"name": "Venom Melt",
+			"collection": "wild",
+			"tier": "blue",
+			"family": "venom_melt",
+			"colors": [
+				"#2aff7a",
+				"#0a8a6a",
+				"#c0ff40",
+				"#0a3a3a"
+			],
+			"power": "venom"
+		},
+		{
+			"id": "aurora",
+			"name": "Aurora",
+			"collection": "wild",
+			"tier": "purple",
+			"family": "aurora",
+			"colors": [
+				"#0a1430",
+				"#3aff9a",
+				"#a050ff",
+				"#40c0ff"
+			],
+			"power": "northern_step"
+		},
+		{
+			"id": "magpie",
+			"name": "Magpie",
+			"collection": "wild",
+			"tier": "purple",
+			"family": "mossback",
+			"colors": [
+				"#101418",
+				"#1a3a6a",
+				"#e8eef4",
+				"#40a0a0"
+			],
+			"power": "loot_chaser"
+		},
+		{
+			"id": "worldroot",
+			"name": "Worldroot",
+			"collection": "wild",
+			"tier": "gold",
+			"family": "mossback",
+			"colors": [
+				"#5a3a1a",
+				"#3a7a2a",
+				"#ffd060",
+				"#f0f0c0"
+			],
+			"power": "party_revive"
+		},
+		{
+			"id": "sky_ribbon",
+			"name": "Sky Ribbon",
+			"collection": "wild",
+			"tier": "gold",
+			"family": "aurora",
+			"colors": [
+				"#0a0a2a",
+				"#60e0ff",
+				"#fff080",
+				"#c060ff"
+			],
+			"power": "lightning"
+		},
+		{
+			"id": "heart_of_the_wild",
+			"name": "Heart of the Wild",
+			"collection": "wild",
+			"tier": "pony",
+			"family": "aurora",
+			"colors": [
+				"#0a1a14",
+				"#5aff8a",
+				"#ff70c0",
+				"#ffe060"
+			],
+			"power": "spirit_pack"
+		},
+		{
+			"id": "candy_cane",
+			"name": "Candy Cane",
+			"collection": "carnival",
+			"tier": "blue",
+			"family": "candy_cane",
+			"colors": [
+				"#e8202a",
+				"#f8f4ee",
+				"#2a9a3a",
+				"#f8f4ee"
+			],
+			"power": "sugar_rush"
+		},
+		{
+			"id": "ticket_stub",
+			"name": "Ticket Stub",
+			"collection": "carnival",
+			"tier": "blue",
+			"family": "jackpot",
+			"colors": [
+				"#e8c050",
+				"#c02a2a",
+				"#f8f0dc",
+				"#2a2a2a"
+			],
+			"power": "lucky_stub"
+		},
+		{
+			"id": "confetti",
+			"name": "Confetti",
+			"collection": "carnival",
+			"tier": "purple",
+			"family": "fade",
+			"colors": [
+				"#ff4ab0",
+				"#40e0ff",
+				"#ffe040",
+				"#7aff5a"
+			],
+			"power": "party_popper"
+		},
+		{
+			"id": "neon_nights",
+			"name": "Neon Nights",
+			"collection": "carnival",
+			"tier": "purple",
+			"family": "prism_melt",
+			"colors": [
+				"#ff2aa0",
+				"#2af0ff",
+				"#a02aff",
+				"#0a0418"
+			],
+			"power": "club_lights"
+		},
+		{
+			"id": "christmas_bells",
+			"name": "Christmas Bells",
+			"collection": "carnival",
+			"tier": "gold",
+			"family": "candy_cane",
+			"colors": [
+				"#c8102a",
+				"#fff8f0",
+				"#1a7a2a",
+				"#ffd040"
+			],
+			"power": "snowman",
+			"chase_names": [
+				"Twelve Bells"
+			]
+		},
+		{
+			"id": "house_always_wins",
+			"name": "House Always Wins",
+			"collection": "carnival",
+			"tier": "gold",
+			"family": "jackpot",
+			"colors": [
+				"#ffd040",
+				"#d01a2a",
+				"#fff8e0",
+				"#1a0a2a"
+			],
+			"power": "slot_roll"
+		},
+		{
+			"id": "jesters_grin",
+			"name": "Jester's Grin",
+			"collection": "carnival",
+			"tier": "pony",
+			"family": "jackpot",
+			"colors": [
+				"#7a1aa0",
+				"#ffd040",
+				"#20c060",
+				"#e81a4a"
+			],
+			"power": "last_laugh"
+		}
+	],
+	"powers": {
+		"whetstone": {
+			"name": "Whetstone",
+			"text": "A knife kill refills {30}% of the gun in hand's magazine."
+		},
+		"second_breath": {
+			"name": "Second Breath",
+			"text": "A knife kill heals you {12}% of your health."
+		},
+		"spark_shower": {
+			"name": "Spark Shower",
+			"text": "Stabs throw sparks that burn enemies within 3 m for 4 s."
+		},
+		"hardened": {
+			"name": "Hardened",
+			"text": "For 6 s after a knife kill you take {30}% less damage."
+		},
+		"meltdown": {
+			"name": "Meltdown",
+			"text": "A stab marks the enemy: 2 s later it bursts in a fire blast. 12 s cooldown."
+		},
+		"anvil_drop": {
+			"name": "Anvil Drop",
+			"text": "Hold stab to slam the ground: everything within 6 m is knocked back and stunned for 1.5 s. 25 s cooldown."
+		},
+		"living_metal": {
+			"name": "Living Metal",
+			"text": "Every stab leaves a pool of molten metal; knife kills in a pool set the next enemy alight."
+		},
+		"undertow": {
+			"name": "Undertow",
+			"text": "Knife kills pull loot and ammo within {8} m to you."
+		},
+		"salt_wound": {
+			"name": "Salt Wound",
+			"text": "Slashed enemies take {15}% more damage from everyone for 5 s."
+		},
+		"refraction": {
+			"name": "Refraction",
+			"text": "Knife hits make {20}% of hits on you miss for 4 s."
+		},
+		"drag_down": {
+			"name": "Drag Down",
+			"text": "A stab roots the enemy for 2 s (elites 1 s)."
+		},
+		"party_ammo": {
+			"name": "Party Ammo",
+			"text": "Every 5th knife kill refills {25}% spare ammo for the party within 20 m."
+		},
+		"deep_light": {
+			"name": "Deep Light",
+			"text": "Knife kills light a lure for 6 s that draws enemies to it. 18 s cooldown."
+		},
+		"the_bite": {
+			"name": "The Bite",
+			"text": "A full slash combo sends a ghost shark through a line of enemies. 15 s cooldown."
+		},
+		"regrowth": {
+			"name": "Regrowth",
+			"text": "After a knife kill you regenerate {2}% health a second for 5 s."
+		},
+		"venom": {
+			"name": "Venom",
+			"text": "Slashes poison the enemy over 4 s (stacks 3 times)."
+		},
+		"northern_step": {
+			"name": "Northern Step",
+			"text": "Knife kills give +{25}% move speed for 4 s and reset your dodge."
+		},
+		"loot_chaser": {
+			"name": "Loot Chaser",
+			"text": "Knife kills raise your loot luck by {20}% for 30 s (stacks 3 times)."
+		},
+		"party_revive": {
+			"name": "Party Revive",
+			"text": "A knife kill within 6 m of a downed teammate revives them at {30}% health. 45 s cooldown."
+		},
+		"lightning": {
+			"name": "Lightning",
+			"text": "Every 4th knife hit calls lightning that chains to 4 enemies."
+		},
+		"spirit_pack": {
+			"name": "Spirit Pack",
+			"text": "Knife kills summon a spirit wolf that fights beside you for 10 s (2 at most)."
+		},
+		"sugar_rush": {
+			"name": "Sugar Rush",
+			"text": "Knife kills give +{20}% fire rate for 4 s."
+		},
+		"lucky_stub": {
+			"name": "Lucky Stub",
+			"text": "Knife kills have a {10}% chance to drop chips or prize tickets."
+		},
+		"party_popper": {
+			"name": "Party Popper",
+			"text": "Knife kills burst confetti that blinds enemies within 4 m for 2 s."
+		},
+		"club_lights": {
+			"name": "Club Lights",
+			"text": "Knife kills show every enemy within 15 m through walls to the party for 5 s."
+		},
+		"snowman": {
+			"name": "Snowman",
+			"text": "A stab freezes the target into a snowman whose big red nose is a crit zone (x2.5 for everyone) for 5 s; bosses 2 s frozen. 20 s cooldown."
+		},
+		"slot_roll": {
+			"name": "Slot Roll",
+			"text": "Knife kills spin a slot: cherries ammo, bells health, BAR armour, 777 a power-up for the party."
+		},
+		"last_laugh": {
+			"name": "Last Laugh",
+			"text": "When you would go down you stay up at 1 health, untouchable for 3 s, and nearby enemies are thrown back. Recharges after 30 knife kills."
+		}
+	}
+}

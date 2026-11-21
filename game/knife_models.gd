@@ -1,6 +1,7 @@
 # Purpose: builds the model of a knife type from its parts in data/knives.json. Blades and grips are lofted between
 # "stations" (a diamond cross-section for a blade, an oval one for a grip); guards, pommels and rings are boxes and
-# rings. Own low-polygon designs after real knife kinds. One mesh per type, one surface per material, built once.
+# rings. Own low-polygon designs after real knife kinds. One mesh per type, one surface per material (the blade a
+# surface of its own, named "blade", for skins), built once.
 # Dependencies: core/knife_db.gd, core/data_store.gd.
 extends RefCounted
 
@@ -59,11 +60,12 @@ static func _mesh(id: String) -> ArrayMesh:
 	var tools := {}  # material id -> SurfaceTool
 	for part: Dictionary in db().parts(id):
 		var mat := String(part["mat"])
-		if not tools.has(mat):
+		var key := ("blade|" + mat) if String(part["kind"]) == "blade" else mat  # (polish1 D5b) the blade is a surface of its own: skins paint it alone
+		if not tools.has(key):
 			var st := SurfaceTool.new()
 			st.begin(Mesh.PRIMITIVE_TRIANGLES)
-			tools[mat] = st
-		var tool: SurfaceTool = tools[mat]
+			tools[key] = st
+		var tool: SurfaceTool = tools[key]
 		match String(part["kind"]):
 			"blade":
 				_loft(tool, part["stations"], 4, float(part.get("ridge", 0.8)), shift)
@@ -74,9 +76,11 @@ static func _mesh(id: String) -> ArrayMesh:
 			"ring":
 				_ring(tool, part, shift)
 	var mesh := ArrayMesh.new()
-	for mat: String in tools:
-		(tools[mat] as SurfaceTool).commit(mesh)
-		mesh.surface_set_material(mesh.get_surface_count() - 1, _material(mat))
+	for key: String in tools:
+		(tools[key] as SurfaceTool).commit(mesh)
+		mesh.surface_set_material(mesh.get_surface_count() - 1, _material(key.trim_prefix("blade|")))
+		if key.begins_with("blade|"):
+			mesh.surface_set_name(mesh.get_surface_count() - 1, "blade")
 	return mesh
 
 

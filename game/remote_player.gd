@@ -15,6 +15,7 @@ const ShieldModel = preload("res://game/shield_model.gd")
 const DataStore = preload("res://core/data_store.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
 const CamoSkin = preload("res://game/camo_skin.gd")
+const KnifeSkin = preload("res://game/knife_skin.gd")
 const LanternGlow = preload("res://game/lantern_glow.gd")
 const Mixtape = preload("res://game/signatures/mixtape.gd")
 const EmblemBadge = preload("res://game/emblem_badge.gd")
@@ -214,6 +215,13 @@ func set_held(shown: String) -> void:
 	var id := shown.trim_suffix("|shield")
 	if id == _held_shown:
 		return
+	var knife_skin := {}  # (polish1 D5b) "knife:<type>~<finish>.<pattern>.<wear %>": a skinned knife
+	var full_id := id
+	if id.begins_with("knife:") and id.contains("~"):
+		var kb := id.get_slice("~", 1).split(".")
+		if kb.size() == 3:
+			knife_skin = {"finish": kb[0], "type": id.trim_prefix("knife:").get_slice("~", 0), "pattern": clampi(kb[1].to_int(), 0, 999), "wear": clampf(float(kb[2].to_int()) / 100.0, 0.0, 1.0), "strength": 1.0, "kills": 0}
+		id = id.get_slice("~", 0)
 	var camo := {}  # (polish1 D5a) "~<id>.<wear %>.<pattern>.<challenge>" after the gun: its camo
 	if id.contains("~"):
 		var bits := id.get_slice("~", 1).split(".")
@@ -257,6 +265,9 @@ func set_held(shown: String) -> void:
 		_held_model = ShieldModel.build()
 	else:
 		_held_model = KnifeModels.build(id.trim_prefix("knife:")) if id.begins_with("knife:") else WeaponModels.build(_held_id)
+		if not knife_skin.is_empty() and _held_model != null:
+			KnifeSkin.apply(_held_model, knife_skin)
+			_held_shown = full_id  # (the whole string: the same knife is not built again next state)
 		if id.contains("@") and _held_model != null:
 			_held_piece = UniqueAttach.apply_id(_held_model, id.get_slice("@", 1).get_slice("#", 0))
 			if _held_piece != null:

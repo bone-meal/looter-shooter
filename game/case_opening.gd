@@ -25,6 +25,8 @@ const PICTURES := "res://assets/ui/cases/"
 const CTILE := Vector2(180, 112)  # (polish1 D5a) the camo reel's tiles
 const CamoSkin = preload("res://game/camo_skin.gd")
 const CamoIcons = preload("res://game/camo_icons.gd")
+const KnifeSkin = preload("res://game/knife_skin.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
 
 var gun_db: RefCounted
 var sounds: Node  # game/fantasy_sounds.gd: "hub_tick" per gun passing the line
@@ -140,7 +142,7 @@ func _process(delta: float) -> void:
 		if _t >= SPIN_SECONDS:
 			_phase = "won"
 			_t = 0.0
-			var tier := String(winner().get("tier", "grey"))
+			var tier := "pony" if winner().has("knife") else String(winner().get("tier", "grey"))
 			_chime.stream = TierSound.chime(maxi(ItemIcons.TIER_ORDER.find(tier), 0))
 			_chime.play()
 			landed.emit(String(_crate.get("id", "")))
@@ -203,7 +205,15 @@ func _draw() -> void:
 		var gun := winner()
 		var tier := String(gun.get("tier", "grey"))
 		var tint := TierStyle.color(gun_db, tier, _t)
-		var gun_name := GunStats.display_name(gun_db, gun)
+		var gun_name := GunStats.display_name(gun_db, gun) if not gun.has("knife") else ""
+		if gun.has("knife"):  # (polish1 D5b) a skinned knife: its name, tier, type, chase and pattern
+			var item: Dictionary = gun["knife"]
+			var rules: RefCounted = KnifeSkin.rules()
+			var fin: Dictionary = rules.call("finish", String(item.get("finish", "")))
+			tier = String(fin.get("tier", "gold"))
+			tint = TierStyle.color(gun_db, tier, _t)
+			var look: Dictionary = rules.call("pattern_look", item)
+			gun_name = "%s | %s%s" % [String(KnifeModels.db().name_of(String(item.get("type", "")))), String(fin.get("name", "")), ("  (" + String(look["name"]) + ")") if String(look["name"]) != "" else ""]
 		var y := mid.y + TILE.y * 0.5 + 70.0
 		if two:  # the camo's name under its reel, the gun's under the camo
 			var camo := camo_winner()
@@ -289,6 +299,23 @@ func _camo_band(mid: Vector2, view: Vector2) -> void:
 
 
 func _tile(r: Rect2, gun: Dictionary, won: bool) -> void:
+	if gun.has("knife"):  # (polish1 D5b) the rare special item: a gold star tile; once won, the knife itself
+		var gold := Color(1.0, 0.8, 0.25)
+		draw_style_box(UiSkin._box(Color(0.12, 0.09, 0.03), Color(gold, 1.0 if won else 0.7), 8, 3 if won else 2), r)
+		var item: Dictionary = gun["knife"]
+		var pic := CamoIcons.knife(item, self) if won and not item.is_empty() else null
+		if pic != null:
+			draw_texture_rect(pic, Rect2(r.position + Vector2(8, 10), Vector2(r.size.x - 16.0, r.size.y - 50.0)), false)
+		else:
+			var star := PackedVector2Array()  # a drawn star (the default font has no star sign)
+			var c := r.get_center() - Vector2(0, 12)
+			for k in 10:
+				var a := -PI * 0.5 + float(k) * PI / 5.0
+				star.append(c + Vector2(cos(a), sin(a)) * (30.0 if k % 2 == 0 else 12.0))
+			draw_colored_polygon(star, gold)
+		draw_rect(Rect2(Vector2(r.position.x, r.end.y - 8.0), Vector2(r.size.x, 8.0)), gold)
+		draw_string(_font, Vector2(r.position.x + 10.0, r.end.y - 18.0), "Rare Special Item", HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20.0, 15, gold)
+		return
 	var tier := String(gun.get("tier", "grey"))
 	var tint := TierStyle.color(gun_db, tier, _t)
 	draw_style_box(UiSkin._box(Color(0.09, 0.09, 0.12), Color(tint, 0.95 if won else 0.5), 8, 3 if won else 1), r)

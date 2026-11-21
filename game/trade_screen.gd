@@ -29,6 +29,9 @@ const BASE_HEIGHT := 648.0
 const W := 1152.0
 const CARD_REF := 1000  # refs from here up mark offered cards (bag slots are below)
 const CAMO_REF := 500000  # (polish1 D5a) refs from here up mark offered camos
+const KNIFE_REF := 600000  # (polish1 D5b) refs from here up mark offered skinned knives
+const KnifeSkin = preload("res://game/knife_skin.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
 const CamoSkin = preload("res://game/camo_skin.gd")
 const CamoIcons = preload("res://game/camo_icons.gd")
 const SLOTS := 8
@@ -66,6 +69,9 @@ var offered_cards := {}  # ref -> card thing offered in this trade (the session 
 var camos: RefCounted  # (polish1 D5a) core/camo_locker.gd, set by the session
 var offered_camos := {}  # ref -> camo item offered in this trade
 var _next_camo := CAMO_REF
+var knives: RefCounted  # (polish1 D5b) core/knife_locker.gd, set by the session
+var offered_knives := {}  # ref -> knife item offered in this trade
+var _next_knife := KNIFE_REF
 var _font: Font = ThemeDB.fallback_font
 
 
@@ -170,7 +176,7 @@ func setup(inventory: InventoryState, items: RefCounted, gun_db: RefCounted) -> 
 			t.clicked.connect(_on_tile)
 			add_child(t)
 			(side[0] as Array).append(t)
-	var tab_row := [["bag", "bag", "GEAR"], ["cards", "card", "CARDS"], ["camos", "star", "CAMOS"]]
+	var tab_row := [["bag", "bag", "GEAR"], ["cards", "card", "CARDS"], ["camos", "star", "CAMOS"], ["knives", "sword", "KNIVES"]]
 	for i in tab_row.size():
 		var b := _icon_button(String(tab_row[i][1]), String(tab_row[i][2]), Color(0.85, 0.85, 0.9), Rect2(76 + i * 170, 352, 160, 40))
 		var which := String(tab_row[i][0])
@@ -257,6 +263,17 @@ func _draw_card() -> void:
 			_card_face.show_card(_card_db, String(_hover["card"]))
 			_card_face.position = Vector2(minf(place.x, view.x - _card_face.size.x), clampf(place.y - _card_face.size.y * 0.5, 0.0, view.y - _card_face.size.y))
 		return
+	if _hover.has("knife"):  # (polish1 D5b)
+		var kh: Dictionary = _hover["knife"]
+		var rules: RefCounted = KnifeSkin.rules()
+		var fin: Dictionary = rules.call("finish", String(kh.get("finish", "")))
+		var lk: Dictionary = rules.call("pattern_look", kh)
+		var ktext := "%s | %s\n%s  -  %s%s, pattern %d\nlevel %d (%d kills)\n%s: %s" % [KnifeModels.db().name_of(String(kh.get("type", ""))), String(fin.get("name", "?")), String(_gun_db.tier(String(fin.get("tier", "gold")))["name"]), CamoSkin.wear_name(float(kh.get("wear", 0.0))), ("  " + String(lk["name"])) if String(lk["name"]) != "" else "", int(kh.get("pattern", 0)), int(rules.call("level", kh)), int(kh.get("kills", 0)), String((rules.call("power", kh) as Dictionary).get("name", "")), String(rules.call("power_text", kh))]
+		var kbox := Rect2(Vector2(minf(place.x, view.x - 360.0), minf(place.y, view.y - 150.0)), Vector2(350, 140))
+		_card.draw_rect(kbox, Color(0.04, 0.04, 0.06, 0.95))
+		_card.draw_rect(kbox, _colour_of(_hover), false, 2.0)
+		_card.draw_multiline_string(_font, kbox.position + Vector2(10, 22), ktext, HORIZONTAL_ALIGNMENT_LEFT, 330, 14, -1, Color.WHITE)
+		return
 	if _hover.has("camo"):
 		var camo: Dictionary = _hover["camo"]
 		var look := CamoSkin.look_of(String(camo.get("id", "")))
@@ -286,6 +303,8 @@ func show_table(view: Dictionary) -> void:
 		_next_ref = CARD_REF
 		offered_camos = {}
 		_next_camo = CAMO_REF
+		offered_knives = {}
+		_next_knife = KNIFE_REF
 		_tab = "bag"
 	_view = view
 	_hover = {}
@@ -303,6 +322,8 @@ func show_table(view: Dictionary) -> void:
 	(_tabs[1] as IconButton).visible = _cards != null
 	(_tabs[2] as IconButton).on = _tab == "camos"
 	(_tabs[2] as IconButton).visible = camos != null
+	(_tabs[3] as IconButton).on = _tab == "knives"
+	(_tabs[3] as IconButton).visible = knives != null
 	var short := _bag_things(theirs) - (_free_slots() + _bag_things(mine))  # cards need no bag room
 	var both: bool = view["confirm"]
 	var ready_mine := bool(view["ready_mine"])
@@ -383,6 +404,12 @@ func _on_tile(tile: Control) -> void:
 				offered_camos[_next_camo] = sent_c["camo"]
 				_next_camo += 1
 				offered.emit(sent_c)
+			elif thing.has("knife"):
+				var sent_k := thing.duplicate(true)
+				sent_k["ref"] = _next_knife
+				offered_knives[_next_knife] = sent_k["knife"]
+				_next_knife += 1
+				offered.emit(sent_k)
 			else:
 				offered.emit(thing)
 
@@ -402,6 +429,18 @@ func _fill_strip(mine: Array) -> void:
 			var thing := _thing_in(slot)
 			if not thing.is_empty() and not on_table.has(slot):
 				things.append([thing, 0])
+	elif _tab == "knives":
+		if knives != null:
+			var on_table_k := {}
+			for thing: Dictionary in mine:
+				if thing.has("knife"):
+					on_table_k[JSON.stringify(thing["knife"])] = int(on_table_k.get(JSON.stringify(thing["knife"]), 0)) + 1
+			for item: Dictionary in knives.get("items"):
+				var key_k := JSON.stringify(item)
+				if int(on_table_k.get(key_k, 0)) > 0:
+					on_table_k[key_k] = int(on_table_k[key_k]) - 1
+					continue
+				things.append([{"knife": item.duplicate()}, 0])
 	elif _tab == "camos":
 		if camos != null:
 			var on_table_c := {}
@@ -442,7 +481,7 @@ func _fill_strip(mine: Array) -> void:
 func _bag_things(things: Array) -> int:
 	var n := 0
 	for thing: Dictionary in things:
-		if not thing.has("card") and not thing.has("camo"):
+		if not thing.has("card") and not thing.has("camo") and not thing.has("knife"):
 			n += 1
 	return n
 
@@ -470,6 +509,8 @@ func _colour_of(thing: Dictionary) -> Color:
 		return TierStyle.color(_gun_db, String((thing["gun"] as Dictionary)["tier"]), Time.get_ticks_msec() / 1000.0)
 	if thing.has("camo"):
 		return TierStyle.color(_gun_db, String(CamoSkin.look_of(String((thing["camo"] as Dictionary).get("id", ""))).get("tier", "green")), Time.get_ticks_msec() / 1000.0)
+	if thing.has("knife"):
+		return TierStyle.color(_gun_db, String(KnifeSkin.rules().finish(String((thing["knife"] as Dictionary).get("finish", ""))).get("tier", "gold")), Time.get_ticks_msec() / 1000.0)
 	if thing.has("arm"):  # a rolled armour piece: its tier's colour
 		return TierStyle.color(_gun_db, String((thing["arm"] as Dictionary)["tier"]), Time.get_ticks_msec() / 1000.0)
 	return Color(0.9, 0.9, 0.9)
@@ -501,6 +542,13 @@ func _draw_tile(tile: Tile) -> void:
 			tile.draw_texture_rect(pic, Rect2(4, 20, r.size.x - 8, 44), false)
 		tile.draw_rect(Rect2(10, r.size.y - 14, r.size.x - 20, 5), c)
 		tile.draw_string(_font, Vector2(6, 16), "CAMO x%d" % int(camo.get("uses", 1)), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 12, 11, c)
+	elif tile.thing.has("knife"):  # (polish1 D5b) a skinned knife: its picture and level
+		var kn: Dictionary = tile.thing["knife"]
+		var kpic := CamoIcons.knife(kn, tile)
+		if kpic != null:
+			tile.draw_texture_rect(kpic, Rect2(4, 20, r.size.x - 8, 44), false)
+		tile.draw_rect(Rect2(10, r.size.y - 14, r.size.x - 20, 5), c)
+		tile.draw_string(_font, Vector2(6, 16), "KNIFE LV%d" % int(KnifeSkin.rules().level(kn)), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 12, 11, c)
 	elif tile.thing.has("id"):
 		ItemIcons.draw(tile, String(tile.thing["id"]), Rect2(8, 16, r.size.x - 16, r.size.y - 32), Color.WHITE, String((tile.thing.get("arm", {}) as Dictionary).get("tier", "")))
 	if tile.count > 1:

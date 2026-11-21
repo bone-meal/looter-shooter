@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;!net wait_guest;!wait 25;!net to_other;!wait 3;!skins ghosts a;!snap knifenet_host;!wait 10;!skins ghosts b

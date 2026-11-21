@@ -2,12 +2,15 @@
 # a gun body with its parts and camo side-on in a small off-screen viewport, one job at a time, and keeps the picture
 # (by body + parts + camo). Until a picture is ready the plain icon is drawn. Also a camo's own swatch picture (the
 # camo on a rifle) for the crate's camo reel and the CAMOS tab. One instance lives in the session (`instance`).
-# Dependencies: game/weapon_models.gd, game/gun_parts_view.gd, game/camo_skin.gd.
+# Also skinned knives' pictures (polish1 D5b).
+# Dependencies: game/weapon_models.gd, game/gun_parts_view.gd, game/camo_skin.gd, game/knife_models.gd, game/knife_skin.gd.
 extends Node
 
 const WeaponModels = preload("res://game/weapon_models.gd")
 const GunPartsView = preload("res://game/gun_parts_view.gd")
 const CamoSkin = preload("res://game/camo_skin.gd")
+const KnifeModels = preload("res://game/knife_models.gd")
+const KnifeSkin = preload("res://game/knife_skin.gd")
 
 const SIZE := Vector2i(320, 180)
 const MOST := 160  # pictures kept
@@ -59,6 +62,9 @@ func _exit_tree() -> void:
 
 
 static func key_of(gun: Dictionary) -> String:
+	if gun.get("knife") is Dictionary:  # (polish1 D5b) a skinned knife: its look (not its kills)
+		var k: Dictionary = gun["knife"]
+		return "knife|%s|%s|%d|%.2f" % [String(k.get("type", "")), String(k.get("finish", "")), int(k.get("pattern", 0)), float(k.get("wear", 0.0))]
 	return "%s|%s|%s" % [String(gun.get("body", "")), JSON.stringify(gun.get("parts", {})), JSON.stringify(gun.get("camo", {}))]
 
 
@@ -67,6 +73,13 @@ static func picture(gun: Dictionary, asker: CanvasItem = null) -> Texture2D:
 	if instance == null or not gun.get("camo") is Dictionary:
 		return null
 	return instance.call("_want", gun, asker)
+
+
+# (polish1 D5b) A skinned knife's picture (its type with its finish), or null while it is being made.
+static func knife(item: Dictionary, asker: CanvasItem = null) -> Texture2D:
+	if instance == null or item.is_empty():
+		return null
+	return instance.call("_want", {"knife": item}, asker)
 
 
 # A camo's swatch: the camo on a rifle.
@@ -112,11 +125,17 @@ func _process(_delta: float) -> void:
 		return
 	var job: Array = _queue.pop_front()
 	var gun: Dictionary = job[1]
-	var model := WeaponModels.build(String(gun.get("body", "ak47")))
-	_stage.add_child(model)
-	if gun_db != null and not (gun.get("parts", {}) as Dictionary).is_empty():
-		GunPartsView.apply(model, gun, gun_db)
-	CamoSkin.dress(model, gun)
+	var model: Node3D
+	if gun.get("knife") is Dictionary:
+		model = KnifeModels.build(String((gun["knife"] as Dictionary).get("type", "combat")))
+		_stage.add_child(model)
+		KnifeSkin.apply(model, gun["knife"])
+	else:
+		model = WeaponModels.build(String(gun.get("body", "ak47")))
+		_stage.add_child(model)
+		if gun_db != null and not (gun.get("parts", {}) as Dictionary).is_empty():
+			GunPartsView.apply(model, gun, gun_db)
+		CamoSkin.dress(model, gun)
 	var fx := model.get_node_or_null("CamoFx")
 	if fx != null:
 		fx.free()

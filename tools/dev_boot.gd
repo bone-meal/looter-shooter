@@ -2769,6 +2769,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						if not g.is_empty():
 							ts.offered.emit({"ref": slot, "gun": g})
 							break
+				"knife":  # (polish1 D5b) "!trade knife": offer the first skinned knife
+					var kl: Array = (session.get("_knife_locker") as RefCounted).get("items")
+					if not kl.is_empty():
+						(ts.get("offered_knives") as Dictionary)[600000] = (kl[0] as Dictionary).duplicate()
+						ts.offered.emit({"ref": 600000, "knife": (kl[0] as Dictionary).duplicate()})
 				"camo":  # (polish1 D5a) "!trade camo": offer the first camo of the locker, as a click on its tile would
 					var lk: Array = (session.get("_camo_locker") as RefCounted).get("items")
 					if not lk.is_empty():
@@ -3003,6 +3008,44 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"knife":  # (polish1 D5b) skinned knives: "!knife give <finish|roll> [pattern] [type] [kills]", "!knife force" (the next crate gives one), "!knife tab", "!knife press <key>", "!knife equip <i>", "!knife kills <n>" (the carried one), "!knife <note>": the locker and what is carried
+			var lk_k: RefCounted = session.get("_knife_locker")
+			var rules_k: RefCounted = lk_k.get("rules")
+			match words[1] if words.size() > 1 else "":
+				"give":
+					var item_k: Dictionary = rules_k.call("roll", RandomNumberGenerator.new())
+					if words.size() > 2 and words[2] != "roll":
+						item_k["finish"] = words[2]
+					if words.size() > 3:
+						item_k["pattern"] = int(words[3])
+					if words.size() > 4:
+						item_k["type"] = words[4]
+					if words.size() > 5:
+						item_k["kills"] = int(words[5])
+					item_k["wear"] = 0.03
+					_lines.append("KNIFE give: %s %s" % [str(lk_k.call("add", item_k)), str(item_k)])
+					(session.get("_knife_tab") as Control).call("refresh")
+				"force":
+					session.set("_force_knife", true)
+				"tab":
+					session.call("_open_card")
+					var tabs_k: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
+					for t_k in tabs_k.get_tab_count():
+						if tabs_k.get_tab_title(t_k) == "Knives":
+							tabs_k.current_tab = t_k
+				"press":
+					var key_k := " ".join(words.slice(2))
+					_lines.append("KNIFE press %s: %s" % [key_k, (session.get("_knife_tab") as Control).call("press", key_k)])
+				"equip":
+					session.call("_equip_knife", int(words[2]))
+				"kills":
+					var carried_k: Dictionary = lk_k.call("carried")
+					if not carried_k.is_empty():
+						carried_k["kills"] = int(words[2])
+						player.call("set_knife_skin", carried_k)
+				_:
+					var c_k: Dictionary = lk_k.call("carried")
+					_lines.append("KNIFE %s: %d owned, carried %s, level %d, held id '%s'" % [" ".join(words.slice(1)), (lk_k.get("items") as Array).size(), str(c_k), int(rules_k.call("level", c_k)) if not c_k.is_empty() else 0, String(player.call("held_id"))])
 		"skins":  # (polish1 D5a part 3) a gun's skins menu + camo challenges: "!skins key" presses the skins key in the open inventory; "!skins open" opens the menu of the gun in hand (a plain gun becomes a rolled one); "!skins press <key>"; "!skins kill <n> [head] [aim] [air] [low] [dist <m>] [boss] [elite]" counts n kills with the gun in hand; "!skins grant <tier> <n>" earns the first n camos of a tier on it; "!skins <note>": its challenges
 			var hand_s := int(player.call("hand_index"))
 			var bag_s: RefCounted = player.get("inventory")
@@ -3057,7 +3100,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 								for mi_g in held_g.find_children("*", "MeshInstance3D", true, false):
 									for si_g in (mi_g as MeshInstance3D).get_surface_override_material_count():
 										var mat_g: Material = (mi_g as MeshInstance3D).get_surface_override_material(si_g)
-										if mat_g is ShaderMaterial and (mat_g as ShaderMaterial).shader == load("res://game/camo_skin.gd").call("shader"):
+										if mat_g is ShaderMaterial and ((mat_g as ShaderMaterial).shader == load("res://game/camo_skin.gd").call("shader") or (mat_g as ShaderMaterial).shader == load("res://game/knife_skin.gd").call("shader")):
 											painted = true
 							_lines.append("SKINS ghost %d: holds '%s', camo painted %s, fx %s" % [id_g, String(body_g.get("_held_shown")), str(painted), str(held_g != null and held_g.get_node_or_null("CamoFx") != null)])
 				"grant":

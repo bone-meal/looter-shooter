@@ -26,6 +26,7 @@ var _binder: Control  # kept between openings: its page, filters and the deck be
 var buy_starter := Callable()  # (polish1 item 80) handed to the binder: buys a starter deck with the session's chips
 var cases_tab: Control  # (polish1 item 72) game/case_tab.gd, set by the session; shown next to the Binder
 var camos_tab: Control  # (polish1 D5a) game/camo_tab.gd, set by the session; shown after the Cases
+var knives_tab: Control  # (polish1 D5b) game/knife_tab.gd, set by the session; shown after the Camos
 
 
 # Small clickable emblem tile.
@@ -100,7 +101,7 @@ func _refresh() -> void:
 	var current := _tabs.current_tab
 	for child in _tabs.get_children():
 		_tabs.remove_child(child)
-		if child != _binder and child != cases_tab and child != camos_tab:
+		if child != _binder and child != cases_tab and child != camos_tab and child != knives_tab:
 			child.queue_free()
 	_show_card()
 	_tabs.add_child(_card_tab())
@@ -129,6 +130,10 @@ func _refresh() -> void:
 		_tabs.add_child(camos_tab)
 		camos_tab.call("refresh")
 		names.append("Camos")
+	if knives_tab != null:
+		_tabs.add_child(knives_tab)
+		knives_tab.call("refresh")
+		names.append("Knives")
 	for i in names.size():
 		_tabs.set_tab_title(i, names[i])
 	_tabs.current_tab = clampi(current, 0, names.size() - 1)

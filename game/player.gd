@@ -14,6 +14,7 @@ signal shield_broke  # the buildable shield took its last hit
 const WeaponState = preload("res://core/weapon_state.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
+const KnifeSkin = preload("res://game/knife_skin.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
 const QuietTest = preload("res://game/quiet_test.gd")
 const Signatures = preload("res://game/signatures/index.gd")
@@ -87,6 +88,7 @@ var emote := ""  # id of the dance playing, "" = none
 var weapon: WeaponState  # the gun in hand (a stock pistol nobody fires while the knife is out, so this is never null)
 var pools: AmmoPools  # spare ammunition, one pool per gun body (saved with the character by the session)
 var knife := "combat"  # which knife type this character carries (rolled once; set with set_knife)
+var knife_skin := {}  # (polish1 D5b) the skinned knife carried instead ({} = the rolled knife): its own type and finish (set_knife_skin)
 var gun_db: GunDb  # tiers, parts and makers for rolled guns
 var health: HealthState
 var settings: SettingsState  # set by game/game_session.gd before add_child
@@ -923,7 +925,7 @@ func held_id() -> String:
 		return "shield"
 	var slung := "|shield" if shield.owned and not guns_locked else ""  # on the back, for others to see
 	if _knife_out:
-		return "knife:" + knife + slung
+		return "knife:" + shown_knife() + _skin_tag() + slung
 	var unique := ""  # a chase gun with a gimmick model: "m16@mixtape", "sniper_basic@fish_story#4321" (others see the gimmick and its record: game/remote_player.gd)
 	if _holding and _held_gun.has("unique") and (gun_db.uniques.get(String(_held_gun["unique"]), {}) as Dictionary).has("attach"):
 		unique = "@" + String(_held_gun["unique"])
@@ -1003,19 +1005,40 @@ func _cycle_hand(step: int) -> void:
 # The knife type this character carries (an unknown id gives the plain combat knife).
 func set_knife(id: String) -> void:
 	knife = KnifeModels.db().known(id)
+	var shown := shown_knife()
 	for old in [_knife_model, _knife_twin]:
 		if old != null:
 			old.queue_free()
-	_knife_model = KnifeModels.build(knife)
+	_knife_model = KnifeModels.build(shown)
+	KnifeSkin.apply(_knife_model, knife_skin)
 	_knife_model.visible = false
 	_head.add_child(_knife_model)
 	_knife_twin = null
-	if KnifeModels.db().twin(knife):
-		_knife_twin = KnifeModels.build(knife)
+	if KnifeModels.db().twin(shown):
+		_knife_twin = KnifeModels.build(shown)
+		KnifeSkin.apply(_knife_twin, knife_skin)
 		_knife_twin.visible = false
 		_head.add_child(_knife_twin)
 	if is_inside_tree() and weapon != null:
 		refresh_held()
+
+
+# (polish1 D5b) The skinned knife for other machines: "~<finish>.<pattern>.<wear %>" ("" for the rolled knife).
+func _skin_tag() -> String:
+	if knife_skin.is_empty():
+		return ""
+	return "~%s.%d.%d" % [String(knife_skin.get("finish", "")).left(24), int(knife_skin.get("pattern", 0)), roundi(float(knife_skin.get("wear", 0.0)) * 100.0)]
+
+
+# (polish1 D5b) Carry a skinned knife ({} = back to the character's own rolled knife).
+func set_knife_skin(item: Dictionary) -> void:
+	knife_skin = item
+	set_knife(knife)
+
+
+# The knife type in hand: the skinned knife's own type, else the rolled one.
+func shown_knife() -> String:
+	return KnifeModels.db().known(String(knife_skin["type"])) if not knife_skin.is_empty() else knife
 
 
 # Top speed with a gun in hand: its body's, shifted a little by a rolled gun's parts; some slow you while you aim
@@ -1484,6 +1507,8 @@ func _knife_blow(attack: Dictionary) -> void:
 	if best.is_empty():
 		return
 	var dealt := float(attack["damage"]) * (1.0 + bonus_damage_pct / 100.0)
+	if not knife_skin.is_empty():
+		dealt *= KnifeSkin.rules().damage_mult(knife_skin)  # (polish1 D5b) a skinned knife hits harder as it levels
 	var enemy: bool = best.collider.has_method("head_hit")
 	if score != null:
 		score.blow = "melee"
@@ -2255,7 +2280,7 @@ func _inspect_target() -> String:
 		var own := "unique:" + String(_held_gun.get("unique", ""))  # a chase gun's own move
 		return own if _held_gun.has("unique") and inspect_moves.has(own) else "gun:" + inventory.holster_body(_hand)
 	if _knife_out:
-		return "knife:" + knife
+		return "knife:" + shown_knife()
 	if knife_stowed and not _shield_out:
 		return "staff"
 	return ""

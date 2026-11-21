@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!net wait_guest;!knife give christmas_bells 25 karambit 0;!knife equip 0;!slot knife;!wait 30;!knife g;!wait 15

@@ -56,6 +56,9 @@ const CamoChallenges = preload("res://core/camo_challenges.gd")
 const CamoIcons = preload("res://game/camo_icons.gd")
 const CamoTab = preload("res://game/camo_tab.gd")
 const SkinsMenu = preload("res://game/skins_menu.gd")
+const KnifeTab = preload("res://game/knife_tab.gd")
+const KnifeLocker = preload("res://core/knife_locker.gd")
+const KnifeSkin = preload("res://game/knife_skin.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
 const NpcChatter = preload("res://game/npc_chatter.gd")
 const RenderStyle = preload("res://game/render_style.gd")
@@ -245,6 +248,9 @@ var _camo_chal := CamoChallenges.new(DataStore.load_json("res://data/camo_challe
 var _clean_kills := 0  # kills in a row without being hit (camo "streak" challenges)
 var _last_gun_kill := -99.0  # when the gun in hand last killed (s, camo "multi" challenges)
 var _camo_tab := CamoTab.new()  # the player card's Camos tab
+var _knife_locker := KnifeLocker.new(KnifeSkin.rules())  # (polish1 D5b) owned skinned knives (saved "knives")
+var _knife_tab := KnifeTab.new()  # the player card's Knives tab
+var _force_knife := false  # (dev) the next crate gives a knife
 var _skins_menu := SkinsMenu.new()  # (polish1 D5a part 3) a gun's skins menu (C on its card in the inventory)
 var _skins_where := {}  # the gun the skins menu shows: {"holster": i} or {"slot": i}
 var _opening := CaseOpening.new()  # the CS:GO-style opening screen
@@ -810,6 +816,10 @@ func _ready() -> void:
 	_camo_tab.inventory = _player.inventory
 	_camo_tab.gun_db = _player.gun_db
 	_camo_tab.apply_requested.connect(_apply_camo)
+	_knife_tab.locker = _knife_locker
+	_knife_tab.gun_db = _player.gun_db
+	_knife_tab.equip_requested.connect(_equip_knife)
+	_card_screen.knives_tab = _knife_tab
 	_skins_menu.chal = _camo_chal
 	_skins_menu.watch = _inventory_screen
 	_skins_menu.locker = _camo_locker
@@ -821,6 +831,7 @@ func _ready() -> void:
 	_inventory_screen.skins_requested.connect(_open_skins)
 	_card_screen.camos_tab = _camo_tab
 	_trade_screen.camos = _camo_locker
+	_trade_screen.knives = _knife_locker
 	_card_screen.buy_starter = func(sid: String) -> String:  # (polish1 item 80) a starter deck bought from the binder
 		var why := String(PackShop.buy("starter:" + sid, _wallet, _cards, DataStore.load_json("res://data/tcg/packs.json"), DataStore.load_json("res://data/tcg/starters.json")["starters"]))
 		if why == "":
@@ -1288,8 +1299,9 @@ func _toggle_inventory() -> void:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	else:
 		_inventory_screen.in_hand = _player.hand_index()
-		_inventory_screen.knife_name = KnifeModels.db().name_of(_player.knife)
-		_inventory_screen.knife_id = _player.knife
+		var ks := _knife_locker.carried()  # (polish1 D5b) a carried skinned knife shows as itself
+		_inventory_screen.knife_name = KnifeModels.db().name_of(_player.shown_knife()) + ((" | " + String(KnifeSkin.rules().finish(String(ks["finish"])).get("name", ""))) if not ks.is_empty() else "")
+		_inventory_screen.knife_id = _player.shown_knife()
 		_inventory_screen.knife_key = InputSetup.label(settings, "knife")
 		_inventory_screen.gun_keys.clear()
 		for n in InventoryState.HOLSTERS:
@@ -1377,6 +1389,8 @@ func _legal_gun(gun: Dictionary) -> bool:
 func _legal_thing(thing: Dictionary) -> bool:
 	if thing.has("camo"):  # (polish1 D5a) an unboxed camo of the data, sane numbers
 		return not _camo_locker.clean(thing["camo"]).is_empty()
+	if thing.has("knife"):  # (polish1 D5b) a skinned knife of the data, sane numbers
+		return KnifeSkin.rules().check(thing["knife"]) == ""
 	if thing.has("gun"):
 		return _legal_gun(thing["gun"])
 	if thing.has("card"):
@@ -1490,6 +1504,14 @@ func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 					mine.remove_at(i)
 					break
 			continue
+		if _trade_screen.offered_knives.has(int(ref)):  # (polish1 D5b) this very knife out of the locker
+			var gone_k: Dictionary = _trade_screen.offered_knives[int(ref)]
+			for i in _knife_locker.items.size():
+				if JSON.stringify(_knife_locker.items[i]) == JSON.stringify(gone_k):
+					_knife_locker.remove(i)
+					_player.set_knife_skin(_knife_locker.carried())
+					break
+			continue
 		if _trade_screen.offered_cards.has(int(ref)):  # a card from the collection
 			var c: Dictionary = _trade_screen.offered_cards[int(ref)]
 			_cards.remove(String(c["card"]), String(c["finish"]), 1, bool(c["leader"]))
@@ -1515,6 +1537,8 @@ func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 				_drop_armour(piece, _player.global_position + _player.global_basis.z * -1.0)
 		elif given.has("id") and _player.items.has_item(String(given["id"])):
 			_player.inventory.add(String(given["id"]), 1)
+		elif given.has("knife") and KnifeSkin.rules().check(given["knife"]) == "":  # (polish1 D5b) keeps its level and kills (locked)
+			_knife_locker.add((given["knife"] as Dictionary).duplicate(true))
 		elif given.has("camo") and not _camo_locker.clean(given["camo"]).is_empty():
 			_camo_locker.add(_camo_locker.clean(given["camo"]))
 		elif given.has("card") and _legal_card(given):
@@ -1790,6 +1814,9 @@ func _load_profile() -> void:
 		if KnifeModels.db().has(String(extra.get("knife", ""))):
 			_player.set_knife(String(extra["knife"]))
 			_knife_rolled = true
+		_knife_locker.from_dict(extra.get("knives"))  # (polish1 D5b) the skinned knives and the one carried
+		_player.set_knife_skin(_knife_locker.carried())
+		_knife_tab.own_knife = _player.knife
 		_fantasy_saved = extra.get("fantasy")
 		_salvage_saved = extra.get("salvage")
 		_chart_saved = extra.get("sea_chart")
@@ -1840,7 +1867,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "knives": _knife_locker.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -2630,8 +2657,15 @@ func _open_case(id: String) -> void:
 	var band := ItemLevel.island_band()
 	var roll := func() -> Dictionary: return GunGen.generate(_player.gun_db, _rng, float(crate["luck"]) * _luck_mult(), "", "", String(crate["min_tier"]), ItemLevel.roll(_rng, band.x, band.y))
 	var gun: Dictionary = roll.call()
-	_player.inventory.add_gun(gun)
-	_player.refresh_held()
+	var knife_odds := float((KnifeSkin.rules().cfg.get("drops", {}) as Dictionary).get(id, 0.0))
+	if _rng.randf() < knife_odds or _force_knife:  # (polish1 D5b) the rare special item: a skinned knife takes the gun's place
+		var item: Dictionary = KnifeSkin.rules().roll(_rng)
+		_knife_locker.add(item)
+		gun = {"knife": item}
+		_force_knife = false
+	else:
+		_player.inventory.add_gun(gun)
+		_player.refresh_held()
 	save_profile()
 	var camo := _camo_locker.roll(_rng, id)  # (polish1 D5a) the second reel: a camo, its own item in the Camos tab
 	_camo_locker.add(camo)
@@ -2639,7 +2673,7 @@ func _open_case(id: String) -> void:
 	var reel: Array = []
 	var win := 40 + _rng.randi_range(0, 4)
 	for i in win + 6:
-		reel.append(gun if i == win else roll.call())
+		reel.append(gun if i == win else ({"knife": {}} if _rng.randf() < 0.035 else roll.call()))  # (a gold star tile now and then, as in CS)
 	var camo_reel: Array = []
 	var camo_win := 44 + _rng.randi_range(0, 4)
 	for i in camo_win + 8:
@@ -2650,6 +2684,19 @@ func _open_case(id: String) -> void:
 
 func _case_landed(id: String) -> void:
 	var gun := _opening.winner()
+	if gun.get("knife") is Dictionary and not (gun["knife"] as Dictionary).is_empty():  # (polish1 D5b) a knife: always told to the lobby
+		var item: Dictionary = gun["knife"]
+		var fin: Dictionary = KnifeSkin.rules().finish(String(item["finish"]))
+		var look: Dictionary = KnifeSkin.rules().pattern_look(item)
+		var knife_line := "a %s | %s%s from a %s" % [KnifeModels.db().name_of(String(item["type"])), String(fin.get("name", "")), (" (" + String(look["name"]) + ")") if String(look["name"]) != "" else "", String(_crate_def(id).get("name", "crate"))]
+		if net == null or not net.can_send() or net.is_host():
+			_chat.add_line("%s unboxed %s!" % [_profile_name, knife_line], Color(1.0, 0.82, 0.3))
+		if net != null:
+			net.chat.announce_unbox(knife_line + "!")
+		_knife_tab.refresh()
+		_case_tab.refresh()
+		_camo_tab.refresh()
+		return
 	var tier := String(gun.get("tier", "grey"))
 	var line := "a %s from a %s" % [GunStats.display_name(_player.gun_db, gun), String(_crate_def(id).get("name", "crate"))]
 	if ItemIcons.TIER_ORDER.find(tier) >= ItemIcons.TIER_ORDER.find("gold"):  # gold and up: told to the lobby
@@ -2667,6 +2714,18 @@ func _case_landed(id: String) -> void:
 			net.chat.announce_unbox(camo_line + "!")
 	_case_tab.refresh()
 	_camo_tab.refresh()
+
+
+# (polish1 D5b) The Knives tab: carry skinned knife `index` (-1 = the character's own rolled knife).
+func _equip_knife(index: int) -> void:
+	_knife_locker.equip(index)
+	_player.set_knife_skin(_knife_locker.carried())
+	_knife_tab.own_knife = _player.knife
+	_knife_tab.refresh()
+	_sounds.call("play", "upgrade_done")
+	var k := _knife_locker.carried()
+	_player_hud.notice("Carrying %s" % ("%s | %s" % [KnifeModels.db().name_of(String(k["type"])), String(KnifeSkin.rules().finish(String(k["finish"])).get("name", ""))] if not k.is_empty() else "your own " + KnifeModels.db().name_of(_player.knife)))
+	save_profile()
 
 
 # (polish1 D5a) The Camos tab: put camo `index` on a gun in a holster or the backpack (one use; replaces its old camo).
@@ -2776,6 +2835,7 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 	if lucky:
 		_score.mult *= 2
 	var by_gun := String(_score.blow) != "melee" and String(_score.blow) != "other" and _player.hand_index() >= 0  # (read before kill() resets nothing: the blow is still ours)
+	var by_knife := String(_score.blow) == "melee"
 	if String(_score.blow) != "other":  # our kill (online somebody else's is "other"): the record
 		_count_kill(enemy_id, elite, String(_score.blow))
 	var paid := _score.kill()  # paid by how the blow landed (the player sets `blow` around its hits); nothing in Aurelind
@@ -2785,6 +2845,13 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		_stats.best("wkills_best", float(in_hand_gun["wkills"]))
 	if by_gun and paid > 0 and not in_hand_gun.is_empty():
 		_camo_kill(in_hand_gun, where, elite, enemy_id)
+	if by_knife and paid > 0:  # (polish1 D5b) the carried skinned knife counts it: its level comes from these
+		var up := _knife_locker.count_kill()
+		if up > 0:
+			var fin: Dictionary = KnifeSkin.rules().finish(String(_knife_locker.carried()["finish"]))
+			_player_hud.callout("%s  LEVEL %d" % [String(fin.get("name", "KNIFE")).to_upper(), up], TierStyle.color(_player.gun_db, String(fin.get("tier", "gold")), 0.0), "star")
+			_player.set_knife_skin(_knife_locker.carried())  # (its damage grows with the level)
+			save_profile()
 	if lucky:
 		_score.mult = maxi(_score.mult >> 1, 1)
 	if paid > 0 and _player.hand_index() >= 0 and _rng.randf() < _perks.num("ammo_chance", 0.0):  # Scavenger: rounds for the gun in hand

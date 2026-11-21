@@ -1,1 +1,6 @@
-Release v1.15
+Polish1 D5b part 1: skinned knives - designed finishes, chase patterns, knives as items
+
+28 knife finishes in 4 collections, each a designed sheet (motifs, relief, glow) with the pattern number choosing where it lands; every chase pattern (Bluegem, Blue Top, Full Fade, Bloodmoon, Abyssal, Nightpearl, Viper's Eye, Rogue Wave, Heartfire, Full Corona, In Bloom, Perfect Twist, Twelve Bells, 777) has its own sheet and is rollable. Knives are items: a Knives tab to carry one, levels from knife kills (damage grows), a rare special item from Silver and Gold crates, trading with level kept, and other players see the knife in your hand.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
