@@ -27,6 +27,7 @@ const AppearanceData = preload("res://game/appearance_data.gd")
 const ViewmodelMotion = preload("res://core/viewmodel_motion.gd")
 const InspectMoves = preload("res://core/inspect_moves.gd")
 const WKillsDisplay = preload("res://game/wkills_display.gd")
+const CamoSkin = preload("res://game/camo_skin.gd")
 const Unstuck = preload("res://game/unstuck.gd")
 const DataStore = preload("res://core/data_store.gd")
 const HealthState = preload("res://core/health_state.gd")
@@ -235,6 +236,8 @@ var ladder := false  # (polish1 item 26) inside a KZ ladder's reach (game_sessio
 var even_ground := false  # the hop course (game_session): everybody moves the same: no speed bonus, perks or auto-hop boots
 var edgebug_cfg := {}  # (polish1 edgebugs) set by game_session on edgebug stages: min_fall, push (m/s) and edge (normal height); {} = off
 var edgebug_at := -10.0  # when the latest edgebug happened (_now() seconds)
+var _camo_mat: ShaderMaterial = null  # (polish1 D5a) the camo on the gun in hand, when it is one that reacts
+var _camo_pulse := Vector3.ZERO  # shoot, reload, kill pulses for it (fade out)
 var _inspect_id := ""  # what is being looked over ("gun:ak47", "knife:karambit", "staff"); "" = nothing
 var _inspect_at := 0.0
 var _shot_at := {}  # host-run enemy (instance id) -> engine time our gun shot hit it (credit_kill)
@@ -686,6 +689,12 @@ func _move_and_shoot(delta: float) -> void:
 # Runs every rendered frame: places the camera, body model and weapon, and plays the animations.
 func _process(delta: float) -> void:
 	_move_and_shoot(minf(delta, MAX_STEP))
+	if _camo_mat != null:  # (polish1 D5a) a legendary / pony camo reacts to what we do
+		_camo_pulse = _camo_pulse.move_toward(Vector3.ZERO, delta * 1.5)
+		if weapon.is_reloading():
+			_camo_pulse.y = 1.0
+		CamoSkin.react(_camo_mat, _motion.ads_eased(), clampf(Vector2(velocity.x, velocity.z).length() / 9.0, 0.0, 1.0), _camo_pulse.x, _camo_pulse.y, _camo_pulse.z,
+			float(weapon.ammo) / maxf(float(weapon.mag_size), 1.0), 1.0 if inspecting() != "" else 0.0)
 	_follow_signature()
 	var origin := global_position
 	if not carried and _tick_from.distance_squared_to(origin) < 4.0:  # between two ticks (farther apart = a teleport)
@@ -1120,6 +1129,8 @@ func _dress_body(index: int) -> void:
 	_ads_positions[index] = _base_ads[index] if eye <= 0.0 else Vector3(_base_ads[index].x, -eye * _models[index].scale.y, _base_ads[index].z)
 	var family := String(_held_gun.get("family", ""))
 	PonySkin.apply(_models[index], String(gun_db.tier(String(_held_gun["tier"])).get("skin", "")) == "pony", family, gun_db.family_def(family))
+	var camo := CamoSkin.dress(_models[index], _held_gun)  # (polish1 D5a) a camo goes over the tier's skin, under the props
+	_camo_mat = camo if camo != null and CamoSkin.reactive(CamoSkin.look_of(String(_held_gun["camo"]["id"]))) else null
 	UniqueAttach.apply(_models[index], _held_gun, gun_db)  # a chase gun's gimmick (after the skin: it keeps its own look)
 	var view: Dictionary = _base_views[index].duplicate()
 	view["optic"] = String((_held_gun.get("parts", {}) as Dictionary).get("sight", {}).get("kind", "")) if eye > 0.0 else ""
@@ -1139,6 +1150,8 @@ func _undress_body(index: int) -> void:
 	GunPartsView.clear(_models[index])
 	_ads_positions[index] = _base_ads[index]
 	PonySkin.apply(_models[index], false)
+	CamoSkin.clear(_models[index])
+	_camo_mat = null
 	_views[index] = _base_views[index]
 
 
@@ -1582,6 +1595,7 @@ func _tell_fire_slow(aim: Vector3) -> void:
 
 
 func _shoot() -> void:
+	_camo_pulse.x = 1.0
 	_gun_sound(String(_weapon_data().get("sound", "")))
 	var origin := _camera.global_position
 	var forward := -_camera.global_transform.basis.z
@@ -2160,6 +2174,7 @@ func skill_cooldown_total(index: int) -> float:
 
 # A kill happened in the arena (game/game_session.gd forwards the director's signal): Berserker Chain stacks, Cooldown Siphon.
 func on_enemy_killed(elite: String, enemy_id: String) -> void:
+	_camo_pulse.z = 1.0  # (polish1 D5a) a reactive camo flashes on a kill
 	var buffs: Dictionary = _held_stats.get("buffs", {})
 	var now := _now()
 	if buffs.has("berserker_chain"):

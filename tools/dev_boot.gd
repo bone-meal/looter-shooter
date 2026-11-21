@@ -2951,6 +2951,23 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var app_l: Dictionary = node_l.get("appearance")
 				var model_l := node_l.get("_model") as Node3D
 				_lines.append("LOOKOF %s: peer %d height %s weight %s bust %s glutes %s outfit %s; body scale %s" % [" ".join(words.slice(1)), id_l, str(app_l.get("height")), str(app_l.get("weight")), str(app_l.get("bust")), str(app_l.get("glutes")), str(app_l.get("rig_outfit")), str(model_l.scale) if model_l != null else "none"])
+		"camo":  # (polish1 D5a) "!camo <id> [ch] [wear] [seed]": the rolled gun in hand wears that camo (ch = its challenge version; a plain gun becomes a rolled one); "!camo off"; "!camo <note>": what it wears
+			var hand_c := int(player.call("hand_index"))
+			var bag_c: RefCounted = player.get("inventory")
+			var looks_c := load("res://game/camo_skin.gd")
+			if words.size() > 1 and hand_c >= 0 and (words[1] == "off" or not (looks_c.call("look_of", words[1]) as Dictionary).is_empty()):
+				var gun_c: Dictionary = bag_c.call("holster_gun", hand_c)
+				if gun_c.is_empty():
+					gun_c = load("res://core/gun_gen.gd").call("generate", player.get("gun_db"), RandomNumberGenerator.new(), 0.0, String(bag_c.call("holster_body", hand_c)), "purple")
+				if words[1] == "off":
+					gun_c.erase("camo")
+				else:
+					gun_c["camo"] = {"id": words[1], "challenge": words.size() > 2 and words[2] == "ch", "wear": float(words[3]) if words.size() > 3 else 0.05, "seed": int(words[4]) if words.size() > 4 else 42}
+				bag_c.call("set_holster_gun", hand_c, gun_c)
+				player.call("refresh_held")
+			else:
+				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
+				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
 		"wkills":  # "!wkills 5": the rolled gun in hand gets the W kills counter at 5 (a plain gun becomes a rolled one first); "!wkills <note>": what it shows
 			var hand_now := int(player.call("hand_index"))
 			var bag: RefCounted = player.get("inventory")

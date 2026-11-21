@@ -1,0 +1,833 @@
+{
+ "version": 1,
+ "_about": "Polish1 D5a gun camos (DECISIONS_SKINS.md). Every camo fits every gun: game/camo_skin.gd draws it from the gun model's own 3D shape (object space, no UVs), so bodies, parts and attachments all take it; a chase gun's props keep their look. `kind` = the shader pattern; `colors` = 4 colours (base, two marks, dark); `accent` = the colour of the CHALLENGE version's upgrade (`challenge` says what it adds). Tiers: green / blue / purple / gold (legendary) / pony. `uses` per tier = how many guns one unboxed camo can go on (3 / 2 / 1). Wear: 0 (Factory New) .. 1 (Battle-Scarred), names by `wear_names` limits; pattern number 1..1000 shifts the pattern.",
+ "uses": {
+  "green": 3,
+  "blue": 2,
+  "purple": 1,
+  "gold": 1,
+  "pony": 1
+ },
+ "wear_names": [
+  [
+   0.07,
+   "Factory New"
+  ],
+  [
+   0.15,
+   "Minimal Wear"
+  ],
+  [
+   0.38,
+   "Field-Tested"
+  ],
+  [
+   0.45,
+   "Well-Worn"
+  ],
+  [
+   1.0,
+   "Battle-Scarred"
+  ]
+ ],
+ "camos": [
+  {
+   "id": "woodland_classic",
+   "name": "Woodland Classic",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#3b4a2a",
+    "#5b6b3a",
+    "#2a2418",
+    "#7a7350"
+   ],
+   "accent": "#9fbf60",
+   "challenge": "leaf edge highlight"
+  },
+  {
+   "id": "digital_woodland",
+   "name": "Digital Woodland",
+   "tier": "green",
+   "kind": "digital",
+   "colors": [
+    "#3e4a2c",
+    "#5d6a40",
+    "#2b2a1e",
+    "#7c7a55"
+   ],
+   "accent": "#8a9a40",
+   "challenge": "olive accent lines"
+  },
+  {
+   "id": "arctic_whiteout",
+   "name": "Arctic Whiteout",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#e8ecee",
+    "#c2cad1",
+    "#9aa6b0",
+    "#f7f9fa"
+   ],
+   "accent": "#9cd0ff",
+   "challenge": "light blue edges"
+  },
+  {
+   "id": "arctic_blue",
+   "name": "Arctic Blue",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#8fb0cc",
+    "#5d84a8",
+    "#d8e4ee",
+    "#3e6488"
+   ],
+   "accent": "#ffffff",
+   "challenge": "white frost"
+  },
+  {
+   "id": "desert_tan",
+   "name": "Desert Tan",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#c8ad7f",
+    "#a88d60",
+    "#8a7048",
+    "#dcc79e"
+   ],
+   "accent": "#6a5030",
+   "challenge": "darker recesses"
+  },
+  {
+   "id": "desert_digital",
+   "name": "Desert Digital",
+   "tier": "green",
+   "kind": "digital",
+   "colors": [
+    "#c9b08a",
+    "#a68c64",
+    "#7e6a4a",
+    "#e0cfae"
+   ],
+   "accent": "#e08a30",
+   "challenge": "orange accent"
+  },
+  {
+   "id": "urban_gray",
+   "name": "Urban Gray",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#7c8086",
+    "#5a5e64",
+    "#a2a6ab",
+    "#3c3f44"
+   ],
+   "accent": "#101012",
+   "challenge": "black edge lines"
+  },
+  {
+   "id": "urban_digital",
+   "name": "Urban Digital",
+   "tier": "green",
+   "kind": "digital",
+   "colors": [
+    "#80858b",
+    "#5c6066",
+    "#a8acb1",
+    "#3a3d42"
+   ],
+   "accent": "#40e0ff",
+   "challenge": "cyan accent"
+  },
+  {
+   "id": "multicam_standard",
+   "name": "Multicam Standard",
+   "tier": "green",
+   "kind": "multicam",
+   "colors": [
+    "#9c8f6a",
+    "#6f6a48",
+    "#b8a986",
+    "#4f4632"
+   ],
+   "accent": "#7a4a28",
+   "challenge": "brown accent"
+  },
+  {
+   "id": "multicam_black",
+   "name": "Multicam Black",
+   "tier": "green",
+   "kind": "multicam",
+   "colors": [
+    "#2a2a2c",
+    "#1a1a1b",
+    "#3c3c3f",
+    "#101011"
+   ],
+   "accent": "#5a5a60",
+   "challenge": "gray micro-pattern"
+  },
+  {
+   "id": "multicam_tropic",
+   "name": "Multicam Tropic",
+   "tier": "green",
+   "kind": "multicam",
+   "colors": [
+    "#4f6a32",
+    "#2f4a24",
+    "#7a8a44",
+    "#1f2e18"
+   ],
+   "accent": "#e0d040",
+   "challenge": "yellow dots"
+  },
+  {
+   "id": "flecktarn_green",
+   "name": "Flecktarn Green",
+   "tier": "green",
+   "kind": "fleck",
+   "colors": [
+    "#6e7350",
+    "#3c4a2a",
+    "#24301a",
+    "#4a3a24"
+   ],
+   "accent": "#1a2412",
+   "challenge": "darker base"
+  },
+  {
+   "id": "flecktarn_brown",
+   "name": "Flecktarn Brown",
+   "tier": "green",
+   "kind": "fleck",
+   "colors": [
+    "#8a7454",
+    "#5a4430",
+    "#3a2a1e",
+    "#6a3a28"
+   ],
+   "accent": "#8a3020",
+   "challenge": "red undertone"
+  },
+  {
+   "id": "tiger_green",
+   "name": "Tiger Stripe Green",
+   "tier": "green",
+   "kind": "tiger",
+   "colors": [
+    "#5a6a3a",
+    "#2c3a1e",
+    "#14180c",
+    "#7a8450"
+   ],
+   "accent": "#000000",
+   "challenge": "black outline"
+  },
+  {
+   "id": "tiger_black",
+   "name": "Tiger Stripe Black",
+   "tier": "green",
+   "kind": "tiger",
+   "colors": [
+    "#3a3a3c",
+    "#141416",
+    "#5a5a5e",
+    "#0a0a0b"
+   ],
+   "accent": "#c02020",
+   "challenge": "red lines"
+  },
+  {
+   "id": "hex_olive",
+   "name": "Hex Camo Olive",
+   "tier": "green",
+   "kind": "hex",
+   "colors": [
+    "#5c6440",
+    "#444c2e",
+    "#727a52",
+    "#30361f"
+   ],
+   "accent": "#80ff60",
+   "challenge": "green edge glow"
+  },
+  {
+   "id": "hex_gray",
+   "name": "Hex Camo Gray",
+   "tier": "green",
+   "kind": "hex",
+   "colors": [
+    "#73777d",
+    "#55595e",
+    "#8e9298",
+    "#3a3d41"
+   ],
+   "accent": "#60a0ff",
+   "challenge": "blue accent"
+  },
+  {
+   "id": "spray_green",
+   "name": "Spray Paint Green",
+   "tier": "green",
+   "kind": "spray",
+   "colors": [
+    "#4a6a2c",
+    "#2a3a1a",
+    "#7a9a40",
+    "#141c0c"
+   ],
+   "accent": "#f0d020",
+   "challenge": "yellow drips"
+  },
+  {
+   "id": "spray_tan",
+   "name": "Spray Paint Tan",
+   "tier": "green",
+   "kind": "spray",
+   "colors": [
+    "#b8a07a",
+    "#8a7452",
+    "#d8c8a0",
+    "#5a4830"
+   ],
+   "accent": "#4a3018",
+   "challenge": "brown drips"
+  },
+  {
+   "id": "night_ops",
+   "name": "Night Ops Black",
+   "tier": "green",
+   "kind": "solid",
+   "colors": [
+    "#1c1c1e",
+    "#161618",
+    "#242427",
+    "#121213"
+   ],
+   "accent": "#303034",
+   "challenge": "charcoal texture"
+  },
+  {
+   "id": "snow_digital",
+   "name": "Snow Digital",
+   "tier": "green",
+   "kind": "digital",
+   "colors": [
+    "#eef1f3",
+    "#d4dade",
+    "#b6bec4",
+    "#ffffff"
+   ],
+   "accent": "#bfe0ff",
+   "challenge": "light blue tint"
+  },
+  {
+   "id": "swamp_green",
+   "name": "Swamp Green",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#3a4224",
+    "#2a301a",
+    "#4e4a2a",
+    "#1e2210"
+   ],
+   "accent": "#5a4224",
+   "challenge": "muddy brown"
+  },
+  {
+   "id": "red_dirt",
+   "name": "Red Dirt",
+   "tier": "green",
+   "kind": "blobs",
+   "colors": [
+    "#8a4a30",
+    "#6a3420",
+    "#a86040",
+    "#4a2418"
+   ],
+   "accent": "#d8a070",
+   "challenge": "dust edges"
+  },
+  {
+   "id": "blue_digital",
+   "name": "Blue Digital",
+   "tier": "green",
+   "kind": "digital",
+   "colors": [
+    "#2a4a7a",
+    "#1a2e52",
+    "#4a6ea0",
+    "#101c34"
+   ],
+   "accent": "#40f0ff",
+   "challenge": "cyan pixels"
+  },
+  {
+   "id": "olive_drab",
+   "name": "Olive Drab Solid",
+   "tier": "green",
+   "kind": "solid",
+   "colors": [
+    "#4b5320",
+    "#444b1d",
+    "#525a24",
+    "#3e4419"
+   ],
+   "accent": "#101208",
+   "challenge": "black edge lines"
+  },
+  {
+   "id": "flecktarn_de",
+   "name": "Flecktarn (German)",
+   "tier": "blue",
+   "kind": "fleck",
+   "colors": [
+    "#7d7d5a",
+    "#3e4b2c",
+    "#20261a",
+    "#5c3e2a"
+   ],
+   "accent": "#c0b890",
+   "challenge": "original balance + wear"
+  },
+  {
+   "id": "choc_chip",
+   "name": "Desert Storm Chocolate Chip",
+   "tier": "blue",
+   "kind": "chip",
+   "colors": [
+    "#d4c09a",
+    "#a8875a",
+    "#5a3e28",
+    "#f0eadc"
+   ],
+   "accent": "#e8d8b0",
+   "challenge": "sand wear"
+  },
+  {
+   "id": "night_dots",
+   "name": "Desert Storm Night Dots",
+   "tier": "blue",
+   "kind": "nightdots",
+   "colors": [
+    "#4c5a48",
+    "#2c3828",
+    "#1a2018",
+    "#6a7a62"
+   ],
+   "accent": "#a0ff80",
+   "challenge": "glow dots"
+  },
+  {
+   "id": "m81",
+   "name": "M81 Woodland",
+   "tier": "blue",
+   "kind": "blobs",
+   "colors": [
+    "#5a6a3c",
+    "#3a4a2c",
+    "#2a2014",
+    "#8a7a50"
+   ],
+   "accent": "#6a7a4c",
+   "challenge": "fabric texture"
+  },
+  {
+   "id": "emr",
+   "name": "Russian EMR (Digital Flora)",
+   "tier": "blue",
+   "kind": "digital",
+   "colors": [
+    "#5e6a46",
+    "#3a4630",
+    "#24261c",
+    "#8a8a62"
+   ],
+   "accent": "#70a040",
+   "challenge": "green accent"
+  },
+  {
+   "id": "red_dawn",
+   "name": "Russian Red Dawn",
+   "tier": "blue",
+   "kind": "splinter",
+   "colors": [
+    "#7a3a2a",
+    "#4a2018",
+    "#a86048",
+    "#2a1410"
+   ],
+   "accent": "#c08a70",
+   "challenge": "weathered"
+  },
+  {
+   "id": "dpm",
+   "name": "British DPM",
+   "tier": "blue",
+   "kind": "dpm",
+   "colors": [
+    "#7a7a4a",
+    "#4a5a2a",
+    "#5a3a20",
+    "#1a1a12"
+   ],
+   "accent": "#9a9a6a",
+   "challenge": "fabric detail"
+  },
+  {
+   "id": "cce",
+   "name": "French CCE",
+   "tier": "blue",
+   "kind": "dpm",
+   "colors": [
+    "#6e7048",
+    "#3a4a2a",
+    "#5e4a2c",
+    "#14140e"
+   ],
+   "accent": "#a0a080",
+   "challenge": "slight fade"
+  },
+  {
+   "id": "m90",
+   "name": "Swedish M90",
+   "tier": "blue",
+   "kind": "splinter",
+   "colors": [
+    "#6a7a5a",
+    "#2c3e2c",
+    "#a8b090",
+    "#1a2418"
+   ],
+   "accent": "#d0d8c0",
+   "challenge": "clean edges"
+  },
+  {
+   "id": "m05",
+   "name": "Finnish M05",
+   "tier": "blue",
+   "kind": "digital",
+   "colors": [
+    "#5a6648",
+    "#3a4636",
+    "#7e8a64",
+    "#22281e"
+   ],
+   "accent": "#6a9040",
+   "challenge": "moss accents"
+  },
+  {
+   "id": "auscam",
+   "name": "Australian AUSCAM",
+   "tier": "blue",
+   "kind": "blobs",
+   "colors": [
+    "#9a8a5a",
+    "#5a5a34",
+    "#6a4428",
+    "#2a2a1a"
+   ],
+   "accent": "#c8b080",
+   "challenge": "desert wear"
+  },
+  {
+   "id": "cadpat",
+   "name": "Canadian CADPAT",
+   "tier": "blue",
+   "kind": "digital",
+   "colors": [
+    "#5a6448",
+    "#3a4434",
+    "#6e6a50",
+    "#1c2018"
+   ],
+   "accent": "#8a9098",
+   "challenge": "cool gray tones"
+  },
+  {
+   "id": "rhodesian",
+   "name": "Rhodesian Brushstroke",
+   "tier": "blue",
+   "kind": "brush",
+   "colors": [
+    "#9a8a5e",
+    "#4a5a2c",
+    "#6a4a2a",
+    "#2a2a18"
+   ],
+   "accent": "#d8c8a0",
+   "challenge": "sun-faded"
+  },
+  {
+   "id": "viet_tiger",
+   "name": "Vietnam Tiger Stripe",
+   "tier": "blue",
+   "kind": "tiger",
+   "colors": [
+    "#6a7240",
+    "#3a3e1e",
+    "#141408",
+    "#8a8450"
+   ],
+   "accent": "#a0a070",
+   "challenge": "fabric wear"
+  },
+  {
+   "id": "pantera",
+   "name": "Polish Pantera",
+   "tier": "blue",
+   "kind": "blobs",
+   "colors": [
+    "#6a6e48",
+    "#3e4a2c",
+    "#5a4228",
+    "#22261a"
+   ],
+   "accent": "#4a7a3a",
+   "challenge": "green depth"
+  },
+  {
+   "id": "skull_field",
+   "name": "Skull Field",
+   "tier": "purple",
+   "kind": "skulls",
+   "colors": [
+    "#1a1a1c",
+    "#d8d4c8",
+    "#3a3a3e",
+    "#8a8478"
+   ],
+   "accent": "#ff2020",
+   "challenge": "red eye glow"
+  },
+  {
+   "id": "neon_kanji",
+   "name": "Neon Kanji Graffiti",
+   "tier": "purple",
+   "kind": "kanji",
+   "colors": [
+    "#141418",
+    "#ff2a8a",
+    "#2affe0",
+    "#ffe02a"
+   ],
+   "accent": "#ffffff",
+   "challenge": "colour pulse"
+  },
+  {
+   "id": "polka_bw",
+   "name": "Polka Dot Black & White",
+   "tier": "purple",
+   "kind": "polka",
+   "colors": [
+    "#101010",
+    "#f4f4f4",
+    "#101010",
+    "#f4f4f4"
+   ],
+   "accent": "#ffffff",
+   "challenge": "size animation"
+  },
+  {
+   "id": "zebra",
+   "name": "Zebra Stripes",
+   "tier": "purple",
+   "kind": "zebra",
+   "colors": [
+    "#f2f2ee",
+    "#0c0c0c",
+    "#f2f2ee",
+    "#0c0c0c"
+   ],
+   "accent": "#ffffff",
+   "challenge": "stripe movement"
+  },
+  {
+   "id": "hex_neon",
+   "name": "Hex Grid Neon",
+   "tier": "purple",
+   "kind": "hexneon",
+   "colors": [
+    "#0a0a14",
+    "#20ffd0",
+    "#ff30c0",
+    "#1a1a2a"
+   ],
+   "accent": "#ffffff",
+   "challenge": "grid pulse"
+  },
+  {
+   "id": "cracked_earth",
+   "name": "Cracked Earth",
+   "tier": "purple",
+   "kind": "cracked",
+   "colors": [
+    "#8a6a4a",
+    "#5a4430",
+    "#2a1e14",
+    "#a88a66"
+   ],
+   "accent": "#ff6010",
+   "challenge": "magma cracks"
+  },
+  {
+   "id": "circuit",
+   "name": "Circuit Board",
+   "tier": "purple",
+   "kind": "circuit",
+   "colors": [
+    "#0e3a24",
+    "#c8a040",
+    "#0a2a1a",
+    "#40ff90"
+   ],
+   "accent": "#80ffc0",
+   "challenge": "travelling traces"
+  },
+  {
+   "id": "silver",
+   "name": "Silver",
+   "tier": "gold",
+   "kind": "silver",
+   "colors": [
+    "#b8bcc4",
+    "#7a7e86",
+    "#e8ecf2",
+    "#50545c"
+   ],
+   "accent": "#ffffff",
+   "challenge": "aim reflection + reload glow"
+  },
+  {
+   "id": "gold",
+   "name": "Gold",
+   "tier": "gold",
+   "kind": "gold",
+   "colors": [
+    "#d8a830",
+    "#9a7018",
+    "#ffe080",
+    "#6a4a10"
+   ],
+   "accent": "#fff0a0",
+   "challenge": "kill flash + full-ammo glow"
+  },
+  {
+   "id": "diamond",
+   "name": "Diamond",
+   "tier": "gold",
+   "kind": "diamond",
+   "colors": [
+    "#c8e8ff",
+    "#8ab8e0",
+    "#ffffff",
+    "#5a88b0"
+   ],
+   "accent": "#ffffff",
+   "challenge": "brighter sparkles when fast"
+  },
+  {
+   "id": "phantom",
+   "name": "Phantom",
+   "tier": "gold",
+   "kind": "phantom",
+   "colors": [
+    "#2a2a36",
+    "#14141c",
+    "#3a3a50",
+    "#9ad8ff"
+   ],
+   "accent": "#c0c0ff",
+   "challenge": "solid when aiming"
+  },
+  {
+   "id": "galaxy",
+   "name": "Galaxy",
+   "tier": "gold",
+   "kind": "galaxy",
+   "colors": [
+    "#0a0618",
+    "#3a1a6a",
+    "#2a6ad0",
+    "#ff60c0"
+   ],
+   "accent": "#ffffff",
+   "challenge": "colour shifts with speed"
+  },
+  {
+   "id": "neon_oni",
+   "name": "Neon Oni",
+   "tier": "pony",
+   "kind": "oni",
+   "colors": [
+    "#0a0a0c",
+    "#ff2040",
+    "#ff9020",
+    "#20e0ff"
+   ],
+   "accent": "#ff4020",
+   "challenge": "oni blinks, embers, roar on inspect"
+  },
+  {
+   "id": "living_coral",
+   "name": "Living Coral",
+   "tier": "pony",
+   "kind": "coral",
+   "colors": [
+    "#04101e",
+    "#ff5a78",
+    "#ffa050",
+    "#5affe6"
+   ],
+   "accent": "#80fff0",
+   "challenge": "full bloom on inspect"
+  },
+  {
+   "id": "glitch_reality",
+   "name": "Glitch Reality",
+   "tier": "pony",
+   "kind": "glitch",
+   "colors": [
+    "#101014",
+    "#ff2060",
+    "#20ffe0",
+    "#f0f0f0"
+   ],
+   "accent": "#ffffff",
+   "challenge": "glitch grows with shooting"
+  },
+  {
+   "id": "void_serpent",
+   "name": "Void Serpent",
+   "tier": "pony",
+   "kind": "serpent",
+   "colors": [
+    "#08060e",
+    "#2a1a40",
+    "#a040ff",
+    "#e0c0ff"
+   ],
+   "accent": "#c060ff",
+   "challenge": "serpent coils on inspect"
+  },
+  {
+   "id": "carnival_hell",
+   "name": "Carnival From Hell",
+   "tier": "pony",
+   "kind": "carnival",
+   "colors": [
+    "#2a0a14",
+    "#ff2a2a",
+    "#e8b030",
+    "#2aff60"
+   ],
+   "accent": "#ffffff",
+   "challenge": "faces laugh on inspect"
+  }
+ ]
+}

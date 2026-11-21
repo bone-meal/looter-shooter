@@ -1,10 +1,9 @@
-Polish1 D4f: the main easter egg The Drowned Bell fully built (models, motion, 10 playable steps, quest.txt)
+Polish1 D5a part 1: gun camo look - 57 camos in one object-space shader, reactive legendary / pony with particles
 
-- data/zombies/quest.json: 10 steps; new spyglass (use on Wreck Cay's top ring, turns to Gull Rock), reforge (the Re-forge awake), key (forge the bell key at the Re-forge); steps already true when they come pass at once
-- tools/blender/quest_main.py: logbook, brine jars (rising brine), lamp posts (swinging lanterns), spyglass, bell key, drowned bell (chains + padlock, swings); game/quest_things.gd draws and animates them (box stand-ins gone)
-- data/zombies/writing/quest.txt: every step's words + THING / HOW notes for the director to rewrite
-- sounds bell_toll, book_page (tools/make_quest_sounds.py); use spots check height; key prompt before the reroll prompt
-- tools/quest_check plays all 10; dev !quest goto on decks / at the forge, jump tells clients; !nav reforge covers jars / bell / log; pair set quest works
+- data/camos.json: all 57 camos of DECISIONS_SKINS (25 green, 15 blue, 7 purple, 5 legendary, 5 pony) with challenge accents, uses per tier, wear names
+- game/camo_skin.gd: every camo drawn from the gun model's own shape (no UVs, every body / part), on painted surfaces only; patterns sized per body; anti-aliased, warped patterns; studio reflections for the metals; wear chips paint and rubs hard edges; legendary / pony react to aim, speed, shots, reloads, kills, ammo, inspect and carry particles
+- player.gd / loot_field.gd wear gun camo; dev !camo; tools/camo_shot.tscn pictures
+- three art passes on the director's notes
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

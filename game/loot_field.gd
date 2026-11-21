@@ -10,6 +10,7 @@ const SoundBoard = preload("res://game/sound_board.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
+const CamoSkin = preload("res://game/camo_skin.gd")
 const LootFilter = preload("res://core/loot_filter.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
 
@@ -67,6 +68,7 @@ func spawn(gun: Dictionary, pos: Vector3, shared: int = 0) -> void:
 	if String(gun_db.tier(tier_id).get("skin", "")) == "pony":
 		var family := String(gun.get("family", ""))
 		PonySkin.apply(model, true, family, gun_db.family_def(family))
+	CamoSkin.dress(model, gun)  # (polish1 D5a) its camo
 	UniqueAttach.apply(model, gun, gun_db)  # a chase gun's gimmick
 	var holder := Node3D.new()
 	holder.position.y = 0.9
