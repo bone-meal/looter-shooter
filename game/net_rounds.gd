@@ -31,6 +31,8 @@ signal run_asked(peer: int, ticket: int, modifiers: PackedStringArray, banner: S
 signal run_started(ticket: int, modifiers: PackedStringArray, buyer: int, banner: String)  # on a client: the party goes into the colosseum; `buyer` pays
 signal quest_asked(peer: int, action: String, index: int)  # on the host: a client did something for the main quest (it stood there: checked)
 signal quest_told(state: Dictionary, news: int)  # on a client: the quest as the host has it; news = the step that was just finished (-1 = none)
+signal reforge_asked(peer: int, action: String)  # on the host: a client did something for the Re-forge quest (it stood there: checked)
+signal reforge_told(state: Dictionary, news: String)  # on a client: the Re-forge quest as the host has it; news = what just happened ("" = nothing)
 signal seat_asked(peer: int, aboard: bool)  # on the host: a client standing by the boat wants a seat, or gives its seat up
 signal helm_input(peer: int, throttle: float, rudder: float)  # on the host: what a client does with the keys at the tiller
 signal boat_state(x: float, z: float, yaw: float, speed: float, seats: PackedInt32Array)  # on a client: the boat as the host runs it
@@ -58,6 +60,8 @@ var power: RefCounted  # core/power_state.gd of this machine
 var builds: RefCounted  # core/build_state.gd of this machine
 var quest: RefCounted  # core/quest_state.gd of this machine
 var quest_near := Callable()  # func(at: Vector3, action: String, index: int) -> bool: that spot fits the client's quest action
+var reforge_state := Callable()  # (polish1 D4e) func() -> Dictionary: the Re-forge quest for a joiner
+var reforge_near := Callable()  # func(at: Vector3, action: String) -> bool: that spot fits the client's Re-forge action
 var painting_near := Callable()  # func(at: Vector3) -> bool: that spot is at the colosseum painting
 var boat_near := Callable()  # func(at: Vector3) -> bool: that spot is near enough to the boat to climb aboard
 var build_near := Callable()  # func(at: Vector3) -> int: the code (BuildState.code_of) of the part or bench at that spot, -1 = none
@@ -544,6 +548,32 @@ func _quest_state(state: Dictionary, news: int) -> void:
 	quest_told.emit(state, news)
 
 
+# --- (polish1 D4e) the Re-forge quest: the same way as the main quest ---
+
+func ask_reforge(action: String) -> void:
+	if is_client():
+		_reforge_ask.rpc_id(1, action)
+
+
+func tell_reforge(state: Dictionary, news: String) -> void:
+	if net.can_send() and net.is_host():
+		_reforge_state.rpc(state, news)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _reforge_ask(action: String) -> void:
+	var peer := multiplayer.get_remote_sender_id()
+	var body: Node3D = net.player_node(peer) if net.is_host() and net.roster.has(peer) else null
+	if body != null and action.length() < 16 and reforge_near.is_valid() and bool(reforge_near.call(body.global_position, action)):
+		reforge_asked.emit(peer, action)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _reforge_state(state: Dictionary, news: String) -> void:
+	if news.length() < 16:
+		reforge_told.emit(state, news)
+
+
 # --- a colosseum run: one player buys the ticket at the painting, the host sends the whole party in ---
 
 func ask_run(ticket: int, modifiers: PackedStringArray, banner: String = "") -> void:
@@ -748,6 +778,8 @@ func _ask_all() -> void:
 		_build_bits.rpc_id(peer, int(builds.call("to_bits")))
 	if quest != null:
 		_quest_state.rpc_id(peer, quest.call("to_dict"), -1)
+	if reforge_state.is_valid():
+		_reforge_state.rpc_id(peer, reforge_state.call(), "")
 	if shelters != null:
 		var boards: PackedInt32Array = shelters.get("boards")
 		for window in boards.size():

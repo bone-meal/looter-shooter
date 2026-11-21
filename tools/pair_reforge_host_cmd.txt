@@ -1,0 +1,1 @@
+!uncap;!wait 2;/god;!net wait_guest;!wait 4;!power part 0;!wait 0.5;!reforge use;!power part 1;!wait 0.5;!reforge use;!power part 2;!wait 0.5;!reforge use;!power bench;!wait 0.5;!reforge use;!wait 70;!reforge h_mid;!reforge kills 14;!wait 3;!reforge h_end;!wait 25

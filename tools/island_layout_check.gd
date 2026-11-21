@@ -7,7 +7,7 @@ extends SceneTree
 
 const Archipelago = preload("res://core/archipelago.gd")
 const DataStore = preload("res://core/data_store.gd")
-const FILES := ["perks", "traps", "upgrade_machine", "power", "buildables", "mystery_box", "zombies/quest", "archipelago"]
+const FILES := ["perks", "traps", "upgrade_machine", "power", "buildables", "mystery_box", "zombies/quest", "archipelago", "reforge_quest"]
 
 var _problems := 0
 var _land: Archipelago
@@ -36,7 +36,7 @@ func _walk(v: Variant, where: String) -> int:
 		var d: Dictionary = v
 		if d.get("island") is String and d.get("at") is Array and _land.index_of(String(d["island"])) >= 0:
 			var p := _land.on_island(String(d["island"]), d["at"])
-			_check(p, "%s %s" % [where, String(d["island"])], 11.0 if where.contains("shelters") else 2.5)  # (a 12 x 9 m hut: 7.5 m to a corner + room to walk round it)
+			_check(p, "%s %s" % [where, String(d["island"])], 11.0 if where.contains("shelters") else 2.5, not bool(d.get("hill_top", false)))  # (a 12 x 9 m hut: 7.5 m to a corner + room to walk round it; hill_top: meant to crown a hill)
 			n += 1
 		for k: Variant in d:
 			n += _walk(d[k], "%s.%s" % [where, str(k)])
@@ -46,10 +46,10 @@ func _walk(v: Variant, where: String) -> int:
 	return n
 
 
-func _check(p: Vector2, what: String, margin: float) -> void:
+func _check(p: Vector2, what: String, margin: float, hills := true) -> void:
 	if where_sea(p):
 		return
-	if _land.blocked(p.x, p.y, margin, true):
+	if _land.blocked(p.x, p.y, margin, hills):
 		_problem("%s at (%.1f, %.1f) is on a hill or against a ridge / ruin / boulder" % [what, p.x, p.y])
 
 

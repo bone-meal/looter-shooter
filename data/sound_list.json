@@ -183,6 +183,18 @@
      "label": "The upgrade machine is done"
     },
     {
+     "id": "foghorn_blast",
+     "label": "The cliff foghorn is cranked (Re-forge quest)"
+    },
+    {
+     "id": "reforge_wake",
+     "label": "The Re-forge wakes"
+    },
+    {
+     "id": "reforge_strike",
+     "label": "The Re-forge's hammer strikes"
+    },
+    {
      "id": "trap_zap",
      "label": "An electric trap runs"
     },

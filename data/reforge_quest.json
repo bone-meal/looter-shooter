@@ -1,0 +1,31 @@
+{
+ "version": 1,
+ "_about": "Polish1 D4e (item 38): the Re-forge sleeps until three maritime pieces are powered, in any order, each needing the island power on. lighthouse: find its brass lens (it lies at one of `lens_spots`, picked per run; anyone who touches it carries it for the party), then fit it at the door. foghorn: hold interact for `hold_seconds` to crank it. tide_wheel: interact to set it turning, then the party kills `kills` enemies within `radius` metres of it in `seconds`, else it stops and can be set turning again. `hill_top`: it crowns a hill on purpose (the layout check allows it). `solid`: its body's half size (reach counts from there). `face`: the model's front looks at the island's centre (in), away from it (out), or at a yaw in degrees. Spots are metres from the island's centre.",
+ "reach": 3.0,
+ "pieces": [
+  {"id": "lighthouse", "kind": "lens", "name": "the Lighthouse", "island": "wreck", "at": [-8.3, 47.3], "face": "in", "model": "quest_lighthouse", "solid": 2.4},
+  {"id": "foghorn", "kind": "hold", "name": "the Cliff Foghorn", "island": "shoal", "at": [-1.5, 0.5], "face": 90.0, "hill_top": true, "model": "quest_foghorn", "solid": 1.2, "hold_seconds": 5.0},
+  {"id": "tide_wheel", "kind": "ritual", "name": "the Tide Wheel", "island": "painter", "at": [4.35, -49.8], "face": "out", "model": "quest_tide_wheel", "solid": 1.0, "kills": 14, "radius": 9.0, "seconds": 60.0}
+ ],
+ "lens_spots": [
+  {"island": "home", "at": [-44.0, 0.0]},
+  {"island": "wreck", "at": [2.5, 28.5]},
+  {"island": "painter", "at": [-10.4, -18.0]},
+  {"island": "shoal", "at": [23.4, 27.9]}
+ ],
+ "lines": {
+  "cold": "The Re-forge is cold. Wake it: light %s.",
+  "awake": "THE RE-FORGE WAKES",
+  "lens_found": "A brass lamp lens. It belongs in a lighthouse.",
+  "lens_needed": "%s: its lamp has no lens. One lies somewhere on the islands.",
+  "lens_fit": "Fit the lens in %s",
+  "crank": "Hold to crank %s",
+  "cranking": "Cranking %s ...",
+  "turn": "Set %s turning",
+  "ritual": "%s turns: %d of %d kills near it, %d s",
+  "ritual_failed": "%s has stopped. Set it turning again.",
+  "no_power": "%s: no power.",
+  "done": "%s is powered.",
+  "piece_done": "%s is powered (%d of 3)."
+ }
+}

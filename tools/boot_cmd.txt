@@ -1,1 +1,1 @@
-!uncap;!immortal;!wait 2;/tp island;!wait 12;!nav note
+!uncap;!immortal;!wait 2;/tp island;!wait 12;!nav reforge;!reforge note

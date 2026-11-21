@@ -111,6 +111,9 @@ const ColosseumBanners = preload("res://core/colosseum_banners.gd")
 const ColosseumBoard = preload("res://game/colosseum_board.gd")
 const CigaretteState = preload("res://core/cigarette_state.gd")
 const QuestState = preload("res://core/quest_state.gd")
+const ReforgeQuest = preload("res://core/reforge_quest.gd")
+const ReforgeThings = preload("res://game/reforge_things.gd")
+const ReforgeMachine = preload("res://game/reforge_machine.gd")
 const QuestThings = preload("res://game/quest_things.gd")
 const SongBook = preload("res://core/song_book.gd")
 const SongFloats = preload("res://game/song_floats.gd")
@@ -283,7 +286,7 @@ var _upgrade_spot := Vector2.ZERO
 var _upgrade_y := 0.0  # (polish1 D4c) the Re-forge's floor height (0 = the ground; it stands on the offshore complex)
 var _perk_y := {}  # (polish1 D4c) perk id -> floor height of its machine (only the ones up in the village / on the complex)
 var _tops_rules: TreetopRules  # (polish1 D4c) the treetop village's rules, made with the land (its buys move things up)
-var _upgrade_node := PerkMachine.new()
+var _upgrade_node := ReforgeMachine.new()  # (polish1 D4e) its own forge-press, woken by its quest
 var _traps: TrapState
 var _trap_cfg: Dictionary  # data/traps.json
 var _trap_nodes := Traps.new()
@@ -373,6 +376,11 @@ var _quest := QuestState.new()  # the islands' main quest (data/zombies/quest.js
 var _quest_things := QuestThings.new()
 var _quest_text_problems := PackedStringArray()  # shown once the HUD exists
 var _quest_spots := {}  # step id -> Vector2 on the land's map (use, kills and boss steps)
+var _reforge := ReforgeQuest.new(DataStore.load_json("res://data/reforge_quest.json"))  # (polish1 D4e) the Re-forge's own quest
+var _reforge_things := ReforgeThings.new()
+var _reforge_spots := {}  # piece id -> Vector2 on the land's map
+var _lens_spots: Array[Vector2] = []
+var _crank_held := 0.0  # seconds our player has held the foghorn's crank
 var _lamp_spots: Array[Vector3] = []  # the shoot step's lamps, world positions (their tops)
 var _songs := SongBook.new()  # the hidden songs (data/zombies/songs.json)
 var _song_floats := SongFloats.new()
@@ -498,6 +506,13 @@ func _ready() -> void:
 			var foot := _land.on_island(String(lamp["island"]), lamp["at"])
 			_land.keep_clear.append(foot)
 			_lamp_spots.append(_flat(foot) + Vector3(0, float(lamp["height"]), 0))
+	for piece: Dictionary in _reforge.cfg["pieces"]:  # (polish1 D4e) the Re-forge quest's lighthouse, foghorn and tide wheel
+		_reforge_spots[String(piece["id"])] = _land.on_island(String(piece["island"]), piece["at"])
+		_land.keep_clear.append(_reforge_spots[String(piece["id"])])
+	for lens: Dictionary in _reforge.cfg["lens_spots"]:
+		_lens_spots.append(_land.on_island(String(lens["island"]), lens["at"]))
+	_land.keep_clear.append_array(_lens_spots)
+	_reforge.reset(_rng.randi())
 	var song_cfg: Dictionary = DataStore.load_json("res://data/zombies/songs.json")
 	_songs.setup(song_cfg)
 	for secret: Dictionary in song_cfg["secrets"]:
@@ -570,6 +585,16 @@ func _ready() -> void:
 			quest_places[id] = _flat(_quest_spots[id])
 	_quest_things.setup(quest_places, _on_lamp_shot)
 	add_child(_quest_things)
+	var reforge_places: Array = []
+	for piece: Dictionary in _reforge.cfg["pieces"]:
+		var id := String(piece["id"])
+		var here: Vector2 = _reforge_spots[id]
+		reforge_places.append({"id": id, "model": String(piece["model"]), "at": _flat(here) + Vector3(0, _land.height_at(here.x, here.y), 0), "yaw": _reforge_yaw(piece), "solid": float(piece["solid"])})  # (the foghorn crowns a hill)
+	var lens_places: Array = []
+	for spot: Vector2 in _lens_spots:
+		lens_places.append(_flat(spot) + Vector3(0, _land.height_at(spot.x, spot.y), 0))
+	_reforge_things.setup(reforge_places, lens_places)
+	add_child(_reforge_things)
 	_song_floats.setup(_song_spots, _on_float_shot)
 	add_child(_song_floats)
 	for problem: String in _quest.text_problems():  # the writers' file: say what it is missing
@@ -894,6 +919,10 @@ func _ready() -> void:
 		net.rounds.quest_near = _quest_fits
 		net.rounds.quest_asked.connect(func(_peer: int, action: String, index: int) -> void: _quest_do(action, index))
 		net.rounds.quest_told.connect(_on_quest_told)
+		net.rounds.reforge_near = _reforge_fits
+		net.rounds.reforge_state = func() -> Dictionary: return _reforge.to_dict(_time)
+		net.rounds.reforge_asked.connect(func(_peer: int, action: String) -> void: _reforge_do(action))
+		net.rounds.reforge_told.connect(_on_reforge_told)
 		net.rounds.painting_near = func(at: Vector3) -> bool: return at.distance_to(_painting) <= PAINTING_RANGE + 1.5
 		net.rounds.run_asked.connect(func(peer: int, ticket: int, mods: PackedStringArray, banner: String) -> void:
 			var run := _banner_run(ticket, mods, banner)  # never a client's word for what a banner holds
@@ -1856,6 +1885,9 @@ func _prompt() -> String:
 				return "The box is spinning ..."
 	if _at_upgrade():
 		return _upgrade_prompt(key)
+	var reforge_text := _reforge_prompt(key)
+	if reforge_text != "":
+		return reforge_text
 	var lever := _trap_at(_player.global_position) if _island_side() else -1
 	if lever >= 0:
 		var trap_name := String(_trap_cfg["traps"][lever]["name"])
@@ -2024,6 +2056,8 @@ func _interact() -> void:
 		_use_box()
 	elif _at_upgrade():
 		_upgrade(false)
+	elif _reforge_piece_here() != "":
+		_use_reforge_piece(_reforge_piece_here())
 	elif _island_side() and _trap_at(_player.global_position) >= 0:
 		_use_trap(_trap_at(_player.global_position))
 	elif _perk_here() != "":
@@ -2634,6 +2668,12 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		guns = DropRules.roll_drops(_player.gun_db, _drops_cfg, _rng, enemy_id, elite != "", wave, _luck_mult(), ItemLevel.for_wave(wave))
 	if not enemy_id.begins_with("boss") and not sea_kill and DropRules.pony_roll(_drops_cfg, _rng):  # the one gun any trash anywhere can leave (a weak pony: the island's level)
 		guns.append(GunGen.generate(_player.gun_db, _rng, 0.0, "", "pony", "", ItemLevel.for_round(_rounds.rules.number) if island_kill else ItemLevel.for_wave(wave)))
+	if island_kill and _quest_host() and _reforge.turning(_time):  # (polish1 D4e) the tide wheel's ritual: kills near it while it turns
+		var counted := _reforge.killed_at(Vector2(where.x - Island.CENTER.x, where.z - Island.CENTER.z), _reforge_spots["tide_wheel"], _time)
+		if counted == "done":
+			_reforge_announce("tide_wheel", false)
+		elif counted == "kill" and net != null:
+			net.rounds.tell_reforge(_reforge.to_dict(_time), "kill")
 	if island_kill and _quest_host():  # the main quest: its boss, or a kill by the brine jars
 		if _director.last_killed.has_meta("quest_boss") and _quest.boss_killed():
 			_quest_advance()
@@ -3723,6 +3763,11 @@ func _close_debris() -> void:
 		(_perk_machines["quick_revive"] as Node3D).visible = true
 	_builds.reset()
 	_quest.reset()
+	_reforge.reset(_rng.randi() if _quest_host() else _reforge.lens_at)  # (a client keeps the host's lens spot until told)
+	_crank_held = 0.0
+	_show_reforge()
+	if net != null and _quest_host():
+		net.rounds.tell_reforge(_reforge.to_dict(_time), "")
 	_show_quest()
 	if _seat >= 0:
 		_put_ashore()
@@ -4132,6 +4177,7 @@ func _show_power() -> void:
 		(_perk_machines[id] as Node).call("set_powered", _power.on)
 	if _upgrade_node.is_inside_tree():
 		_upgrade_node.set_powered(_power.on)
+	_show_reforge()
 
 
 # --- the mystery box, the upgrade machine and the traps ---
@@ -4239,6 +4285,8 @@ func _at_upgrade() -> bool:
 # What the upgrade machine can do with the gun in hand: {"why": text} when nothing, else "reroll" (points, -1 = not
 # for this gun), "up" (points, -1 = no higher tier) and "to" (the higher tier's id).
 func _upgrade_offer() -> Dictionary:
+	if not _reforge.awake():  # (polish1 D4e) its quest wakes it
+		return {"why": String(_reforge.cfg["lines"]["cold"]) % _reforge.missing_names()}
 	if not _power.on:
 		return {"why": "The upgrade machine has no power."}
 	var hand := _player.hand_index()
@@ -4289,6 +4337,8 @@ func _upgrade(up: bool) -> void:
 	_stats.add("upgrades")
 	_player.refresh_held()
 	_sounds.call("play", "upgrade_done")
+	_sounds.call("play", "reforge_strike")
+	_upgrade_node.strike()
 	_player_hud.notice("%s" % GunStats.display_name(_player.gun_db, made))
 	save_profile()
 
@@ -4823,6 +4873,173 @@ func _quest_reward() -> void:
 			_field.spawn(gun, _player.global_position + Vector3(0, 0, -1.2))
 			_player_hud.notice("%s  %s" % [_quest.quest_line("reward"), GunStats.display_name(_player.gun_db, gun)])
 	save_profile()
+
+
+# --- (polish1 D4e) the Re-forge's quest: core/reforge_quest.gd decides, game/reforge_things.gd shows ---
+
+# The piece's model looks at the island's middle ("in"), away from it ("out") or at a yaw in degrees (its front = +Z).
+func _reforge_yaw(piece: Dictionary) -> float:
+	var face: Variant = piece.get("face", "in")
+	if face is float or face is int:
+		return deg_to_rad(float(face))
+	var middle: Vector2 = _land.islands[_land.index_of(String(piece["island"]))]["at"]
+	var here: Vector2 = _reforge_spots[String(piece["id"])]
+	var look := (middle - here) * (1.0 if String(face) == "in" else -1.0)
+	return atan2(look.x, look.y)
+
+
+# How near a piece counts as at it: its body plus the reach.
+func _reforge_reach(id: String) -> float:
+	return float(_reforge.piece(id).get("solid", 1.0)) + float(_reforge.cfg["reach"])
+
+
+func _reforge_near(at: Vector3, spot: Vector2, reach: float) -> bool:
+	var p := at - Island.CENTER
+	return Vector2(p.x, p.z).distance_to(spot) <= reach and absf(p.y - _land.height_at(spot.x, spot.y)) < 3.0
+
+
+# What of the quest our player stands at: "lens" (the lens lying there), a piece's id, "" = nothing.
+func _reforge_piece_here() -> String:
+	if not _island_side() or _seat >= 0:
+		return ""
+	if not _reforge.lens_found and _reforge_near(_player.global_position, _lens_spots[_reforge.lens_at], float(_reforge.cfg["reach"])):
+		return "lens"
+	for id: String in _reforge_spots:
+		if _reforge_near(_player.global_position, _reforge_spots[id], _reforge_reach(id)):
+			return id
+	return ""
+
+
+# Host: does a client's claim fit where it stands?
+func _reforge_fits(at: Vector3, action: String) -> bool:
+	if action == "lens":
+		return _reforge_near(at, _lens_spots[_reforge.lens_at], float(_reforge.cfg["reach"]) + 1.5)
+	var id := "tide_wheel" if action == "wheel" else action
+	return _reforge_spots.has(id) and _reforge_near(at, _reforge_spots[id], _reforge_reach(id) + 1.5)
+
+
+func _named(id: String) -> String:
+	var said := String(_reforge.piece(id)["name"])
+	return said.substr(0, 1).to_upper() + said.substr(1)
+
+
+func _reforge_prompt(key: String) -> String:
+	var lines: Dictionary = _reforge.cfg["lines"]
+	if _island_side() and _reforge.turning(_time) and _reforge_near(_player.global_position, _reforge_spots["tide_wheel"], float(_reforge.piece("tide_wheel")["radius"]) + 6.0):
+		return String(lines["ritual"]) % [_named("tide_wheel"), _reforge.kills, int(_reforge.piece("tide_wheel")["kills"]), ceili(_reforge.turning_until - _time)]
+	var id := _reforge_piece_here()
+	if id == "":
+		return ""
+	if id == "lens":
+		return "[%s] Take the brass lens" % key
+	var called := String(_reforge.piece(id)["name"])
+	if _reforge.done.has(id):
+		return String(lines["done"]) % _named(id)
+	if not _power.on:
+		return String(lines["no_power"]) % _named(id)
+	match String(_reforge.piece(id)["kind"]):
+		"lens":
+			return ("[%s] " % key + String(lines["lens_fit"]) % called) if _reforge.lens_found else String(lines["lens_needed"]) % _named(id)
+		"hold":
+			return "[hold %s] %s (%d%%)" % [key, String(lines["crank"]) % called, roundi(_crank_held / float(_reforge.piece(id)["hold_seconds"]) * 100.0)]
+		"ritual":
+			return "[%s] %s" % [key, String(lines["turn"]) % called]
+	return ""
+
+
+# Interact at a piece or the lens (the foghorn is held instead: _run_reforge).
+func _use_reforge_piece(id: String) -> void:
+	if id == "lens":
+		_reforge_try("lens")
+	elif _power.on and not _reforge.done.has(id):
+		match String(_reforge.piece(id)["kind"]):
+			"lens":
+				if _reforge.lens_found:
+					_reforge_try(id)
+			"ritual":
+				if not _reforge.turning(_time):
+					_reforge_try("wheel")
+
+
+func _reforge_try(action: String) -> void:
+	if _quest_host():
+		_reforge_do(action)
+	else:
+		net.rounds.ask_reforge(action)
+
+
+# Host: a player did something for the quest.
+func _reforge_do(action: String) -> void:
+	var was_awake := _reforge.awake()
+	match action:
+		"lens":
+			if _reforge.find_lens():
+				_reforge_announce("lens", was_awake)
+		"lighthouse", "foghorn":
+			if _reforge.power(action, _power.on):
+				_reforge_announce(action, was_awake)
+		"wheel":
+			if _reforge.start_turning(_time, _power.on):
+				_reforge_announce("turning", was_awake)
+
+
+# Host: show what happened here and tell everybody.
+func _reforge_announce(news: String, was_awake: bool) -> void:
+	_reforge_news(news, was_awake)
+	if net != null:
+		net.rounds.tell_reforge(_reforge.to_dict(_time), news)
+
+
+# A client: the quest as the host has it.
+func _on_reforge_told(state: Dictionary, news: String) -> void:
+	var was_awake := _reforge.awake()
+	_reforge.from_dict(state, _time)
+	_reforge_news(news, was_awake)
+
+
+# Shows the new state; `news`: "lens", a piece's id (just powered), "turning", "stopped", "kill" or "".
+func _reforge_news(news: String, was_awake: bool) -> void:
+	_show_reforge()
+	if news == "" or news == "kill" or not _island_side():
+		return
+	var lines: Dictionary = _reforge.cfg["lines"]
+	match news:
+		"lens":
+			_sounds.call("play", "part_take")
+			_player_hud.notice(String(lines["lens_found"]))
+		"turning":
+			_sounds.call("play", "quest_step")
+			_player_hud.notice(String(lines["ritual"]) % [_named("tide_wheel"), 0, int(_reforge.piece("tide_wheel")["kills"]), int(_reforge.piece("tide_wheel")["seconds"])])
+		"stopped":
+			_player_hud.notice(String(lines["ritual_failed"]) % _named("tide_wheel"))
+		_:
+			_sounds.call("play", "foghorn_blast" if news == "foghorn" else "power_on")
+			_player_hud.notice(String(lines["piece_done"]) % [_named(news), _reforge.done_count()])
+	if _reforge.awake() and not was_awake:
+		_sounds.call("play", "reforge_wake")
+		_player_hud.callout(String(lines["awake"]), Color(0.85, 0.55, 1.0))
+
+
+func _show_reforge() -> void:
+	if _reforge_things.is_inside_tree():
+		_reforge_things.show_state(_reforge.done, _reforge.lens_at, _reforge.lens_found, _reforge.turning(_time), _crank_held > 0.0, _power.on)
+	if _upgrade_node.is_inside_tree():
+		_upgrade_node.set_awake(_reforge.awake())
+
+
+# Every frame: holding interact at the foghorn cranks it; the host stops a tide wheel whose time ran out.
+func _run_reforge(delta: float) -> void:
+	if _quest_host() and _reforge.stopped(_time):
+		_reforge_announce("stopped", _reforge.awake())
+	var cranking := _island_side() and not _player.downed and Input.is_action_pressed("interact") and _power.on and not _reforge.done.has("foghorn") and _reforge_piece_here() == "foghorn"
+	var was := _crank_held > 0.0
+	_crank_held = _crank_held + delta if cranking else 0.0
+	if was != (_crank_held > 0.0):
+		_show_reforge()
+	if _crank_held >= float(_reforge.piece("foghorn")["hold_seconds"]):
+		_crank_held = 0.0
+		_show_reforge()
+		_reforge_try("foghorn")
 
 
 # Every frame: the boss step sends its enemy once somebody of the party stands near its spot (host).
@@ -5679,6 +5896,7 @@ func _process(delta: float) -> void:
 	_run_course(delta)
 	_run_stats(delta)
 	_run_quest()
+	_run_reforge(delta)
 	if _in_arena and not _run_fx.is_empty():
 		_run_modifiers(delta)
 	_host_run(delta)

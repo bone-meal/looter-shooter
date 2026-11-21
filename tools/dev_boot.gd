@@ -2525,6 +2525,50 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var quest: RefCounted = session.get("_quest")
 				_lines.append("QUEST %s: step %d (%s, %s), count %d, lamps %s, boss out %s, tracker '%s', points %d" % [" ".join(words.slice(1)), int(quest.get("step")), String((quest.call("current") as Dictionary).get("id", "done")), String(quest.call("kind")), int(quest.get("count")), str(quest.get("shot")), str(quest.get("boss_out")),
 					String((session.get("_player_hud") as Node).get("quest_text")).replace("\n", " | "), int((session.call("score") as RefCounted).get("points"))])
+		"reforge":  # (polish1 D4e) "!reforge goto lens|lighthouse|foghorn|tide_wheel|forge [m]": stand there (m in front of the forge); "!reforge use": interact where we stand;
+			# "!reforge crank": hold interact (5.5 s); "!reforge kills n": n kills by the turning tide wheel (host); "!reforge wake": every piece done
+			# (host); "!reforge <note>": where it stands
+			var rq: RefCounted = session.get("_reforge")
+			if words.size() > 2 and words[1] == "goto":
+				var to_r: Vector2
+				if words[2] == "lens":
+					to_r = (session.get("_lens_spots") as Array)[int(rq.get("lens_at"))]
+				elif words[2] == "forge":
+					var fg: Node3D = session.get("_upgrade_node")
+					player.call("teleport", fg.global_position + fg.global_basis.z * (float(words[3]) if words.size() > 3 else 2.4) + Vector3(0, 0.2, 0), 0.0)
+					player.call("look_at_point", fg.global_position + Vector3(0, 1.6, 0))
+					to_r = Vector2.INF
+				else:
+					to_r = (session.get("_reforge_spots") as Dictionary)[words[2]]
+				if to_r != Vector2.INF:
+					var land_g: RefCounted = session.get("_land")
+					var back := 1.0 if words[2] == "lens" else float(rq.call("piece", words[2]).get("solid", 1.0)) + 1.2
+					var mid_g: Vector2 = (land_g.get("islands") as Array)[int(land_g.call("island_near", to_r.x, to_r.y))]["at"]
+					var stand := to_r + (mid_g - to_r).normalized() * back
+					player.call("teleport", Vector3(500.0 + stand.x, float(land_g.call("height_at", stand.x, stand.y)) + 0.2, stand.y), 0.0)
+					player.call("look_at_point", Vector3(500.0 + to_r.x, float(land_g.call("height_at", to_r.x, to_r.y)) + 1.0, to_r.y))
+			elif words.size() > 1 and words[1] == "use":
+				session.call("_interact")
+			elif words.size() > 1 and words[1] == "crank":
+				Input.action_press("interact")
+				await get_tree().create_timer(5.5).timeout
+				Input.action_release("interact")
+			elif words.size() > 2 and words[1] == "kills":
+				var wheel: Vector2 = (session.get("_reforge_spots") as Dictionary)["tide_wheel"]
+				for k in int(words[2]):
+					var r_k := String(rq.call("killed_at", wheel + Vector2(1, 1), wheel, float(session.get("_time"))))
+					if r_k == "done":
+						session.call("_reforge_announce", "tide_wheel", false)
+					elif r_k == "kill":
+						session.call("_reforge_announce", "kill", false)
+			elif words.size() > 1 and words[1] == "wake":
+				for id_w: String in ["lighthouse", "foghorn", "tide_wheel"]:
+					(rq.get("done") as Dictionary)[id_w] = true
+				session.call("_reforge_announce", "tide_wheel", false)
+			else:
+				var forge_n: Node3D = session.get("_upgrade_node")
+				_lines.append("REFORGE %s: lens at %d found %s, done %s, turning %s (%.0f s left), kills %d, awake %s, prompt '%s', forge at %s, crank %.1f" % [" ".join(words.slice(1)), int(rq.get("lens_at")), str(rq.get("lens_found")), str((rq.get("done") as Dictionary).keys()), str(rq.call("turning", float(session.get("_time")))),
+					maxf(float(rq.get("turning_until")) - float(session.get("_time")), 0.0), int(rq.get("kills")), str(rq.call("awake")), String(session.call("_prompt")), str(forge_n.global_position - Vector3(500, 0, 0)), float(session.get("_crank_held"))])
 		"song":  # "!song n": shoot all three floats of hidden song n (1-based); "!song <note>": unlocked songs, the files found, what plays
 			var book: RefCounted = session.get("_songs")
 			if words.size() > 1 and words[1].is_valid_int():
@@ -3263,6 +3307,52 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							hut_stalls.append("hut %d: walked in through the SHUT door" % hut)
 						session.call("_toggle_door", door_e)
 					_lines.append("NAV huts %s: %d runs, %d stalls, got inside by the door %d%s" % [words[2] if words.size() > 2 else "home", hut_runs, hut_stalls.size(), inside_ok, ("; " + "; ".join(hut_stalls)) if not hut_stalls.is_empty() else ""])
+				"reforge":  # (polish1 D4e) "!nav reforge": run past the Re-forge (on the rig's main deck) and the three pieces of its quest
+					# on all four sides both ways, grazing them; a line per stall (under 1.5 m in 1.5 s)
+					var land_r: RefCounted = session.get("_land")
+					var things: Array = []  # [centre Vector2, half size, floor y, label]
+					var forge: Node3D = session.get("_upgrade_node")
+					things.append([Vector2(forge.global_position.x - centre.x, forge.global_position.z - centre.z), 2.5, forge.global_position.y - centre.y, "re-forge"])
+					var halves := {"lighthouse": 2.6, "foghorn": 1.6, "tide_wheel": 3.2}
+					for id: String in (session.get("_reforge_spots") as Dictionary):
+						var at_r: Vector2 = (session.get("_reforge_spots") as Dictionary)[id]
+						things.append([at_r, float(halves.get(id, 2.0)), float(land_r.call("height_at", at_r.x, at_r.y)), id])
+					var runs_r := 0
+					var stalls_r: PackedStringArray = []
+					for thing: Array in things:
+						var c_r: Vector2 = thing[0]
+						var h_r := float(thing[1]) + 0.9
+						for side in 4:
+							var along := Vector2(1, 0) if side % 2 == 0 else Vector2(0, 1)
+							var off := Vector2(0, 1) if side % 2 == 0 else Vector2(1, 0)
+							off *= (h_r if side < 2 else -h_r)
+							for dir: float in [1.0, -1.0]:
+								var s_r := c_r + off - along * (h_r + 1.5) * dir
+								var g_r := c_r + off + along * (h_r + 1.5) * dir
+								var y_s := float(thing[2]) if thing[3] == "re-forge" else float(land_r.call("height_at", s_r.x, s_r.y))
+								var y_g := float(thing[2]) if thing[3] == "re-forge" else float(land_r.call("height_at", g_r.x, g_r.y))
+								if y_s < -0.3 or y_g < -0.3:
+									continue  # in the sea
+								var tries_r := 0
+								while tries_r < 8 and _solid_at(player, centre + Vector3(s_r.x, y_s + 0.9, s_r.y)):  # a start inside another prop: step along the run
+									s_r += along * 0.5 * dir
+									tries_r += 1
+								player.call("teleport", centre + Vector3(s_r.x, y_s + 0.2, s_r.y), 0.0)
+								await get_tree().create_timer(0.25).timeout
+								player.call("look_at_point", centre + Vector3(g_r.x, y_g + 1.6, g_r.y))
+								var from_r := player.global_position
+								var want_r := minf(s_r.distance_to(g_r) - 0.6, 6.0)
+								Input.action_press("move_forward")
+								var held_r := 0.0
+								while held_r < 1.5 and Vector2(player.global_position.x - from_r.x, player.global_position.z - from_r.z).length() < want_r:
+									await get_tree().process_frame
+									held_r += get_process_delta_time()
+								Input.action_release("move_forward")
+								runs_r += 1
+								var moved_r := Vector2(player.global_position.x - from_r.x, player.global_position.z - from_r.z).length()
+								if moved_r < minf(1.5, want_r):
+									stalls_r.append("%s side %d dir %d moved %.2f, in front: %s, touching: %s" % [thing[3], side, int(dir), moved_r, _what_ahead(player), _touching(player)])
+					_lines.append("NAV reforge: %d runs, %d stalls%s" % [runs_r, stalls_r.size(), ("; " + "; ".join(stalls_r)) if not stalls_r.is_empty() else ""])
 				"decks":  # (polish1 D4c) "!nav decks <island>": every way open first; round each ring deck both ways, across each stilt deck, over
 					# each bridge both ways; a line per stall (under 1.5 m in 1.5 s) or fall (more than 2 m down)
 					var tt2: Node3D = session.get("_treetops")
@@ -4474,6 +4564,17 @@ func _what_ahead(body: Node3D) -> String:
 
 
 # (polish1 D4b) What a 0.6 m ball round the body's middle touches: "Node (parent) at x z" each, for stall lines.
+# Is there something solid within 0.45 m of a world spot (the player's own body left out)?
+func _solid_at(body: Node3D, at: Vector3) -> bool:
+	var ball := PhysicsShapeQueryParameters3D.new()
+	var sphere := SphereShape3D.new()
+	sphere.radius = 0.45
+	ball.shape = sphere
+	ball.transform = Transform3D(Basis(), at)
+	ball.exclude = [(body as CollisionObject3D).get_rid()]
+	return not body.get_world_3d().direct_space_state.intersect_shape(ball, 1).is_empty()
+
+
 func _touching(body: Node3D) -> String:
 	var ball := PhysicsShapeQueryParameters3D.new()
 	var sphere := SphereShape3D.new()
