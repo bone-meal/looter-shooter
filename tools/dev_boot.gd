@@ -3025,6 +3025,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					item_k["wear"] = 0.03
 					_lines.append("KNIFE give: %s %s" % [str(lk_k.call("add", item_k)), str(item_k)])
 					(session.get("_knife_tab") as Control).call("refresh")
+					if words.has("carry"):  # "... carry": and carry it straight away
+						session.call("_equip_knife", (lk_k.get("items") as Array).size() - 1)
 				"force":
 					session.set("_force_knife", true)
 				"tab":
@@ -3038,6 +3040,62 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("KNIFE press %s: %s" % [key_k, (session.get("_knife_tab") as Control).call("press", key_k)])
 				"equip":
 					session.call("_equip_knife", int(words[2]))
+				"blow":  # "!knife blow <slash|stab> [n] [boss] [tap] [near]": n knife blows on the nearest living enemy (or boss), as if landed, so the power answers; "tap" = 1 damage (the foe lives), "near" = we stand 3 m from it, facing it
+					var kp_k: Node = player.get("knife_powers")
+					var sc_k: RefCounted = session.get("_score")
+					var landed_k := 0
+					var last_k := "none"
+					for b_k in (int(words[3]) if words.size() > 3 and words[3].is_valid_int() else 1):
+						var near_k: Node3D = null
+						for e_k: Variant in (session.call("director").call("enemy_list") as Array):
+							if is_instance_valid(e_k) and not ((e_k as Node).get("health") as RefCounted).call("is_dead") and (not words.has("boss") or String((e_k as Node).get("enemy_id")).begins_with("boss")) and (near_k == null or (e_k as Node3D).global_position.distance_to(player.global_position) < near_k.global_position.distance_to(player.global_position)):
+								near_k = e_k
+						if near_k == null or kp_k == null:
+							break
+						if words.has("near"):
+							var flat_k := (player.global_position - near_k.global_position) * Vector3(1, 0, 1)
+							player.global_position = near_k.global_position + (flat_k.normalized() if flat_k.length() > 0.1 else Vector3.BACK) * 3.0 + Vector3.UP * 0.3
+							player.call("look_at_point", near_k.global_position + Vector3.UP)
+						var dealt_k := 1.0 if words.has("tap") else float(player.call("knife_damage", words[2]))
+						last_k = String(near_k.get("enemy_id"))
+						sc_k.set("blow", "melee")
+						near_k.call("on_hit", dealt_k, near_k.global_position + Vector3.UP, Vector3.UP)
+						if is_instance_valid(near_k):
+							kp_k.call("on_hit", words[2], near_k, near_k.global_position + Vector3.UP, dealt_k)
+						sc_k.set("blow", "")
+						landed_k += 1
+						await get_tree().create_timer(0.35).timeout
+					_lines.append("KNIFE blow %s: %d landed, last on %s, power '%s'" % [words[2], landed_k, last_k, String((kp_k.get("fx") as RefCounted).get("power")) if kp_k != null else "none"])
+				"drain", "pools":  # "!knife drain <note>": every carried gun's spare pool emptied (to see Party Ammo); "!knife pools <note>": what is in them
+					var inv_k: RefCounted = player.get("inventory")
+					var pl_k: RefCounted = player.get("pools")
+					var left_k := PackedStringArray()
+					for i_k in int(inv_k.get("holster_count")):
+						var body_k := String(inv_k.call("holster_body", i_k))
+						if body_k != "":
+							if words[1] == "drain":
+								pl_k.call("take", body_k, 99999)
+							left_k.append("%s %d/%d" % [body_k, int(pl_k.call("left", body_k)), int(pl_k.call("size_of", body_k))])
+					_lines.append("KNIFE %s %s: %s" % [words[1], " ".join(words.slice(2)), ", ".join(left_k)])
+				"laugh":  # "!knife laugh": a blow that would down us, twice (Last Laugh saves the first only)
+					var hp_k: RefCounted = player.get("health")
+					var before_k := float(hp_k.get("hp"))
+					player.call("_hurt", before_k + 50.0)
+					var after_k := float(hp_k.get("hp"))
+					var dodge_k := float(player.get("knife_powers").call("incoming", 80.0)) if player.get("knife_powers") != null else -1.0
+					_lines.append("KNIFE laugh: hp %.0f -> %.0f, a blow right after does %.0f, downed %s" % [before_k, after_k, dodge_k, str(player.get("downed"))])
+				"power":  # "!knife power <note>": the carried power, its strength and the live buffs
+					var kp2_k: Node = player.get("knife_powers")
+					var fx_k: RefCounted = kp2_k.get("fx") if kp2_k != null else null
+					_lines.append("KNIFE power %s: %s strength %.2f speed x%.2f rate x%.2f luck %.0f hp %.0f/%.0f" % [" ".join(words.slice(2)), String(fx_k.get("power")) if fx_k != null else "none", float(fx_k.get("scale")) if fx_k != null else 0.0, float(kp2_k.call("speed_mult")) if kp2_k != null else 1.0, float(kp2_k.call("rate_mult")) if kp2_k != null else 1.0, float(kp2_k.call("luck_pct")) if kp2_k != null else 0.0, float((player.get("health") as RefCounted).get("hp")), float((player.get("health") as RefCounted).get("max_hp"))])
+				"bossdrop":  # "!knife bossdrop": the boss knife drop as if a boss died and the roll won (host / alone)
+					var keep_k: Dictionary = (rules_k.get("cfg") as Dictionary)["drops"]
+					var odds_k := float(keep_k["boss"])
+					keep_k["boss"] = 1.0
+					var had_k := (lk_k.get("items") as Array).size()
+					session.call("_boss_knives")
+					keep_k["boss"] = odds_k
+					_lines.append("KNIFE bossdrop: owned %d -> %d, newest %s" % [had_k, (lk_k.get("items") as Array).size(), str((lk_k.get("items") as Array)[-1])])
 				"kills":
 					var carried_k: Dictionary = lk_k.call("carried")
 					if not carried_k.is_empty():

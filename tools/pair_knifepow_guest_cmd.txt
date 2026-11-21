@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 20;!net guest_in;!wait 6;!net to_other;!knife drain g_drained;!wait 16;!knife pools g_after_ammo;!immortal off;!hurt 1000;!wait 1;!downs g_down;!downs wait_up;!downs g_up;!immortal;!wait 8;!knife g_after_boss

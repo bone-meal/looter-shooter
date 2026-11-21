@@ -1,6 +1,6 @@
 {
 	"version": 1,
-	"_about": "Skinned knives (polish1 D5b, DECISIONS_SKINS + diary/DESIGN_KNIVES.md, the director's draft to edit). A skinned knife = its own item {finish, type, pattern, wear, strength, kills}: finish = an id below (look + power), type = a knife type of data/knives.json, pattern 0-999 decides how the family's pattern lands (and its chase names), wear 0-1, strength = the power's roll (0.9-1.1). families: the look (kind = the shader's pattern) and its chase names by pattern (`chase`: [name, share of patterns], first match wins; phases = names for the rest by pattern). tiers: odds of a drop's tier. levels: kills needed from level n to n+1 = base + step * n, up to max; power strength from power_min to 1 and knife damage from 1 to damage_max across the levels. drops: chance of a knife from each crate (it takes the gun's place). powers: name + text; {n} = the number at full strength (level 30, strength 1), shown scaled by the knife's level and roll. The powers' effects are built in a later step (D5b part 2).",
+	"_about": "Skinned knives (polish1 D5b, DECISIONS_SKINS + diary/DESIGN_KNIVES.md, the director's draft to edit). A skinned knife = its own item {finish, type, pattern, wear, strength, kills}: finish = an id below (look + power), type = a knife type of data/knives.json, pattern 0-999 decides how the family's pattern lands (and its chase names), wear 0-1, strength = the power's roll (0.9-1.1). families: the look (kind = the shader's pattern) and its chase names by pattern (`chase`: [name, share of patterns], first match wins; phases = names for the rest by pattern). tiers: odds of a drop's tier. levels: kills needed from level n to n+1 = base + step * n, up to max; power strength from power_min to 1 and knife damage from 1 to damage_max across the levels. drops: chance of a knife from each crate (it takes the gun's place). powers: name + text; {n} = the number at full strength (level 30, strength 1), shown scaled by the knife's level and roll. The powers' effects are built in a later step (D5b part 2). powers.<id>.p: the power's numbers (n = the main number at full strength, scaled by level and roll; cooldowns, radii, seconds as they are). drops.boss: each player's chance of a knife when a boss dies (the host rolls it).",
 	"tiers": {
 		"blue": 0.6,
 		"purple": 0.28,
@@ -21,7 +21,8 @@
 	"drops": {
 		"bronze": 0.0,
 		"silver": 0.003,
-		"gold": 0.01
+		"gold": 0.01,
+		"boss": 0.02
 	},
 	"collections": {
 		"foundry": "The Foundry Collection",
@@ -555,115 +556,248 @@
 	"powers": {
 		"whetstone": {
 			"name": "Whetstone",
-			"text": "A knife kill refills {30}% of the gun in hand's magazine."
+			"text": "A knife kill refills {30}% of the gun in hand's magazine.",
+			"p": {
+				"n": 30
+			}
 		},
 		"second_breath": {
 			"name": "Second Breath",
-			"text": "A knife kill heals you {12}% of your health."
+			"text": "A knife kill heals you {12}% of your health.",
+			"p": {
+				"n": 12
+			}
 		},
 		"spark_shower": {
 			"name": "Spark Shower",
-			"text": "Stabs throw sparks that burn enemies within 3 m for 4 s."
+			"text": "Stabs throw sparks that burn enemies within 3 m for 4 s.",
+			"p": {
+				"radius": 3.0,
+				"seconds": 4.0,
+				"dps": 0.15
+			}
 		},
 		"hardened": {
 			"name": "Hardened",
-			"text": "For 6 s after a knife kill you take {30}% less damage."
+			"text": "For 6 s after a knife kill you take {30}% less damage.",
+			"p": {
+				"n": 30,
+				"seconds": 6.0
+			}
 		},
 		"meltdown": {
 			"name": "Meltdown",
-			"text": "A stab marks the enemy: 2 s later it bursts in a fire blast. 12 s cooldown."
+			"text": "A stab marks the enemy: 2 s later it bursts in a fire blast. 12 s cooldown.",
+			"p": {
+				"cooldown": 12.0,
+				"delay": 2.0,
+				"radius": 4.0,
+				"damage": 3.0,
+				"boss": 0.5
+			}
 		},
 		"anvil_drop": {
 			"name": "Anvil Drop",
-			"text": "Hold stab to slam the ground: everything within 6 m is knocked back and stunned for 1.5 s. 25 s cooldown."
+			"text": "Hold stab to slam the ground: everything within 6 m is knocked back and stunned for 1.5 s. 25 s cooldown.",
+			"p": {
+				"cooldown": 25.0,
+				"radius": 6.0,
+				"stun": 1.5,
+				"push": 9.0
+			}
 		},
 		"living_metal": {
 			"name": "Living Metal",
-			"text": "Every stab leaves a pool of molten metal; knife kills in a pool set the next enemy alight."
+			"text": "Every stab leaves a pool of molten metal; knife kills in a pool set the next enemy alight.",
+			"p": {
+				"seconds": 4.0,
+				"length": 2.5,
+				"ignite": 6.0
+			}
 		},
 		"undertow": {
 			"name": "Undertow",
-			"text": "Knife kills pull loot and ammo within {8} m to you."
+			"text": "Knife kills pull loot and ammo within {8} m to you.",
+			"p": {
+				"n": 8
+			}
 		},
 		"salt_wound": {
 			"name": "Salt Wound",
-			"text": "Slashed enemies take {15}% more damage from everyone for 5 s."
+			"text": "Slashed enemies take {15}% more damage from everyone for 5 s.",
+			"p": {
+				"n": 15,
+				"seconds": 5.0
+			}
 		},
 		"refraction": {
 			"name": "Refraction",
-			"text": "Knife hits make {20}% of hits on you miss for 4 s."
+			"text": "Knife hits make {20}% of hits on you miss for 4 s.",
+			"p": {
+				"n": 20,
+				"seconds": 4.0
+			}
 		},
 		"drag_down": {
 			"name": "Drag Down",
-			"text": "A stab roots the enemy for 2 s (elites 1 s)."
+			"text": "A stab roots the enemy for 2 s (elites 1 s).",
+			"p": {
+				"seconds": 2.0,
+				"elite": 1.0
+			}
 		},
 		"party_ammo": {
 			"name": "Party Ammo",
-			"text": "Every 5th knife kill refills {25}% spare ammo for the party within 20 m."
+			"text": "Every 5th knife kill refills {25}% spare ammo for the party within 20 m.",
+			"p": {
+				"n": 25,
+				"every": 5,
+				"reach": 20.0
+			}
 		},
 		"deep_light": {
 			"name": "Deep Light",
-			"text": "Knife kills light a lure for 6 s that draws enemies to it. 18 s cooldown."
+			"text": "Knife kills light a lure for 6 s that draws enemies to it. 18 s cooldown.",
+			"p": {
+				"cooldown": 18.0
+			}
 		},
 		"the_bite": {
 			"name": "The Bite",
-			"text": "A full slash combo sends a ghost shark through a line of enemies. 15 s cooldown."
+			"text": "A full slash combo sends a ghost shark through a line of enemies. 15 s cooldown.",
+			"p": {
+				"combo": 3,
+				"window": 2.5,
+				"cooldown": 15.0,
+				"length": 10.0,
+				"damage": 4.0
+			}
 		},
 		"regrowth": {
 			"name": "Regrowth",
-			"text": "After a knife kill you regenerate {2}% health a second for 5 s."
+			"text": "After a knife kill you regenerate {2}% health a second for 5 s.",
+			"p": {
+				"n": 2,
+				"seconds": 5.0
+			}
 		},
 		"venom": {
 			"name": "Venom",
-			"text": "Slashes poison the enemy over 4 s (stacks 3 times)."
+			"text": "Slashes poison the enemy over 4 s (stacks 3 times).",
+			"p": {
+				"dps": 0.12,
+				"seconds": 4.0,
+				"stacks": 3
+			}
 		},
 		"northern_step": {
 			"name": "Northern Step",
-			"text": "Knife kills give +{25}% move speed for 4 s and reset your dodge."
+			"text": "Knife kills give +{25}% move speed for 4 s and reset your dodge.",
+			"p": {
+				"n": 25,
+				"seconds": 4.0
+			}
 		},
 		"loot_chaser": {
 			"name": "Loot Chaser",
-			"text": "Knife kills raise your loot luck by {20}% for 30 s (stacks 3 times)."
+			"text": "Knife kills raise your loot luck by {20}% for 30 s (stacks 3 times).",
+			"p": {
+				"n": 20,
+				"seconds": 30.0,
+				"stacks": 3
+			}
 		},
 		"party_revive": {
 			"name": "Party Revive",
-			"text": "A knife kill within 6 m of a downed teammate revives them at {30}% health. 45 s cooldown."
+			"text": "A knife kill within 6 m of a downed teammate revives them at {30}% health. 45 s cooldown.",
+			"p": {
+				"n": 30,
+				"cooldown": 45.0,
+				"reach": 6.0
+			}
 		},
 		"lightning": {
 			"name": "Lightning",
-			"text": "Every 4th knife hit calls lightning that chains to 4 enemies."
+			"text": "Every 4th knife hit calls lightning that chains to 4 enemies.",
+			"p": {
+				"every": 4
+			}
 		},
 		"spirit_pack": {
 			"name": "Spirit Pack",
-			"text": "Knife kills summon a spirit wolf that fights beside you for 10 s (2 at most)."
+			"text": "Knife kills summon a spirit wolf that fights beside you for 10 s (2 at most).",
+			"p": {
+				"cooldown": 10.0
+			}
 		},
 		"sugar_rush": {
 			"name": "Sugar Rush",
-			"text": "Knife kills give +{20}% fire rate for 4 s."
+			"text": "Knife kills give +{20}% fire rate for 4 s.",
+			"p": {
+				"n": 20,
+				"seconds": 4.0
+			}
 		},
 		"lucky_stub": {
 			"name": "Lucky Stub",
-			"text": "Knife kills have a {10}% chance to drop chips or prize tickets."
+			"text": "Knife kills have a {10}% chance to drop chips or prize tickets.",
+			"p": {
+				"n": 10,
+				"chips": [
+					25,
+					100
+				]
+			}
 		},
 		"party_popper": {
 			"name": "Party Popper",
-			"text": "Knife kills burst confetti that blinds enemies within 4 m for 2 s."
+			"text": "Knife kills burst confetti that blinds enemies within 4 m for 2 s.",
+			"p": {
+				"radius": 4.0,
+				"blind": 1.2
+			}
 		},
 		"club_lights": {
 			"name": "Club Lights",
-			"text": "Knife kills show every enemy within 15 m through walls to the party for 5 s."
+			"text": "Knife kills show every enemy within 15 m through walls to the party for 5 s.",
+			"p": {
+				"radius": 15.0,
+				"seconds": 5.0
+			}
 		},
 		"snowman": {
 			"name": "Snowman",
-			"text": "A stab freezes the target into a snowman whose big red nose is a crit zone (x2.5 for everyone) for 5 s; bosses 2 s frozen. 20 s cooldown."
+			"text": "A stab freezes the target into a snowman whose big red nose is a crit zone (x2.5 for everyone) for 5 s; bosses 2 s frozen. 20 s cooldown.",
+			"p": {
+				"cooldown": 20.0,
+				"freeze": 5.0,
+				"boss_freeze": 2.0,
+				"vulnerable": 2.5,
+				"nose": 5.0,
+				"boss_nose": 6.0
+			}
 		},
 		"slot_roll": {
 			"name": "Slot Roll",
-			"text": "Knife kills spin a slot: cherries ammo, bells health, BAR armour, 777 a power-up for the party."
+			"text": "Knife kills spin a slot: cherries ammo, bells health, BAR armour, 777 a power-up for the party.",
+			"p": {
+				"weights": {
+					"cherries": 0.4,
+					"bells": 0.35,
+					"bar": 0.2,
+					"777": 0.05
+				}
+			}
 		},
 		"last_laugh": {
 			"name": "Last Laugh",
-			"text": "When you would go down you stay up at 1 health, untouchable for 3 s, and nearby enemies are thrown back. Recharges after 30 knife kills."
+			"text": "When you would go down you stay up at 1 health, untouchable for 3 s, and nearby enemies are thrown back. Recharges after 30 knife kills.",
+			"p": {
+				"recharge": 30,
+				"untouchable": 3.0,
+				"radius": 8.0,
+				"push": 12.0
+			}
 		}
 	}
 }

@@ -6,6 +6,8 @@
 # to the signals. Node name must be "Downs" on every machine.
 extends Node
 
+const FAR_REACH := 6.5  # (polish1 D5b) Party Revive: a knife kill this close to a downed teammate helps him up
+
 const STATES := ["up", "down", "out"]
 const SLACK := 2.5  # metres added to the revive reach for what the host cannot see exactly (lag)
 
@@ -38,14 +40,14 @@ func report(state: String) -> void:
 		_state_to_host.rpc_id(1, state)
 
 
-# We held the key long enough next to that downed player.
-func ask_revive(target: int) -> void:
+# We held the key long enough next to that downed player (`far` = Party Revive's knife kill, a few metres away).
+func ask_revive(target: int, far := false) -> void:
 	if not net.can_send():
 		return
 	if net.is_host():
-		_do_revive(1, target)
+		_do_revive(1, target, far)
 	else:
-		_revive_to_host.rpc_id(1, target)
+		_revive_to_host.rpc_id(1, target, far)
 
 
 func _process(delta: float) -> void:
@@ -87,18 +89,18 @@ func _states(all: Dictionary) -> void:
 
 
 @rpc("any_peer", "call_remote", "reliable")
-func _revive_to_host(target: int) -> void:
+func _revive_to_host(target: int, far := false) -> void:
 	if net.is_host():
-		_do_revive(multiplayer.get_remote_sender_id(), target)
+		_do_revive(multiplayer.get_remote_sender_id(), target, far)
 
 
 # Host: `by` wants to help `target` up. Only somebody who is up and close to a downed player can.
-func _do_revive(by: int, target: int) -> void:
+func _do_revive(by: int, target: int, far := false) -> void:
 	if by == target or not net.roster.has(by) or state_of(target) != "down" or state_of(by) != "up":
 		return
 	var helper: Node3D = net.player_node(by)
 	var fallen: Node3D = net.player_node(target)
-	if helper == null or fallen == null or helper.global_position.distance_to(fallen.global_position) > reach + SLACK:
+	if helper == null or fallen == null or helper.global_position.distance_to(fallen.global_position) > (FAR_REACH if far else reach) + SLACK:
 		return
 	states.erase(target)
 	_states.rpc(states)

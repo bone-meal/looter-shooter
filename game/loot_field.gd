@@ -198,6 +198,17 @@ func nearest(pos: Vector3) -> Dictionary:
 	return best
 
 
+# (polish1 D5b Undertow) Drops within `radius` of `to` slide to a step from it.
+func pull(to: Vector3, radius: float) -> int:
+	var n := 0
+	for d in _drops:
+		var node := d["node"] as Node3D
+		if node.global_position.distance_to(to) <= radius:
+			node.global_position = to + Vector3(randf_range(-0.6, 0.6), 0.0, randf_range(-0.6, 0.6))
+			n += 1
+	return n
+
+
 # Removes the drop and returns its gun.
 func take(drop: Dictionary) -> Dictionary:
 	var gun: Dictionary = drop["gun"]

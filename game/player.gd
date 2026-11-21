@@ -15,6 +15,8 @@ const WeaponState = preload("res://core/weapon_state.gd")
 const WeaponModels = preload("res://game/weapon_models.gd")
 const PonySkin = preload("res://game/pony_skin.gd")
 const KnifeSkin = preload("res://game/knife_skin.gd")
+const KnifePowers = preload("res://game/knife_powers.gd")
+const ItemLevelK = preload("res://core/item_level.gd")
 const UniqueAttach = preload("res://game/unique_attach.gd")
 const QuietTest = preload("res://game/quiet_test.gd")
 const Signatures = preload("res://game/signatures/index.gd")
@@ -88,6 +90,7 @@ var emote := ""  # id of the dance playing, "" = none
 var weapon: WeaponState  # the gun in hand (a stock pistol nobody fires while the knife is out, so this is never null)
 var pools: AmmoPools  # spare ammunition, one pool per gun body (saved with the character by the session)
 var knife := "combat"  # which knife type this character carries (rolled once; set with set_knife)
+var knife_powers: Node3D  # (polish1 D5b part 2) the carried skinned knife's power (game/knife_powers.gd)
 var knife_skin := {}  # (polish1 D5b) the skinned knife carried instead ({} = the rolled knife): its own type and finish (set_knife_skin)
 var gun_db: GunDb  # tiers, parts and makers for rolled guns
 var health: HealthState
@@ -504,7 +507,7 @@ func _move_tick(input: Vector2) -> void:
 	var aiming := Input.is_action_pressed("aim")
 	var slowed := aiming and _aim_units > 0.0 and _perk("aim_full_speed", 0.0) <= 0.0  # Run and Gun: aiming keeps full speed
 	var hindered := maxf(status.speed_multiplier(), 1.0) if _perk("no_slow", 0.0) > 0.0 else status.speed_multiplier()  # Trade Winds: nothing slows you
-	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * _traits.speed_mult(_now()) * (_perk("burst_speed", 1.0) if _now() < _wind_until else 1.0)
+	var rush := (1.0 + _rush_pct / 100.0 if _now() < _rush_until else 1.0) * self_fx.speed_mult(_now()) * (float(knife_powers.call("speed_mult")) if knife_powers != null else 1.0) * _traits.speed_mult(_now()) * (_perk("burst_speed", 1.0) if _now() < _wind_until else 1.0)
 	var top := (_aim_units if slowed else _top_units) * move.unit * hindered * (1.0 + bonus_speed_pct / 100.0) * (1.0 + _armour_bonus("speed_pct") / 100.0) * (1.0 + skill_speed_pct / 100.0) * cheat_speed * _pace * rush
 	if _now() < _reload_boost_until:
 		top *= _perk("reload_boost_mult", 1.0)
@@ -673,7 +676,7 @@ func _move_and_shoot(delta: float) -> void:
 	elif _holding and controls_enabled and not manning and Input.is_action_pressed("shoot") and _mouse_held() and not (_sig_node != null and _sig_node.has_method("blocks_fire") and bool(_sig_node.call("blocks_fire"))):
 		if weapon.ammo <= 0 and armor["abilities"].has("auto_reload"):
 			_reload()  # the equipped cigarette reloads for you
-		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now())  # Bullet Storm, Joyburst
+		weapon.rate_mult = self_fx.rate_mult(_now()) * _traits.rate_mult(_held_stats.get("traits", {}), _now()) * (float(knife_powers.call("rate_mult")) if knife_powers != null else 1.0)  # Bullet Storm, Joyburst, Sugar Rush
 		if weapon.try_fire(_now(), Input.is_action_just_pressed("shoot")):  # a fresh press may fan the revolver
 			_shoot()
 			if _sig_node != null and _sig_node.has_method("on_fired"):
@@ -780,6 +783,8 @@ func take_damage(amount: float, element: String = "physical") -> void:
 		(attacker as Object).call("push", away.normalized() * _perk("push", 0.0))
 	taken *= _traits.taken_mult(_held_stats.get("traits", {})) if not _held_gun.is_empty() else 1.0  # Stand Fast
 	taken = self_fx.incoming(taken, _now(), _near_banner())  # War Banner guard, then the Overshield soaks
+	if knife_powers != null:
+		taken = float(knife_powers.call("incoming", taken))  # (polish1 D5b part 2) Hardened, Refraction, Last Laugh's grace
 	if taken <= 0.0:
 		return
 	hurt_from = from
@@ -789,6 +794,9 @@ func take_damage(amount: float, element: String = "physical") -> void:
 
 
 func _hurt(amount: float) -> void:
+	if knife_powers != null and amount >= float(health.hp) and bool(knife_powers.call("would_down")):  # (polish1 D5b part 2) Last Laugh
+		amount = maxf(float(health.hp) - 1.0, 0.0)
+		knife_powers.call("last_laugh")
 	hurt_total += maxf(amount, 0.0)
 	health.take_damage(amount)
 	damaged.emit()
@@ -1033,7 +1041,39 @@ func _skin_tag() -> String:
 # (polish1 D5b) Carry a skinned knife ({} = back to the character's own rolled knife).
 func set_knife_skin(item: Dictionary) -> void:
 	knife_skin = item
+	if knife_powers == null:
+		knife_powers = KnifePowers.new()
+		knife_powers.name = "KnifePowers"
+		add_child(knife_powers)
+		knife_powers.call("setup", KnifeSkin.rules(), self)
+	knife_powers.call("carry", item)
 	set_knife(knife)
+
+
+# (polish1 D5b part 2) A share of every carried gun's spare pool back (Party Ammo, Slot Roll's cherries).
+func refill_pools(share: float) -> void:
+	for i in inventory.holster_count:
+		var body := inventory.holster_body(i)
+		if body != "":
+			pools.give(body, ceili(float(pools.size_of(body)) * share))
+
+
+# (polish1 D5b part 2) The skinned knife's blow strength now: its level's multiplier x the item level of the best gun
+# carried (so a levelled knife keeps up with the gear), times the attack's own damage.
+func knife_damage(attack_kind: String = "stab") -> float:
+	var base := float(KnifeModels.db().attack(attack_kind).get("damage", 60.0)) * (1.0 + bonus_damage_pct / 100.0)
+	if knife_skin.is_empty():
+		return base
+	var best := 1
+	for i in inventory.holster_count:
+		var g: Dictionary = inventory.holster_gun(i)
+		if not g.is_empty():
+			best = maxi(best, ItemLevelK.of(g))
+	return base * KnifeSkin.rules().damage_mult(knife_skin) * ItemLevelK.damage_mult(best)
+
+
+func eye_position() -> Vector3:
+	return _camera.global_position
 
 
 # The knife type in hand: the skinned knife's own type, else the rolled one.
@@ -1508,11 +1548,13 @@ func _knife_blow(attack: Dictionary) -> void:
 		return
 	var dealt := float(attack["damage"]) * (1.0 + bonus_damage_pct / 100.0)
 	if not knife_skin.is_empty():
-		dealt *= KnifeSkin.rules().damage_mult(knife_skin)  # (polish1 D5b) a skinned knife hits harder as it levels
+		dealt = knife_damage(_melee_kind)  # (polish1 D5b) a skinned knife hits harder as it levels, and keeps up with the gear
 	var enemy: bool = best.collider.has_method("head_hit")
 	if score != null:
 		score.blow = "melee"
 	best.collider.on_hit(dealt, best.position, best.normal)
+	if knife_powers != null and enemy:  # (polish1 D5b part 2) the knife's power answers the blow
+		knife_powers.call("on_hit", _melee_kind, best.collider, best.position, dealt)
 	if score != null:
 		score.blow = ""
 		if enemy and not best.collider.health.is_dead() and not best.collider.has_meta("host_pays"):
@@ -1600,6 +1642,14 @@ func party_effect(kind: String, at: Vector3, a: Vector3, reach: float) -> bool:
 			if global_position.distance_to(at) > reach or health.is_dead():
 				return false
 			health.heal(float(health.max_hp) * clampf(a.x, 0.0, 100.0) / 100.0)
+		"knife_ammo":  # (polish1 D5b) a teammate's Party Ammo: a share of every spare pool, within its reach
+			if global_position.distance_to(at) > clampf(a.y, 0.0, 40.0) or health.is_dead():
+				return false
+			refill_pools(clampf(a.x, 0.0, 1.0))
+		"knife_marks":  # a teammate's Club Lights: marks over the enemies round him
+			if knife_powers == null or global_position.distance_to(at) > 60.0:
+				return false
+			knife_powers.call("show_marks", at, clampf(a.x, 0.0, 30.0), clampf(a.y, 0.0, 10.0))
 		"bloom":
 			if skill_fx == null:
 				return false

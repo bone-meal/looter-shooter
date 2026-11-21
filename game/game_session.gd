@@ -963,6 +963,7 @@ func _ready() -> void:
 		net.rounds.round_started.connect(_on_round_started)  # as a client: the host's rounds
 		net.rounds.round_ended.connect(_on_round_ended)
 		net.rounds.power_dropped.connect(_on_power_dropped)
+		net.rounds.knife_given.connect(_on_knife_given)
 		net.rounds.power_gone.connect(_power_field.remove)
 		net.rounds.power_taken.connect(_apply_power)
 		net.rounds.land = _land
@@ -1817,6 +1818,7 @@ func _load_profile() -> void:
 		_knife_locker.from_dict(extra.get("knives"))  # (polish1 D5b) the skinned knives and the one carried
 		_player.set_knife_skin(_knife_locker.carried())
 		_knife_tab.own_knife = _player.knife
+		_hook_knife_powers()
 		_fantasy_saved = extra.get("fantasy")
 		_salvage_saved = extra.get("salvage")
 		_chart_saved = extra.get("sea_chart")
@@ -2716,10 +2718,94 @@ func _case_landed(id: String) -> void:
 	_camo_tab.refresh()
 
 
+# (polish1 D5b part 2) The knife power's needs that only the session can meet.
+func _hook_knife_powers() -> void:
+	if _player.knife_powers != null and not _player.knife_powers.is_connected("wants", _knife_wants):
+		_player.knife_powers.connect("wants", _knife_wants)
+
+
+func _knife_wants(a: Dictionary) -> void:
+	var at := _player.global_position
+	match String(a["do"]):
+		"pull_loot":
+			_field.pull(at, float(a["radius"]))
+		"chips":
+			_wallet.balance += int(a["chips"])
+			if bool(a.get("ticket", false)):
+				_prize_tickets += 1
+			_player_hud.notice("Lucky Stub: +%d chips%s" % [int(a["chips"]), " and a prize ticket" if bool(a.get("ticket", false)) else ""])
+		"party_ammo":
+			_player.refill_pools(float(a["share"]))
+			if net != null:
+				net.party.send("knife_ammo", at, Vector3(float(a["share"]), float(a["reach"]), 0.0))
+			_player_hud.notice("Party Ammo!")
+		"marks":
+			if net != null:
+				net.party.send("knife_marks", at, Vector3(float(a["radius"]), float(a["seconds"]), 0.0))
+		"revive_near":
+			if net == null or not net.can_send():
+				return
+			for peer: int in net.downs.states:
+				var body: Node3D = net.player_node(peer)
+				if String(net.downs.states[peer]) == "down" and body != null and body.global_position.distance_to(at) <= float(a["reach"]):
+					net.downs.ask_revive(peer, true)
+					_player.knife_powers.get("fx").call("revive_used", Time.get_ticks_msec() / 1000.0, float(a["then_cool"]))
+					_player_hud.notice("Party Revive!")
+					return
+		"slot":
+			var sym := String(a["symbol"])
+			match sym:
+				"cherries":
+					_player.refill_pools(0.25)
+				"bells":
+					_player.health.heal(float(_player.health.max_hp) * 0.25)
+				"bar":
+					_player.self_fx.start_shield(Time.get_ticks_msec() / 1000.0, 8.0, float(_player.health.max_hp) * 0.3)
+				"777":
+					if _rounds.active and (net == null or not net.can_send() or net.is_host()):
+						_drop_power(_powerups.pick(_rng), at + (-_player.global_basis.z) * 2.0)
+					else:  # (a joiner cannot drop a power-up: the host does that) a full refill and heal instead
+						_player.refill_pools(1.0)
+						_player.health.heal(float(_player.health.max_hp))
+			_player_hud.callout({"cherries": "CHERRIES: AMMO", "bells": "BELLS: HEALTH", "bar": "BAR: ARMOUR", "777": "777!"}.get(sym, sym), Color(1.0, 0.82, 0.3), "coin")
+		"notice":
+			_player_hud.callout(String(a["text"]), Color(1.0, 0.82, 0.3), "star")
+
+
+# (polish1 D5b) A boss died: alone or hosting, every player in the session has the boss chance of a skinned knife.
+func _boss_knives() -> void:
+	var odds := float((KnifeSkin.rules().cfg.get("drops", {}) as Dictionary).get("boss", 0.0))
+	var peers: Array = [0] if (net == null or not net.can_send()) else (net.roster as Dictionary).keys()
+	for peer: Variant in peers:
+		if _rng.randf() >= odds:
+			continue
+		var item: Dictionary = KnifeSkin.rules().roll(_rng)
+		if int(peer) == 0 or int(peer) == net.my_id():
+			_on_knife_given(item)
+		else:
+			net.rounds.give_knife(int(peer), item)
+
+
+# A skinned knife from a boss (rolled here when alone / hosting, by the host when joined): kept and told.
+func _on_knife_given(item: Dictionary) -> void:
+	if KnifeSkin.rules().check(item) != "" or not _knife_locker.add(item):
+		return
+	var fin: Dictionary = KnifeSkin.rules().finish(String(item["finish"]))
+	var look: Dictionary = KnifeSkin.rules().pattern_look(item)
+	var line := "a %s | %s%s from a boss" % [KnifeModels.db().name_of(String(item["type"])), String(fin.get("name", "")), (" (" + String(look["name"]) + ")") if String(look["name"]) != "" else ""]
+	_player_hud.callout("KNIFE DROP!", TierStyle.color(_player.gun_db, String(fin.get("tier", "gold")), 0.0), "star")
+	_chat.add_line("%s got %s!" % [_profile_name, line], Color(1.0, 0.82, 0.3))
+	if net != null and net.can_send():
+		net.chat.announce_unbox(line + "!")
+	_knife_tab.refresh()
+	save_profile()
+
+
 # (polish1 D5b) The Knives tab: carry skinned knife `index` (-1 = the character's own rolled knife).
 func _equip_knife(index: int) -> void:
 	_knife_locker.equip(index)
 	_player.set_knife_skin(_knife_locker.carried())
+	_hook_knife_powers()
 	_knife_tab.own_knife = _player.knife
 	_knife_tab.refresh()
 	_sounds.call("play", "upgrade_done")
@@ -2845,6 +2931,11 @@ func _on_enemy_killed(where: Vector3, enemy_id: String, elite: String, wave: int
 		_stats.best("wkills_best", float(in_hand_gun["wkills"]))
 	if by_gun and paid > 0 and not in_hand_gun.is_empty():
 		_camo_kill(in_hand_gun, where, elite, enemy_id)
+	if by_knife and paid > 0 and _player.knife_powers != null:  # (polish1 D5b part 2) the knife's power answers the kill
+		_hook_knife_powers()
+		_player.knife_powers.call("on_kill", where)
+	if enemy_id.begins_with("boss") and (net == null or not net.can_send() or net.is_host()):  # (polish1 D5b) the host rolls each player a knife from a boss
+		_boss_knives()
 	if by_knife and paid > 0:  # (polish1 D5b) the carried skinned knife counts it: its level comes from these
 		var up := _knife_locker.count_kill()
 		if up > 0:
@@ -2955,7 +3046,7 @@ func _drop_armour(stack: Dictionary, where: Vector3) -> void:
 
 # Gun luck multiplier from Fortune points and the Lucky Find trait.
 func _luck_mult() -> float:
-	return 1.0 + _progress.bonus("luck_pct") / 100.0
+	return 1.0 + (_progress.bonus("luck_pct") + (float(_player.knife_powers.call("luck_pct")) if _player.knife_powers != null else 0.0)) / 100.0  # (+ Loot Chaser)
 
 
 func _open_chest() -> void:

@@ -8,8 +8,59 @@ extends SceneTree
 const KnifeSkins = preload("res://core/knife_skins.gd")
 const KnifeLocker = preload("res://core/knife_locker.gd")
 const DataStore = preload("res://core/data_store.gd")
+const KnifeFx = preload("res://core/knife_fx.gd")
 
 var problems := 0
+
+
+# Every power answers: what each finish's knife does on slashes, stabs and kills (at level 30), and the passive ones.
+func _powers(r: KnifeSkins) -> void:
+	var expect := {"whetstone": "refill_mag", "second_breath": "heal", "spark_shower": "burn_area", "meltdown": "delayed_blast", "anvil_drop": "slam",
+		"living_metal": "pool", "undertow": "pull_loot", "salt_wound": "vulnerable", "drag_down": "freeze", "party_ammo": "party_ammo", "deep_light": "cast",
+		"the_bite": "bite", "venom": "venom", "northern_step": "reset_dodge", "party_revive": "revive_near", "lightning": "cast", "spirit_pack": "cast",
+		"lucky_stub": "chips", "party_popper": "blind", "club_lights": "marks", "snowman": "snowman", "slot_roll": "slot"}
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 3
+	var missing := []
+	for f: Dictionary in r.cfg["finishes"]:
+		var fx := KnifeFx.new(r)
+		fx.carry({"finish": f["id"], "type": "combat", "pattern": 1, "wear": 0.1, "strength": 1.0, "kills": 1450})
+		var seen := {}
+		var t := 100.0
+		for k in 40:
+			t += 0.3
+			for a: Dictionary in fx.on_hit("slash", false, false, t) + fx.on_hit("stab", false, false, t + 0.1) + fx.on_kill(t + 0.2, rng):
+				seen[String(a["do"])] = true
+		var want := String(expect.get(fx.power, ""))
+		if want != "" and not seen.has(want):
+			missing.append("%s/%s" % [f["id"], fx.power])
+	say("every power fires its action %s" % str(missing), missing.is_empty())
+	var fx2 := KnifeFx.new(r)
+	fx2.carry({"finish": "temper_line", "type": "combat", "pattern": 1, "wear": 0.1, "strength": 1.0, "kills": 1450})
+	fx2.on_kill(10.0, rng)
+	say("Hardened: 30 %% less damage for 6 s, then none", is_equal_approx(fx2.incoming(100.0, 11.0, 0.9), 70.0) and is_equal_approx(fx2.incoming(100.0, 17.0, 0.9), 100.0))
+	var fx3 := KnifeFx.new(r)
+	fx3.carry({"finish": "prism_melt", "type": "combat", "pattern": 1, "wear": 0.1, "strength": 1.0, "kills": 1450})
+	fx3.on_hit("slash", false, false, 10.0)
+	say("Refraction: a low roll misses for 4 s", fx3.incoming(50.0, 11.0, 0.1) == 0.0 and fx3.incoming(50.0, 11.0, 0.5) == 50.0 and fx3.incoming(50.0, 15.0, 0.1) == 50.0)
+	var fx4 := KnifeFx.new(r)
+	fx4.carry({"finish": "jesters_grin", "type": "combat", "pattern": 1, "wear": 0.1, "strength": 1.0, "kills": 0})
+	var first := fx4.would_down(10.0)
+	var again := fx4.would_down(11.0)
+	var untouch := fx4.incoming(80.0, 11.5, 0.9) == 0.0
+	for k in 30:
+		fx4.on_kill(20.0 + float(k), rng)
+	say("Last Laugh: saves once, untouchable a moment, ready again after 30 knife kills", first and not again and untouch and fx4.would_down(60.0))
+	var fx5 := KnifeFx.new(r)
+	fx5.carry({"finish": "christmas_bells", "type": "combat", "pattern": 1, "wear": 0.1, "strength": 1.0, "kills": 0})
+	var snow := fx5.on_hit("stab", false, false, 10.0)
+	var cooled := fx5.on_hit("stab", false, false, 12.0)
+	var boss := fx5.on_hit("stab", false, true, 31.0)
+	say("Snowman: a stab freezes 5 s, 20 s cooldown, bosses 2 s", snow.size() == 1 and float(snow[0]["freeze"]) == 5.0 and cooled.is_empty() and boss.size() == 1 and float(boss[0]["freeze"]) == 2.0)
+	var fx6 := KnifeFx.new(r)
+	fx6.carry({"finish": "candy_cane", "type": "combat", "pattern": 1, "wear": 0.1, "strength": 1.0, "kills": 0})
+	fx6.on_kill(10.0, rng)
+	say("Sugar Rush at level 1: +8 %% fire rate (40 %% of 20)", is_equal_approx(fx6.rate_mult(11.0), 1.08) and is_equal_approx(fx6.rate_mult(15.0), 1.0))
 
 
 func say(text: String, ok: bool) -> void:
@@ -72,5 +123,6 @@ func _init() -> void:
 		if not found:
 			no_chase.append(f["id"])
 	say("every finish has rollable chase patterns %s" % str(no_chase), no_chase.is_empty())
+	_powers(r)
 	print("KNIFE_CHECK_DONE problems=%d" % problems)
 	quit()

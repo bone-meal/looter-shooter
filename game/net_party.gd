@@ -8,7 +8,7 @@
 extends Node
 
 const DataStore = preload("res://core/data_store.gd")
-const KINDS := ["rally", "banner", "hearth", "bloom"]
+const KINDS := ["rally", "banner", "hearth", "bloom", "knife_ammo", "knife_marks"]  # (polish1 D5b: Party Ammo, Club Lights)
 const FAR := 100000.0
 
 var net: Node3D

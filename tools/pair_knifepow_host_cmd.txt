@@ -1,0 +1,1 @@
+!uncap;!immortal;!net wait_guest;!wait 4;/round 3;!wait 10;!knife give quartermasters_hook 3 combat 1450 carry;!knife blow slash 6;!wait 2;!knife h_hook;!downs wait_down;!knife give worldroot 3 combat 1450 carry;!net to_other;!wait 1;!downs h_saw_down;!knife blow slash 3;!wait 2;!downs h_after;!knife bossdrop;!wait 5;!knife h_end
