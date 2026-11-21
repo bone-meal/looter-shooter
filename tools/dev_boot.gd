@@ -2769,6 +2769,11 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						if not g.is_empty():
 							ts.offered.emit({"ref": slot, "gun": g})
 							break
+				"camo":  # (polish1 D5a) "!trade camo": offer the first camo of the locker, as a click on its tile would
+					var lk: Array = (session.get("_camo_locker") as RefCounted).get("items")
+					if not lk.is_empty():
+						(ts.get("offered_camos") as Dictionary)[500000] = (lk[0] as Dictionary).duplicate()
+						ts.offered.emit({"ref": 500000, "camo": (lk[0] as Dictionary).duplicate()})
 				"card":
 					(ts.get("offered_cards") as Dictionary)[1000] = {"card": words[2], "finish": "", "leader": false}
 					ts.offered.emit({"ref": 1000, "card": words[2], "finish": "", "leader": false})
@@ -2955,7 +2960,37 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			var hand_c := int(player.call("hand_index"))
 			var bag_c: RefCounted = player.get("inventory")
 			var looks_c := load("res://game/camo_skin.gd")
-			if words.size() > 1 and hand_c >= 0 and (words[1] == "off" or not (looks_c.call("look_of", words[1]) as Dictionary).is_empty()):
+			var locker_c: RefCounted = session.get("_camo_locker")
+			if words.size() > 1 and words[1] in ["give", "tab", "press", "locker", "pics"]:  # (D5a part 2) "!camo give <id|roll:<crate>> ...", "!camo tab", "!camo press <key>", "!camo locker <note>", "!camo pics <note>"
+				match words[1]:
+					"give":
+						if words[2].begins_with("roll:"):
+							locker_c.call("add", locker_c.call("roll", RandomNumberGenerator.new(), words[2].trim_prefix("roll:")))
+						else:
+							locker_c.call("add", {"id": words[2], "wear": 0.05, "seed": 42, "uses": int(locker_c.call("uses_of", String((locker_c.call("look", words[2]) as Dictionary).get("tier", "green"))))})
+						(session.get("_camo_tab") as Control).call("refresh")
+					"tab":
+						session.call("_open_card")
+						var tabs_m: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
+						for t_m in tabs_m.get_tab_count():
+							if tabs_m.get_tab_title(t_m) == "Camos":
+								tabs_m.current_tab = t_m
+					"press":
+						var opening_m: Control = session.get("_opening")
+						var key_m := " ".join(words.slice(2))
+						var target_m: Node = opening_m if opening_m.visible else session.get("_camo_tab")
+						_lines.append("CAMO press %s: %s" % [key_m, target_m.call("press", key_m)])
+					"locker":
+						_lines.append("CAMO locker %s: %s" % [" ".join(words.slice(2)), str(locker_c.get("items"))])
+					"pics":
+						var icons_m: Node = session.get("_camo_icons")
+						_lines.append("CAMO pics %s: done %d, queued %d" % [" ".join(words.slice(2)), (icons_m.get("_done") as Dictionary).size(), (icons_m.get("_queue") as Array).size()])
+						var k_m := 0
+						for key_p: String in (icons_m.get("_done") as Dictionary):
+							if k_m < 3:
+								((icons_m.get("_done") as Dictionary)[key_p] as ImageTexture).get_image().save_png(OUT + "camo_pic_%d.png" % k_m)
+							k_m += 1
+			elif words.size() > 1 and hand_c >= 0 and (words[1] == "off" or not (looks_c.call("look_of", words[1]) as Dictionary).is_empty()):
 				var gun_c: Dictionary = bag_c.call("holster_gun", hand_c)
 				if gun_c.is_empty():
 					gun_c = load("res://core/gun_gen.gd").call("generate", player.get("gun_db"), RandomNumberGenerator.new(), 0.0, String(bag_c.call("holster_body", hand_c)), "purple")
@@ -3152,7 +3187,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"tab":
 					session.call("_open_card")
 					var tabs: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
-					tabs.current_tab = tabs.get_tab_count() - 1
+					for t_i in tabs.get_tab_count():
+						if tabs.get_tab_title(t_i) == "Cases":
+							tabs.current_tab = t_i
 				"press":
 					var key_c := " ".join(words.slice(2))
 					var target: Node = opening if opening.visible else session.get("_case_tab")

@@ -1,9 +1,6 @@
-Polish1 D5a part 1: gun camo look - 57 camos in one object-space shader, reactive legendary / pony with particles
+Polish1 D5a part 2: camos as items
 
-- data/camos.json: all 57 camos of DECISIONS_SKINS (25 green, 15 blue, 7 purple, 5 legendary, 5 pony) with challenge accents, uses per tier, wear names
-- game/camo_skin.gd: every camo drawn from the gun model's own shape (no UVs, every body / part), on painted surfaces only; patterns sized per body; anti-aliased, warped patterns; studio reflections for the metals; wear chips paint and rubs hard edges; legendary / pony react to aim, speed, shots, reloads, kills, ammo, inspect and carry particles
-- player.gd / loot_field.gd wear gun camo; dev !camo; tools/camo_shot.tscn pictures
-- three art passes on the director's notes
+Each crate spin rolls a camo on a second reel. Owned camos live in a locker (uses 3 / 2 / 1 by tier) and are applied from the new Camos tab to a rolled gun. Icons and swatches render the gun wearing its camo, the gun card names the skin, and unboxed camos trade in a CAMOS trade tab.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

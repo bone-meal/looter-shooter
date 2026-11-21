@@ -5,6 +5,7 @@
 extends RefCounted
 
 const GunStats = preload("res://core/gun_stats.gd")
+const CamoSkin = preload("res://game/camo_skin.gd")
 const SkillState = preload("res://core/skill_state.gd")
 const TierStyle = preload("res://game/tier_style.gd")
 const ArmourStats = preload("res://core/armour_stats.gd")
@@ -26,6 +27,9 @@ static func draw_gun(canvas: CanvasItem, font: Font, gun_db: RefCounted, gun: Di
 	if gun.has("wkills"):  # the kill counter: on the gun model too (game/wkills_display.gd)
 		lines.append(["W kills  Confirmed kills: %d" % int(gun["wkills"]), WKILLS_COLOR])
 		lines.append(["This gun counts every kill made with it.", Color(0.95, 0.65, 0.35)])
+	if gun.get("camo") is Dictionary and not CamoSkin.look_of(String((gun["camo"] as Dictionary).get("id", ""))).is_empty():  # (polish1 D5a)
+		var look := CamoSkin.look_of(String(gun["camo"]["id"]))
+		lines.append(["- %s skin applied" % String(look["name"]), Color(String((gun_db.tier(String(look["tier"])) as Dictionary).get("color", "#ffffff")))])
 	lines.append(["Item level %d%s" % [int(stats["lvl"]), "" if other.is_empty() else "  (%+d)" % (int(stats["lvl"]) - int(other["lvl"]))], Color(0.9, 0.9, 0.6)])
 	lines.append(["Damage %.1f%s" % [stats["damage"], _diff_text(float(stats["damage"]), other, "damage", 1)], _delta_color(float(stats["damage"]), other, "damage", true)])
 	lines.append(["Fire rate %.2f/s%s" % [stats["fire_rate"], _diff_text(float(stats["fire_rate"]), other, "fire_rate", 2)], _delta_color(float(stats["fire_rate"]), other, "fire_rate", true)])

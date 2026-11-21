@@ -9,6 +9,7 @@ extends RefCounted
 
 const IconArt = preload("res://game/icon_art.gd")
 const TierStyle = preload("res://game/tier_style.gd")
+const CamoIcons = preload("res://game/camo_icons.gd")
 const GUN_PICTURES := "res://assets/ui/icons/guns/"
 const ITEM_PICTURES := "res://assets/ui/icons/items/"
 const KNIFE_PICTURES := "res://assets/ui/icons/knives/"
@@ -26,6 +27,18 @@ static var _items := {}
 static var _pictures := {}  # path -> Texture2D or null (looked for once)
 static var _glow: GradientTexture2D
 const WORM_LIGHT := Color(1.0, 0.75, 0.82)
+
+
+# (polish1 D5a) A rolled gun's icon: wearing its camo when it has one (game/camo_icons.gd renders it; until the
+# picture is ready, and for guns without a camo, the plain icon).
+static func draw_gun(canvas: CanvasItem, gun: Dictionary, rect: Rect2, tint: Color) -> void:
+	var dressed: Texture2D = CamoIcons.picture(gun, canvas) if gun.get("camo") is Dictionary else null
+	if dressed != null:
+		var size := dressed.get_size()
+		var fit := minf(rect.size.x / size.x, rect.size.y / size.y)
+		canvas.draw_texture_rect(dressed, Rect2(rect.get_center() - size * fit * 0.5, size * fit), false, Color(1, 1, 1, tint.a))
+		return
+	draw(canvas, String(gun.get("body", "")), rect, tint)
 
 
 # Draws the icon for `id` centered inside `rect`. A rendered picture when there is one (`tier` picks an armour piece's

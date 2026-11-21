@@ -592,7 +592,7 @@ func _draw_holsters(view: Vector2) -> void:
 		if not gun.is_empty():
 			tint = TierStyle.color(player.gun_db, String(gun["tier"]), Time.get_ticks_msec() / 1000.0)
 			draw_rect(r, tint, false, 2.0)
-		ItemIcons.draw(self, body, Rect2(r.position + Vector2(14, 4), Vector2(box.x - 20.0, box.y - 12.0)), tint)
+		ItemIcons.draw_gun(self, gun if not gun.is_empty() else {"body": body}, Rect2(r.position + Vector2(14, 4), Vector2(box.x - 20.0, box.y - 12.0)), tint)
 		var rounds: int = inventory.loaded[holster]
 		if rounds >= 0:
 			draw_string(_font, r.end - Vector2(34, 4), str(rounds), HORIZONTAL_ALIGNMENT_RIGHT, 30, 12, BAD if rounds == 0 else WHITE)

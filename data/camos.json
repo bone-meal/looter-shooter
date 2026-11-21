@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Polish1 D5a gun camos (DECISIONS_SKINS.md). Every camo fits every gun: game/camo_skin.gd draws it from the gun model's own 3D shape (object space, no UVs), so bodies, parts and attachments all take it; a chase gun's props keep their look. `kind` = the shader pattern; `colors` = 4 colours (base, two marks, dark); `accent` = the colour of the CHALLENGE version's upgrade (`challenge` says what it adds). Tiers: green / blue / purple / gold (legendary) / pony. `uses` per tier = how many guns one unboxed camo can go on (3 / 2 / 1). Wear: 0 (Factory New) .. 1 (Battle-Scarred), names by `wear_names` limits; pattern number 1..1000 shifts the pattern.",
+ "_about": "Polish1 D5a gun camos (DECISIONS_SKINS.md). Every camo fits every gun: game/camo_skin.gd draws it from the gun model's own 3D shape (object space, no UVs), so bodies, parts and attachments all take it; a chase gun's props keep their look. `kind` = the shader pattern; `colors` = 4 colours (base, two marks, dark); `accent` = the colour of the CHALLENGE version's upgrade (`challenge` says what it adds). Tiers: green / blue / purple / gold (legendary) / pony. `uses` per tier = how many guns one unboxed camo can go on (3 / 2 / 1). Wear: 0 (Factory New) .. 1 (Battle-Scarred), names by `wear_names` limits; pattern number 1..1000 shifts the pattern. `crate_odds`: per crate (data/gun_loot.json vendor ids) the chance of each camo tier in its second reel.",
  "uses": {
   "green": 3,
   "blue": 2,
@@ -829,5 +829,26 @@
    "accent": "#ffffff",
    "challenge": "faces laugh on inspect"
   }
- ]
+ ],
+ "crate_odds": {
+  "bronze": {
+   "green": 0.8,
+   "blue": 0.17,
+   "purple": 0.03
+  },
+  "silver": {
+   "green": 0.45,
+   "blue": 0.38,
+   "purple": 0.13,
+   "gold": 0.035,
+   "pony": 0.005
+  },
+  "gold": {
+   "green": 0.15,
+   "blue": 0.4,
+   "purple": 0.3,
+   "gold": 0.12,
+   "pony": 0.03
+  }
+ }
 }

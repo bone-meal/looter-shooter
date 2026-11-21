@@ -747,7 +747,7 @@ func _draw_ready() -> void:
 		var icon := Rect2(r.position + Vector2(10, 30), Vector2(r.size.x * 0.4, r.size.y - 38.0))
 		if not gun.is_empty():
 			ItemIcons.plate(self, icon, gun_db, String(gun["tier"]), _now())
-		ItemIcons.draw(self, body, icon, tint)
+		ItemIcons.draw_gun(self, gun if not gun.is_empty() else {"body": body}, icon, tint)
 		var tx := r.position.x + r.size.x * 0.46
 		var tw := r.size.x * 0.52
 		if gun.is_empty():
@@ -791,7 +791,7 @@ func _draw_backpack() -> void:
 			ItemIcons.draw(self, inventory.item_id(i), r.grow(-s * 0.1), Color.WHITE, String(arm.get("tier", "")))
 		else:
 			ItemIcons.plate(self, r, gun_db, String(gun["tier"]), _now(), int(gun.get("lvl", 1)), _font)
-			ItemIcons.draw(self, String(gun["body"]), r.grow(-s * 0.08), tint)
+			ItemIcons.draw_gun(self, gun, r.grow(-s * 0.08), tint)
 		_draw_count(self, r, inventory.item_count(i))
 
 
@@ -812,7 +812,10 @@ func _draw_bank() -> void:
 		var roll: Dictionary = gun if not gun.is_empty() else arm
 		if not roll.is_empty():
 			ItemIcons.plate(self, r, gun_db, String(roll["tier"]), _now(), int(roll.get("lvl", 1)), _font)
-		ItemIcons.draw(self, String(gun["body"]) if not gun.is_empty() else String(stack["id"]), r.grow(-r.size.x * 0.1), tint if not gun.is_empty() else Color.WHITE, String(arm.get("tier", "")))
+		if not gun.is_empty():
+			ItemIcons.draw_gun(self, gun, r.grow(-r.size.x * 0.1), tint)
+		else:
+			ItemIcons.draw(self, String(stack["id"]), r.grow(-r.size.x * 0.1), Color.WHITE, String(arm.get("tier", "")))
 		_draw_count(self, r, int(stack["count"]))
 	if bank_price != "":
 		UiSkin.pill(self, _font, _bank_button(), bank_price, false, false, 14)
@@ -886,7 +889,7 @@ func _draw_cursor() -> void:
 	if cgun.is_empty():
 		ItemIcons.draw(_top, String(inventory.cursor["id"]), r, Color.WHITE, String((inventory.cursor.get("arm", {}) as Dictionary).get("tier", "")))
 	else:
-		ItemIcons.draw(_top, String(cgun["body"]), r, _tint(cgun))
+		ItemIcons.draw_gun(_top, cgun, r, _tint(cgun))
 	_draw_count(_top, r, int(inventory.cursor["count"]))
 
 

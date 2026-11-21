@@ -28,6 +28,9 @@ signal cancelled
 const BASE_HEIGHT := 648.0
 const W := 1152.0
 const CARD_REF := 1000  # refs from here up mark offered cards (bag slots are below)
+const CAMO_REF := 500000  # (polish1 D5a) refs from here up mark offered camos
+const CamoSkin = preload("res://game/camo_skin.gd")
+const CamoIcons = preload("res://game/camo_icons.gd")
 const SLOTS := 8
 const TILE := Vector2(76, 96)
 const GAP := 8.0
@@ -60,6 +63,9 @@ var _card: Control  # lies over everything and draws the hovered thing's card (g
 var _card_face: Control  # the hovered card game card, drawn big
 var _next_ref := CARD_REF
 var offered_cards := {}  # ref -> card thing offered in this trade (the session takes these out when it is done)
+var camos: RefCounted  # (polish1 D5a) core/camo_locker.gd, set by the session
+var offered_camos := {}  # ref -> camo item offered in this trade
+var _next_camo := CAMO_REF
 var _font: Font = ThemeDB.fallback_font
 
 
@@ -164,7 +170,7 @@ func setup(inventory: InventoryState, items: RefCounted, gun_db: RefCounted) -> 
 			t.clicked.connect(_on_tile)
 			add_child(t)
 			(side[0] as Array).append(t)
-	var tab_row := [["bag", "bag", "GEAR"], ["cards", "card", "CARDS"]]
+	var tab_row := [["bag", "bag", "GEAR"], ["cards", "card", "CARDS"], ["camos", "star", "CAMOS"]]
 	for i in tab_row.size():
 		var b := _icon_button(String(tab_row[i][1]), String(tab_row[i][2]), Color(0.85, 0.85, 0.9), Rect2(76 + i * 170, 352, 160, 40))
 		var which := String(tab_row[i][0])
@@ -251,6 +257,15 @@ func _draw_card() -> void:
 			_card_face.show_card(_card_db, String(_hover["card"]))
 			_card_face.position = Vector2(minf(place.x, view.x - _card_face.size.x), clampf(place.y - _card_face.size.y * 0.5, 0.0, view.y - _card_face.size.y))
 		return
+	if _hover.has("camo"):
+		var camo: Dictionary = _hover["camo"]
+		var look := CamoSkin.look_of(String(camo.get("id", "")))
+		var text := "%s camo\n%s  -  %s, pattern %d\ngoes on %d more gun%s" % [String(look.get("name", "?")), String(_gun_db.tier(String(look.get("tier", "green")))["name"]), CamoSkin.wear_name(float(camo.get("wear", 0.0))), int(camo.get("seed", 1)), int(camo.get("uses", 1)), "" if int(camo.get("uses", 1)) == 1 else "s"]
+		var box := Rect2(Vector2(minf(place.x, view.x - 300.0), minf(place.y, view.y - 90.0)), Vector2(290, 82))
+		_card.draw_rect(box, Color(0.04, 0.04, 0.06, 0.95))
+		_card.draw_rect(box, _colour_of(_hover), false, 2.0)
+		_card.draw_multiline_string(_font, box.position + Vector2(10, 22), text, HORIZONTAL_ALIGNMENT_LEFT, 270, 14, -1, Color.WHITE)
+		return
 	if _hover.has("gun"):
 		var gun: Dictionary = _hover["gun"]
 		var held: Dictionary = _inventory.holster_gun(in_hand) if in_hand >= 0 else {}
@@ -269,6 +284,8 @@ func show_table(view: Dictionary) -> void:
 	if not visible:  # a new trade: the card marks start over (kept after close, the session reads them when it is done)
 		offered_cards = {}
 		_next_ref = CARD_REF
+		offered_camos = {}
+		_next_camo = CAMO_REF
 		_tab = "bag"
 	_view = view
 	_hover = {}
@@ -284,6 +301,8 @@ func show_table(view: Dictionary) -> void:
 	(_tabs[0] as IconButton).on = _tab == "bag"
 	(_tabs[1] as IconButton).on = _tab == "cards"
 	(_tabs[1] as IconButton).visible = _cards != null
+	(_tabs[2] as IconButton).on = _tab == "camos"
+	(_tabs[2] as IconButton).visible = camos != null
 	var short := _bag_things(theirs) - (_free_slots() + _bag_things(mine))  # cards need no bag room
 	var both: bool = view["confirm"]
 	var ready_mine := bool(view["ready_mine"])
@@ -306,7 +325,7 @@ func show_table(view: Dictionary) -> void:
 	else:
 		_status_icon = "check"
 		_status = "Press READY when it looks fair"
-	for b: Control in [_ready_button, _confirm_button, _tabs[0], _tabs[1]]:
+	for b: Control in [_ready_button, _confirm_button, _tabs[0], _tabs[1], _tabs[2]]:
 		b.queue_redraw()
 	_board.queue_redraw()
 
@@ -358,6 +377,12 @@ func _on_tile(tile: Control) -> void:
 				offered_cards[_next_ref] = sent
 				_next_ref += 1
 				offered.emit(sent)
+			elif thing.has("camo"):
+				var sent_c := thing.duplicate(true)
+				sent_c["ref"] = _next_camo
+				offered_camos[_next_camo] = sent_c["camo"]
+				_next_camo += 1
+				offered.emit(sent_c)
 			else:
 				offered.emit(thing)
 
@@ -377,6 +402,19 @@ func _fill_strip(mine: Array) -> void:
 			var thing := _thing_in(slot)
 			if not thing.is_empty() and not on_table.has(slot):
 				things.append([thing, 0])
+	elif _tab == "camos":
+		if camos != null:
+			var on_table_c := {}
+			for thing: Dictionary in mine:
+				if thing.has("camo"):
+					var key_c := JSON.stringify(thing["camo"])
+					on_table_c[key_c] = int(on_table_c.get(key_c, 0)) + 1
+			for item: Dictionary in camos.get("items"):
+				var key_i := JSON.stringify(item)
+				if int(on_table_c.get(key_i, 0)) > 0:
+					on_table_c[key_i] = int(on_table_c[key_i]) - 1
+					continue
+				things.append([{"camo": item.duplicate()}, 0])
 	elif _cards != null and _card_db != null:
 		var on_table := {}
 		for thing: Dictionary in mine:
@@ -404,7 +442,7 @@ func _fill_strip(mine: Array) -> void:
 func _bag_things(things: Array) -> int:
 	var n := 0
 	for thing: Dictionary in things:
-		if not thing.has("card"):
+		if not thing.has("card") and not thing.has("camo"):
 			n += 1
 	return n
 
@@ -430,6 +468,8 @@ func _colour_of(thing: Dictionary) -> Color:
 		return RARITY_COLORS.get("legendary" if bool(thing["leader"]) else String(_card_db.card(String(thing["card"])).get("rarity", "common")), Color.WHITE)
 	if thing.has("gun"):
 		return TierStyle.color(_gun_db, String((thing["gun"] as Dictionary)["tier"]), Time.get_ticks_msec() / 1000.0)
+	if thing.has("camo"):
+		return TierStyle.color(_gun_db, String(CamoSkin.look_of(String((thing["camo"] as Dictionary).get("id", ""))).get("tier", "green")), Time.get_ticks_msec() / 1000.0)
 	if thing.has("arm"):  # a rolled armour piece: its tier's colour
 		return TierStyle.color(_gun_db, String((thing["arm"] as Dictionary)["tier"]), Time.get_ticks_msec() / 1000.0)
 	return Color(0.9, 0.9, 0.9)
@@ -452,8 +492,15 @@ func _draw_tile(tile: Tile) -> void:
 	tile.draw_style_box(back, r)
 	if tile.thing.has("gun"):
 		var gun: Dictionary = tile.thing["gun"]
-		ItemIcons.draw(tile, String(gun["body"]), Rect2(6, 26, r.size.x - 12, 40), c)
+		ItemIcons.draw_gun(tile, gun, Rect2(6, 26, r.size.x - 12, 40), c)
 		tile.draw_rect(Rect2(10, r.size.y - 14, r.size.x - 20, 5), c)  # the tier band
+	elif tile.thing.has("camo"):  # (polish1 D5a) a camo: its swatch and its uses
+		var camo: Dictionary = tile.thing["camo"]
+		var pic := CamoIcons.swatch({"id": String(camo.get("id", "")), "wear": float(camo.get("wear", 0.0)), "seed": int(camo.get("seed", 1))}, tile)
+		if pic != null:
+			tile.draw_texture_rect(pic, Rect2(4, 20, r.size.x - 8, 44), false)
+		tile.draw_rect(Rect2(10, r.size.y - 14, r.size.x - 20, 5), c)
+		tile.draw_string(_font, Vector2(6, 16), "CAMO x%d" % int(camo.get("uses", 1)), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 12, 11, c)
 	elif tile.thing.has("id"):
 		ItemIcons.draw(tile, String(tile.thing["id"]), Rect2(8, 16, r.size.x - 16, r.size.y - 32), Color.WHITE, String((tile.thing.get("arm", {}) as Dictionary).get("tier", "")))
 	if tile.count > 1:

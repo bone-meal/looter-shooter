@@ -178,6 +178,15 @@ static func _weighted(options: Array, weights: Dictionary, rng: RandomNumberGene
 
 # Returns "" when the gun is legal, otherwise a short reason. The host calls this before trusting a gun from a client or a save.
 static func validate(db: RefCounted, gun: Dictionary) -> String:
+	if gun.has("camo"):  # (polish1 D5a) a camo on the gun: looks only, checked for shape (data/camos.json ids)
+		var camo: Variant = gun["camo"]
+		if not camo is Dictionary or not (camo as Dictionary).get("id") is String or String(camo["id"]).length() > 40 \
+				or not ((camo as Dictionary).get("wear") is float or (camo as Dictionary).get("wear") is int) or float(camo["wear"]) < 0.0 or float(camo["wear"]) > 1.0 \
+				or not ((camo as Dictionary).get("seed") is float or (camo as Dictionary).get("seed") is int) or int(camo["seed"]) < 0 or int(camo["seed"]) > 1000 \
+				or not (camo as Dictionary).get("challenge", false) is bool or (camo as Dictionary).size() > 4:
+			return "bad camo"
+		gun = gun.duplicate()
+		gun.erase("camo")
 	if gun.has("wkills"):
 		var count: Variant = gun["wkills"]
 		if not (count is int or count is float) or float(count) < 0.0 or float(count) > float(WKILLS_MAX) or not is_equal_approx(float(count), roundf(float(count))):

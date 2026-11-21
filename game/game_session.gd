@@ -51,6 +51,9 @@ const CaseShelf = preload("res://core/case_shelf.gd")
 const PackShop = preload("res://core/tcg/pack_shop.gd")
 const CaseTab = preload("res://game/case_tab.gd")
 const CaseOpening = preload("res://game/case_opening.gd")
+const CamoLocker = preload("res://core/camo_locker.gd")
+const CamoIcons = preload("res://game/camo_icons.gd")
+const CamoTab = preload("res://game/camo_tab.gd")
 const ItemIcons = preload("res://game/item_icons.gd")
 const NpcChatter = preload("res://game/npc_chatter.gd")
 const RenderStyle = preload("res://game/render_style.gd")
@@ -234,6 +237,9 @@ var _progress := ProgressState.new(DataStore.load_json("res://data/progression.j
 var _card_screen := CardScreen.new()
 var _cases := CaseShelf.new()  # (polish1 item 72) crates bought and not opened yet (saved "cases")
 var _case_tab := CaseTab.new()  # the player card's Cases tab
+var _camo_locker := CamoLocker.new(DataStore.load_json("res://data/camos.json"))  # (polish1 D5a) unboxed camos not used up yet (saved "camos")
+var _camo_icons := CamoIcons.new()  # renders guns wearing their camo for icons
+var _camo_tab := CamoTab.new()  # the player card's Camos tab
 var _opening := CaseOpening.new()  # the CS:GO-style opening screen
 var _crates: Array = []  # data/gun_loot.json "vendor"
 var _render_style := RenderStyle.new()
@@ -791,6 +797,14 @@ func _ready() -> void:
 	_case_tab.gun_db = _player.gun_db
 	_case_tab.open_requested.connect(_show_case)
 	_card_screen.cases_tab = _case_tab
+	add_child(_camo_icons)
+	_camo_icons.gun_db = _player.gun_db
+	_camo_tab.locker = _camo_locker
+	_camo_tab.inventory = _player.inventory
+	_camo_tab.gun_db = _player.gun_db
+	_camo_tab.apply_requested.connect(_apply_camo)
+	_card_screen.camos_tab = _camo_tab
+	_trade_screen.camos = _camo_locker
 	_card_screen.buy_starter = func(sid: String) -> String:  # (polish1 item 80) a starter deck bought from the binder
 		var why := String(PackShop.buy("starter:" + sid, _wallet, _cards, DataStore.load_json("res://data/tcg/packs.json"), DataStore.load_json("res://data/tcg/starters.json")["starters"]))
 		if why == "":
@@ -1344,6 +1358,8 @@ func _legal_gun(gun: Dictionary) -> bool:
 
 # Host: guns and armour (director, round 5) and card game cards (a real card or leader in a real finish).
 func _legal_thing(thing: Dictionary) -> bool:
+	if thing.has("camo"):  # (polish1 D5a) an unboxed camo of the data, sane numbers
+		return not _camo_locker.clean(thing["camo"]).is_empty()
 	if thing.has("gun"):
 		return _legal_gun(thing["gun"])
 	if thing.has("card"):
@@ -1449,6 +1465,14 @@ func _legal_card(thing: Dictionary) -> bool:
 
 func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 	for ref: Variant in gave:
+		if _trade_screen.offered_camos.has(int(ref)):  # (polish1 D5a) this very camo out of the locker
+			var gone: Dictionary = _trade_screen.offered_camos[int(ref)]
+			var mine: Array = _camo_locker.items
+			for i in mine.size():
+				if JSON.stringify(mine[i]) == JSON.stringify(gone):
+					mine.remove_at(i)
+					break
+			continue
 		if _trade_screen.offered_cards.has(int(ref)):  # a card from the collection
 			var c: Dictionary = _trade_screen.offered_cards[int(ref)]
 			_cards.remove(String(c["card"]), String(c["finish"]), 1, bool(c["leader"]))
@@ -1474,6 +1498,8 @@ func _finish_trade(gave: Array, got: Array, partner := "?") -> void:
 				_drop_armour(piece, _player.global_position + _player.global_basis.z * -1.0)
 		elif given.has("id") and _player.items.has_item(String(given["id"])):
 			_player.inventory.add(String(given["id"]), 1)
+		elif given.has("camo") and not _camo_locker.clean(given["camo"]).is_empty():
+			_camo_locker.add(_camo_locker.clean(given["camo"]))
 		elif given.has("card") and _legal_card(given):
 			_cards.add(String(given["card"]), String(given.get("finish", "")), 1, bool(given.get("leader", false)))
 	_on_inventory_changed()
@@ -1718,6 +1744,7 @@ func _load_profile() -> void:
 			_jackpot = float(extra.get("jackpot", _jackpot))
 		_doubloons.balance = maxi(int(extra.get("doubloons", 0)), 0)
 		_cases.from_dict(extra.get("cases"), _crates.map(func(c: Dictionary) -> String: return String(c["id"])))
+		_camo_locker.from_list(extra.get("camos"))
 		_prize_tickets = maxi(int(extra.get("prize_tickets", 0)), 0)
 		_pachinko_pot = maxf(float(extra.get("pachinko_pot", _pachinko_pot)), float(_pachinko_cfg["jackpot"]["seed"]))
 		if _pachinko != null:
@@ -1796,7 +1823,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -2588,12 +2615,19 @@ func _open_case(id: String) -> void:
 	_player.inventory.add_gun(gun)
 	_player.refresh_held()
 	save_profile()
+	var camo := _camo_locker.roll(_rng, id)  # (polish1 D5a) the second reel: a camo, its own item in the Camos tab
+	_camo_locker.add(camo)
+	save_profile()
 	var reel: Array = []
 	var win := 40 + _rng.randi_range(0, 4)
 	for i in win + 6:
 		reel.append(gun if i == win else roll.call())
+	var camo_reel: Array = []
+	var camo_win := 44 + _rng.randi_range(0, 4)
+	for i in camo_win + 8:
+		camo_reel.append(camo if i == camo_win else _camo_locker.roll(_rng, id))
 	_opening.left = _cases.count(id)
-	_opening.spin(reel, win)
+	_opening.spin(reel, win, camo_reel, camo_win)
 
 
 func _case_landed(id: String) -> void:
@@ -2605,7 +2639,34 @@ func _case_landed(id: String) -> void:
 			_chat.add_line("%s unboxed %s!" % [_profile_name, line], Color(1.0, 0.82, 0.3))
 		if net != null:
 			net.chat.announce_unbox(line + "!")
+	var camo := _opening.camo_winner()  # (polish1 D5a) a legendary or pony camo is told to the lobby too
+	var look := _camo_locker.look(String(camo.get("id", "")))
+	if not look.is_empty() and String(look["tier"]) in ["gold", "pony"]:
+		var camo_line := "a %s %s camo" % [String(_player.gun_db.tier(String(look["tier"]))["name"]), String(look["name"])]
+		if net == null or not net.can_send() or net.is_host():
+			_chat.add_line("%s unboxed %s!" % [_profile_name, camo_line], Color(1.0, 0.82, 0.3))
+		if net != null:
+			net.chat.announce_unbox(camo_line + "!")
 	_case_tab.refresh()
+	_camo_tab.refresh()
+
+
+# (polish1 D5a) The Camos tab: put camo `index` on a gun in a holster or the backpack (one use; replaces its old camo).
+func _apply_camo(index: int, where: Dictionary) -> void:
+	var gun: Dictionary = _player.inventory.holster_gun(int(where["holster"])) if where.has("holster") else _player.inventory.gun_at(int(where.get("slot", -1)))
+	if gun.is_empty():
+		return
+	var on_gun := _camo_locker.use(index)
+	if on_gun.is_empty():
+		return
+	gun["camo"] = on_gun
+	if where.has("holster"):
+		_player.inventory.set_holster_gun(int(where["holster"]), gun)
+	_player.refresh_held()
+	_sounds.call("play", "upgrade_done")
+	_player_hud.notice("%s applied to %s" % [String(_camo_locker.look(String(on_gun["id"]))["name"]), GunStats.display_name(_player.gun_db, gun)])
+	save_profile()
+	_camo_tab.refresh()
 
 
 func _pick_up(drop: Dictionary) -> void:

@@ -12,6 +12,7 @@ const TierStyle = preload("res://game/tier_style.gd")
 const GunStats = preload("res://core/gun_stats.gd")
 const SkillState = preload("res://core/skill_state.gd")
 const ArmourStats = preload("res://core/armour_stats.gd")
+const CamoSkin = preload("res://game/camo_skin.gd")
 
 const PAD := 22.0
 const BUTTON_H := 40.0
@@ -78,7 +79,7 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 	TierStyle.draw_name(canvas, font, Vector2(x, y), db, tier_id, GunStats.display_name(db, gun), 24, tint, w, t, GunStats.maker_name(db, gun))  # a long name scrolls
 	y += 12.0
 	ItemIcons.plate(canvas, Rect2(x, y, w, 118.0), db, tier_id, t)
-	ItemIcons.draw(canvas, String(gun["body"]), Rect2(x + w * 0.06, y, w * 0.88, 120.0), tint)
+	ItemIcons.draw_gun(canvas, gun, Rect2(x + w * 0.06, y, w * 0.88, 120.0), tint)
 	var logo: Dictionary = db.makers.get(String(gun.get("maker", "")), {}).get("logo", {})
 	if not logo.is_empty() and not gun.has("unique"):  # (polish1 item 47) the maker's logo, here only (data/manufacturers.json "logo")
 		EmblemArt.draw_def(canvas, logo, Vector2(x + w - 24.0, y + 24.0), 19.0)
@@ -148,6 +149,12 @@ static func _gun(canvas: CanvasItem, font: Font, r: Rect2, foot: float, gun: Dic
 		var u: Dictionary = stats["unique"]
 		if String(u.get("flavor", "")) != "":
 			lines.append(["\"%s\"" % String(u["flavor"]), Color(1.0, 0.55, 0.7), false, ""])
+	if gun.get("camo") is Dictionary:  # (polish1 D5a) "- <name> skin applied", in the camo's tier colour
+		var camo: Dictionary = gun["camo"]
+		var look := CamoSkin.look_of(String(camo.get("id", "")))
+		if not look.is_empty():
+			lines.append(["- %s skin applied%s   (%s, pattern %d)" % [String(look["name"]), "  [challenge]" if bool(camo.get("challenge", false)) else "", CamoSkin.wear_name(float(camo.get("wear", 0.0))), int(camo.get("seed", 1))],
+				TierStyle.color(db, String(look["tier"]), t), false, ""])
 	var past: Array = gun.get("owners", [])
 	if not past.is_empty():  # (polish1 item 63) a gold+ gun's previous owners: a hint, the list while the key is held
 		var key := _key_text("gun_history")

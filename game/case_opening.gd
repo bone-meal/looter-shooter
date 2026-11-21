@@ -22,6 +22,9 @@ const GAP := 10.0
 const SPIN_SECONDS := 6.5
 const LID_SECONDS := 0.7
 const PICTURES := "res://assets/ui/cases/"
+const CTILE := Vector2(180, 112)  # (polish1 D5a) the camo reel's tiles
+const CamoSkin = preload("res://game/camo_skin.gd")
+const CamoIcons = preload("res://game/camo_icons.gd")
 
 var gun_db: RefCounted
 var sounds: Node  # game/fantasy_sounds.gd: "hub_tick" per gun passing the line
@@ -30,6 +33,9 @@ var left := 0  # how many more crates of this kind the player has (for Open anot
 var _crate: Dictionary = {}
 var _reel: Array = []  # gun dicts
 var _win := 0
+var _camos: Array = []  # (polish1 D5a) the second reel: camo items {id, wear, seed, uses}
+var _camo_win := 0
+var _camo_stop := 0.0
 var _phase := ""  # "case" | "lid" | "spin" | "won"
 var _t := 0.0
 var _stop := 0.0  # where the reel stops (pixels from its start to the centre line)
@@ -62,9 +68,12 @@ func show_case(crate: Dictionary, count: int) -> void:
 
 
 # The session took the crate and rolled: `reel` guns, the winner at `win`.
-func spin(reel: Array, win: int) -> void:
+func spin(reel: Array, win: int, camos: Array = [], camo_win: int = 0) -> void:
 	_reel = reel
 	_win = win
+	_camos = camos
+	_camo_win = camo_win
+	_camo_stop = float(camo_win) * (CTILE.x + GAP) + CTILE.x * _rng.randf_range(0.12, 0.88)
 	_phase = "lid"
 	_t = 0.0
 	_ticked = -1
@@ -73,6 +82,10 @@ func spin(reel: Array, win: int) -> void:
 
 func winner() -> Dictionary:
 	return _reel[_win] if _win < _reel.size() else {}
+
+
+func camo_winner() -> Dictionary:
+	return _camos[_camo_win] if _camo_win < _camos.size() else {}
 
 
 func close() -> void:
@@ -182,13 +195,24 @@ func _draw() -> void:
 			_button(Rect2(Vector2(mid.x - 160.0, box.end.y + 44.0), Vector2(320, 62)), "OPEN", "open", func() -> void: open_pressed.emit(id), true)
 			_button(Rect2(Vector2(mid.x - 90.0, box.end.y + 122.0), Vector2(180, 42)), "Back", "done", close)
 		return
-	_reel_band(mid, view)
+	var two := not _camos.is_empty()
+	_reel_band(mid - Vector2(0, 120.0 if two else 0.0), view)
+	if two:
+		_camo_band(mid + Vector2(0, 70.0), view)
 	if _phase == "won":
 		var gun := winner()
 		var tier := String(gun.get("tier", "grey"))
 		var tint := TierStyle.color(gun_db, tier, _t)
 		var gun_name := GunStats.display_name(gun_db, gun)
 		var y := mid.y + TILE.y * 0.5 + 70.0
+		if two:  # the camo's name under its reel, the gun's under the camo
+			var camo := camo_winner()
+			var look := CamoSkin.look_of(String(camo.get("id", "")))
+			var ctint := TierStyle.color(gun_db, String(look.get("tier", "green")), _t)
+			y = mid.y + 70.0 + CTILE.y * 0.5 + 44.0
+			draw_string(_font, Vector2(0, y), "%s camo  -  %s  (%s, pattern %d, %d use%s)" % [String(look.get("name", "")), String(gun_db.tier(String(look.get("tier", "green")))["name"]), CamoSkin.wear_name(float(camo.get("wear", 0.0))), int(camo.get("seed", 1)), int(camo.get("uses", 1)), "" if int(camo.get("uses", 1)) == 1 else "s"],
+				HORIZONTAL_ALIGNMENT_CENTER, view.x, 22, ctint)
+			y += 30.0
 		draw_string(_font, Vector2(0, y), String(gun_db.tier(tier)["name"]).to_upper(), HORIZONTAL_ALIGNMENT_CENTER, view.x, 30, tint)
 		draw_string_outline(_font, Vector2(0, y + 44.0), gun_name, HORIZONTAL_ALIGNMENT_CENTER, view.x, 30, 6, Color(0, 0, 0, 0.8))
 		draw_string(_font, Vector2(0, y + 44.0), gun_name, HORIZONTAL_ALIGNMENT_CENTER, view.x, 30, Color.WHITE)
@@ -229,6 +253,39 @@ func _reel_band(mid: Vector2, view: Vector2) -> void:
 	draw_line(Vector2(mid.x, band.position.y - 10.0), Vector2(mid.x, band.end.y + 10.0), UiSkin.ACCENT, 3.0)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid.x - 10, band.position.y - 12), Vector2(mid.x + 10, band.position.y - 12), Vector2(mid.x, band.position.y + 2)]), UiSkin.ACCENT)
 	draw_colored_polygon(PackedVector2Array([Vector2(mid.x - 10, band.end.y + 12), Vector2(mid.x + 10, band.end.y + 12), Vector2(mid.x, band.end.y - 2)]), UiSkin.ACCENT)
+
+
+# (polish1 D5a) The camo reel under the gun reel: swatches (the camo on a rifle) running the same way, stopping at the
+# same moment on the camo that was rolled.
+func _camo_band(mid: Vector2, view: Vector2) -> void:
+	var band := Rect2(Vector2(0, mid.y - CTILE.y * 0.5 - 14.0), Vector2(view.x, CTILE.y + 28.0))
+	draw_rect(band, Color(0.04, 0.04, 0.06, 0.95))
+	draw_line(band.position, Vector2(band.end.x, band.position.y), Color(UiSkin.ACCENT, 0.3), 2.0)
+	draw_line(Vector2(0, band.end.y), band.end, Color(UiSkin.ACCENT, 0.3), 2.0)
+	var k := clampf(_t / SPIN_SECONDS, 0.0, 1.0) if _phase == "spin" else (1.0 if _phase == "won" else 0.0)
+	var run := _camo_stop * (1.0 - pow(1.0 - k, 4.0))
+	var start := mid.x - run
+	for i in _camos.size():
+		var x := start + float(i) * (CTILE.x + GAP)
+		if x > view.x or x + CTILE.x < 0.0:
+			continue
+		var r := Rect2(Vector2(x, mid.y - CTILE.y * 0.5), CTILE)
+		var camo: Dictionary = _camos[i]
+		var look := CamoSkin.look_of(String(camo.get("id", "")))
+		var tint := TierStyle.color(gun_db, String(look.get("tier", "green")), _t)
+		var won := _phase == "won" and i == _camo_win
+		draw_style_box(UiSkin._box(Color(0.09, 0.09, 0.12), Color(tint, 0.95 if won else 0.5), 8, 3 if won else 1), r)
+		var pic := CamoIcons.swatch({"id": String(camo.get("id", "")), "wear": float(camo.get("wear", 0.0)) if i == _camo_win else 0.05, "seed": int(camo.get("seed", 1)) if i == _camo_win else 7}, self)  # (one picture per camo kind for the rest of the reel)
+		if pic != null:
+			draw_texture_rect(pic, Rect2(r.position + Vector2(8, 4), Vector2(r.size.x - 16.0, r.size.y - 30.0)), false)
+		draw_rect(Rect2(Vector2(r.position.x, r.end.y - 6.0), Vector2(r.size.x, 6.0)), tint)
+		draw_string(_font, Vector2(r.position.x + 8.0, r.end.y - 12.0), String(look.get("name", "")), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 16.0, 13, UiSkin.TEXT)
+	var shade := 260.0
+	draw_polygon(PackedVector2Array([band.position, band.position + Vector2(shade, 0), Vector2(shade, band.end.y), Vector2(0, band.end.y)]),
+		PackedColorArray([Color(0, 0, 0, 0.95), Color(0, 0, 0, 0), Color(0, 0, 0, 0), Color(0, 0, 0, 0.95)]))
+	draw_polygon(PackedVector2Array([Vector2(view.x - shade, band.position.y), Vector2(view.x, band.position.y), band.end, Vector2(view.x - shade, band.end.y)]),
+		PackedColorArray([Color(0, 0, 0, 0), Color(0, 0, 0, 0.95), Color(0, 0, 0, 0.95), Color(0, 0, 0, 0)]))
+	draw_line(Vector2(mid.x, band.position.y - 8.0), Vector2(mid.x, band.end.y + 8.0), UiSkin.ACCENT, 3.0)
 
 
 func _tile(r: Rect2, gun: Dictionary, won: bool) -> void:
