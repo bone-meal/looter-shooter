@@ -142,8 +142,7 @@ func _process(delta: float) -> void:
 	for peer: int in rules.players.keys():
 		if not where.has(peer):
 			rules.leave(peer)
-	var settings_menu := get_tree().get_first_node_in_group("settings_menu") as Control
-	var going := rules.tick(delta, _held, settings_menu == null or not settings_menu.is_visible_in_tree())  # the countdown waits only while the host's Settings are open (polish1 item 8)
+	var going := rules.tick(delta, _held, not _host_in_menu())  # the countdown waits while the host's Settings or character customizing are open (polish1 item 8)
 	_send -= delta
 	if _send <= 0.0 or going:
 		_send = 0.2
@@ -167,3 +166,12 @@ func _view(v: Dictionary) -> void:
 @rpc("authority", "call_remote", "reliable")
 func _go() -> void:
 	go.emit()
+
+
+# True while the host has Settings or the character customize menu open: the hub countdown waits for them.
+func _host_in_menu() -> bool:
+	for group: String in ["settings_menu", "customize_menu"]:
+		var menu := get_tree().get_first_node_in_group(group) as Control
+		if menu != null and menu.is_visible_in_tree():
+			return true
+	return false

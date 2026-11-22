@@ -1,9 +1,8 @@
-Polish1 D5c part 20: Hound of War, the seventh elite mask
+Customize preview turns only on left-drag; hub countdown waits while host customizes
 
-A war dog's head in short fur (tan, a dark saddle and muzzle), a long shepherd
-muzzle with the lip curled off its canines, tall ears (one torn) up through a
-round steel helmet worn down over the brow with goggles on the brim, a shaggy
-neck, a studded collar and a clutch of dog tags on chains at the throat.
+- game/customize_menu.gd: no idle spin; hold the left mouse button on the preview and drag to turn the model. Joins group customize_menu.
+- game/net_hub.gd: the hub countdown pauses while the host has Settings or the character customize menu open.
+- tools/dev_boot.gd: !custom open / close / note for checks.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,4 +1,4 @@
-# Purpose: full-screen character customization: live rotating 3D preview plus tabs for body (gender, height, weight, chest, glutes, skin), hair (20 styles + color wheel), face (50 expressions) and outfit (100).
+# Purpose: full-screen character customization: a live 3D preview (held still; hold the left mouse button on it and drag to turn it) plus tabs for body (gender, height, weight, chest, glutes, skin), hair (20 styles + color wheel), face (50 expressions) and outfit (100).
 # With the rigged characters installed (game/rigged_body.gd) the tabs offer what those bodies have: gender, height and shape sliders, skin, hair + colour, outfit.
 # Dependencies: game/rigged_body.gd, game/body_builder.gd, game/appearance_data.gd (core/appearance_db.gd rules), game/menu_widgets.gd. Emits `applied(look)` when saved, `cancelled` when closed without saving.
 extends Control
@@ -32,6 +32,7 @@ var _picker := ColorPicker.new()
 
 
 func _ready() -> void:
+	add_to_group("customize_menu")  # game/net_hub.gd: the hub countdown waits while the host is in here
 	Widgets.fill(self)
 	visible = false
 	Widgets.backdrop(self, Color(0.05, 0.06, 0.09, 0.96))
@@ -50,14 +51,13 @@ func open(current: Dictionary) -> void:
 	visible = true
 
 
-func _process(delta: float) -> void:
+func _process(_delta: float) -> void:
 	if not visible:
 		return
 	if _dirty:
 		_dirty = false
 		_rebuild_model()
 	if _model != null:
-		_model.rotation.y += delta * 0.7
 		if _model.has_method("head_anchor"):
 			_model.call("animate", 0.0, false)
 
@@ -69,6 +69,7 @@ func _build_preview() -> Control:
 	container.stretch = true
 	container.custom_minimum_size = Vector2(440, 600)
 	container.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	container.gui_input.connect(_on_preview_input)
 	_viewport = SubViewport.new()
 	_viewport.own_world_3d = true
 	_viewport.size = Vector2i(440, 600)
@@ -90,6 +91,12 @@ func _build_preview() -> Control:
 	cam.position = Vector3(0.0, 1.05, 3.6)
 	_viewport.add_child(cam)
 	return container
+
+
+func _on_preview_input(event: InputEvent) -> void:
+	# The model only turns while the left mouse button is held on the preview and dragged (no idle spin).
+	if _model != null and event is InputEventMouseMotion and (event.button_mask & MOUSE_BUTTON_MASK_LEFT) != 0:
+		_model.rotation.y += event.relative.x * 0.01
 
 
 func _rebuild_model() -> void:

@@ -4538,6 +4538,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				speeds.append(str(int(player.call("speed_units"))))
 			Input.action_release("move_right")
 			_lines.append("BHOP %s%s: run %s u/s, after each hop %s" % ["tapped while falling" if late == 0 else "%d ms late" % late, ", flawless strafing" if strafe else "", speeds[0], " ".join(speeds.slice(1))])
+		"custom":  # the character customize menu: "!custom open" / "!custom close" / "!custom note" (open? the preview model's turn: it must not spin by itself)
+			var cz: Control = session.get("_customizer")
+			if words.size() > 1 and words[1] == "open":
+				session.call("_open_customizer")
+			elif words.size() > 1 and words[1] == "close":
+				session.call("_close_customizer")
+			else:
+				var mdl: Node3D = cz.get("_model")
+				_lines.append("CUSTOM %s: open %s model turn %.4f" % [" ".join(words.slice(2)), str(cz.visible), mdl.rotation.y if mdl != null else -9.0])
 		"hub":  # the safe hub: "!hub note" = in it? its view in the log; "!hub at x z" = stand at hub metres (from its middle)
 			var hub: Node = session.get("net").get("hub")
 			if words.size() > 3 and words[1] == "at":
