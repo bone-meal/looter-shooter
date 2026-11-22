@@ -1,1 +1,1 @@
-Windows exe gets the custom icon (modify_resources on) + icon_check and git_status tools
+Release v1.17
