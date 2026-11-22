@@ -337,6 +337,22 @@
 				"pulse_hz": 0.2,
 				"sparks": {"at": [[0.0546, 0.2196, 0.0034], [-0.0065, 0.2326, 0.0346], [0.0156, 0.19, 0.06]], "radius": 0.03, "amount": 4, "dir": [0.0, 1.0, 0.0], "gravity": -0.03, "life": 3.0, "glow": 1.2, "color": [0.7, 1.0, 0.6]}
 			}
+		},
+		"neon_ronin": {
+			"name": "Neon Ronin",
+			"source": "elite",
+			"base": "payday",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A smooth gunmetal face in the shadow of a huge drooping straw hat, cyan light in its narrow eyes, neon characters written down both cheeks that write themselves in and fade stroke by stroke, a dark indigo wrap knotted at the nape.",
+			"fx": {
+				"glow": [0.2, 0.95, 1.0],
+				"glow_strength": 3.0,
+				"pulse_hz": 0.6,
+				"glow_from_col": true,
+				"heal_every": 5.0
+			}
 		}
 	}
 }
