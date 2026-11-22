@@ -1,8 +1,8 @@
-Polish1 D5c part 21: Beak of the Damned, elite mask 20
+Polish1 D5c part 22: Skull of the Forgotten, elite mask 21
 
-- assets/masks/beak_of_the_damned: baked 14000 / 4500 tris (riveted steel beak bands, brass tip, iris lenses, lobster-tail cap on oiled leather, brass bellows pump).
-- data/masks.json: faint green lens glow, the pump's gear turns (fx spin), green mist leaks from the beak's grille.
-- tools/blender/mask_beak_of_the_damned.py: the cowl reaches the collar line.
+- tools/blender/mask_skull_of_the_forgotten.py: a weathered skull overgrown by the forest (a root out of one eye spreading over the broken brow, gripping roots, jaw tied on by roots, moss, bracket fungi, a sapling, a root beard over clods of earth to the collar); bone darkened so the game sun does not wash it white.
+- assets/masks/skull_of_the_forgotten: baked 14000 / 4500 tris.
+- data/masks.json: small mushroom caps glow pale green and pulse, spores drift up off the moss.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

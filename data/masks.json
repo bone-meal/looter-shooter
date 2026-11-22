@@ -322,6 +322,21 @@
 				"spin": {"at": [-0.0361, 0.1458, 0.0997], "axis": [0.3663, -0.1228, 0.9224], "hz": 0.15},
 				"mist": {"at": [0.0, 0.084, -0.174], "radius": 0.02, "amount": 8, "dir": [0.0, -1.0, 0.0], "rise": -0.01, "life": 2.0, "size": 0.016, "color": [0.4, 0.75, 0.3, 0.35]}
 			}
+		},
+		"skull_of_the_forgotten": {
+			"name": "Skull of the Forgotten",
+			"source": "elite",
+			"base": "skull",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "An old skull dug out of a forest floor with the forest still growing through it: a root bursting from one eye and spreading over the broken brow, roots gripping the temples and tying on the sagging jaw, moss, bracket fungi, a sapling on the crown and a beard of roots over clods of earth. Small pale mushrooms glow in the moss and spores drift up off it.",
+			"fx": {
+				"glow": [0.55, 1.0, 0.7],
+				"glow_strength": 2.5,
+				"pulse_hz": 0.2,
+				"sparks": {"at": [[0.0546, 0.2196, 0.0034], [-0.0065, 0.2326, 0.0346], [0.0156, 0.19, 0.06]], "radius": 0.03, "amount": 4, "dir": [0.0, 1.0, 0.0], "gravity": -0.03, "life": 3.0, "glow": 1.2, "color": [0.7, 1.0, 0.6]}
+			}
 		}
 	}
 }
