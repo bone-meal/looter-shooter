@@ -1,9 +1,9 @@
-Polish1 D5c part 19: Cracked Mirror, the sixth elite mask
+Polish1 D5c part 20: Hound of War, the seventh elite mask
 
-A blank mirror face shattered from one blow on the brow into big shards, each
-tipped a little so it catches the sky its own way, a few missing; set in an
-ornate gilt frame with a twisted rope, rosettes and a shell crest with scrolls;
-over a black velvet hood drawn back in pleats to a knot and a tassel.
+A war dog's head in short fur (tan, a dark saddle and muzzle), a long shepherd
+muzzle with the lip curled off its canines, tall ears (one torn) up through a
+round steel helmet worn down over the brow with goggles on the brim, a shaggy
+neck, a studded collar and a clutch of dog tags on chains at the throat.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

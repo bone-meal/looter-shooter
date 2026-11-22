@@ -294,6 +294,18 @@
 			"fx": {
 				"glow_strength": 0.0
 			}
+		},
+		"hound_of_war": {
+			"name": "Hound of War",
+			"source": "elite",
+			"base": "animal",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A war dog's head in short fur, lip curled off its canines, ears up through a battered steel helmet with goggles on the brim, a studded collar and a clutch of dog tags at its throat.",
+			"fx": {
+				"glow_strength": 0.0
+			}
 		}
 	}
 }
