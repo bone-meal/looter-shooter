@@ -1,6 +1,6 @@
-Polish1 D5c part 7: Frostbite Commander, the sixth boss mask
+Polish1 D5c part 8: Gilded Tyrant, the seventh boss mask
 
-An arctic armour helm of faceted overlapping plates with an icy blue visor slit, a keeled jaw plate with raked vents, rime in every seam and living ice bursting out of the visor, the vents, the sides and the crown, icicles off the back rim. In the game the ice's light cracks and re-forms, cold mist pours from the vents and frost streams off while the wearer moves or turns fast.
+An oversized grinning lion king mascot head in tarnished gold: ruby eyes in prong settings, a wide grin of rounded gold teeth and fangs, a huge crown of faceted points with emeralds and sapphires in its band, and a mane of overlapping gold plates set with jewels. In the game the jewels pulse in their own colours, gold dust drifts down and the mane plates swell out and back.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

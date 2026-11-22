@@ -7,7 +7,7 @@
 # its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
 # an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
 # in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask; the moving part can instead
-# turn round an axis (fx spin); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
+# turn round an axis (fx spin); glow hues from the colour map (fx glow_from_col); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
 
@@ -43,6 +43,8 @@ uniform float heal_every = 0.0;  // glow group G = cracks that open and heal, al
 uniform vec3 spin_at = vec3(0.0);  // the moving part turns round spin_axis through spin_at, spin_hz turns a second
 uniform vec3 spin_axis = vec3(0.0, 0.0, 1.0);  // (Blood Eclipse: its forehead disc, the eclipse travelling round)
 uniform float spin_hz = 0.0;
+uniform vec4 mane = vec4(0.0);  // xyz = middle of a sunburst behind the head, w = how far its plates swell out and back (breathing)
+uniform float glow_from_col = 0.0;  // 1 = glow group G takes each spot's own hue from the colour map (Gilded Tyrant's emeralds + sapphires; R keeps glow_color)
 varying float side;
 
 void vertex() {
@@ -72,6 +74,11 @@ void vertex() {
 		NORMAL = NORMAL * c + cross(k, NORMAL) * s + k * dot(k, NORMAL) * (1.0 - c);
 		TANGENT = TANGENT * c + cross(k, TANGENT) * s + k * dot(k, TANGENT) * (1.0 - c);
 		BINORMAL = BINORMAL * c + cross(k, BINORMAL) * s + k * dot(k, BINORMAL) * (1.0 - c);
+	}
+	if (mane.w > 0.0) {  // the plates behind the head swell out and back
+		vec2 m = VERTEX.xy - mane.xy;
+		float plate = smoothstep(0.09, 0.12, length(m)) * smoothstep(0.0, 0.02, VERTEX.z - mane.z);
+		VERTEX.xy += normalize(m) * sin(TIME * 1.6) * mane.w * plate;
 	}
 	vec3 rel = VERTEX - head_mid;
 	float r = length(rel.xz);
@@ -109,8 +116,10 @@ void fragment() {
 		float ph = sin(TIME * 6.2832 / heal_every + UV.x * 17.0 + UV.y * 11.0);
 		g_lit = smoothstep(-0.25, 0.65, ph) * mix(0.5, 1.0, on);
 	}
-	float lit = fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + fx.g * g_lit;
-	EMISSION = glow_color * lit * glow_strength * mix(stillness.x, stillness.y, moving);
+	vec3 base_col = texture(col_tex, UV).rgb;
+	vec3 hue = base_col / max(max(base_col.r, max(base_col.g, base_col.b)), 0.001);
+	vec3 lit = glow_color * fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + mix(glow_color, hue, glow_from_col) * fx.g * g_lit;
+	EMISSION = lit * glow_strength * mix(stillness.x, stillness.y, moving);
 }
 """
 
@@ -249,6 +258,11 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	var still: Array = fx.get("stillness", [1.0, 1.0])
 	m.set_shader_parameter("stillness", Vector2(float(still[0]), float(still[1])))
 	m.set_shader_parameter("heal_every", float(fx.get("heal_every", 0.0)))
+	var mn: Dictionary = fx.get("mane", {})
+	if not mn.is_empty():
+		var mc := _vec(mn.get("at"), Vector3.ZERO)
+		m.set_shader_parameter("mane", Vector4(mc.x, mc.y, mc.z, float(mn.get("amp", 0.004))))
+	m.set_shader_parameter("glow_from_col", 1.0 if bool(fx.get("glow_from_col", false)) else 0.0)
 	var spin: Dictionary = fx.get("spin", {})
 	if not spin.is_empty():
 		m.set_shader_parameter("spin_at", _vec(spin.get("at"), Vector3.ZERO))
