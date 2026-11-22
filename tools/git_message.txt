@@ -1,10 +1,10 @@
-Polish1 D5c part 14: Street Predator, the first elite mask
+Polish1 D5c part 15: Riot Ghost, the second elite mask
 
-A yellowed fibreglass goalie mask raked by three deep claw gouges with dried
-blood in them, worn over a dark hoodie whose hood has a point, creases and loose
-cloth slumped at the neck, two buckled elastic straps over it, drawstring cords.
-Breath puffs from the mouth vents. Silhouette plans for drop masks now go in
-diary/MASK_PLANS_DROPS.md.
+A blank heister face of milky glass under a ghost's torn veil (swept back,
+creased, hanging in a ragged sheet round the neck). Faint wailing faces surface
+under its skin and sink away, a cold light sits deep in its eyes. New mask
+options: rim (glow at grazing angles, faked translucency, the director's pick)
+and drift (glow group G fading in and out in slow drifting bands).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -6,7 +6,7 @@
 # and materials are shared between everyone wearing the same mask. A moving part (FX blue: Iron Reaper's jaw) turns about
 # its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
 # an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
-# in glow group G can open and heal (heal_every) and brighten while the wearer has a weapon out (combat); ash puffs (fx ash) rise off the mask; the moving part can instead
+# in glow group G can open and heal (heal_every) or surface and sink in drifting bands (drift), a rim glow fakes translucency (rim), and brighten while the wearer has a weapon out (combat); ash puffs (fx ash) rise off the mask; the moving part can instead
 # turn round an axis (fx spin); runes orbiting (fx runes: a glyph ring turned by its shader); glow hues from the colour map (fx glow_from_col); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
@@ -47,10 +47,14 @@ uniform vec3 spin_axis = vec3(0.0, 0.0, 1.0);  // (Blood Eclipse: its forehead d
 uniform float spin_hz = 0.0;
 uniform vec4 mane = vec4(0.0);  // xyz = middle of a sunburst behind the head, w = how far its plates swell out and back (breathing)
 uniform float glow_from_col = 0.0;  // 1 = glow group G takes each spot's own hue from the colour map (Gilded Tyrant's emeralds + sapphires; R keeps glow_color)
+uniform vec4 rim = vec4(0.0);  // faked translucency: rgb glow at grazing angles x a (Riot Ghost's milky shell)
+uniform vec2 drift = vec2(0.0);  // glow group G fades in and out in slow bands drifting across the mask: x turns a second, y band size
 varying float side;
+varying vec3 mpos;
 
 void vertex() {
 	side = VERTEX.x;
+	mpos = VERTEX;
 	float jaw = textureLod(fx_tex, UV, 0.0).b;
 	if (length(slide) > 0.0 && jaw > 0.5) {
 		float ph = mod(TIME, jaw_every);
@@ -118,10 +122,17 @@ void fragment() {
 		float ph = sin(TIME * 6.2832 / heal_every + UV.x * 17.0 + UV.y * 11.0);
 		g_lit = smoothstep(-0.25, 0.65, ph) * mix(0.5, 1.0, on);
 	}
+	if (drift.x > 0.0) {  // faces under the surface surfacing and sinking as the bands pass
+		float ph = sin(TIME * 6.2832 * drift.x + mpos.y * drift.y + mpos.x * drift.y * 0.7 + mpos.z * drift.y * 0.4);
+		g_lit *= smoothstep(-0.2, 0.7, ph);
+	}
 	vec3 base_col = texture(col_tex, UV).rgb;
 	vec3 hue = base_col / max(max(base_col.r, max(base_col.g, base_col.b)), 0.001);
 	vec3 lit = glow_color * fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + mix(glow_color, hue, glow_from_col) * fx.g * g_lit * mix(combat_glow.x, combat_glow.y, combat);
 	EMISSION = lit * glow_strength * mix(stillness.x, stillness.y, moving);
+	if (rim.a > 0.0) {
+		EMISSION += rim.rgb * rim.a * pow(1.0 - clamp(dot(normalize(NORMAL), VIEW), 0.0, 1.0), 2.5);
+	}
 }
 """
 
@@ -302,6 +313,10 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	var still: Array = fx.get("stillness", [1.0, 1.0])
 	m.set_shader_parameter("stillness", Vector2(float(still[0]), float(still[1])))
 	m.set_shader_parameter("heal_every", float(fx.get("heal_every", 0.0)))
+	var rm: Array = fx.get("rim", [0.0, 0.0, 0.0, 0.0])
+	m.set_shader_parameter("rim", Vector4(float(rm[0]), float(rm[1]), float(rm[2]), float(rm[3])))
+	var dr: Array = fx.get("drift", [0.0, 0.0])
+	m.set_shader_parameter("drift", Vector2(float(dr[0]), float(dr[1])))
 	var cg: Array = fx.get("combat", [1.0, 1.0])
 	m.set_shader_parameter("combat_glow", Vector2(float(cg[0]), float(cg[1])))
 	var mn: Dictionary = fx.get("mane", {})
