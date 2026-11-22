@@ -1,6 +1,10 @@
-Polish1 D5c part 10: Chrome Executioner, the ninth boss mask
+Polish1 D5c part 11: Bone Cathedral, the tenth boss mask
 
-A featureless mirror-chrome face plate of broad facets split by a blade ridge that stands proud of the frame, set in a black leather executioner's hood with a rolled frame, loose creases, a strap and a steel buckle at the back. Liquid metal weeps from where its eyes should be; in the game chrome drops fall from the tears.
+A cracked old skull grown into a cathedral of bone: a crown of five spires,
+buttress piers with pinnacles, flying arches and an arcade down each side,
+vertebrae down the back, a rose window of petal holes with holy light, amber
+eyes, a chattering jaw, bone dust and rising light motes. mask_kit lofts now
+wound outward (inward lofts baked dark in the game).
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -161,6 +161,24 @@
 				"glow_strength": 0.0,
 				"sparks": {"at": [[0.026, 0.082, -0.152], [-0.026, 0.074, -0.15]], "amount": 2, "drip": 0.004, "life": 1.3, "gravity": 1.2, "glow": 0.6, "color": [0.85, 0.87, 0.9]}
 			}
+		},
+		"bone_cathedral": {
+			"name": "Bone Cathedral",
+			"source": "boss",
+			"base": "skull",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "An old cracked skull grown into a cathedral of bone: a crown of spires, buttressed piers and arcades down its sides, vertebrae down its back. Holy light shines through a rose window in its brow and amber light deep in its eyes; its jaw chatters.",
+			"fx": {
+				"glow": [1.0, 0.62, 0.22],
+				"glow_from_col": true,
+				"glow_strength": 3.5,
+				"pulse_hz": 0.3,
+				"jaw": {"hinge": [0.1, -0.067], "angle": 6.0, "every": 3.0},
+				"mist": {"at": [0.0, 0.21, -0.01], "radius": 0.08, "amount": 8, "dir": [0.0, -1.0, 0.0], "rise": -0.02, "life": 2.5, "size": 0.02, "color": [0.85, 0.8, 0.68, 0.25]},
+				"sparks": {"at": [[0.0, 0.196, -0.13]], "radius": 0.02, "amount": 4, "dir": [0.0, 0.3, -1.0], "gravity": -0.05, "life": 1.8, "glow": 2.0, "color": [1.0, 0.85, 0.5]}
+			}
 		}
 	}
 }

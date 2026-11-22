@@ -283,13 +283,13 @@ def loft(name, center, radius, rings=120, segs=32, profile=None, mat=None, cap=T
     for i in range(rings - 1):
         for j in range(segs):
             a = i * segs + j; b = i * segs + (j + 1) % segs
-            faces.append((a, b, b + segs, a + segs))
+            faces.append((a, a + segs, b + segs, b))  # wound outward (the B / U frame is left-handed)
     if cap:
         for end, ring in ((0, 0), (1, rings - 1)):
             ci = len(verts); verts.append(tuple(Vector(center(end))))
             for j in range(segs):
                 a = ring * segs + j; b = ring * segs + (j + 1) % segs
-                faces.append((a, b, ci) if end else (b, a, ci))
+                faces.append((b, a, ci) if end else (a, b, ci))
     return mesh_obj(name, verts, faces, mat)
 
 
