@@ -7,7 +7,7 @@
 # its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
 # an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
 # in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask; the moving part can instead
-# turn round an axis (fx spin); haze puffs (fx haze).
+# turn round an axis (fx spin); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
 
@@ -185,6 +185,11 @@ static func build(id: String) -> Node3D:
 		root.add_child(_mist(fx["ash"], share))
 	if fx.get("haze") is Dictionary and share > 0.0:
 		root.add_child(_mist(fx["haze"], share))
+	if fx.get("frost") is Dictionary and share > 0.0:  # puffs only while the wearer moves or turns fast (game/rigged_body.gd)
+		var frost := _mist(fx["frost"], share)
+		frost.name = "MoveFx"
+		frost.emitting = false
+		root.add_child(frost)
 	if fx.get("flies") is Dictionary and share > 0.0:
 		root.add_child(_flies(fx["flies"], share))
 	if fx.get("sparks") is Dictionary and share > 0.0:

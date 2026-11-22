@@ -96,6 +96,23 @@
 				"spin": {"at": [0.0, 0.1944, -0.117], "axis": [0.0, 0.65, -0.76], "hz": 0.06},
 				"haze": {"at": [0.0, 0.1944, -0.12], "radius": 0.03, "amount": 8, "dir": [0.0, 0.5, -1.0], "rise": 0.01, "life": 3.0, "size": 0.035, "color": [0.75, 0.04, 0.03, 0.28]}
 			}
+		},
+		"frostbite_commander": {
+			"name": "Frostbite Commander",
+			"source": "boss",
+			"base": "ballistic",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "An arctic armour helm with an icy blue visor slit, rime packed in every seam and living ice bursting out of it. The ice's light cracks and re-forms, cold mist pours from the jaw vents and frost streams off when the wearer moves or turns fast.",
+			"fx": {
+				"glow": [0.35, 0.8, 1.0],
+				"glow_strength": 3.0,
+				"pulse_hz": 0.4,
+				"heal_every": 6.0,
+				"mist": {"at": [0.0, 0.072, -0.14], "radius": 0.045, "amount": 10, "dir": [0.0, -0.6, -1.0], "rise": -0.02, "life": 2.2, "size": 0.05, "color": [0.75, 0.88, 1.0, 0.3]},
+				"frost": {"at": [0.0, 0.2, -0.02], "radius": 0.09, "amount": 14, "dir": [0.0, 0.2, 1.0], "rise": -0.01, "life": 1.4, "size": 0.03, "color": [0.85, 0.93, 1.0, 0.45]}
+			}
 		}
 	}
 }
