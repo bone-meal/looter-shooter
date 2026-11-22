@@ -240,6 +240,7 @@ func animate(move: float, holding: bool) -> void:
 	if _mask_mesh != null:  # (polish1 D5c) the mask's glow follows how fast this wearer moves
 		_mask_move = move_toward(_mask_move, clampf(move, 0.0, 1.0), get_process_delta_time() * 1.5)
 		_mask_mesh.set_instance_shader_parameter("moving", _mask_move)
+		_mask_mesh.set_instance_shader_parameter("combat", _hold_amount)  # weapon out: Silent Judge's crest lines brighten
 		if _mask_move_fx != null:
 			var dt := maxf(get_process_delta_time(), 0.001)
 			var turn := absf(angle_difference(_mask_yaw, global_rotation.y)) / dt

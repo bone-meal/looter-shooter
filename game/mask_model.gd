@@ -6,7 +6,7 @@
 # and materials are shared between everyone wearing the same mask. A moving part (FX blue: Iron Reaper's jaw) turns about
 # its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
 # an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
-# in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask; the moving part can instead
+# in glow group G can open and heal (heal_every) and brighten while the wearer has a weapon out (combat); ash puffs (fx ash) rise off the mask; the moving part can instead
 # turn round an axis (fx spin); runes orbiting (fx runes: a glyph ring turned by its shader); glow hues from the colour map (fx glow_from_col); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
@@ -37,6 +37,8 @@ uniform float jaw_every = 5.0;  // seconds between grinds
 uniform vec3 slide = vec3(0.0);  // instead of turning: the moving part slides out by this much (a tongue flick)
 uniform float blink_every = 0.0;  // glow group R blinks shut, one side then the other (0 = never)
 instance uniform float moving = 0.0;  // this wearer: 0 standing still .. 1 running (game/rigged_body.gd)
+instance uniform float combat = 0.0;  // this wearer: 0 .. 1 with a weapon out (game/rigged_body.gd)
+uniform vec2 combat_glow = vec2(1.0);  // glow group G x this calm / with a weapon out (Silent Judge's crest lines)
 uniform float move_pulse = 0.0;  // the pulse quickens to pulse_hz + this while moving (Iron Reaper)
 uniform vec2 stillness = vec2(1.0);  // glow x this when still / moving (Ashen King: embers brighter standing still)
 uniform float heal_every = 0.0;  // glow group G = cracks that open and heal, along their length, every n seconds
@@ -118,7 +120,7 @@ void fragment() {
 	}
 	vec3 base_col = texture(col_tex, UV).rgb;
 	vec3 hue = base_col / max(max(base_col.r, max(base_col.g, base_col.b)), 0.001);
-	vec3 lit = glow_color * fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + mix(glow_color, hue, glow_from_col) * fx.g * g_lit;
+	vec3 lit = glow_color * fx.r * mix(0.22, 1.0, on) * (1.0 - shut) + mix(glow_color, hue, glow_from_col) * fx.g * g_lit * mix(combat_glow.x, combat_glow.y, combat);
 	EMISSION = lit * glow_strength * mix(stillness.x, stillness.y, moving);
 }
 """
@@ -300,6 +302,8 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	var still: Array = fx.get("stillness", [1.0, 1.0])
 	m.set_shader_parameter("stillness", Vector2(float(still[0]), float(still[1])))
 	m.set_shader_parameter("heal_every", float(fx.get("heal_every", 0.0)))
+	var cg: Array = fx.get("combat", [1.0, 1.0])
+	m.set_shader_parameter("combat_glow", Vector2(float(cg[0]), float(cg[1])))
 	var mn: Dictionary = fx.get("mane", {})
 	if not mn.is_empty():
 		var mc := _vec(mn.get("at"), Vector3.ZERO)

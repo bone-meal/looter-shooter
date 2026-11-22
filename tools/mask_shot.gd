@@ -79,6 +79,7 @@ func _ready() -> void:
 					var mm := (b.call("head_anchor") as Node3D).get_node_or_null("Mask/MaskMesh") as MeshInstance3D
 					if mm != null and bodies.find(b) == 1:  # the man's pictures show the mask as if he were running
 						mm.set_instance_shader_parameter("moving", 1.0)
+						mm.set_instance_shader_parameter("combat", 1.0)  # and as if a weapon is out
 				await get_tree().process_frame
 			await RenderingServer.frame_post_draw
 			var file := "res://tools/shots/mask_%s_%s_%s.jpg" % [id, view, "f" if bodies.find(body) == 0 else "m"]

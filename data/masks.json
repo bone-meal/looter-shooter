@@ -195,6 +195,23 @@
 				"spin": {"at": [0.0, 0.2018, -0.1172], "axis": [0.0, 0.5176, -0.8556], "hz": 0.08},
 				"mist": {"at": [0.0, 0.2, 0.0], "radius": 0.15, "amount": 10, "dir": [0.0, -1.0, 0.0], "rise": -0.01, "life": 3.0, "size": 0.018, "color": [0.55, 0.6, 0.45, 0.35]}
 			}
+		},
+		"silent_judge": {
+			"name": "Silent Judge",
+			"source": "boss",
+			"base": "half",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A brushed-steel half helm with a stern face and a cold visor slit, a tall blade crest sweeping to the nape, and a heavy iron jaw on hinge pistons that parts on a slow breath. The light in the crest's grooves burns brighter while a weapon is out; white motes rise from it.",
+			"fx": {
+				"glow": [0.45, 0.7, 1.0],
+				"glow_strength": 4.5,
+				"pulse_hz": 0.2,
+				"combat": [0.4, 2.0],
+				"jaw": {"hinge": [0.1156, -0.0434], "angle": 4.0, "every": 6.0},
+				"sparks": {"at": [[0.0, 0.36, -0.03], [0.0, 0.31, 0.02], [0.0, 0.25, 0.06]], "radius": 0.015, "amount": 4, "dir": [0.0, 1.0, 0.0], "gravity": -0.08, "life": 2.0, "glow": 1.5, "color": [0.9, 0.95, 1.0]}
+			}
 		}
 	}
 }

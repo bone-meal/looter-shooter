@@ -1,10 +1,10 @@
-Polish1 D5c part 12: Nuclear Prophet, the eleventh boss mask
+Polish1 D5c part 13: Silent Judge, the last boss mask
 
-An olive rubber gas hood under a prophet's ragged sackcloth cowl: a black face
-piece with a rolled seal and green fog in the lenses, twin filter canisters on
-the cheeks, corrugated hoses round to a two-canister pack on the back, a neck
-bib pulled in by a cinch, and a radiation plate on the brow that turns and
-pulses green. Fallout ash drifts round the head.
+A brushed-steel half helm with a stern face and a cold visor slit, a tall blade
+crest stepping back to the nape with light in its grooves, raised ear plates,
+and a heavy iron jaw on hinge pistons that parts on a slow breath. New mask
+option combat: glow group G brightens while the wearer has a weapon out (also
+on others online), used by the crest lines. White motes rise off the crest.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
