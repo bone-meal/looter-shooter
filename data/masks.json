@@ -306,6 +306,22 @@
 			"fx": {
 				"glow_strength": 0.0
 			}
+},
+		"beak_of_the_damned": {
+			"name": "Beak of the Damned",
+			"source": "elite",
+			"base": "plague",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A plague doctor's mask rebuilt by a machinist: a short beak of riveted steel bands with a brass tip, iris lenses over a sick green glow, a lobster-tail steel cap on oiled leather, and a brass bellows pump on the back whose gear never stops turning. Green mist leaks from the grille under the beak.",
+			"fx": {
+				"glow": [0.35, 1.0, 0.3],
+				"glow_strength": 1.8,
+				"pulse_hz": 0.3,
+				"spin": {"at": [-0.0361, 0.1458, 0.0997], "axis": [0.3663, -0.1228, 0.9224], "hz": 0.15},
+				"mist": {"at": [0.0, 0.084, -0.174], "radius": 0.02, "amount": 8, "dir": [0.0, -1.0, 0.0], "rise": -0.01, "life": 2.0, "size": 0.016, "color": [0.4, 0.75, 0.3, 0.35]}
+			}
 		}
 	}
 }

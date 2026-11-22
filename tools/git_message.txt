@@ -1,8 +1,8 @@
-Customize preview turns only on left-drag; hub countdown waits while host customizes
+Polish1 D5c part 21: Beak of the Damned, elite mask 20
 
-- game/customize_menu.gd: no idle spin; hold the left mouse button on the preview and drag to turn the model. Joins group customize_menu.
-- game/net_hub.gd: the hub countdown pauses while the host has Settings or the character customize menu open.
-- tools/dev_boot.gd: !custom open / close / note for checks.
+- assets/masks/beak_of_the_damned: baked 14000 / 4500 tris (riveted steel beak bands, brass tip, iris lenses, lobster-tail cap on oiled leather, brass bellows pump).
+- data/masks.json: faint green lens glow, the pump's gear turns (fx spin), green mist leaks from the beak's grille.
+- tools/blender/mask_beak_of_the_damned.py: the cowl reaches the collar line.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
