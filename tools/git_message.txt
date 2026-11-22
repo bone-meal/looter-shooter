@@ -1,6 +1,6 @@
-Polish1 D5c part 9: Void Howler, the eighth boss mask
+Polish1 D5c part 10: Chrome Executioner, the ninth boss mask
 
-An armoured wolf in dark steel plates: a long flat-topped muzzle and an open snarling jaw full of metal teeth, blade ears swept back, a segmented crest down the skull, purple light in the seams and black void eyes ringed with purple. In the game runes orbit its head (one glyph ring turned by its shader), void fog spills from its jaws and the eye rings swirl. Steel in the mask sculpts no longer browns in its corners when it is meant to have no rust.
+A featureless mirror-chrome face plate of broad facets split by a blade ridge that stands proud of the frame, set in a black leather executioner's hood with a rolled frame, loose creases, a strap and a steel buckle at the back. Liquid metal weeps from where its eyes should be; in the game chrome drops fall from the tears.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

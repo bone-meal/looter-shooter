@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://b7wkki7xqm5nh"
+path="res://.godot/imported/hi.obj-74a2ece73891061cff6081367fa7c97f.mesh"
+
+[deps]
+
+files=["res://.godot/imported/hi.obj-74a2ece73891061cff6081367fa7c97f.mesh"]
+
+source_file="res://assets/masks/chrome_executioner/hi.obj"
+dest_files=["res://.godot/imported/hi.obj-74a2ece73891061cff6081367fa7c97f.mesh", "res://.godot/imported/hi.obj-74a2ece73891061cff6081367fa7c97f.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false
