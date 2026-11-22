@@ -1,1 +1,6 @@
-Release v1.16
+Polish1 D5c part 6: Blood Eclipse, the fifth boss mask
+
+A smooth black lacquer face with a knife-edge brow and slit eyes burning faint red, a red eclipse on a disc on the forehead inside a glowing ring, blade fins sweeping back from the temples and a dorsal fin over the skull. In the game the disc turns slowly so the crescent travels round, red haze breathes out of the ring. Masks can now turn a part round an axis; seams in the mask sculpts no longer bead.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

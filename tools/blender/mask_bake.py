@@ -224,6 +224,8 @@ def fx_of(n):  # material name -> FX channels: R / G = the two glow groups (eyes
         return (1.0, 0.0, 0.0)
     if n == "lensglow5" or n.startswith("fxG_"):
         return (0.0, 1.0, 0.0)
+    if n.startswith("fxBG_"):  # glows (group G) and is the moving part (Blood Eclipse's disc)
+        return (0.0, 1.0, 1.0)
     if n.startswith("fxB_"):
         return (0.0, 0.0, 1.0)
     return (0.0, 0.0, 0.0)

@@ -517,7 +517,8 @@ def smax(a, b, k):  # smooth subtraction: smax(a, -b, k) cuts b out of a
 def groove(d, plane_dist, depth=0.012, width=0.016, step=0.0):
     """A seam where a plane crosses the form: the surface sinks `depth` in a band `width` wide; one side is raised
     `step` (an overlapping plate)."""
-    return d + depth * np.exp(-(plane_dist / width) ** 2) - step * (plane_dist > 0)
+    # (the step eases over ~1 cm: a hard switch made a beaded stair along the seam after marching cubes)
+    return d + depth * np.exp(-(plane_dist / width) ** 2) - step * 0.5 * (1.0 + np.tanh(plane_dist / 0.005))
 
 
 def sdf_mesh(name, fn, lo, hi, res=0.014, mat=None, relax=2):

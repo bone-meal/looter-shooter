@@ -6,7 +6,8 @@
 # and materials are shared between everyone wearing the same mask. A moving part (FX blue: Iron Reaper's jaw) turns about
 # its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
 # an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
-# in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask.
+# in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask; the moving part can instead
+# turn round an axis (fx spin); haze puffs (fx haze).
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
 
@@ -39,6 +40,9 @@ instance uniform float moving = 0.0;  // this wearer: 0 standing still .. 1 runn
 uniform float move_pulse = 0.0;  // the pulse quickens to pulse_hz + this while moving (Iron Reaper)
 uniform vec2 stillness = vec2(1.0);  // glow x this when still / moving (Ashen King: embers brighter standing still)
 uniform float heal_every = 0.0;  // glow group G = cracks that open and heal, along their length, every n seconds
+uniform vec3 spin_at = vec3(0.0);  // the moving part turns round spin_axis through spin_at, spin_hz turns a second
+uniform vec3 spin_axis = vec3(0.0, 0.0, 1.0);  // (Blood Eclipse: its forehead disc, the eclipse travelling round)
+uniform float spin_hz = 0.0;
 varying float side;
 
 void vertex() {
@@ -58,6 +62,16 @@ void vertex() {
 		VERTEX.yz = jaw_hinge + vec2(q.x * c + q.y * s, -q.x * s + q.y * c);
 		NORMAL.yz = vec2(NORMAL.y * c + NORMAL.z * s, -NORMAL.y * s + NORMAL.z * c);
 		VERTEX.x += sin(TIME * 31.0) * 0.0015 * open;
+	}
+	if (spin_hz > 0.0 && jaw > 0.5) {
+		vec3 k = normalize(spin_axis);
+		float a = TIME * 6.2832 * spin_hz;
+		float c = cos(a), s = sin(a);
+		vec3 q = VERTEX - spin_at;
+		VERTEX = spin_at + q * c + cross(k, q) * s + k * dot(k, q) * (1.0 - c);
+		NORMAL = NORMAL * c + cross(k, NORMAL) * s + k * dot(k, NORMAL) * (1.0 - c);
+		TANGENT = TANGENT * c + cross(k, TANGENT) * s + k * dot(k, TANGENT) * (1.0 - c);
+		BINORMAL = BINORMAL * c + cross(k, BINORMAL) * s + k * dot(k, BINORMAL) * (1.0 - c);
 	}
 	vec3 rel = VERTEX - head_mid;
 	float r = length(rel.xz);
@@ -169,6 +183,8 @@ static func build(id: String) -> Node3D:
 		root.add_child(_mist(fx["mist"], share))
 	if fx.get("ash") is Dictionary and share > 0.0:
 		root.add_child(_mist(fx["ash"], share))
+	if fx.get("haze") is Dictionary and share > 0.0:
+		root.add_child(_mist(fx["haze"], share))
 	if fx.get("flies") is Dictionary and share > 0.0:
 		root.add_child(_flies(fx["flies"], share))
 	if fx.get("sparks") is Dictionary and share > 0.0:
@@ -228,6 +244,11 @@ static func _material(id: String, size: String) -> ShaderMaterial:
 	var still: Array = fx.get("stillness", [1.0, 1.0])
 	m.set_shader_parameter("stillness", Vector2(float(still[0]), float(still[1])))
 	m.set_shader_parameter("heal_every", float(fx.get("heal_every", 0.0)))
+	var spin: Dictionary = fx.get("spin", {})
+	if not spin.is_empty():
+		m.set_shader_parameter("spin_at", _vec(spin.get("at"), Vector3.ZERO))
+		m.set_shader_parameter("spin_axis", _vec(spin.get("axis"), Vector3(0, 0, 1)))
+		m.set_shader_parameter("spin_hz", float(spin.get("hz", 0.05)))
 	var flick: Dictionary = fx.get("flick", {})
 	if not flick.is_empty():
 		m.set_shader_parameter("slide", _vec(flick.get("by"), Vector3.ZERO))

@@ -80,6 +80,22 @@
 				"ash": {"at": [0.0, 0.2, -0.015], "radius": 0.07, "amount": 14, "dir": [0.0, 1.0, 0.0], "rise": 0.05, "life": 3.2, "size": 0.03, "color": [0.32, 0.3, 0.28, 0.5]},
 				"sparks": {"at": [[0.0, 0.2, -0.015]], "radius": 0.07, "amount": 6, "dir": [0.0, 1.0, 0.0], "gravity": -0.25, "life": 1.6, "glow": 4.0, "color": [1.0, 0.45, 0.1]}
 			}
+		},
+		"blood_eclipse": {
+			"name": "Blood Eclipse",
+			"source": "boss",
+			"base": "payday",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A smooth black lacquer face with a knife-edge brow and slit eyes burning faint red. On its forehead a red eclipse turns slowly inside a glowing ring that breathes out a red haze; blade fins sweep back from the temples.",
+			"fx": {
+				"glow": [1.0, 0.06, 0.04],
+				"glow_strength": 3.5,
+				"pulse_hz": 0.3,
+				"spin": {"at": [0.0, 0.1944, -0.117], "axis": [0.0, 0.65, -0.76], "hz": 0.06},
+				"haze": {"at": [0.0, 0.1944, -0.12], "radius": 0.03, "amount": 8, "dir": [0.0, 0.5, -1.0], "rise": 0.01, "life": 3.0, "size": 0.035, "color": [0.75, 0.04, 0.03, 0.28]}
+			}
 		}
 	}
 }
