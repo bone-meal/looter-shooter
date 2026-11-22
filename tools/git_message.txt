@@ -1,8 +1,8 @@
-Polish1 D5c part 23: Neon Ronin, elite mask 22
+Polish1 D5c part 24: Bullet Ballet, elite mask 23
 
-- tools/blender/mask_neon_ronin.py: a smooth gunmetal face under a huge drooping straw hat that shades the face, neon characters inlaid down both cheeks, a neon line down the nose, an indigo wrap with wound strips and a knot with two tails, a neon seam, a red chin cord.
-- assets/masks/neon_ronin: baked 14000 / 4500 tris.
-- data/masks.json: cyan eyes, the characters keep their own magenta / cyan hue and write themselves in and fade (heal_every), a quick neon flicker.
+- tools/blender/mask_bullet_ballet.py: a black painted goalie shell covered in spent casings laid like scales (one mesh per metal), bare forehead ridge and bullet strikes, a black hood with a dancer's bun, twisting pink satin ribbons crossed behind and a bow at the nape, a scalloped tulle ruffle at the collar.
+- assets/masks/bullet_ballet: baked 14000 / 4500 tris.
+- data/masks.json: no glow; now and then a small brass casing falls from the jaw; ribbons thick enough to survive decimation.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

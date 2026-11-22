@@ -353,6 +353,19 @@
 				"glow_from_col": true,
 				"heal_every": 5.0
 			}
+		},
+		"bullet_ballet": {
+			"name": "Bullet Ballet",
+			"source": "elite",
+			"base": "hockey",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A black goalie mask that kept every round of a firefight: spent brass casings driven into it like scales, bullet strikes on the bare paint, pink satin ribbons crossed over a black hood and tied in a bow at the nape, a tulle ruffle at the neck. Now and then a casing works loose and falls.",
+			"fx": {
+				"glow_strength": 0.0,
+				"sparks": {"at": [[0.0, 0.0545, -0.1305], [0.03, 0.09, -0.13], [-0.03, 0.07, -0.13]], "amount": 1, "drip": 0.0025, "life": 1.0, "gravity": 1.4, "glow": 0.0, "color": [0.45, 0.32, 0.12]}
+			}
 		}
 	}
 }
