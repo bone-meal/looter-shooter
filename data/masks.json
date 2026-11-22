@@ -282,6 +282,18 @@
 				"pulse_hz": 0.3,
 				"mist": {"at": [0.0, 0.055, -0.165], "radius": 0.025, "amount": 5, "dir": [0.0, -0.3, -1.0], "rise": 0.005, "life": 1.6, "size": 0.02, "color": [0.75, 0.75, 0.45, 0.25]}
 			}
+		},
+		"cracked_mirror": {
+			"name": "Cracked Mirror",
+			"source": "elite",
+			"base": "featureless",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A blank mirror face shattered by one blow, every shard still catching the light its own way, set in an antique gilt frame over a black velvet hood.",
+			"fx": {
+				"glow_strength": 0.0
+			}
 		}
 	}
 }
