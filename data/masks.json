@@ -212,6 +212,19 @@
 				"jaw": {"hinge": [0.1156, -0.0434], "angle": 4.0, "every": 6.0},
 				"sparks": {"at": [[0.0, 0.36, -0.03], [0.0, 0.31, 0.02], [0.0, 0.25, 0.06]], "radius": 0.015, "amount": 4, "dir": [0.0, 1.0, 0.0], "gravity": -0.08, "life": 2.0, "glow": 1.5, "color": [0.9, 0.95, 1.0]}
 			}
+		},
+		"street_predator": {
+			"name": "Street Predator",
+			"source": "elite",
+			"base": "hockey",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "An old yellowed goalie mask over a dark hoodie, raked by three deep claw gouges, dried blood still in them. Breath puffs from its vents.",
+			"fx": {
+				"glow_strength": 0.0,
+				"mist": {"at": [0.0, 0.078, -0.1435], "radius": 0.02, "amount": 3, "dir": [0.0, -0.3, -1.0], "rise": 0.01, "life": 1.2, "size": 0.015, "color": [0.85, 0.85, 0.88, 0.15]}
+			}
 		}
 	}
 }
