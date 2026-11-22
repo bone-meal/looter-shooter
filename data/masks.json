@@ -242,6 +242,18 @@
 				"drift": [0.07, 30.0],
 				"mist": {"at": [0.0, 0.02, 0.1], "radius": 0.08, "amount": 6, "dir": [0.0, -1.0, 0.3], "rise": -0.01, "life": 2.2, "size": 0.02, "color": [0.8, 0.88, 1.0, 0.2]}
 			}
+		},
+		"trench_rat": {
+			"name": "Trench Rat",
+			"source": "elite",
+			"base": "ballistic",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A battered steel helmet and a bolted face plate pressed into a rat's snout, a crude grin painted on it, dented by gunfire with one round still stuck, caked in trench mud, hessian strips hanging round it.",
+			"fx": {
+				"glow_strength": 0.0
+			}
 		}
 	}
 }

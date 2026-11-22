@@ -1,10 +1,9 @@
-Polish1 D5c part 15: Riot Ghost, the second elite mask
+Polish1 D5c part 16: Trench Rat, the third elite mask
 
-A blank heister face of milky glass under a ghost's torn veil (swept back,
-creased, hanging in a ragged sheet round the neck). Faint wailing faces surface
-under its skin and sink away, a cold light sits deep in its eyes. New mask
-options: rim (glow at grazing angles, faked translucency, the director's pick)
-and drift (glow group G fading in and out in slow drifting bands).
+A battered steel helmet whose rim slopes to the nape, bullet dents with one
+round still stuck, a bolted face plate pressed into a rat's snout with a crude
+white grin painted on it, mud caked in patches on the jaw, flat hessian strips
+hanging round the sides and back, a leather neck flap.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
