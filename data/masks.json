@@ -254,6 +254,19 @@
 			"fx": {
 				"glow_strength": 0.0
 			}
+		},
+		"carnival_butcher": {
+			"name": "Carnival Butcher",
+			"source": "elite",
+			"base": "mascot",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "An oversized, worn felt clown head with a grin far too wide and far too full of teeth, stained round the mouth, a crumpled striped top hat tipped over one eye. Its jaw clacks now and then.",
+			"fx": {
+				"glow_strength": 0.0,
+				"jaw": {"hinge": [0.126, -0.0265], "angle": 7.0, "every": 4.0}
+			}
 		}
 	}
 }

@@ -1,9 +1,10 @@
-Polish1 D5c part 16: Trench Rat, the third elite mask
+Polish1 D5c part 17: Carnival Butcher, the fourth elite mask
 
-A battered steel helmet whose rim slopes to the nape, bullet dents with one
-round still stuck, a bolted face plate pressed into a rat's snout with a crude
-white grin painted on it, mud caked in patches on the jaw, flat hessian strips
-hanging round the sides and back, a leather neck flap.
+An oversized worn felt clown head with a grin from ear to ear crammed with five
+rows of teeth, staring eyes, a red bulb nose, stains round the mouth, a bush of
+orange curls round the back and sides, a crumpled striped top hat tipped
+forward, a zipper down the back, a fluted two-tier collar over a felt neck.
+The jaw and its lower teeth clack now and then.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
