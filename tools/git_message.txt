@@ -1,10 +1,10 @@
-Polish1 D5c part 11: Bone Cathedral, the tenth boss mask
+Polish1 D5c part 12: Nuclear Prophet, the eleventh boss mask
 
-A cracked old skull grown into a cathedral of bone: a crown of five spires,
-buttress piers with pinnacles, flying arches and an arcade down each side,
-vertebrae down the back, a rose window of petal holes with holy light, amber
-eyes, a chattering jaw, bone dust and rising light motes. mask_kit lofts now
-wound outward (inward lofts baked dark in the game).
+An olive rubber gas hood under a prophet's ragged sackcloth cowl: a black face
+piece with a rolled seal and green fog in the lenses, twin filter canisters on
+the cheeks, corrugated hoses round to a two-canister pack on the back, a neck
+bib pulled in by a cinch, and a radiation plate on the brow that turns and
+pulses green. Fallout ash drifts round the head.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

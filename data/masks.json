@@ -179,6 +179,22 @@
 				"mist": {"at": [0.0, 0.21, -0.01], "radius": 0.08, "amount": 8, "dir": [0.0, -1.0, 0.0], "rise": -0.02, "life": 2.5, "size": 0.02, "color": [0.85, 0.8, 0.68, 0.25]},
 				"sparks": {"at": [[0.0, 0.196, -0.13]], "radius": 0.02, "amount": 4, "dir": [0.0, 0.3, -1.0], "gravity": -0.05, "life": 1.8, "glow": 2.0, "color": [1.0, 0.85, 0.5]}
 			}
+		},
+		"nuclear_prophet": {
+			"name": "Nuclear Prophet",
+			"source": "boss",
+			"base": "gas",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A rubber gas hood under a prophet's ragged cowl: twin filter canisters, hoses looping back to a canister pack, scorched hazard labels, and a radiation plate on the brow whose symbol turns and pulses green. Green fog rolls in its lenses; fallout ash drifts round it.",
+			"fx": {
+				"glow": [0.4, 1.0, 0.25],
+				"glow_strength": 3.0,
+				"pulse_hz": 0.25,
+				"spin": {"at": [0.0, 0.2018, -0.1172], "axis": [0.0, 0.5176, -0.8556], "hz": 0.08},
+				"mist": {"at": [0.0, 0.2, 0.0], "radius": 0.15, "amount": 10, "dir": [0.0, -1.0, 0.0], "rise": -0.01, "life": 3.0, "size": 0.018, "color": [0.55, 0.6, 0.45, 0.35]}
+			}
 		}
 	}
 }
