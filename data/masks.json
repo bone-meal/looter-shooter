@@ -366,6 +366,23 @@
 				"glow_strength": 0.0,
 				"sparks": {"at": [[0.0, 0.0545, -0.1305], [0.03, 0.09, -0.13], [-0.03, 0.07, -0.13]], "amount": 1, "drip": 0.0025, "life": 1.0, "gravity": 1.4, "glow": 0.0, "color": [0.45, 0.32, 0.12]}
 			}
+		},
+		"smoke_demon": {
+			"name": "Smoke Demon",
+			"source": "elite",
+			"base": "featureless",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A blank face of black burnt stone with a scowling brow and two ridged horns, embers deep in its eye hollows and mouth slit, ember cracks breathing across it, and smoke frozen into solid billows behind its head. Black smoke pours out of its eyes and mouth.",
+			"fx": {
+				"glow": [1.0, 0.35, 0.08],
+				"glow_strength": 3.0,
+				"pulse_hz": 0.35,
+				"heal_every": 6.0,
+				"mist": {"at": [0.0, 0.1312, -0.15], "radius": 0.04, "amount": 26, "dir": [0.0, 0.4, -1.0], "rise": 0.03, "life": 2.4, "size": 0.075, "color": [0.02, 0.02, 0.025, 0.8]},
+				"haze": {"at": [0.0, 0.0714, -0.155], "radius": 0.035, "amount": 18, "dir": [0.0, 0.2, -1.0], "rise": 0.03, "life": 2.2, "size": 0.075, "color": [0.02, 0.02, 0.025, 0.8]}
+			}
 		}
 	}
 }
