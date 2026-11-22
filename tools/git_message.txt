@@ -1,6 +1,6 @@
-Polish1 D5c part 8: Gilded Tyrant, the seventh boss mask
+Polish1 D5c part 9: Void Howler, the eighth boss mask
 
-An oversized grinning lion king mascot head in tarnished gold: ruby eyes in prong settings, a wide grin of rounded gold teeth and fangs, a huge crown of faceted points with emeralds and sapphires in its band, and a mane of overlapping gold plates set with jewels. In the game the jewels pulse in their own colours, gold dust drifts down and the mane plates swell out and back.
+An armoured wolf in dark steel plates: a long flat-topped muzzle and an open snarling jaw full of metal teeth, blade ears swept back, a segmented crest down the skull, purple light in the seams and black void eyes ringed with purple. In the game runes orbit its head (one glyph ring turned by its shader), void fog spills from its jaws and the eye rings swirl. Steel in the mask sculpts no longer browns in its corners when it is meant to have no rust.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

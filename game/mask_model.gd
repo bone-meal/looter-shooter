@@ -7,7 +7,7 @@
 # its hinge in the vertex shader; masks without Morse can pulse their glow. Per wearer `moving` (0 still .. 1 running,
 # an instance uniform set by game/rigged_body.gd) quickens the pulse (move_pulse) or dims the glow (stillness); cracks
 # in glow group G can open and heal (heal_every); ash puffs (fx ash) rise off the mask; the moving part can instead
-# turn round an axis (fx spin); glow hues from the colour map (fx glow_from_col); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
+# turn round an axis (fx spin); runes orbiting (fx runes: a glyph ring turned by its shader); glow hues from the colour map (fx glow_from_col); haze puffs (fx haze); frost puffs only on the move / a quick turn (fx frost: MoveFx).
 # Dependencies: core/mask_db.gd, core/data_store.gd, data/masks.json, assets/masks/<id>/.
 extends RefCounted
 
@@ -145,6 +145,45 @@ void fragment() {
 }
 """
 
+# Runes orbiting a mask (Void Howler): one ring mesh of glyph quads, each quad's glyph picked by its vertex colour,
+# turned round the head and bobbing in the vertex shader (one draw call, nothing per frame on the CPU).
+const RUNE_CODE := """
+shader_type spatial;
+render_mode unshaded, blend_add, depth_draw_never, cull_disabled, shadows_disabled;
+uniform vec4 tint : source_color = vec4(0.6, 0.2, 1.0, 1.0);
+uniform float strength = 2.0;
+uniform float hz = 0.04;
+varying float glyph;
+
+float seg(vec2 p, vec2 a, vec2 b) {
+	vec2 pa = p - a, ba = b - a;
+	float h = clamp(dot(pa, ba) / dot(ba, ba), 0.0, 1.0);
+	return length(pa - ba * h);
+}
+
+void vertex() {
+	glyph = COLOR.r;
+	float a = TIME * 6.2832 * hz;
+	float c = cos(a), s = sin(a);
+	VERTEX.xz = vec2(VERTEX.x * c - VERTEX.z * s, VERTEX.x * s + VERTEX.z * c);
+	VERTEX.y += sin(TIME * 1.3 + COLOR.g * 40.0) * 0.005;
+}
+
+void fragment() {
+	vec2 p = UV;
+	float id = floor(glyph * 255.0 + 0.5);
+	float d = seg(p, vec2(0.5, 0.12), vec2(0.5, 0.88));  // every glyph has a stem
+	if (mod(id, 2.0) > 0.5) d = min(d, seg(p, vec2(0.2, 0.25), vec2(0.8, 0.25)));
+	if (mod(floor(id / 2.0), 2.0) > 0.5) d = min(d, seg(p, vec2(0.5, 0.5), vec2(0.82, 0.78)));
+	if (mod(floor(id / 4.0), 2.0) > 0.5) d = min(d, seg(p, vec2(0.5, 0.5), vec2(0.18, 0.78)));
+	if (mod(floor(id / 8.0), 2.0) > 0.5) d = min(d, abs(length(p - vec2(0.5, 0.62)) - 0.18));
+	if (mod(floor(id / 16.0), 2.0) > 0.5) d = min(d, seg(p, vec2(0.25, 0.88), vec2(0.75, 0.88)));
+	float line = 1.0 - smoothstep(0.035, 0.07, d);
+	float halo = (1.0 - smoothstep(0.0, 0.2, d)) * 0.25;
+	ALBEDO = tint.rgb * (line + halo) * strength * (0.75 + 0.25 * sin(TIME * 2.0 + id));
+}
+"""
+
 static var tier := 3  # graphics tier: 0 potato .. 4 ultimate (data/masks.json "detail")
 static var _db: MaskDb
 static var _shader: Shader
@@ -152,6 +191,7 @@ static var _meshes := {}  # "id|hi" -> Mesh
 static var _materials := {}  # "id|full" -> ShaderMaterial
 static var _soft_dot: Texture2D
 static var _puff_shader: Shader
+static var _rune_shader: Shader
 
 
 static func db() -> MaskDb:
@@ -199,6 +239,8 @@ static func build(id: String) -> Node3D:
 		frost.name = "MoveFx"
 		frost.emitting = false
 		root.add_child(frost)
+	if fx.get("runes") is Dictionary and share > 0.0:
+		root.add_child(_runes(fx["runes"]))
 	if fx.get("flies") is Dictionary and share > 0.0:
 		root.add_child(_flies(fx["flies"], share))
 	if fx.get("sparks") is Dictionary and share > 0.0:
@@ -296,6 +338,46 @@ static func _dot() -> Texture2D:
 		t.height = 64
 		_soft_dot = t
 	return _soft_dot
+
+
+# A ring of `count` glyph quads round the head (cfg: at = ring middle, radius, size, hz, color, strength).
+static func _runes(cfg: Dictionary) -> MeshInstance3D:
+	if _rune_shader == null:
+		_rune_shader = Shader.new()
+		_rune_shader.code = RUNE_CODE
+	var count := int(cfg.get("count", 10))
+	var radius := float(cfg.get("radius", 0.16))
+	var half := float(cfg.get("size", 0.024)) * 0.5
+	var st := SurfaceTool.new()
+	st.begin(Mesh.PRIMITIVE_TRIANGLES)
+	var dice := RandomNumberGenerator.new()
+	dice.seed = 77
+	for k in count:
+		var a := TAU * k / count
+		var centre := Vector3(sin(a), 0.0, cos(a)) * radius
+		var side := Vector3(cos(a), 0.0, -sin(a)) * half
+		var up := Vector3(0.0, half * 1.4, 0.0)
+		var col := Color(float(dice.randi_range(1, 31)) / 255.0, float(k) / float(count), 0.0)
+		var corners := [centre - side - up, centre + side - up, centre + side + up, centre - side + up]
+		var uvs := [Vector2(0, 1), Vector2(1, 1), Vector2(1, 0), Vector2(0, 0)]
+		for i in [0, 1, 2, 0, 2, 3]:
+			st.set_color(col)
+			st.set_uv(uvs[i])
+			st.add_vertex(corners[i])
+	var mi := MeshInstance3D.new()
+	mi.name = "Runes"
+	mi.mesh = st.commit()
+	var m := ShaderMaterial.new()
+	m.shader = _rune_shader
+	var c: Array = cfg.get("color", [0.6, 0.2, 1.0])
+	m.set_shader_parameter("tint", Color(float(c[0]), float(c[1]), float(c[2])))
+	m.set_shader_parameter("strength", float(cfg.get("strength", 2.0)))
+	m.set_shader_parameter("hz", float(cfg.get("hz", 0.04)))
+	mi.material_override = m
+	mi.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	mi.position = _vec(cfg.get("at"), Vector3.ZERO)
+	mi.custom_aabb = AABB(Vector3(-radius - half, -half * 2.0, -radius - half), Vector3(radius + half, half * 2.0, radius + half) * 2.0)
+	return mi
 
 
 static func _vec(a: Variant, fallback: Vector3) -> Vector3:

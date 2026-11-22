@@ -1,0 +1,25 @@
+[remap]
+
+importer="wavefront_obj"
+importer_version=1
+type="Mesh"
+uid="uid://dvkg270jsuh8p"
+path="res://.godot/imported/hi.obj-8f8d3d82e05eab51edf536113388dfaf.mesh"
+
+[deps]
+
+files=["res://.godot/imported/hi.obj-8f8d3d82e05eab51edf536113388dfaf.mesh"]
+
+source_file="res://assets/masks/void_howler/hi.obj"
+dest_files=["res://.godot/imported/hi.obj-8f8d3d82e05eab51edf536113388dfaf.mesh", "res://.godot/imported/hi.obj-8f8d3d82e05eab51edf536113388dfaf.mesh"]
+
+[params]
+
+generate_tangents=true
+generate_lods=true
+generate_shadow_mesh=true
+generate_lightmap_uv2=false
+generate_lightmap_uv2_texel_size=0.2
+scale_mesh=Vector3(1, 1, 1)
+offset_mesh=Vector3(0, 0, 0)
+force_disable_mesh_compression=false

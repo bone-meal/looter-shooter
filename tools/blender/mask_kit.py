@@ -363,6 +363,8 @@ def steel(name, base=(0.11, 0.115, 0.12), heat=0.6, rust=0.5, scale=1.0, rough=0
     L.new(inv.outputs[0], rm.inputs[0]); L.new(rn.outputs["Fac"], rm.inputs[1])
     rmask = N.new("ShaderNodeMapRange"); rmask.inputs["From Min"].default_value = 0.12 * (1.2 - rust); rmask.inputs["From Max"].default_value = 0.32 * (1.2 - rust) + 0.02
     L.new(rm.outputs[0], rmask.inputs["Value"])
+    if rust <= 0.0:  # no rust at all (AO alone had browned occluded corners even at rust 0)
+        rmask.inputs["From Min"].default_value = 5.0; rmask.inputs["From Max"].default_value = 6.0
     rusty = N.new("ShaderNodeMix"); rusty.data_type = "RGBA"
     L.new(rmask.outputs["Result"], rusty.inputs[0]); L.new(polish.outputs[2], rusty.inputs[6])
     rusty.inputs[7].default_value = (0.16, 0.06, 0.025, 1)

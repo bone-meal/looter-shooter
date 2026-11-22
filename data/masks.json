@@ -130,6 +130,23 @@
 				"mane": {"at": [0.0, 0.129, 0.035], "amp": 0.005},
 				"sparks": {"at": [[0.0, 0.25, 0.02]], "radius": 0.14, "amount": 10, "dir": [0.0, -1.0, 0.0], "gravity": 0.15, "life": 2.2, "glow": 2.5, "color": [1.0, 0.75, 0.25]}
 			}
+		},
+		"void_howler": {
+			"name": "Void Howler",
+			"source": "boss",
+			"base": "animal",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "An armoured wolf in dark steel plates, snarling with bared metal teeth, blade ears swept back and purple light in every seam. Its black void eyes swirl with purple, void fog spills from its jaws and runes orbit slowly round its head.",
+			"fx": {
+				"glow": [0.62, 0.15, 1.0],
+				"glow_strength": 4.0,
+				"pulse_hz": 0.35,
+				"heal_every": 2.0,
+				"mist": {"at": [0.0, 0.075, -0.2], "radius": 0.02, "amount": 10, "dir": [0.0, -0.8, -0.6], "rise": -0.02, "life": 2.4, "size": 0.05, "color": [0.22, 0.04, 0.38, 0.4]},
+				"runes": {"at": [0.0, 0.18, -0.02], "radius": 0.165, "count": 10, "size": 0.026, "hz": 0.04, "strength": 2.2, "color": [0.62, 0.2, 1.0]}
+			}
 		}
 	}
 }
