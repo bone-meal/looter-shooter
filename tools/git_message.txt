@@ -1,8 +1,1 @@
-Polish1 D5c part 25: Smoke Demon, elite mask 24
-
-- tools/blender/mask_smoke_demon.py: a blank face of black burnt stone with a scowling V brow, a forehead ridge and planed cheeks, deep eye hollows and a ragged mouth slit with embers inside, ember cracks, long ridged horns, and frozen smoke (plumes rising over the crown and pouring down the back, twisting).
-- assets/masks/smoke_demon: baked 14000 / 4500 tris.
-- data/masks.json: ember glow pulsing, cracks breathing (heal_every), black smoke pouring from the eyes and mouth; stone darker so the game sun leaves it black.
-
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
-Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
+Windows exe gets the custom icon (modify_resources on) + icon_check and git_status tools
