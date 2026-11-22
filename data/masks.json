@@ -267,6 +267,21 @@
 				"glow_strength": 0.0,
 				"jaw": {"hinge": [0.126, -0.0265], "angle": 7.0, "every": 4.0}
 			}
+		},
+		"filter_fiend": {
+			"name": "Filter Fiend",
+			"source": "elite",
+			"base": "gas",
+			"covers": "full",
+			"neck_cut": -0.01,
+			"trade": true,
+			"text": "A respirator taken to excess: four amber insect lenses, a snout of stacked filters, canisters fanned out like mandibles, a crest of filters down the head and hoses to a filter drum on the back. It breathes out a sickly haze.",
+			"fx": {
+				"glow": [1.0, 0.6, 0.15],
+				"glow_strength": 1.8,
+				"pulse_hz": 0.3,
+				"mist": {"at": [0.0, 0.055, -0.165], "radius": 0.025, "amount": 5, "dir": [0.0, -0.3, -1.0], "rise": 0.005, "life": 1.6, "size": 0.02, "color": [0.75, 0.75, 0.45, 0.25]}
+			}
 		}
 	}
 }

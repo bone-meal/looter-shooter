@@ -1,10 +1,10 @@
-Polish1 D5c part 17: Carnival Butcher, the fourth elite mask
+Polish1 D5c part 18: Filter Fiend, the fifth elite mask
 
-An oversized worn felt clown head with a grin from ear to ear crammed with five
-rows of teeth, staring eyes, a red bulb nose, stains round the mouth, a bush of
-orange curls round the back and sides, a crumpled striped top hat tipped
-forward, a zipper down the back, a fluted two-tier collar over a felt neck.
-The jaw and its lower teeth clack now and then.
+A respirator taken to excess: a yellow face plate with four amber insect lenses,
+a snout of three stepped pancake filters, four canisters fanned out like
+mandibles, a crest of filters along the head, hoses to a back plate with a
+filter drum and gauges, bellows ribs down the neck. Sickly haze breathed out of
+the snout.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
