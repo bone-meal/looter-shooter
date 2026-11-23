@@ -1,0 +1,9 @@
+renderer gl_compatibility, window (1954.0, 1080.0)
+plain 0.10 ms GPU
+woodland_classic 2.56 ms GPU
+diamond 1.12 ms GPU
+galaxy 3.72 ms GPU
+neon_oni 2.16 ms GPU
+living_coral 3.55 ms GPU
+void_serpent 2.37 ms GPU
+carnival_hell 1.20 ms GPU

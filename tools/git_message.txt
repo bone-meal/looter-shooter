@@ -1,16 +1,10 @@
-Polish1 stage H (feel + performance) and stage I part 1 (card picks, pachinko streak, case stats, kill tracker)
+Polish1 item 145: camo art pass on Galaxy, Living Coral and Void Serpent
 
-- Slopes: the step-up no longer lifts the body on walkable slopes (spawn-island hill stutter, 148); Aurelind's unstuck tests the drawn ground, not the smooth rule half a metre above it (farm-hill rubber band, 159); floor snap 0.3 on the islands. Hill walks: 0 unstuck frees.
-- Floating props in Aurelind: trees and work nodes stand on the drawn ground (155).
-- Zombies stuck behind props: ridges, ruins, boulders and giant trunks are cut out of the island navmesh (paths led over ridge tips enemies cannot climb); enemies get the map before the first bake, start paths from their first point, follow bends close in, turn the other way when stuck twice (144). Chase test: 32 of 32 reach the player (was 7 failures).
-- Crow ride: the club is built in 41 small pieces during the take-off (was 3 freezes of about a second), the crowd's models load on worker threads from the first worm, and the flight rises over the trees, clears everything under its curve by 4 m and comes straight down onto the landing (162).
-- Skins menu: its view is drawn once while loading (first opening froze 1.4 s, now 0.1 s) (143).
-- Card game: picking asks where a card rests, not where its lifted hover copy is drawn (edge flicker, missed attack clicks); leaders on the 3D table show their name, health and hero power on hover (163, 164).
-- Pachinko: holding F builds a HOT STREAK (chip wins +0 to +60 % after 5 s over 60 s, data/pachinko.json hold_streak); long holds grow the chips (168).
-- Combat Report: Cases section (crates opened by crate, guns by tier, knives, best pull, camos by tier) (170).
-- W kills counter: a raised module with a glowing bezel, a W KILLS title and a big outlined number (149).
-- rigid_skin set its weight count after begin (an engine error per enemy spawned).
-- Dev: !hillwalk, !nav chase, !timed, !uiclose, !report, !tcg pickall, !pachinko hold, !crow fly a fed, !unstuck rule.
+- Camos can span the whole gun: every camo'd mesh knows where it sits in the gun (instance uniforms), and a view direction for parallax layers.
+- Void Serpent: a scaled snake slides round the gun's side on a snake-game route, head with glowing slit-pupil eyes and a flicking tongue, tapering body with dark diamonds, eats translucent coloured orbs (a ring of light, a lump down its body), new orbs each lap; the ground is very dark grey with a slightly lighter repeating hexagon pattern (director's note), fewer wisps.
+- Galaxy: a window into deep space: parallax nebula with dust lanes and filaments, a spiral galaxy turning on the receiver, twinkling stars in two layers, bright four-spike stars, a shooting star every 7 s.
+- Living Coral: deep water with light shafts and moving caustics, branching coral with glowing polyps, brain coral domes, waving anemones, small fish swimming along the side, bubbles; painted relief bumps the lighting so the coral stands off the gun, shadows round it.
+- tools/camo_shot: --ids (each camo alone, big), --gap, --inspect, --measure (GPU time per camo), tools/camo_shot_args.txt when run without arguments.
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

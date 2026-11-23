@@ -39,9 +39,20 @@ uniform float inspect = 0.0;
 uniform float body = 0.0;  // 1 on the gun's main body mesh: faces / the serpent are laid out on it
 uniform vec3 mid = vec3(0.0);
 uniform vec3 ext = vec3(0.1, 0.1, 0.5);
+// (polish1 item 145) where this mesh sits in the WHOLE gun (set per mesh by apply()): rows of the mesh -> gun transform,
+// the gun's middle and half size, gon = 1 when set. The serpent's board and the galaxy's spiral span every part.
+instance uniform vec4 gx = vec4(1.0, 0.0, 0.0, 0.0);
+instance uniform vec4 gy = vec4(0.0, 1.0, 0.0, 0.0);
+instance uniform vec4 gz = vec4(0.0, 0.0, 1.0, 0.0);
+instance uniform vec3 gmid = vec3(0.0);
+instance uniform vec3 gext = vec3(0.1, 0.1, 0.5);
+instance uniform float gon = 0.0;
 varying vec3 lp;
 varying vec3 ln;
 varying vec3 np;
+varying vec3 gp;  // gun space, in units of the gun's half height, from its middle
+varying vec3 gnn;  // the normal in gun space
+varying vec3 vdir;  // from the camera to this point, in this mesh's own space (parallax: a window into depth)
 
 float h1(vec3 p) { return fract(sin(dot(p, vec3(12.9898, 78.233, 37.719))) * 43758.5453); }
 float h2(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }
@@ -120,16 +131,42 @@ float face(vec2 q, float blink, float grin) {  // an oni / carnival face: horns,
 	return d;
 }
 
+// (polish1 item 145) the void serpent's board: a closed snake-game tour over a 12 x 3 grid of cells on the gun's side
+// (row 0 left to right, a comb back through rows 1-2, down column 0), and a cell's spot in gun space (u along, v up)
+vec2 tour_cell(float idx) {
+	float w = 12.0;
+	float n = mod(idx, 3.0 * w);
+	if (n < w) { return vec2(n, 0.0); }
+	n -= w;
+	if (n < 2.0 * (w - 1.0)) {
+		float c = floor(n * 0.5); float within = mod(n, 2.0);
+		return vec2(w - 1.0 - c, mod(c, 2.0) < 0.5 ? 1.0 + within : 2.0 - within);
+	}
+	n -= 2.0 * (w - 1.0);
+	return vec2(0.0, 2.0 - n);
+}
+vec2 board(vec2 cell, float ulen) { return vec2(-0.86 * ulen + cell.x * (1.72 * ulen / 11.0), 0.44 + cell.y * 0.15); }
+vec2 tour_at(float f, float ulen) {
+	float i = floor(f);
+	return mix(board(tour_cell(i), ulen), board(tour_cell(i + 1.0), ulen), f - i);
+}
+
 void vertex() {
 	lp = VERTEX * size * 30.0 + vec3(seed * 1.37, seed * 0.71, seed * 2.13);
 	ln = NORMAL;
 	np = (VERTEX - mid) / max(ext, vec3(0.001));
+	vec3 g = vec3(dot(gx.xyz, VERTEX) + gx.w, dot(gy.xyz, VERTEX) + gy.w, dot(gz.xyz, VERTEX) + gz.w);
+	gp = gon > 0.5 ? (g - gmid) / max(gext.y, 0.001) : np * vec3(ext.x / max(ext.y, 0.001), 1.0, ext.z / max(ext.y, 0.001));
+	gnn = gon > 0.5 ? normalize(vec3(dot(gx.xyz, NORMAL), dot(gy.xyz, NORMAL), dot(gz.xyz, NORMAL))) : NORMAL;
+	vdir = VERTEX - (inverse(MODEL_MATRIX) * vec4(CAMERA_POSITION_WORLD, 1.0)).xyz;
 }
 
 void fragment() {
 	vec3 an = abs(ln);
 	vec2 p2 = an.x > an.y && an.x > an.z ? lp.zy : (an.y > an.z ? lp.xz : lp.xy);
 	vec3 col = c0.rgb; float rough = 0.62; float metal = 0.0; vec3 glow = vec3(0.0); float edge = 0.0;
+	float relief = 0.0;  // (polish1 item 145) a painted height: bumps the lighting so shapes stand off the gun (coral)
+	float relief_k = 0.0;
 	float gloss = 0.06;  // how much of the painted studio the surface shows
 	float t = TIME;
 	float ch = challenge;
@@ -382,22 +419,59 @@ void fragment() {
 		if (bayer > solid) { discard; }
 		glow = c3.rgb * (wisp * 1.4 + fres * 1.6 + smoke * 0.15) * (1.0 + ch * 0.6);
 		col *= 0.6; rough = 0.4; gloss = 0.0;
-	} else if (kind == 24) {  // galaxy: deep space, coloured nebula, dust lanes, stars of every size
-		vec3 q = lp * 0.12 + vec3(t * 0.02, 0.0, t * 0.03);
-		vec3 wq = warp(q * 1.4, 2.2);
+	} else if (kind == 24) {  // galaxy (polish1 item 145): a WINDOW INTO DEEP SPACE: layers that move against each other as the
+		// gun turns (parallax): far nebula clouds with dark dust lanes, a spiral galaxy turning slowly on the gun's side, near
+		// stars of every size, the brightest with four spikes, a shooting star now and then. Challenge: colours shift with speed.
+		vec3 vd = normalize(vdir);
+		float shift = speed * 0.35 * ch;
+		vec3 q1 = (lp + vd * 22.0) * 0.06 + vec3(t * 0.008, 0.0, t * 0.012);
+		vec3 wq = warp(q1, 2.6);
 		float neb = field(wq);
-		float dust = smoothstep(0.55, 0.75, field(wq * 2.5 + 4.0));
-		float shift = speed * 0.5 * ch;
-		vec3 nc = mix(c1.rgb, c2.rgb, smoothstep(0.25, 0.75, field(q * 2.0 + shift)));
-		nc = mix(nc, c3.rgb, smoothstep(0.7, 0.9, neb));
-		col = mix(c0.rgb, nc, smoothstep(0.45, 0.9, neb) * (1.0 - dust * 0.8) * 0.85);
-		float st = h1(floor(lp * 2.2));
-		float tw = 0.5 + 0.5 * sin(t * (2.0 + 4.0 * ch) + st * 40.0);
-		vec3 fl = fract(lp * 2.2) - 0.5;
-		float star = step(0.9, st) * smoothstep(0.22, 0.0, length(fl)) * tw;
-		float big = step(0.996, h1(floor(lp * 1.5) + 2.0)) * smoothstep(0.3, 0.0, length(fract(lp * 1.5) - 0.5));
-		glow = col * 0.28 + vec3(star) * 2.2 + vec3(1.0, 0.95, 0.9) * big * 3.0;
-		col *= 0.6; rough = 0.25; gloss = 0.08;
+		float neb2 = field(wq * 1.7 + 11.0);
+		float dust = smoothstep(0.52, 0.8, field(warp(q1 * 2.2 + 4.0, 1.8)));
+		vec3 nc = mix(c1.rgb, c2.rgb, smoothstep(0.25, 0.75, fract(neb2 + shift)));
+		nc = mix(nc, c3.rgb, smoothstep(0.82, 0.98, fract(neb + shift * 0.5)) * 0.7);
+		float fil = ridge(wq * 2.3 + 2.0);  // thin glowing filaments through the clouds
+		float dens = pow(smoothstep(0.64, 1.0, neb), 1.8) * (1.0 - dust * 0.95);
+		col = c0.rgb * 0.35;
+		glow = nc * (dens * 0.5 + pow(fil, 6.0) * dens * 0.8 + pow(fil, 12.0) * 0.08);
+		// the spiral galaxy, deeper than the stars (gun space, on the sides)
+		vec2 g = vec2(gp.z, gp.y) + vec2(vd.z, vd.y) * 0.5 - vec2(0.15 * gext.z / max(gext.y, 0.001), 0.45);
+		float rr = length(g) / 1.25;
+		float ang = atan(g.y, g.x) - t * 0.05;
+		float arms = pow(0.5 + 0.5 * cos(2.0 * (ang + 2.4 * log(rr + 0.04))), 3.0) * (0.7 + 0.6 * vn(vec3(g * 9.0, 2.0)));
+		float disc = exp(-rr * 2.4);
+		float sidep = smoothstep(0.35, 0.6, abs(gnn.x));
+		float spiral = (arms * disc * 0.8 + exp(-rr * rr * 90.0) * 1.8 + disc * 0.12) * sidep;
+		float knots = 0.0;
+		glow += mix(c3.rgb, vec3(1.0, 0.92, 0.8), smoothstep(0.3, 0.0, rr)) * spiral + vec3(0.9, 0.85, 1.0) * knots * 1.5;
+		// near stars: small and many, twinkling (on the face's own plane, so none are sliced away)
+		vec2 sq = (p2 + vec2(vd.z + vd.x, vd.y) * 4.0) * 1.3;
+		vec2 cell = floor(sq);
+		float st = h2(cell);
+		float sd = length(fract(sq) - 0.5 - (h22(cell + 3.3) - 0.5) * 0.7);
+		float tw = 0.6 + 0.4 * sin(t * (1.5 + 3.0 * ch) + st * 40.0);
+		float star = step(0.55, st) * (1.0 - aa(0.04 + 0.07 * (st - 0.55), sd)) * tw;
+		glow += mix(vec3(0.75, 0.85, 1.0), vec3(1.0, 0.85, 0.7), h2(cell + 8.0)) * star * 3.0;
+		vec2 sq2 = (p2 + vec2(vd.z + vd.x, vd.y) * 9.0) * 2.6;  // a finer, fainter, deeper layer
+		float st2 = h2(floor(sq2) + 21.0);
+		glow += vec3(0.7, 0.75, 1.0) * step(0.6, st2) * (1.0 - aa(0.05, length(fract(sq2) - 0.5 - (h22(floor(sq2) + 7.0) - 0.5) * 0.7))) * 1.2;
+		// bright stars with four spikes (the face's own plane)
+		vec2 bq = (p2 + vec2(vd.z + vd.x, vd.y) * 1.5) * 0.35;
+		vec2 bc = floor(bq); vec2 bf = fract(bq) - 0.5 - (h22(bc + 5.0) - 0.5) * 0.5;
+		float bs = h2(bc + 9.0);
+		float spike = (1.0 - aa(0.006, abs(bf.x))) * smoothstep(0.32, 0.0, abs(bf.y)) + (1.0 - aa(0.006, abs(bf.y))) * smoothstep(0.32, 0.0, abs(bf.x));
+		glow += vec3(1.0, 0.97, 0.92) * step(0.9, bs) * (spike * 1.6 + (1.0 - aa(0.025, length(bf))) * 4.0) * (0.75 + 0.25 * sin(t * 2.0 + bs * 30.0));
+		// a shooting star every 7 s, across the gun's side
+		float ph = fract(t / 7.0 + seed * 0.13);
+		vec2 mdir = normalize(vec2(1.0, -0.35));
+		vec2 mh = vec2(mix(-1.3, 1.3, ph / 0.18) * gext.z / max(gext.y, 0.001), 0.9 - ph / 0.18 * 0.6);
+		vec2 mrel = vec2(gp.z, gp.y) - mh;
+		float along = dot(mrel, -mdir);
+		float meteor = (1.0 - aa(0.008 + along * 0.004, abs(dot(mrel, vec2(-mdir.y, mdir.x))))) * step(0.0, along) * smoothstep(0.9, 0.0, along) * step(ph, 0.18) * sidep;
+		glow += vec3(1.0, 0.95, 0.9) * meteor * 3.0;
+		glow += nc * fres * 0.5;
+		rough = 0.2; gloss = 0.12;
 	} else if (kind == 25) {  // neon oni: black lacquer, flowing neon veins, an oni face on each side, embers
 		col = c0.rgb; rough = 0.12; gloss = 0.35;
 		vec3 w = warp(lp * 0.25 + vec3(0.0, 0.0, t * 0.08), 1.6);
@@ -413,22 +487,104 @@ void fragment() {
 		glow += c1.rgb * fl * (1.6 + 2.5 * inspect) + c1.rgb * smoothstep(0.06, 0.0, fd) * step(0.45, an.x) * 0.4 * body;
 		float ember = step(0.992 - 0.004 * ch, h1(floor(lp * 6.0 + vec3(0.0, t * 5.0, 0.0))));
 		glow += c2.rgb * ember * 3.0;
-	} else if (kind == 26) {  // living coral: deep sea, branching coral that grows, glowing polyps
-		float grow = 0.56 + 0.06 * sin(t * 0.3) - 0.15 * inspect * ch;
-		vec3 w = warp(lp * 0.3, 1.0);
-		float br = ridge(w * 1.2);
-		float coral = smoothstep(grow + 0.06, grow + 0.12, br);
-		float tip = smoothstep(grow + 0.3, grow + 0.38, br);
-		vec3 sea = mix(c0.rgb * 0.6, vec3(0.02, 0.08, 0.16), field(lp * 0.25));
-		sea += vec3(0.0, 0.12, 0.18) * pow(field(lp * 0.6 + vec3(0.0, t * 0.3, 0.0)), 4.0);  // light rippling down through the water
-		col = mix(sea, mix(c1.rgb, c2.rgb, field(w * 2.0)), coral);
-		col = mix(col, c2.rgb * 1.2 + 0.1, tip);
-		vec3 pc = fract(lp * 3.0) - 0.5;
-		float polyp = step(0.94 - 0.02 * ch, h1(floor(lp * 3.0))) * smoothstep(0.3, 0.0, length(pc)) * coral;
-		glow = c3.rgb * polyp * (1.5 + 1.0 * sin(t * 2.0 + h1(floor(lp * 3.0)) * 9.0) + 3.0 * inspect) + c1.rgb * tip * 0.35;
-		float mote = step(0.995, h1(floor(lp * 4.0 + vec3(0.0, t * 1.2, 0.0))));
-		glow += c3.rgb * mote * 2.0;
-		rough = 0.5; gloss = 0.1;
+	} else if (kind == 26) {  // living coral (polish1 item 145): a REEF: deep water behind (parallax) with light rippling down
+		// in caustics, three kinds of coral side by side (branching coral with glowing polyp tips, brain coral domes with
+		// meandering grooves, anemones whose tentacles wave), a few small fish swimming along the gun, bubbles rising.
+		// Challenge / inspect: full bloom (polyps and anemones open and glow).
+		vec3 vd = normalize(vdir);
+		float bloom = clamp(inspect * (0.5 + 0.5 * ch) + ch * 0.25, 0.0, 1.0);
+		vec2 dq = (p2 + vec2(vd.z + vd.x, vd.y) * 10.0) * 0.18;
+		vec3 sea = mix(vec3(0.005, 0.03, 0.08), vec3(0.02, 0.16, 0.26), clamp(gp.y * 0.4 + 0.55, 0.0, 1.0));
+		float rays = pow(vn(vec3(dq.x * 1.2 + dq.y * 0.5, t * 0.15, 3.0)), 3.0);
+		sea += vec3(0.05, 0.2, 0.25) * rays;
+		// caustics: bright wandering cell edges, two layers drifting apart
+		vec2 cq = p2 * 0.3 + vec2(sin(t * 0.4 + p2.y * 0.3), cos(t * 0.33 + p2.x * 0.3)) * 0.6;
+		float ca = (1.0 - smoothstep(0.0, 0.14, vor(cq + vec2(t * 0.11, t * 0.07)).y)) + (1.0 - smoothstep(0.0, 0.1, vor(cq * 1.4 - vec2(t * 0.09, -t * 0.05) + 7.0).y)) * 0.7;
+		float up = smoothstep(0.2, 0.9, gnn.y) * 0.7 + 0.3;
+		// which coral grows where
+		float reg = field(lp * 0.06 + 3.0) * 0.4 + clamp(gp.z / max(gext.z / max(gext.y, 0.001), 0.001) * 0.5 + 0.5, 0.0, 1.0) * 0.6;  // muzzle: branches, middle: brain coral, stock: anemones (mixed by noise)
+		float wb = smoothstep(0.44, 0.5, reg);  // branching -> brain
+		float wa = smoothstep(0.58, 0.64, reg);  // brain -> anemones
+		// 1 branching coral: thick main branches forking into thin twigs (two ridge nets), thick where a clump grows,
+		// rounded lit tips, glowing polyps along them
+		vec3 w = warp(lp * 0.26, 1.3);
+		float clump = clamp(field(lp * 0.09 + 17.0) + (0.45 - gp.y) * 0.35, 0.0, 1.0);  // the reef thickens low on the gun
+		float b1 = ridge(w * 1.0);
+		float b2 = ridge(w * 2.6 + 9.0);
+		float sway = 0.015 * sin(t * 0.6 + lp.y * 0.2);
+		float m1 = smoothstep(0.88 - 0.12 * clump + sway, 0.9 - 0.12 * clump + sway, b1);
+		float m2 = smoothstep(0.92 - 0.08 * clump, 0.94 - 0.08 * clump, b2) * smoothstep(0.8, 0.86, b1 + clump * 0.15);
+		float coral = max(m1, m2) * smoothstep(0.12, 0.28, clump);
+		float core = smoothstep(0.94 - 0.1 * clump, 1.0, b1);  // the lit middle of a branch
+		vec3 bcol = mix(c1.rgb * 0.5, c1.rgb * 1.15, core);
+		bcol = mix(bcol, c2.rgb * 1.1, m2 * (1.0 - m1) * 0.8);  // twigs lighter
+		vec3 pv = vor(p2 * 4.0 + 5.0);
+		float polyp = (1.0 - aa(0.14 + 0.1 * bloom, pv.x)) * step(0.5, pv.z) * coral;
+		float shade = smoothstep(0.62, 0.9, b1 + clump * 0.1) * smoothstep(0.12, 0.28, clump) * (1.0 - coral);  // its shadow on the water behind
+		vec3 c_branch = mix(sea * (1.0 - 0.55 * shade), bcol * (0.55 + 0.45 * core), coral);  // round: dark at the sides, lit along the middle
+		c_branch = mix(c_branch, c3.rgb * 0.6 + 0.2, polyp * 0.7);
+		float h_branch = coral * (0.35 + 0.65 * core) + polyp * 0.25;
+		vec3 g_branch = c3.rgb * polyp * (0.6 + 2.2 * bloom) * (0.6 + 0.4 * sin(t * 2.0 + pv.z * 20.0)) + c1.rgb * coral * 0.08;
+		// 2 brain coral (round domes with meandering grooves)
+		vec3 dv = vor(p2 * 0.42 + 11.0);
+		float dome = smoothstep(0.5, 0.38, dv.x) * step(0.45, dv.z);
+		float mang = field(lp * 0.2 + 5.0) * 9.0;
+		float mz = abs(sin(dot(p2, vec2(cos(mang), sin(mang))) * 7.0 + field(lp * 0.5) * 4.0));  // meandering parallel grooves
+		float groove = (1.0 - aa(0.35, mz)) * dome;
+		float rise = sqrt(max(1.0 - pow(dv.x / 0.5, 2.0), 0.0));  // a dome's height across it
+		vec3 c_brain = mix(c_branch, mix(c2.rgb * 0.95, c2.rgb * 0.4 + c1.rgb * 0.15, groove) * (0.45 + 0.65 * rise), dome);
+		c_brain = mix(c_brain, c_brain * 0.5, smoothstep(0.62, 0.5, dv.x) * (1.0 - dome));  // shadow round its foot
+		float h_brain = mix(h_branch, rise * 0.9 - groove * 0.25, dome);
+		vec3 g_brain = mix(g_branch, c2.rgb * groove * 0.12 * (1.0 + bloom), dome);
+		// 3 anemones (tentacles waving round a mouth) on a rocky floor
+		vec2 aq = p2 * 0.34; vec2 ac = floor(aq); vec2 af = fract(aq) - 0.5 - (h22(ac + 2.0) - 0.5) * 0.3;
+		float ar = length(af); float aang = atan(af.y, af.x);
+		float reach = 0.32 + 0.1 * bloom;
+		float tent = abs(sin(aang * 8.0 + sin(t * 1.6 + ar * 9.0 + h2(ac) * 6.0) * 0.7));
+		float anem = (1.0 - aa(0.18, tent * smoothstep(0.08, reach, ar) * 1.6)) * (1.0 - aa(reach, ar));
+		float mouth = 1.0 - aa(0.07, ar);
+		vec3 rock = mix(sea * 1.5, vec3(0.08, 0.07, 0.09), field(lp * 0.4) * 0.6);
+		vec3 acol = mix(c1.rgb * 0.8, c3.rgb * 0.7, smoothstep(0.1, reach, ar));
+		vec3 c_anem = mix(rock * (1.0 - 0.4 * (1.0 - aa(reach + 0.06, ar))), acol * (0.6 + 0.4 * smoothstep(0.1, reach, ar)), anem);
+		c_anem = mix(c_anem, c2.rgb * 0.5, mouth);
+		float h_anem = anem * (0.5 + 0.5 * smoothstep(reach, 0.1, ar)) + (1.0 - aa(0.12, ar)) * 0.4 - mouth * 0.3;
+		vec3 g_anem = c3.rgb * anem * smoothstep(reach * 0.6, reach, ar) * (0.5 + 1.8 * bloom) * (0.7 + 0.3 * sin(t * 2.5 + h2(ac) * 9.0));
+		col = mix(mix(c_branch, c_brain, wb), c_anem, wa);
+		glow = mix(mix(g_branch, g_brain, wb), g_anem, wa);
+		relief = mix(mix(h_branch, h_brain, wb), h_anem, wa) * 0.035;
+		relief_k = 1.0;
+		glow += c3.rgb * fres * 0.25 * smoothstep(0.1, 0.5, relief * 28.0);  // a soft rim on the coral against the deep
+		col += vec3(0.25, 0.6, 0.65) * ca * up * 0.45;  // the light on everything
+		glow += vec3(0.15, 0.5, 0.55) * ca * up * 0.4;
+		// small fish along the gun's sides (gun space): striped orange bodies, a tail that beats
+		float sidef = smoothstep(0.35, 0.6, abs(gnn.x));
+		float ulen = gext.z / max(gext.y, 0.001);
+		for (int k = 0; k < 5; k++) {
+			float fk = float(k);
+			float sp = 0.18 + 0.08 * h2(vec2(fk, 1.0));
+			float fx = (fract(t * sp / ulen * 0.5 + h2(vec2(fk, 2.0))) * 2.4 - 1.2) * ulen;
+			float fy = 0.2 + 0.55 * h2(vec2(fk, 3.0)) + 0.06 * sin(t * 1.3 + fk * 2.0);
+			vec2 fl = vec2(gp.z, gp.y) - vec2(fx, fy);
+			fl.x = -fl.x;  // they swim toward the muzzle
+			float bodyf = 1.0 - aa(1.0, length(fl / vec2(0.075, 0.032)));
+			float wag = sin(t * 9.0 + fk) * 0.012;
+			vec2 tl = fl - vec2(0.085, wag);
+			float tail = (1.0 - aa(0.0, abs(tl.y) - max(tl.x, 0.0) * 0.8 - 0.002)) * step(-0.01, tl.x) * step(tl.x, 0.04);
+			float stripe = step(0.5, fract(fl.x * 22.0 + 0.25)) * 0.0 + (1.0 - aa(0.008, abs(fl.x + 0.01))) + (1.0 - aa(0.006, abs(fl.x - 0.035)));
+			float fish = max(bodyf, tail) * sidef;
+			vec3 fc = mix(vec3(1.0, 0.45, 0.08), vec3(1.0), clamp(stripe, 0.0, 1.0) * bodyf);
+			col = mix(col, fc, fish);
+			glow = mix(glow, fc * 0.25, fish);
+			glow += vec3(0.0) * fish;
+			float eye = (1.0 - aa(0.006, length(fl - vec2(-0.045, 0.006)))) * sidef;
+			col = mix(col, vec3(0.0), eye);
+		}
+		// bubbles rising from the reef
+		vec2 bq = vec2(p2.x * 0.9, p2.y * 0.9 - t * 0.9);
+		vec2 bcell = floor(bq); vec2 bf2 = fract(bq) - 0.5 - (h22(bcell + 4.0) - 0.5) * 0.6;
+		float bubble = step(0.86, h2(bcell + 1.7)) * (1.0 - aa(0.02, abs(length(bf2) - 0.09 - 0.05 * h2(bcell))));
+		glow += vec3(0.6, 0.9, 1.0) * bubble * 0.8;
+		rough = 0.55; gloss = 0.08;
 	} else if (kind == 27) {  // glitch reality: a datamoshed surface, RGB split, scanlines, slipping blocks
 		float g = 0.25 + shoot * (0.5 + 0.5 * ch) + reload * 0.4 + inspect * 0.7;
 		float band = floor(lp.y * 2.5 + floor(t * 9.0) * 0.37);
@@ -447,30 +603,90 @@ void fragment() {
 		col *= 0.85 + 0.15 * scan;
 		glow += vec3(step(0.96, h2(vec2(floor(FRAGCOORD.y * 0.2), floor(t * 22.0))))) * g * 1.5;
 		rough = 0.3; gloss = 0.12;
-	} else if (kind == 28) {  // void serpent: a swirling void, a scaled serpent winding along the gun, glowing eyes
-		vec3 vq = lp * 0.25 + vec3(0.0, 0.0, -t * 0.15);
-		float sw = field(warp(vq, 2.0));
-		col = mix(c0.rgb, c1.rgb * 0.8, smoothstep(0.4, 0.9, sw));
-		glow = c2.rgb * smoothstep(0.75, 0.95, sw) * 0.5;
-		float z = np.z * ext.z / ext.y;
-		float tm = t * (0.7 + 0.7 * ch);
-		float path = sin(z * 1.6 - tm) * 0.45 + sin(z * 3.7 - tm * 1.4) * 0.12;
-		float yy = np.y;
-		float bw = 0.2 + 0.06 * inspect * ch;
-		float d = body > 0.5 ? abs(yy - path) : abs(fract(lp.y * 0.05) - 0.5) * 2.0;
-		float sbody = 1.0 - aa(bw, d);
-		vec4 hs = hexc(vec2(lp.z * 2.0, lp.y * 3.0));
-		float scale = 1.0 - aa(0.07, hexedge(hs.xy));
-		float belly = smoothstep(bw, 0.0, d);
-		vec3 skin = mix(c1.rgb * 1.6, c3.rgb * 0.5, belly * 0.5);
-		col = mix(col, mix(skin, skin * 0.35, scale), sbody);
-		float pulse = smoothstep(0.12, 0.0, abs(fract(z * 0.3 - t * 0.35) - 0.5));
-		glow += c2.rgb * (scale * sbody * (0.6 + pulse * 1.8)) + c2.rgb * smoothstep(bw + 0.12, bw, d) * (1.0 - sbody) * 0.9;
-		float headz = (fract(t * 0.05) * 2.4 - 1.2) * ext.z / ext.y;
-		vec2 eyep = vec2(z - headz, yy - (sin(headz * 1.6 - tm) * 0.45 + sin(headz * 3.7 - tm * 1.4) * 0.12));
-		float eyes = ((1.0 - aa(0.05, length(eyep - vec2(0.0, 0.08)))) + (1.0 - aa(0.05, length(eyep + vec2(0.0, 0.08))))) * body;
-		glow += c3.rgb * eyes * (4.0 + 5.0 * inspect);
-		rough = 0.3; gloss = 0.04;
+	} else if (kind == 28) {  // void serpent (polish1 item 145): a swirling void; a scaled serpent SLIDES round the gun's side
+		// on a snake-game tour, head first (eyes, a flicking tongue), chasing small translucent orbs and EATING them (a flash,
+		// a lump going down its body); the tour spans every part of the gun (gun space), parts in between hide it for a moment
+		// the ground (director 2026-11-23): very dark grey with a repeating hexagon pattern a shade lighter, quiet so the
+		// serpent and the orbs carry the eye
+		vec4 bg = hexc(p2 * 1.1);
+		float hex_line = 1.0 - aa(0.05, hexedge(bg.xy));
+		col = mix(vec3(0.045, 0.045, 0.05), vec3(0.085, 0.085, 0.09), hex_line);
+		glow = vec3(0.0);
+		float side = smoothstep(0.35, 0.55, abs(gnn.x));
+		float ulen = gext.z / max(gext.y, 0.001);
+		vec2 q = vec2(gp.z, gp.y);
+		float cw = 1.72 * ulen / 11.0;  // a cell along the gun
+		float f = t * (1.7 + 1.6 * inspect * ch) + seed * 3.0;  // the head's place on the tour, in cells
+		// the body: 16 joints half a cell apart behind the head
+		float best = 9.0; float s_at = 0.0; vec2 dir = vec2(1.0, 0.0); float lat = 0.0;
+		vec2 prev = tour_at(f, ulen);
+		vec2 head = prev;
+		vec2 hdir = normalize(tour_at(f, ulen) - tour_at(f - 0.2, ulen) + vec2(0.00001, 0.0));
+		for (int k = 1; k <= 16; k++) {
+			vec2 cur = tour_at(f - float(k) * 0.5, ulen);
+			vec2 ba = prev - cur; vec2 pa = q - cur;
+			float hh = clamp(dot(pa, ba) / max(dot(ba, ba), 0.000001), 0.0, 1.0);
+			vec2 off = pa - ba * hh;
+			float d = length(off);
+			if (d < best) { best = d; s_at = float(k) * 0.5 - hh * 0.5; dir = normalize(ba + vec2(0.000001, 0.0)); lat = dot(off, vec2(-dir.y, dir.x)); }
+			prev = cur;
+		}
+		// the last orb eaten: how many cells ago (its lump travels down the body)
+		float eaten_n = floor((floor(f) - 2.0) / 4.0) * 4.0 + 2.0;
+		float age = f - eaten_n;
+		float lump = 1.0 + 0.55 * exp(-pow((s_at - age) * 2.2, 2.0)) * step(age, 8.0);
+		float taper = 1.0 - 0.75 * pow(clamp(s_at / 8.0, 0.0, 1.0), 1.6);
+		float bw = 0.056 * taper * lump * (s_at < 0.45 ? 1.0 + 0.75 * (1.0 - s_at / 0.45) : 1.0);
+		float sbody = (1.0 - aa(bw, best)) * side;
+		float across = clamp(lat / max(bw, 0.001), -1.0, 1.0);
+		vec4 hs = hexc(vec2(s_at * 9.0, across * 1.6) * vec2(1.0, 1.0));
+		float scale = 1.0 - aa(0.08, hexedge(hs.xy));
+		float round_ = sqrt(max(1.0 - across * across, 0.0));
+		vec3 skin = mix(c1.rgb * 0.5, c1.rgb * 1.9 + c2.rgb * 0.25, round_);
+		skin = mix(skin, c3.rgb * 0.55, smoothstep(0.55, 1.0, -across) * 0.6);  // its pale belly
+		float diamond = abs(across) * 1.3 + abs(fract(s_at * 2.2 + 0.25) - 0.5) * 1.6;  // dark diamonds down its back
+		skin = mix(skin, c0.rgb * 1.5, (1.0 - aa(0.62, diamond)) * 0.85);
+		skin += c2.rgb * 0.6 * (1.0 - aa(0.05, abs(diamond - 0.66)));  // their violet rims
+		col = mix(col, mix(skin * 0.4, skin, scale), sbody);
+		float wave = smoothstep(0.2, 0.0, abs(fract(s_at * 0.35 - t * 0.6) - 0.5));
+		glow += c2.rgb * sbody * ((1.0 - scale) * (0.7 + 1.6 * wave) + 0.15);
+		glow += c2.rgb * (1.0 - aa(bw + 0.03, best)) * (1.0 - sbody / max(side, 0.001)) * side * 0.6;  // a violet aura round it
+		// the head: two glowing eyes, a forked tongue flicking out now and then
+		vec2 hp = q - head;
+		vec2 hn = vec2(-hdir.y, hdir.x);
+		vec2 hl = vec2(dot(hp, hdir), dot(hp, hn));
+		vec2 e1 = hl - vec2(0.022, 0.04); vec2 e2 = hl - vec2(0.022, -0.04);
+		float eyes = (1.0 - aa(0.025, length(e1))) + (1.0 - aa(0.025, length(e2)));
+		float pupil = (1.0 - aa(0.006, abs(e1.x) - 0.017 * (1.0 - smoothstep(0.0, 0.02, abs(e1.y))))) * (1.0 - aa(0.025, length(e1)))
+			+ (1.0 - aa(0.006, abs(e2.x) - 0.017 * (1.0 - smoothstep(0.0, 0.02, abs(e2.y))))) * (1.0 - aa(0.025, length(e2)));  // slit pupils
+		glow += mix(vec3(1.0, 0.95, 0.4), c3.rgb, 0.3) * eyes * (1.0 - pupil) * side * (4.0 + 5.0 * inspect);
+		glow += c2.rgb * side * (1.0 - aa(0.05, length(e1))) * (1.0 - eyes) * 0.8 + c2.rgb * side * (1.0 - aa(0.05, length(e2))) * (1.0 - eyes) * 0.8;  // eye glow round them
+		col = mix(col, vec3(0.0), eyes * side);
+		float flick = step(0.7, fract(t * 0.8));
+		float tongue = (1.0 - aa(0.006, abs(hl.y) - max(hl.x - 0.13, 0.0) * 0.5)) * step(0.075, hl.x) * step(hl.x, 0.17) * flick;
+		col = mix(col, vec3(0.9, 0.2, 0.4), tongue * side);
+		glow += vec3(1.0, 0.25, 0.5) * tongue * side * 1.5;
+		// the orbs: on every 4th cell of the tour still ahead of the head this lap; translucent, each its own colour
+		float lap = floor(f / 36.0);
+		for (int k = 0; k < 9; k++) {
+			float n = lap * 36.0 + float(k) * 4.0 + 2.0;
+			if (n <= floor(f) + 0.5 && n < f) { continue; }
+			vec2 o = board(tour_cell(n), ulen) + vec2(0.0, 0.012 * sin(t * 2.0 + float(k)));
+			float r = 0.04;
+			float od = length(q - o) / r;
+			if (od < 1.6) {
+				vec3 oc = hsv(h2(vec2(n, 3.1)), 0.65, 1.0);
+				float inside = 1.0 - aa(1.0, od);
+				col = mix(col, mix(col, oc * 0.5, 0.45), inside * side);  // you see the gun through it
+				glow += oc * side * (inside * (0.35 + 0.9 * pow(od, 4.0)) + smoothstep(1.5, 1.0, od) * (1.0 - inside) * 0.35);
+				glow += vec3(1.0) * side * (1.0 - aa(0.18, length(q - o - vec2(-0.3, 0.35) * r) / r));  // a highlight
+			}
+		}
+		// the bite: a ring of light spreading from where the last orb was eaten
+		vec2 eo = board(tour_cell(eaten_n), ulen);
+		float ring = (1.0 - aa(0.012, abs(length(q - eo) - age * 0.06))) * smoothstep(1.4, 0.0, age);
+		glow += hsv(h2(vec2(eaten_n, 3.1)), 0.65, 1.0) * ring * side * 2.0;
+		rough = 0.3; gloss = 0.05;
 	} else if (kind == 29) {  // carnival from hell: harlequin diamonds cycling colours, gold trim, grinning faces, confetti
 		vec2 q = p2 * 0.9;
 		vec2 dq = vec2(q.x + q.y, q.x - q.y) * 0.7071;
@@ -499,6 +715,13 @@ void fragment() {
 	// paint grain so it reads as paint, not flat colour; a little relief in the coat
 	col *= 0.94 + 0.06 * vn(lp * 25.0);
 	NORMAL = normalize(NORMAL + (vec3(vn(lp * 18.0), vn(lp * 18.0 + 3.1), vn(lp * 18.0 + 6.7)) - 0.5) * 0.08);
+	if (relief_k > 0.0) {  // bump from the painted height (surface gradient from screen derivatives, no UVs needed)
+		vec3 dpx = dFdx(VERTEX); vec3 dpy = dFdy(VERTEX);
+		vec3 r1 = cross(dpy, NORMAL); vec3 r2 = cross(NORMAL, dpx);
+		float det = dot(dpx, r1);
+		vec3 grad = sign(det) * (dFdx(relief) * r1 + dFdy(relief) * r2);
+		NORMAL = normalize(abs(det) * NORMAL - grad * relief_k);
+	}
 	// hard edges rubbed through first (the face normal jumps there)
 	float hard = smoothstep(0.08, 0.5, length(fwidth(ln)));
 	float rub = hard * smoothstep(0.25, 0.75, fbm(lp * 0.9 + 60.0) + wear * 0.8) * (kind >= 20 && kind <= 24 ? 0.3 : 1.0);
@@ -585,6 +808,7 @@ static func material(camo: Dictionary, look: Dictionary, hold: float = 1.0) -> S
 static func apply(model: Node, camo: Dictionary, look: Dictionary) -> ShaderMaterial:
 	var mat := material(camo, look, (model as Node3D).scale.x if model is Node3D else 1.0)
 	_put(model, mat)
+	_gun_space(model, mat)
 	var main := _biggest(model)  # the main body gets its own copy: faces and the serpent are laid out from its size
 	if model is Node3D:
 		_add_fx(model as Node3D, main, look)
@@ -602,11 +826,47 @@ static func apply(model: Node, camo: Dictionary, look: Dictionary) -> ShaderMate
 	return own
 
 
+# (polish1 item 145) Tells every camo'd mesh where it sits in the whole gun (instance uniforms gx / gy / gz / gmid /
+# gext / gon), so a pattern can span the gun's parts: the serpent's board, the galaxy's spiral.
+static func _gun_space(model: Node, mat: ShaderMaterial) -> void:
+	var meshes: Array = []
+	var box := AABB()
+	var first := true
+	for found in model.find_children("*", "MeshInstance3D", true, false):
+		var mi := found as MeshInstance3D
+		if mi.mesh == null:
+			continue
+		var uses := false
+		for i in mi.mesh.get_surface_count():
+			uses = uses or mi.get_surface_override_material(i) == mat
+		if not uses:
+			continue
+		var place := Transform3D.IDENTITY
+		var walk: Node = mi
+		while walk != null and walk != model:
+			if walk is Node3D:
+				place = (walk as Node3D).transform * place
+			walk = walk.get_parent()
+		meshes.append([mi, place])
+		var b := place * mi.mesh.get_aabb()
+		box = b if first else box.merge(b)
+		first = false
+	for pair: Array in meshes:
+		var mi: MeshInstance3D = pair[0]
+		var t: Transform3D = pair[1]
+		mi.set_instance_shader_parameter("gx", Vector4(t.basis.x.x, t.basis.y.x, t.basis.z.x, t.origin.x))
+		mi.set_instance_shader_parameter("gy", Vector4(t.basis.x.y, t.basis.y.y, t.basis.z.y, t.origin.y))
+		mi.set_instance_shader_parameter("gz", Vector4(t.basis.x.z, t.basis.y.z, t.basis.z.z, t.origin.z))
+		mi.set_instance_shader_parameter("gmid", box.get_center())
+		mi.set_instance_shader_parameter("gext", box.size * 0.5)
+		mi.set_instance_shader_parameter("gon", 1.0)
+
+
 # Particles on the gun for the moving camos (embers, sparkles, smoke, motes, pixels, void wisps, confetti): [colour
 # index or -1 for many colours, amount, lifetime, upward speed, size, additive]. In world space so they trail the gun.
 const FX := {"diamond": [2, 18, 0.9, 0.02, 0.02, true], "phantom": [3, 30, 1.8, 0.12, 0.09, true], "galaxy": [2, 14, 1.5, 0.0, 0.018, true],
 	"oni": [2, 24, 1.1, 0.35, 0.022, true], "coral": [3, 22, 2.4, 0.12, 0.02, true], "glitch": [1, 20, 0.35, 0.0, 0.02, true],
-	"serpent": [2, 28, 1.4, 0.05, 0.05, true], "carnival": [-1, 30, 1.6, -0.15, 0.016, false]}
+	"serpent": [2, 10, 1.4, 0.05, 0.04, true], "carnival": [-1, 30, 1.6, -0.15, 0.016, false]}
 
 
 static func _add_fx(model: Node3D, main: MeshInstance3D, look: Dictionary) -> void:
