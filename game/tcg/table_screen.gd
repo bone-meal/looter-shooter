@@ -406,12 +406,16 @@ func _repick() -> void:
 		_drop_hover()
 		return
 	var under: Variant = view3d.call("pick", get_viewport().get_mouse_position())
-	if not is_same(under, _hovered):
+	if not _same_spot(under, _hovered):
 		if _hovered is Control and is_instance_valid(_hovered):
 			_on_hover(_hovered, false)
 		_hovered = under
 		if under is Control:
 			_on_hover(under, true)
+		elif under is Dictionary and bool((under as Dictionary).get("leader", false)):
+			_on_leader_hover(int((under as Dictionary)["side"]))
+		else:
+			_drop_zoom()
 
 
 func _drop_hover() -> void:
@@ -614,12 +618,16 @@ func _felt_3d(event: InputEvent) -> void:
 		return
 	var under: Variant = view3d.call("pick", get_viewport().get_mouse_position())
 	if motion != null:
-		if not is_same(under, _hovered):  # a face (Object) or a leader spot (Dictionary)
-			if _hovered is Control:
+		if not _same_spot(under, _hovered):  # a face (Object) or a leader spot (Dictionary)
+			if _hovered is Control and is_instance_valid(_hovered):
 				_on_hover(_hovered, false)
 			_hovered = under
 			if under is Control:
 				_on_hover(under, true)
+			elif under is Dictionary and bool((under as Dictionary).get("leader", false)):
+				_on_leader_hover(int((under as Dictionary)["side"]))
+			else:
+				_drop_zoom()
 		return
 	var click := event as InputEventMouseButton
 	if click == null or not click.pressed or not (click.button_index in [MOUSE_BUTTON_LEFT, MOUSE_BUTTON_RIGHT]):
@@ -636,6 +644,33 @@ func _felt_3d(event: InputEvent) -> void:
 			_cancel()
 	else:
 		_cancel()
+
+
+# (polish1 item 163) The same thing under the mouse as before? Leader spots are new dictionaries at every redraw.
+func _same_spot(a: Variant, b: Variant) -> bool:
+	if a is Dictionary and b is Dictionary:
+		return int((a as Dictionary).get("side", -1)) == int((b as Dictionary).get("side", -2))
+	return is_same(a, b)
+
+
+func _drop_zoom() -> void:
+	_zoom.visible = false
+	_zoom_help.text = ""
+	_zoom_help.visible = false
+
+
+# (polish1 item 163) A leader on the 3D table under the mouse: its name, health and hero power in the help panel.
+func _on_leader_hover(table_side: int) -> void:
+	if _m == null:
+		return
+	var side := _me if table_side == 0 else 1 - _me
+	var s: Dictionary = (_m.get("sides") as Array)[side]
+	var leader: Dictionary = (_m.get("db") as RefCounted).get("leaders").get(String(s["leader"]), {})
+	var p: Dictionary = _m.call("power_of", side)
+	_zoom.visible = false
+	_zoom_help.text = "%s (%s)\n%d health, %d cards in hand, %d in the deck\nHero power: %s (%d mana): %s" % [String(leader.get("name", s["leader"])), String(_who[side]) if side < _who.size() else "",
+		int(s["hp"]), (s["hand"] as Array).size(), (s["deck"] as Array).size(), p.get("name", "Power"), int(_m.get("rules")["power_cost"]), CardText.of(_m.get("db"), {"effects": p.get("effects", [])})]
+	_zoom_help.visible = true
 
 
 func _on_hover(face: Control, on: bool) -> void:

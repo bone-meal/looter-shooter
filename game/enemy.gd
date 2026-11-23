@@ -127,6 +127,8 @@ var _crawling := false  # see cripple()
 var _blocked := 0.0  # seconds it has been walking without getting anywhere
 var _dodge_until := 0.0  # it walks turned aside until this engine time ...
 var _dodge_side := 1.0  # ... to this side (+1 / -1)
+var _dodge_from := Vector3.INF  # (polish1 item 144) where its last run of turning aside began ...
+var _dodge_tries := 0  # ... and how many times it turned aside there without getting a metre away
 var _temper := ""  # a wild animal (stats "temper"): skittish runs away, defensive fights back when pressed; "" = always hunts
 var _provoked_until := 0.0  # hurt (or crowded, if defensive) until this engine time
 var _wander_at := 0.0  # a wandering animal picks a new way to amble at this engine time ...
@@ -405,9 +407,9 @@ func set_run_fx(fx: Dictionary) -> void:
 # flat; ZERO when there is no path (then it goes straight as before).
 func _nav_step(goal: Vector3) -> Vector3:
 	var now := Time.get_ticks_msec() / 1000.0
-	if now >= _path_at or goal.distance_to(_path_goal) > 2.0 or _path_i >= _path.size():
+	if now >= _path_at or goal.distance_to(_path_goal) > 2.0 or (_path_i >= _path.size() and not _path.is_empty()):
 		_path = NavigationServer3D.map_get_path(nav_map, global_position, goal, true)
-		_path_i = 1
+		_path_i = 0  # (polish1 item 144) the path's first point is where it joins the mesh: pressed against a rock it is off the mesh and goes there first, not straight at the next corner through the rock
 		_path_goal = goal
 		_path_at = now + randf_range(0.4, 0.6)
 	while _path_i < _path.size():
@@ -467,9 +469,9 @@ func _physics_process(delta: float) -> void:
 	flat.y = 0.0
 	var distance := flat.length()
 	var dir := flat / distance if distance > 0.01 else Vector3.ZERO
-	if nav_map.is_valid() and distance > (0.6 if errand else 2.5):  # (polish1 D4a) round ridges, ruins, huts and up hills by the islands' navigation mesh
+	if nav_map.is_valid() and distance > 0.6:  # (polish1 D4a) round ridges, ruins, huts and up hills by the islands' navigation mesh
 		var step := _nav_step(goal)
-		if step != Vector3.ZERO:
+		if step != Vector3.ZERO and (errand or distance > 2.5 or _path.size() > 2):  # (polish1 item 144) close by too when something stands between them (the way bends)
 			dir = step
 	if errand:
 		distance = maxf(distance, to_target.length())  # (it keeps walking to its errand; blows are for its prey only)
@@ -525,9 +527,18 @@ func _physics_process(delta: float) -> void:
 			_blocked += delta
 			if _blocked > 0.35 and now >= _dodge_until:
 				_blocked = 0.0
+				_path_at = 0.0  # (polish1 item 144) a fresh way from where it is stuck
+				if global_position.distance_to(_dodge_from) < 1.0:
+					_dodge_tries += 1
+				else:
+					_dodge_tries = 0
+					_dodge_from = global_position
 				if now - _dodge_until > 3.0:
 					_dodge_side = 1.0 if randf() < 0.5 else -1.0
-				_dodge_until = now + 0.8
+				elif _dodge_tries >= 2:  # turning that way got it nowhere twice: the other way round, for longer
+					_dodge_side = -_dodge_side
+					_dodge_tries = 0
+				_dodge_until = now + (0.8 if _dodge_tries == 0 else 1.2)
 		else:
 			_blocked = 0.0
 

@@ -393,6 +393,14 @@ func land_height(x: float, z: float) -> float:
 	return terrain.height(x - OFFSET.x, z - OFFSET.z)
 
 
+# (polish1 item 159) The ground as it is DRAWN and collides (the chunk meshes, cell by cell) under a WORLD x, z: on a
+# bumpy hill the smooth terrain rule can stand 0.5 m over the mesh between its vertices, so the automatic unstuck
+# took a player walking on the mesh for one buried in the hill and lifted him (up and down = the rubber band).
+func drawn_height(x: float, z: float) -> float:
+	var g := land.ground(x - OFFSET.x, z - OFFSET.z)
+	return g.x if not is_nan(g.x) else land_height(x, z)
+
+
 # Land height under a WORLD x, z (creatures walk on this; never below the shallows).
 func ground_height(x: float, z: float) -> float:
 	return maxf(terrain.height(x - OFFSET.x, z - OFFSET.z), terrain.sea - 0.5)

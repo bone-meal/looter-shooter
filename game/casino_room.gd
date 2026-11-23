@@ -30,77 +30,118 @@ const Z1 := 6.0
 
 # Returns {"vendors" (Array of game/gun_vendor.gd), "pachinko", "slots" (Array), "blackjack", "roulette", "crew", "bj_dealer", "rt_dealer", "card_table", "card_dealer", "card_vendor", "player_tables" (Array)}.
 static func build(parent: Node3D, center: Vector3) -> Dictionary:
-	var root := Node3D.new()
-	root.position = center
-	parent.add_child(root)
-	_shell(root)
-	_ceiling_lights(root)
-	_back_signs(root)
-	var wall: PachinkoWall = PachinkoWall.new()
-	wall.position = Vector3(22.0, 8.8, Z0 + 0.55)
-	root.add_child(wall)
-	var slots: Array = []
-	for i in 6:
-		var m: SlotMachine = SlotMachine.new()
-		m.position = Vector3(X1 - 1.4, 0.0, -8.4 + float(i) * 2.3)  # against the east wall, facing west
-		m.rotation_degrees.y = -90.0
-		root.add_child(m)
-		slots.append(m)
-	var crew: StaffCrew = StaffCrew.new()
-	root.add_child(crew)
-	var bj: BlackjackTable = BlackjackTable.new()
-	bj.position = Vector3(15.2, 0.0, 2.6)
-	root.add_child(bj)
-	var rt: RouletteTable = RouletteTable.new()
-	rt.position = Vector3(15.5, 0.0, -1.4)
-	root.add_child(rt)
-	var bj_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_pink", "twin_tails", "#f48fb1", "giggle", 1), Vector3(15.2, 0.0, 1.65), 180.0, null, "dealer_blackjack")
-	var rt_dealer: Node3D = crew.add("deal", StaffCrew.look("casino_purple", "bob", "#3b2a6b", "gentle_smile", 0), Vector3(14.3, 0.0, -2.6), 180.0, null, "dealer_roulette")
+	var out := {}
+	for step: Callable in build_steps(parent, center, out):
+		step.call()
+	return out
+
+
+# (polish1 item 162) The same build as pieces to call one after the other (one a frame while a crow takes off for the
+# club). `out` is filled as they run and holds build()'s dictionary once the last one has run.
+static func build_steps(parent: Node3D, center: Vector3, out: Dictionary) -> Array[Callable]:
+	var st := {}  # what the pieces share
+	var steps: Array[Callable] = []
+	steps.append(func() -> void:
+		var root := Node3D.new()
+		root.position = center
+		parent.add_child(root)
+		st["root"] = root
+		_shell(root)
+		_ceiling_lights(root)
+		_back_signs(root))
+	steps.append(func() -> void:
+		var wall: PachinkoWall = PachinkoWall.new()
+		wall.position = Vector3(22.0, 8.8, Z0 + 0.55)
+		(st["root"] as Node3D).add_child(wall)
+		st["wall"] = wall
+		st["slots"] = [])
+	for half in 2:
+		steps.append(func() -> void:
+			for i in range(half * 3, half * 3 + 3):
+				var m: SlotMachine = SlotMachine.new()
+				m.position = Vector3(X1 - 1.4, 0.0, -8.4 + float(i) * 2.3)  # against the east wall, facing west
+				m.rotation_degrees.y = -90.0
+				(st["root"] as Node3D).add_child(m)
+				(st["slots"] as Array).append(m))
+	steps.append(func() -> void:
+		var root: Node3D = st["root"]
+		var crew: StaffCrew = StaffCrew.new()
+		root.add_child(crew)
+		st["crew"] = crew
+		var bj: BlackjackTable = BlackjackTable.new()
+		bj.position = Vector3(15.2, 0.0, 2.6)
+		root.add_child(bj)
+		st["bj"] = bj
+		var rt: RouletteTable = RouletteTable.new()
+		rt.position = Vector3(15.5, 0.0, -1.4)
+		root.add_child(rt)
+		st["rt"] = rt)
+	steps.append(func() -> void:
+		var crew: StaffCrew = st["crew"]
+		st["bj_dealer"] = crew.add("deal", StaffCrew.look("casino_pink", "twin_tails", "#f48fb1", "giggle", 1), Vector3(15.2, 0.0, 1.65), 180.0, null, "dealer_blackjack"))
+	steps.append(func() -> void:
+		var crew: StaffCrew = st["crew"]
+		st["rt_dealer"] = crew.add("deal", StaffCrew.look("casino_purple", "bob", "#3b2a6b", "gentle_smile", 0), Vector3(14.3, 0.0, -2.6), 180.0, null, "dealer_roulette"))
+	steps.append(func() -> void:
+		var crew: StaffCrew = st["crew"]
+		_cocktail_bar(st["root"], crew)
+		crew.add_obstacle(Vector3(15.2, 0.0, 2.6), 1.35, 0.72)  # blackjack table
+		crew.add_obstacle(Vector3(15.0, 0.0, -1.4), 1.95, 0.75)  # roulette table
+		crew.add_obstacle(Vector3(15.2, 0.0, 1.65), 0.3, 0.3)  # blackjack dealer
+		crew.add_obstacle(Vector3(14.3, 0.0, -2.6), 0.3, 0.3)  # roulette dealer
+		for m: Node3D in st["slots"]:
+			crew.add_obstacle(m.position, 0.5, 0.5)  # slot machines
+		for i in 3:
+			crew.add_obstacle(Vector3(12.75, 0.0, 0.8 + 1.9 * float(i)), 0.3, 0.7))  # vendor kiosks
 	# Waitress routes stay in the aisles: one round the cocktail bar (x 20.3..28.6, z -4..4.6), one up the aisle east of
 	# the roulette table (x 18.8) and along the south wall.
-	var loop_a: Array = [Vector3(20.3, 0, 4.6), Vector3(28.6, 0, 4.6), Vector3(28.6, 0, -4.0), Vector3(20.3, 0, -4.0)]
-	var loop_b: Array = [Vector3(14.4, 0, 4.9), Vector3(18.8, 0, 4.9), Vector3(18.8, 0, -6.0), Vector3(18.8, 0, 4.9)]
-	_cocktail_bar(root, crew)
-	crew.add_obstacle(Vector3(15.2, 0.0, 2.6), 1.35, 0.72)  # blackjack table
-	crew.add_obstacle(Vector3(15.0, 0.0, -1.4), 1.95, 0.75)  # roulette table
-	crew.add_obstacle(Vector3(15.2, 0.0, 1.65), 0.3, 0.3)  # blackjack dealer
-	crew.add_obstacle(Vector3(14.3, 0.0, -2.6), 0.3, 0.3)  # roulette dealer
-	for i in slots.size():
-		crew.add_obstacle((slots[i] as Node3D).position, 0.5, 0.5)  # slot machines
-	for i in 3:
-		crew.add_obstacle(Vector3(12.75, 0.0, 0.8 + 1.9 * float(i)), 0.3, 0.7)  # vendor kiosks
-	crew.add("walk", StaffCrew.look("casino_cyan", "ponytail", "#e8c36a", "beaming", 2), loop_a[0], 0.0, loop_a, "waitress_mint")
-	crew.add("walk", StaffCrew.look("casino_gold", "high_ponytail", "#1b1b1b", "giggle", 4), loop_b[0], 0.0, loop_b, "waitress_goldie")
-	var vendors: Array = []
-	var crates: Array = DataStore.load_json("res://data/gun_loot.json")["vendor"]
-	for i in crates.size():
-		var v: GunVendor = GunVendor.new()
-		v.crate = crates[i]
-		v.position = Vector3(12.75, 0.0, 0.8 + 1.9 * float(i))
-		root.add_child(v)
-		vendors.append(v)
-	_vendor_sign(root, 0.8 + 1.9, crates.size())
-	var house: Dictionary = DataStore.load_json("res://data/tcg/table.json")["house"]
-	var at := Vector3(float(house["at"][0]), float(house["at"][1]), float(house["at"][2]))
-	var card_table: BeachTable = BeachTable.new()
-	card_table.position = at
-	card_table.rotation_degrees.y = float(house["yaw"])
-	root.add_child(card_table)
-	var seat := at + Vector3(0, 0, 0.85).rotated(Vector3.UP, deg_to_rad(float(house["yaw"])))  # on the dealer's stool, facing the player
-	var card_dealer: Node3D = crew.add("sit", StaffCrew.look("casino_gold", "long_wavy", "#c0392b", "smirk", 1), seat, float(house["yaw"]), null, String(house["dealer_npc"]))
-	var player_tables: Array = []  # the other three tables (locked: four on the beach): two players play there (online, build step 13)
+	steps.append(func() -> void:
+		var loop_a: Array = [Vector3(20.3, 0, 4.6), Vector3(28.6, 0, 4.6), Vector3(28.6, 0, -4.0), Vector3(20.3, 0, -4.0)]
+		(st["crew"] as StaffCrew).add("walk", StaffCrew.look("casino_cyan", "ponytail", "#e8c36a", "beaming", 2), loop_a[0], 0.0, loop_a, "waitress_mint"))
+	steps.append(func() -> void:
+		var loop_b: Array = [Vector3(14.4, 0, 4.9), Vector3(18.8, 0, 4.9), Vector3(18.8, 0, -6.0), Vector3(18.8, 0, 4.9)]
+		(st["crew"] as StaffCrew).add("walk", StaffCrew.look("casino_gold", "high_ponytail", "#1b1b1b", "giggle", 4), loop_b[0], 0.0, loop_b, "waitress_goldie"))
+	steps.append(func() -> void:
+		var root: Node3D = st["root"]
+		var vendors: Array = []
+		var crates: Array = DataStore.load_json("res://data/gun_loot.json")["vendor"]
+		for i in crates.size():
+			var v: GunVendor = GunVendor.new()
+			v.crate = crates[i]
+			v.position = Vector3(12.75, 0.0, 0.8 + 1.9 * float(i))
+			root.add_child(v)
+			vendors.append(v)
+		_vendor_sign(root, 0.8 + 1.9, crates.size())
+		st["vendors"] = vendors)
+	steps.append(func() -> void:
+		var root: Node3D = st["root"]
+		var house: Dictionary = DataStore.load_json("res://data/tcg/table.json")["house"]
+		var at := Vector3(float(house["at"][0]), float(house["at"][1]), float(house["at"][2]))
+		var card_table: BeachTable = BeachTable.new()
+		card_table.position = at
+		card_table.rotation_degrees.y = float(house["yaw"])
+		root.add_child(card_table)
+		st["card_table"] = card_table
+		var seat := at + Vector3(0, 0, 0.85).rotated(Vector3.UP, deg_to_rad(float(house["yaw"])))  # on the dealer's stool, facing the player
+		st["card_dealer"] = (st["crew"] as StaffCrew).add("sit", StaffCrew.look("casino_gold", "long_wavy", "#c0392b", "smirk", 1), seat, float(house["yaw"]), null, String(house["dealer_npc"])))
+	st["player_tables"] = []  # the other three tables (locked: four on the beach): two players play there (online, build step 13)
 	for t: Dictionary in DataStore.load_json("res://data/tcg/table.json").get("tables", []):
-		var pt: BeachTable = BeachTable.new()
-		pt.position = Vector3(float(t["at"][0]), float(t["at"][1]), float(t["at"][2]))
-		pt.rotation_degrees.y = float(t.get("yaw", 0.0))
-		root.add_child(pt)
-		player_tables.append(pt)
-	var card_vendor: CardVendor = CardVendor.new()  # the card vending machine: north-west corner, facing the room
-	card_vendor.position = Vector3(13.0, 0.0, -9.6)
-	card_vendor.rotation_degrees.y = 90.0
-	root.add_child(card_vendor)
-	crew.add_obstacle(Vector3(13.0, 0.0, -9.6), 0.6, 0.9)
-	return {"vendors": vendors, "pachinko": wall, "slots": slots, "blackjack": bj, "roulette": rt, "crew": crew, "bj_dealer": bj_dealer, "rt_dealer": rt_dealer, "card_table": card_table, "card_dealer": card_dealer, "card_vendor": card_vendor, "player_tables": player_tables}
+		steps.append(func() -> void:
+			var pt: BeachTable = BeachTable.new()
+			pt.position = Vector3(float(t["at"][0]), float(t["at"][1]), float(t["at"][2]))
+			pt.rotation_degrees.y = float(t.get("yaw", 0.0))
+			(st["root"] as Node3D).add_child(pt)
+			(st["player_tables"] as Array).append(pt))
+	steps.append(func() -> void:
+		var root: Node3D = st["root"]
+		var player_tables: Array = st["player_tables"]
+		var card_vendor: CardVendor = CardVendor.new()  # the card vending machine: north-west corner, facing the room
+		card_vendor.position = Vector3(13.0, 0.0, -9.6)
+		card_vendor.rotation_degrees.y = 90.0
+		root.add_child(card_vendor)
+		(st["crew"] as StaffCrew).add_obstacle(Vector3(13.0, 0.0, -9.6), 0.6, 0.9)
+		out.merge({"vendors": st["vendors"], "pachinko": st["wall"], "slots": st["slots"], "blackjack": st["bj"], "roulette": st["rt"], "crew": st["crew"], "bj_dealer": st["bj_dealer"], "rt_dealer": st["rt_dealer"], "card_table": st["card_table"], "card_dealer": st["card_dealer"], "card_vendor": card_vendor, "player_tables": player_tables}, true))
+	return steps
 
 
 # (D3) A round cocktail bar in the middle of the east half: glowing counter rim, bottle tower, stools, a bartender.

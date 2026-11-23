@@ -488,7 +488,12 @@ func pick(screen_pos: Vector2) -> Variant:
 	var best_d := INF
 	for c: Dictionary in _cards:
 		var node: Node3D = c["node"]
-		var g := node.global_transform
+		# (polish1 items 163 / 164) asked where the card RESTS, not where it is drawn: the hovered card lifts toward the
+		# camera and grows, which moved its edge off the mouse there (nothing under it -> it dropped -> under it again:
+		# the flicker), and a card in the middle of a move is still clicked where it belongs
+		var home: Transform3D = c["home"]
+		var size: Vector2 = c["size"]
+		var g := (node.get_parent() as Node3D).global_transform * Transform3D(home.basis * Basis.from_scale(Vector3(size.x, size.y, 1.0)), home.origin)
 		var normal := g.basis.z.normalized()
 		var denom := normal.dot(dir)
 		if absf(denom) < 0.0001:

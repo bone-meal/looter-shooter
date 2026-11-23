@@ -171,7 +171,7 @@ func _send_in(id: String, here: Array) -> void:
 	enemy.set_meta("island", true)
 	enemy.set_meta("tier", rules.number)
 	enemy.set("one_blow", one_blow)
-	if nav != null and bool(nav.call("ready_to_use")):
+	if nav != null:  # (polish1 item 144) even before the first bake is done: until then the map gives no way and it walks straight
 		enemy.set("nav_map", nav.get("map"))
 	enemy.call("set_target", prey)
 	enemy.connect("died", _on_died)
@@ -188,7 +188,7 @@ func send_at(id: String, at: Vector3, number: int) -> Node3D:
 	enemy.set_meta("tier", number)
 	enemy.set_meta("quest_boss", true)
 	enemy.set("one_blow", one_blow)
-	if nav != null and bool(nav.call("ready_to_use")):
+	if nav != null:  # (polish1 item 144) even before the first bake is done: until then the map gives no way and it walks straight
 		enemy.set("nav_map", nav.get("map"))
 	var here: Array = bodies.call() if bodies.is_valid() else []
 	if not here.is_empty():

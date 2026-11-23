@@ -17,7 +17,10 @@ static func show(model: Node3D, gun: Dictionary) -> void:
 	if plate == null:
 		plate = _build(model)
 	plate.visible = true
-	(plate.get_node("Count") as Label3D).text = "%07d" % int(gun["wkills"])
+	var count := plate.get_node("Count") as Label3D
+	count.text = "%04d" % int(gun["wkills"])  # (polish1 item 149) the number itself, at least 4 digits, sized to fill the window
+	var span := float(plate.get_meta("span"))
+	count.pixel_size = minf(span * 0.86 / (float(count.font_size) * 0.62 * float(count.text.length())), span * 0.32 / float(count.font_size))
 
 
 static func _build(model: Node3D) -> Node3D:
@@ -35,27 +38,57 @@ static func _build(model: Node3D) -> Node3D:
 		plate.rotation_degrees = Vector3(0, -90, 0)
 	else:
 		plate.position = Vector3(middle.x - box.size.x * 0.08, middle.y + box.size.y * 0.1, box.position.z + box.size.z - 0.004)
-	var span := clampf(maxf(box.size.x, box.size.z) * 0.22, 0.05, 0.16)
+	# (polish1 item 149) a counter MODULE, not a sticker: a raised dark block with a glowing orange bezel, "W KILLS" over
+	# a big glowing number with a dark outline (reads in first and third person, in sun and in the dark)
+	var span := clampf(maxf(box.size.x, box.size.z) * 0.26, 0.06, 0.18)
+	var tall := span * 0.46
+	plate.set_meta("span", span)
+	var bezel := MeshInstance3D.new()
+	var rim := BoxMesh.new()
+	rim.size = Vector3(span + 0.008, tall + 0.008, 0.004)
+	bezel.mesh = rim
+	var glow := StandardMaterial3D.new()
+	glow.albedo_color = Color(0.25, 0.12, 0.03)
+	glow.emission_enabled = true
+	glow.emission = DIGITS
+	glow.emission_energy_multiplier = 0.6
+	bezel.material_override = glow
+	bezel.position = Vector3(0, 0, 0.002)
+	bezel.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	plate.add_child(bezel)
 	var back := MeshInstance3D.new()
-	var quad := QuadMesh.new()
-	quad.size = Vector2(span, span * 0.3)
-	back.mesh = quad
+	var block := BoxMesh.new()
+	block.size = Vector3(span, tall, 0.008)
+	back.mesh = block
 	var dark := StandardMaterial3D.new()
-	dark.albedo_color = Color(0.05, 0.05, 0.06)
-	dark.roughness = 0.4
-	dark.cull_mode = BaseMaterial3D.CULL_DISABLED
+	dark.albedo_color = Color(0.035, 0.035, 0.04)
+	dark.roughness = 0.35
+	dark.metallic = 0.3
 	back.material_override = dark
+	back.position = Vector3(0, 0, 0.004)
 	back.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	plate.add_child(back)
+	var title := Label3D.new()
+	title.text = "W KILLS"
+	title.font_size = 32
+	title.pixel_size = span * 0.42 / (32.0 * 0.62 * 7.0)
+	title.modulate = Color(1.0, 0.78, 0.55, 0.9)
+	title.outline_size = 0
+	title.shaded = false
+	title.double_sided = true
+	title.position = Vector3(0, tall * 0.34, 0.0085)
+	title.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	plate.add_child(title)
 	var count := Label3D.new()
 	count.name = "Count"
-	count.font_size = 48
-	count.pixel_size = span / 48.0 / 4.6  # seven digits fill the plate
-	count.modulate = DIGITS
-	count.outline_size = 0
+	count.font_size = 64
+	count.pixel_size = span / 64.0 / 3.0
+	count.modulate = DIGITS * 1.35
+	count.outline_size = 10
+	count.outline_modulate = Color(0.08, 0.02, 0.0)
 	count.shaded = false
 	count.double_sided = true
-	count.position = Vector3(0, 0, 0.002)
+	count.position = Vector3(0, -tall * 0.1, 0.009)
 	count.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	plate.add_child(count)
 	return plate

@@ -14,7 +14,49 @@ func _init() -> void:
 	var d: Dictionary = DataStore.load_json("res://data/pachinko.json")
 	for aim_mode: String in ["sweep", "middle", "edge"]:
 		_run(d, aim_mode, 3000)
+	_held(d, 240.0)
 	quit()
+
+
+# (polish1 item 168) Holding the launch key for `seconds` (the game's 0.25 s delay then a ball every 0.07 s while the
+# board has room), sweeping marker, the hot streak on chip payouts: the return in each 30 s and the chips won a minute.
+func _held(d: Dictionary, seconds: float) -> void:
+	var sim := Sim.new(d, 777)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var kinds: Array = d["pocket_kinds"]
+	var dt := 0.05
+	var t := 0.0
+	var fire := 0.0
+	var parts: PackedStringArray = []
+	var staked := 0.0
+	var back := 0.0
+	var all_staked := 0.0
+	var all_back := 0.0
+	var balls := 0
+	while t < seconds:
+		t += dt
+		fire += dt
+		while fire >= 0.25:
+			fire -= 0.07
+			if sim.launch(0.5 + 0.5 * sin(rng.randf() * TAU)):
+				staked += float(sim.ball_cost)
+				balls += 1
+		for pocket in sim.step(dt):
+			var coins := sim.payout(pocket)
+			if coins > 0:
+				coins += floori(float(coins) * Sim.streak_bonus(d, t))
+			back += float(coins)
+			if String(kinds[pocket]) == "fever":  # (free gold balls, as the game drops them)
+				for i in int(d["fever"]["free_balls"]):
+					sim.launch(clampf(0.5 + (float(i) - 1.5) * 0.08, 0.0, 1.0), 1)
+		if fmod(t + 0.0001, 30.0) < dt:
+			parts.append("%d-%ds %.3f (%+d chips/min)" % [int(t) - 30, int(t), back / maxf(staked, 1.0), int((back - staked) * 2.0)])
+			all_staked += staked
+			all_back += back
+			staked = 0.0
+			back = 0.0
+	print("PACHINKO_CHECK held %d s (%d balls, chips only, no pot): %s | whole hold %.3f" % [int(seconds), balls, ", ".join(parts), all_back / maxf(all_staked, 1.0)])
 
 
 func _run(d: Dictionary, aim_mode: String, paid: int) -> void:

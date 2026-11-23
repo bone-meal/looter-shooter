@@ -2818,7 +2818,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give); "!immortal off" ends it
 			player.set("cheat_god", not (words.size() > 1 and words[1] == "off"))
 		"unstuck":  # (polish1 item 110) "!unstuck bury <m>": the body pushed that far down into the ground, then 1.5 s; "!unstuck <note>": what it did
-			if words.size() > 2 and words[1] == "bury":
+			if words.size() > 2 and words[1] == "rule":  # "!unstuck rule smooth|drawn": (polish1 H1) Aurelind's under-the-land test against the smooth terrain rule (old) or the drawn ground (new)
+				var fw: Node = session.call("fantasy")
+				player.get("unstuck").set("ground_height", Callable(fw, "land_height") if words[2] == "smooth" else Callable(fw, "drawn_height"))
+			elif words.size() > 2 and words[1] == "bury":
 				var y0: float = (player as Node3D).global_position.y
 				(player as Node3D).global_position.y -= float(words[2])
 				await get_tree().create_timer(1.5, true, false, true).timeout
@@ -2931,6 +2934,9 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("C3 %s: perks %s, quick revives used %d, down %s, health %d, round %d, feasts %d, building %s" % [" ".join(words.slice(1)), str((session.get("_perks") as RefCounted).get("owned")), int(session.get("_quick_revives_used")), str(player.get("downed")), roundi(float(player.get("health").hp)), int(session.call("_island_round")), get_tree().get_nodes_in_group("gull_feasts").size(), str(session.get("_boat_building") != null)])
 		"crow":  # (polish1 C2) "!crow fly a|b": crow a (home island) flies us to the club, b back home, as after feeding / asking it; "!crow look a|b": stand 7 m from that crow looking at it; "!crow note": the flight now
 			if words.size() > 2 and words[1] == "fly":
+				if words.has("fed"):  # "!crow fly a fed": as after feeding it worms (the crowd's models were sent loading at the first worm)
+					load("res://game/rigged_body.gd").call("prefetch")
+					await get_tree().create_timer(5.0, true, false, true).timeout
 				if words[2] == "a":
 					session.call("_start_flight", session.get("_crow_a"), session.get("_crow_a_pos"), session.get("_crow_b_land"), session.get("_club_spawn"))
 				else:
@@ -2944,6 +2950,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var ride: Node3D = session.get("_ride_crow")
 				_lines.append("CROW %s: flight t %.2f phase '%s', ride crow at %s visible %s, player at %s, third %s" % [" ".join(words.slice(1)), float(session.get("_flight_t")), String(session.get("_flight_phase")), str(ride.global_position.round()), str(ride.visible), str((player as Node3D).global_position.round()), str(player.get("third_person"))])
+				_lines.append("  plan: rise %.1f m, cruise high points y %.1f, comes down %.1f m (polish1 item 162); club pieces built in ms %s" % [float(session.get("_flight_up")), float(session.get("_flight_high")), float(session.get("_flight_down")), str(session.get("_flight_step_ms"))])
 		"dropgun":  # "!dropgun [body] [tier]": (polish1 A1, item 67) a rolled gun on the ground 3 m in front of us, looked at
 			var fwd_d := -(player as Node3D).global_transform.basis.z
 			fwd_d.y = 0.0
@@ -3239,6 +3246,98 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var book: RefCounted = session.get("_stats")
 				_lines.append("CARD %s: totals %s | kills by enemy %s | by weapon %s | gathered %s | spells %s" % [" ".join(words.slice(1)), JSON.stringify(book.get("totals")), str(book.call("group", "kills_by_enemy")), str(book.call("group", "kills_by_weapon")), str(book.call("group", "gathered")), str(book.call("group", "spells"))])
+		"hillwalk":  # "!hillwalk <seconds> <yaw deg> [hill <island> <n>]": (polish1 H1) hold forward that long facing yaw (from the foot of island hill n if given) and
+			# count what fights the slope: ticks off the floor while not jumping, unstuck frees, the biggest drop of the feet in one step
+			if words.size() > 5 and words[3] == "hill":
+				var land_h: RefCounted = session.get("_land")
+				var hill_h: Array = (land_h.get("islands")[int(words[4])]["hills"] as Array)[int(words[5])]
+				var at_h: Vector2 = hill_h[0]
+				var dir_h := Vector2(-sin(deg_to_rad(float(words[2]))), -cos(deg_to_rad(float(words[2]))))
+				var foot_h := at_h - dir_h * float(hill_h[1]) * 1.3
+				var c_h := Vector3(500, 0, 0)  # game/island.gd CENTER
+				player.call("teleport", c_h + Vector3(foot_h.x, float(land_h.call("height_at", foot_h.x, foot_h.y)) + 0.3, foot_h.y), deg_to_rad(float(words[2])))
+				await get_tree().create_timer(0.6, true, false, true).timeout
+			elif words.size() > 5 and words[3] == "at":  # "... at <x> <z>": from that Aurelind spot (its own metres), on the drawn ground
+				var fw_h: Node = session.call("fantasy")
+				var off_h := Vector3(20000.0, 0.0, 0.0)  # game/fantasy_world.gd OFFSET
+				var wx := float(words[4]) + off_h.x
+				var wz := float(words[5]) + off_h.z
+				player.call("teleport", Vector3(wx, float(fw_h.call("land_height", wx, wz)) + 0.5, wz), deg_to_rad(float(words[2])))
+				await get_tree().create_timer(2.0, true, false, true).timeout
+				player.call("teleport", Vector3(wx, float(fw_h.call("drawn_height", wx, wz)) + 0.3, wz), deg_to_rad(float(words[2])))
+				await get_tree().create_timer(0.5, true, false, true).timeout
+			player.call("look_at_point", (player as Node3D).global_position + Vector3(-sin(deg_to_rad(float(words[2]))), 0.0, -cos(deg_to_rad(float(words[2])))) * 20.0 + Vector3(0, 1.6, 0))
+			var freed0 := int(player.get("unstuck").get("freed"))
+			(player.get("unstuck").get("notes") as PackedStringArray).clear()
+			var y_start: float = (player as Node3D).global_position.y
+			var xz_start := Vector2((player as Node3D).global_position.x, (player as Node3D).global_position.z)
+			Input.action_press("move_forward")
+			var off_floor := 0
+			var ticks := 0
+			var worst_drop := 0.0
+			var last_y: float = y_start
+			var t_h := 0.0
+			while t_h < float(words[1]):
+				await get_tree().physics_frame
+				t_h += get_physics_process_delta_time()
+				ticks += 1
+				var y_now: float = (player as Node3D).global_position.y
+				if not (player as CharacterBody3D).is_on_floor():
+					off_floor += 1
+				worst_drop = maxf(worst_drop, last_y - y_now)
+				last_y = y_now
+			Input.action_release("move_forward")
+			var went_h := Vector2((player as Node3D).global_position.x, (player as Node3D).global_position.z).distance_to(xz_start)
+			_lines.append("HILLWALK %s s yaw %s: went %.1f m, climbed %.2f m, off the floor %d of %d ticks, unstuck frees %d (%s), worst drop in a tick %.3f m" % [words[1], words[2], went_h, last_y - y_start, off_floor, ticks, int(player.get("unstuck").get("freed")) - freed0, String(player.get("unstuck").get("last_reason")), worst_drop])
+			if not (player.get("unstuck").get("notes") as PackedStringArray).is_empty():
+				_lines.append("  frees: " + "; ".join(player.get("unstuck").get("notes")))
+		"report":  # "!report <section title>": that section of the Combat Report, row by row (polish1 item 170: "!report Cases")
+			var rep: Dictionary = session.call("_combat_report")
+			for sec: Dictionary in rep.get("sections", []):
+				if String(sec["title"]).to_lower() == " ".join(words.slice(1)).to_lower():
+					_lines.append("REPORT %s: %s" % [sec["title"], str(sec["rows"])])
+		"uiclose":  # "!uiclose": shuts the skins menu, the card screen (P) and the inventory, whichever are open
+			if (session.get("_skins_menu") as Control).visible:
+				(session.get("_skins_menu") as Control).call("close")
+			if (session.get("_card_screen") as Control).visible:
+				(session.get("_card_screen") as Control).call("close")
+			if (session.get("_inventory_screen") as Control).visible:
+				session.call("_toggle_inventory")
+			await get_tree().process_frame
+		"timed":  # "!timed <seconds> <command words ...>": (polish1 H3) how long the command itself took, then every frame for that long:
+			# the slowest frames, how many took over 50 ms, and how many pictures the gun-picture maker still had queued at the end
+			var t_us := Time.get_ticks_usec()
+			await _dev(renderer, session, words.slice(2))
+			var cmd_ms := float(Time.get_ticks_usec() - t_us) / 1000.0
+			var frames_t: PackedFloat32Array = []
+			var last_t := Time.get_ticks_usec()
+			var end_t := last_t + int(float(words[1]) * 1000000.0)
+			while Time.get_ticks_usec() < end_t:
+				await get_tree().process_frame
+				var now_t := Time.get_ticks_usec()
+				frames_t.append(float(now_t - last_t) / 1000.0)
+				last_t = now_t
+			var sorted_t := frames_t.duplicate()
+			sorted_t.sort()
+			var slow_t := 0
+			for ms_t in frames_t:
+				if ms_t > 50.0:
+					slow_t += 1
+			var top_t: PackedStringArray = []
+			for k_t in mini(5, sorted_t.size()):
+				top_t.append("%.0f" % sorted_t[sorted_t.size() - 1 - k_t])
+			var per_s: PackedStringArray = []  # the slowest frame of each second, in order
+			var acc_t := 0.0
+			var worst_s := 0.0
+			for ms_t in frames_t:
+				worst_s = maxf(worst_s, ms_t)
+				acc_t += ms_t
+				if acc_t >= 1000.0:
+					per_s.append("%.0f" % worst_s)
+					acc_t = 0.0
+					worst_s = 0.0
+			var icons_t: Node = load("res://game/camo_icons.gd").get("instance")
+			_lines.append("TIMED %s: the command %.0f ms; then %d frames in %s s, median %.1f ms, slowest %s ms, %d over 50 ms, slowest per second [%s]; pictures still queued %d" % [" ".join(words.slice(2)), cmd_ms, frames_t.size(), words[1], sorted_t[sorted_t.size() >> 1] if not sorted_t.is_empty() else 0.0, ", ".join(top_t), slow_t, " ".join(per_s), (icons_t.get("_queue") as Array).size() if icons_t != null else -1])
 		"stand":  # "!stand x y z [yaw deg]": stand at that world spot (any world), facing yaw
 			player.call("teleport", Vector3(float(words[1]), float(words[2]), float(words[3])), deg_to_rad(float(words[4])) if words.size() > 4 else 0.0)
 		"window":  # "!window 1600 900": the quiet test window's size from now on (pictures at that size; it never takes focus)
@@ -3563,6 +3662,62 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						Input.action_release("move_forward")
 						hills_l.append("%.1f of %.1f m (ended at %.0f, %.0f; in front: %s)" % [player.global_position.y, float(hill[2]), player.global_position.x - centre.x, player.global_position.z - centre.z, _what_ahead(player)])
 					_lines.append("NAV sweep %s: %d runs, %d stalls, unstuck acted %d; hills climbed %s%s" % [words[2] if words.size() > 2 else "home", tries, stalls.size(), int(unst.get("freed")) - freed0, ", ".join(hills_l), ("; " + "; ".join(stalls)) if not stalls.is_empty() else ""])
+				"chase":  # (polish1 item 144) "!nav chase <island id> <enemy id> [max] [seconds]": for each ridge / ruin / boulder / tree of that
+					# island, we stand just past one side and an enemy starts on the far side; a line per enemy that does not reach us in time
+					var land4: RefCounted = session.get("_land")
+					var isle4 := int(land4.call("index_of", words[2]))
+					var foe_id := words[3] if words.size() > 3 else "drowned"
+					var most := int(words[4]) if words.size() > 4 else 40
+					var limit := float(words[5]) if words.size() > 5 else 9.0
+					var rounds4: Node = session.call("rounds")
+					var runs4 := 0
+					var slow_l: PackedStringArray = []
+					var took := 0.0
+					for b: Dictionary in land4.get("blocks"):
+						if int(b["island"]) != isle4 or runs4 >= most:
+							continue
+						var a4: Vector2 = b["a"]
+						var b4: Vector2 = b["b"]
+						var mid4 := (a4 + b4) * 0.5
+						var along4 := (b4 - a4).normalized() if a4.distance_to(b4) > 0.01 else Vector2(1, 0)
+						var side4 := Vector2(-along4.y, along4.x) * (1.0 if runs4 % 2 == 0 else -1.0)
+						var reach4 := float(b["half_width"])
+						var me4 := mid4 + side4 * (reach4 + 1.6)
+						var foe4 := mid4 - side4 * (reach4 + 4.0)
+						if bool(land4.call("blocked", me4.x, me4.y, 0.6, false)) or bool(land4.call("blocked", foe4.x, foe4.y, 0.6, false)) or float(land4.call("height_at", me4.x, me4.y)) < -0.3 or float(land4.call("height_at", foe4.x, foe4.y)) < -0.3:
+							continue
+						runs4 += 1
+						player.call("teleport", centre + Vector3(me4.x, float(land4.call("height_at", me4.x, me4.y)) + 0.2, me4.y), 0.0)
+						await get_tree().create_timer(0.3).timeout
+						var foe: Node3D = rounds4.call("send_at", foe_id, centre + Vector3(foe4.x, float(land4.call("height_at", foe4.x, foe4.y)) + 0.3, foe4.y), 1)
+						foe.call("set_target", player)
+						var t0 := Time.get_ticks_msec()
+						var got := false
+						var best := INF
+						while float(Time.get_ticks_msec() - t0) / 1000.0 < limit and is_instance_valid(foe):
+							await get_tree().physics_frame
+							var dd := Vector2(foe.global_position.x - player.global_position.x, foe.global_position.z - player.global_position.z).length()
+							best = minf(best, dd)
+							if dd < 1.9:
+								got = true
+								break
+						var secs4 := float(Time.get_ticks_msec() - t0) / 1000.0
+						if got:
+							took += secs4
+						else:
+							var why4 := ""
+							if is_instance_valid(foe):
+								var nv4: Node = session.get("_island_nav")
+								var p4 := NavigationServer3D.map_get_path(nv4.get("map"), foe.global_position, player.global_position, true)
+								var len4 := 0.0
+								for i4 in range(1, p4.size()):
+									len4 += p4[i4].distance_to(p4[i4 - 1])
+								why4 = ", way %d points %.1f m ending %.1f m from us, first %s, foe nav %s, in front of it: %s, me at %.1f %.1f" % [p4.size(), len4, p4[p4.size() - 1].distance_to(player.global_position) if p4.size() > 0 else -1.0, str((p4[0] - foe.global_position).snapped(Vector3.ONE * 0.1)) if p4.size() > 0 else "-", str((foe.get("nav_map") as RID).is_valid()), _what_ahead(foe), player.global_position.x - centre.x, player.global_position.z - centre.z]
+							slow_l.append("%s (%.0f, %.0f) %.0f m wide: closest %.1f m, ended at %.1f %.1f%s" % [b["kind"], mid4.x, mid4.y, reach4 * 2.0, best, foe.global_position.x - centre.x if is_instance_valid(foe) else 0.0, foe.global_position.z - centre.z if is_instance_valid(foe) else 0.0, why4])
+						if is_instance_valid(foe):
+							foe.call("on_hit", 1000000.0, foe.global_position + Vector3(0, 1, 0), Vector3.UP)
+						await get_tree().create_timer(0.3).timeout
+					_lines.append("NAV chase %s %s: %d runs, %d did not reach us in %.0f s, the rest took %.1f s on average%s" % [words[2], foe_id, runs4, slow_l.size(), limit, took / maxf(float(runs4 - slow_l.size()), 1.0), ("; " + "; ".join(slow_l)) if not slow_l.is_empty() else ""])
 				"huts":  # (polish1 D4b) "!nav huts <island id>": open each hut's door, then run past its walls outside (both ways, 1.2 m off),
 					# in through the door, round the inside (past the table, wall buy, perk and ammo crate) and out again; a line per stall
 					var land3: RefCounted = session.get("_land")
@@ -3939,6 +4094,15 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"launch":
 					for i in (int(words[2]) if words.size() > 2 else 1):
 						session.call("_launch_pachinko")
+				"hold":  # (polish1 item 168) "!pachinko hold <s>": hold the interact key at the console that long (the real hold path), then the chips and the prompt
+					var wallet_h: RefCounted = session.get("_wallet")
+					var before_h := int(wallet_h.get("balance"))
+					Input.action_press("interact")
+					await get_tree().create_timer(float(words[2]), true, false, true).timeout
+					var prompt_h := String(session.call("_prompt"))
+					Input.action_release("interact")
+					await get_tree().create_timer(12.0, true, false, true).timeout  # the last balls land
+					_lines.append("PACHINKO hold %s s: chips %d -> %d, prompt at the end '%s'" % [words[2], before_h, int(wallet_h.get("balance")), prompt_h])
 				"fever":
 					var kinds: Array = (session.get("_pachinko_cfg") as Dictionary)["pocket_kinds"]
 					session.call("_on_pachinko_landed", kinds.find("fever"), 0, "FEVER")
@@ -4086,6 +4250,38 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var bt: Node = (session.get("_card_screen") as Node).get("_binder")
 				bt.call("_take_starter", words[2])
 				_lines.append("TCG starter %s: %s, chips %d" % [words[2], String((bt.get("_status") as Label).text), int((session.get("_wallet") as RefCounted).get("balance"))])
+			elif words[1] == "pickall":  # (polish1 items 163 / 164) "!tcg pickall": for every card on the 3D table, 25 spots over its face are
+				# projected to the screen and asked of the view's picker (no mouse moved): how many give that card back, and what is picked instead
+				var scr_p: Control = tcg.get("_screen")
+				var v3p: Node3D = scr_p.get("view3d")
+				var cam_p: Camera3D = v3p.get("_cam")
+				var rows_p: PackedStringArray = []
+				var cards_p: Array = (v3p.get("_cards") as Array).duplicate()
+				for c: Dictionary in cards_p:
+					var node_p: Node3D = c["node"]
+					var face_p: Variant = c["face"]
+					var name_p := "back"
+					if face_p is Dictionary:
+						name_p = "leader%d" % int((face_p as Dictionary)["side"])
+					elif face_p is Control:
+						var cr: Variant = (face_p as Control).get("creature")
+						name_p = ("%s %s" % ["foe" if cr is Dictionary and not (cr as Dictionary).is_empty() and int((cr as Dictionary).get("side", 0)) != int(scr_p.get("_me")) else ("mine" if cr is Dictionary and not (cr as Dictionary).is_empty() else "hand"), String((face_p as Control).get("id"))])
+					var good := 0
+					var instead := {}
+					var home_t: Transform3D = node_p.global_transform
+					for gx in 5:
+						for gy in 5:
+							var local_p := Vector3(-0.4 + 0.2 * gx, -0.4 + 0.2 * gy, 0.0)
+							var at_p := cam_p.unproject_position(home_t * local_p)
+							var got: Variant = v3p.call("pick", at_p)
+							if is_same(got, face_p) or (got is Dictionary and face_p is Dictionary and int((got as Dictionary)["side"]) == int((face_p as Dictionary)["side"])):
+								good += 1
+							else:
+								var what := "nothing" if got == null else ("leader" if got is Dictionary else ("back" if bool((got as Control).get("back")) else String((got as Control).get("id"))))
+								instead[what] = int(instead.get(what, 0)) + 1
+					rows_p.append("%s %d/25%s" % [name_p, good, (" (instead: %s)" % str(instead)) if good < 25 else ""])
+				v3p.call("pick", Vector2(-10000.0, -10000.0))
+				_lines.append("TCG pickall: " + "; ".join(rows_p))
 			elif words[1] == "hover":  # (polish1 item 95) "!tcg hover <n> [foe]": the mouse moves onto our (or the dealer's) n-th creature on the 3D table
 				var scr: Control = tcg.get("_screen")
 				var v3: Node3D = scr.get("view3d")

@@ -39,7 +39,7 @@ static func build_inside(parent: Node3D) -> Dictionary:
 # (polish1 item 70) The club's inside in pieces, one call each, so a crow flight can build it a piece a frame while it
 # takes off (no loading picture); the casino (CasinoRoom.build) is the last piece, made by the caller.
 static func inside_steps(parent: Node3D) -> Array[Callable]:
-	return [func() -> void:
+	var steps: Array[Callable] = [func() -> void:
 		_anim = PartyPeople.new()
 		parent.add_child(_anim)
 		_anim.sign_label = _sign
@@ -47,8 +47,9 @@ static func inside_steps(parent: Node3D) -> Array[Callable]:
 		func() -> void: _stage(parent),
 		func() -> void: _bar(parent),
 		func() -> void: _tables(parent),
-		func() -> void: _lights(parent),
-		func() -> void: _people()]
+		func() -> void: _lights(parent)]
+	steps.append_array(_people_steps())  # (polish1 item 162) one person a step: each is a model build
+	return steps
 
 
 # (polish1 item 166) Soft fill light high up in the club, the games room and the casino, so the rooms read at his
@@ -377,24 +378,27 @@ static func _add(parent_node: Node3D, role: String, pos: Vector3, yaw_deg: float
 	_anim.add_person(p, role, phase)
 
 
-static func _people() -> void:
+static func _people_steps() -> Array[Callable]:
 	var skins := [Color(0.95, 0.78, 0.65), Color(0.78, 0.55, 0.4), Color(0.55, 0.37, 0.26), Color(0.9, 0.7, 0.55)]
 	var hairs := [Color(0.1, 0.07, 0.05), Color(0.6, 0.3, 0.1), Color(0.9, 0.8, 0.4), Color(0.9, 0.2, 0.5), Color(0.2, 0.7, 0.9)]
 	var shirts := PartyPeople.TILE_COLORS
+	var out: Array[Callable] = []
 	# crowd on the dance floor
 	for i in 12:
 		var x := -3.0 + (i % 4) * 2.0 + (0.4 if i % 2 == 0 else -0.3)
 		var z := -6.8 + floorf(i / 4.0) * 2.0
-		_add(_anim, "dancer", _at(x, 0.14, z), randf_range(-30.0, 30.0) + 180.0 * 0.0, randf() * 6.0, shirts[i % shirts.size()], Color(0.15, 0.15, 0.3), skins[i % skins.size()], hairs[(i * 3) % hairs.size()], i % 3 == 0)
+		out.append(func() -> void: _add(_anim, "dancer", _at(x, 0.14, z), randf_range(-30.0, 30.0) + 180.0 * 0.0, randf() * 6.0, shirts[i % shirts.size()], Color(0.15, 0.15, 0.3), skins[i % skins.size()], hairs[(i * 3) % hairs.size()], i % 3 == 0))
 	# performers on the stage, facing the crowd (+z)
 	for i in 4:
-		_add(_anim, "performer", _at(-3.6 + i * 2.4, 0.6, -11.4), 180.0, i * 1.3, shirts[(i + 1) % shirts.size()], Color(0.1, 0.1, 0.2), skins[i % skins.size()], hairs[(i + 2) % hairs.size()], i % 2 == 0)
+		out.append(func() -> void: _add(_anim, "performer", _at(-3.6 + i * 2.4, 0.6, -11.4), 180.0, i * 1.3, shirts[(i + 1) % shirts.size()], Color(0.1, 0.1, 0.2), skins[i % skins.size()], hairs[(i + 2) % hairs.size()], i % 2 == 0))
 	# DJ behind the table
-	_add(_anim, "dj", _at(6.2, 0.0, -13.4), 180.0, 0.0, Color(0.1, 0.1, 0.12), Color(0.1, 0.1, 0.12), skins[1], hairs[0])
+	out.append(func() -> void: _add(_anim, "dj", _at(6.2, 0.0, -13.4), 180.0, 0.0, Color(0.1, 0.1, 0.12), Color(0.1, 0.1, 0.12), skins[1], hairs[0]))
 	# bartender behind the bar: a bunny-girl staff member (same original uniform as the casino staff)
-	var crew: StaffCrew = StaffCrew.new()
-	_anim.add_child(crew)
-	crew.add("idle", StaffCrew.look("casino_cyan", "twin_buns", "#7a4a2a", "gentle_smile", 3), _at(-8.9, 0.0, -6.0), -90.0)
+	out.append(func() -> void:
+		var crew: StaffCrew = StaffCrew.new()
+		_anim.add_child(crew)
+		crew.add("idle", StaffCrew.look("casino_cyan", "twin_buns", "#7a4a2a", "gentle_smile", 3), _at(-8.9, 0.0, -6.0), -90.0))
 	# patrons on stools
-	_add(_anim, "sitter", _at(-6.4, -0.2, -8.0), 90.0, 0.0, Color(0.9, 0.3, 0.2), Color(0.2, 0.2, 0.3), skins[0], hairs[1])
-	_add(_anim, "sitter", _at(-6.4, -0.2, -4.4), 90.0, 2.0, Color(0.2, 0.5, 0.9), Color(0.2, 0.2, 0.3), skins[3], hairs[2])
+	out.append(func() -> void: _add(_anim, "sitter", _at(-6.4, -0.2, -8.0), 90.0, 0.0, Color(0.9, 0.3, 0.2), Color(0.2, 0.2, 0.3), skins[0], hairs[1]))
+	out.append(func() -> void: _add(_anim, "sitter", _at(-6.4, -0.2, -4.4), 90.0, 2.0, Color(0.2, 0.5, 0.9), Color(0.2, 0.2, 0.3), skins[3], hairs[2]))
+	return out

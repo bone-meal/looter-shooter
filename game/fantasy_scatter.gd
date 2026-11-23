@@ -121,6 +121,16 @@ func _on_ground(x: float, z: float, turn: float, grow: float, radius: float) -> 
 	return Transform3D((tilt * Basis(Vector3.UP, turn)).scaled(Vector3.ONE * grow), Vector3(x, minf(h, minf(minf(e, w), minf(s, n))) - 0.05, z))
 
 
+# (polish1 item 155) An upright thing's foot (trees, work nodes): the lowest drawn ground under a ring of that radius, a
+# little lower, so no side of it hangs over a slope. Trees and nodes went by the smooth height, up to half a metre off the drawn ground.
+func _foot_y(x: float, z: float, radius: float) -> float:
+	var low := _ground_y(x, z)
+	for k in 4:
+		var a := TAU * float(k) / 4.0 + 0.785
+		low = minf(low, _ground_y(x + cos(a) * radius, z + sin(a) * radius))
+	return low - 0.08
+
+
 func _ground_y(x: float, z: float) -> float:
 	var here: Vector2 = _land.call("ground", x, z)
 	return terrain.height(x, z) if is_nan(here.x) else here.x
@@ -189,7 +199,7 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 	var trunks := StaticBody3D.new()
 	holder.add_child(trunks)
 	for tree: Array in layout.trees(key):  # scenery: [model, x, z, grow, turn]
-		_place(by_model, String(tree[0]), float(tree[1]), terrain.height(float(tree[1]), float(tree[2])), float(tree[2]), float(tree[3]), float(tree[4]))
+		_place(by_model, String(tree[0]), float(tree[1]), _foot_y(float(tree[1]), float(tree[2]), 0.5 * float(tree[3])), float(tree[2]), float(tree[3]), float(tree[4]))  # (polish1 item 155) on the drawn ground
 		_trunk(trunks, float(tree[1]), float(tree[2]), 0.3 * float(tree[3]))
 	for thing: Array in layout.clutter(key):  # boulders, logs, bushes: [model, x, z, grow, turn, radius]
 		_clutter_add(key, String(thing[0]), _on_ground(float(thing[1]), float(thing[2]), float(thing[4]), float(thing[3]), float(thing[5]) if thing.size() > 5 else 0.6))
@@ -197,8 +207,11 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 			_trunk(trunks, float(thing[1]), float(thing[2]), float(thing[5]))
 	for node: Array in layout.nodes(key):  # things to work on: [slot, node id, x, y, z, turn]
 		var def: Dictionary = _node_data[String(node[1])]
-		var index := _place(by_model, String(def["model"]), float(node[2]), float(node[3]), float(node[4]), 1.0, float(node[5]))
-		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), float(node[3]), float(node[4])), String(def["model"]), index)
+		var node_y := float(node[3])
+		if absf(node_y - terrain.height(float(node[2]), float(node[4]))) < 0.05:  # (polish1 item 155) a node on land (not a fishing spot on the water): on the drawn ground
+			node_y = _foot_y(float(node[2]), float(node[4]), 0.5)
+		var index := _place(by_model, String(def["model"]), float(node[2]), node_y, float(node[4]), 1.0, float(node[5]))
+		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), node_y, float(node[4])), String(def["model"]), index)
 		if String(def["skill"]) == "woodcutting":
 			_trunk(trunks, float(node[2]), float(node[4]), 0.35)
 		elif String(def["skill"]) == "mining" and not layout.walked_over(String(def["model"])):  # a rock is as wide as its model (the low ore rocks are walked over)

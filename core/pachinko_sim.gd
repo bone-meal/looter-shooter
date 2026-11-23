@@ -93,6 +93,15 @@ func multiplier(pocket: int) -> float:
 	return float(multipliers[pocket])
 
 
+# (polish1 item 168, director: holding F for a long time GROWS the chips) The hot-streak bonus on chip payouts after
+# `held` seconds of holding the launch key without letting go: nothing for after_s, then rising evenly to top over ramp_s.
+static func streak_bonus(data: Dictionary, held: float) -> float:
+	var streak: Dictionary = data.get("hold_streak", {})
+	if streak.is_empty():
+		return 0.0
+	return float(streak["top"]) * clampf((held - float(streak["after_s"])) / maxf(float(streak["ramp_s"]), 0.01), 0.0, 1.0)
+
+
 func payout(pocket: int) -> int:
 	return floori(multiplier(pocket) * float(ball_cost) + 0.0001)
 

@@ -53,6 +53,40 @@ var _outfit_albedo: Texture2D  # the outfit's alternative colour texture, if it 
 var _kind := ""  # body | outfit | hairstyle: bodies of one kind are made of the same pieces (merge_pieces shares their mesh)
 
 
+# (polish1 item 162) Starts loading every body, outfit and hairstyle model on worker threads, so a crowd built a piece
+# a frame later (the club while a crow lifts off) finds them loaded instead of reading each from disk on the main
+# thread (0.2-0.6 s apiece on his PC). Loads already done or under way are skipped; release_prefetch() lets them go.
+static var _prefetching: PackedStringArray = []
+
+
+static func prefetch() -> void:
+	if not available() or not _prefetching.is_empty():
+		return
+	var d := data()
+	var packs := String(d["packs"])
+	var paths: Array = []
+	for body: Dictionary in (d.get("bodies", {}) as Dictionary).values():
+		paths.append(packs + String(body.get("model", "")))
+	for outfit: Dictionary in (d.get("outfits", {}) as Dictionary).values():
+		for file: String in (outfit.get("models", {}) as Dictionary).values():
+			paths.append(file if file.begins_with("res://") else packs + file)
+	for style: Dictionary in (d.get("hair", {}) as Dictionary).values():
+		for file: String in (style.get("models", {}) as Dictionary).values():
+			paths.append(file if file.begins_with("res://") else packs + String(d["hair_folder"]) + file)
+	for path: String in paths:
+		if path in _prefetching or not ResourceLoader.exists(path) or ResourceLoader.has_cached(path):
+			continue
+		if ResourceLoader.load_threaded_request(path) == OK:
+			_prefetching.append(path)
+
+
+static func release_prefetch() -> void:
+	for path: String in _prefetching:
+		if ResourceLoader.load_threaded_get_status(path) != ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+			ResourceLoader.load_threaded_get(path)  # (hands the loaded model over and ends the request; nothing keeps it)
+	_prefetching = PackedStringArray()
+
+
 static func data() -> Dictionary:
 	if _data.is_empty():
 		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(DATA_PATH))

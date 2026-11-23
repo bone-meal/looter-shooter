@@ -5,6 +5,8 @@
   "worms_needed": 3,
   "flight_seconds": 8.0,
   "altitude": 30.0,
+  "clearance": 4.0,
+  "_about_clearance": "polish1 item 162: metres the flight keeps over trees, rocks and roofs (rises on the spot above everything within 30 m of the perch, comes straight down onto the landing spot from above everything within 30 m of it, cruise high points raised until the whole curve clears). altitude = the cruise's starting height over the higher end; raised by the game when needed.",
   "rise_seconds": 1.4,
   "land_seconds": 1.2,
   "leave_seconds": 4.0,

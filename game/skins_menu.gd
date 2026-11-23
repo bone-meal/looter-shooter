@@ -89,6 +89,23 @@ func _ready() -> void:
 	_view.add_child(cam)
 	_pivot = Node3D.new()
 	_view.add_child(_pivot)
+	_prewarm.call_deferred()
+
+
+# (polish1 item 143) The bench's first opening froze the game for about 1.4 s on his PC (its view drawing for the first
+# time: the GPU sets up everything a gun in that view needs). Drawn once while the game loads instead, with a camo'd rifle.
+func _prewarm() -> void:
+	var model := WeaponModels.build("ak47")
+	_pivot.add_child(model)
+	var looks: Array = CamoSkin.cfg().get("camos", [])
+	if not looks.is_empty():
+		CamoSkin.dress(model, {"body": "ak47", "camo": {"id": String((looks[0] as Dictionary)["id"]), "wear": 0.1, "seed": 1}})
+	_view.render_target_update_mode = SubViewport.UPDATE_ONCE
+	await get_tree().process_frame
+	await get_tree().process_frame
+	if is_instance_valid(model):
+		model.queue_free()
+
 
 
 func open(the_gun: Dictionary) -> void:

@@ -3,7 +3,7 @@
 # navigation map, so island enemies walk round obstacles and up hills to their prey (game/enemy.gd `nav_map`).
 # Cleared debris re-bakes it (in the background; the old mesh is used meanwhile). Only the machine that runs the
 # island's enemies needs it (alone or hosting); it is cheap to keep everywhere.
-# Dependencies: core/archipelago.gd (the area), game/island.gd (CENTER). Parsing runs on the main thread, baking on a worker.
+# Dependencies: core/archipelago.gd (the area and its rocks' footprints), game/island.gd (CENTER). Parsing runs on the main thread, baking on a worker.
 extends Node3D
 
 signal baked(seconds: float)
@@ -17,10 +17,14 @@ var _again := false
 var _root: Node
 var _started := 0
 var _area: Rect2  # the archipelago seen from above (world x, z)
+var _land: RefCounted  # core/archipelago.gd: its rocks are cut out of the mesh (polish1 item 144)
+var _centre := Vector3.ZERO
 
 
 func setup(root: Node, land: RefCounted, centre: Vector3) -> void:
 	_root = root
+	_land = land
+	_centre = centre
 	map = NavigationServer3D.map_create()
 	NavigationServer3D.map_set_cell_size(map, 0.3)
 	NavigationServer3D.map_set_cell_height(map, 0.2)
@@ -57,11 +61,36 @@ func rebuild() -> void:
 	_source.clear()
 	_tag(_root)  # every static body at the islands goes into the group the parser reads
 	NavigationServer3D.parse_source_geometry_data(_mesh, _source, _root)
+	_cut_rocks()
 	var fresh := NavigationMesh.new()
 	for prop: Dictionary in _mesh.get_property_list():
 		if (prop["usage"] as int) & PROPERTY_USAGE_STORAGE and String(prop["name"]) not in ["vertices", "polygons"]:
 			fresh.set(String(prop["name"]), _mesh.get(String(prop["name"])))
 	NavigationServer3D.bake_from_source_geometry_data_async(fresh, _source, _done.bind(fresh))
+
+
+# (polish1 item 144) Ridges, ruins, boulders and giant trunks are cut out of the walkable mesh by their footprint (plus
+# the agent's radius): their sloped tops and tapered ends read as walkable to the bake, but an enemy's box cannot climb
+# them, so ways led over a ridge's low end and the enemy stood stuck against it. Now ways go round them.
+func _cut_rocks() -> void:
+	for b: Dictionary in _land.get("blocks"):
+		var a2: Vector2 = b["a"]
+		var b2: Vector2 = b["b"]
+		var kind := String(b["kind"])
+		var r := float(b.get("core", 0.0)) if kind == "tree" else float(b["half_width"]) + 0.2  # a tree: its trunk (its roots are walked over)
+		var ring := PackedVector3Array()
+		if a2.distance_to(b2) < 0.01:  # round: an octagon outside the circle
+			for k in 8:
+				var ang := TAU * float(k) / 8.0
+				ring.append(Vector3(_centre.x + a2.x + cos(ang) * r * 1.08, 0.0, _centre.z + a2.y + sin(ang) * r * 1.08))
+		else:  # long: a box round the segment, its ends as far out as its sides
+			var along := (b2 - a2).normalized()
+			var side := Vector2(-along.y, along.x) * r
+			var s0 := a2 - along * r
+			var s1 := b2 + along * r
+			for c: Vector2 in [s0 + side, s1 + side, s1 - side, s0 - side]:
+				ring.append(Vector3(_centre.x + c.x, 0.0, _centre.z + c.y))
+		_source.add_projected_obstruction(ring, _centre.y - 20.0, float(b.get("height", 4.0)) + 40.0, false)
 
 
 func _tag(node: Node) -> void:

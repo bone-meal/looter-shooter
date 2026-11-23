@@ -15,6 +15,7 @@ const GOOD_EVERY := 0.5  # how often a free standing spot is remembered
 var freed := 0  # how many times it acted (dev status)
 var ground_height := Callable()  # func(world x, z) -> the land's height there, while in a world made of one terrain (Aurelind)
 var last_reason := ""
+var notes: PackedStringArray = []  # (dev status, polish1 H1) the last few frees: why, where the feet were, the land and the collision floor there
 var _inside_t := 0.0
 var _wedged_t := 0.0
 var _under_t := 0.0
@@ -48,6 +49,7 @@ func step(body: CharacterBody3D, capsule: CapsuleShape3D, holder: Node3D, wish: 
 			_under_t += dt
 			if _under_t >= STUCK_IN:
 				_under_t = 0.0
+				_note(body, "under the land %.2f" % land)
 				body.global_position.y = land + 0.3
 				body.velocity = Vector3.ZERO
 				freed += 1
@@ -63,6 +65,7 @@ func step(body: CharacterBody3D, capsule: CapsuleShape3D, holder: Node3D, wish: 
 		return false
 	_inside_t = 0.0
 	_wedged_t = 0.0
+	_note(body, why)
 	var spot := _free_spot(body, capsule, holder)
 	if spot == Vector3.INF:
 		if _good == Vector3.INF:
@@ -123,3 +126,12 @@ func _free_spot(body: CharacterBody3D, capsule: CapsuleShape3D, holder: Node3D) 
 			continue
 		return (hit["position"] as Vector3) + Vector3.UP * 0.05
 	return Vector3.INF
+
+
+func _note(body: CharacterBody3D, why: String) -> void:
+	var p := body.global_position
+	var q := PhysicsRayQueryParameters3D.create(p + Vector3(0, 3, 0), p - Vector3(0, 6, 0), body.collision_mask, [body.get_rid()])
+	var hit := body.get_world_3d().direct_space_state.intersect_ray(q)
+	notes.append("%s at %.1f %.2f %.1f, floor below %s" % [why, p.x, p.y, p.z, "%.2f" % (hit["position"] as Vector3).y if not hit.is_empty() else "none"])
+	if notes.size() > 12:
+		notes.remove_at(0)

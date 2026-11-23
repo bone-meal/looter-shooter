@@ -69,6 +69,12 @@
   "tickets": 25
  },
  "tickets_per_pocket": 1,
+ "hold_streak": {
+  "after_s": 5.0,
+  "ramp_s": 60.0,
+  "top": 0.6
+ },
+ "_hold_streak": "polish1 item 168 (director: holding F for long periods DOES increase the chip count and can grow the account): while the launch key is held without letting go, chip payouts get a HOT STREAK bonus: none for after_s seconds, then rising evenly to top (x1.6) over ramp_s; letting go ends it. Return measured by tools/pachinko_check.gd (held line).",
  "prizes": [
   {
    "id": "crate_bronze",

@@ -97,6 +97,8 @@ const ScoreCard = preload("res://core/score_card.gd")
 const KnifeModels = preload("res://game/knife_models.gd")
 const IslandRounds = preload("res://game/island_rounds.gd")
 const IslandNav = preload("res://game/island_nav.gd")
+const RiggedBody = preload("res://game/rigged_body.gd")  # (polish1 item 162) prefetch of the crowd models before a crow flight
+const PachinkoSim = preload("res://core/pachinko_sim.gd")  # (polish1 item 168) the hot-streak rule
 const AmmoCrate = preload("res://game/ammo_crate.gd")
 const Treetops = preload("res://game/treetops.gd")
 const TreetopRules = preload("res://core/treetop_rules.gd")
@@ -362,6 +364,7 @@ var _solo_jackpot := -1.0  # online as a client: our own saved pot, kept aside w
 var _casino_cfg: Dictionary
 var _pachinko: PachinkoWall
 var _pachinko_hold := 0.0
+var _pachinko_held_s := 0.0  # (polish1 item 168) seconds the launch key has been held without letting go: the hot streak
 var _pachinko_cfg: Dictionary  # data/pachinko.json (pocket kinds, fever, jackpot, prizes)
 var _pachinko_pot := 200.0  # (polish1 item 75) this player's pachinko jackpot pot (saved in the profile)
 var _prize_tickets := 0  # (polish1 item 75) pachinko prize tickets (saved in the profile)
@@ -457,6 +460,10 @@ var _flight_src: Node3D  # the perched crow hidden during the flight
 var _flight_prev_view := false
 var _flight_phase := ""  # (polish1 item 70) "rise", "cruise", "land" while carrying; "leave" = the crow flies off empty
 var _flight_phase_t := 0.0
+var _flight_up := 3.0  # (polish1 item 162) how high it rises on the spot: over everything round its perch ...
+var _flight_high := 30.0  # ... the cruise's high points (world y), raised until the whole curve clears what lies under it ...
+var _flight_step_ms: PackedFloat32Array = []  # (dev status) how long each piece of the club took to build during a rise
+var _flight_down := 0.0  # ... and how far above the landing spot the cruise ends (it comes straight down from there)
 var _flight_steps: Array[Callable] = []  # the club's inside still to build, a piece a frame during the rise
 var _flight_cam: Camera3D  # the chase view during a flight (no clipping into the crow)
 var _crow_a_land := Vector3.ZERO  # where a crow from the club lands on the home island (beside crow a, not onto it)
@@ -912,6 +919,7 @@ func _ready() -> void:
 	_rounds.way_cut.connect(_on_way_cut)
 	_island_nav.rebuild.call_deferred()  # once everything on the islands stands
 	_player.unstuck.ground_height = _island_ground  # (director: no getting stuck, as in Aurelind) under the islands' ground = back on top
+	_player.floor_snap_length = 0.3  # (polish1 item 148) feet stay on the ground over the islands' hill tops
 	_rounds.shelters = _shelters
 	_player.perks = _perks
 	_player_hud.perks = _perks
@@ -2114,7 +2122,10 @@ func _prompt() -> String:
 	if _near_prizes():
 		return "[%s] Prize counter: trade prize tickets for card packs and crates (%d tickets)" % [key, _prize_tickets]
 	if _near_pachinko():
-		return "[%s] Launch a pachinko ball (%d chips, hold to keep firing): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
+		var streak := PachinkoSim.streak_bonus(_pachinko_cfg, _pachinko_held_s)
+		if streak > 0.0:  # (polish1 item 168)
+			return "HOT STREAK: wins pay +%d %% while you keep holding [%s]" % [roundi(streak * 100.0), key]
+		return "[%s] Launch a pachinko ball (%d chips, hold to keep firing: a long hold builds a HOT STREAK): fire when the marker is on the gold line" % [key, _pachinko.ball_cost()]
 	var food: String = _crow_cfg["food_item"]
 	var needed: int = int(_crow_cfg["worms_needed"])
 	if _near(_crow_a_pos, CROW_RANGE):
@@ -2407,8 +2418,10 @@ func _hold_pachinko(delta: float) -> void:
 	var busy: bool = _customizer.visible or _slot_screen.visible or _games.is_open() or _tcg.is_open() or _ptables.is_open() or _shop.is_open() or _prize_screen.visible or _darts.is_open() or _pool.is_open() or _inventory_screen.visible
 	if busy or not Input.is_action_pressed("interact") or not _near_pachinko():
 		_pachinko_hold = 0.0
+		_pachinko_held_s = 0.0
 		return
 	_pachinko_hold += delta
+	_pachinko_held_s += delta
 	if _pachinko_hold >= PACHINKO_HOLD_DELAY:
 		_pachinko_hold -= PACHINKO_HOLD_EVERY
 		_launch_pachinko()
@@ -2437,6 +2450,7 @@ func _launch_pachinko() -> void:
 func _on_pachinko_landed(pocket: int, coins: int, pocket_name: String) -> void:
 	var kind := _pachinko.pocket_kind(pocket)
 	if coins > 0:
+		coins += floori(float(coins) * PachinkoSim.streak_bonus(_pachinko_cfg, _pachinko_held_s))  # (polish1 item 168) the hot streak of a long hold
 		_wallet.add(coins)
 	if kind == "fever":
 		var fever: Dictionary = _pachinko_cfg["fever"]
@@ -2500,6 +2514,8 @@ func _feed_crow() -> void:
 		return
 	_fed += 1
 	_eat_time = 1.2
+	if _casino.is_empty():  # (polish1 item 162) the crowd's models load on worker threads before the flight builds the club
+		RiggedBody.prefetch()
 	_player.refresh_held()
 	if _fed >= int(_crow_cfg["worms_needed"]):
 		_fed = 0
@@ -2525,6 +2541,7 @@ func _start_flight(source: Node3D, from: Vector3, to: Vector3, dest_spawn: Vecto
 	_flight_from = from
 	_flight_to = to
 	_flight_dest = dest_spawn
+	_plan_flight()
 	_flight_src = source
 	source.visible = false
 	_ride_crow.visible = true
@@ -2543,15 +2560,51 @@ func _start_flight(source: Node3D, from: Vector3, to: Vector3, dest_spawn: Vecto
 # The cruise curve (cubic Bezier): out over the sea from the perch, high over the water, then in over the sea to the
 # landing spot. u 0..1.
 func _flight_curve(u: float) -> Vector3:
-	var lift := Vector3(0.0, 3.0, 0.0)
 	var way := Vector3(_flight_to.x - _flight_from.x, 0.0, _flight_to.z - _flight_from.z).normalized()
-	var high := float(_crow_cfg["altitude"])
-	var p0 := _flight_from + lift
-	var p1 := p0 + way * 60.0 + Vector3(0.0, high, 0.0)
-	var p2 := _flight_to - way * 70.0 + Vector3(0.0, high * 0.6, 0.0)
-	var p3 := _flight_to
+	var p0 := _flight_from + Vector3(0.0, _flight_up, 0.0)
+	var p3 := _flight_to + Vector3(0.0, _flight_down, 0.0)
+	var p1 := p0 + way * 60.0
+	p1.y = _flight_high
+	var p2 := _flight_to - way * 70.0
+	p2.y = lerpf(p3.y, _flight_high, 0.6)
 	var v := 1.0 - u
 	return p0 * v * v * v + p1 * 3.0 * v * v * u + p2 * 3.0 * v * u * u + p3 * u * u * u
+
+
+# (polish1 item 162) The flight keeps `clearance` metres over trees, rocks and roofs: it rises on the spot above
+# everything within 30 m of the perch, ends its cruise above everything within 30 m of the landing spot and comes
+# straight down there, and its high points go up until no point of the curve passes lower than that over what is under it.
+func _plan_flight() -> void:
+	var clear := float(_crow_cfg.get("clearance", 4.0))
+	_flight_up = maxf(3.0, _top_round(_flight_from) - _flight_from.y + clear)
+	_flight_down = maxf(0.0, _top_round(_flight_to) - _flight_to.y + clear)
+	_flight_high = maxf(_flight_from.y, _flight_to.y) + float(_crow_cfg["altitude"])
+	for attempt in 6:
+		var short := 0.0
+		for i in range(1, 48):
+			var p := _flight_curve(float(i) / 48.0)
+			short = maxf(short, _top_at(p.x, p.z) + clear - p.y)
+		if short <= 0.0:
+			break
+		_flight_high += short * 1.5 + 2.0
+
+
+# The highest solid thing within 30 m of a spot (rings of rays).
+func _top_round(at: Vector3) -> float:
+	var top := _top_at(at.x, at.z)
+	for ring: float in [10.0, 20.0, 30.0]:
+		for k in 8:
+			var a := TAU * float(k) / 8.0
+			top = maxf(top, _top_at(at.x + cos(a) * ring, at.z + sin(a) * ring))
+	return top
+
+
+# The top of whatever solid stands at x, z (a ray straight down from high up); far below when nothing does (the sea).
+func _top_at(x: float, z: float) -> float:
+	var q := PhysicsRayQueryParameters3D.create(Vector3(x, 400.0, z), Vector3(x, -60.0, z))
+	q.exclude = [_player.get_rid()]
+	var hit := get_world_3d().direct_space_state.intersect_ray(q)
+	return (hit["position"] as Vector3).y if not hit.is_empty() else -60.0
 
 
 func _fly(delta: float) -> void:
@@ -2561,9 +2614,11 @@ func _fly(delta: float) -> void:
 	match _flight_phase:
 		"rise":
 			if not _flight_steps.is_empty():  # one piece of the club a frame while the crow lifts off
+				var t_step := Time.get_ticks_usec()
 				(_flight_steps.pop_front() as Callable).call()
-			var r := clampf(_flight_phase_t / float(_crow_cfg["rise_seconds"]), 0.0, 1.0)
-			_ride_crow.global_position = _flight_from + Vector3(0.0, 3.0 * smoothstep(0.0, 1.0, r), 0.0)
+				_flight_step_ms.append(float(Time.get_ticks_usec() - t_step) / 1000.0)  # (dev status, polish1 item 162)
+			var r := clampf(_flight_phase_t / (float(_crow_cfg["rise_seconds"]) * clampf(_flight_up / 6.0, 1.0, 3.0)), 0.0, 1.0)  # (a high rise takes longer)
+			_ride_crow.global_position = _flight_from + Vector3(0.0, _flight_up * smoothstep(0.0, 1.0, r), 0.0)
 			_turn_crow_toward(_ride_crow.global_position + way, delta * 2.5)
 			CrowModel.pose(_ride_crow, CrowModel.FLAP, _flight_t)
 			if r >= 1.0 and _flight_steps.is_empty():
@@ -2580,10 +2635,12 @@ func _fly(delta: float) -> void:
 			if u >= 1.0:
 				_flight_phase = "land"
 				_flight_phase_t = 0.0
-		"land":
-			_ride_crow.global_position = _flight_to
-			CrowModel.pose(_ride_crow, CrowModel.FLAP if _flight_phase_t < 0.4 else CrowModel.IDLE, _flight_t)
-			if _flight_phase_t >= float(_crow_cfg["land_seconds"]):
+		"land":  # (polish1 item 162) straight down from over the trees round the landing spot
+			var down_s := float(_crow_cfg["land_seconds"]) * clampf(_flight_down / 4.0, 1.0, 3.0)
+			var d := smoothstep(0.0, 1.0, clampf(_flight_phase_t / maxf(down_s - 0.4, 0.01), 0.0, 1.0))
+			_ride_crow.global_position = _flight_to + Vector3(0.0, _flight_down * (1.0 - d), 0.0)
+			CrowModel.pose(_ride_crow, CrowModel.FLAP if _flight_phase_t < (down_s - 0.4 if _flight_down > 0.0 else 0.4) else CrowModel.IDLE, _flight_t)
+			if _flight_phase_t >= down_s:
 				_step_off()
 				return
 		"leave":  # the crow, empty, flies off over the sea it came from and is back on its own perch
@@ -2697,9 +2754,14 @@ func _open_case(id: String) -> void:
 	else:
 		_player.inventory.add_gun(gun)
 		_player.refresh_held()
-	save_profile()
 	var camo := _camo_locker.roll(_rng, id)  # (polish1 D5a) the second reel: a camo, its own item in the Camos tab
 	_camo_locker.add(camo)
+	_stats.add_to("cases_by_crate", id)  # (polish1 item 170) the Combat Report's Cases section, counted at the roll (quitting mid-spin keeps it)
+	if gun.has("knife"):
+		_stats.add("case_knives")
+	else:
+		_stats.add_to("case_gun_tiers", String(gun.get("tier", "grey")))
+	_stats.add_to("case_camo_tiers", String(_camo_locker.look(String(camo.get("id", ""))).get("tier", "green")))
 	save_profile()
 	var reel: Array = []
 	var win := 40 + _rng.randi_range(0, 4)
@@ -5682,6 +5744,7 @@ func _run_course(delta: float) -> void:
 	if here != _on_course:
 		_on_course = here
 		_player.even_ground = here
+		_player.floor_snap_length = 0.1 if here else 0.3  # (polish1 item 148) the islands keep the feet on the ground over hill tops; the course keeps Source's short snap
 		_player.ladder = false
 		_player_hud.course_text = ""
 		_haze(here)
@@ -5892,6 +5955,8 @@ func _combat_report() -> Dictionary:
 		"course_best": float(_bhop_best.get("classic_1", 0.0)),
 		"quests_done": (_fantasy.quests.done as Array).size() if _fantasy != null else 0,
 		"level": _progress.level(),
+		"crate_name": func(id: String) -> String: return String(_crate_def(id).get("name", id.capitalize())),
+		"tiers": ItemIcons.TIER_ORDER.map(func(t: String) -> Array: return [t, String(_player.gun_db.tier(t).get("name", t.capitalize()))]),
 	}
 	var report := CombatReport.build(_stats, ctx)
 	report["look"] = _player.appearance
@@ -6096,7 +6161,7 @@ func _enter_fantasy() -> void:
 	LoadClock.mark("fantasy: world built")
 	_in_fantasy = true
 	_rest_worlds()
-	_player.unstuck.ground_height = _fantasy.land_height  # (polish1 item 110) inside a hill = back on top
+	_player.unstuck.ground_height = _fantasy.drawn_height  # (polish1 items 110 / 159) inside a hill = back on top (the ground as drawn, not the smooth rule)
 	_player.floor_max_angle = deg_to_rad(52.0)  # (polish1 item 105) small hills are walked up; only real cliffs stop you
 	_player.floor_snap_length = 0.4
 	_player.teleport(_fantasy.spawn_world(), 0.0)
@@ -6141,7 +6206,7 @@ func _leave_fantasy() -> void:
 	_in_fantasy = false
 	_player.unstuck.ground_height = _island_ground
 	_player.floor_max_angle = deg_to_rad(45.0)
-	_player.floor_snap_length = 0.1
+	_player.floor_snap_length = 0.3  # (polish1 item 148) feet stay on the ground over the islands' hill tops
 	_fantasy_left_at = _time
 	_rest_worlds()
 	apply_settings()
@@ -6215,8 +6280,12 @@ func _build_club() -> void:
 func _club_build_steps() -> Array[Callable]:
 	var first := get_child_count()
 	var steps := ClubIsland.inside_steps(self)
-	steps.append(func() -> void: _casino = CasinoRoom.build(self, ClubIsland.CENTER))
-	steps.append(func() -> void: _club_setup(first))
+	var built := {}  # (polish1 item 162) the casino a piece a step too; _casino is set once it is all there
+	steps.append_array(CasinoRoom.build_steps(self, ClubIsland.CENTER, built))
+	steps.append(func() -> void: _casino = built; _club_setup(first))
+	steps.append(_club_setup_pool)
+	steps.append(_club_setup_games)
+	steps.append(_club_setup_rest)
 	return steps
 
 
@@ -6229,6 +6298,9 @@ func _club_setup(first: int) -> void:
 	add_child(_darts)
 	_darts.setup(_wallet, _player, _player_hud, _custom_layer, _sounds, _rng, ClubIsland.CENTER)
 	_darts.finished.connect(save_profile)
+
+
+func _club_setup_pool() -> void:
 	add_child(_pool)
 	_pool.setup(_wallet, _player, _player_hud, _custom_layer, _sounds, _rng, ClubIsland.CENTER)
 	_pool.finished.connect(save_profile)
@@ -6242,6 +6314,9 @@ func _club_setup(first: int) -> void:
 	_slot_machines = _casino["slots"]
 	for m in _slot_machines:
 		m.finished.connect(_on_slot_finished)
+
+
+func _club_setup_games() -> void:
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
 	if _tcg.is_set_up():  # the home port's tavern table came first (sea step 7b)
 		_tcg.add_place(_casino)
@@ -6263,6 +6338,10 @@ func _club_setup(first: int) -> void:
 		for t: Node3D in _casino.get("player_tables", []):
 			spots.append(t.global_position)
 		net.tcg.set_spots(spots)
+
+
+func _club_setup_rest() -> void:
+	RiggedBody.release_prefetch()
 	_shop.setup(_wallet, _cards, _casino, _custom_layer, _player)
 	(_casino["blackjack"] as Node3D).connect("changed", func(op: String, args: Array) -> void: table_event.emit(op, args))
 	_jukebox = Jukebox.new()

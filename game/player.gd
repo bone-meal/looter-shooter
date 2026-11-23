@@ -482,8 +482,10 @@ func _step_up(delta: float) -> void:
 	if not is_on_floor() or cheat_fly or carried:
 		return
 	var ahead := Vector3(velocity.x, 0.0, velocity.z) * delta
-	if ahead.length() < 0.001 or not test_move(global_transform, ahead):
+	if ahead.length() < 0.001 or not test_move(global_transform, ahead, _step_hit):
 		return  # nothing in the way
+	if _step_hit.get_normal().y >= cos(floor_max_angle):
+		return  # (polish1 items 148 / 159) a walkable slope, not a ledge: move_and_slide walks up it (stepping it lifted the body each tick and it dropped back = the stutter on hills)
 	var lift := Vector3.UP * STEP_HEIGHT
 	var reach := ahead.normalized() * maxf(ahead.length(), STEP_REACH)
 	if test_move(global_transform, lift) or test_move(global_transform.translated(lift), reach):

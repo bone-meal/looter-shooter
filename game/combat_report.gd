@@ -1,7 +1,7 @@
 # Purpose: turns the character's record (core/stat_book.gd) into the Combat Report's sections: what is shown, in which
 # order, with which names. `ctx` hands in the names the record does not know: callables gun_name(body),
 # knife_name(type), item_name(id), skill_name(id), enemy_name(id), and plain values best_round, course_best,
-# quests_done, level, tcg_record (the card game record: vs / decks = {name: [wins, losses]}). Returns {"under_portrait": [lines], "sections": [{"title", "rows": [[label, value]]}]}.
+# quests_done, level, tcg_record (the card game record: vs / decks = {name: [wins, losses]}), crate_name(id) and tiers ([[id, name]] lowest first) for the Cases section (polish1 item 170). Returns {"under_portrait": [lines], "sections": [{"title", "rows": [[label, value]]}]}.
 # Dependencies: core/stat_book.gd.
 extends RefCounted
 
@@ -91,6 +91,25 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 		["Hop course runs finished", _n(book.total("course_runs"))],
 		["Cigarettes smoked", _n(book.total("cigarettes"))],
 	]
+	var cases := []  # (polish1 item 170) what came out of the crates
+	for pair: Array in book.top("cases_by_crate", 0):
+		cases.append([_call(ctx, "crate_name", String(pair[0])), _n(float(pair[1]))])
+	if not cases.is_empty():
+		cases.push_front(["Crates opened", _n(book.group_sum("cases_by_crate"))])
+		var best := ""
+		for t: Array in ctx.get("tiers", []):
+			var got := book.count_in("case_gun_tiers", String(t[0]))
+			if got > 0.0:
+				cases.append(["%s guns" % String(t[1]), _n(got)])
+				best = String(t[1])
+		cases.append(["Knives", _n(book.total("case_knives"))])
+		if book.total("case_knives") > 0.0:
+			best = "a knife"
+		cases.append(["Best pull", best if best != "" else "none yet"])
+		for t: Array in ctx.get("tiers", []):
+			var camos := book.count_in("case_camo_tiers", String(t[0]))
+			if camos > 0.0:
+				cases.append(["%s camos" % String(t[1]), _n(camos)])
 	return {
 		"under_portrait": ["Level %d" % int(ctx.get("level", 1)), "%s kills, %s deaths" % [_n(kills), _n(deaths)], "Played %s" % StatBook.duration(book.total("seconds_played"))],
 		"sections": [
@@ -106,6 +125,7 @@ static func build(book: StatBook, ctx: Dictionary) -> Dictionary:
 			{"title": "You got me Lobster?", "rows": lobster},
 			{"title": "Card wins - losses by player", "rows": by_opponent},
 			{"title": "Card wins - losses by deck", "rows": by_deck},
+			{"title": "Cases", "rows": cases},
 		],
 	}
 
