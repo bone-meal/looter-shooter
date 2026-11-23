@@ -1,8 +1,10 @@
-Polish1 E2: Aurelind loot list and manuscript skill level-up banner
+Fix Aurelind wheat buried in the ground + the next quest after the Harvest King in Millbrook
 
-- game/fantasy_feedback.gd: loot list (icon per item, stacked x n, each line its own timer, oldest fades first) and the skill level-up banner (manuscript page: skill icon in a gold roundel, blackletter name, level, what it opens, wrapped)
-- fantasy_world: signals picked / skill_up replace the item toasts and the level-up notice
-- dev !e1 give / !e1 xp
+- fantasy_land ground(): height on the drawn triangle (the bilinear blend was up to 1.2 m off on steep squares; wheat, herbs, ore and props placed by it stood buried)
+- fantasy_scatter: nodes skip steep drawn faces (terrace edges the smooth height calls flat); crops, herbs and ore stand by their middle. Measured: wheat sunk more than 25 cm 53 of 131 -> 0 of 124
+- new link quest m06b Word from the Wood: after the Harvest King, Miller Oswin in Millbrook sends you to Warden Oska in Fernhollow (m07 now needs it); saves with later quests count it as done
+- a reach step that begins where you already stand passes at once (m07 started inside Fernhollow)
+- level-up banner moved below the achievement cards; dev !e1 nodes <id> [go]
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

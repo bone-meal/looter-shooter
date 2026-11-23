@@ -79,7 +79,7 @@ func _draw() -> void:
 	_draw_work()
 	_draw_boss()
 	feedback.draw_loot(self, Vector2(size.x - 16.0, 380.0))
-	feedback.draw_banner(self, Vector2(size.x * 0.5, 96.0))
+	feedback.draw_banner(self, Vector2(size.x * 0.5, 132.0))
 
 
 func _draw_skills() -> void:

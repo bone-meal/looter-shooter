@@ -111,6 +111,7 @@ var _sky_colors := ProceduralSkyMaterial.new()
 var _caster: Dictionary  # data/fantasy/spells.json "caster"
 var _region := ""
 var _place := ""
+var _reach_told := {}  # "quest:step" reach steps already reported from where we stand
 var _area := ""  # (polish1 item 129) the named area the player is in
 var _timer := 0.0
 var _buff := {}  # potion in effect: {"power", "armor", "until"}
@@ -873,7 +874,24 @@ func _after_change() -> void:
 		_claim_steps()
 	elif not _busy:
 		_apply(quests.check(bag.items.duplicate(), skills.levels()))
+	_reach_here()
 	changed.emit()
+
+
+# (2026-11-23) A "reach" step that begins while we already stand in that place passes at once (entering is what
+# reports it, and we are not entering: e.g. Warden Oska's quest starts with "reach Fernhollow" while we stand in it).
+func _reach_here() -> void:
+	if _place == "" or _busy:
+		return
+	for id: String in quests.active.keys():
+		var step := quests.step(id)
+		if String(step.get("type", "")) == "reach" and String(step["place"]) == _place:
+			var tag := "%s:%d" % [id, int(quests.active[id]["step"])]
+			if _reach_told.has(tag):
+				continue
+			_reach_told[tag] = true
+			report({"type": "reach", "place": _place})
+			return
 
 
 # Not the host: tell the host when our own bag or skills pass the step a party quest is on (items handed in leave

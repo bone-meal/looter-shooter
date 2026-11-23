@@ -186,6 +186,20 @@ step 1: Defeat the Harvest King at the Old Threshing Floor
 # Mirren the Hedge-witch says this when the quest is finished:
 done: Amber is back in the wheat. Hold on to that pigment. Your staff can hold one more element now.
 
+[quest m06b]
+# CHAPTER 2 of the main story (the way to the next region). GIVEN BY: Miller Oswin. NEEDS FIRST: m06. REWARD: 60 Magic xp.
+title: Word from the Wood
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Since the straw king fell, the miller in Millbrook has been asking after you. A rider came in from the west.
+# Miller Oswin says this when offering the quest:
+offer: A rider came through from Fernhollow, west past the hills, asking for whoever put the straw king down. Their warden wants you. Bring her my regards, and keep out of the wolves' way.
+# Step 1 shows this in the quest list. The player must: talk to Warden Oska.
+step 1: Find Warden Oska in Fernhollow, in the forest west of Millbrook
+# What Warden Oska says when you speak to her for step 1:
+says 1: Oswin's straw-slayer, at last. The wood is sick the way his fields were. Sit, and I will tell you where it starts.
+# Miller Oswin says this when the quest is finished:
+done: So you found the warden. Millbrook will keep a loaf by for you.
+
 [quest s01]
 # SIDE QUEST. GIVEN BY: Old Pim. NEEDS FIRST: m01. REWARD: 150 Fishing xp, 3 x Fried Minnow.
 title: Something Biting

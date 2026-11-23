@@ -131,6 +131,13 @@ func _foot_y(x: float, z: float, radius: float) -> float:
 	return low - 0.08
 
 
+# (2026-11-23) True where the DRAWN ground (the chunk mesh) slopes more than about 40 degrees round a point.
+func _drawn_steep(x: float, z: float) -> bool:
+	var e := 0.8
+	var n := Vector3(_ground_y(x - e, z) - _ground_y(x + e, z), 2.0 * e, _ground_y(x, z - e) - _ground_y(x, z + e)).normalized()
+	return n.y < 0.76
+
+
 func _ground_y(x: float, z: float) -> float:
 	var here: Vector2 = _land.call("ground", x, z)
 	return terrain.height(x, z) if is_nan(here.x) else here.x
@@ -209,7 +216,10 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 		var def: Dictionary = _node_data[String(node[1])]
 		var node_y := float(node[3])
 		if absf(node_y - terrain.height(float(node[2]), float(node[4]))) < 0.05:  # (polish1 item 155) a node on land (not a fishing spot on the water): on the drawn ground
-			node_y = _foot_y(float(node[2]), float(node[4]), 0.5)
+			if _drawn_steep(float(node[2]), float(node[4])):
+				continue  # (2026-11-23) the drawn land is a steep face here (a terrace edge the smooth height calls flat): wheat stood buried in such faces
+			var tree := String(def["skill"]) == "woodcutting"
+			node_y = _foot_y(float(node[2]), float(node[4]), 0.5 if tree else 0.2) + (0.0 if tree else 0.04)  # crops, herbs, ore: by their middle, only a little sunk
 		var index := _place(by_model, String(def["model"]), float(node[2]), node_y, float(node[4]), 1.0, float(node[5]))
 		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), node_y, float(node[4])), String(def["model"]), index)
 		if String(def["skill"]) == "woodcutting":

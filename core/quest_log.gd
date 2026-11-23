@@ -248,6 +248,13 @@ func from_dict(saved: Variant) -> void:
 		for id: Variant in src["done"]:
 			if _quests.has(String(id)) and not done.has(String(id)):
 				done.append(String(id))
+	var later: Array = (src.get("active", {}) as Dictionary).keys() if src.get("active") is Dictionary else []
+	for id in _order:  # (2026-11-23) a "link" quest added after a save: done when a quest needing it is done or under way
+		if bool(_quests[id].get("link", false)) and not done.has(id):
+			for other in _order:
+				if (_quests[other]["requires"] as Array).has(id) and (done.has(other) or later.has(other)):
+					done.append(id)
+					break
 	var kept: Array[String] = []
 	for id in _order:  # a finished quest whose requirements are not finished was edited in: drop it
 		if done.has(id):

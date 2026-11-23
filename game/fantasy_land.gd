@@ -109,8 +109,15 @@ func ground(x: float, z: float) -> Vector2:
 	var tz := fz - float(gz)
 	var i := gz * (CELLS + 1) + gx
 	var j := i + CELLS + 1
-	return Vector2(lerpf(lerpf(verts[i].y, verts[i + 1].y, tx), lerpf(verts[j].y, verts[j + 1].y, tx), tz),
-		lerpf(lerpf(blend[i * 4 + 2], blend[i * 4 + 6], tx), lerpf(blend[j * 4 + 2], blend[j * 4 + 6], tx), tz))
+	# (2026-11-23) the height on the drawn TRIANGLE (the mesh and its collider split each square from its top-right to its
+	# bottom-left corner): a bilinear blend of the four corners was up to ~1.2 m off on steep, twisted squares, and wheat,
+	# herbs and props placed by it stood buried in the ground.
+	var h := 0.0
+	if tx + tz <= 1.0:
+		h = verts[i].y + (verts[i + 1].y - verts[i].y) * tx + (verts[j].y - verts[i].y) * tz
+	else:
+		h = verts[j + 1].y + (verts[j].y - verts[j + 1].y) * (1.0 - tx) + (verts[i + 1].y - verts[j + 1].y) * (1.0 - tz)
+	return Vector2(h, lerpf(lerpf(blend[i * 4 + 2], blend[i * 4 + 6], tx), lerpf(blend[j * 4 + 2], blend[j * 4 + 6], tx), tz))
 
 
 # How many chunks are on screen and how many are still being worked out.

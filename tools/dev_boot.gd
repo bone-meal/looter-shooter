@@ -2819,6 +2819,38 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			match words[1] if words.size() > 1 else "note":
 				"kill":
 					fw.call("_on_slain", words[2], player.global_position)
+				"nodes":  # "!e1 nodes <node id> [go]": every loaded node of that kind: its foot against the ground under it (a ray down); "go" stands by the deepest
+					var g_n: Node = fw.get("gather")
+					var space := player.get_world_3d().direct_space_state
+					var deep := -INF
+					var deep_at := Vector3.ZERO
+					var deep_info := ""
+					var n_all := 0
+					var n_low := 0
+					var sum_d := 0.0
+					for key_n: Vector2i in g_n.get("_nodes"):
+						for nd: Dictionary in g_n.get("_nodes")[key_n]:
+							if String(nd["id"]) != words[2]:
+								continue
+							var w_at: Vector3 = fw.call("world_of", nd["at"])
+							var q_n := PhysicsRayQueryParameters3D.create(w_at + Vector3(0, 30, 0), w_at - Vector3(0, 30, 0))
+							q_n.exclude = [player.get_rid()]
+							var hit_n := space.intersect_ray(q_n)
+							if hit_n.is_empty():
+								continue
+							var below := float((hit_n["position"] as Vector3).y) - w_at.y  # how far the foot is under the ground there
+							n_all += 1
+							sum_d += below
+							if below > 0.25:
+								n_low += 1
+							if below > deep:
+								deep = below
+								deep_at = nd["at"]
+								deep_info = "node y %.2f, smooth %.2f, drawn %s, ray %.2f on %s" % [float((nd["at"] as Vector3).y), float(fw.get("terrain").call("height", (nd["at"] as Vector3).x, (nd["at"] as Vector3).z)), str(fw.get("land").call("ground", (nd["at"] as Vector3).x, (nd["at"] as Vector3).z)), float((fw.call("local_of", hit_n["position"]) as Vector3).y), str((hit_n["collider"] as Node).get_path()) if hit_n["collider"] is Node else "?"]
+					_lines.append("E1 nodes %s: %d checked, %d sunk more than 25 cm, mean %.2f m, deepest %.2f m at (%.1f, %.1f)" % [words[2], n_all, n_low, sum_d / maxf(float(n_all), 1.0), deep, deep_at.x, deep_at.z] + " | " + deep_info)
+					if words.size() > 3 and n_all > 0:
+						player.call("teleport", fw.call("ground_world", deep_at.x + 2.0, deep_at.z + 2.0), 0.0)
+						player.call("look_at_point", fw.call("world_of", deep_at) + Vector3(0, 0.4, 0))
 				"give":  # "!e1 give <item> [n]": into the bag the normal way (the loot list)
 					fw.call("give", words[2], int(words[3]) if words.size() > 3 else 1)
 				"xp":  # "!e1 xp <skill> <amount>": experience the normal way (a level-up shows its banner)
