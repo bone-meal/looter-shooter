@@ -54,6 +54,8 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 		place["name"] = _line(text, "place", String(place["id"]), "name", missing)
 	for lake: Dictionary in world.get("lakes", []):
 		lake["name"] = _line(text, "lake", String(lake["id"]), "name", missing)
+	for area: Dictionary in world.get("areas", []):  # (polish1 item 129) named areas a quest can be bound to
+		area["name"] = _line(text, "area", String(area["id"]), "name", missing)
 	for npc: Dictionary in world["npcs"]:
 		npc["name"] = _line(text, "person", String(npc["id"]), "name", missing)
 		npc["greet"] = _line(text, "person", String(npc["id"]), "greeting", missing)
@@ -62,6 +64,7 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 		quest["name"] = _line(text, "quest", id, "title", missing)
 		quest["text"] = _line(text, "quest", id, "offer", missing)
 		quest["done"] = _line(text, "quest", id, "done", missing)
+		quest["hint"] = _line(text, "quest", id, "hint", missing)  # (polish1 item 127) the quest log's medium hint toward its giver
 		var steps: Array = quest["steps"]
 		for i in steps.size():
 			steps[i]["text"] = _line(text, "quest", id, "step %d" % (i + 1), missing)

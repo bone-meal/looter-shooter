@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "The fantasy world's quests (rules: core/quest_log.gd). chapter 1-8 = the main line (one region each, ending in its boss), 0 = side quests. requires = quests that must be finished first; level = Magic level advised (shown, not enforced: the boss enforces it). steps are done in order. step types: talk (npc), kill (enemy, count), have (item, count; take = handed in), skill (skill, level), reach (place), cast (sequence = exact elements, or substance = element set, or secret = id; count), fire (count). rewards: xp (Magic), skill_xp, items, pigment (one more element slot for the party), secret (a long spell is taught), unlock_guns. Text and numbers are placeholders for the director. Titles, spoken lines and step texts are in data/fantasy/writing/<region>.txt. (polish1 item 115) make = that item made at a station (forge, oven, cauldron ...) while the step is current: carrying one already does not count.",
+ "_about": "The fantasy world's quests (rules: core/quest_log.gd). chapter 1-8 = the main line (one region each, ending in its boss), 0 = side quests. requires = quests that must be finished first; level = Magic level advised (shown, not enforced: the boss enforces it). steps are done in order. step types: talk (npc), kill (enemy, count), have (item, count; take = handed in), skill (skill, level), reach (place), cast (sequence = exact elements, or substance = element set, or secret = id; count), fire (count). rewards: xp (Magic), skill_xp, items, pigment (one more element slot for the party), secret (a long spell is taught), unlock_guns. Text and numbers are placeholders for the director. Titles, spoken lines and step texts are in data/fantasy/writing/<region>.txt. (polish1 item 115) make = that item made at a station (forge, oven, cauldron ...) while the step is current: carrying one already does not count. (polish1 item 129) a kill step may name an \"area\" (data/fantasy/world.json areas): only kills inside it count.",
  "quests": [
   {
    "id": "m01",
@@ -123,7 +123,8 @@
     {
      "type": "kill",
      "enemy": "strawling",
-     "count": 10
+     "count": 10,
+     "area": "far_fields"
     },
     {
      "type": "reach",
@@ -281,7 +282,8 @@
     {
      "type": "kill",
      "enemy": "forest_wolf",
-     "count": 8
+     "count": 8,
+     "area": "wolfwood"
     }
    ],
    "rewards": {
@@ -323,7 +325,8 @@
     {
      "type": "kill",
      "enemy": "mossgoblin",
-     "count": 10
+     "count": 10,
+     "area": "mushroom_glades"
     },
     {
      "type": "have",
@@ -404,7 +407,8 @@
     {
      "type": "kill",
      "enemy": "reef_crab",
-     "count": 8
+     "count": 8,
+     "area": "saltwrack_shore"
     }
    ],
    "rewards": {
@@ -503,7 +507,8 @@
     {
      "type": "kill",
      "enemy": "dune_scorpion",
-     "count": 8
+     "count": 8,
+     "area": "caravan_road"
     }
    ],
    "rewards": {
@@ -602,7 +607,8 @@
     {
      "type": "kill",
      "enemy": "frost_wolf",
-     "count": 10
+     "count": 10,
+     "area": "rimegate_road"
     }
    ],
    "rewards": {

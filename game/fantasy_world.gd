@@ -93,6 +93,7 @@ var interiors: FantasyInteriors  # what is inside which building
 var rooms := FantasyRooms.new()  # doors, rooms and containers
 var found := {}  # ids of the regions and places the player has been to (the map names only these)
 var inside := false
+var hud_node: Control  # game/fantasy_hud.gd (its compass)
 var mana := 0.0
 var sounds: Node  # game/fantasy_sounds.gd
 var party: Node  # game/net_fantasy.gd while playing online (null alone): quest events go through the host
@@ -108,6 +109,7 @@ var _sky_colors := ProceduralSkyMaterial.new()
 var _caster: Dictionary  # data/fantasy/spells.json "caster"
 var _region := ""
 var _place := ""
+var _area := ""  # (polish1 item 129) the named area the player is in
 var _timer := 0.0
 var _buff := {}  # potion in effect: {"power", "armor", "until"}
 var _regen_until := 0.0  # healing spells: health returns until this engine time
@@ -215,6 +217,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	moves.started.connect(_on_move_started)
 	moves.summoned.connect(func(id: String, x: float, z: float) -> void: spawner.spawn_local(id, x, z, _player))
 	var hud := FantasyHud.new()
+	hud_node = hud
 	hud.world = self
 	hud.work = work
 	hud.spawner = spawner
@@ -332,7 +335,8 @@ func _on_slain(enemy_id: String, where: Vector3) -> void:
 	sound("creature_fall", where)
 	if inside:
 		spawner.pay(enemy_id)
-	report({"type": "kill", "enemy": enemy_id})
+	var at := local_of(where)
+	report({"type": "kill", "enemy": enemy_id, "areas": terrain.areas_at(at.x, at.z)})
 	if party != null and not party.call("is_client"):
 		party.call("send_slain", enemy_id)
 
@@ -583,6 +587,15 @@ func _process(delta: float) -> void:
 			notice.emit(String(terrain.place(here)["name"]))
 			_find(here)
 			report({"type": "reach", "place": here})
+	var area_here := ""  # (polish1 item 129) named areas: told on the way in, then named on the map and the compass
+	for id: String in terrain.areas_at(local.x, local.z):
+		area_here = id
+	if area_here != _area:
+		_area = area_here
+		if area_here != "" and here == "":
+			notice.emit(String(terrain.area_by_id(area_here)["name"]))
+		if area_here != "":
+			_find(area_here)
 
 
 # The region's weather over the chosen look. With a photo sky only the haze, the sun's colour and the sky's tint
@@ -948,6 +961,12 @@ func map_marks() -> Array:
 				where = String(places.person(String(step["npc"])).get("place", ""))
 			"reach":
 				where = String(step["place"])
+			"kill":  # (polish1 item 129) a kill step bound to a named area points there
+				if step.has("area"):
+					var area := terrain.area_by_id(String(step["area"]))
+					if not area.is_empty() and not seen.has(String(step["area"])):
+						seen[String(step["area"])] = true
+						out.append({"x": float(area["x"]), "z": float(area["z"]), "mark": "..."})
 		if where != "" and not seen.has(where):
 			seen[where] = true
 			var p := terrain.place(where)

@@ -33,6 +33,10 @@ name: Saltmarsh
 # WHAT: a lake (fresh water: its own fish).
 name: The Lagoon
 
+[area saltwrack_shore]
+# WHAT: the low shore round the Tidal Flats (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
+name: Saltwrack Shore
+
 # ---------------- PEOPLE OF BRINEMOUTH COAST ----------------
 
 [folk brinemouth]
@@ -61,18 +65,22 @@ greeting: Silverfin run past the breakwater at this hour.
 [quest m12]
 # CHAPTER 3 of the main story. GIVEN BY: Captain Ysolde. NEEDS FIRST: m11. REWARD: 1200 Magic xp.
 title: Salt Air
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: A sea captain in Brinemouth, east along the coast road, has heard that someone out west mends broken lands.
 # Captain Ysolde says this when offering the quest:
 offer: Word travels by water. They say you mend lands. Mine is drowning an inch a night.
 # Step 1 shows this in the quest list. The player must: arrive at Brinemouth.
 step 1: Travel to Brinemouth on the south-east coast
-# Step 2 shows this in the quest list. The player must: defeat 8 x Reef Crab.
-step 2: Break reef crabs on the shore
+# Step 2 shows this in the quest list. The player must: defeat 8 x Reef Crab in Saltwrack Shore (only kills there count).
+step 2: Break reef crabs on Saltwrack Shore, by the Tidal Flats
 # Captain Ysolde says this when the quest is finished:
 done: Shells that thick, and you cracked them. Good.
 
 [quest m13]
 # CHAPTER 3 of the main story. GIVEN BY: Netmender Brill. NEEDS FIRST: m12. REWARD: 1200 Magic xp, 500 Fishing xp, 1 x Oak Rod.
 title: Nets and Needles
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: In Brinemouth nobody sails and nobody eats. The netmender thinks the breakwater could feed them.
 # Netmender Brill says this when offering the quest:
 offer: Nobody will sail, so nobody eats. Unless you can fish from the breakwater.
 # Step 1 shows this in the quest list. The player must: reach Fishing level 13.
@@ -85,6 +93,8 @@ done: Six! Have my best rod. I was only using it to prop the door.
 [quest m14]
 # CHAPTER 3 of the main story. GIVEN BY: Captain Ysolde. NEEDS FIRST: m12. REWARD: 1600 Magic xp.
 title: The Drowned Crew
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Captain Ysolde stares at the flats where her crew walks, soaked and silent.
 # Captain Ysolde says this when offering the quest:
 offer: Those are my own lads walking the flats. Soaked through, every one. You know what runs through wet rope in a storm.
 # Step 1 shows this in the quest list. The player must: defeat 10 x Drowned Sailor.
@@ -97,6 +107,8 @@ done: Rest now, the lot of you.
 [quest m15]
 # CHAPTER 3 of the main story. GIVEN BY: Captain Ysolde. NEEDS FIRST: m13, m14. REWARD: 1500 Magic xp, 1 x Azure Pigment, one more element slot.
 title: The Tidewarden
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The captain in Brinemouth talks about the warden of the tide, gone white as salt.
 # Captain Ysolde says this when offering the quest:
 offer: The warden of the tide kept the sea where it belongs. It has gone white as salt and it is dragging the water in after it.
 # Step 1 shows this in the quest list. The player must: defeat 1 x The Tidewarden.
@@ -107,6 +119,8 @@ done: The tide's going out. Azure is yours.
 [quest s05]
 # SIDE QUEST. GIVEN BY: Netmender Brill. NEEDS FIRST: m12. REWARD: 700 Woodcutting xp.
 title: Driftwood
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The breakwater in Brinemouth is falling apart, and the netmender knows which wood the sea cannot rot.
 # Netmender Brill says this when offering the quest:
 offer: The breakwater wants mending and palm is the only wood that laughs at salt.
 # Step 1 shows this in the quest list. The player must: hold 10 x Driftpalm Log and hand them over.

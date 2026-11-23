@@ -37,6 +37,10 @@ name: Mirror Tarn
 # WHAT: a pond (fresh water: its own fish).
 name: The White Eye
 
+[area rimegate_road]
+# WHAT: the road between Hollin and Rimegate (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
+name: The Rimegate Road
+
 # ---------------- PEOPLE OF FROSTMERE ----------------
 
 [folk frostmere]
@@ -65,18 +69,22 @@ greeting: Wolves I understand. The thing on the steps is not a wolf.
 [quest m20]
 # CHAPTER 5 of the main story. GIVEN BY: Trapper Hakon. NEEDS FIRST: m19. REWARD: 800 Magic xp.
 title: The Frozen Road
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: A trapper waits at Rimegate in the north. The road to the gate is shut, and not by snow.
 # Trapper Hakon says this when offering the quest:
 offer: You're a long way from the wheat. Road's shut by wolves. Open it and the gate will open for you.
 # Step 1 shows this in the quest list. The player must: arrive at Rimegate.
 step 1: Climb north to Rimegate in Frostmere
-# Step 2 shows this in the quest list. The player must: defeat 10 x Frost Wolf.
-step 2: Hunt frost wolves on the road
+# Step 2 shows this in the quest list. The player must: defeat 10 x Frost Wolf in The Rimegate Road (only kills there count).
+step 2: Hunt frost wolves on the Rimegate Road (Hollin to Rimegate)
 # Trapper Hakon says this when the quest is finished:
 done: Pelts for the town and a road for the traders.
 
 [quest m21]
 # CHAPTER 5 of the main story. GIVEN BY: Archivist Solenne. NEEDS FIRST: m20. REWARD: 700 Magic xp, teaches the long spell Phoenix Rite.
 title: The Archive
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Behind Rimegate's walls an archivist keeps the long spells, and she is particular about who reads them.
 # Archivist Solenne says this when offering the quest:
 offer: The long spells are written here. They are exact: one element out of place and you get a puddle. Light my lamps and I will read you the first.
 # Step 1 shows this in the quest list. The player must: hold 5 x Frost Crystal and hand them over.
@@ -87,6 +95,8 @@ done: Phoenix Rite: Fire, Fire, Air, Water, Fire, Fire, Air. Say it back. Again.
 [quest m22]
 # CHAPTER 5 of the main story. GIVEN BY: Trapper Hakon. NEEDS FIRST: m21. REWARD: 1000 Magic xp.
 title: Cracks in the Ice
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Hakon at Rimegate says the golems come down off the steps every night now.
 # Trapper Hakon says this when offering the quest:
 offer: The golems come off the steps at night. Heat's the answer, and the archivist says you carry a lot of it now.
 # Step 1 shows this in the quest list. The player must: defeat 8 x Ice Golem.
@@ -99,6 +109,8 @@ done: I felt that from here.
 [quest m23]
 # CHAPTER 5 of the main story. GIVEN BY: Archivist Solenne. NEEDS FIRST: m22. REWARD: 3000 Magic xp, 1 x White Pigment, one more element slot, teaches the long spell Absolute Zero.
 title: The Rime Colossus
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The archivist at Rimegate remembers when white was a colour here and not a frost.
 # Archivist Solenne says this when offering the quest:
 offer: White was a colour here, once: clean snow, not this dead frost. The Colossus held it. Bring it back.
 # Step 1 shows this in the quest list. The player must: defeat 1 x The Rime Colossus.
@@ -109,6 +121,8 @@ done: Snow that sparkles. And for you, the cold itself: Absolute Zero. Water, Ai
 [quest s06]
 # SIDE QUEST. GIVEN BY: Trapper Hakon. NEEDS FIRST: m20. REWARD: 900 Fishing xp, 900 Cooking xp.
 title: Cold Catch
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The trapper at Rimegate fishes through the ice when the road is quiet.
 # Trapper Hakon says this when offering the quest:
 offer: Cut a hole, drop a line, don't fall in.
 # Step 1 shows this in the quest list. The player must: hold 5 x Icefin and hand them over.

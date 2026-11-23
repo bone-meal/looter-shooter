@@ -41,10 +41,17 @@ static func draw(p: Variant, body: Rect2, side: Rect2, talking: bool) -> void:
 		top = p.heading(body, top, "scroll", "Chapter %d of 8" % mini(int(quests.chapter()), 8))
 		for id: String in quests.active:
 			top = _row(p, body, top, id, "")
-		if (quests.active as Dictionary).is_empty() and bool(p.shows(body, top, 60.0)):
+		if (quests.done as Array).is_empty() and (quests.active as Dictionary).is_empty() and bool(p.shows(body, top, 60.0)):
 			IconArt.draw(p, "exclaim", Rect2(body.position.x + 4.0, top + 4.0, 30.0, 30.0), Style.GOLD)
-			Style.paragraph(p, Vector2(body.position.x + 44.0, top + 20.0), String(p.world.first_hint()) if (quests.done as Array).is_empty() else "Look for someone with a ! above their head.", 15, Style.PARCHMENT, body.size.x - 60.0, 2)
+			Style.paragraph(p, Vector2(body.position.x + 44.0, top + 20.0), String(p.world.first_hint()), 15, Style.PARCHMENT, body.size.x - 60.0, 2)
 			top += 60.0
+		elif not (quests.rumours(3) as Array).is_empty():  # (polish1 item 127) medium hints toward the quests nobody has taken yet
+			top = p.heading(body, top + 6.0, "exclaim", "Rumours")
+			for id: String in quests.rumours(3):
+				if bool(p.shows(body, top, 52.0)):
+					IconArt.draw(p, "exclaim", Rect2(body.position.x + 6.0, top + 6.0, 20.0, 20.0), Style.GOLD_DIM)
+					Style.paragraph(p, Vector2(body.position.x + 34.0, top + 19.0), String(quests.quest(id).get("hint", "")), 14, Style.PARCHMENT, body.size.x - 50.0, 2)
+				top += 52.0
 		if not (quests.done as Array).is_empty():
 			top = p.heading(body, top + 6.0, "check", "Done")
 			for id: String in quests.done:

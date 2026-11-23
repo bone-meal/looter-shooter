@@ -27,6 +27,23 @@ static func font() -> Font:
 	return _font
 
 
+static var _italic: Font = load("res://assets/fonts/Alegreya-Italic.ttf")
+static var _blackletter: Font = load("res://assets/fonts/UnifrakturMaguntia.ttf")  # (polish1 item 98) 1400s textura for the compass (OFL)
+static var _gothic: Font = load("res://assets/fonts/GrenzeGotisch.ttf")  # a readable gothic hand for labels on the scroll (OFL)
+
+
+static func font_italic() -> Font:
+	return _italic
+
+
+static func blackletter() -> Font:
+	return _blackletter
+
+
+static func gothic() -> Font:
+	return _gothic
+
+
 # A dark panel with a gold hairline and a small mark in each corner.
 static func frame(canvas: CanvasItem, rect: Rect2, fill: Color = INK) -> void:
 	canvas.draw_rect(rect, fill)

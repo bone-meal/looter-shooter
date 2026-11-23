@@ -71,12 +71,22 @@ func _ready() -> void:
 	var book := SpellBook.new(spells)
 	for problem in book.problems():
 		_need(false, problem)
+	var area_terrain := FantasyTerrain.new(world)  # (polish1 item 129) for the named areas
 	for quest: Dictionary in quests["quests"]:
 		_need(npc_ids.has(String(quest["giver"])), "quest %s has unknown giver" % quest["id"])
 		for s: Dictionary in quest["steps"]:
 			match String(s["type"]):
 				"talk": _need(npc_ids.has(String(s["npc"])), "quest %s talks to unknown npc" % quest["id"])
-				"kill": _need(enemies.has(String(s["enemy"])), "quest %s kills unknown enemy %s" % [quest["id"], s["enemy"]])
+				"kill":
+					_need(enemies.has(String(s["enemy"])), "quest %s kills unknown enemy %s" % [quest["id"], s["enemy"]])
+					if s.has("area"):  # (polish1 item 129) a named area that exists, lies in the region that has the enemy, and is not empty
+						var area: Dictionary = area_terrain.area_by_id(String(s["area"]))
+						_need(not area.is_empty(), "quest %s kills in unknown area %s" % [quest["id"], s["area"]])
+						if not area.is_empty():
+							_need(String(area["name"]) != "", "area %s has no name in the writing files" % s["area"])
+							_need(area_terrain.areas_at(float(area.get("cx", area["x"])), float(area.get("cz", area["z"])) + float(area["inner"]) * 1.5).has(String(s["area"])) or not (area["road"] as PackedVector2Array).is_empty(), "area %s does not hold its own middle" % s["area"])
+							var reg: Dictionary = area_terrain.region_at(float(area["x"]), float(area["z"]))
+							_need((reg["enemies"] as Array).has(String(s["enemy"])), "area %s lies in %s, where %s does not live" % [s["area"], reg["id"], s["enemy"]])
 				"have": _need(items.has(String(s["item"])), "quest %s wants unknown item %s" % [quest["id"], s["item"]])
 				"reach": _need(place_ids.has(String(s["place"])), "quest %s reaches unknown place" % quest["id"])
 				"skill": _need((skilling["skills"] as Dictionary).has(String(s["skill"])), "quest %s wants unknown skill" % quest["id"])
@@ -127,7 +137,9 @@ func _ready() -> void:
 					"kill":
 						for _n in int(s["count"]):
 							total_xp += int(enemies[String(s["enemy"])]["xp"])
-							changes = out_log.note({"type": "kill", "enemy": s["enemy"]})
+							changes = out_log.note({"type": "kill", "enemy": s["enemy"], "areas": [String(s.get("area", ""))]})
+						if s.has("area"):  # (polish1 item 129) a kill elsewhere does not count
+							_need(out_log.note({"type": "kill", "enemy": s["enemy"], "areas": []}).is_empty() or not out_log.active.has(id), "quest %s counted a kill outside %s" % [id, s["area"]])
 					"cast":
 						for _n in int(s["count"]):
 							changes = out_log.note({"type": "cast", "sequence": s.get("sequence", ""), "substance": s.get("substance", ""), "secret": s.get("secret", "")})

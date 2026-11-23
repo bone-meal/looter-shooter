@@ -23,6 +23,8 @@ var _ring_center := Vector2.ZERO
 var _ring_radius := 0.0
 var lakes: Array = []  # {"id", "name", "x", "z", "r", "depth", "level", "water"}: level is worked out from the land around
 var roads: Array = []  # PackedVector2Array per road: a bent line between two places
+var road_ends: Array = []  # (polish1 item 123) per road (same order): [place id at its start, place id at its end]
+var areas: Array = []  # (polish1 item 129) named areas: {"id", "name", "region", "x", "z" (where the map / compass name it), "cx", "cz" (a circle's centre), "radius", "inner", "road" (PackedVector2Array or empty), "width"}
 var _place_level := PackedFloat32Array()  # ground level of each place (same order as `places`)
 var _ready_places := false
 var _calm_at := PackedVector3Array()  # places and lakes: (x, z, radius inside which the land is calm)
@@ -97,6 +99,32 @@ func _init(world_data: Dictionary) -> void:
 		var to := Vector2(float(b["pos"][0]), float(b["pos"][1]))
 		var bend := (to - from).orthogonal().normalized() * (to - from).length() * 0.14 * (hash01(int(from.x), int(to.y), 5) - 0.5) * 2.0
 		roads.append(PackedVector2Array([from, (from + to) * 0.5 + bend, to]))
+		road_ends.append([String(pair[0]), String(pair[1])])
+	for entry: Dictionary in data.get("areas", []):
+		var area := {"id": String(entry["id"]), "name": String(entry.get("name", "")), "region": String(entry.get("region", "")), "radius": float(entry.get("radius", 0.0)),
+			"inner": float(entry.get("inner", 0.0)), "road": PackedVector2Array(), "width": float(entry.get("width", 0.0))}
+		if entry.has("road"):
+			var ends: Array = entry["road"]
+			for road: PackedVector2Array in roads:
+				var a0 := place(String(ends[0]))
+				var b0 := place(String(ends[1]))
+				var pa := Vector2(float(a0.get("pos", [0, 0])[0]), float(a0.get("pos", [0, 0])[1]))
+				var pb := Vector2(float(b0.get("pos", [0, 0])[0]), float(b0.get("pos", [0, 0])[1]))
+				if (road[0].is_equal_approx(pa) and road[2].is_equal_approx(pb)) or (road[0].is_equal_approx(pb) and road[2].is_equal_approx(pa)):
+					area["road"] = road
+			var line: PackedVector2Array = area["road"]
+			if not line.is_empty():
+				area["x"] = line[1].x
+				area["z"] = line[1].y
+		else:
+			area["x"] = float(entry["pos"][0])
+			area["z"] = float(entry["pos"][1])
+			area["cx"] = area["x"]  # the shape's centre (x / z may move to where the name is shown)
+			area["cz"] = area["z"]
+			if float(area["inner"]) > 0.0:  # a ring round a place: named on its north side
+				area["z"] = float(entry["pos"][1]) - (float(area["radius"]) + float(area["inner"])) * 0.5
+		if area.has("x"):
+			areas.append(area)
 	for lake: Dictionary in lakes:
 		_lake_at.append(Vector3(float(lake["x"]), float(lake["z"]), float(lake["r"])))
 		_lake_level.append(float(lake["level"]))
@@ -113,6 +141,34 @@ func _init(world_data: Dictionary) -> void:
 					var list: PackedInt32Array = _seg_cells.get(cell, PackedInt32Array())
 					list.append(index)
 					_seg_cells[cell] = list
+
+
+# (polish1 item 129) The ids of the named areas a point lies in.
+func areas_at(x: float, z: float) -> Array:
+	var out: Array = []
+	for area: Dictionary in areas:
+		if area_has(area, x, z):
+			out.append(String(area["id"]))
+	return out
+
+
+func area_has(area: Dictionary, x: float, z: float) -> bool:
+	var line: PackedVector2Array = area["road"]
+	var p := Vector2(x, z)
+	if not line.is_empty():
+		for i in line.size() - 1:
+			if Geometry2D.get_closest_point_to_segment(p, line[i], line[i + 1]).distance_to(p) <= float(area["width"]):
+				return true
+		return false
+	var d := Vector2(x - float(area["cx"]), z - float(area["cz"])).length()
+	return d <= float(area["radius"]) and d >= float(area["inner"])
+
+
+func area_by_id(id: String) -> Dictionary:
+	for entry: Dictionary in areas:
+		if String(entry["id"]) == id:
+			return entry
+	return {}
 
 
 # One weight per region (same order as `regions`), adding up to 1: high for the region the point is in, shared

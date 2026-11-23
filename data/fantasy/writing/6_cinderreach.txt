@@ -65,6 +65,8 @@ greeting: Cinderroot only grows where the ground is still warm. Mind your boots.
 [quest m24]
 # CHAPTER 6 of the main story. GIVEN BY: Forgemaster Brann. NEEDS FIRST: m23. REWARD: 500 Magic xp.
 title: The Stoked Mountain
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: A raven has flown south-east to Anvilgate ahead of you. Its forgemaster has imps in his coal.
 # Forgemaster Brann says this when offering the quest:
 offer: Archivist's raven got here before you. Imps in my coal, imps in my quench tank. Start there.
 # Step 1 shows this in the quest list. The player must: arrive at Anvilgate.
@@ -77,6 +79,8 @@ done: That's the small fires out.
 [quest m25]
 # CHAPTER 6 of the main story. GIVEN BY: Forgemaster Brann. NEEDS FIRST: m24. REWARD: 500 Magic xp, teaches the long spell Starfall.
 title: Hammer and Glass
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Forgemaster Brann will not let you near the wyrm with a pine twig. He talks of obsidian and emberwood.
 # Forgemaster Brann says this when offering the quest:
 offer: You'll not face the wyrm with a pine twig. Obsidian, emberwood, and the White you carry. Forge it yourself or it won't know you.
 # Step 1 shows this in the quest list. The player must: reach Smithing level 34.
@@ -89,6 +93,8 @@ done: Now that is a staff. Here is a spell worthy of it: Starfall. Fire, Earth, 
 [quest m26]
 # CHAPTER 6 of the main story. GIVEN BY: Ashwife Coral. NEEDS FIRST: m24. REWARD: 500 Magic xp, 900 Alchemy xp, 3 x Cinder Draught.
 title: Ash on the Wind
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: An ashwife in Anvilgate grows the root that lets people stand near the caldera, when the drakes allow it.
 # Ashwife Coral says this when offering the quest:
 offer: Drakes foul the root beds. Root makes the draught that lets you stand near the caldera. You see the problem.
 # Step 1 shows this in the quest list. The player must: hold 8 x Cinderroot and hand them over.
@@ -101,6 +107,8 @@ done: Three draughts. Drink one before you look at the wyrm, not after.
 [quest m27]
 # CHAPTER 6 of the main story. GIVEN BY: Forgemaster Brann. NEEDS FIRST: m25, m26. REWARD: 2000 Magic xp, 1 x Crimson Pigment, one more element slot, teaches the long spell Leviathan's Wake.
 title: The Cinderwyrm
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Brann calls the wyrm in the caldera the forge's heart. He wants it beating red again.
 # Forgemaster Brann says this when offering the quest:
 offer: The wyrm was the forge's heart: crimson, a fire that makes. It burns white now and makes nothing.
 # Step 1 shows this in the quest list. The player must: defeat 1 x The Cinderwyrm.

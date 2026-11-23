@@ -1,15 +1,16 @@
 # Purpose: the fantasy world's always-on HUD: a row of round skill medallions in the top left (level in the middle,
 # a ring that fills towards the next level), experience and item lines that rise and fade, a card with the tracked
-# quests in the top right, the bar while gathering, and the boss's name, health and the name of the attack it is
+# quests in the top right, the scroll compass across the top (game/fantasy_compass.gd), the bar while gathering, and the boss's name, health and the name of the attack it is
 # about to make. Hidden outside that world. Drawn in the shared look of game/fantasy_style.gd.
 # Dependencies: game/fantasy_world.gd (skills, quests, toast and boss_move signals), game/fantasy_work.gd (progress),
-# game/fantasy_spawner.gd (boss_awake), game/input_setup.gd, game/fantasy_style.gd.
+# game/fantasy_spawner.gd (boss_awake), game/input_setup.gd, game/fantasy_style.gd, game/fantasy_compass.gd.
 extends Control
 
 const InputSetup = preload("res://game/input_setup.gd")
 const Style = preload("res://game/fantasy_style.gd")
 const IconArt = preload("res://game/icon_art.gd")
 const PanelQuests = preload("res://game/panel_quests.gd")
+const FantasyCompass = preload("res://game/fantasy_compass.gd")
 
 const MEDAL := 17.0  # radius of a skill medallion
 const MOVE_SECONDS := 2.4
@@ -22,8 +23,8 @@ var work: Node
 var spawner: Node
 var settings: RefCounted
 
+var compass := FantasyCompass.new()  # (polish1 item 98) the scroll compass across the top
 var _toasts: Array = []  # {"text", "color", "left"}
-var _since_draw := 0.0
 var _move := ""  # the boss attack being announced
 var _move_color := Color.WHITE
 var _move_left := 0.0
@@ -54,13 +55,13 @@ func _process(delta: float) -> void:
 		if float(_toasts[i]["left"]) <= 0.0:
 			_toasts.remove_at(i)
 	_move_left = maxf(_move_left - delta, 0.0)
-	_since_draw += delta
-	if _since_draw >= 0.1 or not _toasts.is_empty() or _move_left > 0.0 or float(work.call("progress")) >= 0.0:  # ten redraws a second is enough unless something moves
-		_since_draw = 0.0
-		queue_redraw()
+	compass.update(world, delta)
+	queue_redraw()  # (polish1 item 98) every frame: the compass turns with the view
 
 
 func _draw() -> void:
+	if not bool(world.get("map").call("is_open")) and not bool(world.call("panel_open")):  # the map and the menu cover it
+		compass.draw(self, world, Vector2(size.x * 0.5, 12.0))
 	_draw_skills()
 	_draw_toasts()
 	_draw_quests()
@@ -99,7 +100,14 @@ func _draw_quests() -> void:
 		if ids.size() < TRACKED:
 			ids.append(id)
 	var first_steps: bool = ids.is_empty() and int(world.quests.done.size()) == 0
-	if ids.is_empty() and not first_steps:
+	if ids.is_empty() and not first_steps:  # (polish1 item 127) nothing under way: the next rumour (a medium hint toward a giver)
+		var next: Array = world.quests.rumours(1)
+		if next.is_empty():
+			return
+		var card_r := Rect2(size.x - 376.0, 132.0, 360.0, 78.0)
+		Style.frame(self, card_r, Style.INK_SOFT)
+		Style.text(self, card_r.position + Vector2(14.0, 22.0), "Rumour", 15, Style.GOLD)
+		Style.paragraph(self, card_r.position + Vector2(14.0, 42.0), String(world.quests.quest(String(next[0])).get("hint", "")), 13, Style.PARCHMENT, 332.0)
 		return
 	var width := 360.0
 	var card := Rect2(size.x - width - 16.0, 132.0, width, 18.0 + 62.0 * float(maxi(ids.size(), 1)))

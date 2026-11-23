@@ -41,6 +41,10 @@ name: The Reddening
 # WHAT: a pond (fresh water: its own fish).
 name: The Last Oasis
 
+[area caravan_road]
+# WHAT: the road from Saltmarsh down to Dunehaven (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
+name: The Caravan Road
+
 # ---------------- PEOPLE OF SUNSCAR DESERT ----------------
 
 [folk sunscar]
@@ -69,18 +73,22 @@ greeting: Sunstone holds a spell the way a jar holds water.
 [quest m16]
 # CHAPTER 4 of the main story. GIVEN BY: Caravan-master Tarek. NEEDS FIRST: m15. REWARD: 2000 Magic xp.
 title: Twelve Wagons
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: A caravan-master in Dunehaven, south across the dunes, has lost twelve wagons and wants to know to what.
 # Caravan-master Tarek says this when offering the quest:
 offer: A sailor told me about you. I had twelve wagons. I would like to know what has them now.
 # Step 1 shows this in the quest list. The player must: arrive at Dunehaven.
 step 1: Cross north to Dunehaven in the Sunscar Desert
-# Step 2 shows this in the quest list. The player must: defeat 8 x Dune Scorpion.
-step 2: Clear scorpions from the caravan road
+# Step 2 shows this in the quest list. The player must: defeat 8 x Dune Scorpion in The Caravan Road (only kills there count).
+step 2: Clear scorpions from the Caravan Road (Saltmarsh to Dunehaven)
 # Caravan-master Tarek says this when the quest is finished:
 done: The road is open as far as the first well.
 
 [quest m17]
 # CHAPTER 4 of the main story. GIVEN BY: Glasswright Noor. NEEDS FIRST: m16. REWARD: 2000 Magic xp, 600 Smithing xp, 2 x Sun Elixir.
 title: Sunstone
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: A glasswright in Dunehaven sets stones in staffs. She is said to prize sunstone above water.
 # Glasswright Noor says this when offering the quest:
 offer: Bring me sunstone and I will show you how to set it in a staff. It drinks spells and gives them back doubled.
 # Step 1 shows this in the quest list. The player must: reach Mining level 20.
@@ -93,6 +101,8 @@ done: Clear as noon. Two elixirs for you, and my forge is yours.
 [quest m18]
 # CHAPTER 4 of the main story. GIVEN BY: Caravan-master Tarek. NEEDS FIRST: m16. REWARD: 3000 Magic xp.
 title: Voices in the Sand
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The caravan-master in Dunehaven swears the sand itself has started whispering.
 # Caravan-master Tarek says this when offering the quest:
 offer: They are only sand with a grudge. Sand that is frozen cannot blow.
 # Step 1 shows this in the quest list. The player must: defeat 10 x Sand Wraith.
@@ -105,6 +115,8 @@ done: Twelve wagons. I will tell the families.
 [quest m19]
 # CHAPTER 4 of the main story. GIVEN BY: Caravan-master Tarek. NEEDS FIRST: m17, m18. REWARD: 3000 Magic xp, 1 x Ochre Pigment, one more element slot.
 title: Glassmaw
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Tarek speaks of a great worm north-east of Dunehaven that once kept the dunes moving slowly.
 # Caravan-master Tarek says this when offering the quest:
 offer: The great worm kept the dunes moving slowly, the way they should. It is pale as glass now and it eats roads.
 # Step 1 shows this in the quest list. The player must: defeat 1 x Glassmaw.

@@ -55,6 +55,8 @@ greeting: I mixed every colour this land has. He took them back to white. Bring 
 [quest m32]
 # CHAPTER 8 of the main story. GIVEN BY: The Last Painter. NEEDS FIRST: m31. REWARD: 1000 Magic xp, teaches the long spell Prism Lance.
 title: Seven Colours
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Every colour is back but one. At the Pale Gate, in the middle of the world, someone is waiting with a brush.
 # The Last Painter says this when offering the quest:
 offer: I painted this land. He was my first figure, and I left him unfinished: no colour at all. He has been taking everyone else's ever since.
 # Step 1 shows this in the quest list. The player must: arrive at The Pale Gate.
@@ -69,6 +71,8 @@ done: All seven. Put them together and you get what he cannot stand: Prism Lance
 [quest m33]
 # CHAPTER 8 of the main story. GIVEN BY: The Last Painter. NEEDS FIRST: m32. REWARD: 1000 Magic xp, teaches the long spell Genesis Rain.
 title: Knights of Nothing
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The Last Painter says the pale court is made of what has been erased.
 # The Last Painter says this when offering the quest:
 offer: His court is made of what he has erased. Clear it, and make the last staff: skysteel, with every stone you have carried.
 # Step 1 shows this in the quest list. The player must: defeat 10 x Pale Knight.
@@ -83,6 +87,8 @@ done: You will need to stay standing in there. Genesis Rain: Water, Earth, Air, 
 [quest m34]
 # CHAPTER 8 of the main story. GIVEN BY: The Last Painter. NEEDS FIRST: m33. REWARD: 20000 Magic xp, teaches the long spell Eclipse, guns work in this world.
 title: The Pallid King
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The painter at the Pale Gate has one last thing to finish.
 # The Last Painter says this when offering the quest:
 offer: Finish him. I mean that as a painter: finish him.
 # Step 1 shows this in the quest list. The player must: defeat 1 x The Pallid King.

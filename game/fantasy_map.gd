@@ -132,6 +132,22 @@ func _draw() -> void:
 		draw_string(font, at + Vector2(-150.0, -10.0), "levels %d - %d" % [int(region["level"][0]), int(region["level"][1])], HORIZONTAL_ALIGNMENT_CENTER, 300.0, 11, Color(INKED, 0.55))
 	for lake: Dictionary in terrain.lakes:
 		draw_string(font, _spot(float(lake["x"]), float(lake["z"]) + float(lake["r"]) + 14.0, sheet) + Vector2(-80.0, 0.0), String(lake["name"]), HORIZONTAL_ALIGNMENT_CENTER, 160.0, 10, Color(0.16, 0.26, 0.36, 0.85))
+	# (polish1 item 129) named areas once found: a faint dashed edge (a ring round its middle, or along its road) and the name in italics
+	for area: Dictionary in terrain.areas:
+		if not (world.get("found") as Dictionary).has(String(area["id"])):
+			continue
+		var line: PackedVector2Array = area["road"]
+		var ink := Color(0.42, 0.22, 0.1, 0.55)
+		if not line.is_empty():
+			for i in line.size() - 1:
+				draw_line(_spot(line[i].x, line[i].y, sheet), _spot(line[i + 1].x, line[i + 1].y, sheet), Color(ink, 0.25), maxf(2.0, float(area["width"]) * 2.0 * sheet.size.x / float(terrain.size)))
+		else:
+			var c := _spot(float(area["cx"]), float(area["cz"]), sheet)
+			var r := float(area["radius"]) * sheet.size.x / float(terrain.size)
+			for k in 24:
+				if k % 2 == 0:
+					draw_arc(c, r, TAU * k / 24.0, TAU * (k + 1) / 24.0, 4, ink, 1.0, true)
+		draw_string(Style.font_italic(), _spot(float(area["x"]), float(area["z"]), sheet) + Vector2(-90.0, 4.0), String(area["name"]), HORIZONTAL_ALIGNMENT_CENTER, 180.0, 11, Color(0.42, 0.22, 0.1, 0.85))
 	# places: a sign by kind; the name once found
 	for place: Dictionary in terrain.places:
 		var at := _spot(float(place["pos"][0]), float(place["pos"][1]), sheet)

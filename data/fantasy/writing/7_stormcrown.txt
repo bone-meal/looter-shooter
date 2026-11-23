@@ -61,6 +61,8 @@ greeting: When the big bell rings by itself, something is circling.
 [quest m28]
 # CHAPTER 7 of the main story. GIVEN BY: Abbot Wen. NEEDS FIRST: m27. REWARD: 500 Magic xp.
 title: The Shouting Wind
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Six colours are home. An abbot on the windy heights of Skyrest, far to the west, waits for the seventh.
 # Abbot Wen says this when offering the quest:
 offer: You have brought back six colours. The seventh is the colour of a storm about to break, and it is circling over our heads.
 # Step 1 shows this in the quest list. The player must: arrive at Skyrest.
@@ -73,6 +75,8 @@ done: The bells have stopped ringing by themselves.
 [quest m29]
 # CHAPTER 7 of the main story. GIVEN BY: Abbot Wen. NEEDS FIRST: m28. REWARD: 500 Magic xp, teaches the long spell Katrina.
 title: The Hurricane Sutra
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Abbot Wen wants to hear you speak plainly to the wind before he teaches you to shout.
 # Abbot Wen says this when offering the quest:
 offer: Show the wind you can speak plainly to it. Then I will teach you to shout back.
 # Step 1 shows this in the quest list. The player must: cast exactly Air + Air + Air + Air + Air, 3 time(s).
@@ -83,6 +87,8 @@ done: The sutra has a name older than the abbey: Katrina. Air, Water, Air, Air, 
 [quest m30]
 # CHAPTER 7 of the main story. GIVEN BY: Bellringer Ilse. NEEDS FIRST: m29. REWARD: 500 Magic xp, teaches the long spell Judgement.
 title: Bells of Skyrest
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The bellringer of Skyrest says the spirits ride the gusts past her bells.
 # Bellringer Ilse says this when offering the quest:
 offer: The spirits ride the gusts. Give them a bigger wind than their own.
 # Step 1 shows this in the quest list. The player must: defeat 8 x Gale Spirit.
@@ -95,6 +101,8 @@ done: I've rung these bells forty years and never heard thunder answer. Here is 
 [quest m31]
 # CHAPTER 7 of the main story. GIVEN BY: Abbot Wen. NEEDS FIRST: m30. REWARD: 2000 Magic xp, 1 x Storm Pigment, one more element slot, teaches the long spell Worldbreaker.
 title: The Tempest Roc
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The abbot watches a great bleached bird circling its aerie and screaming at nothing.
 # Abbot Wen says this when offering the quest:
 offer: The great bird carried the storms from sea to field. Bleached, it only circles and screams.
 # Step 1 shows this in the quest list. The player must: defeat 1 x The Tempest Roc.
@@ -105,6 +113,8 @@ done: Storm-violet. Seven. One more gift, for the ground you are about to walk o
 [quest s07]
 # SIDE QUEST. GIVEN BY: Bellringer Ilse. NEEDS FIRST: m28. REWARD: 1500 Mining xp, 1500 Smithing xp.
 title: Skysteel
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The bellringer at Skyrest has a cracked bell and hopes for skysteel from the tops.
 # Bellringer Ilse says this when offering the quest:
 offer: The old bell cracked. Skysteel rings truer. The lodes are up on the tops, where the lightning likes to stand.
 # Step 1 shows this in the quest list. The player must: hold 4 x Skysteel Bar.

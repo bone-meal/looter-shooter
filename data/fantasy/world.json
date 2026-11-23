@@ -1990,5 +1990,63 @@
    "pale_gate",
    "pale_throne"
   ]
+ ],
+ "_areas": "(polish1 item 129) NAMED AREAS: parts of a region a quest can be bound to (only kills inside count), named on the map and the compass once found (walked into). Shapes: {\"pos\": [x, z], \"radius\" m, \"inner\" m (optional: a ring round a place)} or {\"road\": [place a, place b], \"width\" m (each side of the road's line)}. Names in the writing files ([area id] name:). Kill steps take \"area\": id in quests.json.",
+ "areas": [
+  {
+   "id": "far_fields",
+   "region": "amberfield",
+   "pos": [
+    -230,
+    1130
+   ],
+   "radius": 170
+  },
+  {
+   "id": "wolfwood",
+   "region": "greenwald",
+   "pos": [
+    -1620,
+    1080
+   ],
+   "radius": 300,
+   "inner": 80
+  },
+  {
+   "id": "mushroom_glades",
+   "region": "greenwald",
+   "pos": [
+    -2000,
+    1400
+   ],
+   "radius": 170
+  },
+  {
+   "id": "saltwrack_shore",
+   "region": "brinemouth",
+   "pos": [
+    2180,
+    2420
+   ],
+   "radius": 220
+  },
+  {
+   "id": "caravan_road",
+   "region": "sunscar",
+   "road": [
+    "saltmarsh",
+    "dunehaven"
+   ],
+   "width": 55
+  },
+  {
+   "id": "rimegate_road",
+   "region": "frostmere",
+   "road": [
+    "hollin",
+    "rimegate"
+   ],
+   "width": 55
+  }
  ]
 }

@@ -32,6 +32,7 @@ var small_m := 100.0  # small loose things are drawn within this distance and ca
 var motion := 3  # graphics tier: 0 nothing moves, 1 windmill sails, 2 people breathe too
 var plain := false  # graphics tier: buildings are shown as their plain models (assets/models/fantasy/plain/, about 30 % of the triangles)
 var _merges: Array = []  # places whose buildings are still being folded into one mesh: {"holder", "list", "next", "tools"}
+var signs: Array = []  # (polish1 item 123) road signs built now: {"place", "at": Vector3 local, "face": Vector2 (toward the road)}
 var stations: Array = []  # {"kind": workbench|forge|cauldron|fire, "at": Vector3, "place": id, "until": engine time or 0}
 var _player_at := Vector3(INF, 0.0, INF)  # where the player was at the last `follow` (guards halt when he is close)
 var people: Array = []  # {"id", "name", "at": Vector3, "place", "greet", "look", "folk": bool, "node", "mark"}
@@ -277,6 +278,22 @@ func set_marks(marks: Dictionary) -> void:
 			var label := entry["mark"] as Label3D
 			label.text = m.substr(0, 1)
 			label.modulate = Color(0.7, 0.7, 0.7) if m == "?grey" else Color(1.0, 0.85, 0.3)
+		_tint_plate(entry)
+
+
+# (polish1 item 102) A person an open quest sends you to (gold "?") wears a gold name plate; everyone else white.
+func _tint_plate(entry: Dictionary) -> void:
+	var held: Variant = entry.get("plate")  # (a Variant first: the body may have been freed with its plate)
+	if held == null or not is_instance_valid(held):
+		return
+	var plate := held as Label3D
+	var target := String(_marks.get(entry["id"], "")) == "?gold"
+	if target:
+		plate.modulate = Color(1.0, 0.8, 0.25)
+		plate.outline_modulate = Color(0.25, 0.14, 0.02)
+	else:
+		plate.modulate = Color(1, 1, 1, 0.75) if bool(entry["folk"]) else Color.WHITE
+		plate.outline_modulate = Color.BLACK
 
 
 # (polish1 item 107) Logs laid on the ground, to be lit with a fire spell.
@@ -408,6 +425,9 @@ func _unbuild(id: String) -> void:
 	for i in range(stations.size() - 1, -1, -1):
 		if String(stations[i]["place"]) == id:
 			stations.remove_at(i)
+	for i in range(signs.size() - 1, -1, -1):
+		if String(signs[i]["place"]) == id:
+			signs.remove_at(i)
 
 
 func _mesh(model: String) -> Mesh:
@@ -426,6 +446,7 @@ func _build(id: String, items: Array) -> void:
 	var big: Array = []  # [Mesh, Transform3D] of every building
 	var body := StaticBody3D.new()
 	holder.add_child(body)
+	_road_signs(id, holder, body)
 	for i in items.size():
 		var item: Dictionary = items[i]
 		var model := String(item["model"])
@@ -513,6 +534,104 @@ func _build(id: String, items: Array) -> void:
 		holder.add_child(drawn)
 
 
+# (polish1 item 123) Road signs: where each road leaves a place, a post at the roadside just past the place's edge
+# with an arm for EVERY road leaving that place (the junction), each pointing down its road with the name of the place
+# at its end and the distance, and a board with this place's name on top. Text on both faces.
+func _road_signs(id: String, holder: Node3D, body: StaticBody3D) -> void:
+	var home := terrain.place(id)
+	if home.is_empty():
+		return
+	var center := Vector2(float(home["pos"][0]), float(home["pos"][1]))
+	var leaving: Array = []  # [direction from the place along the road, destination name, road length]
+	for k in terrain.road_ends.size():
+		var ends: Array = terrain.road_ends[k]
+		var line: PackedVector2Array = terrain.roads[k]
+		var other := ""
+		if String(ends[0]) == id:
+			other = String(ends[1])
+		elif String(ends[1]) == id:
+			other = String(ends[0])
+		else:
+			continue
+		var length := line[0].distance_to(line[1]) + line[1].distance_to(line[2])
+		leaving.append([(line[1] - center).normalized(), String(terrain.place(other).get("name", other)), length])
+	if leaving.is_empty():
+		return
+	var wood := FantasyModels.tinted("timber", Color(0.55, 0.42, 0.28))
+	var face_font: Font = load("res://assets/fonts/GrenzeGotisch.ttf")
+	for road: Array in leaving:
+		var dir: Vector2 = road[0]
+		var side := Vector2(-dir.y, dir.x)
+		var spot := center + dir * (float(home["flat"]) + 9.0) + side * 3.6
+		spot = layout.push_out(spot.x, spot.y, 0.6)
+		var post := Node3D.new()
+		post.position = Vector3(spot.x, terrain.height(spot.x, spot.y) - 0.15, spot.y)
+		holder.add_child(post)
+		signs.append({"place": id, "at": post.position, "face": -side})
+		var pole := MeshInstance3D.new()
+		var pole_mesh := BoxMesh.new()
+		pole_mesh.size = Vector3(0.16, 3.0, 0.16)
+		pole.mesh = pole_mesh
+		pole.material_override = wood
+		pole.position.y = 1.5
+		post.add_child(pole)
+		var shape := CollisionShape3D.new()  # a slim round post: nothing to catch on
+		var drum := CylinderShape3D.new()
+		drum.radius = 0.14
+		drum.height = 3.0
+		shape.shape = drum
+		shape.position = post.position + Vector3(0, 1.5, 0)
+		body.add_child(shape)
+		_sign_board(post, String(home.get("name", id)), 2.95, atan2(-side.x, -side.y), clampf(0.4 + float(String(home.get("name", id)).length()) * 0.1, 1.2, 2.6), wood, face_font, true)  # this place's name across the top, facing the road
+		var arms := leaving.duplicate()
+		arms.sort_custom(func(a: Array, b: Array) -> bool: return float(a[2]) < float(b[2]))
+		for k in arms.size():
+			var to_dir: Vector2 = arms[k][0]
+			var aim := (center + to_dir * (float(home["flat"]) + 60.0)) - spot  # down that road, seen from this post
+			var yaw := atan2(-aim.y, aim.x)
+			var words := "%s  %s" % [String(arms[k][1]), ("%.1f km" % (float(arms[k][2]) / 1000.0)) if float(arms[k][2]) >= 1000.0 else "%d m" % roundi(float(arms[k][2]))]
+			_sign_board(post, words, 2.55 - 0.34 * k, yaw, clampf(0.3 + float(words.length()) * 0.085, 1.2, 2.8), wood, face_font, false)  # the plank as long as its words
+
+
+# One board on a sign post: an arm pointing along `yaw` (a pointed end) or the name board (centred). Text both sides.
+func _sign_board(post: Node3D, words: String, height: float, yaw: float, length: float, wood: Material, face_font: Font, centred: bool) -> void:
+	var arm := Node3D.new()
+	arm.position.y = height
+	arm.rotation.y = yaw
+	post.add_child(arm)
+	var plank := MeshInstance3D.new()
+	var board := BoxMesh.new()
+	board.size = Vector3(length, 0.26, 0.05)
+	plank.mesh = board
+	plank.material_override = wood
+	plank.position.x = 0.0 if centred else length * 0.5 + 0.05
+	arm.add_child(plank)
+	if not centred:  # the pointed end
+		var tip := MeshInstance3D.new()
+		var point := PrismMesh.new()
+		point.size = Vector3(0.26, 0.22, 0.05)
+		tip.mesh = point
+		tip.material_override = wood
+		tip.rotation.z = -PI * 0.5
+		tip.position.x = length + 0.05 + 0.11
+		arm.add_child(tip)
+	for back in 2:
+		var label := Label3D.new()
+		label.text = words
+		label.font = face_font
+		label.font_size = 64
+		label.pixel_size = 0.0032
+		label.modulate = Color(0.12, 0.07, 0.03)
+		label.outline_size = 0
+		label.double_sided = false
+		label.width = length * 300.0
+		label.autowrap_mode = TextServer.AUTOWRAP_OFF
+		label.position = Vector3(plank.position.x, 0.0, 0.03 if back == 0 else -0.03)
+		label.rotation.y = 0.0 if back == 0 else PI
+		label.visibility_range_end = 45.0
+		arm.add_child(label)
+
+
 func _stand(entry: Dictionary) -> void:
 	var look := {"gender": "female", "height": 1.0, "weight": 1.0, "bust": 0.3, "glutes": 0.3, "skin": 2, "hair": "bob", "hair_color": "#553322", "face": "gentle_smile", "outfit": "farmer"}
 	look.merge(entry["look"], true)
@@ -535,6 +654,8 @@ func _stand(entry: Dictionary) -> void:
 		plate.billboard = BaseMaterial3D.BILLBOARD_ENABLED
 		plate.position.y = 2.05
 		body.add_child(plate)
+		entry["plate"] = plate
+		_tint_plate(entry)
 	var mark := Label3D.new()
 	var m := String(_marks.get(entry["id"], ""))
 	mark.text = m.substr(0, 1)

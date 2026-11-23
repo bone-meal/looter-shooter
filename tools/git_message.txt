@@ -1,13 +1,11 @@
-Polish1 I4 poker part 3: online table (host deals) + livelier house players
+Polish1 E1: Aurelind guidance - scroll compass, named areas, gold name plates, rumours, road signs
 
-- game/poker_dealer.gd: deals a table for any mix of players and house players (sit, move on your turn, rebuy, stand up mid-hand, turn clock online, refills, no house player twice)
-- game/net_poker.gd (node Poker): the host runs the dealer, clients send intents, each machine gets its own view; chips stay on each machine; a lost host gives seated players their chips back
-- game/poker_game.gd: alone its own dealer, in a lobby the shared table; a player's chair hides that house player; everyone sees the table played
-- poker_screen.gd: stakes locked to the lobby table, our seat always at the bottom, notes
-- core/poker_ai.gd: pre-flop by hand rank (play / raise shares by tightness and aggression), a little looser after the flop: 6 seats now 90 percent of hands see a flop with 3 players (was 2)
-- data/poker.json turn_s_online 30
-- tools/poker_dealer_check.gd, poker_check table feel, pair test set poker (two copies: both sat, played, stood up, chips back)
-- ARCHITECTURE.md poker map
+- game/fantasy_compass.gd: compass across the top as an unrolled scroll, blackletter winds (illuminated N), red seals for quest targets, gold ! for quest givers, place signs, faint ? for places not found, near stations; the mark in the middle named with its distance
+- named areas (world.json areas, writing [area id]): Far Fields, Wolfwood, Mushroom Glades, Saltwrack Shore, Caravan Road, Rimegate Road; place-bound kill steps count kills inside only; named on entering, on the map and the compass
+- quest target name plates turn gold
+- rumours: a medium hint per quest (writing hint: lines, 41 drafted); quest page Rumours list + HUD card when nothing is under way
+- road signs: a post where each road leaves a place with an arm per road (name + distance) and the place name on top; old textless ring signposts removed
+- fonts UnifrakturMaguntia + Grenze Gotisch (OFL); fantasy_check checks areas (41 of 41 quests finish); dev !e1
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

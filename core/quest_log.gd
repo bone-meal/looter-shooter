@@ -75,7 +75,7 @@ func step_text(id: String) -> String:
 	return String(s["text"]) if goal <= 1 or String(s["type"]) in ["have", "skill"] else "%s (%d/%d)" % [s["text"], int(active[id]["n"]), goal]
 
 
-# Reports something that happened. event = {"type": "kill", "enemy": id} | {"type": "cast", "sequence", "substance",
+# Reports something that happened. event = {"type": "kill", "enemy": id, "areas": [named areas it died in]} | {"type": "cast", "sequence", "substance",
 # "secret"} | {"type": "reach", "place": id} | {"type": "talk", "npc": id} | {"type": "fire"} | {"type": "make", "item", "count"}. Returns the changes:
 # [{"quest": id, "finished": bool, "rewards": {...} when finished}].
 func note(event: Dictionary) -> Array:
@@ -96,8 +96,8 @@ func note(event: Dictionary) -> Array:
 
 func _matches(s: Dictionary, event: Dictionary) -> bool:
 	match String(s["type"]):
-		"kill":
-			return String(s["enemy"]) == String(event.get("enemy", ""))
+		"kill":  # (polish1 item 129) a step bound to a named area counts kills inside it only (event "areas": where the kill was)
+			return String(s["enemy"]) == String(event.get("enemy", "")) and (not s.has("area") or (event.get("areas", []) as Array).has(String(s["area"])))
 		"reach":
 			return String(s["place"]) == String(event.get("place", ""))
 		"talk":
@@ -206,6 +206,17 @@ func guns_unlocked() -> bool:
 		if bool((_quests[id]["rewards"] as Dictionary).get("unlock_guns", false)):
 			return true
 	return false
+
+
+# (polish1 item 127) Quests nobody has taken yet that can be started now, the main line first: their hints point the way.
+func rumours(limit: int) -> Array[String]:
+	var main: Array[String] = []
+	var side: Array[String] = []
+	for id in _order:
+		if can_start(id):
+			(main if int(_quests[id]["chapter"]) > 0 else side).append(id)
+	var out: Array[String] = main + side
+	return out.slice(0, limit)
 
 
 # The main-line chapter the party is in (1-8; 9 = finished).

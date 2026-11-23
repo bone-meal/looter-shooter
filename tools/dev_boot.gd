@@ -2813,6 +2813,50 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 						break
 					await get_tree().create_timer(0.25, true, false, true).timeout
 			_lines.append("DOWNS %s: states %s, me downed %s, hp %d, revives %d, downs %d" % [" ".join(words.slice(1)), str((dl.get("downs") as Node).get("states")), str(player.get("downed")), int(player.get("health").hp), int(session.call("score").get("revives")), int(session.call("score").get("downs"))])
+		"e1":  # (polish1 stage E1, Aurelind guidance) "!e1 kill <enemy>": a kill paid at our feet (named areas count it); "!e1 sign <place> [n]": stand 5 m in front of
+			# that place's n-th road sign looking at it; "!e1 map" / "!e1 quests": open the map / the quest page; "!e1 close"; "!e1 face <x> <z>": look toward map metres; "!e1 note"
+			var fw: Node = session.call("fantasy")
+			match words[1] if words.size() > 1 else "note":
+				"kill":
+					fw.call("_on_slain", words[2], player.global_position)
+				"sign":
+					var pl: Node = fw.get("places")
+					var n_s := int(words[3]) if words.size() > 3 else 0
+					var mine_s: Array = []
+					for sg: Dictionary in pl.get("signs"):
+						if String(sg["place"]) == words[2]:
+							mine_s.append(sg)
+					if n_s < mine_s.size():
+						var sg2: Dictionary = mine_s[n_s]
+						var face2: Vector2 = sg2["face"]
+						var at2: Vector3 = sg2["at"]
+						player.call("teleport", fw.call("ground_world", at2.x + face2.x * 5.0, at2.z + face2.y * 5.0), 0.0)
+						player.call("look_at_point", fw.call("world_of", at2) + Vector3(0, 2.2, 0))
+					_lines.append("E1 signs at %s: %d" % [words[2], mine_s.size()])
+				"map":
+					fw.get("map").call("toggle")
+				"quests":
+					fw.get("panel").call("open", "Quests")
+				"close":
+					fw.call("close_panel")
+					fw.call("close_panel")
+				"face":
+					player.call("look_at_point", fw.call("world_of", Vector3(float(words[2]), 0.0, float(words[3]))) + Vector3(0, 1.6, 0))
+				"person":  # "!e1 person <npc id> [m]": stand m metres (6) from that person looking at them
+					var who_e: Dictionary = fw.get("places").call("person", words[2])
+					if not who_e.is_empty():
+						var at_e: Vector3 = who_e["at"]
+						var m_e := float(words[3]) if words.size() > 3 else 6.0
+						player.call("teleport", fw.call("ground_world", at_e.x + m_e * 0.7, at_e.z + m_e * 0.7), 0.0)
+						player.call("look_at_point", fw.call("world_of", at_e) + Vector3(0, 1.8, 0))
+				_:
+					var q_e: RefCounted = fw.get("quests")
+					var act: PackedStringArray = []
+					for id_e: String in q_e.get("active"):
+						act.append("%s: %s" % [id_e, String(q_e.call("step_text", id_e))])
+					var here_e: Vector3 = fw.call("player_local")
+					var comp: RefCounted = (fw.get("hud_node") as Node).get("compass")
+					_lines.append("E1 at (%d, %d) areas %s | quests %s | rumours %s | compass marks %d" % [roundi(here_e.x), roundi(here_e.z), str(fw.get("terrain").call("areas_at", here_e.x, here_e.z)), " ; ".join(act), str(q_e.call("rumours", 3)), (comp.get("marks") as Array).size()])
 		"go":  # "!go club": travel there without the chat command (a joiner may not use /tp)
 			session.call("travel", words[1])
 		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give); "!immortal off" ends it

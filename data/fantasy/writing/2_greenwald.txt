@@ -37,6 +37,14 @@ name: Fern Mere
 # WHAT: a pond (fresh water: its own fish).
 name: Heron Pool
 
+[area wolfwood]
+# WHAT: the woods all round Fernhollow, where the wolf packs run (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
+name: The Wolfwood
+
+[area mushroom_glades]
+# WHAT: glades in the north-west of the forest (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
+name: The Mushroom Glades
+
 # ---------------- PEOPLE OF THE GREENWALD ----------------
 
 [folk greenwald]
@@ -65,18 +73,22 @@ greeting: Glowcaps only open in the dark of the wood. Bring a basketful.
 [quest m07]
 # CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m06. REWARD: 500 Magic xp.
 title: Under the Oaks
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Word of the straw king has reached the forest. The warden at Fernhollow, west past the mill roads, wants a word.
 # Warden Oska says this when offering the quest:
 offer: You're the one who put the straw king down. The wood needs the same favour. Start with the wolves: they're hungry, not wicked.
 # Step 1 shows this in the quest list. The player must: arrive at Fernhollow.
 step 1: Travel west to Fernhollow in the Greenwald
-# Step 2 shows this in the quest list. The player must: defeat 8 x Forest Wolf.
-step 2: Thin the wolf packs around Fernhollow
+# Step 2 shows this in the quest list. The player must: defeat 8 x Forest Wolf in The Wolfwood (only kills there count).
+step 2: Thin the wolf packs in the Wolfwood around Fernhollow
 # Warden Oska says this when the quest is finished:
 done: Quieter already. That was the easy part.
 
 [quest m08]
 # CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m07. REWARD: 400 Magic xp.
 title: A Better Staff
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Warden Oska has been eyeing your ash stick and shaking her head.
 # Warden Oska says this when offering the quest:
 offer: That ash stick won't carry what the wood will ask of you. Oak holds more. You have the pigment to wake it.
 # Step 1 shows this in the quest list. The player must: reach Woodcutting level 8.
@@ -89,10 +101,12 @@ done: Feel the difference? Every land here has a wood or a stone that holds magi
 [quest m09]
 # CHAPTER 2 of the main story. GIVEN BY: Herbalist Wynn. NEEDS FIRST: m07. REWARD: 500 Magic xp, 300 Farming xp, 3 x Health Draught.
 title: Goblins in the Glowcaps
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: The herbalist in Fernhollow sends pickers into the glades, and they keep coming back with bruises.
 # Herbalist Wynn says this when offering the quest:
 offer: They pelt my pickers with stones. Chase them off and bring me what they've been trampling.
-# Step 1 shows this in the quest list. The player must: defeat 10 x Mossgoblin.
-step 1: Drive mossgoblins out of the mushroom glades
+# Step 1 shows this in the quest list. The player must: defeat 10 x Mossgoblin in The Mushroom Glades (only kills there count).
+step 1: Drive mossgoblins out of the Mushroom Glades, north-west in the forest
 # Step 2 shows this in the quest list. The player must: hold 8 x Glowcap and hand them over.
 step 2: Gather glowcaps
 # Herbalist Wynn says this when the quest is finished:
@@ -101,6 +115,8 @@ done: These will brew. Take three draughts for the trouble.
 [quest m10]
 # CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m08, m09. REWARD: 600 Magic xp.
 title: Bark That Walks
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: In Fernhollow they say water just runs off the big bark-skinned ones. The warden has a better idea.
 # Warden Oska says this when offering the quest:
 offer: The big ones shrug off water. Earth and fire together make something that sticks and burns. Use it.
 # Step 1 shows this in the quest list. The player must: defeat 6 x Barkhide.
@@ -113,6 +129,8 @@ done: Magma on bark. Ugly, and it works.
 [quest m11]
 # CHAPTER 2 of the main story. GIVEN BY: Warden Oska. NEEDS FIRST: m10. REWARD: 800 Magic xp, 1 x Verdant Pigment, one more element slot.
 title: The Rootmother
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Warden Oska speaks of the first tree, out in her hollow in the far west, as if speaking of the dead.
 # Warden Oska says this when offering the quest:
 offer: She was green once: the first tree, mother of the wood. Now she's bleached to bone and strangling her own children.
 # Step 1 shows this in the quest list. The player must: defeat 1 x The Rootmother.
