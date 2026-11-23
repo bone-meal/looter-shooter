@@ -169,7 +169,7 @@ func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x
 			if models.is_empty():
 				continue
 			for i in count:
-				for attempt in 5:
+				for attempt in (60 if rule.has("station") else 5):  # (polish1 E5) a station (the coach house) tries hard to find room
 					var h1 := FantasyTerrain.hash01(seed_x, seed_z, salt + i * 13 + attempt * 5)
 					var h2 := FantasyTerrain.hash01(seed_x, seed_z, salt + i * 13 + attempt * 5 + 1)
 					var h3 := FantasyTerrain.hash01(seed_x, seed_z, salt + i * 13 + attempt * 5 + 2)
@@ -184,7 +184,7 @@ func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x
 							turn = atan2(cos(a), sin(a))
 						"out":
 							turn = atan2(-cos(a), -sin(a))
-					if _put(out, taken, model, x, z, turn, "", false, slopes):
+					if _put(out, taken, model, x, z, turn, String(rule.get("station", "")), false, slopes):
 						break
 	return out
 

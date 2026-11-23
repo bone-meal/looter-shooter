@@ -1,5 +1,5 @@
 # Purpose: the one look of each of the game's three monies, drawn the same everywhere (director: "Coins, chips,
-# doubloons different and correct icons"): POINTS = the island's coins (a bright milled gold coin with a star), CHIPS =
+# doubloons different and correct icons"): (polish1 E5) GIL = the chips' name and coin in Aurelind; POINTS = the island's coins (a bright milled gold coin with a star), CHIPS =
 # the casino's poker chip (game/chip_art.gd), DOUBLOONS = the sea's money (an old struck coin of darker gold, a little
 # out of round, with a cross and a dotted rim). draw(canvas, kind, centre, radius) on any CanvasItem.
 # Dependencies: game/chip_art.gd.
@@ -19,6 +19,8 @@ static func draw(ci: CanvasItem, kind: String, centre: Vector2, r: float) -> voi
 			ChipArt.draw(ci, centre, r)
 		"doubloons":
 			_doubloon(ci, centre, r)
+		"gil":
+			_gil(ci, centre, r)
 		_:
 			_coin(ci, centre, r)
 
@@ -35,6 +37,19 @@ static func _coin(ci: CanvasItem, c: Vector2, r: float) -> void:
 		var a := -PI * 0.5 + float(i) * TAU / 10.0
 		star.append(c + Vector2.from_angle(a) * r * (0.5 if i % 2 == 0 else 0.22))
 	ci.draw_colored_polygon(star, GOLD_DARK)
+	ci.draw_arc(c, r, 0.0, TAU, 24, Color(0, 0, 0, 0.45), maxf(r * 0.08, 1.0), true)
+
+
+# (polish1 E5) GIL: what the game's chips are called in Aurelind (director): a minted coin, not a poker chip. A thick
+# rim of pale gold round a rose-gold face with a little three-pointed crown over a bar.
+static func _gil(ci: CanvasItem, c: Vector2, r: float) -> void:
+	ci.draw_circle(c, r, Color(0.72, 0.55, 0.22))
+	ci.draw_circle(c, r * 0.8, Color(0.93, 0.74, 0.38))
+	ci.draw_arc(c, r * 0.8, 0.0, TAU, 24, Color(0.62, 0.42, 0.16), maxf(r * 0.07, 1.0), true)
+	var crown := PackedVector2Array([c + Vector2(-0.42, 0.18) * r, c + Vector2(-0.42, -0.3) * r, c + Vector2(-0.2, -0.06) * r, c + Vector2(0.0, -0.4) * r,
+		c + Vector2(0.2, -0.06) * r, c + Vector2(0.42, -0.3) * r, c + Vector2(0.42, 0.18) * r])
+	ci.draw_colored_polygon(crown, Color(0.62, 0.42, 0.16))
+	ci.draw_rect(Rect2(c + Vector2(-0.42, 0.26) * r, Vector2(0.84, 0.14) * r), Color(0.62, 0.42, 0.16))
 	ci.draw_arc(c, r, 0.0, TAU, 24, Color(0, 0, 0, 0.45), maxf(r * 0.08, 1.0), true)
 
 

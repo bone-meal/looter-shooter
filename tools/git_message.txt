@@ -1,8 +1,9 @@
-Polish1 E4 fixes: trophy pictures in the Trophies tab, capes with dagged hems, crown in place of the hat
+Polish1 E5: grand chapel interior, coach stations in walled towns, gil
 
-- Trophies tab: every card and the detail pane show the trophy worn (tools/trophy_shot.tscn icons mode, assets/ui/trophies/); ghost copies in cold blue, not owned ones dark
-- mantles hang as proper capes (wider toward the hem, a dagged hem for straw, moss, kelp, pelt, scales, feathers and shrouds: tailor sheet option hem); the pale shroud less white
-- a worn trophy crown takes the place of the outfit's hat (no hat poking through)
+- 122 the chapel inside is a grand hall (16 x 26 m, 8.5 m to the eaves, open timber roof with trusses under a stone gable): clustered stone columns, tall stained-glass lancet windows down both sides, a rose window over the altar, candelabras, banners, a lectern, a red runner and 14 pews; rooms may now have their own size, height, pitched roof, windows and light (interiors.json)
+- 126 every walled town has a coach house (shed, parked coach, sign, fare board) with a coachman; talking to him (or using the coach house) opens the Coach page: every other walled town of a country already visited, distance and fare; riding pays the fare and shows the coach card while the road loads
+- director: fares are paid in the game's chips, called GIL in Aurelind with their own coin (inventory bar too)
+- data: coaches.json (fare base + per km, ride time, coachman look and lines), layouts.json coach rule; dev !e5
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

@@ -1,0 +1,18 @@
+{
+ "version": 1,
+ "_about": "(polish1 E5, item 126) COACH STATIONS: every walled town (data/fantasy/layouts.json kinds town and town_palisade) has a coach house (tools/blender/coach_house.py, station 'coach') with its coachman standing at it (game/fantasy_places.gd). Talking to him opens the Coach page (game/panel_coach.gd): every other walled town of a country (region) already visited, with its fare in GIL (the game's chips, called gil in Aurelind: director 2026-11-23). fare = base + per_km x the straight distance in km, rounded to `round`. ride_s = how long the ride's card shows (a teleport for now; game/coach_ride.gd). coachman = his look (data outfits, appearance ids) and name; lines = what he says at the top of the page (one picked by the town). Numbers and words mine, the director's to change.",
+ "base": 25,
+ "per_km": 20,
+ "round": 5,
+ "ride_s": 3.0,
+ "coachman": {
+  "name": "Coachman",
+  "look": {"gender": "male", "outfit": "highlander", "hair": "crop", "hair_color": "#5a4632", "skin": 2}
+ },
+ "lines": [
+  "Seats inside, luggage on the roof. Where to?",
+  "The horses are fed and the wheels are greased. Name the town.",
+  "Roads are long, but my coach is quicker than your boots.",
+  "Pay up front, friend. Even a coach eats."
+ ]
+}

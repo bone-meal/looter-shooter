@@ -3134,6 +3134,62 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"e5":  # (polish1 stage E5, places) "!e5 chapel [place]": go in the chapel of that place (millbrook); "!e5 view <x> <y> <z> <tx> <ty> <tz>": inside a room, stand
+			# at room-local metres looking at another room-local point; "!e5 note": the room's size and pieces
+			var fw5: Node = session.call("fantasy")
+			var rooms5: Node = fw5.get("rooms")
+			match words[1] if words.size() > 1 else "note":
+				"chapel":
+					fw5.call("travel", words[2] if words.size() > 2 else "millbrook")
+					await get_tree().create_timer(3.0, true, false, true).timeout
+					var best5: Dictionary = {}
+					var me5: Vector3 = fw5.call("player_local")
+					for door5: Dictionary in rooms5.get("_doors"):
+						if String(door5["kind"]) == "chapel" and (best5.is_empty() or Vector2(me5.x, me5.z).distance_to(door5["at"]) < Vector2(me5.x, me5.z).distance_to(best5["at"])):
+							best5 = door5
+					_lines.append("E5 chapel door found %s" % str(not best5.is_empty()))
+					if not best5.is_empty():
+						rooms5.call("_enter", best5)
+				"coach":  # "!e5 coach [place]": stand before that town's coachman (millbrook) and hire him (the coach page opens)
+					fw5.call("travel", words[2] if words.size() > 2 else "millbrook")
+					await get_tree().create_timer(2.0, true, false, true).timeout
+					var man5: Dictionary = (fw5.get("places") as Node).call("person", "coachman:" + (words[2] if words.size() > 2 else "millbrook"))
+					_lines.append("E5 coachman found %s" % str(not man5.is_empty()))
+					if not man5.is_empty():
+						var at5: Vector3 = man5["at"]
+						var mid5: Dictionary = (fw5.get("terrain") as RefCounted).call("place", words[2] if words.size() > 2 else "millbrook")
+						var way5 := (Vector2(float(mid5["pos"][0]), float(mid5["pos"][1])) - Vector2(at5.x, at5.z)).normalized()
+						player.call("teleport", fw5.call("ground_world", at5.x + way5.x * 7.0, at5.z + way5.y * 7.0), 0.0)
+						player.call("look_at_point", fw5.call("world_of", at5) + Vector3(0, 1.5, 0))
+						await get_tree().create_timer(1.0, true, false, true).timeout
+						await _stage(renderer, "e5_coach_house", 0.1)
+						player.call("teleport", fw5.call("ground_world", at5.x + way5.x * 1.6, at5.z + way5.y * 1.6), 0.0)
+						player.call("look_at_point", fw5.call("world_of", at5) + Vector3(0, 1.5, 0))
+						await get_tree().create_timer(1.5, true, false, true).timeout
+						fw5.call("interact")
+				"house":  # "!e5 house [place]": stand 10 m before that town's coach house, looking at it
+					var pl5: Dictionary = (fw5.get("terrain") as RefCounted).call("place", words[2] if words.size() > 2 else "millbrook")
+					for it5: Dictionary in (fw5.get("layout") as RefCounted).call("place_items", pl5):
+						if String(it5["station"]) == "coach":
+							var fr5 := Vector2(-sin(float(it5["turn"])), -cos(float(it5["turn"])))
+							player.call("teleport", fw5.call("ground_world", float(it5["x"]) + fr5.x * 9.0, float(it5["z"]) + fr5.y * 9.0), 0.0)
+							player.call("look_at_point", fw5.call("ground_world", float(it5["x"]), float(it5["z"])) + Vector3(0, 1.8, 0))
+				"pick":  # "!e5 pick <town>": pick a town on the coach page
+					fw5.get("panel").set("picked", words[2])
+					(fw5.get("panel") as CanvasItem).queue_redraw()
+				"ride":  # "!e5 ride <town>": ride there the normal way (fare paid)
+					_lines.append("E5 ride %s: '%s'" % [words[2], String(fw5.call("coach_ride", words[2]))])
+				"gil":  # "!e5 gil <n>": n more chips (gil)
+					(session.get("_wallet") as RefCounted).call("add", int(words[2]))
+				"found":  # "!e5 found <region>": that country counts as visited
+					(fw5.get("found") as Dictionary)[words[2]] = true
+				"view":
+					var room5: Node3D = rooms5.get("_room")
+					player.call("teleport", room5.global_position + Vector3(float(words[2]), float(words[3]), float(words[4])), 0.0)
+					player.call("look_at_point", room5.global_position + Vector3(float(words[5]), float(words[6]), float(words[7])))
+				_:
+					var room5n: Node3D = rooms5.get("_room")
+					_lines.append("E5 %s: inside %s, room children %d, gil %d, here %s, at %s" % [" ".join(words.slice(1)), str(rooms5.call("inside")), room5n.get_child_count() if is_instance_valid(room5n) else -1, int((session.get("_wallet") as RefCounted).get("balance")), String((fw5.call("coach_here") as Dictionary).get("id", "-")), str((fw5.call("player_local") as Vector3).snapped(Vector3.ONE))])
 		"e4":  # (polish1 stage E4, bosses) "!e4 arena <boss> [m]": stand m metres (22) from its arena's middle looking in (it wakes at 45 m); "!e4 kill": the awake boss dies to our blow;
 			# "!e4 slain <boss> [off]": the lobby counts it beaten (its echo wakes next) or not; "!e4 respawn": every boss may wake now; "!e4 odds <ghost> <spectral>": the echo's drop chances;
 			# "!e4 look": face the awake boss; "!e4 page <boss> [phantom]"; "!e4 hud"; "!e4 trophy give|wear|off <id>", "!e4 tab", "!e4 press <key>", "!e4 note": trophies owned / worn, the relic, the awake boss

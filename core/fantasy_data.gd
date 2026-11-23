@@ -14,7 +14,7 @@ const FOLDER := "res://data/fantasy/"
 # {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "combat", "ground", "squad", "agility", "props", "text", "problems": PackedStringArray}
 static func load_all() -> Dictionary:
 	var d := {}
-	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad", "agility"]:
+	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad", "agility", "coaches"]:
 		d[part] = DataStore.load_json(FOLDER + part + ".json")
 	d["props"] = DataStore.load_json(FOLDER + "props.json")["props"]
 	var files := PackedStringArray([FOLDER + "writing/spells.txt", FOLDER + "writing/items.txt", FOLDER + "writing/skills.txt", FOLDER + "writing/buildings.txt"])

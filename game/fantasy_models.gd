@@ -133,11 +133,26 @@ static func glow() -> StandardMaterial3D:
 	return _glow
 
 
+static var _stained: StandardMaterial3D
+
+
+static func stained() -> StandardMaterial3D:
+	if _stained == null:
+		_stained = StandardMaterial3D.new()
+		_stained.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+		_stained.vertex_color_use_as_albedo = true
+		_stained.vertex_color_is_srgb = true
+		_stained.albedo_color = Color(1.1, 1.06, 1.0)  # a little brighter than its paint: daylight through it
+	return _stained
+
+
 # The material for a part made of `kind` (the material name the model scripts give it): a textured surface of
 # data/surfaces.json ("fx_<kind>") that keeps the part's own colour, plain paint for anything else.
 static func surface(kind: String) -> StandardMaterial3D:
 	if kind == "glow":
 		return glow()
+	if kind == "stained":  # (polish1 E5) stained glass: lit from behind, in its own colours
+		return stained()
 	if not KINDS.has(kind):
 		return paint()
 	var m := SurfaceLibrary.material("fx_" + kind, Color.WHITE)

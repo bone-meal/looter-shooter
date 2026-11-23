@@ -54,8 +54,12 @@ func door(item: Dictionary) -> Vector2:
 	return (f[0] as Vector2) - (f[2] as Vector2) * (float(size.get("d", 4.0)) * 0.5 + 0.9)
 
 
-# How large a building's room is inside (half width, half depth): its footprint without the walls, within limits.
-func half_size(model: String) -> Vector2:
+# How large a building's room is inside (half width, half depth): its footprint without the walls, within limits;
+# (polish1 E5) a room kind with its own "size" (the grand chapel) is that large whatever the building.
+func half_size(model: String, kind: String = "") -> Vector2:
+	var own: Array = (data["rooms"].get(kind, {}) as Dictionary).get("size", [])
+	if own.size() == 2:
+		return Vector2(float(own[0]), float(own[1])) * 0.5
 	var size: Dictionary = props.get(model, {})
 	if size.has("inner"):
 		return Vector2(float(size["inner"][0]), float(size["inner"][1]))

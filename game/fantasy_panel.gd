@@ -16,6 +16,7 @@ const PanelBag = preload("res://game/panel_bag.gd")
 const PanelQuests = preload("res://game/panel_quests.gd")
 const PanelSpells = preload("res://game/panel_spells.gd")
 const PanelStation = preload("res://game/panel_station.gd")
+const PanelCoach = preload("res://game/panel_coach.gd")
 
 const WINDOW := Vector2(990, 620)
 const SIDE_WIDTH := 300.0
@@ -60,7 +61,7 @@ func open_talk(who: Dictionary) -> void:
 
 func open_station(kind: String) -> void:
 	station = kind
-	open("Station")
+	open("Coach" if kind == "coach" else "Station")  # (polish1 E5) a coachman: the coach page
 
 
 func close_panel() -> void:
@@ -135,6 +136,8 @@ func _draw() -> void:
 			PanelSpells.draw(self, body, side)
 		"Station":
 			PanelStation.draw(self, body, side)
+		"Coach":
+			PanelCoach.draw(self, body, side)
 	scroll = minf(scroll, _reach)
 	if _reach > 0.0:  # a thin bar at the right edge of the page shows where the view is
 		var track := Rect2(body.end.x + 4.0, body.position.y, 3.0, body.size.y)
@@ -155,6 +158,8 @@ func _draw_tabs(frame: Rect2) -> void:
 	var list := TABS.duplicate()
 	if _page == "Talk":
 		list.append([String(person.get("name", "")), "talk"])
+	elif _page == "Coach":
+		list.append([String(world.data["coaches"].get("coachman", {}).get("name", "Coach")), "map"])
 	elif _page == "Station":
 		list.append([String(world.data["text"].get("station", {}).get(station, {}).get("name", station.capitalize())), String(world.skilling["stations"][station]["icon"])])
 	for i in list.size():

@@ -59,12 +59,15 @@ signal picked(item: String, count: int)  # (polish1 item 99) something came into
 signal skill_up(skill: String, level: int, opened: PackedStringArray)  # (polish1 item 104) the HUD's manuscript banner
 signal said(text: String, color: Color)  # a line for the chat box (quest text)
 signal boss_move(text: String, color: Color)  # a boss starts one of its special attacks (the HUD flashes its name)
+signal coach_left(destination: String)  # (polish1 E5) a coach ride began: the HUD's travel card
 signal vanquished(creature: String, phantom: bool, won: Array)  # (polish1 E4) a great creature fell: the HUD's page, what this player won
 signal fade  # the screen should fade (a door was used)
 signal changed  # bag, skills or quests changed: the HUD redraws, the session saves
 signal spell_cast(spell_name: String, mix: String)  # a spell left the staff (the session counts it: core/stat_book.gd)
 signal worked(skill: String, item: String, count: int, made: bool)  # gathered (made false) or crafted (made true)
 
+var gil := func() -> int: return 0  # (polish1 E5) the player's chips, called gil here (set by the session)
+var pay_gil := func(_n: int) -> bool: return false  # takes the fare (set by the session); false = not enough
 var trophy_gift := Callable()  # (polish1 E4) func(boss id, phantom, odds) -> lines: the session's boss trophies (game/boss_trophy_keeper.gd)
 var spell_uses := Callable()  # func(group "spells" | "spell_mixes", id) -> times cast (set by the session; the Spells page shows it)
 var data: Dictionary  # everything core/fantasy_data.gd loaded: world, quests, gear, skilling, spells, enemies, layouts, props, text
@@ -166,6 +169,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 		folk[String(region["id"])] = region["folk"]
 	folk["guard"] = data["world"]["guard_folk"]
 	places.setup(terrain, layout, folk)
+	places.add_coachmen(data.get("coaches", {}))  # (polish1 E5) a coachman at every walled town's coach house
 	LoadClock.mark("fantasy: every place laid out")
 	mana = max_mana()
 	add_child(work)
@@ -669,6 +673,54 @@ func heal_over_time(per_second: float, seconds: float) -> void:
 
 
 # --- experience, items, quests ---
+
+# --- (polish1 E5, item 126) coaches ---
+
+# Every walled town with its coach house: {id, name, region, region_name, at: Vector2, visited, km, fare} (km and fare
+# from where the player stands now).
+func coach_towns() -> Array:
+	var out: Array = []
+	var cfg: Dictionary = data["coaches"]
+	var me := player_local()
+	for place: Dictionary in terrain.places:
+		if not String(place["kind"]) in ["town", "town_palisade"]:
+			continue
+		var at := Vector2(float(place["pos"][0]), float(place["pos"][1]))
+		var km := at.distance_to(Vector2(me.x, me.z)) / 1000.0
+		var step := maxf(float(cfg.get("round", 5)), 1.0)
+		var fare := roundi((float(cfg.get("base", 25)) + float(cfg.get("per_km", 20)) * km) / step) * int(step)
+		var region := String(place["region"])
+		out.append({"id": String(place["id"]), "name": String(place["name"]), "region": region, "region_name": String(terrain.region_by_id(region).get("name", region)),
+			"at": at, "visited": found.has(region), "km": km, "fare": fare})
+	return out
+
+
+# The walled town whose coachman the player stands by ({} = none within its flat ring).
+func coach_here() -> Dictionary:
+	var me := player_local()
+	for town: Dictionary in coach_towns():
+		if (town["at"] as Vector2).distance_to(Vector2(me.x, me.z)) < float(terrain.place(String(town["id"])).get("flat", 50)) + 20.0:
+			return town
+	return {}
+
+
+# Rides to a walled town: it must be in a country already visited and the fare paid in gil. Returns a line for the
+# window ("" = gone).
+func coach_ride(target: String) -> String:
+	for town: Dictionary in coach_towns():
+		if String(town["id"]) != target:
+			continue
+		if not bool(town["visited"]):
+			return "The coach only goes to countries you have been to."
+		if not bool(pay_gil.call(int(town["fare"]))):
+			return "Not enough gil: the fare is %d." % int(town["fare"])
+		panel.close_panel()
+		coach_left.emit(String(town["name"]))
+		sound("ui_map")
+		get_tree().create_timer(0.7).timeout.connect(func() -> void: travel(target))  # behind the travel card
+		return ""
+	return ""
+
 
 # (polish1 E4, item 131) This player's share of a great creature's fall (every machine pays its own player): the
 # boss's relic the first time (any form), its trophies (the session), the vanquished page and its sound.

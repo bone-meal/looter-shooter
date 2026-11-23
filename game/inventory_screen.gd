@@ -55,6 +55,7 @@ var gun_keys: Array[String] = []
 var bank: RefCounted  # core/bank_state.gd while the window is open AT the bank (its slots show on the left), else null
 var bank_price := ""  # what the next bank upgrade costs, worded by the session ("" = no upgrade left)
 var chips := -1  # casino chips and points for the bottom bar (set by the session when it opens the window; -1 = hide)
+var chips_as := "chips"  # (polish1 E5) in Aurelind the same money is called gil, with its own coin
 var points := -1
 var doubloons := -1  # the sea's money (sea step 6), -1 = hide
 var look := {}  # the character's look for the portrait
@@ -873,7 +874,7 @@ func _draw_footer() -> void:
 	UiSkin.panel(self, f, UiSkin.INK_DEEP)
 	var x := f.position.x + 24.0
 	var y := f.position.y + 32.0
-	for money: Array in [["points", points], ["chips", chips], ["doubloons", doubloons]]:  # each with its own coin (game/currency_art.gd)
+	for money: Array in [["points", points], [chips_as, chips], ["doubloons", doubloons]]:  # each with its own coin (game/currency_art.gd)
 		if int(money[1]) < 0:
 			continue
 		CurrencyArt.draw(self, String(money[0]), Vector2(x + 9, y - 6), 10.0)

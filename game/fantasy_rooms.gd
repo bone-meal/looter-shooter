@@ -195,9 +195,9 @@ func _enter(door: Dictionary) -> void:
 	var rules: RefCounted = _world.get("interiors")
 	var item: Dictionary = door["item"]
 	var cfg: Dictionary = _world.data["interiors"]
-	var half: Vector2 = rules.call("half_size", String(item["model"]))
-	var high := float(cfg["room_height"])
+	var half: Vector2 = rules.call("half_size", String(item["model"]), String(door["kind"]))
 	var def: Dictionary = cfg["rooms"][String(door["kind"])]
+	var high := float(def.get("height", cfg["room_height"]))  # (polish1 E5) the grand chapel is taller
 	_anchor = Vector3(door["at"].x, _world.terrain.height(door["at"].x, door["at"].y), door["at"].y)
 	_outside = _world.call("world_of", _anchor + Vector3(0.0, 0.3, 0.0))
 	_out_dir = (door["at"] - Vector2(float(item["x"]), float(item["z"]))).normalized()  # from the building out through its door
@@ -212,19 +212,26 @@ func _enter(door: Dictionary) -> void:
 	var body := StaticBody3D.new()
 	_room.add_child(body)
 	_slab(body, ground, Vector3(half.x * 2.0 + 0.6, 0.3, half.y * 2.0 + 0.6), Vector3(0, -0.15, 0), true)
-	_slab(body, timber, Vector3(half.x * 2.0 + 0.6, 0.2, half.y * 2.0 + 0.6), Vector3(0, high + 0.1, 0), false)
+	if String(def.get("roof", "")) != "pitched":
+		_slab(body, timber, Vector3(half.x * 2.0 + 0.6, 0.2, half.y * 2.0 + 0.6), Vector3(0, high + 0.1, 0), false)
 	for side: float in [-1.0, 1.0]:
 		_slab(body, wall, Vector3(half.x * 2.0 + 0.6, high, 0.3), Vector3(0, high * 0.5, side * (half.y + 0.15)), true)
 		_slab(body, wall, Vector3(0.3, high, half.y * 2.0), Vector3(side * (half.x + 0.15), high * 0.5, 0), true)
-		_window(Vector3(side * half.x, 1.75, 0.0), side, timber, _real_view(item, side) if real_views else _view())
-	for k in 3:  # beams under the ceiling
-		_slab(body, timber, Vector3(0.2, 0.22, half.y * 2.0), Vector3(half.x * (float(k) - 1.0) * 0.6, high - 0.11, 0), false)
+		if not def.has("windows"):
+			_window(Vector3(side * half.x, 1.75, 0.0), side, timber, _real_view(item, side) if real_views else _view())
+	if String(def.get("roof", "")) == "pitched":
+		_pitched_roof(timber, wall, half, high)
+	else:
+		for k in 3:  # beams under the ceiling
+			_slab(body, timber, Vector3(0.2, 0.22, half.y * 2.0), Vector3(half.x * (float(k) - 1.0) * 0.6, high - 0.11, 0), false)
+	if def.has("windows"):
+		_tall_windows(def["windows"], half)
 	_slab(body, timber, Vector3(1.3, 2.15, 0.1), Vector3(0, 1.075, -half.y + 0.05), false)  # the door, on the front wall
 	var entry: Vector2 = rules.call("entry", half)
 	_exit = _room.global_position + Vector3(entry.x, 0.0, entry.y - 0.3)
 	var lamp := OmniLight3D.new()
 	lamp.light_color = Color(1.0, 0.84, 0.64)
-	lamp.light_energy = 1.5
+	lamp.light_energy = float(def.get("light", 1.5))
 	lamp.omni_range = maxf(half.x, half.y) * 2.0 + 3.0
 	lamp.position = Vector3(0.0, high - 0.6, 0.0)
 	_room.add_child(lamp)
@@ -324,6 +331,62 @@ func _slab(body: StaticBody3D, look: Material, size: Vector3, at: Vector3, solid
 		shape.shape = block
 		shape.position = at
 		body.add_child(shape)
+
+
+# (polish1 E5, item 122) A gable roof over a grand room: two slopes of boards from the wall tops to a ridge, the gable
+# ends closed in stone (stepped), and timber trusses (a tie beam, two rafters and a king post) every few metres. Drawn
+# only (nobody reaches the roof).
+func _pitched_roof(timber: Material, wall: Material, half: Vector2, high: float) -> void:
+	var rise := half.x * 0.6
+	var slope := atan2(rise, half.x)
+	var span := Vector2(half.x, rise).length() + 0.5
+	var boards := FantasyModels.tinted("wood", Color(0.36, 0.27, 0.18))
+	for side: float in [-1.0, 1.0]:
+		var face := _beam(boards, Vector3(span, 0.18, half.y * 2.0 + 0.6))
+		face.position = Vector3(side * half.x * 0.5, high + rise * 0.5, 0.0)
+		face.rotation.z = -side * slope
+	for step in 6:  # the gable ends, stepped up to the ridge
+		var t := (float(step) + 0.5) / 6.0
+		var width := half.x * 2.0 * (1.0 - t) + 0.6
+		for end: float in [-1.0, 1.0]:
+			var gable := _beam(wall, Vector3(width, rise / 6.0 + 0.02, 0.3))
+			gable.position = Vector3(0.0, high + rise * (float(step) + 0.5) / 6.0, end * (half.y + 0.15))
+	var trusses := maxi(int(half.y * 2.0 / 4.0), 2)
+	for k in trusses:
+		var z := -half.y + half.y * 2.0 * (float(k) + 0.5) / float(trusses)
+		_beam(timber, Vector3(half.x * 2.0, 0.3, 0.3)).position = Vector3(0.0, high - 0.15, z)  # the tie beam
+		_beam(timber, Vector3(0.24, rise, 0.24)).position = Vector3(0.0, high + rise * 0.5, z)  # the king post
+		for side: float in [-1.0, 1.0]:
+			var rafter := _beam(timber, Vector3(span - 0.4, 0.26, 0.26))
+			rafter.position = Vector3(side * half.x * 0.5, high + rise * 0.5 - 0.25, z)
+			rafter.rotation.z = -side * slope
+
+
+# (polish1 E5) Tall windows down both side walls (glass facing in) and a round one high on the back wall.
+func _tall_windows(spec: Dictionary, half: Vector2) -> void:
+	for along: Variant in spec.get("along", []):
+		for side: float in [-1.0, 1.0]:
+			var window := FantasyModels.scene(String(spec["model"]))
+			if window == null:
+				return
+			window.position = Vector3(side * (half.x - 0.05), float(spec.get("y", 0.0)), -float(along) * half.y)
+			window.rotation.y = side * PI * 0.5
+			_room.add_child(window)
+	if spec.has("rose"):
+		var rose := FantasyModels.scene(String(spec["rose"]))
+		if rose != null:
+			rose.position = Vector3(0.0, float(spec.get("rose_y", 6.0)), half.y - 0.05)  # (a model's front is -z: toward the door)
+			_room.add_child(rose)
+
+
+func _beam(look: Material, size: Vector3) -> MeshInstance3D:
+	var mesh := BoxMesh.new()
+	mesh.size = size
+	var drawn := MeshInstance3D.new()
+	drawn.mesh = mesh
+	drawn.material_override = look
+	_room.add_child(drawn)
+	return drawn
 
 
 # A still picture of what really is outside the building's side wall, taken once from where the window would be.

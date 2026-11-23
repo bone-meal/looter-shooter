@@ -13,7 +13,7 @@ signal station_opened(kind: String)
 const WATERS := {"fresh": "freshwater", "salt": "saltwater", "lava": "lava"}
 const VERBS := {"woodcutting": "Chop", "mining": "Mine", "fishing": "Fish at", "farming": "Reap", "alchemy": "Pick", "hunting": "Follow", "archaeology": "Dig at"}
 const STATION_NAMES := {"fire": "Cook at the fire", "forge": "Work the forge", "workbench": "Use the workbench", "cauldron": "Brew at the cauldron",
-	"sawhorse": "Saw at the sawhorse", "crafting_table": "Craft at the table"}
+	"sawhorse": "Saw at the sawhorse", "crafting_table": "Craft at the table", "coach": "Hire a coach"}  # (polish1 E5) the coach house itself opens the coach page too
 const TALK_REACH := 3.0
 
 var world: Node3D  # game/fantasy_world.gd
@@ -44,6 +44,8 @@ func blocked(def: Dictionary) -> String:
 func prompt(key: String) -> String:
 	var local: Vector3 = world.player_local()
 	var person: Dictionary = world.places.person_near(local, TALK_REACH)
+	if not person.is_empty() and bool(person.get("coach", false)):  # (polish1 E5) a coachman
+		return "[%s] Hire a coach (%s)" % [key, person["name"]]
 	if not person.is_empty():
 		return "[%s] Talk to %s" % [key, person["name"]]
 	if world.agility.busy():
@@ -90,6 +92,9 @@ func _reach_of(node: Dictionary) -> float:
 func interact() -> void:
 	var local: Vector3 = world.player_local()
 	var person: Dictionary = world.places.person_near(local, TALK_REACH)
+	if not person.is_empty() and bool(person.get("coach", false)):  # (polish1 E5) the coach page
+		station_opened.emit("coach")
+		return
 	if not person.is_empty():
 		var told: Array = []  # (polish1 item 103) quests waiting on a talk with this person: what they say for it
 		for qid: String in world.quests.active:

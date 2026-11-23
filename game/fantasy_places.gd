@@ -137,6 +137,27 @@ func _add_guard(place: Dictionary, n: int, looks: Array, spot: Vector2, words: D
 	return who
 
 
+# (polish1 E5, item 126) The coachman of every walled town: standing before its coach house (layout station
+# "coach"), facing the town's middle; data/fantasy/coaches.json gives his name and look. Talking to him opens the
+# coach page (game/fantasy_work.gd).
+func add_coachmen(coaches: Dictionary) -> void:
+	var who: Dictionary = coaches.get("coachman", {})
+	var lines: Array = coaches.get("lines", [])
+	for place: Dictionary in terrain.places:
+		if not String(place["kind"]) in ["town", "town_palisade"]:
+			continue
+		for item: Dictionary in layout.place_items(place):
+			if String(item["station"]) != "coach":
+				continue
+			var turn := float(item["turn"])
+			var front := Vector2(-sin(turn), -cos(turn))  # a model's front is its -z
+			var spot := layout.push_out(float(item["x"]) + front.x * 3.9 + front.y * 1.4, float(item["z"]) + front.y * 3.9 - front.x * 1.4, 0.9)
+			var mid := Vector2(float(place["pos"][0]), float(place["pos"][1]))
+			people.append({"id": "coachman:%s" % place["id"], "name": String(who.get("name", "Coachman")), "at": Vector3(spot.x, terrain.height(spot.x, spot.y), spot.y),
+				"place": String(place["id"]), "greet": String(lines[0]) if not lines.is_empty() else "", "folk": true, "node": null, "mark": null,
+				"look": (who.get("look", {}) as Dictionary).duplicate(), "coach": true, "yaw": atan2(spot.x - mid.x, spot.y - mid.y)})
+
+
 # One frame of a guard's round: towards the next point of its path, halting while a player stands close.
 # Returns how fast it walks (0..1) for its animation.
 func _walk(who: Dictionary, delta: float) -> float:

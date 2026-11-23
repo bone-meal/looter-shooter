@@ -1354,6 +1354,7 @@ func _toggle_inventory() -> void:
 		for n in InventoryState.HOLSTERS:
 			_inventory_screen.gun_keys.append(InputSetup.label(settings, "weapon_%d" % (n + 1)))
 		_inventory_screen.chips = _wallet.balance  # the bottom bar
+		_inventory_screen.chips_as = "gil" if _in_fantasy else "chips"  # (polish1 E5) the same money, called gil in Aurelind
 		_inventory_screen.doubloons = _doubloons.balance
 		_inventory_screen.points = _score.points
 		_inventory_screen.look = _player.appearance  # the character in the left panel
@@ -6220,6 +6221,12 @@ func _build_fantasy() -> void:
 		_stats.add_to("skill_actions", skill)
 		_stats.add_to("made" if made else "gathered", item, float(count)))
 	_fantasy.spell_uses = func(group: String, id: String) -> float: return _stats.count_in(group, id)
+	_fantasy.gil = func() -> int: return _wallet.balance  # (polish1 E5) the chips, called gil in Aurelind: coach fares
+	_fantasy.pay_gil = func(n: int) -> bool:
+		if not _wallet.spend(n):
+			return false
+		save_profile()
+		return true
 	_fantasy.trophy_gift = _trophies.on_boss  # (polish1 E4) a boss kill's trophies (game/boss_trophy_keeper.gd)
 	_fantasy_exit = _fantasy.exit_world()
 	Island.build_painting(self, _fantasy_exit, PaintingArt.island_texture())

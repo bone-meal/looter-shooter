@@ -1,5 +1,5 @@
 {
- "_about": "What stands where in the fantasy world's places (rules: core/fantasy_layout.gd; sizes: data/fantasy/props.json). kinds: one list of rules per place kind (data/fantasy/world.json places.kind). A rule is ONE thing {model, at} or SEVERAL {models, count, ring} or a WALL {wall, gate, gates, ring, tower}: the wall closes right up to its gates, the road through each gate is kept clear, tower = a model built into the wall beside each gate. at and ring are fractions of the place's flat radius (at_m and ring_m = metres); face: in | out | any; even = spaced evenly around the ring; station = a crafting station stands there; $ in a model name = the region's building scheme; extras = that many things from the region's own list below. sites: small spots scattered through the country (metres), region_sites: how often each kind turns up in a region. Things never overlap: a thing that does not fit is left out. walk_over: the models nobody bumps into (they lie flat, hang overhead or are too small); everything else in the world is solid to players and creatures. no_salt: true on a rule added later keeps the chance placements of the rules after it where they were. (polish1 item 123) the textless signposts in the place rings are gone: game/fantasy_places.gd puts named road signs where each road leaves a place. (polish1 E4) a place may name its own rules with world.json 'layout' (the Harvest King's arena: arena_threshing, a threshing ground of stooks, flail racks, haystacks and loose straw round the old threshing floor).",
+ "_about": "What stands where in the fantasy world's places (rules: core/fantasy_layout.gd; sizes: data/fantasy/props.json). kinds: one list of rules per place kind (data/fantasy/world.json places.kind). A rule is ONE thing {model, at} or SEVERAL {models, count, ring} or a WALL {wall, gate, gates, ring, tower}: the wall closes right up to its gates, the road through each gate is kept clear, tower = a model built into the wall beside each gate. at and ring are fractions of the place's flat radius (at_m and ring_m = metres); face: in | out | any; even = spaced evenly around the ring; station = a crafting station stands there; $ in a model name = the region's building scheme; extras = that many things from the region's own list below. sites: small spots scattered through the country (metres), region_sites: how often each kind turns up in a region. Things never overlap: a thing that does not fit is left out. walk_over: the models nobody bumps into (they lie flat, hang overhead or are too small); everything else in the world is solid to players and creatures. station on a SEVERAL rule = each one placed is that station (it gets 60 tries to fit instead of 5; polish1 E5: the coach house of walled towns); no_salt: true on a rule added later keeps the chance placements of the rules after it where they were. (polish1 item 123) the textless signposts in the place rings are gone: game/fantasy_places.gd puts named road signs where each road leaves a place. (polish1 E4) a place may name its own rules with world.json 'layout' (the Harvest King's arena: arena_threshing, a threshing ground of stooks, flail racks, haystacks and loose straw round the old threshing floor).",
  "kinds": {
   "town": [
    {
@@ -203,6 +203,19 @@
     "ring": 0.95,
     "face": "in",
     "even": true
+   },
+   {
+    "station": "coach",
+    "models": [
+     "coach_house"
+    ],
+    "count": 1,
+    "ring": [
+     0.3,
+     0.8
+    ],
+    "face": "in",
+    "no_salt": true
    }
   ],
   "town_palisade": [
@@ -408,6 +421,19 @@
     "ring": 0.95,
     "face": "in",
     "even": true
+   },
+   {
+    "station": "coach",
+    "models": [
+     "coach_house"
+    ],
+    "count": 1,
+    "ring": [
+     0.3,
+     0.8
+    ],
+    "face": "in",
+    "no_salt": true
    }
   ],
   "town_open": [
