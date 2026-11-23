@@ -66,6 +66,7 @@ var _title := Label.new()
 var _hint := Label.new()
 var _buttons := HBoxContainer.new()
 var _big: Control  # a turned card shown big under the mouse
+var _skipping := false  # the card being turned was clicked through: its trip to the row goes fast too
 var _summary := ScrollContainer.new()
 var _summary_grid := GridContainer.new()
 var _item := ""  # (polish1 item 77) the unopened purchase being opened: "single", "bundle_5", "bundle_10", "box" ("" = the list)
@@ -263,6 +264,7 @@ func _stage_input(event: InputEvent) -> void:
 				for tw: Variant in _flip_tweens:
 					if (tw as Tween).is_valid():
 						(tw as Tween).set_speed_scale(14.0)
+				_skipping = true
 			else:
 				_turn_next()
 	elif event is InputEventMouseMotion and _state == "stack" and _drag_from >= 0.0 and not _busy:
@@ -409,8 +411,9 @@ func _to_row(face: Control, card: Dictionary) -> void:
 	var spot := Vector2((W - width) * 0.5 + i * (ROW.x + gap), ROW_TOP)
 	face.z_index = 0
 	var t := create_tween().set_parallel(true)
-	if not _flip_tweens.is_empty() and (_flip_tweens[0] as Tween).get_speed_scale() > 1.0:
+	if _skipping:  # (Tween has no get_speed_scale in 4.6: the call stopped this card here and the pack hung, polish1 item 165)
 		t.set_speed_scale(14.0)  # a skipped card goes to its row at once too
+		_skipping = false
 	_flip_tweens.append(t)
 	t.tween_property(face, "position", spot, 0.3).set_ease(Tween.EASE_OUT)
 	t.tween_property(face, "size", ROW, 0.3)

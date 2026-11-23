@@ -1,1 +1,15 @@
-Release v1.17
+Polish1 stage G: quick fixes from the play-through list part 4
+
+- Crates open again: the opening screen comes to the front of its layer and covers the screen (clicks on OPEN went to the Cases tab under it) (169).
+- Pack opening no longer stops after the first card (a Tween call that does not exist in 4.6 halted it) (165).
+- Back to the hub from bhop checkpoints too (141).
+- Island rock ridges: no see-through holes at their low ends (faces were wound inward) (150).
+- Round call-out sits under the power-up icons (151); crossbow bolts on the ground bigger with glowing flights (147).
+- Copper ore no longer vanishes: the smelting and icefin quests keep the items their next step needs; a hand-in is always told (161).
+- Max ammo fills the magazines too (152); Spells volume starts at 50 % (158); combat report picture is still (157); inventory preview breathes smoothly (142); crabs scuttle quietly when close (153).
+- Damage numbers shrink with distance and hide behind land and sea (146).
+- Club, games room and casino get soft fill light on Forward+; pool pockets have lit brass liners (166).
+- Dev: !lclick, !case rclick, !tcg packs click, !prompt, !window, !stand; quiet test window size settable.
+
+Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

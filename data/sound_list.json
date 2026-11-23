@@ -288,6 +288,10 @@
      "label": "Enemy claws"
     },
     {
+     "id": "crab_scuttle",
+     "label": "Crab scuttling close by"
+    },
+    {
      "id": "atk_slam",
      "label": "Heavy enemy blow"
     },

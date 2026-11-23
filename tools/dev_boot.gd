@@ -5,6 +5,7 @@
 # Dependencies: the running game (finds the player by its set_third_person method).
 extends Node
 
+const QuietTestScript = preload("res://game/quiet_test.gd")
 const MaskModelDev = preload("res://game/mask_model.gd")
 const Threat = preload("res://core/sea/threat_rules.gd")
 const DeckWalkDev = preload("res://core/sea/deck_walk.gd")
@@ -3238,6 +3239,30 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var book: RefCounted = session.get("_stats")
 				_lines.append("CARD %s: totals %s | kills by enemy %s | by weapon %s | gathered %s | spells %s" % [" ".join(words.slice(1)), JSON.stringify(book.get("totals")), str(book.call("group", "kills_by_enemy")), str(book.call("group", "kills_by_weapon")), str(book.call("group", "gathered")), str(book.call("group", "spells"))])
+		"stand":  # "!stand x y z [yaw deg]": stand at that world spot (any world), facing yaw
+			player.call("teleport", Vector3(float(words[1]), float(words[2]), float(words[3])), deg_to_rad(float(words[4])) if words.size() > 4 else 0.0)
+		"window":  # "!window 1600 900": the quiet test window's size from now on (pictures at that size; it never takes focus)
+			QuietTestScript.size = Vector2i(int(words[1]), int(words[2]))
+		"prompt":  # "!prompt <note>": the interact prompt shown now
+			_lines.append("PROMPT %s: '%s'" % [" ".join(words.slice(1)), String(session.call("_prompt"))])
+		"lclick":  # "!lclick 300 400": a real left click at that window spot (press, then release), through the GUI as a player's would
+			var at_c := Vector2(float(words[1]), float(words[2]))
+			get_viewport().warp_mouse(at_c)
+			var mv := InputEventMouseMotion.new()
+			mv.position = at_c
+			mv.global_position = at_c
+			mv.relative = Vector2(1, 0)
+			get_viewport().push_input(mv, true)
+			for down_c: bool in [true, false]:
+				var btn := InputEventMouseButton.new()
+				btn.button_index = MOUSE_BUTTON_LEFT
+				btn.pressed = down_c
+				btn.position = at_c
+				btn.global_position = at_c
+				get_viewport().push_input(btn, true)
+				await get_tree().process_frame
+			var hov := get_viewport().gui_get_hovered_control()
+			_lines.append("LCLICK %s: hovered %s" % [str(at_c), str(hov.get_path()) if hov != null else "none"])
 		"mouse":  # "!mouse 300 400": the mouse moves to that window spot (tooltips show after their delay)
 			var at := Vector2(float(words[1]), float(words[2]))
 			get_viewport().warp_mouse(at)
@@ -3405,6 +3430,30 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					var key_c := " ".join(words.slice(2))
 					var target: Node = opening if opening.visible else session.get("_case_tab")
 					_lines.append("CASE press %s: %s" % [key_c, target.call("press", key_c)])
+				"rclick":  # "!case rclick <key>": a REAL left click on that control (polish1 item 169: the click path, not press())
+					var key_r := " ".join(words.slice(2))
+					var tgt: Control = opening if opening.visible else session.get("_case_tab")
+					var found := false
+					for hit_r: Array in tgt.get("_hits"):
+						if String(hit_r[2]) == key_r:
+							found = true
+							var at_r: Vector2 = tgt.get_global_transform_with_canvas() * (hit_r[0] as Rect2).get_center()
+							var mv_r := InputEventMouseMotion.new()
+							mv_r.position = at_r
+							mv_r.global_position = at_r
+							get_viewport().push_input(mv_r, true)
+							for down_r: bool in [true, false]:
+								var b_r := InputEventMouseButton.new()
+								b_r.button_index = MOUSE_BUTTON_LEFT
+								b_r.pressed = down_r
+								b_r.position = at_r
+								b_r.global_position = at_r
+								get_viewport().push_input(b_r, true)
+								await get_tree().process_frame
+							var hv_r := get_viewport().gui_get_hovered_control()
+							_lines.append("CASE rclick %s at %s: hovered %s, opening visible %s phase %s rect %s index %d of %d, cases %s, free slots %d" % [key_r, str(at_r), str(hv_r.get_path()) if hv_r != null else "none", str(opening.visible), str(opening.get("_phase")), str(opening.get_global_rect()), opening.get_index(), opening.get_parent().get_child_count(), str(shelf.get("counts")), int(session.call("_free_slots"))])
+					if not found:
+						_lines.append("CASE rclick %s: no such control on %s (keys %s)" % [key_r, tgt.name, str((tgt.get("_hits") as Array).map(func(h: Array) -> String: return String(h[2])))])
 				"buy":
 					for c: Dictionary in session.get("_crates"):
 						if String(c["id"]) == words[2]:
@@ -3994,6 +4043,24 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					tabs.current_tab = tabs.get_tab_idx_from_control(binder)
 					binder.call("refresh")
 					(binder.get("_open_button") as Button).pressed.emit()
+				elif opening != null and words[2] == "click":  # "!tcg packs click [note]": a REAL left click on the card stack's middle (polish1 item 165)
+					var stg: Control = opening.get("_stage")
+					var at_p: Vector2 = stg.get_global_transform_with_canvas() * Vector2(576, 225)
+					var mv_p := InputEventMouseMotion.new()
+					mv_p.position = at_p
+					mv_p.global_position = at_p
+					get_viewport().push_input(mv_p, true)
+					await get_tree().process_frame
+					for down_p: bool in [true, false]:
+						var bt := InputEventMouseButton.new()
+						bt.button_index = MOUSE_BUTTON_LEFT
+						bt.pressed = down_p
+						bt.position = at_p
+						bt.global_position = at_p
+						get_viewport().push_input(bt, true)
+						await get_tree().process_frame
+					var hv := get_viewport().gui_get_hovered_control()
+					_lines.append("TCG PACKS click %s at %s: state %s busy %s stack %d row %d hovered %s" % [" ".join(words.slice(3)), str(at_p), str(opening.get("_state")), str(opening.get("_busy")), (opening.get("_stack") as Array).size(), (opening.get("_row") as Array).size(), str(hv.get_path()) if hv != null else "none"])
 				elif opening != null:
 					opening.call("dev_step", words[2])
 			elif words[1] == "mat":  # "!tcg mat <id>": own that play mat and lay it as ours

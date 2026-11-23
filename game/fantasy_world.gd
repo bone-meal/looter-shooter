@@ -866,6 +866,7 @@ func _claim_steps() -> void:
 			passed = true
 			if bool(step.get("take", false)):
 				bag.remove(String(step["item"]), int(step["count"]))
+				notice.emit("Handed over %d %s" % [int(step["count"]), bag.item_name(String(step["item"]))])
 		elif String(step["type"]) == "skill" and skills.level(String(step["skill"])) >= int(step["level"]):
 			passed = true
 		if passed:
@@ -880,6 +881,7 @@ func _apply(changes: Array) -> void:
 	for change: Dictionary in changes:
 		for item: String in change.get("take", {}):
 			bag.remove(item, int(change["take"][item]))
+			notice.emit("Handed over %d %s" % [int(change["take"][item]), bag.item_name(item)])  # (polish1 item 161) never silently
 		if bool(change["finished"]):
 			reward(String(change["quest"]))
 			if party != null:

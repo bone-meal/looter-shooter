@@ -26,7 +26,8 @@ var dev_commands := true  # chat commands such as /give (game/admin_commands.gd)
 var volume := 1.0  # master volume 0..1
 var muted_sounds: Array = []  # sound ids switched off on the Sounds page (data/sound_list.json, game/sound_board.gd)
 var loot_filter := {}  # (polish1 item 68) core/loot_filter.gd: min tier, beams off, highlights (cleaned where used)
-var sound_groups := {}  # (polish1 item 3) group name of data/sound_list.json -> its volume 0..1 (missing = 1)
+const GROUP_DEFAULTS := {"Spells": 0.5}  # (polish1 item 158) groups that do not start at full volume
+var sound_groups := GROUP_DEFAULTS.duplicate()  # (polish1 item 3) group name of data/sound_list.json -> its volume 0..1 (missing = 1)
 var crosshair := {}  # the player's crosshair (Settings > Crosshair): field id -> number + "name"; {} = the first preset. Cleaned by core/crosshair_style.gd where used
 
 
@@ -69,7 +70,7 @@ func from_dict(d: Dictionary) -> void:
 	var filtered: Variant = d.get("loot_filter", {})
 	loot_filter = (filtered as Dictionary).duplicate(true) if filtered is Dictionary else {}
 	var groups: Variant = d.get("sound_groups", {})
-	sound_groups = {}
+	sound_groups = GROUP_DEFAULTS.duplicate()  # a group never set keeps its default (Spells 50 %)
 	if groups is Dictionary:
 		for g: Variant in groups:
 			sound_groups[String(g)] = clampf(float(groups[g]), 0.0, 1.0)

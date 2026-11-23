@@ -5126,6 +5126,8 @@ func _apply_power(kind: String) -> void:
 	match kind:
 		"max_ammo":
 			_player.pools.fill_all()
+			_player.refill_magazines()  # (polish1 item 152) the magazines too (filled from the pools ...)
+			_player.pools.fill_all()  # (... which are then topped up again)
 		"nuke":
 			_player_hud.flash_white()
 			_score.give(int(entry["points"]) * _powerups.points_mult(_time))
@@ -5624,7 +5626,7 @@ func _course_exit_here() -> bool:
 		return false
 	var local := _player.global_position - _course_root.position
 	var under := _course.pad_at(local.x, local.z, local.y)
-	return under >= 0 and under in [_course.start_index(), _course.finish_index()]
+	return under >= 0 and (under in [_course.start_index(), _course.finish_index()] or String((_course.pads[under] as Dictionary).get("kind", "")) == "checkpoint")  # (polish1 item 141) checkpoints too
 
 
 # At the hub's arch back to the islands.

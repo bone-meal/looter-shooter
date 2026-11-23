@@ -127,6 +127,28 @@ func _frame() -> void:
 	var cn := MultiMeshInstance3D.new()
 	cn.multimesh = cups
 	add_child(cn)
+	# (polish1 item 166) a pale brass liner round each pocket's mouth, faintly lit, so the pockets read in the dark room
+	var ring := TorusMesh.new()
+	ring.inner_radius = 0.07
+	ring.outer_radius = 0.088
+	ring.rings = 18
+	ring.ring_segments = 6
+	var brass := _mat(Color(0.85, 0.66, 0.3), 0.35)
+	brass.metallic = 0.6
+	brass.emission_enabled = true
+	brass.emission = Color(0.55, 0.42, 0.18)
+	brass.emission_energy_multiplier = 0.6
+	ring.material = brass
+	var rings := MultiMesh.new()
+	rings.transform_format = MultiMesh.TRANSFORM_3D
+	rings.mesh = ring
+	rings.instance_count = pockets.size()
+	for k in pockets.size():
+		var p2: Vector2 = pockets[k]
+		rings.set_instance_transform(k, Transform3D(Basis.IDENTITY, Vector3(p2.x, CLOTH_Y + 0.012, p2.y)))
+	var rn := MultiMeshInstance3D.new()
+	rn.multimesh = rings
+	add_child(rn)
 	# pearl sights on the rail tops
 	var dot := SphereMesh.new()
 	dot.radius = 0.008

@@ -1008,6 +1008,17 @@ func select_hand(index: int) -> void:
 
 
 # The whole inventory was replaced (a save was loaded): nothing that was in hand before counts any more.
+# Every ready gun's magazine full at once (Full Clip; the islands' max ammo power-up, polish1 item 152).
+func refill_magazines() -> void:
+	for w in _ready_weapons:
+		if w != null:
+			w.refill()
+	weapon.refill()
+	for i in inventory.holster_count:
+		if _ready_weapons[i] != null:
+			inventory.loaded[i] = _ready_weapons[i].ammo
+
+
 func reload_inventory() -> void:
 	for i in InventoryState.HOLSTERS:
 		_ready_weapons[i] = null
@@ -2210,13 +2221,7 @@ func _self_skill(entry: Dictionary, forward: Vector3, now: float) -> void:
 			health.heal(health.max_hp * float(v.call("heal")) / 100.0)
 			self_fx.start_rush(now, v.call("seconds"), v.call("speed"), v.call("leech"))
 		"full_clip":
-			for w in _ready_weapons:
-				if w != null:
-					w.refill()
-			weapon.refill()
-			for i in inventory.holster_count:
-				if _ready_weapons[i] != null:
-					inventory.loaded[i] = _ready_weapons[i].ammo
+			refill_magazines()
 			self_fx.start_clip(now, v.call("seconds"), v.call("damage"))
 		"overshield":
 			self_fx.start_shield(now, v.call("seconds"), health.max_hp * float(v.call("shield")) / 100.0)

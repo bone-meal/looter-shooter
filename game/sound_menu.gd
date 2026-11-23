@@ -227,12 +227,13 @@ func _unmute_all() -> void:
 
 
 func _reset_volumes() -> void:
-	settings.sound_groups.clear()
+	settings.sound_groups = settings.GROUP_DEFAULTS.duplicate()  # (polish1 item 158) Spells back to 50 %
 	SoundBoard.set_groups(settings.sound_groups)
 	for group_name: String in _groups:
 		var slider := (_groups[group_name]["card"] as Node).find_children("*", "HSlider", true, false)[0] as HSlider
-		slider.set_value_no_signal(1.0)
-		((slider.get_parent() as Node).get_child(2) as Label).text = "100 %"
+		var v := float(settings.sound_groups.get(group_name, 1.0))
+		slider.set_value_no_signal(v)
+		((slider.get_parent() as Node).get_child(2) as Label).text = "%d %%" % roundi(v * 100.0)
 	changed.emit()
 
 

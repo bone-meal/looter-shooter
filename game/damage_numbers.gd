@@ -30,8 +30,9 @@ func _ready() -> void:
 	for i in POOL_SIZE:
 		var label := Label3D.new()
 		label.billboard = BaseMaterial3D.BILLBOARD_ENABLED
-		label.fixed_size = true
-		label.no_depth_test = true
+		label.fixed_size = true  # a screen size, scaled down with distance in _process (polish1 item 146)
+		label.no_depth_test = false  # (polish1 item 146) hidden behind land and the sea, as anything else there
+		label.render_priority = 10
 		label.pixel_size = 0.0012
 		label.font_size = BASE_FONT
 		label.outline_size = 12
@@ -66,6 +67,9 @@ func spawn(at: Vector3, amount: float, crit := false, target: Object = null) -> 
 	_targets[i] = id
 	_totals[i] += amount
 	_starts[i] = at + Vector3(randf_range(-0.3, 0.3), 0.2, randf_range(-0.3, 0.3))
+	var cam := get_viewport().get_camera_3d()
+	if cam != null:  # (polish1 item 146) a little toward the camera, so the depth test does not bury it in the body it hit
+		_starts[i] += (cam.global_position - _starts[i]).normalized() * 0.7
 	_ages[i] = 0.0
 	_pops[i] = 1.0 if crit else 0.5
 	var label := _labels[i]
@@ -111,6 +115,10 @@ func _process(delta: float) -> void:
 			_targets[i] = 0
 			continue
 		_pops[i] = maxf(_pops[i] - delta * 5.0, 0.0)
-		label.pixel_size = 0.0012 * (1.0 + 0.45 * _pops[i])
+		var far := 1.0  # (polish1 item 146) full size within 8 m, shrinking with distance to 40 % at 40 m and beyond
+		var cam := get_viewport().get_camera_3d()
+		if cam != null:
+			far = clampf(8.0 / maxf(cam.global_position.distance_to(_starts[i]), 0.01), 0.4, 1.0)
+		label.pixel_size = 0.0012 * (1.0 + 0.45 * _pops[i]) * far
 		label.global_position = _starts[i] + Vector3(0, _ages[i] * RISE_SPEED, 0)
 		label.modulate.a = 1.0 - _ages[i] / LIFETIME

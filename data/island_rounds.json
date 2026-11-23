@@ -210,6 +210,9 @@
   "sea_crawler": {
    "model": "en_reef_crab",
    "remains": "gulls",
+   "near_sound": "crab_scuttle",
+   "near_range": 9.0,
+   "near_every": 0.8,
    "max_hp": 14,
    "speed": 6.8,
    "attack_type": "melee",

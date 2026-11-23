@@ -65,6 +65,12 @@ func show_case(crate: Dictionary, count: int) -> void:
 	left = count
 	_phase = "case"
 	_t = 0.0
+	# (polish1 item 169) over everything that shares its layer (the player card it is opened from) and the whole
+	# screen: clicks on OPEN went to the Cases tab underneath, so crates could not be opened
+	if get_parent() != null:
+		get_parent().move_child(self, -1)
+	position = Vector2.ZERO
+	size = get_viewport_rect().size
 	visible = true
 	set_process(true)
 

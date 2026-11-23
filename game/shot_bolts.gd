@@ -158,17 +158,17 @@ func _land(shot: Dictionary, point: Vector3, normal: Vector3, collider: Object, 
 				_query.collision_mask = 3
 				at = floor_hit.position if not floor_hit.is_empty() else point
 				vel = Vector3(vel.x, -vel.length() * 0.2, vel.z)
-			_lie(_look("bolt"), at, vel, shooter, float(stats["lie_seconds"]))
+			_lie(_look("bolt_lying"), at, vel, shooter, float(stats["lie_seconds"]), 0.06)  # (polish1 item 147) a bigger bolt with glowing flights, barely buried: easy to spot and pick up
 
 
-func _lie(look: Node3D, point: Vector3, vel: Vector3, shooter: Node3D, seconds: float) -> void:
+func _lie(look: Node3D, point: Vector3, vel: Vector3, shooter: Node3D, seconds: float, buried: float = 0.15) -> void:
 	while _lying.size() >= LYING:
 		(_lying[0]["node"] as Node3D).queue_free()
 		_lying.remove_at(0)
 	var node := Node3D.new()
 	node.add_child(look)
 	add_child(node)
-	node.position = point - vel.normalized() * 0.15  # half of it in whatever it hit
+	node.position = point - vel.normalized() * buried  # partly in whatever it hit
 	if vel.length() > 0.1:
 		node.look_at(node.position + vel, Vector3.UP if absf(vel.normalized().y) < 0.99 else Vector3.FORWARD)
 	_lying.append({"node": node, "until": Time.get_ticks_msec() / 1000.0 + seconds, "shooter": shooter if shooter != null else null})
@@ -235,6 +235,18 @@ func _make(kind: String) -> Array:
 				[_cone(0.012, 0.05), steel, Transform3D(along, Vector3(0, 0, -0.235))],
 				[_box(Vector3(0.002, 0.03, 0.07)), flight, Transform3D(Basis(), Vector3(0, 0.012, 0.17))],
 				[_box(Vector3(0.03, 0.002, 0.07)), flight, Transform3D(Basis(), Vector3(0, 0, 0.17))]]
+		"bolt_lying":  # (polish1 item 147) on the ground to be picked up: 1.6x, flights glowing, a glow at the tail
+			var k := 1.6
+			var tip := SphereMesh.new()
+			tip.radius = 0.035
+			tip.height = 0.07
+			tip.radial_segments = 8
+			tip.rings = 4
+			return [[_rod(0.006 * k, 0.42 * k), wood, Transform3D(along, Vector3.ZERO)],
+				[_cone(0.012 * k, 0.05 * k), steel, Transform3D(along, Vector3(0, 0, -0.235 * k))],
+				[_box(Vector3(0.003, 0.03 * k, 0.07 * k)), FxKit.glow(Color(1.0, 0.45, 0.2), true), Transform3D(Basis(), Vector3(0, 0.012 * k, 0.17 * k))],
+				[_box(Vector3(0.03 * k, 0.003, 0.07 * k)), FxKit.glow(Color(1.0, 0.45, 0.2), true), Transform3D(Basis(), Vector3(0, 0, 0.17 * k))],
+				[tip, FxKit.glow(Color(1.0, 0.6, 0.3), true), Transform3D(Basis(), Vector3(0, 0, 0.21 * k))]]
 		"flare":
 			var ball := SphereMesh.new()
 			ball.radius = 0.05

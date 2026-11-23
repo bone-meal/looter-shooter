@@ -106,7 +106,7 @@ func _draw_round(ci: CanvasItem, view: Vector2, a: float, grow: float) -> void:
 	var digits := str(int(_banner["number"])).length()
 	var num_w := NUMBER_H * (ChalkMarks.DIGIT_W + 0.14) * float(digits)
 	var left := (view.x - word_w - 24.0 - num_w) * 0.5
-	var top := view.y * 0.1
+	var top := maxf(view.y * 0.1, 168.0)  # (polish1 item 151) under the power-up icons along the top (game/player_hud.gd, down to ~y 160)
 	_chalk_text(ci, Vector2(left, top + NUMBER_H * 0.82), word, size, color)
 	ChalkMarks.number(ci, Vector2(left + word_w + 24.0, top), int(_banner["number"]), NUMBER_H, color)
 	var line := String(_banner["line"])

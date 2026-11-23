@@ -17,6 +17,7 @@ func build(report: Dictionary) -> void:
 	var left := VBoxContainer.new()
 	add_child(left)
 	var picture := PortraitView.new()
+	picture.still = true  # (polish1 item 157) no animated player in the report
 	left.add_child(picture)
 	picture.show_look(report.get("look", {}))
 	for line: String in report.get("under_portrait", []):

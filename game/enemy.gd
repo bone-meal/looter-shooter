@@ -53,6 +53,7 @@ var _path_i := 0
 var _path_at := 0.0
 var _path_goal := Vector3.INF
 var feud := ""  # fantasy tribes: the banner this warrior fights for ("" = none)
+var _near_t := 0.0  # (polish1 item 153) time to the next close-by sound
 var sounds: Node  # the game's sound player (game/fantasy_sounds.gd with data/sounds.json), set by game/wave_director.gd; null = silent
 var order_goal := Vector3.INF  # squad order (game/squad_command.gd): walk to this spot instead of straight at the target
 var order_attack := true  # squad order: it may strike now (false = it waits its turn)
@@ -439,6 +440,12 @@ func _physics_process(delta: float) -> void:
 		return
 	if not is_instance_valid(_target):
 		return
+	if _stats.has("near_sound"):  # (polish1 item 153) a quiet sound now and then while it closes in (crabs scuttle)
+		_near_t -= delta
+		if _near_t <= 0.0:
+			_near_t = float(_stats.get("near_every", 1.0)) * randf_range(0.8, 1.25)
+			if global_position.distance_to(_target.global_position) < float(_stats.get("near_range", 8.0)) and velocity.length() > 0.5:
+				_say(String(_stats["near_sound"]))
 	if not _climb.is_empty():  # (polish1 D4d) up or down a trunk or a stilt
 		_climbing(delta)
 		return

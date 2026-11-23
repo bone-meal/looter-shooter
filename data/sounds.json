@@ -10,6 +10,7 @@
   "hub_tick": {"volume": -10, "pitch": [1.0, 1.0], "range": 0},
   "sting_round_end": {"volume": -9, "pitch": [1.0, 1.0], "range": 0},
   "achievement_chime": {"volume": -12, "pitch": [1.0, 1.0], "range": 0},
+  "crab_scuttle": {"volume": -19, "pitch": [0.85, 1.15], "range": 10},
   "dart_throw": {"volume": -14, "pitch": [0.92, 1.08], "range": 12},
   "dart_hit": {"volume": -8, "pitch": [0.9, 1.1], "range": 15},
   "dart_bust": {"volume": -12, "pitch": [1.0, 1.0], "range": 0},

@@ -9,7 +9,9 @@ const BodyBuilder = preload("res://game/body_builder.gd")
 var _port := SubViewport.new()
 var _model: Node3D
 var _since := 1.0
-const STEP := 1.0 / 15.0  # the breathing is posed and drawn 15 times a second, not every frame (cheap on low-end machines)
+var still := false  # (polish1 item 157) the Combat Report's picture: posed and drawn a few frames after it shows, then left still
+var _still_left := 3
+const STEP := 0.0  # (polish1 item 142) the breathing posed and drawn every frame: at 15 a second it read as lag in the inventory
 
 
 func _init() -> void:
@@ -53,12 +55,17 @@ func show_look(look: Dictionary) -> void:
 		_model = BodyBuilder.build(look)
 	_model.rotation.y = PI - deg_to_rad(18.0)  # facing the camera, turned a little toward the light
 	_port.add_child(_model)
+	_still_left = 3
 
 
 func _process(delta: float) -> void:
 	_since += delta
 	if _model == null or not is_visible_in_tree() or _since < STEP:
 		return
+	if still:
+		if _still_left <= 0:
+			return
+		_still_left -= 1
 	_since = 0.0
 	if _model.has_method("animate"):
 		_model.call("animate", 0.0, false)  # the idle pose, breathing

@@ -78,7 +78,7 @@ static func _ridge(st: SurfaceTool, body: StaticBody3D, a: Vector2, b: Vector2, 
 	var axis := func(p: Vector3) -> Vector3:  # the point inside the wall next to p
 		var t2 := clampf((Vector2(p.x, p.z) - a).dot(dir), 0.3, length - 0.3)
 		var q := a + dir * t2
-		return Vector3(q.x, ground + h * 0.3, q.y)
+		return Vector3(q.x, ground - 0.4, q.y)  # (polish1 item 150) under the rock: at ground + 0.3 h it stood ABOVE the low, tapered ends, which then wound their top faces inward (culled = see-through holes)
 	for i in steps:
 		var r0: Array = rings[i]
 		var r1: Array = rings[i + 1]

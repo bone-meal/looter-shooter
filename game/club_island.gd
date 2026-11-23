@@ -51,6 +51,27 @@ static func inside_steps(parent: Node3D) -> Array[Callable]:
 		func() -> void: _people()]
 
 
+# (polish1 item 166) Soft fill light high up in the club, the games room and the casino, so the rooms read at his
+# settings (realistic look on Forward+: the sky light does not reach indoors). Forward+ only: there lights are cheap
+# (clustered); on Compatibility every lit mesh is drawn once more per light (C5: +830 draws), so it keeps the neon only.
+static func _fill_lights(parent: Node3D) -> void:
+	if RenderingServer.get_current_rendering_method() != "forward_plus":
+		return
+	var spots := [Vector3(-5, 4.6, -10), Vector3(5, 4.6, -10), Vector3(-5, 4.6, -2), Vector3(5, 4.6, -2),  # club
+		Vector3(-18, 4.6, -10), Vector3(-18, 4.6, -3),  # games room
+		Vector3(17, 4.6, -7), Vector3(27, 4.6, -7), Vector3(17, 4.6, 2), Vector3(27, 4.6, 2)]  # casino
+	for at: Vector3 in spots:
+		var fill := OmniLight3D.new()
+		fill.position = _at(at.x, at.y, at.z)
+		fill.omni_range = 9.5
+		fill.omni_attenuation = 1.2
+		fill.light_energy = 0.9
+		fill.light_color = Color(0.95, 0.88, 1.0)
+		fill.shadow_enabled = false
+		fill.light_specular = 0.2
+		parent.add_child(fill)
+
+
 static func _at(x: float, y: float, z: float) -> Vector3:
 	return CENTER + Vector3(x, y, z)
 
@@ -272,6 +293,7 @@ static func _tables(parent: Node3D) -> void:
 # and a lit disc where each meets the floor. None of it is a real light (on the Compatibility renderer every light
 # draws what it touches once more); it is all glowing meshes.
 static func _lights(parent: Node3D) -> void:
+	_fill_lights(parent)
 	var pink := _mat(MAGENTA, true)
 	var blue := _mat(CYAN, true)
 	for y: float in [0.16, WALL_H - 0.35]:

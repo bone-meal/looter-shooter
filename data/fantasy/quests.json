@@ -193,7 +193,7 @@
      "type": "have",
      "item": "copper_ore",
      "count": 6,
-     "take": true
+     "take": false
     },
     {
      "type": "make",
@@ -981,7 +981,7 @@
      "type": "have",
      "item": "icefin",
      "count": 5,
-     "take": true
+     "take": false
     },
     {
      "type": "make",
