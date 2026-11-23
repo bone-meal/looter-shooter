@@ -2819,6 +2819,10 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			match words[1] if words.size() > 1 else "note":
 				"kill":
 					fw.call("_on_slain", words[2], player.global_position)
+				"give":  # "!e1 give <item> [n]": into the bag the normal way (the loot list)
+					fw.call("give", words[2], int(words[3]) if words.size() > 3 else 1)
+				"xp":  # "!e1 xp <skill> <amount>": experience the normal way (a level-up shows its banner)
+					fw.call("gain_xp", words[2], int(words[3]))
 				"sign":
 					var pl: Node = fw.get("places")
 					var n_s := int(words[3]) if words.size() > 3 else 0

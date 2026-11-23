@@ -54,7 +54,9 @@ const WALK_FLY := 2
 signal ship_built(ship_id: String)  # the shipyard launched a ship (game/sea_ships.gd build)
 signal ship_part_made(part: String)  # the shipyard made a ship's part, e.g. "crane" (game/sea_ships.gd fit_part)
 signal notice(text: String)  # big line in the middle of the screen
-signal toast(text: String, color: Color)  # small rising line: experience, items
+signal toast(text: String, color: Color)  # small rising line: experience
+signal picked(item: String, count: int)  # (polish1 item 99) something came into the bag: the HUD's loot list
+signal skill_up(skill: String, level: int, opened: PackedStringArray)  # (polish1 item 104) the HUD's manuscript banner
 signal said(text: String, color: Color)  # a line for the chat box (quest text)
 signal boss_move(text: String, color: Color)  # a boss starts one of its special attacks (the HUD flashes its name)
 signal fade  # the screen should fade (a door was used)
@@ -680,7 +682,7 @@ func gain_xp(skill: String, amount: int) -> void:
 		var opened := PackedStringArray()
 		for step: Dictionary in SkillPerks.reached(skilling.get("unlocks", {}), skill, before, skills.level(skill)):
 			opened.append(String(step.get("name", "")))
-		notice.emit("%s level %d%s" % [skills.skill_name(skill), skills.level(skill), "" if opened.is_empty() else ": " + ", ".join(opened)])
+		skill_up.emit(skill, skills.level(skill), opened)
 		sound("level_up")
 		apply_stats()
 	_after_change()
@@ -711,7 +713,7 @@ func give(item: String, count: int = 1) -> void:
 	var staff_before := String(bag.equipped.get("staff", ""))
 	bag.add(item, count)
 	sound("item")
-	toast.emit("+%d %s" % [count, bag.item_name(item)], Color.WHITE)
+	picked.emit(item, count)
 	if String(bag.equipped.get("staff", "")) != staff_before:
 		notice.emit("Now wielding: %s" % bag.item_name(String(bag.equipped["staff"])))
 	apply_stats()
@@ -927,7 +929,7 @@ func reward(quest_id: String) -> void:
 	said.emit("%s: %s" % [places.person(String(quest["giver"])).get("name", "?"), quest["done"]], GOLD)
 	for item: String in rewards.get("items", {}):
 		bag.add(item, int(rewards["items"][item]))
-		toast.emit("+%d %s" % [int(rewards["items"][item]), bag.item_name(item)], Color.WHITE)
+		picked.emit(item, int(rewards["items"][item]))
 	for skill: String in rewards.get("skill_xp", {}):
 		gain_xp(skill, int(rewards["skill_xp"][skill]))
 	gain_xp("magic", int(rewards.get("xp", 0)))

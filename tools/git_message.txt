@@ -1,11 +1,8 @@
-Polish1 E1: Aurelind guidance - scroll compass, named areas, gold name plates, rumours, road signs
+Polish1 E2: Aurelind loot list and manuscript skill level-up banner
 
-- game/fantasy_compass.gd: compass across the top as an unrolled scroll, blackletter winds (illuminated N), red seals for quest targets, gold ! for quest givers, place signs, faint ? for places not found, near stations; the mark in the middle named with its distance
-- named areas (world.json areas, writing [area id]): Far Fields, Wolfwood, Mushroom Glades, Saltwrack Shore, Caravan Road, Rimegate Road; place-bound kill steps count kills inside only; named on entering, on the map and the compass
-- quest target name plates turn gold
-- rumours: a medium hint per quest (writing hint: lines, 41 drafted); quest page Rumours list + HUD card when nothing is under way
-- road signs: a post where each road leaves a place with an arm per road (name + distance) and the place name on top; old textless ring signposts removed
-- fonts UnifrakturMaguntia + Grenze Gotisch (OFL); fantasy_check checks areas (41 of 41 quests finish); dev !e1
+- game/fantasy_feedback.gd: loot list (icon per item, stacked x n, each line its own timer, oldest fades first) and the skill level-up banner (manuscript page: skill icon in a gold roundel, blackletter name, level, what it opens, wrapped)
+- fantasy_world: signals picked / skill_up replace the item toasts and the level-up notice
+- dev !e1 give / !e1 xp
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
