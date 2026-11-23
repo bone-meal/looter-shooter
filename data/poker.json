@@ -1,0 +1,110 @@
+{
+ "version": 1,
+ "_about": "polish1 item 167: TEXAS HOLD'EM in the casino (core/poker_rules.gd, core/poker_ai.gd). stakes: the table's blind levels (small / big blind, buy-in from min_bb to max_bb big blinds, chips taken from the wallet and paid back when you stand up). seats: chairs round the table (you + house players). house: the house players (names and looks ours; tight 0..1 folds more, aggression 0..1 bets and raises more, bluff 0..1 bets with nothing now and then, sims = how many run-outs it plays in its head after the flop, think_s = how long it seems to think, look = how the seated house player looks: gender, outfit / hair (npc ids of data/characters.json npc), hair colour, skin tone). Online the host deals (like darts / pool). Placeholders for the director to tune.",
+ "seats": 6,
+ "stakes": [
+  {
+   "id": "low",
+   "name": "Low stakes",
+   "sb": 5,
+   "bb": 10,
+   "min_bb": 20,
+   "max_bb": 100
+  },
+  {
+   "id": "mid",
+   "name": "Mid stakes",
+   "sb": 25,
+   "bb": 50,
+   "min_bb": 20,
+   "max_bb": 100
+  },
+  {
+   "id": "high",
+   "name": "High rollers",
+   "sb": 100,
+   "bb": 200,
+   "min_bb": 20,
+   "max_bb": 100
+  }
+ ],
+ "house": [
+  {
+   "name": "Dottie Marlow",
+   "tight": 0.75,
+   "aggression": 0.25,
+   "bluff": 0.04,
+   "sims": 100,
+   "think_s": 1.4,
+   "look": {
+    "gender": "female",
+    "outfit": "french_artist",
+    "hair": "bob",
+    "hair_color": "#c9a26b",
+    "skin": 1
+   }
+  },
+  {
+   "name": "Big Sal",
+   "tight": 0.3,
+   "aggression": 0.8,
+   "bluff": 0.22,
+   "sims": 100,
+   "think_s": 0.9,
+   "look": {
+    "gender": "male",
+    "outfit": "pirate_captain",
+    "hair": "buzz",
+    "hair_color": "#1a1a1a",
+    "skin": 3
+   }
+  },
+  {
+   "name": "The Professor",
+   "tight": 0.55,
+   "aggression": 0.55,
+   "bluff": 0.12,
+   "sims": 160,
+   "think_s": 2.0,
+   "look": {
+    "gender": "male",
+    "outfit": "winter_explorer",
+    "hair": "sidepart",
+    "hair_color": "#8a5a2b",
+    "skin": 0
+   }
+  },
+  {
+   "name": "Lucky Reyes",
+   "tight": 0.2,
+   "aggression": 0.45,
+   "bluff": 0.18,
+   "sims": 80,
+   "think_s": 1.0,
+   "look": {
+    "gender": "female",
+    "outfit": "sailor",
+    "hair": "curly",
+    "hair_color": "#2b1d14",
+    "skin": 4
+   }
+  },
+  {
+   "name": "Quiet Wen",
+   "tight": 0.65,
+   "aggression": 0.65,
+   "bluff": 0.08,
+   "sims": 140,
+   "think_s": 1.7,
+   "look": {
+    "gender": "female",
+    "outfit": "desert_nomad",
+    "hair": "bun",
+    "hair_color": "#1a1a1a",
+    "skin": 2
+   }
+  }
+ ],
+ "rebuy_house": true,
+ "_rebuy_house": "a house player who busts is replaced by the next one with a fresh buy-in, so the table stays full"
+}

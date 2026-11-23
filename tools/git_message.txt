@@ -1,10 +1,13 @@
-Polish1 item 145: camo art pass on Galaxy, Living Coral and Void Serpent
+Polish1 I4 poker part 2: Texas Holdem table in the casino vs five house players
 
-- Camos can span the whole gun: every camo'd mesh knows where it sits in the gun (instance uniforms), and a view direction for parallax layers.
-- Void Serpent: a scaled snake slides round the gun's side on a snake-game route, head with glowing slit-pupil eyes and a flicking tongue, tapering body with dark diamonds, eats translucent coloured orbs (a ring of light, a lump down its body), new orbs each lap; the ground is very dark grey with a slightly lighter repeating hexagon pattern (director's note), fewer wisps.
-- Galaxy: a window into deep space: parallax nebula with dust lanes and filaments, a spiral galaxy turning on the receiver, twinkling stars in two layers, bright four-spike stars, a shooting star every 7 s.
-- Living Coral: deep water with light shafts and moving caustics, branching coral with glowing polyps, brain coral domes, waving anemones, small fish swimming along the side, bubbles; painted relief bumps the lighting so the coral stands off the gun, shadows round it.
-- tools/camo_shot: --ids (each camo alone, big), --gap, --inspect, --measure (GPU time per camo), tools/camo_shot_args.txt when run without arguments.
+- core/poker_rules.gd, core/poker_ai.gd, data/poker.json (pure rules, house AI, stakes and players)
+- game/poker_table.gd: oval felt table, six chairs, cards, chip stacks, dealer button
+- game/poker_screen.gd: stakes and buy-in pick, felt with seats, board, pot, fold / call / raise controls
+- game/poker_game.gd: plays hands against the house; leaving folds and cashes out
+- casino_room.gd: table, dealer and seated house players, one build step each
+- casino_games.gd: poker spot, open, close
+- dev: !poker, !poker press, !poker auto, !poker chips, !poker note
+- tools/poker_check.gd: rules and AI checks
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

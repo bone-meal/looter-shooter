@@ -1,5 +1,5 @@
 # Purpose: runs the blackjack and roulette tables: sitting down (free the mouse, face the table), the overlay screens, dealing animation order, the wallet (stake spent up front, winnings paid at the end) and the result messages. Rules are in core/, drawing in the table nodes.
-# Dependencies: core/blackjack_rules.gd, core/roulette_rules.gd, core/wallet.gd, game/blackjack_table.gd, game/roulette_table.gd, game/blackjack_screen.gd, game/roulette_screen.gd, game/staff_crew.gd, game/player.gd (controls_enabled, look_at_point), game/player_hud.gd (notice).
+# Dependencies: game/poker_game.gd, core/blackjack_rules.gd, core/roulette_rules.gd, core/wallet.gd, game/blackjack_table.gd, game/roulette_table.gd, game/blackjack_screen.gd, game/roulette_screen.gd, game/staff_crew.gd, game/player.gd (controls_enabled, look_at_point), game/player_hud.gd (notice).
 extends Node
 
 const Blackjack = preload("res://core/blackjack_rules.gd")
@@ -10,6 +10,7 @@ const RouletteTable = preload("res://game/roulette_table.gd")
 const BlackjackScreen = preload("res://game/blackjack_screen.gd")
 const RouletteScreen = preload("res://game/roulette_screen.gd")
 const StaffCrew = preload("res://game/staff_crew.gd")
+const PokerGame = preload("res://game/poker_game.gd")
 
 signal round_finished  # coins changed: the session saves the profile
 signal left
@@ -28,6 +29,7 @@ var _bj_dealer: Node3D
 var _rt_dealer: Node3D
 var _bj_screen := BlackjackScreen.new()
 var _rt_screen := RouletteScreen.new()
+var _poker: Node  # (polish1 item 167) game/poker_game.gd: the Texas Hold'em table
 
 
 # The two screens join the tree in `setup`, which now only runs when the club is built (round 5): a session that never
@@ -74,15 +76,22 @@ func setup(wallet: Wallet, cfg: Dictionary, casino: Dictionary, layer: CanvasLay
 	_rt_table.finished.connect(_on_roulette_finished)
 	_rt_screen.bets_changed.connect(_rt_table.show_bets)
 	_bj_screen.bet_changed.connect(_on_bj_bet_chosen)
+	if casino.has("poker"):
+		_poker = PokerGame.new()
+		add_child(_poker)
+		_poker.call("setup", wallet, casino["poker"], layer, player, hud)
+		_poker.connect("finished", func() -> void: round_finished.emit())
 
 
 func is_open() -> bool:
-	return _current != ""
+	return _current != "" or (_poker != null and bool(_poker.call("is_open")))
 
 
 # Esc: closes the table if no round is running. Always consumes the key while seated.
 func request_close() -> void:
-	if _current == "blackjack":
+	if _poker != null and bool(_poker.call("is_open")):
+		_poker.call("request_close")
+	elif _current == "blackjack":
 		_bj_screen.close()
 	elif _current == "roulette":
 		_rt_screen.close()
@@ -96,6 +105,8 @@ func spot_near(pos: Vector3) -> String:
 		return "blackjack"
 	if _is_near(_rt_table, pos):
 		return "roulette"
+	if _poker != null and bool(_poker.call("near", pos)):
+		return "poker"
 	return ""
 
 
@@ -104,11 +115,14 @@ func _is_near(table: Node3D, pos: Vector3) -> bool:
 
 
 func open(which: String) -> void:
-	_current = which
 	var refill: Dictionary = _cfg["free_refill"]
 	if _wallet.balance < int(refill["below"]):
 		_wallet.balance = int(refill["to"])
 		_hud.call("notice", "The casino tops you up to %d free chips." % _wallet.balance)
+	if which == "poker":
+		_poker.call("open")
+		return
+	_current = which
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	if which == "blackjack":

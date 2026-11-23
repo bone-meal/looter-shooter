@@ -3291,6 +3291,27 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			_lines.append("HILLWALK %s s yaw %s: went %.1f m, climbed %.2f m, off the floor %d of %d ticks, unstuck frees %d (%s), worst drop in a tick %.3f m" % [words[1], words[2], went_h, last_y - y_start, off_floor, ticks, int(player.get("unstuck").get("freed")) - freed0, String(player.get("unstuck").get("last_reason")), worst_drop])
 			if not (player.get("unstuck").get("notes") as PackedStringArray).is_empty():
 				_lines.append("  frees: " + "; ".join(player.get("unstuck").get("notes")))
+		"poker":  # (polish1 item 167) "!poker": stand at the poker table and sit (its screen opens); "!poker press <key>" a control of its screen
+			# ("stakes 1", "buyin max", "sit", "fold", "call", "check", "raise", "min", "pot", "allin", "rebuy", "leave"); "!poker auto <n>": the house AI plays our seat n hands; "!poker note"
+			var games: Node = session.get("_games")
+			var pk: Node = games.get("_poker")
+			if pk == null:
+				_lines.append("POKER: no table (go to the club first)")
+				return
+			match words[1] if words.size() > 1 else "":
+				"":
+					var pt: Node3D = pk.get("table")
+					player.call("teleport", pt.to_global(pt.call("seat_spot", 0) * 1.2) + Vector3(0, 0.1, 0), 0.0)
+					await get_tree().create_timer(0.3, true, false, true).timeout
+					games.call("open", "poker")
+				"press":
+					_lines.append("POKER press %s: %s" % [" ".join(words.slice(2)), str((pk.get("screen") as Control).call("press", " ".join(words.slice(2))))])
+				"auto":
+					pk.set("auto_hands", int(words[2]))
+				"chips":  # "!poker chips <n>": the wallet holds n chips (dev runs never save)
+					(session.get("_wallet") as RefCounted).set("balance", int(words[2]))
+				"note":
+					_lines.append("POKER %s" % String(pk.call("note")))
 		"report":  # "!report <section title>": that section of the Combat Report, row by row (polish1 item 170: "!report Cases")
 			var rep: Dictionary = session.call("_combat_report")
 			for sec: Dictionary in rep.get("sections", []):
