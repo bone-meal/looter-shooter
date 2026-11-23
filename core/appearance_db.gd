@@ -1,5 +1,5 @@
 # Purpose: pure lookup + validation of character appearance (gender, body sliders, skin, hair, face expression, outfit). `sanitize` turns ANY input into a valid appearance, so saves and other players' data can never carry unknown IDs or out-of-range numbers.
-# Rigged bodies (data/characters.json, optional 4th argument) add `rig_outfit` and `rig_hair`; a worn `mask` must be one of `mask_ids`.
+# Rigged bodies (data/characters.json, optional 4th argument) add `rig_outfit` and `rig_hair`; a worn `mask` must be one of `mask_ids`; worn `boss_trophies` are cleaned by core/boss_trophy_db.gd.
 # Dependencies: none. Built from data/appearance.json, data/outfits.json, data/expressions.json, data/characters.json (parsed Dictionaries passed in).
 extends RefCounted
 
@@ -19,6 +19,7 @@ var _hair_ids := {}
 var _hex := RegEx.new()
 var _rig_defaults := {}  # gender -> {rig_outfit, rig_hair}
 var mask_ids := {}  # (polish1 D5c) masks that may be worn (data/masks.json ids), set by game/appearance_data.gd
+var boss_trophies: RefCounted  # (polish1 E4) core/boss_trophy_db.gd: worn boss trophies are checked by it (set by game/appearance_data.gd)
 
 
 func _init(main: Dictionary, outfit_data: Dictionary, face_data: Dictionary, rig_data: Dictionary = {}) -> void:
@@ -92,6 +93,10 @@ func sanitize(raw: Variant) -> Dictionary:
 	var mask_id: Variant = src.get("mask")  # (polish1 D5c) the worn mask's id, known to data/masks.json
 	if mask_id is String and mask_ids.has(mask_id):
 		out["mask"] = mask_id
+	if boss_trophies != null and src.get("boss_trophies") is Array:  # (polish1 E4) worn boss trophies: known ids, one a body spot
+		var worn: Array = boss_trophies.call("clean", src["boss_trophies"])
+		if not worn.is_empty():
+			out["boss_trophies"] = worn
 	if _rig_defaults.has(gender):
 		for key: String in ["rig_outfit", "rig_hair"]:
 			var picked: Variant = src.get(key)

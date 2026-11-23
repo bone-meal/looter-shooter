@@ -4,7 +4,8 @@
 # speed (idle / walk / run), with an arms-only weapon pose on top. Code written for the old code-built bodies (dances,
 # dealer and lifeguard poses, NPC head-turn) keeps working through the handle nodes of game/rigged_pose.gd.
 # There is no outfit-less character. An outfit may leave off pieces of its model, take pieces of the pack's other
-# outfit, and wear pieces of our own: skinned ones sewn by tools/tailor.py and rigid ones (hats) from tools/blender/wear.py.
+# outfit, and wear pieces of our own: skinned ones sewn by tools/tailor.py and rigid ones (hats) from tools/blender/wear.py;
+# (polish1 E4) worn boss trophies (look boss_trophies, data/boss_trophies.json) add their pieces the same way, ghost ones blue.
 # The character faces -Z like every other body in the game.
 # Use: RiggedBody.build(appearance) (null when the packs are not on this machine: callers then use game/body_builder.gd),
 # then animate() every frame; head_anchor(), hand_anchor(), support(), grip(), attach(), tint_outfit(), third_person_hold(), hold() as needed.
@@ -18,6 +19,7 @@ const BodyShape = preload("res://game/body_shape.gd")
 const RiggedJiggle = preload("res://game/rigged_jiggle.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
 const MaskModel = preload("res://game/mask_model.gd")
+const EchoLook = preload("res://game/echo_look.gd")
 
 const DATA_PATH := "res://data/characters.json"
 
@@ -128,6 +130,7 @@ static func build(appearance: Dictionary, soft := true) -> Node3D:
 		"bust": float(appearance.get("bust", 0.0)),
 		"glutes": float(appearance.get("glutes", 0.0)),
 		"mask": String(appearance.get("mask", "")),
+		"trophies": appearance.get("boss_trophies", []),
 		"soft": soft,
 	})
 	if not built:
@@ -170,6 +173,16 @@ func setup(look: Dictionary) -> bool:
 		var sewn := String((wear.get(id, {}) as Dictionary).get("sewn", ""))
 		if sewn != "":
 			_add_pieces(sewn % [String(outfit.get("base", "peasant")), body_id], true)
+	var trophies: Array = AppearanceData.trophies().clean(look.get("trophies", []))  # (polish1 E4) boss trophies over the outfit
+	var trophy_heads: Array = []  # [wear id, ghost]
+	for tid: String in trophies:
+		var ghostly := AppearanceData.trophies().is_ghost(tid)
+		for id: String in AppearanceData.trophies().wear_of(tid):
+			var sewn := String((wear.get(id, {}) as Dictionary).get("sewn", ""))
+			if sewn != "":
+				_add_pieces(sewn % [String(outfit.get("base", "peasant")), body_id], true, ghostly)
+			else:
+				trophy_heads.append([id, ghostly])
 	var skin := _skin_material(body_id, body, Color.html(String(look.get("skin_color", d["skin_reference"]))))
 	var shape: Dictionary = body.get("shape", {}) if bool(look.get("soft", false)) else {}
 	var clothes: Array = []
@@ -219,7 +232,7 @@ func setup(look: Dictionary) -> bool:
 	if under_hood.has(body_id) and hair_id != "none":
 		hair_id = String(under_hood[body_id])
 	var style: Dictionary = styles[hair_id]
-	_kind = "%s|%s|%s%s" % [body_id, outfit_id, hair_id, "|masked" if masked else ""]
+	_kind = "%s|%s|%s%s%s" % [body_id, outfit_id, hair_id, "|masked" if masked else "", "|" + ",".join(trophies) if not trophies.is_empty() else ""]
 	var hair_models: Dictionary = style.get("models", {})
 	if hair_models.has(body_id) and not masked:
 		_add_head_piece(String(hair_models[body_id]), String(style.get("texture", "1")), hair_color)
@@ -236,6 +249,13 @@ func setup(look: Dictionary) -> bool:
 			var lift: Array = thing.get("at", [0.0, 0.0, 0.0])
 			made.position = Vector3(float(lift[0]), float(lift[1]), float(lift[2]))
 			_anchor.add_child(made)
+	for head_piece: Array in ([] if masked else trophy_heads):  # (polish1 E4) a trophy's crown (tools/blender/trophy_wear.py); a full mask hides it like a hat
+		var thing: Dictionary = wear.get(String(head_piece[0]), {})
+		var crown := FantasyModels.scene(String(thing["model"])) if thing.has("model") else null
+		if crown != null:
+			if bool(head_piece[1]):
+				EchoLook.cover(crown)
+			_anchor.add_child(crown)
 	_mask_mesh = null
 	_mask_move_fx = null
 	if mask_id != "":  # (polish1 D5c) the worn mask (tools/blender/mask_bake.py: built in this anchor's space)
@@ -630,7 +650,7 @@ func _add_head_piece(model_file: String, texture_id: String, color: Color) -> vo
 # Puts on every skinned piece of another model that stands on the same skeleton. `ours` = sewn by tools/tailor.py:
 # its surfaces are named after what they are made of and take the fantasy props' materials. Such pieces keep their
 # own colours when the outfit is tinted or given another colour texture.
-func _add_pieces(path: String, ours: bool) -> void:
+func _add_pieces(path: String, ours: bool, ghostly: bool = false) -> void:
 	var scene := _open(path)
 	if scene == null:
 		return
@@ -647,6 +667,9 @@ func _add_pieces(path: String, ours: bool) -> void:
 		_adopt(piece, null, from, false)
 		piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON
 		piece.set_meta("own_colours", true)
+		if ghostly:  # (polish1 E4) a ghost trophy or the spectral set: a translucent blue echo
+			piece.material_override = EchoLook.material()
+			piece.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 	scene.free()
 
 

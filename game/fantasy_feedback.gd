@@ -36,12 +36,12 @@ func add_level(skill_name: String, level: int, opened: PackedStringArray, icon: 
 	_banners.append({"name": skill_name, "level": level, "opened": opened, "icon": icon, "color": color, "age": 0.0})
 
 
-func update(delta: float) -> void:
+func update(delta: float, hold_banner: bool = false) -> void:  # hold_banner: the level-up waits (a vanquished page is up)
 	for i in range(lines.size() - 1, -1, -1):
 		lines[i]["left"] = float(lines[i]["left"]) - delta
 		if float(lines[i]["left"]) <= 0.0:
 			lines.remove_at(i)
-	if not _banners.is_empty():  # one banner at a time, the next after it
+	if not _banners.is_empty() and not hold_banner:  # one banner at a time, the next after it
 		_banners[0]["age"] = float(_banners[0]["age"]) + delta
 		if float(_banners[0]["age"]) >= BANNER_SECONDS:
 			_banners.pop_front()

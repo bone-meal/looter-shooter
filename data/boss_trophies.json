@@ -1,0 +1,19 @@
+{
+ "version": 1,
+ "_about": "Boss TROPHIES (polish1 E4, item 131 / 133): cosmetic pieces worn over any outfit in the trophy slot, seen by everyone online (they are part of the look: appearance 'trophies'). Read by core/boss_trophy_db.gd (not data/trophies.json, which is the hub trophy room). spots = the places on the body a piece takes (head, back, arms, legs): pieces that share a spot cannot be worn together, so a boss trophy (head + back) goes with the spectral bracers and greaves but not with the circlet or the shroud. wear = ids of data/characters.json 'wear' (a crown from tools/blender/trophy_wear.py, a mantle sewn by tools/tailor.py from data/wear.json). boss = the Aurelind boss whose first kill gives it (each player's own kill: core/boss_trophy_locker.gd). ghost = drawn as a translucent blue echo (game/echo_look.gd). Every boss trophy has a GHOST copy '<id>_ghost' made by core/boss_trophy_db.gd (same pieces, ghost look), dropped by that boss's phantom (data/fantasy/enemies.json phantom). set 'spectral' = the phantoms' shared set. Names and texts mine, the director's to change.",
+ "spots": ["head", "back", "arms", "legs"],
+ "trophies": {
+  "harvest_king": {"name": "Crown of the Harvest King", "about": "A woven straw crown of wheat ears and the king's frayed straw mantle.", "boss": "harvest_king", "spots": ["head", "back"], "wear": ["trophy_straw_crown", "straw_mantle"]},
+  "rootmother": {"name": "Rootmother's Circlet", "about": "Twisting roots that still put out leaves, and a mantle of moss.", "boss": "rootmother", "spots": ["head", "back"], "wear": ["trophy_root_circlet", "moss_mantle"]},
+  "tidewarden": {"name": "Tidewarden's Coral Crown", "about": "Living coral and sea pearls, with a mantle of kelp and scales.", "boss": "tidewarden", "spots": ["head", "back"], "wear": ["trophy_coral_crown", "kelp_mantle"]},
+  "glassmaw": {"name": "Glassmaw Diadem", "about": "Shards of sun-fused glass on a bronze band, and a dune shawl.", "boss": "glassmaw", "spots": ["head", "back"], "wear": ["trophy_glass_diadem", "dune_shawl"]},
+  "rime_colossus": {"name": "Rime Crown", "about": "A ring of ice that never melts, and the colossus's frost pelt.", "boss": "rime_colossus", "spots": ["head", "back"], "wear": ["trophy_rime_crown", "frost_pelt"]},
+  "cinderwyrm": {"name": "Wyrm Horns", "about": "The wyrm's swept horns on an ember-cracked band, and a scaled mantle.", "boss": "cinderwyrm", "spots": ["head", "back"], "wear": ["trophy_wyrm_horns", "ember_mantle"]},
+  "tempest_roc": {"name": "Roc's Storm Crest", "about": "A fan of storm feathers over the crown, and a feathered mantle.", "boss": "tempest_roc", "spots": ["head", "back"], "wear": ["trophy_roc_crest", "storm_mantle"]},
+  "pallid_king": {"name": "The Pallid Crown", "about": "A crown of pale finger bones round a hollow eye, and a long pale shroud.", "boss": "pallid_king", "spots": ["head", "back"], "wear": ["trophy_pallid_crown", "pale_shroud"]},
+  "spectral_circlet": {"name": "Spectral Circlet", "about": "Part of the spectral set, shed by the echoes of fallen great creatures.", "set": "spectral", "ghost": true, "spots": ["head"], "wear": ["trophy_spectral_circlet"]},
+  "spectral_shroud": {"name": "Spectral Shroud", "about": "Part of the spectral set, shed by the echoes of fallen great creatures.", "set": "spectral", "ghost": true, "spots": ["back"], "wear": ["spectral_shroud"]},
+  "spectral_bracers": {"name": "Spectral Bracers", "about": "Part of the spectral set, shed by the echoes of fallen great creatures.", "set": "spectral", "ghost": true, "spots": ["arms"], "wear": ["spectral_bracers"]},
+  "spectral_greaves": {"name": "Spectral Greaves", "about": "Part of the spectral set, shed by the echoes of fallen great creatures.", "set": "spectral", "ghost": true, "spots": ["legs"], "wear": ["spectral_greaves"]}
+ }
+}

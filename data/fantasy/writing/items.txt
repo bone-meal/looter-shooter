@@ -237,6 +237,17 @@ white_pigment: White Pigment
 crimson_pigment: Crimson Pigment
 storm_pigment: Storm Pigment
 
+[items relic]
+# WHAT: the region bosses' relics (polish1 E4): a charm with one passive, dropped by the boss's first kill. Read a line as  item id: Name .
+sheaf_charm: Sheaf-Knot Charm
+heartwood_seed: Heartwood Seed
+undertow_pearl: Undertow Pearl
+glassmaw_eye: Glassmaw's Eye
+rime_heart: Rime Heart
+ember_scale: Wyrm's Ember Scale
+roc_plume: Roc Plume
+pale_signet: Pale Signet
+
 [items trap]
 # WHAT: a trap set from the bag where you stand. Read a line as  id: Name .
 snare: Snare

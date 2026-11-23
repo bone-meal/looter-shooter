@@ -3134,6 +3134,69 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"e4":  # (polish1 stage E4, bosses) "!e4 arena <boss> [m]": stand m metres (22) from its arena's middle looking in (it wakes at 45 m); "!e4 kill": the awake boss dies to our blow;
+			# "!e4 slain <boss> [off]": the lobby counts it beaten (its echo wakes next) or not; "!e4 respawn": every boss may wake now; "!e4 odds <ghost> <spectral>": the echo's drop chances;
+			# "!e4 look": face the awake boss; "!e4 page <boss> [phantom]"; "!e4 hud"; "!e4 trophy give|wear|off <id>", "!e4 tab", "!e4 press <key>", "!e4 note": trophies owned / worn, the relic, the awake boss
+			var fw4: Node = session.call("fantasy")
+			var keeper4: RefCounted = session.get("_trophies")
+			var sp4: Node = fw4.get("spawner") if fw4 != null else null
+			match words[1] if words.size() > 1 else "note":
+				"arena":
+					for pl4: Dictionary in fw4.get("terrain").get("places"):
+						if String(pl4.get("boss", "")) == words[2]:
+							var m4 := float(words[3]) if words.size() > 3 else 22.0
+							var mid4 := Vector2(float(pl4["pos"][0]), float(pl4["pos"][1]))
+							player.call("teleport", fw4.call("ground_world", mid4.x + m4, mid4.y), 0.0)
+							player.call("look_at_point", fw4.call("ground_world", mid4.x, mid4.y) + Vector3(0, 1.5, 0))
+				"kill":
+					for b4: Dictionary in sp4.get("_bosses"):
+						if is_instance_valid(b4["enemy"]) and not (b4["enemy"] as Node).get("health").call("is_dead"):
+							(b4["enemy"] as Node).call("on_hit", 1.0e9)
+				"look":  # "!e4 look": face the awake boss (or its echo)
+					for b4l: Dictionary in sp4.get("_bosses"):
+						if is_instance_valid(b4l["enemy"]):
+							player.call("look_at_point", (b4l["enemy"] as Node3D).global_position + Vector3(0, 2.0, 0))
+				"slain":
+					if words.size() > 3 and words[3] == "off":
+						(fw4.get("quests").get("slain") as Dictionary).erase(words[2])
+					else:
+						(fw4.get("quests").get("slain") as Dictionary)[words[2]] = true
+				"hud":  # "!e4 hud": the Aurelind HUD as drawn (debug)
+					var h4: Control = fw4.get("hud_node")
+					var kids4 := PackedStringArray()
+					for k4 in h4.get_parent().get_children():
+						kids4.append("%s:%s:%s:%s" % [k4.name, (k4.get_script() as Script).resource_path.get_file() if k4.get_script() != null else k4.get_class(), str(k4.visible) if k4 is CanvasItem else "-", str((k4 as CanvasItem).z_index) if k4 is CanvasItem else "-"])
+					_lines.append("E4 layer: " + ", ".join(kids4))
+					_lines.append("E4 hud dbg %s lines %s visible %s in tree %s size %s pos %s pages %s, huds in layer %d" % [str(h4.get_meta("dbg", 0)), str((h4.get("feedback") as RefCounted).get("lines")), str(h4.is_visible_in_tree()), str(h4.is_inside_tree()), str(h4.size), str(h4.global_position), str((h4.get("vanquished") as RefCounted).get("_pages")), h4.get_parent().get_child_count()])
+				"page":  # "!e4 page <boss> [phantom]": this player's share of that boss's fall, as if it had just died
+					fw4.call("boss_paid", words[2] + ("_phantom" if words.size() > 3 else ""), sp4.call("stats_of", words[2] + ("_phantom" if words.size() > 3 else "")))
+				"respawn":
+					for b4r: Dictionary in sp4.get("_bosses"):
+						b4r["respawn_at"] = 0.0
+				"odds":
+					var odds4: Dictionary = (fw4.get("data") as Dictionary)["enemies"]["phantom"]
+					odds4["ghost_trophy"] = float(words[2])
+					odds4["spectral"] = float(words[3])
+				"trophy":
+					match words[2]:
+						"give":
+							_lines.append("E4 trophy give %s: %s" % [words[3], str(keeper4.call("earn", words[3], "(dev)"))])
+						"wear", "off":
+							if bool((keeper4.get("locker") as RefCounted).call("is_worn", words[3])) == (words[2] == "off"):
+								keeper4.call("toggle", words[3])
+				"tab":
+					session.call("_open_card")
+					var tabs4: TabContainer = (session.get("_card_screen") as Node).get("_tabs")
+					for t4 in tabs4.get_tab_count():
+						if tabs4.get_tab_title(t4) == "Trophies":
+							tabs4.current_tab = t4
+				"press":
+					var key4 := " ".join(words.slice(2))
+					_lines.append("E4 press %s: %s" % [key4, (session.get("_trophy_tab") as Control).call("press", key4)])
+				_:
+					var lk4: RefCounted = keeper4.get("locker")
+					var awake4: Dictionary = sp4.call("boss_awake") if sp4 != null else {}
+					_lines.append("E4 %s: owned %s, worn %s, look %s, relic '%s', boss awake %s, slain %s, page up %s" % [" ".join(words.slice(1)), str(lk4.call("order")), str(lk4.get("worn")), str((player.get("appearance") as Dictionary).get("boss_trophies", [])), String((fw4.get("bag").get("equipped") as Dictionary).get("relic", "")) if fw4 != null else "-", str(awake4), str((fw4.get("quests").get("slain") as Dictionary).keys()) if fw4 != null else "-", str((fw4.get("hud_node").get("vanquished") as RefCounted).call("busy")) if fw4 != null else "-"])
 		"mask":  # (polish1 D5c) masks: "!mask give <id>", "!mask wear <id>", "!mask off", "!mask tab", "!mask press <key>", "!mask tier <0-4>", "!mask <note>": owned, worn, what the body wears
 			var lk_m: RefCounted = session.get("_mask_locker")
 			match words[1] if words.size() > 1 else "":

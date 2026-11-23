@@ -1,9 +1,10 @@
 # Purpose: pure fantasy-world inventory: how many of each item a player carries and what is equipped (staff, robe, axe,
-# pickaxe, rod). Better staffs, robes and tools equip themselves when they arrive. No nodes.
+# pickaxe, rod, relic). Better staffs, robes and tools equip themselves when they arrive; a relic (polish1 E4: a boss's
+# charm, one passive) is worn when it is the first. No nodes.
 # Dependencies: none. Data: data/fantasy/gear.json.
 extends RefCounted
 
-const SLOTS := ["staff", "robe", "axe", "pickaxe", "rod"]
+const SLOTS := ["staff", "robe", "axe", "pickaxe", "rod", "relic"]
 
 var items := {}  # item id -> count
 var equipped := {}  # slot -> item id ("" = nothing)
@@ -55,6 +56,7 @@ func slot_of(id: String) -> String:
 	match String(d.get("kind", "")):
 		"staff": return "staff"
 		"robe": return "robe"
+		"relic": return "relic"
 		"tool": return String(d["slot"])
 	return ""
 
@@ -118,6 +120,12 @@ func staff() -> Dictionary:
 
 func robe() -> Dictionary:
 	return def(String(equipped["robe"]))
+
+
+# (polish1 E4) The worn relic's bonus for a skill's perk key (data/fantasy/gear.json relic "perk": {skill: {key: amount}}).
+func relic_perk(skill: String, key: String) -> float:
+	var perks: Dictionary = def(String(equipped.get("relic", ""))).get("perk", {})
+	return float((perks.get(skill, {}) as Dictionary).get(key, 0.0))
 
 
 func tool_tier(slot: String) -> int:

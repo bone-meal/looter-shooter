@@ -1,11 +1,11 @@
-Polish1 E3: Aurelind world rules - calm zones, aloof weak creatures, quiet zones, shared spots with hibernation, distinct trees and wheat, early Farming quest
+Polish1 E4: boss trophies, relics, a real death moment, phantom echoes, the threshing ground
 
-- 111: creatures straying into a town / farm ring or near players far above them go aloof (wander, fight back only when hurt); give up past 75 m; zones of 120 m hold 8 creatures, 8 kills empty a zone and it stays quiet 5 minutes
-- 114: gathering spots shared by the lobby (host decides, joiners get the state), a share start dormant, a spot used 6 times hibernates 30 minutes and a sleeper of its kind nearby wakes
-- 106: choppable trees wear a forester's band (one colour per tier), a fresh axe notch and wood chips; names of gatherables within 14 m float over them
-- 109: ripe wheat golden, taller, heavy grain heads, twine tie
-- 108: new early quest Bringing In the Wheat (Farmer Hale, 15 wheat, 300 Farming xp) before the mint quest; more meadowmint in Amberfield + two fixed patches by Hale Farm
-- data: enemies.json spawn calm/ignore/give-up/zones, skilling.json looks + spots, world.json patches; dev !e1 near / spots / use / zonekill / foes
+- 131 every region boss: a signature TROPHY (crown + mantle) worn over any outfit in a trophy slot, seen online, chosen from a new Trophies tab of the player card; the first win over a boss (any form) gives it
+- 131 a RELIC per boss (one passive charm, relic slot in the bag): Sheaf-Knot Charm, Heartwood Seed, Undertow Pearl, Glassmaw's Eye, Rime Heart, Wyrm's Ember Scale, Roc Plume, Pale Signet
+- 131 the fall: shudder, kneel, topple, a gold light column with its own debris rising, a ground ring, a bell toll; a manuscript Vanquished page lists what you won (achievements and emblems unlock as before)
+- 133 THE BINDING ECHOES: once the lobby host has beaten a boss it returns every 10 minutes as its translucent blue echo (weaker); echoes drop a rare ghost trophy and pieces of a 4-piece spectral set; an echo counts as the boss for quests and achievements
+- Harvest King arena: the old threshing floor, stooks, flail racks, grain heaps, loose straw, haystacks, scarecrows
+- data: boss_trophies.json, wear.json mantles, enemies.json phantom + relic, gear.json relics; dev !e4; checks tools/boss_trophy_check.gd, tools/trophy_shot.tscn
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

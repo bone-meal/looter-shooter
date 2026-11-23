@@ -53,7 +53,7 @@ func place_items(place: Dictionary, keep: Array = []) -> Array:
 		var scheme := String(terrain.region_by_id(String(place["region"])).get("scheme", "amber"))
 		var cx := float(place["pos"][0])
 		var cz := float(place["pos"][1])
-		_places[id] = _lay(rules["kinds"].get(String(place["kind"]), []), cx, cz, float(place["flat"]), scheme, int(cx), int(cz), keep, false)
+		_places[id] = _lay(rules["kinds"].get(String(place.get("layout", place["kind"])), []), cx, cz, float(place["flat"]), scheme, int(cx), int(cz), keep, false)
 		_remember(_places[id])
 		if interiors != null:  # the furniture of the main story's walk-in houses stands in the open world
 			for item: Dictionary in (_places[id] as Array).duplicate():

@@ -3,7 +3,7 @@
 # quests in the top right, the scroll compass across the top (game/fantasy_compass.gd), the bar while gathering, and the boss's name, health and the name of the attack it is
 # about to make. Hidden outside that world. Drawn in the shared look of game/fantasy_style.gd.
 # Dependencies: game/fantasy_world.gd (skills, quests, toast and boss_move signals), game/fantasy_work.gd (progress),
-# game/fantasy_spawner.gd (boss_awake), game/input_setup.gd, game/fantasy_style.gd, game/fantasy_compass.gd, game/fantasy_feedback.gd.
+# game/fantasy_spawner.gd (boss_awake), game/input_setup.gd, game/fantasy_style.gd, game/fantasy_compass.gd, game/fantasy_feedback.gd, game/vanquished_banner.gd.
 extends Control
 
 const InputSetup = preload("res://game/input_setup.gd")
@@ -12,6 +12,7 @@ const IconArt = preload("res://game/icon_art.gd")
 const PanelQuests = preload("res://game/panel_quests.gd")
 const FantasyCompass = preload("res://game/fantasy_compass.gd")
 const FantasyFeedback = preload("res://game/fantasy_feedback.gd")
+const VanquishedBanner = preload("res://game/vanquished_banner.gd")
 
 const MEDAL := 17.0  # radius of a skill medallion
 const MOVE_SECONDS := 2.4
@@ -26,6 +27,7 @@ var settings: RefCounted
 
 var compass := FantasyCompass.new()  # (polish1 item 98) the scroll compass across the top
 var feedback := FantasyFeedback.new()  # (polish1 items 99 / 104) the loot list and the skill level-up banner
+var vanquished := VanquishedBanner.new()  # (polish1 E4) the page shown when a great creature falls
 var _toasts: Array = []  # {"text", "color", "left"}
 var _move := ""  # the boss attack being announced
 var _move_color := Color.WHITE
@@ -44,6 +46,7 @@ func _ready() -> void:
 		var def: Dictionary = world.skilling["skills"][skill]
 		var tint: Array = def["color"]
 		feedback.add_level(String(world.skills.skill_name(skill)), level, opened, String(def["icon"]), Color(float(tint[0]), float(tint[1]), float(tint[2]))))
+	world.connect("vanquished", func(creature: String, phantom: bool, won: Array) -> void: vanquished.add(creature, phantom, won))
 	world.connect("boss_move", func(text: String, color: Color) -> void:
 		_move = text
 		_move_color = color
@@ -66,7 +69,8 @@ func _process(delta: float) -> void:
 			_toasts.remove_at(i)
 	_move_left = maxf(_move_left - delta, 0.0)
 	compass.update(world, delta)
-	feedback.update(delta)
+	vanquished.update(delta)
+	feedback.update(delta, vanquished.busy())
 	queue_redraw()  # (polish1 item 98) every frame: the compass turns with the view
 
 
@@ -80,7 +84,10 @@ func _draw() -> void:
 	_draw_boss()
 	_draw_node_names()
 	feedback.draw_loot(self, Vector2(size.x - 16.0, 380.0))
-	feedback.draw_banner(self, Vector2(size.x * 0.5, 132.0))
+	if vanquished.busy():
+		vanquished.draw(self, Vector2(size.x * 0.5, 132.0))
+	else:
+		feedback.draw_banner(self, Vector2(size.x * 0.5, 132.0))
 
 
 func _draw_skills() -> void:

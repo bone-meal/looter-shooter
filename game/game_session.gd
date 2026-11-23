@@ -59,6 +59,8 @@ const SkinsMenu = preload("res://game/skins_menu.gd")
 const KnifeTab = preload("res://game/knife_tab.gd")
 const KnifeLocker = preload("res://core/knife_locker.gd")
 const MaskTab = preload("res://game/mask_tab.gd")
+const BossTrophyKeeper = preload("res://game/boss_trophy_keeper.gd")
+const BossTrophyTab = preload("res://game/boss_trophy_tab.gd")
 const MaskLocker = preload("res://core/mask_locker.gd")
 const MaskModel = preload("res://game/mask_model.gd")
 const KnifeSkin = preload("res://game/knife_skin.gd")
@@ -257,6 +259,8 @@ var _knife_locker := KnifeLocker.new(KnifeSkin.rules())  # (polish1 D5b) owned s
 var _knife_tab := KnifeTab.new()  # the player card's Knives tab
 var _mask_locker := MaskLocker.new(MaskModel.db())  # (polish1 D5c) owned masks + the worn one (saved "masks")
 var _mask_tab := MaskTab.new()  # the player card's Masks tab
+var _trophies := BossTrophyKeeper.new()  # (polish1 E4) boss trophies owned + worn (saved "boss_trophies")
+var _trophy_tab := BossTrophyTab.new()  # the player card's Trophies tab
 var _force_knife := false  # (dev) the next crate gives a knife
 var _skins_menu := SkinsMenu.new()  # (polish1 D5a part 3) a gun's skins menu (C on its card in the inventory)
 var _skins_where := {}  # the gun the skins menu shows: {"holster": i} or {"slot": i}
@@ -835,6 +839,24 @@ func _ready() -> void:
 	_mask_tab.locker = _mask_locker
 	_mask_tab.wear_requested.connect(_wear_mask)
 	_card_screen.masks_tab = _mask_tab
+	_trophies.tab = _trophy_tab
+	_trophies.player = _player
+	_trophies.hud = _player_hud
+	_trophies.chat = _chat
+	_trophies.sounds = _sounds
+	_trophies.who = func() -> String: return _profile_name
+	_trophies.save = save_profile
+	_trophies.look_out = func(look: Dictionary) -> void: look_changed.emit(look)
+	_trophy_tab.locker = _trophies.locker
+	var boss_names := {}  # read once from the fantasy data (with its writing files) the first time the tab needs one
+	_trophy_tab.boss_name = func(id: String) -> String:
+		if boss_names.is_empty():
+			var all_foes: Dictionary = (load("res://core/fantasy_data.gd") as GDScript).call("load_all")["enemies"]["enemies"]
+			for foe: String in all_foes:
+				boss_names[foe] = String(all_foes[foe].get("name", foe))
+		return String(boss_names.get(id, id))
+	_trophy_tab.wear_requested.connect(_trophies.toggle)
+	_card_screen.trophies_tab = _trophy_tab
 	_skins_menu.chal = _camo_chal
 	_skins_menu.watch = _inventory_screen
 	_skins_menu.locker = _camo_locker
@@ -1294,6 +1316,7 @@ func _close_customizer() -> void:
 func _on_look_applied(look: Dictionary) -> void:
 	look = look.duplicate()
 	look["mask"] = _mask_locker.worn  # (polish1 D5c) the customizer does not take the mask off
+	look = _trophies.dressed(look)  # (polish1 E4) nor the boss trophies
 	_player.set_appearance(look)
 	save_profile()
 	look_changed.emit(_player.appearance)
@@ -1856,6 +1879,7 @@ func _load_profile() -> void:
 			var masked: Dictionary = _player.appearance.duplicate()
 			masked["mask"] = _mask_locker.worn
 			_player.set_appearance(masked)
+		_trophies.restore(extra.get("boss_trophies"))  # (polish1 E4) the boss trophies; the look wears the worn ones
 		_fantasy_saved = extra.get("fantasy")
 		_salvage_saved = extra.get("salvage")
 		_chart_saved = extra.get("sea_chart")
@@ -1906,7 +1930,7 @@ func save_profile() -> void:
 	if no_save:
 		return
 	if _player != null and _profile_name != "":
-		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "knives": _knife_locker.to_dict(), "masks": _mask_locker.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
+		var extra := {"coins": _wallet.balance, "doubloons": _doubloons.balance, "jackpot": _solo_jackpot if _solo_jackpot >= 0.0 else _jackpot, "progress": _progress.to_dict(), "score": _score.to_dict(), "ammo": _player.pools.to_dict(), "knife": _player.knife, "best_round": _best_round, "bank": _bank.to_dict(_player.inventory), "cigarette_left": _smoke.left, "songs": _songs.to_list(), "course_best": float(_bhop_best.get("classic_1", 0.0)), "bhop_best": _bhop_best, "stats": _stats.to_dict(), "tcg": _cards.to_dict(), "cases": _cases.to_dict(), "camos": _camo_locker.to_list(), "knives": _knife_locker.to_dict(), "masks": _mask_locker.to_dict(), "boss_trophies": _trophies.to_dict(), "prize_tickets": _prize_tickets, "pachinko_pot": _pachinko_pot}
 		if _pack != null:
 			extra["pack"] = {"at": [_pack.global_position.x, _pack.global_position.y, _pack.global_position.z], "things": _pack.bundle["things"]}
 		if _fantasy != null:
@@ -5876,6 +5900,8 @@ func _camo_kill(gun: Dictionary, where: Vector3, elite: String, enemy_id: String
 func _count_kill(enemy_id: String, elite: String, blow: String) -> void:
 	_stats.add("kills")
 	_stats.add_to("kills_by_enemy", enemy_id)
+	if enemy_id.ends_with("_phantom"):  # (polish1 E4) a boss's echo counts as that boss too (its achievement, the record)
+		_stats.add_to("kills_by_enemy", enemy_id.trim_suffix("_phantom"))
 	var weapon := "other"
 	if blow == "melee":
 		weapon = "knife:" + _player.knife
@@ -6194,6 +6220,7 @@ func _build_fantasy() -> void:
 		_stats.add_to("skill_actions", skill)
 		_stats.add_to("made" if made else "gathered", item, float(count)))
 	_fantasy.spell_uses = func(group: String, id: String) -> float: return _stats.count_in(group, id)
+	_fantasy.trophy_gift = _trophies.on_boss  # (polish1 E4) a boss kill's trophies (game/boss_trophy_keeper.gd)
 	_fantasy_exit = _fantasy.exit_world()
 	Island.build_painting(self, _fantasy_exit, PaintingArt.island_texture())
 	if net != null and net.is_active():

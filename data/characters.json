@@ -753,6 +753,66 @@
   },
   "cook_cap": {
    "model": "wear/cook_cap"
+  },
+  "trophy_straw_crown": {
+   "model": "wear/trophy_straw_crown"
+  },
+  "trophy_root_circlet": {
+   "model": "wear/trophy_root_circlet"
+  },
+  "trophy_coral_crown": {
+   "model": "wear/trophy_coral_crown"
+  },
+  "trophy_glass_diadem": {
+   "model": "wear/trophy_glass_diadem"
+  },
+  "trophy_rime_crown": {
+   "model": "wear/trophy_rime_crown"
+  },
+  "trophy_wyrm_horns": {
+   "model": "wear/trophy_wyrm_horns"
+  },
+  "trophy_roc_crest": {
+   "model": "wear/trophy_roc_crest"
+  },
+  "trophy_pallid_crown": {
+   "model": "wear/trophy_pallid_crown"
+  },
+  "trophy_spectral_circlet": {
+   "model": "wear/trophy_spectral_circlet"
+  },
+  "straw_mantle": {
+   "sewn": "res://assets/models/outfits/wear/straw_mantle_%s_%s.gltf"
+  },
+  "moss_mantle": {
+   "sewn": "res://assets/models/outfits/wear/moss_mantle_%s_%s.gltf"
+  },
+  "kelp_mantle": {
+   "sewn": "res://assets/models/outfits/wear/kelp_mantle_%s_%s.gltf"
+  },
+  "dune_shawl": {
+   "sewn": "res://assets/models/outfits/wear/dune_shawl_%s_%s.gltf"
+  },
+  "frost_pelt": {
+   "sewn": "res://assets/models/outfits/wear/frost_pelt_%s_%s.gltf"
+  },
+  "ember_mantle": {
+   "sewn": "res://assets/models/outfits/wear/ember_mantle_%s_%s.gltf"
+  },
+  "storm_mantle": {
+   "sewn": "res://assets/models/outfits/wear/storm_mantle_%s_%s.gltf"
+  },
+  "pale_shroud": {
+   "sewn": "res://assets/models/outfits/wear/pale_shroud_%s_%s.gltf"
+  },
+  "spectral_shroud": {
+   "sewn": "res://assets/models/outfits/wear/spectral_shroud_%s_%s.gltf"
+  },
+  "spectral_bracers": {
+   "sewn": "res://assets/models/outfits/wear/spectral_bracers_%s_%s.gltf"
+  },
+  "spectral_greaves": {
+   "sewn": "res://assets/models/outfits/wear/spectral_greaves_%s_%s.gltf"
   }
  }
 }

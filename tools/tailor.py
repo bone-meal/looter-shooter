@@ -24,6 +24,7 @@ BASES = {"peasant": {"female": "Female_Peasant", "male": "Male_Peasant"}, "range
 ARM = ("clavicle", "upperarm", "lowerarm", "hand", "index", "middle", "ring", "pinky", "thumb")
 NEXT = {"upperarm": "lowerarm", "lowerarm": "hand", "thigh": "calf", "calf": "foot"}
 TYPES = {5120: np.int8, 5121: np.uint8, 5122: np.int16, 5123: np.uint16, 5125: np.uint32, 5126: np.float32}
+ONLY = set(filter(None, os.environ.get("ONLY", "").split(",")))
 WIDTH = {"SCALAR": 1, "VEC2": 2, "VEC3": 3, "VEC4": 4, "MAT4": 16}
 
 
@@ -261,6 +262,8 @@ def main():
             if body == "female" and base == "peasant":
                 print("heights (female settler):", {b: round(float(d.rest[b][1]), 2) for b in ("Head", "neck_01", "spine_03", "spine_02", "spine_01", "pelvis", "calf_l", "foot_l")}, "tallest corner", round(float(d.pos[:, 1].max()), 2))
             for piece, recipe in rules["pieces"].items():
+                if ONLY and piece not in ONLY:  # ONLY=a,b python3 tools/tailor.py sews just those pieces
+                    continue
                 if "bases" in recipe and base not in recipe["bases"]:
                     continue
                 parts = []

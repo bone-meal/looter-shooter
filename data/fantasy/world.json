@@ -1034,7 +1034,8 @@
    "kind": "arena",
    "flat": 30,
    "boss": "harvest_king",
-   "yard": "g_cobble"
+   "yard": "g_cobble",
+   "layout": "arena_threshing"
   },
   {
    "id": "fernhollow",

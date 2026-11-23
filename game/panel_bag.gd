@@ -1,4 +1,4 @@
-# Purpose: the Bag page of the fantasy window: what is in use (staff, robe, axe, pickaxe, rod) and everything carried,
+# Purpose: the Bag page of the fantasy window: what is in use (staff, robe, axe, pickaxe, rod, relic) and everything carried,
 # sorted into gear, food and drink, materials and pigments, each thing as its icon with a count. Picking one shows what
 # it does on the right, with one button to wear, eat, drink or burn it.
 # Dependencies: game/fantasy_panel.gd (the window and its helpers), core/fantasy_bag.gd through the world.
@@ -8,11 +8,14 @@ const Style = preload("res://game/fantasy_style.gd")
 
 const SIZE := 54.0
 const GAP := 6.0
-const GROUPS := [["Gear", "shield", ["staff", "robe", "tool"]], ["Food and drink", "bread", ["food", "potion"]], ["Materials", "log", ["material"]], ["Pigments", "pigment", ["pigment"]]]
+const GROUPS := [["Gear", "shield", ["staff", "robe", "tool", "relic"]], ["Food and drink", "bread", ["food", "potion"]], ["Materials", "log", ["material"]], ["Pigments", "pigment", ["pigment"]]]
 # what an item's numbers mean: [key in the item's data, icon, words]
 const FACTS := [["power", "spark", "spell power x%s"], ["slots", "star", "+%s elements in a spell"], ["mana", "drop", "+%s mana"], ["hp", "heart", "+%s health"],
 	["armor", "shield", "takes off %s of each hit"], ["regen", "drop", "+%s mana every second"], ["tier", "star", "tier %s"], ["heal", "heart", "heals %s"]]
-const KIND_WORDS := {"staff": "Staff", "robe": "Robe", "tool": "Tool", "food": "Food", "potion": "Potion", "material": "Material", "pigment": "Pigment"}
+const KIND_WORDS := {"staff": "Staff", "robe": "Robe", "tool": "Tool", "food": "Food", "potion": "Potion", "material": "Material", "pigment": "Pigment", "relic": "Relic"}
+# (polish1 E4) a relic's perk keys in words
+const PERK_WORDS := {"double": "%s%% chance of twice the haul", "regrow": "spots regrow %s%% sooner", "keep": "%s%% chance the spot stays", "save": "%s%% chance to keep the materials",
+	"power": "spell power +%s%%", "regen": "mana regen +%s%%", "mana": "most mana +%s%%", "armor": "takes off %s%% of each hit", "run_speed": "run speed +%s%%"}
 
 
 static func draw(p: Variant, body: Rect2, side: Rect2) -> void:
@@ -62,9 +65,15 @@ static func _card(p: Variant, side: Rect2) -> void:
 		if def.has(fact[0]):
 			top = p.card_row(side, top, String(fact[1]), Style.GOLD, String(fact[2]) % str(def[fact[0]]))
 	var burns: bool = (p.world.skilling["fire"]["level"] as Dictionary).has(item)
+	var perks: Dictionary = def.get("perk", {})
+	for skill: String in perks:  # (polish1 E4) a relic's passive
+		for key: String in perks[skill]:
+			var amount := float(perks[skill][key])
+			var words := String(PERK_WORDS.get(key, key + " %s")) % str(roundi(amount if key == "run_speed" else amount * 100.0))
+			top = p.card_row(side, top, "star", Style.GOLD, "%s: %s" % [String(p.world.skills.skill_name(skill)), words])
 	if kind in ["food", "potion"]:
 		p.card_button(side, "heart", "Eat" if kind == "food" else "Drink", _use.bind(p, item))
-	elif kind in ["staff", "robe", "tool"]:
+	elif kind in ["staff", "robe", "tool", "relic"]:
 		p.card_button(side, "check", "Use this one", _use.bind(p, item))
 	elif burns:
 		p.card_button(side, "flame", "Light a fire", _use.bind(p, item))

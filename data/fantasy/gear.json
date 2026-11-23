@@ -1,6 +1,6 @@
 {
  "version": 1,
- "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches. Sea step 3e: relics (Archaeology) and the collections' trophies (for the home port's trophy hall later). Kind backpack = a bag for the gun side's backpack: bag n opens its 4 slots (core/inventory_state.gd set_bags), made in order 1, 2, 3.",
+ "_about": "Fantasy world items (rules: core/fantasy_bag.gd). kind: staff (power = spell strength, slots = extra elements per cast, mana), robe (hp, armor = share of damage removed, regen = mana per second), tool (slot axe/pickaxe/rod, tier), food and potion (heal, mana, or a timed buff), material, pigment (boss trophy: each adds one element slot). Placeholders for the director. Names are in data/fantasy/writing/items.txt. icon = a shape of the icon sheet (data/icons.json), color = the colour that shape is drawn in (also the staff's glow). Sea step 3: trap = set from the bag where you stand (a snare: Hunting). Sea step 3c: gunside = made by Crafting but goes straight into the gun side's backpack as a rolled armour piece of item `base` (data/items.json) at `tier` and item level `lvl` (kept below what drops where you could make it: a small help, not a shortcut). A trap's speed = how much sooner it catches. Sea step 3e: relics (Archaeology) and the collections' trophies (for the home port's trophy hall later). Kind backpack = a bag for the gun side's backpack: bag n opens its 4 slots (core/inventory_state.gd set_bags), made in order 1, 2, 3. (polish1 E4) relic = a region boss's charm, worn in the relic slot: perk = {skill: {perk key: amount}} added to that skill's perks (core/skill_perks.gd keys: double, regrow, keep, save ...; magic power / regen / mana / armor; agility run_speed), boss = whose first kill drops it (the enemy's 'relic').",
  "start": {
   "equip": {
    "staff": "ash_staff",
@@ -2369,6 +2369,131 @@
     0.5,
     0.34
    ]
+  },
+  "sheaf_charm": {
+   "kind": "relic",
+   "boss": "harvest_king",
+   "perk": {
+    "farming": {
+     "double": 0.2,
+     "regrow": 0.15
+    }
+   },
+   "color": [
+    1.0,
+    0.78,
+    0.3
+   ],
+   "icon": "necklace"
+  },
+  "heartwood_seed": {
+   "kind": "relic",
+   "boss": "rootmother",
+   "perk": {
+    "woodcutting": {
+     "double": 0.2
+    },
+    "magic": {
+     "regen": 0.1
+    }
+   },
+   "color": [
+    0.45,
+    0.8,
+    0.3
+   ],
+   "icon": "necklace"
+  },
+  "undertow_pearl": {
+   "kind": "relic",
+   "boss": "tidewarden",
+   "perk": {
+    "fishing": {
+     "double": 0.2
+    }
+   },
+   "color": [
+    0.4,
+    0.75,
+    1.0
+   ],
+   "icon": "necklace"
+  },
+  "glassmaw_eye": {
+   "kind": "relic",
+   "boss": "glassmaw",
+   "perk": {
+    "mining": {
+     "double": 0.2
+    }
+   },
+   "color": [
+    1.0,
+    0.7,
+    0.35
+   ],
+   "icon": "necklace"
+  },
+  "rime_heart": {
+   "kind": "relic",
+   "boss": "rime_colossus",
+   "perk": {
+    "magic": {
+     "armor": 0.08
+    }
+   },
+   "color": [
+    0.8,
+    0.92,
+    1.0
+   ],
+   "icon": "necklace"
+  },
+  "ember_scale": {
+   "kind": "relic",
+   "boss": "cinderwyrm",
+   "perk": {
+    "magic": {
+     "power": 0.1
+    }
+   },
+   "color": [
+    1.0,
+    0.35,
+    0.15
+   ],
+   "icon": "necklace"
+  },
+  "roc_plume": {
+   "kind": "relic",
+   "boss": "tempest_roc",
+   "perk": {
+    "agility": {
+     "run_speed": 6
+    }
+   },
+   "color": [
+    0.6,
+    0.6,
+    0.95
+   ],
+   "icon": "necklace"
+  },
+  "pale_signet": {
+   "kind": "relic",
+   "boss": "pallid_king",
+   "perk": {
+    "magic": {
+     "mana": 0.15,
+     "regen": 0.15
+    }
+   },
+   "color": [
+    0.9,
+    0.9,
+    0.88
+   ],
+   "icon": "necklace"
   }
  }
 }

@@ -16,6 +16,8 @@ const CharacterModels = preload("res://game/character_models.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
 const EnemyRig = preload("res://game/enemy_rig.gd")
 const RigidSkin = preload("res://game/rigid_skin.gd")
+const EchoLook = preload("res://game/echo_look.gd")
+const BossFall = preload("res://game/boss_fall.gd")
 
 const BONE_COLOR := Color(0.9, 0.88, 0.8)
 const BONE_FLASH := Color(1.0, 0.35, 0.35)
@@ -378,6 +380,8 @@ func _ready() -> void:
 				add_to_group("hit_parts")
 		elif _stats["attack_type"] == "melee":
 			_sword_arm = creature.find_child("ArmR", true, false) as Node3D
+		if bool(_stats.get("phantom", false)):  # (polish1 E4, item 133) a great creature's echo: translucent blue
+			EchoLook.cover(creature)
 	else:
 		_base_color = _accent
 		_flash_color = BOX_FLASH
@@ -847,6 +851,9 @@ func fall() -> void:
 		return
 	if _rig != null:
 		_rig.die()
+	if has_meta("fantasy_boss"):  # (polish1 E4, item 131) a great creature's end is a moment: game/boss_fall.gd
+		BossFall.play(self, _model, _size, _chips, bool(_stats.get("phantom", false)))
+		return
 	if String(_stats.get("remains", "")) == "gulls" and _pulse == null and GullFeast.room(get_tree()):
 		_gull_remains()
 		return

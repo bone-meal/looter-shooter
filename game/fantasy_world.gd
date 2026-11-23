@@ -59,11 +59,13 @@ signal picked(item: String, count: int)  # (polish1 item 99) something came into
 signal skill_up(skill: String, level: int, opened: PackedStringArray)  # (polish1 item 104) the HUD's manuscript banner
 signal said(text: String, color: Color)  # a line for the chat box (quest text)
 signal boss_move(text: String, color: Color)  # a boss starts one of its special attacks (the HUD flashes its name)
+signal vanquished(creature: String, phantom: bool, won: Array)  # (polish1 E4) a great creature fell: the HUD's page, what this player won
 signal fade  # the screen should fade (a door was used)
 signal changed  # bag, skills or quests changed: the HUD redraws, the session saves
 signal spell_cast(spell_name: String, mix: String)  # a spell left the staff (the session counts it: core/stat_book.gd)
 signal worked(skill: String, item: String, count: int, made: bool)  # gathered (made false) or crafted (made true)
 
+var trophy_gift := Callable()  # (polish1 E4) func(boss id, phantom, odds) -> lines: the session's boss trophies (game/boss_trophy_keeper.gd)
 var spell_uses := Callable()  # func(group "spells" | "spell_mixes", id) -> times cast (set by the session; the Spells page shows it)
 var data: Dictionary  # everything core/fantasy_data.gd loaded: world, quests, gear, skilling, spells, enemies, layouts, props, text
 var terrain: FantasyTerrain
@@ -340,7 +342,7 @@ func _on_slain(enemy_id: String, where: Vector3) -> void:
 	if inside:
 		spawner.pay(enemy_id)
 	var at := local_of(where)
-	report({"type": "kill", "enemy": enemy_id, "areas": terrain.areas_at(at.x, at.z)})
+	report({"type": "kill", "enemy": String(spawner.stats_of(enemy_id).get("phantom_of", enemy_id)), "areas": terrain.areas_at(at.x, at.z)})  # (polish1 E4) an echo counts as its boss
 	if party != null and not party.call("is_client"):
 		party.call("send_slain", enemy_id)
 
@@ -648,7 +650,7 @@ func apply_stats() -> void:
 	if not inside:
 		return
 	var hp := float(_caster["hp_per_level"]) * float(magic_level() - 1) + float(bag.robe().get("hp", 0.0))
-	var armor := clampf(float(bag.robe().get("armor", 0.0)) + float(_buff.get("armor", 0.0)), 0.0, 0.8)
+	var armor := clampf(float(bag.robe().get("armor", 0.0)) + float(_buff.get("armor", 0.0)) + perk("magic", "armor"), 0.0, 0.8)
 	_player.call("set_world_bonus", hp, 1.0 - armor)
 	_player.set("skill_speed_pct", perk("agility", "run_speed"))  # Agility: quicker on your feet here (and at sea)
 	_player.set("guns_locked", not quests.guns_unlocked())
@@ -668,9 +670,25 @@ func heal_over_time(per_second: float, seconds: float) -> void:
 
 # --- experience, items, quests ---
 
+# (polish1 E4, item 131) This player's share of a great creature's fall (every machine pays its own player): the
+# boss's relic the first time (any form), its trophies (the session), the vanquished page and its sound.
+func boss_paid(enemy_id: String, stats: Dictionary) -> void:
+	var phantom := stats.has("phantom_of")
+	var boss := String(stats.get("phantom_of", enemy_id))
+	var won: Array = []
+	var relic := String(spawner.stats_of(boss).get("relic", ""))
+	if relic != "" and bag.count(relic) <= 0:
+		give(relic, 1)
+		won.append("Relic: %s  (worn in your bag's relic slot)" % bag.item_name(relic))
+	if trophy_gift.is_valid():
+		won.append_array(trophy_gift.call(boss, phantom, data["enemies"].get("phantom", {})))
+	sound("echo_fade" if phantom else "boss_fall")
+	vanquished.emit(String(stats.get("name", boss)), phantom, won)
+
+
 # The sum of one perk of `skill` at its current level (core/skill_perks.gd; 0 when none).
 func perk(skill: String, key: String) -> float:
-	return SkillPerks.total(skilling.get("unlocks", {}), skill, skills.level(skill), key)
+	return SkillPerks.total(skilling.get("unlocks", {}), skill, skills.level(skill), key) + bag.relic_perk(skill, key)  # (polish1 E4) the worn relic too
 
 
 func gain_xp(skill: String, amount: int) -> void:
@@ -770,7 +788,7 @@ func use_item(item: String) -> String:
 			var why := snares.place(player_local(), item)
 			_after_change()
 			return why
-		"staff", "robe", "tool":
+		"staff", "robe", "tool", "relic":
 			bag.equip(item)
 			apply_stats()
 			_after_change()

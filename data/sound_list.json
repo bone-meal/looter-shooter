@@ -469,6 +469,14 @@
     {
      "id": "creature_hit",
      "label": "Creature's own attack strikes"
+    },
+    {
+     "id": "boss_fall",
+     "label": "A great creature falls"
+    },
+    {
+     "id": "echo_fade",
+     "label": "A great creature's echo fades"
     }
    ]
   },

@@ -46,6 +46,7 @@ func setup(fantasy_world: Node3D, director: Node3D, player: Node3D) -> void:
 	var data: Dictionary = _world.data["enemies"]
 	_enemies = data["enemies"]
 	_cfg = data["spawn"]
+	_add_phantoms(data.get("phantom", {}))
 	_tribes = data["tribes"]
 	for place: Dictionary in _world.terrain.places:
 		var at := Vector2(float(place["pos"][0]), float(place["pos"][1]))
@@ -70,6 +71,33 @@ func stop() -> void:
 	active = false
 
 
+# (polish1 E4, item 133) Each boss's ECHO "<boss>_phantom": the boss's model in the echo look (game/echo_look.gd),
+# weaker, its own drops (game/boss_trophy_keeper.gd rolls them), "phantom_of" = the boss it echoes.
+func _add_phantoms(cfg: Dictionary) -> void:
+	if cfg.is_empty():
+		return
+	for id: String in _enemies.keys():
+		var boss: Dictionary = _enemies[id]
+		if not bool(boss.get("boss", false)) or bool(boss.get("phantom", false)):
+			continue
+		var echo := boss.duplicate(true)
+		var called := String(boss.get("name", id))
+		echo["name"] = String(cfg.get("name", "Echo of %s")) % (("the " + called.substr(4)) if called.begins_with("The ") else called)
+		echo["max_hp"] = float(boss["max_hp"]) * float(cfg.get("hp", 1.0))
+		echo["damage"] = float(boss["damage"]) * float(cfg.get("damage", 1.0))
+		echo["xp"] = roundi(float(boss["xp"]) * float(cfg.get("xp", 1.0)))
+		echo["drops"] = {}
+		echo.erase("relic")
+		echo["phantom"] = true
+		echo["phantom_of"] = id
+		_enemies[id + "_phantom"] = echo
+
+
+# The form a boss wakes in: its echo once the lobby (this host) has beaten it.
+func _form(boss_id: String) -> String:
+	return boss_id + "_phantom" if _world.quests.slain.has(boss_id) and _enemies.has(boss_id + "_phantom") else boss_id
+
+
 func stats_of(id: String) -> Dictionary:
 	return _enemies.get(id, {})
 
@@ -79,7 +107,7 @@ func boss_awake() -> Dictionary:
 	for boss: Dictionary in _bosses:
 		if is_instance_valid(boss["enemy"]) and not (boss["enemy"] as Node3D).health.is_dead():
 			var enemy: Node3D = boss["enemy"]
-			return {"name": String(_enemies[boss["id"]]["name"]), "ratio": float(enemy.health.hp) / float(enemy.health.max_hp)}
+			return {"name": String((_enemies.get(String(enemy.get("enemy_id")), _enemies[boss["id"]]) as Dictionary)["name"]), "ratio": float(enemy.health.hp) / float(enemy.health.max_hp)}
 	return {}
 
 
@@ -314,8 +342,9 @@ func _boss_tick(all: Array) -> void:
 			_director.call("despawn", boss["enemy"])  # nobody is near: it goes back to sleep, healed
 			boss["enemy"] = null
 		elif not alive and now >= float(boss["respawn_at"]) and d < float(_cfg["boss_trigger_m"]):
-			boss["enemy"] = _spawn(String(boss["id"]), boss["pos"].x, boss["pos"].y, near)
-			var stats: Dictionary = _enemies[boss["id"]]
+			var form := _form(String(boss["id"]))
+			boss["enemy"] = _spawn(form, boss["pos"].x, boss["pos"].y, near)
+			var stats: Dictionary = _enemies[form]
 			notice.emit("%s  (level %d)" % [String(stats["name"]).to_upper(), int(stats["level"])])
 			boss_woke.emit(boss["enemy"], stats.get("moves", []))
 
@@ -412,10 +441,9 @@ func _on_killed(where: Vector3, enemy_id: String, _elite: String, _wave: int) ->
 	if not active or not _enemies.has(enemy_id):
 		return
 	for boss: Dictionary in _bosses:
-		if String(boss["id"]) == enemy_id:
+		if String(boss["id"]) == String(_enemies[enemy_id].get("phantom_of", enemy_id)):  # the boss or its echo
 			boss["enemy"] = null
-			boss["respawn_at"] = Time.get_ticks_msec() / 1000.0 + float(_cfg["boss_respawn_s"])
-			notice.emit("%s DEFEATED" % String(_enemies[enemy_id]["name"]).to_upper())
+			boss["respawn_at"] = Time.get_ticks_msec() / 1000.0 + float(_cfg["boss_respawn_s"])  # (polish1 E4) its fall is told by the vanquished page
 	if not bool(_enemies[enemy_id].get("boss", false)) and not _enemies[enemy_id].has("temper") and not _enemies[enemy_id].has("tribe"):
 		var at: Vector3 = _world.local_of(where)
 		_zone_kill(at.x, at.z)
@@ -443,3 +471,5 @@ func pay(enemy_id: String) -> void:
 	for item: String in stats.get("drops", {}):
 		if _rng.randf() < float(stats["drops"][item]):
 			_world.give(item, 1 + extra)
+	if bool(stats.get("boss", false)):  # (polish1 E4) relic, trophies, the vanquished page
+		_world.boss_paid(enemy_id, stats)

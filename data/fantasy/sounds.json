@@ -321,6 +321,14 @@
     1.08
    ],
    "range": 35
+  },
+  "boss_fall": {
+   "volume": 5,
+   "range": 120
+  },
+  "echo_fade": {
+   "volume": 2,
+   "range": 90
   }
  }
 }
