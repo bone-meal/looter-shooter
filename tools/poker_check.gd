@@ -16,6 +16,7 @@ func _init() -> void:
 	_ranks()
 	_side_pots()
 	_play_many()
+	_table_feel()
 	print("POKER_CHECK problems %d" % problems)
 	quit()
 
@@ -78,6 +79,50 @@ func _side_pots() -> void:
 	print("POKER_CHECK side pots %s" % str(pots))
 
 
+# The casino's table as the player meets it: six seats, every stack topped back up to 100 big blinds each hand (the
+# house players are refilled there): how many hands see a flop, how many players, how often someone raises.
+func _table_feel() -> void:
+	var house: Array = DataStore.load_json("res://data/poker.json")["house"]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 5
+	var r := Rules.new()
+	r.small_blind = 5
+	r.big_blind = 10
+	for k in 6:
+		r.add_seat("p%d" % k, 1000)
+	var flops := 0
+	var players := 0
+	var raised := 0
+	var showdowns := 0
+	var hands := 600
+	for h in hands:
+		for st: Dictionary in r.seats:
+			st["chips"] = 1000
+			st["out"] = false
+		r.start_hand(rng)
+		var counted := false
+		var was_raised := false
+		var guard := 0
+		while r.phase != "showdown" and guard < 200:
+			guard += 1
+			if r.board.is_empty() and r.to_call > r.big_blind:
+				was_raised = true
+			if not counted and r.board.size() >= 3:
+				counted = true
+				flops += 1
+				for i in r.seats.size():
+					if r.in_hand(i):
+						players += 1
+			var who := r.current
+			if not r.act(who, Ai.decide(r, who, house[who % house.size()], rng)):
+				r.act(who, {"do": "fold"})
+		if was_raised:
+			raised += 1
+		if not (r.result.get("shown", {}) as Dictionary).is_empty():
+			showdowns += 1
+	print("POKER_CHECK table feel (6 seats, 100 bb each hand): %d %% of hands see a flop with %.1f players, %d %% raised pre-flop, %d %% to a showdown" % [roundi(100.0 * flops / hands), float(players) / maxf(float(flops), 1.0), roundi(100.0 * raised / hands), roundi(100.0 * showdowns / hands)])
+
+
 func _play_many() -> void:
 	var cfg: Dictionary = DataStore.load_json("res://data/poker.json")
 	var house: Array = cfg["house"]
@@ -85,6 +130,12 @@ func _play_many() -> void:
 	rng.seed = 11
 	var hands := 0
 	var showdowns := 0
+	var flops := 0
+	var at_flop := 0  # players in at the flop, summed
+	var raised := 0  # hands with a pre-flop raise
+	var full := 0  # hands dealt to all six (the casino's house players are refilled: these are the table's normal hands)
+	var full_flops := 0
+	var full_at_flop := 0
 	var biggest := 0
 	var t0 := Time.get_ticks_msec()
 	var think_ms := 0
@@ -93,16 +144,32 @@ func _play_many() -> void:
 		var r := Rules.new()
 		r.small_blind = 5
 		r.big_blind = 10
-		for k in 5:
+		for k in 6:  # a full table, as in the casino
 			r.add_seat(String((house[k % house.size()] as Dictionary)["name"]), 1000)
-		var total := 5000
+		var total := 6000
 		while r.players_left() >= 2 and r.hand_no < 120:
 			if not r.start_hand(rng):
 				break
 			hands += 1
+			var six := r.players_left() == 6
+			if six:
+				full += 1
 			var guard := 0
+			var counted := false
+			var was_raised := false
 			while r.phase != "showdown" and guard < 200:
 				guard += 1
+				if r.board.is_empty() and r.to_call > r.big_blind:
+					was_raised = true
+				if not counted and r.board.size() >= 3:
+					counted = true
+					if six:
+						full_flops += 1
+					for i in r.seats.size():
+						if r.in_hand(i):
+							at_flop += 1
+							if six:
+								full_at_flop += 1
 				var who := r.current
 				var t := Time.get_ticks_usec()
 				var move := Ai.decide(r, who, house[who % house.size()], rng)
@@ -114,10 +181,16 @@ func _play_many() -> void:
 			_expect(r.phase == "showdown", "hand %d ended" % r.hand_no)
 			if not (r.result.get("shown", {}) as Dictionary).is_empty():
 				showdowns += 1
+			if r.board.size() >= 3:
+				flops += 1
+			if was_raised:
+				raised += 1
 			var now := 0
 			for s: Dictionary in r.seats:
 				now += int(s["chips"])
 				_expect(int(s["chips"]) >= 0, "no negative chips")
 			_expect(now == total, "chips kept after hand %d (%d)" % [r.hand_no, now])
 			biggest = maxi(biggest, r.pot())
-	print("POKER_CHECK %d hands of house players: %d to a showdown, biggest pot %d, %.1f ms a decision, %d ms in all" % [hands, showdowns, biggest, float(think_ms) / 1000.0 / maxf(float(moves), 1.0), Time.get_ticks_msec() - t0])
+	print("POKER_CHECK six-handed: %d hands, %d %% saw a flop, %.1f players a flop" % [full, roundi(100.0 * full_flops / maxf(float(full), 1.0)), float(full_at_flop) / maxf(float(full_flops), 1.0)])
+	print("POKER_CHECK %.1f players a flop, %d %% of hands raised pre-flop" % [float(at_flop) / maxf(float(flops), 1.0), roundi(100.0 * raised / maxf(float(hands), 1.0))])
+	print("POKER_CHECK %d hands of house players: %d saw a flop, %d to a showdown, biggest pot %d, %.1f ms a decision, %d ms in all" % [hands, flops, showdowns, biggest, float(think_ms) / 1000.0 / maxf(float(moves), 1.0), Time.get_ticks_msec() - t0])

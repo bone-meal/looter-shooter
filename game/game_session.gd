@@ -6318,6 +6318,8 @@ func _club_setup_pool() -> void:
 
 func _club_setup_games() -> void:
 	_games.setup(_wallet, _casino_cfg, _casino, _custom_layer, _player, _player_hud, _rng)
+	if net != null:
+		_games.set_poker_link(net.poker)
 	if _tcg.is_set_up():  # the home port's tavern table came first (sea step 7b)
 		_tcg.add_place(_casino)
 	else:

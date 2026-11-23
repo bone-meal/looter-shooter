@@ -1,7 +1,9 @@
 {
  "version": 1,
- "_about": "polish1 item 167: TEXAS HOLD'EM in the casino (core/poker_rules.gd, core/poker_ai.gd). stakes: the table's blind levels (small / big blind, buy-in from min_bb to max_bb big blinds, chips taken from the wallet and paid back when you stand up). seats: chairs round the table (you + house players). house: the house players (names and looks ours; tight 0..1 folds more, aggression 0..1 bets and raises more, bluff 0..1 bets with nothing now and then, sims = how many run-outs it plays in its head after the flop, think_s = how long it seems to think, look = how the seated house player looks: gender, outfit / hair (npc ids of data/characters.json npc), hair colour, skin tone). Online the host deals (like darts / pool). Placeholders for the director to tune.",
+ "_about": "polish1 item 167: TEXAS HOLD'EM in the casino (core/poker_rules.gd, core/poker_ai.gd). stakes: the table's blind levels (small / big blind, buy-in from min_bb to max_bb big blinds, chips taken from the wallet and paid back when you stand up). seats: chairs round the table (you + house players). house: the house players (names and looks ours; tight 0..1 folds more, aggression 0..1 bets and raises more, bluff 0..1 bets with nothing now and then, sims = how many run-outs it plays in its head after the flop, think_s = how long it seems to think, look = how the seated house player looks: gender, outfit / hair (npc ids of data/characters.json npc), hair colour, skin tone). Online the host deals one shared table (game/net_poker.gd): the first player to sit sets the stakes, players take the empty chair or a house player's chair (house players fill the rest). Placeholders for the director to tune.",
  "seats": 6,
+ "turn_s_online": 30,
+ "_turn_s_online": "online: seconds a player may think on their turn before the dealer checks (or folds) for them; alone there is no clock",
  "stakes": [
   {
    "id": "low",

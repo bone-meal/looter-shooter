@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!net wait_guest;!go club;!wait 10;!poker chips 5000;!poker;!wait 1;!poker press stakes 0;!poker press buyin max;!poker press sit;!wait 1;!poker note;!poker auto 60;!wait 25;!poker note;!shot poker_host1;!wait 25;!poker note;!shot poker_host2;!wait 25;!poker note;!wait 25;!poker note;!shot poker_host3;!poker press leave;!wait 2;!poker note

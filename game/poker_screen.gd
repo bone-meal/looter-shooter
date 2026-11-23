@@ -28,6 +28,8 @@ var wallet := 0  # chips in the wallet (not at the table)
 var _seated := false
 var _stakes := 0
 var _buy_frac := 0.5
+var _locked := -1  # online: the stakes the lobby's table plays (-1 = choose)
+var _note := ""  # the line under the buy-in (who sits with you, "Taking a seat...", why the host said no)
 var _view: Dictionary = {}
 var _me := 0
 var _legal: Dictionary = {}
@@ -61,6 +63,19 @@ func open(coins: int) -> void:
 	_banner = ""
 	_busted = false
 	visible = true
+	queue_redraw()
+
+
+# Online: the lobby's table already plays these stakes (-1 = free to choose).
+func lock_stakes(i: int) -> void:
+	_locked = i
+	if i >= 0:
+		_stakes = i
+	queue_redraw()
+
+
+func set_note(text: String) -> void:
+	_note = text
 	queue_redraw()
 
 
@@ -186,6 +201,11 @@ func _draw_pick() -> void:
 		var st: Dictionary = stakes[i]
 		var r := Rect2(Vector2(40.0 + float(i) * 300.0, 124), Vector2(280, 70))
 		var on := i == _stakes
+		if _locked >= 0 and i != _locked:  # the lobby's table plays other stakes
+			draw_style_box(UiSkin._box(Color(0.04, 0.05, 0.06, 0.6), Color(UiSkin.EDGE, 0.4), 12, 2), r)
+			draw_string(_font, r.position + Vector2(16, 30), String(st["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, UiSkin.TEXT_DIM * Color(1, 1, 1, 0.5))
+			draw_string(_font, r.position + Vector2(16, 56), "the table plays other stakes", HORIZONTAL_ALIGNMENT_LEFT, -1, 14, UiSkin.TEXT_DIM * Color(1, 1, 1, 0.5))
+			continue
 		draw_style_box(UiSkin._box(Color(0.06, 0.08, 0.1, 0.95) if not on else Color(0.18, 0.14, 0.05, 0.95), GOLD if on else UiSkin.EDGE, 12, 2), r)
 		draw_string(_font, r.position + Vector2(16, 30), String(st["name"]), HORIZONTAL_ALIGNMENT_LEFT, -1, 20, GOLD if on else UiSkin.TEXT)
 		draw_string(_font, r.position + Vector2(16, 56), "blinds %d / %d   buy-in %d - %d" % [int(st["sb"]), int(st["bb"]), int(st["min_bb"]) * int(st["bb"]), int(st["max_bb"]) * int(st["bb"])], HORIZONTAL_ALIGNMENT_LEFT, -1, 14, UiSkin.TEXT_DIM)
@@ -197,7 +217,7 @@ func _draw_pick() -> void:
 		_button(Rect2(Vector2(40.0 + float(k) * 150.0, 254), Vector2(136, 44)), String(marks[k][0]).to_upper(), "buyin %s" % marks[k][0], true, func() -> void: _buy_frac = f, is_equal_approx(f, _buy_frac))
 	ChipArt.draw_value(self, Vector2(540, 276), 20.0, _buy_in(), _font)
 	draw_string(_font, Vector2(570, 286), "%d chips" % _buy_in(), HORIZONTAL_ALIGNMENT_LEFT, -1, 26, GOLD)
-	draw_string(_font, Vector2(40, 350), "Five house players sit with you. Chips you win go back to your wallet when you stand up.", HORIZONTAL_ALIGNMENT_LEFT, PANEL.x - 80.0, 16, UiSkin.TEXT_DIM)
+	draw_string(_font, Vector2(40, 350), _note, HORIZONTAL_ALIGNMENT_LEFT, PANEL.x - 80.0, 16, UiSkin.TEXT_DIM)
 	var can := wallet >= _buy_in()
 	_button(Rect2(Vector2(PANEL.x - 360.0, PANEL.y - 96.0), Vector2(320, 64)), "SIT DOWN" if can else "Not enough chips", "sit", can, func() -> void: sit_requested.emit(_stakes, _buy_in()), true)
 
@@ -223,7 +243,8 @@ func _draw_middle(felt: Rect2) -> void:
 # Seat boxes round the oval: ours at the bottom middle, the rest round the sides and the top (the dealer's side).
 func _seat_at(i: int, n: int, felt: Rect2) -> Vector2:
 	var order := [90.0, 148.0, 32.0, 206.0, 334.0, 250.0]
-	var a := deg_to_rad(float(order[i % order.size()]) if n <= order.size() else 90.0 + 360.0 * float(i) / float(n))
+	var k := (i - _me + n) % maxi(n, 1)  # our seat at the bottom (online we may sit in any chair)
+	var a := deg_to_rad(float(order[k % order.size()]) if n <= order.size() else 90.0 + 360.0 * float(k) / float(n))
 	return felt.get_center() + Vector2(cos(a) * felt.size.x * 0.4, sin(a) * felt.size.y * 0.4)
 
 

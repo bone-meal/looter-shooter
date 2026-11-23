@@ -3307,7 +3307,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"press":
 					_lines.append("POKER press %s: %s" % [" ".join(words.slice(2)), str((pk.get("screen") as Control).call("press", " ".join(words.slice(2))))])
 				"auto":
-					pk.set("auto_hands", int(words[2]))
+					pk.call("set_auto", int(words[2]))
 				"chips":  # "!poker chips <n>": the wallet holds n chips (dev runs never save)
 					(session.get("_wallet") as RefCounted).set("balance", int(words[2]))
 				"note":

@@ -135,13 +135,14 @@ static func build_steps(parent: Node3D, center: Vector3, out: Dictionary) -> Arr
 		crew.add_obstacle(POKER_AT, 2.3, 1.6)
 		crew.add("deal", StaffCrew.look("casino_gold", "bob", "#1b1b1b", "gentle_smile", 2), POKER_AT + PokerTable.dealer_spot(), rad_to_deg(atan2(PokerTable.dealer_spot().x, PokerTable.dealer_spot().z))))
 	var house: Array = DataStore.load_json("res://data/poker.json").get("house", [])
+	st["poker_people"] = [null, null, null, null, null, null]  # seat -> the seated house player (seat 0: the empty chair); hidden while a player online has that seat
 	for i in range(1, mini(house.size() + 1, PokerTable.SEAT_ANGLES.size())):  # one seated player a piece (each is a model build)
 		steps.append(func() -> void:
 			var crew: StaffCrew = st["crew"]
 			var l: Dictionary = (house[i - 1] as Dictionary).get("look", {})
 			var look := {"gender": String(l.get("gender", "female")), "height": 1.0, "weight": 1.0, "bust": 0.3, "glutes": 0.3, "skin": int(l.get("skin", 2)),
 				"hair": String(l.get("hair", "bob")), "hair_color": String(l.get("hair_color", "#553322")), "face": "gentle_smile", "outfit": String(l.get("outfit", "sailor"))}
-			crew.add("sit", look, POKER_AT + PokerTable.seat_spot(i), PokerTable.seat_yaw(i)))
+			(st["poker_people"] as Array)[i] = crew.add("sit", look, POKER_AT + PokerTable.seat_spot(i), PokerTable.seat_yaw(i)))
 	st["player_tables"] = []  # the other three tables (locked: four on the beach): two players play there (online, build step 13)
 	for t: Dictionary in DataStore.load_json("res://data/tcg/table.json").get("tables", []):
 		steps.append(func() -> void:
@@ -158,7 +159,7 @@ static func build_steps(parent: Node3D, center: Vector3, out: Dictionary) -> Arr
 		card_vendor.rotation_degrees.y = 90.0
 		root.add_child(card_vendor)
 		(st["crew"] as StaffCrew).add_obstacle(Vector3(13.0, 0.0, -9.6), 0.6, 0.9)
-		out.merge({"vendors": st["vendors"], "pachinko": st["wall"], "slots": st["slots"], "blackjack": st["bj"], "roulette": st["rt"], "crew": st["crew"], "bj_dealer": st["bj_dealer"], "rt_dealer": st["rt_dealer"], "card_table": st["card_table"], "card_dealer": st["card_dealer"], "card_vendor": card_vendor, "player_tables": player_tables, "poker": st["poker"]}, true))
+		out.merge({"vendors": st["vendors"], "pachinko": st["wall"], "slots": st["slots"], "blackjack": st["bj"], "roulette": st["rt"], "crew": st["crew"], "bj_dealer": st["bj_dealer"], "rt_dealer": st["rt_dealer"], "card_table": st["card_table"], "card_dealer": st["card_dealer"], "card_vendor": card_vendor, "player_tables": player_tables, "poker": st["poker"], "poker_people": st["poker_people"]}, true))
 	return steps
 
 

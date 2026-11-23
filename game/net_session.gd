@@ -32,6 +32,7 @@ const NetRounds = preload("res://game/net_rounds.gd")
 const NetSlots = preload("res://game/net_slots.gd")
 const NetDarts = preload("res://game/net_darts.gd")
 const NetPool = preload("res://game/net_pool.gd")
+const NetPoker = preload("res://game/net_poker.gd")
 const NetDowns = preload("res://game/net_downs.gd")
 const NetSea = preload("res://game/net_sea.gd")
 
@@ -88,6 +89,7 @@ var rounds: Node  # the island's shared rounds and enemies (game/net_rounds.gd)
 var slots: Node  # the lobby's shared slot jackpot (game/net_slots.gd)
 var darts: Node  # darts matches between players (game/net_darts.gd)
 var pool: Node  # 8-ball matches between players (game/net_pool.gd)
+var poker: Node  # the casino's poker table, the host dealing (game/net_poker.gd)
 var downs: Node  # who is down or out on the islands, revives, the party's game over (game/net_downs.gd)
 var sea: Node  # the sea's fleet, helms, decks, swimmers and ropes (game/net_sea.gd)
 var space: Node = null  # the sea world (game/sea_world.gd) once built: its floating origin turns positions to and from shared ones
@@ -186,6 +188,10 @@ func _ready() -> void:
 	pool.name = "Pool"
 	pool.net = self
 	add_child(pool)
+	poker = NetPoker.new()
+	poker.name = "Poker"
+	poker.net = self
+	add_child(poker)
 	downs = NetDowns.new()
 	downs.name = "Downs"
 	downs.net = self
@@ -304,6 +310,8 @@ func _drop_client() -> void:
 
 func leave(reason: String = "") -> void:
 	var was_active := _client != null or _migrating
+	if poker != null:
+		poker.after_host_lost()
 	_migrating = false
 	_drop_client()
 	unbind_world()
@@ -466,6 +474,7 @@ func _migrate() -> void:
 	if _client == null or _migrating:
 		return
 	_migrating = true
+	poker.after_host_lost()  # (polish1 item 167) the old host dealt the poker table: seated players get their table chips back
 	_freeze_sea(true)
 	var old_session := session_id
 	var me := _my_peer

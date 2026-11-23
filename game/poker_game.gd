@@ -1,56 +1,89 @@
-# Purpose: runs the casino's Texas Hold'em table against the house (polish1 item 167): sitting down (stakes + buy-in
-# taken from the wallet), hands one after another with the house players thinking for a moment before each move,
-# your moves from the screen, what happened told on the screen and shown on the 3D table, a house player who busts
-# replaced by the next with a fresh buy-in, rebuys, and standing up (your table chips back to the wallet; mid-hand you
-# fold first). Rules in core/poker_rules.gd, the house in core/poker_ai.gd, numbers in data/poker.json.
-# Dependencies: core/poker_rules.gd, core/poker_ai.gd, core/wallet.gd, game/poker_table.gd, game/poker_screen.gd.
+# Purpose: the casino's Texas Hold'em table for this player (polish1 item 167): walking up (the screen), sitting down
+# (stakes + buy-in taken from the wallet), the hands as this machine sees them on the screen and the 3D table, our
+# moves, rebuys, standing up (the table chips back to the wallet). Alone a dealer here deals against the house players
+# (game/poker_dealer.gd); in a lobby the host deals one shared table (game/net_poker.gd) where players sit with house
+# players (a player's seat hides that chair's house player). Everyone near the table sees it played.
+# Dependencies: game/poker_dealer.gd, game/net_poker.gd (link), core/poker_rules.gd (hand names), core/wallet.gd,
+# game/poker_table.gd, game/poker_screen.gd, game/player.gd (teleport, look_at_point, controls_enabled), game/player_hud.gd.
 extends Node
 
 const Rules = preload("res://core/poker_rules.gd")
-const Ai = preload("res://core/poker_ai.gd")
+const Dealer = preload("res://game/poker_dealer.gd")
 const PokerScreen = preload("res://game/poker_screen.gd")
 const DataStore = preload("res://core/data_store.gd")
 
 signal finished  # chips changed: the session saves the profile
 
-const ME := 0
+const SOLO := 1  # our owner id at the dealer here
 
 var table: Node3D  # game/poker_table.gd
 var screen := PokerScreen.new()
+var link: Node  # game/net_poker.gd (in a lobby)
+var _people: Array = []  # seat -> the seated house player model (null for the empty chair)
 var _wallet: RefCounted
 var _player: CharacterBody3D
 var _hud: Control
-var _rng := RandomNumberGenerator.new()
 var _cfg: Dictionary = {}
-var _rules: Rules
-var _styles: Array = []  # seat -> house style ({} for us)
-var _next_house := 0
+var _dealer := Dealer.new()
+var _net := false  # this sitting is at the lobby's table
 var _open := false
-var _running := false  # a hand is being played out
-var _waiting := false  # waiting for our move
-var _leaving := false
+var _view: Dictionary = {}  # the table as we see it now
+var _seat := -1  # our seat (-1 = not seated)
+var _told_hand := -1  # the hand whose winner the banner shows
 var _hands_won := 0
-var auto_hands := 0  # (dev) the house AI plays our seat for this many hands (tests)
+var _bot := 0  # (dev) online on a guest: calls / checks for us this many hands
 
 
-func setup(wallet: RefCounted, poker_table: Node3D, layer: CanvasLayer, player: CharacterBody3D, hud: Control) -> void:
+func setup(wallet: RefCounted, poker_table: Node3D, layer: CanvasLayer, player: CharacterBody3D, hud: Control, people: Array = []) -> void:
 	_wallet = wallet
 	table = poker_table
 	_player = player
 	_hud = hud
+	_people = people
 	_cfg = DataStore.load_json("res://data/poker.json")
-	_rng.randomize()
 	screen.cfg = _cfg
 	layer.add_child(screen)
 	screen.sit_requested.connect(_sit)
 	screen.move_requested.connect(_on_move)
 	screen.rebuy_requested.connect(_rebuy)
 	screen.closed.connect(request_close)
+	_dealer.cfg = _cfg
+	add_child(_dealer)
+	_dealer.changed.connect(func(events: Array) -> void:
+		if not _net:
+			var seat := _dealer.seat_of(SOLO)
+			_apply(_dealer.view_for(seat), seat, false, events))
+	_dealer.paid.connect(func(_o: int, chips: int) -> void: _paid(chips))
+
+
+func set_link(net_poker: Node) -> void:
+	link = net_poker
+	link.connect("view_changed", func(v: Dictionary, seat: int, queued: bool, events: Array) -> void:
+		if _net or _seat < 0:
+			_apply(v, seat, queued, events))
+	link.connect("paid_out", _paid)
+	link.connect("refused", func(text: String, refund: int) -> void:
+		_wallet.call("add", refund)
+		_hud.call("notice", text)
+		screen.wallet = int(_wallet.get("balance"))
+		screen.set_note(text)
+		finished.emit())
+	link.connect("table_lost", func(chips: int) -> void:
+		_wallet.call("add", chips)
+		_hud.call("notice", "The host left: your %d table chips are back in your wallet." % chips)
+		_net = false
+		if _open:
+			_leave_table_view()
+		finished.emit())
 
 
 func _notification(what: int) -> void:
 	if what == NOTIFICATION_PREDELETE and is_instance_valid(screen) and screen.get_parent() == null:
 		screen.free()
+
+
+func _online() -> bool:
+	return link != null and bool(link.call("online"))
 
 
 func is_open() -> bool:
@@ -63,232 +96,249 @@ func near(pos: Vector3) -> bool:
 
 func open() -> void:
 	_open = true
-	_leaving = false
 	_player.controls_enabled = false
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-	var spot: Vector3 = table.to_global(table.call("seat_spot", ME))
+	screen.open(int(_wallet.get("balance")))
+	if _online():
+		var v: Dictionary = link.get("last_view")
+		var players := 0
+		for h: bool in v.get("human", []):
+			players += 1 if h else 0
+		screen.lock_stakes(int(v.get("stakes", -1)) if not v.is_empty() else -1)
+		screen.set_note("The lobby's table: you sit with %s." % ("the house players" if players == 0 else "%d player%s and the house players" % [players, "" if players == 1 else "s"]))
+		_go_to_seat(_free_chair(v))
+	else:
+		screen.lock_stakes(-1)
+		screen.set_note("Five house players sit with you. Chips you win go back to your wallet when you stand up.")
+		_go_to_seat(0)
+
+
+# The chair we would get (for standing there while choosing): the empty chair, else the first house player's.
+func _free_chair(v: Dictionary) -> int:
+	var human: Array = v.get("human", [])
+	for i in human.size():
+		if not bool(human[i]):
+			return i
+	return 0
+
+
+func _go_to_seat(seat: int) -> void:
+	var spot: Vector3 = table.to_global(table.call("seat_spot", seat) * (1.0 if seat == 0 else 1.25))
 	_player.call("teleport", Vector3(spot.x, _player.global_position.y, spot.z), 0.0)
 	_player.call("look_at_point", table.global_position + Vector3(0, 0.95, 0))
-	screen.open(int(_wallet.get("balance")))
 
 
-# Esc / Leave: stand up. Mid-hand our cards are folded first; our chips at the table go back to the wallet.
+# Esc / Stand up: our chips at the table come back (the dealer pays them); mid-hand our cards fold.
 func request_close() -> void:
 	if not _open:
 		return
-	if _rules != null and _running and _rules.in_hand(ME):
-		if _rules.current == ME:
-			_rules.act(ME, {"do": "fold"})
+	if _seat >= 0 or (_net and bool(_view.get("_queued", false))):
+		if _net:
+			link.call("ask_leave")
 		else:
-			_rules.seats[ME]["folded"] = true
-	_leaving = true
-	_cash_out()
-	_open = false
-	_running = false
-	_waiting = false
-	screen.close_screen()
-	table.call("clear")
-	_player.controls_enabled = true
-	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+			_dealer.leave(SOLO)
+	elif _net:
+		link.call("ask_leave")  # (a sit still on its way: the host gives it back)
+	_leave_table_view()
 	finished.emit()
 
 
-func _cash_out() -> void:
-	if _rules == null:
+func _leave_table_view() -> void:
+	_open = false
+	_seat = -1
+	screen.close_screen()
+	_player.controls_enabled = true
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	if not _net:
+		table.call("clear")
+		_view = {}
+		_show_people([])
+
+
+func _paid(chips: int) -> void:
+	if chips <= 0:
 		return
-	var chips := int(_rules.seats[ME]["chips"])
-	if chips > 0:
-		_wallet.call("add", chips)
-		_hud.call("notice", "You stand up from the poker table with %d chips." % chips)
-	_rules.seats[ME]["chips"] = 0
-	_rules = null
+	_wallet.call("add", chips)
+	_hud.call("notice", "%d chips from the poker table go back to your wallet." % chips)
+	screen.wallet = int(_wallet.get("balance"))
+	finished.emit()
 
 
 func _sit(stakes: int, buy_in: int) -> void:
 	if not _wallet.call("spend", buy_in):
 		return
-	var st: Dictionary = (_cfg["stakes"] as Array)[stakes]
-	_rules = Rules.new()
-	_rules.small_blind = int(st["sb"])
-	_rules.big_blind = int(st["bb"])
-	_rules.add_seat("You", buy_in)
-	_styles = [{}]
-	var house: Array = _cfg["house"]
-	for k in int(_cfg.get("seats", 6)) - 1:
-		var h: Dictionary = house[_next_house % house.size()]
-		_next_house += 1
-		_rules.add_seat(String(h["name"]), _house_buy_in(st))
-		_styles.append(h)
 	screen.wallet = int(_wallet.get("balance"))
 	finished.emit()
-	_play.call_deferred()
-
-
-func _house_buy_in(st: Dictionary) -> int:
-	return int(st["bb"]) * _rng.randi_range(int(st["min_bb"]) + 20, int(st["max_bb"]))
+	if _online():
+		_net = true
+		screen.set_note("Taking a seat...")
+		link.call("ask_sit", stakes, buy_in)
+		return
+	_net = false
+	var why := _dealer.sit(SOLO, "You", stakes, buy_in)
+	if why != "":
+		_wallet.call("add", buy_in)
+		screen.set_note(why)
 
 
 func _rebuy() -> void:
-	if _rules == null:
-		return
-	var st := _stake()
+	var st: Dictionary = (_cfg["stakes"] as Array)[maxi(int(_view.get("stakes", 0)), 0)]
 	var amount := floori(float(int(st["bb"]) * int(st["max_bb"])) * 0.5)
 	if not _wallet.call("spend", amount):
 		_hud.call("notice", "Not enough chips to buy in again (%d)." % amount)
 		return
-	_rules.seats[ME]["chips"] = amount
-	_rules.seats[ME]["out"] = false
 	screen.wallet = int(_wallet.get("balance"))
-	screen.set_busted(false)
 	finished.emit()
-	_play.call_deferred()
-
-
-func _stake() -> Dictionary:
-	for st: Dictionary in _cfg["stakes"]:
-		if int(st["bb"]) == _rules.big_blind:
-			return st
-	return (_cfg["stakes"] as Array)[0]
-
-
-# Hands one after another until we stand up or run out of chips.
-func _play() -> void:
-	if _running or _rules == null:
+	if _net:
+		link.call("ask_rebuy", amount)
 		return
-	_running = true
-	while _open and _rules != null and int(_rules.seats[ME]["chips"]) > 0:
-		_refill_house()
-		if not _rules.start_hand(_rng):
-			break
-		screen.new_hand()
-		_tell()
-		_show()
-		while _open and _rules != null and _rules.phase != "showdown":
-			var who := _rules.current
-			if who < 0:
-				break
-			if who == ME:
-				_waiting = true
-				_show()
-				while _waiting and _open:
-					if auto_hands > 0:  # (dev) the house AI plays our seat
-						await get_tree().create_timer(0.3).timeout
-						if _waiting and _open:
-							_on_move(Ai.decide(_rules, ME, (_cfg["house"] as Array)[2], _rng))
-						continue
-					await get_tree().process_frame
-				continue
-			var style: Dictionary = _styles[who]
-			await get_tree().create_timer(float(style.get("think_s", 1.2)) * _rng.randf_range(0.6, 1.3)).timeout
-			if not _open or _rules == null:
-				break
-			var move := Ai.decide(_rules, who, style, _rng)
-			if not _rules.act(who, move):
-				_rules.act(who, {"do": "fold"})
-			_tell()
-			_show()
-		if not _open or _rules == null:
-			break
-		_show()
-		_announce()
-		auto_hands = maxi(auto_hands - 1, 0)
-		await get_tree().create_timer(3.2).timeout
-	_running = false
-	if _open and _rules != null and int(_rules.seats[ME]["chips"]) <= 0:
-		screen.set_busted(true)
-		screen.set_banner("Out of chips")
+	var why := _dealer.rebuy(SOLO, amount)
+	if why != "":
+		_wallet.call("add", amount)
+		_hud.call("notice", why)
 
 
-func _on_move(move: Dictionary) -> void:
-	if not _waiting or _rules == null or _rules.current != ME:
+func _on_move(mv: Dictionary) -> void:
+	if _net:
+		link.call("ask_move", mv)
+	else:
+		_dealer.move(SOLO, mv)
+
+
+# The table moved on: the 3D table (everyone), the house players in their chairs, and our screen when we are at it.
+func _apply(v: Dictionary, seat: int, queued: bool, events: Array) -> void:
+	_view = v
+	_view["_queued"] = queued
+	if v.is_empty() or v.get("seats", []).is_empty():
+		table.call("clear")
+		_show_people([])
+		if _open and _seat >= 0:  # the table closed under us
+			_seat = -1
+			screen.open(int(_wallet.get("balance")))
 		return
-	if _rules.act(ME, move):
-		_waiting = false
-		_tell()
-		_show()
-
-
-# A house player with no chips left gets up; the next house player sits down with a fresh buy-in.
-func _refill_house() -> void:
-	if not bool(_cfg.get("rebuy_house", true)):
+	table.call("set_view", v, seat)
+	_show_people(v.get("human", []))
+	if not _open:
 		return
-	var house: Array = _cfg["house"]
-	for i in range(1, _rules.seats.size()):
-		if int(_rules.seats[i]["chips"]) <= 0:
-			var h: Dictionary = house[_next_house % house.size()]
-			_next_house += 1
-			_rules.seats[i]["name"] = String(h["name"])
-			_rules.seats[i]["chips"] = _house_buy_in(_stake())
-			_rules.seats[i]["out"] = false
-			_styles[i] = h
-			screen.say(i, "sits down", "%s sits down." % String(h["name"]))
-
-
-func _show() -> void:
-	if _rules == null:
+	var was := _seat
+	_seat = seat
+	if seat < 0:
+		if queued:
+			screen.set_note("You sit down when this hand ends...")
 		return
-	var view := _rules.view(ME)
+	if was != seat:
+		_go_to_seat(seat)
 	screen.wallet = int(_wallet.get("balance"))
-	screen.show_hand(view, ME, _rules.legal(ME) if _waiting else {})
-	table.call("set_view", view, ME)
+	if int(v.get("hand_no", 0)) != _told_hand and String(v.get("phase", "")) == "preflop":
+		screen.new_hand()
+	_tell(events, v, seat)
+	screen.show_hand(v, seat, v.get("legal", {}))
+	if _bot > 0 and not (v.get("legal", {}) as Dictionary).is_empty():
+		var owe := int((v["legal"] as Dictionary)["call"])
+		get_tree().create_timer(0.4).timeout.connect(func() -> void: _on_move({"do": "call" if owe > 0 else "check"}))
+	var mine: Dictionary = (v["seats"] as Array)[seat]
+	var between := String(v.get("phase", "")) in ["idle", "showdown"]
+	screen.set_busted(int(mine["chips"]) <= 0 and between)
+	if String(v.get("phase", "")) == "showdown" and int(v.get("hand_no", 0)) != _told_hand:
+		_told_hand = int(v.get("hand_no", 0))
+		_announce(v, seat)
+		_bot = maxi(_bot - 1, 0)
 
 
-# Turns the rules' events into words on the screen.
-func _tell() -> void:
-	for e: Dictionary in _rules.events:
+# A player in a chair hides the house player who sat there (online).
+func _show_people(human: Array) -> void:
+	for i in _people.size():
+		var p: Node3D = _people[i]
+		if p != null and is_instance_valid(p):
+			p.visible = not (i < human.size() and bool(human[i]))
+
+
+# Turns the table's events into words on the screen ("You" for our seat).
+func _tell(events: Array, v: Dictionary, me: int) -> void:
+	var seats: Array = v.get("seats", [])
+	for e: Dictionary in events:
 		var seat := int(e.get("seat", -1))
-		match String(e["kind"]):
+		match String(e.get("kind", "")):
 			"deal":
-				screen.say(-1, "", "Hand %d: %s the button." % [_rules.hand_no, _says(int(e["button"]), "has", "have")])
+				screen.say(-1, "", "Hand %d: %s the button." % [int(v.get("hand_no", 0)), _says(seats, me, int(e["button"]), "has", "have")])
 			"blind":
 				screen.say(seat, "%s %d" % [String(e["what"]).capitalize(), int(e["amount"])], "")
 			"fold":
-				screen.say(seat, "Fold", "%s." % _says(seat, "folds", "fold"))
+				screen.say(seat, "Fold", "%s." % _says(seats, me, seat, "folds", "fold"))
 			"check":
-				screen.say(seat, "Check", "%s." % _says(seat, "checks", "check"))
+				screen.say(seat, "Check", "%s." % _says(seats, me, seat, "checks", "check"))
 			"call":
-				screen.say(seat, "Call %d" % int(e["amount"]), "%s %d." % [_says(seat, "calls", "call"), int(e["amount"])])
+				screen.say(seat, "Call %d" % int(e["amount"]), "%s %d." % [_says(seats, me, seat, "calls", "call"), int(e["amount"])])
 			"raise":
-				screen.say(seat, ("All in %d" if bool(e.get("all_in", false)) else "Raise to %d") % int(e["to"]), "%s %d." % [_says(seat, "goes all in for", "go all in for") if bool(e.get("all_in", false)) else _says(seat, "raises to", "raise to"), int(e["to"])])
+				screen.say(seat, ("All in %d" if bool(e.get("all_in", false)) else "Raise to %d") % int(e["to"]), "%s %d." % [_says(seats, me, seat, "goes all in for", "go all in for") if bool(e.get("all_in", false)) else _says(seats, me, seat, "raises to", "raise to"), int(e["to"])])
 			"street":
-				for i in _rules.seats.size():
-					if _rules.in_hand(i) and not bool(_rules.seats[i]["all_in"]):
+				for i in seats.size():
+					var s: Dictionary = seats[i]
+					if not bool(s["folded"]) and not bool(s["out"]) and not bool(s["all_in"]):
 						screen.say(i, "", "")
 				screen.say(-1, "", "The %s." % String(e["phase"]))
 			"win":
-				screen.say(seat, "Wins %d" % int(e["amount"]), "%s %d%s." % [_says(seat, "wins", "win"), int(e["amount"]), (" with %s" % String(e["hand"]).to_lower()) if String(e["hand"]) != "" else ""])
-	_rules.events.clear()
+				screen.say(seat, "Wins %d" % int(e["amount"]), "%s %d%s." % [_says(seats, me, seat, "wins", "win"), int(e["amount"]), (" with %s" % String(e["hand"]).to_lower()) if String(e["hand"]) != "" else ""])
+			"sit":
+				if seat != me:
+					screen.say(seat, "sits down", "%s sits down." % String(e["name"]))
+			"leave":
+				screen.say(seat, "stood up", "%s stands up." % String(e["name"]))
+			"clock":
+				screen.say(seat, "Out of time", "%s out of time." % ("You are" if seat == me else "%s is" % _name(seats, seat)))
+
+
+func _name(seats: Array, seat: int) -> String:
+	return String((seats[seat] as Dictionary)["name"]) if seat >= 0 and seat < seats.size() else "?"
 
 
 # "Big Sal folds" / "You fold".
-func _says(seat: int, verb_s: String, verb: String) -> String:
-	return "You " + verb if seat == ME else "%s %s" % [String(_rules.seats[seat]["name"]), verb_s]
+func _says(seats: Array, me: int, seat: int, verb_s: String, verb: String) -> String:
+	return "You " + verb if seat == me else "%s %s" % [_name(seats, seat), verb_s]
 
 
-func _announce() -> void:
-	var pots: Array = _rules.result.get("pots", [])
+func _announce(v: Dictionary, me: int) -> void:
+	var pots: Array = (v.get("result", {}) as Dictionary).get("pots", [])
 	if pots.is_empty():
 		return
 	var main: Dictionary = pots[0]
 	var names: PackedStringArray = []
+	var mine := false
 	for w: int in main["winners"]:
-		names.append(String(_rules.seats[w]["name"]))
-	if ME in (main["winners"] as Array):
+		if w == me:
+			mine = true
+			names.append("You")
+		else:
+			names.append(_name(v["seats"], w))
+	if mine:
 		_hands_won += 1
-	screen.set_banner("%s win%s%s" % [" and ".join(names), "" if names.size() > 1 or names[0] == "You" else "s", (" with " + String(main["hand"]).to_lower()) if String(main["hand"]) != "" else ""])
+	screen.set_banner("%s win%s%s" % [" and ".join(names), "" if names.size() > 1 or mine else "s", (" with " + String(main["hand"]).to_lower()) if String(main["hand"]) != "" else ""])
+
+
+# (dev) The house AI plays our seat for n hands (alone, or online on the host's own seat; a guest calls / checks).
+func set_auto(hands: int) -> void:
+	if _net:
+		var d: Node = link.call("dealer")
+		if d != null:
+			(d.get("auto") as Dictionary)[1] = hands
+		else:
+			_bot = hands
+	else:
+		_dealer.auto[SOLO] = hands
 
 
 # (dev) One line: stakes, hand, phase, chips at the seats, the pot, our cards and the board.
 func note() -> String:
-	if _rules == null:
-		return "open %s, not seated, wallet %d" % [str(_open), int(_wallet.get("balance"))]
+	if _view.is_empty() or _view.get("seats", []).is_empty():
+		return "open %s, not seated, online %s, wallet %d" % [str(_open), str(_net), int(_wallet.get("balance"))]
 	var chips: PackedStringArray = []
-	for s: Dictionary in _rules.seats:
+	for s: Dictionary in _view["seats"]:
 		chips.append("%s %d%s" % [String(s["name"]), int(s["chips"]), " F" if bool(s["folded"]) else ""])
 	var mine: PackedStringArray = []
-	for c: int in _rules.seats[ME]["cards"]:
-		mine.append(Rules.card_name(c))
+	if _seat >= 0:
+		for c: int in (_view["seats"] as Array)[_seat]["cards"]:
+			mine.append(Rules.card_name(c))
 	var board: PackedStringArray = []
-	for c: int in _rules.board:
+	for c: int in _view.get("board", []):
 		board.append(Rules.card_name(c))
-	return "blinds %d/%d hand %d %s, current %d, pot %d | %s | mine %s board %s | won %d, wallet %d" % [_rules.small_blind, _rules.big_blind, _rules.hand_no, _rules.phase, _rules.current, _rules.pot(), ", ".join(chips), " ".join(mine), " ".join(board), _hands_won, int(_wallet.get("balance"))]
+	return "%s blinds %d/%d hand %d %s, current %d, seat %d, pot %d | %s | mine %s board %s | won %d, wallet %d" % ["online" if _net else "solo", int(_view["sb"]), int(_view["bb"]), int(_view["hand_no"]), String(_view["phase"]), int(_view["current"]), _seat, int(_view["pot"]), ", ".join(chips), " ".join(mine), " ".join(board), _hands_won, int(_wallet.get("balance"))]

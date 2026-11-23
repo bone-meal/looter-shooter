@@ -1,13 +1,13 @@
-Polish1 I4 poker part 2: Texas Holdem table in the casino vs five house players
+Polish1 I4 poker part 3: online table (host deals) + livelier house players
 
-- core/poker_rules.gd, core/poker_ai.gd, data/poker.json (pure rules, house AI, stakes and players)
-- game/poker_table.gd: oval felt table, six chairs, cards, chip stacks, dealer button
-- game/poker_screen.gd: stakes and buy-in pick, felt with seats, board, pot, fold / call / raise controls
-- game/poker_game.gd: plays hands against the house; leaving folds and cashes out
-- casino_room.gd: table, dealer and seated house players, one build step each
-- casino_games.gd: poker spot, open, close
-- dev: !poker, !poker press, !poker auto, !poker chips, !poker note
-- tools/poker_check.gd: rules and AI checks
+- game/poker_dealer.gd: deals a table for any mix of players and house players (sit, move on your turn, rebuy, stand up mid-hand, turn clock online, refills, no house player twice)
+- game/net_poker.gd (node Poker): the host runs the dealer, clients send intents, each machine gets its own view; chips stay on each machine; a lost host gives seated players their chips back
+- game/poker_game.gd: alone its own dealer, in a lobby the shared table; a player's chair hides that house player; everyone sees the table played
+- poker_screen.gd: stakes locked to the lobby table, our seat always at the bottom, notes
+- core/poker_ai.gd: pre-flop by hand rank (play / raise shares by tightness and aggression), a little looser after the flop: 6 seats now 90 percent of hands see a flop with 3 players (was 2)
+- data/poker.json turn_s_online 30
+- tools/poker_dealer_check.gd, poker_check table feel, pair test set poker (two copies: both sat, played, stood up, chips back)
+- ARCHITECTURE.md poker map
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

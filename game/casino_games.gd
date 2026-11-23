@@ -79,8 +79,14 @@ func setup(wallet: Wallet, cfg: Dictionary, casino: Dictionary, layer: CanvasLay
 	if casino.has("poker"):
 		_poker = PokerGame.new()
 		add_child(_poker)
-		_poker.call("setup", wallet, casino["poker"], layer, player, hud)
+		_poker.call("setup", wallet, casino["poker"], layer, player, hud, casino.get("poker_people", []))
 		_poker.connect("finished", func() -> void: round_finished.emit())
+
+
+# (polish1 item 167) in a lobby the host deals one poker table for everyone (game/net_poker.gd).
+func set_poker_link(net_poker: Node) -> void:
+	if _poker != null:
+		_poker.call("set_link", net_poker)
 
 
 func is_open() -> bool:
