@@ -1,11 +1,8 @@
-Polish1 E4: boss trophies, relics, a real death moment, phantom echoes, the threshing ground
+Polish1 E4 fixes: trophy pictures in the Trophies tab, capes with dagged hems, crown in place of the hat
 
-- 131 every region boss: a signature TROPHY (crown + mantle) worn over any outfit in a trophy slot, seen online, chosen from a new Trophies tab of the player card; the first win over a boss (any form) gives it
-- 131 a RELIC per boss (one passive charm, relic slot in the bag): Sheaf-Knot Charm, Heartwood Seed, Undertow Pearl, Glassmaw's Eye, Rime Heart, Wyrm's Ember Scale, Roc Plume, Pale Signet
-- 131 the fall: shudder, kneel, topple, a gold light column with its own debris rising, a ground ring, a bell toll; a manuscript Vanquished page lists what you won (achievements and emblems unlock as before)
-- 133 THE BINDING ECHOES: once the lobby host has beaten a boss it returns every 10 minutes as its translucent blue echo (weaker); echoes drop a rare ghost trophy and pieces of a 4-piece spectral set; an echo counts as the boss for quests and achievements
-- Harvest King arena: the old threshing floor, stooks, flail racks, grain heaps, loose straw, haystacks, scarecrows
-- data: boss_trophies.json, wear.json mantles, enemies.json phantom + relic, gear.json relics; dev !e4; checks tools/boss_trophy_check.gd, tools/trophy_shot.tscn
+- Trophies tab: every card and the detail pane show the trophy worn (tools/trophy_shot.tscn icons mode, assets/ui/trophies/); ghost copies in cold blue, not owned ones dark
+- mantles hang as proper capes (wider toward the hem, a dagged hem for straw, moss, kelp, pelt, scales, feathers and shrouds: tailor sheet option hem); the pale shroud less white
+- a worn trophy crown takes the place of the outfit's hat (no hat poking through)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

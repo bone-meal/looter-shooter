@@ -242,7 +242,7 @@ func setup(look: Dictionary) -> bool:
 	socket.bone_name = "Head"
 	_anchor.transform = _skeleton.get_bone_global_rest(_skeleton.find_bone("Head")).affine_inverse() * Transform3D(Basis(Vector3.UP, PI), Vector3(float(at[0]), float(at[1]), float(at[2])))
 	socket.add_child(_anchor)
-	for id: String in ([] if masked else outfit.get("wear", [])):  # rigid things on the head (tools/blender/wear.py)
+	for id: String in ([] if masked or not trophy_heads.is_empty() else outfit.get("wear", [])):  # rigid things on the head (tools/blender/wear.py); a trophy's crown takes the hat's place
 		var thing: Dictionary = wear.get(id, {})
 		var made := FantasyModels.scene(String(thing["model"])) if thing.has("model") else null
 		if made != null:

@@ -2,11 +2,14 @@
 # wearing a set of trophy pieces (data/boss_trophies.json), pictured from the 3/4 front and from behind, upper body,
 # to res://tools/shots/trophy_<set>_<view>_<f|m>.jpg + tools/trophy_shot.log (draw calls, triangles).
 # `-- --ids=a+b,c` (sets of pieces worn together, + between pieces; else tools/trophy_shot_ids.txt, else harvest_king).
+# `-- --icons` (or the ids file saying icons): instead the Trophies tab's pictures, one per trophy that is not a ghost copy (the tab tints those blue):
+# a woman wearing it, framed on the spots it takes, on a dark ground, 256 px, to res://assets/ui/trophies/<id>.png.
 # Dependencies: game/rigged_body.gd, game/surface_library.gd.
 extends Node3D
 
 const SurfaceLibrary = preload("res://game/surface_library.gd")
 const RiggedBody = preload("res://game/rigged_body.gd")
+const AppearanceData = preload("res://game/appearance_data.gd")
 
 
 func _ready() -> void:
@@ -16,6 +19,9 @@ func _ready() -> void:
 	for arg in OS.get_cmdline_user_args():
 		if arg.begins_with("--ids="):
 			sets = arg.trim_prefix("--ids=")
+	if OS.get_cmdline_user_args().has("--icons") or (FileAccess.file_exists("res://tools/trophy_shot_ids.txt") and FileAccess.get_file_as_string("res://tools/trophy_shot_ids.txt").strip_edges() == "icons"):
+		await _icons()
+		return
 	var env := Environment.new()
 	var sky := Sky.new()
 	sky.sky_material = ProceduralSkyMaterial.new()
@@ -73,6 +79,74 @@ func _ready() -> void:
 			body.queue_free()
 		await get_tree().process_frame
 	lines.append("TROPHY_SHOT_DONE")
+	var f := FileAccess.open("res://tools/trophy_shot.log", FileAccess.WRITE)
+	f.store_string("\n".join(lines))
+	f.close()
+	get_tree().quit()
+
+
+# The Trophies tab's pictures (polish1 E4): framed by spot (head and back = from behind over the shoulder, so the crown
+# and the mantle both show; arms = the forearms; legs = the shins).
+func _icons() -> void:
+	get_window().size = Vector2i(256, 256)
+	var env := Environment.new()
+	env.background_mode = Environment.BG_COLOR
+	env.background_color = Color(0.07, 0.07, 0.1)
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.55, 0.58, 0.65)
+	env.tonemap_mode = Environment.TONE_MAPPER_FILMIC
+	var we := WorldEnvironment.new()
+	we.environment = env
+	add_child(we)
+	var sun := DirectionalLight3D.new()
+	sun.rotation_degrees = Vector3(-35, 150, 0)
+	sun.light_energy = 1.5
+	add_child(sun)
+	var rim := DirectionalLight3D.new()
+	rim.rotation_degrees = Vector3(-15, -30, 0)
+	rim.light_energy = 0.9
+	add_child(rim)
+	var camera := Camera3D.new()
+	camera.fov = 30.0
+	add_child(camera)
+	camera.current = true
+	SurfaceLibrary.configure(true, "1k", 2)
+	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path("res://assets/ui/trophies"))
+	var db := AppearanceData.trophies()
+	var lines := PackedStringArray()
+	for id: String in db.ids():
+		if db.def(id).has("phantom"):
+			continue
+		var body := RiggedBody.build({"gender": "female", "rig_outfit": "peasant", "rig_hair": "long", "skin": 3, "boss_trophies": [id]})
+		add_child(body)
+		body.rotation.y = PI
+		var head: Vector3 = (body.call("head_anchor") as Node3D).global_position
+		var spots: Array = db.spots_of(id)
+		var at := head + Vector3(0, -0.05, 0)
+		var from := Vector3(-0.75, 0.25, -1.05)  # over the shoulder, from behind (the bodies face +Z)
+		if spots.has("arms") and not spots.has("head"):
+			at = head + Vector3(-0.25, -0.62, 0.05)
+			from = Vector3(-0.9, 0.1, 0.45)
+		elif spots.has("legs") and not spots.has("head"):
+			at = head + Vector3(0, -1.15, 0)
+			from = Vector3(0.7, 0.15, 0.9)
+		elif spots == ["head"]:
+			at = head + Vector3(0, 0.1, 0)
+			from = Vector3(0.35, 0.12, 0.6)
+		camera.position = at + from
+		camera.look_at(at)
+		for _i in 12:
+			body.call("animate", 0.0, false)
+			await get_tree().process_frame
+		await RenderingServer.frame_post_draw
+		var file := "res://assets/ui/trophies/%s.png" % id
+		var image := get_viewport().get_texture().get_image()
+		image.resize(256, 256)
+		image.save_png(file)
+		lines.append(file)
+		body.queue_free()
+		await get_tree().process_frame
+	lines.append("TROPHY_ICONS_DONE")
 	var f := FileAccess.open("res://tools/trophy_shot.log", FileAccess.WRITE)
 	f.store_string("\n".join(lines))
 	f.close()

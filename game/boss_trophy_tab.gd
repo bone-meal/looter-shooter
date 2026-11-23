@@ -1,6 +1,6 @@
 # Purpose: the TROPHIES tab of the player card (polish1 E4, items 131 / 133): every boss trophy, ghost trophy and
 # spectral piece as a card (owned ones bright, the rest dark with who gives them), the worn ones marked, the four body
-# spots (head, back, arms, legs) and what is on each; pick one and the right side shows its text with WEAR IT /
+# spots (head, back, arms, legs) and what is on each; each card has its picture (assets/ui/trophies/); pick one and the right side shows its text with WEAR IT /
 # TAKE IT OFF. Real game UI (game/ui_skin.gd). Draws and asks only: the session puts the piece on.
 # Dependencies: game/ui_skin.gd, core/boss_trophy_locker.gd (set `locker`), boss names (set `boss_name`).
 extends Control
@@ -9,7 +9,8 @@ const UiSkin = preload("res://game/ui_skin.gd")
 
 signal wear_requested(id: String)  # puts the piece on, or takes it off when it is worn
 
-const CARD := Vector2(262, 86)
+const CARD := Vector2(300, 124)
+const PICS := "res://assets/ui/trophies/%s.png"  # made by tools/trophy_shot.tscn --icons; a ghost copy shows its trophy's picture in blue
 const FILTERS := [["all", "All"], ["boss", "Bosses"], ["ghost", "Ghosts"], ["spectral", "Spectral set"]]
 const BLUE := Color(0.55, 0.78, 1.0)
 
@@ -23,6 +24,7 @@ var _hits: Array = []
 var _mouse := Vector2(-1, -1)
 var _font: Font = ThemeDB.fallback_font
 var _names := {}  # boss id -> its name
+var _pics := {}  # trophy id -> Texture2D (null = none made yet)
 
 
 func _ready() -> void:
@@ -127,10 +129,13 @@ func _draw() -> void:
 		var ghostly := bool(_db().call("is_ghost", id))
 		var edge := BLUE if ghostly else UiSkin.ACCENT
 		UiSkin.panel(self, r, Color(0.07, 0.07, 0.1, 0.97), Color(edge, 0.95 if id == _picked or r.has_point(_mouse) else 0.35), 10)
-		draw_string(_font, Vector2(r.position.x + 10.0, r.position.y + 26.0), String(_db().call("name_of", id)), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20.0, 15, (BLUE if ghostly else UiSkin.TEXT) if mine else UiSkin.TEXT_DIM)
-		draw_string(_font, Vector2(r.position.x + 10.0, r.position.y + 46.0), " + ".join(_db().call("spots_of", id)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20.0, 11, UiSkin.TEXT_DIM)
+		_picture(id, Rect2(r.position + Vector2(8, 8), Vector2(r.size.y - 16.0, r.size.y - 16.0)), mine)
+		var tx := r.position.x + r.size.y
+		var tw := r.end.x - tx - 8.0
+		draw_multiline_string(_font, Vector2(tx, r.position.y + 24.0), String(_db().call("name_of", id)), HORIZONTAL_ALIGNMENT_LEFT, tw, 15, 2, (BLUE if ghostly else UiSkin.TEXT) if mine else UiSkin.TEXT_DIM)
+		draw_string(_font, Vector2(tx, r.position.y + 70.0), " + ".join(_db().call("spots_of", id)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, tw, 11, UiSkin.TEXT_DIM)
 		var sub := "WORN" if bool(locker.call("is_worn", id)) else ("owned" if mine else _source(id))
-		draw_string(_font, Vector2(r.position.x + 10.0, r.end.y - 14.0), sub, HORIZONTAL_ALIGNMENT_LEFT, r.size.x - 20.0, 12, UiSkin.GOOD if sub == "WORN" else UiSkin.TEXT_DIM)
+		draw_multiline_string(_font, Vector2(tx, r.end.y - 34.0), sub, HORIZONTAL_ALIGNMENT_LEFT, tw, 12, 2, UiSkin.GOOD if sub == "WORN" else UiSkin.TEXT_DIM)
 		_hits.append([r, func() -> void: _picked = id if _picked != id else "", "pick " + id])
 	_detail(Rect2(Vector2(left_w + 10.0, 14), Vector2(size.x - left_w - 30.0, size.y - 28.0)))
 
@@ -154,6 +159,10 @@ func _detail(area: Rect2) -> void:
 		return
 	var d: Dictionary = _db().call("def", _picked)
 	var mine := bool(locker.call("has", _picked))
+	var side := minf(w, area.end.y - y - 190.0)
+	if side > 80.0:  # the picture, large
+		_picture(_picked, Rect2(Vector2(x + (w - side) * 0.5, y - 14.0), Vector2(side, side)), mine)
+		y += side + 10.0
 	draw_string(_font, Vector2(x, y), String(d.get("name", _picked)).to_upper(), HORIZONTAL_ALIGNMENT_LEFT, w, 22, BLUE if bool(_db().call("is_ghost", _picked)) else UiSkin.ACCENT)
 	y += 22.0
 	draw_string(_font, Vector2(x, y), _source(_picked), HORIZONTAL_ALIGNMENT_LEFT, w, 13, UiSkin.TEXT_DIM)
@@ -165,3 +174,17 @@ func _detail(area: Rect2) -> void:
 	UiSkin.pill(self, _font, wear_r, "TAKE IT OFF" if on else "WEAR IT", on, wear_r.has_point(_mouse), 17)
 	var id := _picked
 	_hits.append([wear_r, func() -> void: wear_requested.emit(id), "wear"])
+
+
+# A trophy's picture (its ghost copy: the same picture in cold blue); not owned yet = dark.
+func _picture(id: String, rect: Rect2, mine: bool) -> void:
+	var d: Dictionary = _db().call("def", id)
+	var source := id.trim_suffix("_ghost") if d.has("phantom") else id
+	if not _pics.has(source):
+		_pics[source] = load(PICS % source) if ResourceLoader.exists(PICS % source) else null
+	var pic: Texture2D = _pics[source]
+	if pic == null:
+		draw_rect(rect, Color(0.12, 0.12, 0.16))
+		return
+	var tint := Color(0.55, 0.8, 1.0) if d.has("phantom") else Color.WHITE
+	draw_texture_rect(pic, rect, false, tint if mine else Color(0.16, 0.16, 0.2, 0.95))

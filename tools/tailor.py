@@ -173,6 +173,8 @@ def sheet(d, spec):
         pos[r, :, 0] = d.middle[0] + np.sin(angles) * radius[r]
         pos[r, :, 1] = y
         pos[r, :, 2] = d.middle[1] + np.cos(angles) * radius[r]
+    if spec.get("hem"):  # a dagged hem: every other column ends `hem` metres higher (frayed straw, feathers, tatters)
+        pos[rows - 1, 1::2, 1] += float(spec["hem"])
     flat = pos.reshape(-1, 3)
     donors = np.where(body)[0]
     joints = np.zeros((len(flat), 4), np.int64)
