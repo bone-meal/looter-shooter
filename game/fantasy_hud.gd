@@ -78,6 +78,7 @@ func _draw() -> void:
 	_draw_quests()
 	_draw_work()
 	_draw_boss()
+	_draw_node_names()
 	feedback.draw_loot(self, Vector2(size.x - 16.0, 380.0))
 	feedback.draw_banner(self, Vector2(size.x * 0.5, 132.0))
 
@@ -137,6 +138,30 @@ func _draw_quests() -> void:
 		if i < ids.size() - 1:
 			Style.rule(self, Vector2(card.position.x + 40.0, y + 44.0), Vector2(card.end.x - 40.0, y + 44.0))
 		y += 62.0
+
+
+# (polish1 item 106) The names of the things to gather close by, over them (trees to chop, crops, ore, herbs), with
+# the skill level they need; faint further off, gone past 14 m or behind the camera.
+func _draw_node_names() -> void:
+	var cam := get_viewport().get_camera_3d()
+	if cam == null:
+		return
+	var here: Vector3 = world.call("player_local")
+	var font := Style.gothic()
+	var scale_k := size.y / float(get_viewport().get_visible_rect().size.y)
+	for node: Dictionary in world.gather.call("near_list", here, 14.0, 6):
+		var def: Dictionary = world.skilling["nodes"][String(node["id"])]
+		if String(def["skill"]) in ["fishing", "hunting", "archaeology"]:
+			continue  # the water's ripples, tracks and dig marks speak for themselves
+		var top: Vector3 = world.call("world_of", node["at"]) + Vector3(0, 2.6 if String(def["skill"]) == "woodcutting" else 1.5, 0)
+		if cam.is_position_behind(top):
+			continue
+		var at := cam.unproject_position(top) * scale_k
+		var d := Vector2(here.x - (node["at"] as Vector3).x, here.z - (node["at"] as Vector3).z).length()
+		var a := clampf((14.0 - d) / 5.0, 0.0, 1.0)
+		var words := "%s  (%s %d)" % [String(def["name"]), String(world.skills.skill_name(String(def["skill"]))), int(def["level"])]
+		draw_string_outline(font, at - Vector2(150.0, 0.0), words, HORIZONTAL_ALIGNMENT_CENTER, 300.0, 16, 5, Color(0, 0, 0, 0.7 * a))
+		draw_string(font, at - Vector2(150.0, 0.0), words, HORIZONTAL_ALIGNMENT_CENTER, 300.0, 16, Color(Style.PARCHMENT, a))
 
 
 func _draw_work() -> void:

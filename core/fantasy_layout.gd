@@ -333,6 +333,16 @@ func nodes(key: Vector2i) -> Array:
 			if pick <= 0.0:
 				out.append([slot, id, x, terrain.height(x, z), z, FantasyTerrain.hash01(key.x, key.y, slot + 170) * TAU])
 				break
+	var patches: Array = terrain.data.get("patches", [])
+	for pi in patches.size():  # (polish1 item 108) fixed patches (more meadowmint by Hale Farm): slots 900 + 20 per patch
+		var patch: Dictionary = patches[pi]
+		for k in int(patch["count"]):
+			var a := TAU * float(k) / float(patch["count"]) + FantasyTerrain.hash01(pi, k, 401) * 0.8
+			var r := float(patch["radius"]) * sqrt(0.15 + 0.85 * FantasyTerrain.hash01(pi, k, 402))
+			var x := float(patch["pos"][0]) + cos(a) * r
+			var z := float(patch["pos"][1]) + sin(a) * r
+			if floori(x / _chunk) == key.x and floori(z / _chunk) == key.y and _free_ground(x, z):
+				out.append([900 + pi * 20 + k, String(patch["node"]), x, terrain.height(x, z), z, FantasyTerrain.hash01(pi, k, 403) * TAU])
 	var slot := NODE_SLOTS
 	for lake: Dictionary in terrain.lakes:  # spots around each lake, three metres in from the bank
 		var spots := maxi(int(float(lake["r"]) / 5.0), 3)

@@ -186,7 +186,7 @@ func _process(delta: float) -> void:
 			world.give(String(find["item"]), 1)
 	world.gain_xp(skill, int(def["xp"]))
 	if bool(def.get("once", false)) or randf() < float(_cfg["deplete_chance"]) * (1.0 - world.perk(skill, "keep")):
-		world.gather.spend(_node, float(def["respawn"]) * maxf(1.0 - world.perk(skill, "regrow"), 0.2))
+		world.gather_use(_node, float(def["respawn"]) * maxf(1.0 - world.perk(skill, "regrow"), 0.2))  # (polish1 item 114) shared online
 		_node = {}
 
 

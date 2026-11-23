@@ -28,6 +28,7 @@ var _cfg: Dictionary
 var _tribes: Dictionary  # data "tribes": the battlefield, the camps, how many warriors a side
 var _field := Vector2.ZERO
 var _camps := {}  # banner -> Vector2
+var _zones := {}  # (polish1 item 111) Vector2i zone -> {"left": creatures before it falls quiet, "quiet_until": engine time}
 var _bosses: Array = []  # {"id", "place", "pos": Vector2, "enemy", "respawn_at"}
 var _warriors: Array[Node3D] = []
 var _fill_at := {}  # banner -> engine time the next fallen warrior is replaced
@@ -105,6 +106,7 @@ func _process(delta: float) -> void:
 		var local: Vector3 = _world.local_of(body.global_position)
 		_world.layout.prepare(local.x, local.z)  # creatures are about to walk here: houses and props must be known
 	_despawn_far(all)
+	_calm_tick(all)
 	_boss_tick(all)
 	_tribe_tick(all)
 	_retarget(all)
@@ -176,6 +178,64 @@ func _despawn_far(all: Array) -> void:
 				_director.call("despawn", enemy)
 
 
+# (polish1 item 111) Calm and give-up rules for the roaming creatures, twice a second: one that strays into a town /
+# farm / village's calm ring, or whose nearest player is far above it (Magic level at least its level + ignore_gap:
+# known for this machine's player; the others count as level 0), goes ALOOF (wanders, leaves players be until hurt);
+# one whose nearest player is further than give_up_m gives the chase up (despawned).
+func _calm_tick(all: Array) -> void:
+	var give_up := float(_cfg.get("give_up_m", 45.0))
+	var gap := int(_cfg.get("ignore_gap", 10))
+	var calm_m := float(_cfg.get("calm_m", 20.0))
+	for enemy in (_director.call("enemy_list") as Array).duplicate():
+		if not _roams(enemy) or (enemy as Node).has_meta("animal"):
+			continue
+		var e: Node3D = enemy
+		var near := _nearest(all, e.global_position)
+		if near.global_position.distance_to(e.global_position) > give_up:
+			_director.call("despawn", e)
+			continue
+		var level := int(_world.skills.level("magic")) if near == _player else 0
+		var calm := level >= int(e.get_meta("tier", 1)) + gap
+		if not calm:
+			var local: Vector3 = _world.local_of(e.global_position)
+			for place: Dictionary in _world.terrain.places:
+				if String(place["kind"]) != "arena" and Vector2(local.x - float(place["pos"][0]), local.z - float(place["pos"][1])).length() < float(place["flat"]) + calm_m:
+					calm = true
+					break
+		e.set("aloof", calm)
+
+
+# (polish1 item 111) Zones of zone_m metres: each holds zone_pool creatures; every kill there takes one; an emptied zone
+# stays QUIET (nothing spawns in it) for zone_quiet_s, then fills again. Spawning alone never empties a zone.
+func _zone_of(x: float, z: float) -> Vector2i:
+	var size := float(_cfg.get("zone_m", 120.0))
+	return Vector2i(floori(x / size), floori(z / size))
+
+
+func zone_quiet(x: float, z: float) -> bool:
+	var key := _zone_of(x, z)
+	return _zones.has(key) and float((_zones[key] as Dictionary).get("quiet_until", 0.0)) > Time.get_ticks_msec() / 1000.0
+
+
+func _zone_kill(x: float, z: float) -> void:
+	var key := _zone_of(x, z)
+	var now := Time.get_ticks_msec() / 1000.0
+	var zone: Dictionary = _zones.get(key, {"left": int(_cfg.get("zone_pool", 8)), "quiet_until": 0.0})
+	if float(zone["quiet_until"]) > 0.0 and float(zone["quiet_until"]) <= now:  # quiet time over: full again
+		zone = {"left": int(_cfg.get("zone_pool", 8)), "quiet_until": 0.0}
+	zone["left"] = int(zone["left"]) - 1
+	if int(zone["left"]) <= 0 and float(zone["quiet_until"]) <= now:
+		zone["quiet_until"] = now + float(_cfg.get("zone_quiet_s", 300.0))
+		notice.emit("This stretch of land falls quiet.")
+	_zones[key] = zone
+
+
+# (dev) the zone here: creatures left before it falls quiet, seconds of quiet left.
+func zone_note(x: float, z: float) -> String:
+	var zone: Dictionary = _zones.get(_zone_of(x, z), {"left": int(_cfg.get("zone_pool", 8)), "quiet_until": 0.0})
+	return "zone %s: %d left, quiet %.0f s" % [str(_zone_of(x, z)), int(zone["left"]), maxf(float(zone["quiet_until"]) - Time.get_ticks_msec() / 1000.0, 0.0)]
+
+
 # Each creature chases whoever is closest to it (tribe warriors choose in _tribe_tick).
 func _retarget(all: Array) -> void:
 	if all.size() < 2:
@@ -194,6 +254,8 @@ func _spawn_group(near: Node3D) -> void:
 	for place: Dictionary in _world.terrain.places:  # towns, farms and camps are safe; arenas belong to their boss
 		if Vector2(x - float(place["pos"][0]), z - float(place["pos"][1])).length() < float(place["flat"]) + float(_cfg["safe_radius"]) * (1.0 if String(place["kind"]) != "arena" else 0.2):
 			return
+	if zone_quiet(x, z):  # (polish1 item 111) a cleared stretch stays quiet a while
+		return
 	var kinds: Array = _world.terrain.region_at(x, z)["enemies"]
 	if kinds.is_empty():
 		return
@@ -354,6 +416,9 @@ func _on_killed(where: Vector3, enemy_id: String, _elite: String, _wave: int) ->
 			boss["enemy"] = null
 			boss["respawn_at"] = Time.get_ticks_msec() / 1000.0 + float(_cfg["boss_respawn_s"])
 			notice.emit("%s DEFEATED" % String(_enemies[enemy_id]["name"]).to_upper())
+	if not bool(_enemies[enemy_id].get("boss", false)) and not _enemies[enemy_id].has("temper") and not _enemies[enemy_id].has("tribe"):
+		var at: Vector3 = _world.local_of(where)
+		_zone_kill(at.x, at.z)
 	var splits: Dictionary = _enemies[enemy_id].get("splits", {})
 	if not splits.is_empty():  # it bursts into smaller ones
 		var local: Vector3 = _world.local_of(where)

@@ -138,6 +138,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	terrain = FantasyTerrain.new(data["world"])
 	bag = FantasyBag.new(data["gear"])
 	skilling = data["skilling"]
+	gather.cfg.merge(skilling.get("spots", {}), true)  # (polish1 item 114)
 	skills = SkillLevels.new(skilling)
 	quests = QuestLog.new(data["quests"])
 	var spell_data: Dictionary = data["spells"]
@@ -867,6 +868,18 @@ func accept(quest_id: String) -> void:
 		sound("quest_accept")
 		_after_change()
 		_synced()
+
+
+# (polish1 item 114) A node used up by this player. Alone it is decided here; the host decides and tells everyone; a
+# party member hides it at once and asks the host, whose word (hibernation, a spot waking) comes back to all.
+func gather_use(node: Dictionary, seconds: float) -> void:
+	if party != null and party.call("is_client"):
+		gather.spend(node, seconds)
+		party.call("send_node_use", "%d:%d:%d" % [(node["key"] as Vector2i).x, (node["key"] as Vector2i).y, int(node["slot"])], seconds)
+		return
+	var change := gather.use(node, seconds)
+	if party != null:
+		party.call("send_node_change", change)
 
 
 func _after_change() -> void:

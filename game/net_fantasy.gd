@@ -2,7 +2,8 @@
 # health) and keeps the one party quest log; other machines show puppets, send what they do as requests (a hit on a
 # creature, an effect, a quest event, taking a quest, a spell to show) and are told the results. The host checks each
 # request: who sent it, that the creature exists, that the numbers are finite and within what the party's progress
-# makes possible. Skills, bags and gathering stay each player's own (their signed profile).
+# makes possible. Skills and bags stay each player's own (their signed profile); the gathering SPOTS are shared
+# (polish1 item 114: a node one player uses is used up for all; hibernation and woken spots come from the host).
 # Dependencies: game/net_session.gd (parent; `net`), game/fantasy_world.gd (`world`), game/wave_director.gd, game/enemy.gd.
 extends Node
 
@@ -211,6 +212,7 @@ func _ask_all() -> void:
 		if is_instance_valid(_enemies[id]):
 			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position)
 	_log.rpc_id(peer, world.quests.to_dict())
+	send_node_state(peer)  # (polish1 item 114) which spots are used up, hibernating or woken
 
 
 # --- requests from the other machines ---
@@ -265,6 +267,53 @@ func _effect(id: int, kind: String, amount: float, seconds: float) -> void:
 		"push":
 			if not enemy.has_meta("fantasy_boss"):
 				enemy.call("push", Vector3(amount, 0.0, seconds).limit_length(20.0))  # push sends its x and z here
+
+
+# --- (polish1 item 114) gathering spots, shared: the host decides ---
+
+func send_node_use(tag: String, seconds: float) -> void:
+	_node_use.rpc_id(1, tag, seconds)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _node_use(tag: String, seconds: float) -> void:
+	if not net.is_host() or world == null or not net.roster.has(multiplayer.get_remote_sender_id()):
+		return
+	var parts := tag.split(":")
+	if parts.size() != 3 or not parts[0].is_valid_int() or not parts[1].is_valid_int() or not parts[2].is_valid_int() or not is_finite(seconds):
+		return
+	var node: Dictionary = world.gather.call("_by_tag", tag)
+	var secs := clampf(seconds, 1.0, 600.0)
+	var change: Dictionary = world.gather.call("use", node, secs) if not node.is_empty() else {"tag": tag, "spent": secs, "hib": 0.0, "wake": ""}
+	if node.is_empty():
+		world.gather.call("apply", change)
+	send_node_change(change)
+
+
+func send_node_change(change: Dictionary) -> void:
+	if net.can_send() and net.is_host():
+		_node_change.rpc(change)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _node_change(change: Dictionary) -> void:
+	if world != null:
+		world.gather.call("apply", change)
+
+
+# Host: everything about the spots for a player who has just joined.
+func send_node_state(peer: int) -> void:
+	if net.can_send() and net.is_host() and world != null:
+		_node_state.rpc_id(peer, world.gather.call("state"))
+
+
+@rpc("authority", "call_remote", "reliable")
+func _node_state(list: Array) -> void:
+	if world == null:
+		return
+	for change: Variant in list:
+		if change is Dictionary:
+			world.gather.call("apply", change)
 
 
 # --- the party's quests ---

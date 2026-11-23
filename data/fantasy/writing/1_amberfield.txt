@@ -242,6 +242,18 @@ step 3: Bake bread at your fire (3 wheat)
 # Farmer Hale says this when the quest is finished:
 done: Sit by it a while. A fire puts the strength back in your casting arm.
 
+[quest s08]
+# SIDE QUEST (polish1 item 108: the early wheat harvest that teaches Farming before the mint). GIVEN BY: Farmer Hale. NEEDS FIRST: m01. REWARD: 300 Farming xp, 3 x Bread.
+title: Bringing In the Wheat
+# (polish1 item 127) A medium hint in the quest log while this quest can be taken but nobody has it yet: point the way without spelling it out.
+hint: Farmer Hale stands at his door looking at his fields, short of hands at harvest time.
+# Farmer Hale says this when offering the quest:
+offer: Harvest won't wait for the straw-men to behave. Reap me fifteen good sheaves, the gold ones with the heavy heads, and you'll know which end of a field is which.
+# Step 1 shows this in the quest list. The player must: hold 15 x Wheat and hand them over.
+step 1: Reap ripe wheat for Hale (the golden sheaves with heavy heads)
+# Farmer Hale says this when the quest is finished:
+done: That's a farmer's back you've got now. Mint grows where the soil is kind, out past my fence. You'll know it now.
+
 [quest s04]
 # SIDE QUEST. GIVEN BY: Mirren the Hedge-witch. NEEDS FIRST: m03. REWARD: 160 Alchemy xp.
 title: Mint for the Pot

@@ -131,6 +131,7 @@ var _dodge_from := Vector3.INF  # (polish1 item 144) where its last run of turni
 var _dodge_tries := 0  # ... and how many times it turned aside there without getting a metre away
 var _temper := ""  # a wild animal (stats "temper"): skittish runs away, defensive fights back when pressed; "" = always hunts
 var _provoked_until := 0.0  # hurt (or crowded, if defensive) until this engine time
+var aloof := false  # (polish1 item 111) set by game/fantasy_spawner.gd: the players near are far above it, or it strayed into a calm place: it wanders and leaves them be until hurt
 var _wander_at := 0.0  # a wandering animal picks a new way to amble at this engine time ...
 var _wander_yaw := 0.0
 var _wander_go := false  # ... and whether it walks or stands grazing
@@ -456,7 +457,7 @@ func _physics_process(delta: float) -> void:
 		return
 	if not walker.is_valid() and not is_on_floor():
 		velocity.y -= _gravity * delta
-	if _temper != "" and _roam(delta):
+	if (_temper != "" or aloof) and _roam(delta):
 		return
 
 	var goal := _errand()  # (polish1 D4d) climbers and rope-cutters may walk somewhere else first
@@ -711,6 +712,10 @@ func _roam(delta: float) -> bool:
 	var away := global_position - _target.global_position
 	away.y = 0.0
 	var near := away.length() < float(_stats.get("notice_m", 12.0))
+	if aloof and _temper == "":  # (polish1 item 111) a creature that leaves the players be: hurt it and it fights back for a while
+		if now < _provoked_until:
+			return false
+		near = false
 	if _temper == "defensive" and (near or now < _provoked_until):
 		if near:
 			_provoked_until = maxf(_provoked_until, now + 6.0)

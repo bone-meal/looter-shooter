@@ -103,7 +103,7 @@
     "ash_tree": 0.7,
     "copper_rock": 0.25,
     "wheat": 2.2,
-    "meadowmint": 0.5,
+    "meadowmint": 0.9,
     "dig_amberfield": 0.14
    },
    "enemies": [
@@ -2047,6 +2047,27 @@
     "rimegate"
    ],
    "width": 55
+  }
+ ],
+ "_patches": "(polish1 item 108) fixed PATCHES of a node kind besides the random spread: {\"node\", \"pos\": [x, z], \"radius\" m, \"count\"} (core/fantasy_layout.gd nodes; a spot on a road, in a place or in water is left out).",
+ "patches": [
+  {
+   "node": "meadowmint",
+   "pos": [
+    -20,
+    1700
+   ],
+   "radius": 14,
+   "count": 7
+  },
+  {
+   "node": "meadowmint",
+   "pos": [
+    -120,
+    1735
+   ],
+   "radius": 12,
+   "count": 5
   }
  ]
 }

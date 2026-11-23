@@ -1,10 +1,11 @@
-Fix Aurelind wheat buried in the ground + the next quest after the Harvest King in Millbrook
+Polish1 E3: Aurelind world rules - calm zones, aloof weak creatures, quiet zones, shared spots with hibernation, distinct trees and wheat, early Farming quest
 
-- fantasy_land ground(): height on the drawn triangle (the bilinear blend was up to 1.2 m off on steep squares; wheat, herbs, ore and props placed by it stood buried)
-- fantasy_scatter: nodes skip steep drawn faces (terrace edges the smooth height calls flat); crops, herbs and ore stand by their middle. Measured: wheat sunk more than 25 cm 53 of 131 -> 0 of 124
-- new link quest m06b Word from the Wood: after the Harvest King, Miller Oswin in Millbrook sends you to Warden Oska in Fernhollow (m07 now needs it); saves with later quests count it as done
-- a reach step that begins where you already stand passes at once (m07 started inside Fernhollow)
-- level-up banner moved below the achievement cards; dev !e1 nodes <id> [go]
+- 111: creatures straying into a town / farm ring or near players far above them go aloof (wander, fight back only when hurt); give up past 75 m; zones of 120 m hold 8 creatures, 8 kills empty a zone and it stays quiet 5 minutes
+- 114: gathering spots shared by the lobby (host decides, joiners get the state), a share start dormant, a spot used 6 times hibernates 30 minutes and a sleeper of its kind nearby wakes
+- 106: choppable trees wear a forester's band (one colour per tier), a fresh axe notch and wood chips; names of gatherables within 14 m float over them
+- 109: ripe wheat golden, taller, heavy grain heads, twine tie
+- 108: new early quest Bringing In the Wheat (Farmer Hale, 15 wheat, 300 Farming xp) before the mint quest; more meadowmint in Amberfield + two fixed patches by Hale Farm
+- data: enemies.json spawn calm/ignore/give-up/zones, skilling.json looks + spots, world.json patches; dev !e1 near / spots / use / zonekill / foes
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

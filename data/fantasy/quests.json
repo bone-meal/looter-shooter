@@ -260,11 +260,36 @@
    }
   },
   {
+   "id": "s08",
+   "chapter": 0,
+   "giver": "farmer_hale",
+   "requires": [
+    "m01"
+   ],
+   "steps": [
+    {
+     "type": "have",
+     "item": "wheat",
+     "count": 15,
+     "take": true
+    }
+   ],
+   "rewards": {
+    "skill_xp": {
+     "farming": 300
+    },
+    "items": {
+     "bread": 3
+    }
+   }
+  },
+  {
    "id": "s04",
    "chapter": 0,
    "giver": "mirren",
    "requires": [
-    "m03"
+    "m03",
+    "s08"
    ],
    "steps": [
     {

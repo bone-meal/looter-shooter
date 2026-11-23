@@ -1,7 +1,16 @@
 {
  "version": 2,
  "_about": "RuneScape-style skills of the fantasy world (rules: core/skill_levels.gd). xp needed to reach level L = base * (L-1)^power, cap = max_level. nodes = things in the world you work on (tree, rock, fishing spot, crop); recipes = things made at a station (fire, forge, workbench, cauldron). All numbers are placeholders for the director. gather: how close you must stand, the chance a node is used up after each item, and how much faster each tool tier above the needed one works. nodes.water: fishing spots sit on real water: fresh = ponds and lakes, salt = the sea, lava = the pools of the volcano. gather.reach_water: how far a rod casts from the bank. Names are in data/fantasy/writing/skills.txt. Each skill has an icon (a shape of data/icons.json); stations = the icon of each crafting station. VERSION 2 (sea step 3): 15 skills, every skill opens something at levels 5, 10 ... 50 (`unlocks`): kind content = the node / recipe / log ids it opens (their level must be that level; magic \"slot\" = one more element per cast; \"later:<x>\" = a sea system still to come) or kind perk = bonuses that add up per skill: speed (gathering takes that share less time), double (chance of one more of what is gathered, or made by a recipe with batch: true), keep (chance a node is not used up), save (chance a recipe or a log is not used), regrow (herbs grow back that share sooner), bonus {item, chance} (an extra find while gathering), heal (food heals more), potency (potions heal, refill and last longer), fire_time / fire_regen / fire_radius (your fires last longer, refill more mana, reach further), mana / regen / power (Magic), ship_speed / repair / cannon_reload (Sailing, with the ships of sea step 5). Rules: core/skill_perks.gd. Unlock names and lines: data/fantasy/writing/skills.txt [unlock <skill>]. Hunting: nodes with `animal` are tracks (following them takes `seconds`, then that animal is met 25-35 m on along the trail; once = used up by one go); gather.snare: a set snare catches the region's best small game you may hunt after `seconds` (less with snare_speed perks), max snares out at once, keep_snare = chance the snare comes back. Content steps may also open animals (data/fantasy/enemies.json with skill hunting). Sea step 3c: stations sawhorse (Carpentry: planks, crates, barrels) and crafting_table (Crafting: leather, cut gems, snares, and pieces for the gun side's gear: gear.json kind gunside); station site = repairs done where the broken thing stands (ladders, sea step 3d). Perk finer = chance a crafted gun-side piece comes one tier up. Sea step 3e, Archaeology: nodes with `finds` are digs (each find is picked by weight: an encrusted relic); station restore_table: restore a relic, and hand in a region's three relics for its collection (recipe `lore` = a line of data/fantasy/writing/skills.txt [lore <id>] told on completing it).",
- "success": {"_about": "polish1 item 121: a gathering skill listed here can come up empty: chance = base + per_level x (your level - the node level), at least min; over 1.0 the extra is the chance of a BONUS item (up to most). A miss says so (miss_words). Placeholders.", "mining": {"base": 0.5, "per_level": 0.05, "min": 0.25, "most": 1.5, "miss_words": "The rock crumbles. Your skill is too low to find anything."}},
+ "success": {
+  "_about": "polish1 item 121: a gathering skill listed here can come up empty: chance = base + per_level x (your level - the node level), at least min; over 1.0 the extra is the chance of a BONUS item (up to most). A miss says so (miss_words). Placeholders.",
+  "mining": {
+   "base": 0.5,
+   "per_level": 0.05,
+   "min": 0.25,
+   "most": 1.5,
+   "miss_words": "The rock crumbles. Your skill is too low to find anything."
+  }
+ },
  "max_level": 50,
  "xp_base": 30,
  "xp_power": 2.2,
@@ -137,7 +146,17 @@
    "gives": "ash_log",
    "seconds": 2.4,
    "respawn": 30,
-   "model": "tree_ash"
+   "model": "tree_ash",
+   "look": {
+    "band": [
+     0.85,
+     0.2,
+     0.15
+    ],
+    "band_h": 1.3,
+    "notch": true,
+    "chips": true
+   }
   },
   "oak_tree": {
    "skill": "woodcutting",
@@ -148,7 +167,17 @@
    "gives": "oak_log",
    "seconds": 3.0,
    "respawn": 45,
-   "model": "tree_oak"
+   "model": "tree_oak",
+   "look": {
+    "band": [
+     0.95,
+     0.55,
+     0.15
+    ],
+    "band_h": 1.45,
+    "notch": true,
+    "chips": true
+   }
   },
   "palm_tree": {
    "skill": "woodcutting",
@@ -159,7 +188,17 @@
    "gives": "palm_log",
    "seconds": 3.2,
    "respawn": 50,
-   "model": "tree_palm"
+   "model": "tree_palm",
+   "look": {
+    "band": [
+     0.95,
+     0.85,
+     0.2
+    ],
+    "band_h": 1.3,
+    "notch": true,
+    "chips": true
+   }
   },
   "frostpine_tree": {
    "skill": "woodcutting",
@@ -170,7 +209,17 @@
    "gives": "frostpine_log",
    "seconds": 3.6,
    "respawn": 60,
-   "model": "tree_pine"
+   "model": "tree_pine",
+   "look": {
+    "band": [
+     0.25,
+     0.5,
+     0.95
+    ],
+    "band_h": 1.3,
+    "notch": true,
+    "chips": true
+   }
   },
   "emberwood_tree": {
    "skill": "woodcutting",
@@ -181,7 +230,17 @@
    "gives": "emberwood_log",
    "seconds": 4.0,
    "respawn": 75,
-   "model": "tree_ember"
+   "model": "tree_ember",
+   "look": {
+    "band": [
+     0.6,
+     0.25,
+     0.8
+    ],
+    "band_h": 1.35,
+    "notch": true,
+    "chips": true
+   }
   },
   "copper_rock": {
    "skill": "mining",
@@ -330,7 +389,27 @@
    "gives": "wheat",
    "seconds": 1.2,
    "respawn": 40,
-   "model": "wheat_sheaf"
+   "model": "wheat_sheaf",
+   "look": {
+    "tint": [
+     1.3,
+     1.08,
+     0.55
+    ],
+    "scale": 1.3,
+    "heads": [
+     1.4,
+     1.08,
+     0.42
+    ],
+    "heads_h": 1.0,
+    "tie": [
+     0.55,
+     0.35,
+     0.18
+    ],
+    "tie_h": 0.45
+   }
   },
   "meadowmint": {
    "skill": "farming",
@@ -420,7 +499,17 @@
    "gives": "stormoak_log",
    "seconds": 4.2,
    "respawn": 90,
-   "model": "tree_stormoak"
+   "model": "tree_stormoak",
+   "look": {
+    "band": [
+     0.95,
+     0.95,
+     0.95
+    ],
+    "band_h": 1.5,
+    "notch": true,
+    "chips": true
+   }
   },
   "stormlily": {
    "skill": "farming",
@@ -3688,5 +3777,12 @@
     }
    }
   ]
- }
+ },
+ "_looks": "(polish1 items 106 / 109) node \"look\" (game/node_looks.gd): what tells a node from the same kind of scenery: band [r, g, b] + band_h = a forester's cloth band on the trunk (one colour per woodcutting tier: ash red, oak orange, palm yellow, frostpine blue, emberwood purple, stormoak white), notch = a fresh axe cut, chips = wood chips at the foot; tint = the model's colours multiplied, scale, heads = heavy grain heads, tie = a twine tie (ripe wheat).",
+ "spots": {
+  "hibernate_after": 6,
+  "hibernate_s": 1800,
+  "dormant_share": 0.35
+ },
+ "_spots": "(polish1 item 114) gathering spots (game/gather_nodes.gd): dormant_share of the random spots start asleep (not drawn, not gatherable); a spot gathered hibernate_after times hibernates for hibernate_s seconds and a sleeping spot of the same kind nearby wakes instead. Online the host keeps it for the lobby."
 }

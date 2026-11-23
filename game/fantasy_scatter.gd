@@ -8,6 +8,7 @@ extends Node3D
 
 const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
 const FantasyModels = preload("res://game/fantasy_models.gd")
+const NodeLooks = preload("res://game/node_looks.gd")
 const FantasyLayout = preload("res://core/fantasy_layout.gd")
 const FantasyGround = preload("res://game/fantasy_ground.gd")
 
@@ -193,7 +194,11 @@ func _clutter_drop(key: Vector2i) -> void:
 
 func _mesh(id: String) -> Mesh:
 	if not _meshes.has(id):
-		_meshes[id] = FantasyModels.mesh(id)
+		if id.contains("#"):  # (polish1 items 106 / 109) "model#node": the node's model with its look (data nodes "look")
+			var parts := id.split("#")
+			_meshes[id] = NodeLooks.compose(_mesh(parts[0]), (_node_data.get(parts[1], {}) as Dictionary).get("look", {}))
+		else:
+			_meshes[id] = FantasyModels.mesh(id)
 	return _meshes[id]
 
 
@@ -220,8 +225,9 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 				continue  # (2026-11-23) the drawn land is a steep face here (a terrace edge the smooth height calls flat): wheat stood buried in such faces
 			var tree := String(def["skill"]) == "woodcutting"
 			node_y = _foot_y(float(node[2]), float(node[4]), 0.5 if tree else 0.2) + (0.0 if tree else 0.04)  # crops, herbs, ore: by their middle, only a little sunk
-		var index := _place(by_model, String(def["model"]), float(node[2]), node_y, float(node[4]), 1.0, float(node[5]))
-		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), node_y, float(node[4])), String(def["model"]), index)
+		var model_id := String(def["model"]) + ("#" + String(node[1]) if def.has("look") else "")  # a node with a look has its own mesh, apart from the scenery
+		var index := _place(by_model, model_id, float(node[2]), node_y, float(node[4]), float((def.get("look", {}) as Dictionary).get("scale", 1.0)), float(node[5]))
+		gather.add_node(key, int(node[0]), String(node[1]), Vector3(float(node[2]), node_y, float(node[4])), model_id, index)
 		if String(def["skill"]) == "woodcutting":
 			_trunk(trunks, float(node[2]), float(node[4]), 0.35)
 		elif String(def["skill"]) == "mining" and not layout.walked_over(String(def["model"])):  # a rock is as wide as its model (the low ore rocks are walked over)

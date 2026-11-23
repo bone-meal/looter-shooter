@@ -2851,6 +2851,40 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					if words.size() > 3 and n_all > 0:
 						player.call("teleport", fw.call("ground_world", deep_at.x + 2.0, deep_at.z + 2.0), 0.0)
 						player.call("look_at_point", fw.call("world_of", deep_at) + Vector3(0, 0.4, 0))
+				"near":  # "!e1 near <node id> [m]": stand m metres (4) from the nearest awake one, looking at it
+					for nd_n: Dictionary in fw.get("gather").call("near_list", fw.call("player_local"), 400.0, 80):
+						if String(nd_n["id"]) == words[2]:
+							var at_n: Vector3 = nd_n["at"]
+							var m_n := float(words[3]) if words.size() > 3 else 4.0
+							player.call("teleport", fw.call("ground_world", at_n.x + m_n * 0.7, at_n.z + m_n * 0.7), 0.0)
+							player.call("look_at_point", fw.call("world_of", at_n) + Vector3(0, 0.8, 0))
+							break
+				"spots":  # (polish1 item 114) "!e1 spots <node id>": loaded spots of that kind awake / dormant / hibernating
+					_lines.append("E3 " + String(fw.get("gather").call("note", words[2])))
+				"use":  # "!e1 use <node id> <n>": the nearest awake one of that kind used up n times the normal way (respawn 2 s)
+					for _u in int(words[3]):
+						var near_u: Array = fw.get("gather").call("near_list", fw.call("player_local"), 400.0, 60)
+						for nd_u: Dictionary in near_u:
+							if String(nd_u["id"]) == words[2]:
+								fw.call("gather_use", nd_u, 2.0)
+								break
+						await get_tree().create_timer(3.6, true, false, true).timeout
+					_lines.append("E3 after use: " + String(fw.get("gather").call("note", words[2])))
+				"zonekill":  # (polish1 item 111) "!e1 zonekill <n>": n kills counted in the zone here
+					var here_z: Vector3 = fw.call("player_local")
+					for _z in int(words[2]):
+						fw.get("spawner").call("_zone_kill", here_z.x, here_z.z)
+					_lines.append("E3 " + String(fw.get("spawner").call("zone_note", here_z.x, here_z.z)))
+				"foes":  # "!e1 foes": the roaming creatures: how many, how many aloof, nearest distance
+					var n_f := 0
+					var aloof_f := 0
+					for en_f in session.get("_director").call("enemy_list"):
+						if is_instance_valid(en_f) and (en_f as Node).has_meta("fantasy"):
+							n_f += 1
+							if bool((en_f as Node).get("aloof")):
+								aloof_f += 1
+					var here_f: Vector3 = fw.call("player_local")
+					_lines.append("E3 foes %d, aloof %d, magic %d | %s" % [n_f, aloof_f, int(fw.get("skills").call("level", "magic")), String(fw.get("spawner").call("zone_note", here_f.x, here_f.z))])
 				"give":  # "!e1 give <item> [n]": into the bag the normal way (the loot list)
 					fw.call("give", words[2], int(words[3]) if words.size() > 3 else 1)
 				"xp":  # "!e1 xp <skill> <amount>": experience the normal way (a level-up shows its banner)
