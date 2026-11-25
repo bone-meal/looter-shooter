@@ -4,7 +4,9 @@
 # land matches. Without textures it is the plain coloured land. One shader source with #defines, valid in
 # Compatibility and Forward+.
 # Dependencies: game/surface_library.gd (texture sets, gains, current quality). Configured by game/render_style.gd.
-# The mix weights come per corner from game/fantasy_land.gd (CUSTOM0: second region, rock, trodden).
+# The mix weights come per corner from game/fantasy_land.gd (CUSTOM0: second region, rock, trodden, snow).
+# (polish1 F1a) Rock is read from three sides (triplanar, so steep faces facing any way are not streaked) and snow
+# settles on the level parts of snowy ground (ledges and tops), leaving the steep faces rock.
 extends RefCounted
 
 const SurfaceLibrary = preload("res://game/surface_library.gd")
@@ -36,10 +38,12 @@ uniform sampler2D nor_yard : hint_normal, repeat_enable, filter_linear_mipmap_an
 #endif
 
 varying vec3 world_pos;
+varying vec3 world_up;
 varying vec4 mix_w;
 
 void vertex() {
 	world_pos = (MODEL_MATRIX * vec4(VERTEX, 1.0)).xyz;
+	world_up = normalize((MODEL_MATRIX * vec4(NORMAL, 0.0)).xyz);
 	mix_w = CUSTOM0;
 #ifdef NORMALS
 	TANGENT = vec3(1.0, 0.0, 0.0);
@@ -55,17 +59,27 @@ vec3 toned(vec3 c) {
 	return mix(vec3(lum), lin, 0.7) * 0.62;
 }
 
+const vec3 SNOW = vec3(0.92, 0.94, 0.97);
+
 void fragment() {
+	vec3 wn = normalize(world_up);
+	float snowy = mix_w.a * smoothstep(0.55, 0.82, wn.y);
 #ifdef TEXTURED
 	vec2 p = world_pos.xz;
-	vec2 steep = vec2(world_pos.x + world_pos.z, world_pos.y);
+	vec3 side = pow(abs(wn), vec3(4.0));
+	side /= (side.x + side.y + side.z);
+	vec2 steep = side.x > side.z ? world_pos.zy : world_pos.xy;  // the face's own side, for the rock's normals
 	// each ground is read twice, once large: the large copy hides the repeat in the distance
 	vec3 a = mix(texture(tex_a, p / tiles.x).rgb, texture(tex_a, p / (tiles.x * 5.3)).rgb, 0.45) * gain_a;
 	vec3 b = mix(texture(tex_b, p / tiles.y).rgb, texture(tex_b, p / (tiles.y * 5.3)).rgb, 0.45) * gain_b;
 	vec3 grain = mix(a, b, mix_w.r);
-	grain = mix(grain, texture(tex_rock, steep / tiles.z).rgb * gain_rock, mix_w.g);
+	if (mix_w.g > 0.01) {
+		vec3 rock = texture(tex_rock, world_pos.zy / tiles.z).rgb * side.x + texture(tex_rock, p / tiles.z).rgb * side.y + texture(tex_rock, world_pos.xy / tiles.z).rgb * side.z;
+		grain = mix(grain, rock * gain_rock, mix_w.g);
+	}
 	grain = mix(grain, texture(tex_yard, p / tiles.w).rgb * gain_yard, mix_w.b);
 	ALBEDO = grain * toned(COLOR.rgb);
+	ALBEDO = mix(ALBEDO, toned(SNOW) * (0.9 + 0.2 * dot(grain, vec3(0.33))), snowy);
 #ifdef NORMALS
 	vec3 n = mix(texture(nor_a, p / tiles.x).rgb, texture(nor_b, p / tiles.y).rgb, mix_w.r);
 	n = mix(n, texture(nor_rock, steep / tiles.z).rgb, mix_w.g);
@@ -74,7 +88,7 @@ void fragment() {
 	ROUGHNESS = 0.94;
 	SPECULAR = 0.3;
 #else
-	ALBEDO = toned(COLOR.rgb);
+	ALBEDO = mix(toned(COLOR.rgb), toned(SNOW), snowy);
 	ROUGHNESS = 1.0;
 #endif
 }

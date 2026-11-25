@@ -76,6 +76,50 @@ def ice_shards(m):
         m.loft(ice if k % 2 == 0 else K("ice", (0.6, 0.78, 0.96)), [(dx, 0, df, 0.42, 0.36), (dx + lean * 0.4, h * 0.6, df, 0.3, 0.26), (dx + lean, h, df + lean * 0.3, 0.03, 0.03)], segs=5, steps=2)
 
 
+def crag(m, kind, rgb, seed, cap=None):
+    """(polish1 F1a) A rock outcrop for a country's mountain sides: a stack of tilted slabs (bedding planes) breaking out
+    of the slope, about 7 m across and 5 m tall, a jagged crest, fallen blocks at its foot; its foot goes deep so it
+    can stand sunk into a slope. `cap` = snow lying on the ledges."""
+    import random
+    rnd = random.Random(seed)
+    layers = 5
+    # the body of rock the ledges stick out of (without it the ledges read as a stack of plates)
+    fk.blob(m, K(kind, tuple(v * 0.82 for v in rgb)), (2.9, 3.2, 1.7), (0.0, 1.9, -0.55), seed=seed + 90, rough=0.3, cuts=2)
+    fk.blob(m, K(kind, tuple(v * 0.88 for v in rgb)), (2.0, 2.2, 1.4), (rnd.uniform(-0.6, 0.6), 3.6, -0.8), seed=seed + 91, rough=0.32, cuts=1)
+    for k in range(layers):
+        y = -1.2 + k * 1.25
+        w = 3.6 - k * 0.42 + rnd.uniform(-0.3, 0.3)
+        d = 2.2 - k * 0.22 + rnd.uniform(-0.2, 0.2)
+        shade = 0.86 + 0.16 * ((k * 7) % 3) / 2.0
+        fk.blob(m, K(kind, tuple(v * shade for v in rgb)), (w, 0.75, d), (rnd.uniform(-0.4, 0.4), y + 0.6, rnd.uniform(-0.3, 0.3) - k * 0.12), seed=seed + k, rough=0.32, cuts=1)
+        if cap and k < layers - 1:
+            fk.blob(m, c(cap), (w * 0.7, 0.12, d * 0.5), (rnd.uniform(-0.3, 0.3), y + 1.32, -k * 0.12 + d * 0.25), seed=seed + 20 + k, rough=0.2, cuts=1)
+    for j in range(3):  # teeth along the crest
+        x = -1.6 + j * 1.6 + rnd.uniform(-0.3, 0.3)
+        h = rnd.uniform(1.0, 1.9)
+        m.loft(K(kind, tuple(v * 0.95 for v in rgb)), [(x, 4.6, -0.5, 0.75, 0.6), (x + 0.15, 4.6 + h * 0.6, -0.5, 0.45, 0.38), (x + 0.25, 4.6 + h, -0.45, 0.06, 0.06)], segs=5, steps=2)
+    for j in range(4):  # blocks fallen at its foot
+        fk.blob(m, K(kind, tuple(v * 0.9 for v in rgb)), (rnd.uniform(0.4, 0.8),) * 3, (rnd.uniform(-3.0, 3.0), 0.3, rnd.uniform(1.6, 2.6)), seed=seed + 40 + j, rough=0.3, cuts=1)
+    if cap:
+        fk.blob(m, c(cap), (2.2, 0.25, 1.2), (0.0, 5.0, -0.5), seed=seed + 60, rough=0.2, cuts=1)
+
+
+def scree(m, kind, rgb, seed):
+    """(polish1 F1a) Loose stones run down from rock: a fan of small flat stones, about 4 x 3 m, ankle high."""
+    import random
+    rnd = random.Random(seed)
+    for k in range(22):
+        a = rnd.uniform(-1.1, 1.1)
+        r = rnd.uniform(0.2, 2.0)
+        s = rnd.uniform(0.12, 0.38) * (1.2 - r * 0.25)
+        shade = rnd.uniform(0.8, 1.1)
+        fk.blob(m, K(kind, tuple(min(v * shade, 1.0) for v in rgb)), (s * 1.3, s * 0.55, s), (math.sin(a) * r, s * 0.3, math.cos(a) * r - 0.8), seed=seed + k, rough=0.3, cuts=1)
+
+
+STONES = {"grey": ("rock", (0.52, 0.52, 0.5), None), "sand": ("sandstone", (0.8, 0.62, 0.42), None), "basalt": ("rock", (0.21, 0.19, 0.2), None),
+    "ice": ("rock", (0.58, 0.62, 0.7), (0.95, 0.97, 1.0)), "pale": ("rock", (0.76, 0.76, 0.78), None), "moss": ("rock", (0.44, 0.46, 0.4), (0.3, 0.46, 0.22))}
+
+
 def build_all():
     fk.init()
     mk = fk.Maker()
@@ -95,6 +139,9 @@ def build_all():
     mk.model("bush_dry", lambda m: dry_bush(m, (0.5, 0.42, 0.3), 79))
     mk.model("bush_ash", lambda m: dry_bush(m, (0.16, 0.14, 0.14), 83))
     mk.model("ice_shards", ice_shards)
+    for k, (name, (kind, rgb, cap)) in enumerate(sorted(STONES.items())):  # (polish1 F1a) country mountainsides
+        mk.model("crag_" + name, lambda m, kind=kind, rgb=rgb, cap=cap, k=k: crag(m, kind, rgb, 101 + k * 13, cap))
+        mk.model("scree_" + name, lambda m, kind=kind, rgb=rgb, k=k: scree(m, kind, rgb, 301 + k * 31), solid=False)
     mk.save()
 
 

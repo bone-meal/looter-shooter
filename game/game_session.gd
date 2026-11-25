@@ -88,6 +88,7 @@ const ChatBox = preload("res://game/chat_box.gd")
 const ChatCommand = preload("res://core/chat_command.gd")
 const AdminCommands = preload("res://game/admin_commands.gd")
 const FantasyWorld = preload("res://game/fantasy_world.gd")
+const CountryWorld = preload("res://core/country_world.gd")
 const SeaWorld = preload("res://game/sea_world.gd")
 const BossBar = preload("res://game/boss_bar.gd")
 const Crossing = preload("res://game/crossing.gd")
@@ -225,6 +226,8 @@ var _chart_saved: Variant = null  # the sea chart from the save, until the sea i
 var _in_sea := false
 var _fantasy: FantasyWorld  # built the first time the player enters (or from the save)
 var _fantasy_saved: Variant  # the fantasy part of the profile, until that world is built
+var _border_busy := false  # (polish1 F1a) a border crossing is under way (the next country is being built)
+var _country_card: Control = preload("res://game/country_card.gd").new()  # (polish1 F1a) the card over a border crossing
 var _fantasy_exit := Vector3.ZERO
 var _port_spot: Array = []  # the island's spot for the gallery's return painting: [world position, yaw] (sea step 7b-4)
 var _port_paintings := {}  # "island" / "aurelind" -> world position of a return painting put up (once its painting is bought)
@@ -6207,8 +6210,14 @@ func _build_fantasy() -> void:
 		return
 	_fantasy = FantasyWorld.new()
 	add_child(_fantasy)
-	_fantasy.setup(_player, _director, _render_style, _hud_layer, _numbers, settings)
+	var country := "amberfield"  # (polish1 F1a) the country the save stood in (an older save starts over in Amberfield)
+	if _fantasy_saved is Dictionary and int((_fantasy_saved as Dictionary).get("v", 0)) == FantasyWorld.SAVE_VERSION:
+		country = String((_fantasy_saved as Dictionary).get("country", country))
+	if not FileAccess.file_exists("res://data/fantasy/countries/%s.json" % country):
+		country = "amberfield"
+	_fantasy.setup(_player, _director, _render_style, _hud_layer, _numbers, settings, country)
 	_fantasy.from_dict(_fantasy_saved)
+	_fantasy.cross.connect(_cross_country)
 	_fantasy.notice.connect(_player_hud.notice)
 	_fantasy.fade.connect(_player_hud.play_fade)
 	_fantasy.said.connect(func(text: String, color: Color) -> void: _chat.add_line(text, color))
@@ -6232,6 +6241,64 @@ func _build_fantasy() -> void:
 	Island.build_painting(self, _fantasy_exit, PaintingArt.island_texture())
 	if net != null and net.is_active():
 		net.fantasy.bind(_fantasy, _director)
+		net.fantasy.on_cross = _do_cross
+
+
+# (polish1 F1a) A player asked to go over a border: online the host takes the whole party, alone it just happens.
+func _cross_country(to: String, crossing: String) -> void:
+	if _border_busy:
+		return
+	if net != null and net.is_active():
+		net.fantasy.ask_cross(to, crossing)
+	else:
+		_do_cross(to, crossing)
+
+
+# Builds the next country behind the loading card and stands this player at the crossing's far end (at the
+# country's heart when `crossing` is ""). One country is simulated at a time: the old one is put away first.
+func _do_cross(to: String, crossing: String) -> void:
+	if _border_busy or _fantasy == null:
+		return
+	_border_busy = true
+	var was_inside := _in_fantasy
+	if loading != null:
+		loading.call("begin", 6)
+	var old: Dictionary = _fantasy.data.get("old_world", _fantasy.data["world"])
+	var look := {}
+	for region: Dictionary in old.get("regions", []):
+		if String(region["id"]) == to:
+			look = region
+	var band: Dictionary = CountryWorld.load_country(to)
+	if _country_card.get_parent() == null:
+		_hud_layer.add_child(_country_card)
+	_country_card.call("show_for", to, CountryWorld.country_name(to, old), String(band.get("levels", "")), String(look.get("blurb", "")))
+	await get_tree().process_frame  # the card is on screen before the slow building starts
+	await get_tree().process_frame
+	var saved := _fantasy.to_dict()
+	saved["country"] = to
+	_fantasy_saved = saved
+	if net != null and net.is_active():
+		net.fantasy.unbind()
+	if was_inside:
+		_fantasy.leave()
+		_director.reset()
+	_in_fantasy = false  # in between countries nothing asks the old world
+	_fantasy.queue_free()
+	_fantasy = null
+	await get_tree().process_frame
+	_build_fantasy()
+	_fantasy_dirty = true
+	if was_inside:
+		_in_fantasy = true
+		_player.unstuck.ground_height = _fantasy.drawn_height
+		_player.teleport(_fantasy.arrival_world(crossing), 0.0)
+		apply_settings()
+		_fantasy.enter(_player.global_position)
+	if loading != null:
+		loading.call("finish")
+	_country_card.call("done")
+	save_profile()
+	_border_busy = false
 
 
 func _leave_fantasy() -> void:

@@ -110,16 +110,19 @@ func _undress(key: Vector2i) -> void:
 
 # (polish1 item 97) A piece standing on the ground as it is DRAWN (the chunk's own mesh, not the smooth height it was
 # made from), sunk to the lowest point under its foot and tilted with the slope, so nothing floats or juts out of a hill.
-func _on_ground(x: float, z: float, turn: float, grow: float, radius: float) -> Transform3D:
+func _on_ground(x: float, z: float, turn: float, grow: float, radius: float, lean: float = 1.0, sink: float = 0.0) -> Transform3D:
 	var h := _ground_y(x, z)
 	var reach := clampf(radius * 0.6, 0.2, 2.0)
 	var e := _ground_y(x + reach, z)
 	var w := _ground_y(x - reach, z)
 	var s := _ground_y(x, z + reach)
 	var n := _ground_y(x, z - reach)
-	var up := Vector3(w - e, 2.0 * reach, n - s).normalized()
+	var up := Vector3.UP.lerp(Vector3(w - e, 2.0 * reach, n - s).normalized(), lean).normalized()  # (polish1 F1a) `lean`: how far it leans with the slope
 	var tilt := Basis(Quaternion(Vector3.UP, up)) if up.dot(Vector3.UP) < 0.9999 else Basis()
-	return Transform3D((tilt * Basis(Vector3.UP, turn)).scaled(Vector3.ONE * grow), Vector3(x, minf(h, minf(minf(e, w), minf(s, n))) - 0.05, z))
+	var low := minf(h, minf(minf(e, w), minf(s, n)))
+	if lean < 0.5:  # (polish1 F1a) an upright piece on a steep slope (a crag) stands between its middle and the lowest ground: the lowest buried it
+		low = lerpf(h, low, 0.5)
+	return Transform3D((tilt * Basis(Vector3.UP, turn)).scaled(Vector3.ONE * grow), Vector3(x, low - 0.05 - sink, z))
 
 
 # (polish1 item 155) An upright thing's foot (trees, work nodes): the lowest drawn ground under a ring of that radius, a
@@ -199,6 +202,8 @@ func _mesh(id: String) -> Mesh:
 			_meshes[id] = NodeLooks.compose(_mesh(parts[0]), (_node_data.get(parts[1], {}) as Dictionary).get("look", {}))
 		else:
 			_meshes[id] = FantasyModels.mesh(id)
+		if _meshes[id] != null:
+			(_meshes[id] as Mesh).resource_name = id  # named for checks (!f1a ground)
 	return _meshes[id]
 
 
@@ -213,8 +218,9 @@ func _dress(key: Vector2i, with_tufts: bool) -> void:
 	for tree: Array in layout.trees(key):  # scenery: [model, x, z, grow, turn]
 		_place(by_model, String(tree[0]), float(tree[1]), _foot_y(float(tree[1]), float(tree[2]), 0.5 * float(tree[3])), float(tree[2]), float(tree[3]), float(tree[4]))  # (polish1 item 155) on the drawn ground
 		_trunk(trunks, float(tree[1]), float(tree[2]), 0.3 * float(tree[3]))
-	for thing: Array in layout.clutter(key):  # boulders, logs, bushes: [model, x, z, grow, turn, radius]
-		_clutter_add(key, String(thing[0]), _on_ground(float(thing[1]), float(thing[2]), float(thing[4]), float(thing[3]), float(thing[5]) if thing.size() > 5 else 0.6))
+	for thing: Array in layout.clutter(key):  # boulders, logs, bushes: [model, x, z, grow, turn, radius, (tilt, sink: a country's rock)]
+		_clutter_add(key, String(thing[0]), _on_ground(float(thing[1]), float(thing[2]), float(thing[4]), float(thing[3]), float(thing[5]) if thing.size() > 5 else 0.6,
+			float(thing[6]) if thing.size() > 6 else 1.0, float(thing[7]) if thing.size() > 7 else 0.0))
 		if not layout.walked_over(String(thing[0])):  # bushes and stumps are walked through; boulders, spires and logs stay solid
 			_trunk(trunks, float(thing[1]), float(thing[2]), float(thing[5]))
 	for node: Array in layout.nodes(key):  # things to work on: [slot, node id, x, y, z, turn]

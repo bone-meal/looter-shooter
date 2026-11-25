@@ -1980,6 +1980,12 @@
   }
  },
  "walk_over": [
+  "scree_basalt",
+  "scree_grey",
+  "scree_ice",
+  "scree_moss",
+  "scree_pale",
+  "scree_sand",
   "banner_blue",
   "banner_red",
   "bedroll",

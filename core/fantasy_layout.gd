@@ -29,6 +29,7 @@ var _trees := {}  # chunk key -> Array of [model, x, z, grow, turn]
 var _clutter := {}  # chunk key -> Array of [model, x, z, grow, turn, radius]
 var _grid := {}  # Vector2i square -> Array of [x, z, half width, half depth, cos, sin]
 var _walk_over := {}  # models nobody bumps into (rugs, crop rows ...): rules "walk_over"
+var rocks := {}  # (polish1 F1a) data/fantasy/country_rocks.json: a country's crags, scree and boulders
 var _plugs := {}  # place or site id -> Array of [x, z, radius]
 var _chunk: float
 
@@ -310,7 +311,51 @@ func clutter(key: Vector2i) -> Array:
 				var size: Dictionary = props.get(id, {})
 				out.append([id, x, z, grow, FantasyTerrain.hash01(key.x, key.y, slot + 370) * TAU, 0.21 * (float(size.get("w", 1.0)) + float(size.get("d", 1.0))) * grow])
 				break
+	if terrain.country_shape != null and not rocks.is_empty():
+		out.append_array(_country_rocks(key))
 	_clutter[key] = out
+	return out
+
+
+# (polish1 F1a) A country's rock by the lie of the land: crags break out of steep ground (faced downhill, deep in it),
+# scree lies on the middle slopes, boulders on gentler ground, more of them the higher it is. Pieces:
+# [model, x, z, grow, turn, radius, tilt, sink] (game/fantasy_scatter.gd stands them on the drawn ground).
+func _country_rocks(key: Vector2i) -> Array:
+	var out: Array = []
+	var crag: Dictionary = rocks["crag"]
+	var scree: Dictionary = rocks["scree"]
+	var lump: Dictionary = rocks["boulder"]
+	for slot in int(rocks.get("slots", 12)):
+		var x := (float(key.x) + FantasyTerrain.hash01(key.x, key.y, slot * 5 + 601)) * _chunk
+		var z := (float(key.y) + FantasyTerrain.hash01(key.x, key.y, slot * 5 + 602)) * _chunk
+		var h := terrain.height(x, z)
+		if h < terrain.sea + 1.0 or terrain.water_at(x, z) != "" or not _free_ground(x, z):
+			continue
+		var fall := Vector2(terrain.height(x + 3.0, z) - terrain.height(x - 3.0, z), terrain.height(x, z + 3.0) - terrain.height(x, z - 3.0)) / 6.0
+		var steep := fall.length()
+		var stone := String((rocks["stone"] as Dictionary).get(String(terrain.region_at(x, z)["id"]), "grey"))
+		var roll := FantasyTerrain.hash01(key.x, key.y, slot * 5 + 603)
+		var grow_t := FantasyTerrain.hash01(key.x, key.y, slot * 5 + 604)
+		var downhill := atan2(fall.x, fall.y)  # the model's front (-z) turned to face down the slope
+		var pick: Dictionary = {}
+		var model := ""
+		if steep >= float(crag["steep"][0]) and steep <= float(crag["steep"][1]) and roll < float(crag["chance"]) * smoothstep(float(crag.get("low", 0.0)), float(crag.get("high", 0.1)), h):
+			pick = crag
+			model = "crag_" + stone
+		elif steep >= float(scree["steep"][0]) and steep <= float(scree["steep"][1]) and roll < float(scree["chance"]):
+			pick = scree
+			model = "scree_" + stone
+		elif steep < float(lump["steep_most"]) and roll < lerpf(float(lump["chance_low"]), float(lump["chance_high"]), smoothstep(float(lump["low"]), float(lump["high"]), h)):
+			pick = lump
+			model = String((rocks["boulder"] as Dictionary).get(stone, "boulder_grey"))
+			downhill = roll * 977.0
+		if model == "" or not props.has(model):
+			continue
+		var grow := lerpf(float(pick["grow"][0]), float(pick["grow"][1]), grow_t)
+		if pick == crag:  # high mountain faces carry bigger outcrops
+			grow *= 1.0 + float(crag.get("mountain_grow", 0.0)) * smoothstep(float(crag.get("high", 90.0)), float(crag.get("high", 90.0)) * 2.0, h)
+		var size: Dictionary = props[model]
+		out.append([model, x, z, grow, downhill, 0.21 * (float(size.get("w", 1.0)) + float(size.get("d", 1.0))) * grow, float(pick["tilt"]), float(pick["sink"]) * grow])
 	return out
 
 

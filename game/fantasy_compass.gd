@@ -82,7 +82,7 @@ func update(world: Node3D, delta: float) -> void:
 		if seen.has("pl:" + String(p["id"])):
 			continue
 		var d := Vector2(float(p["pos"][0]) - me.x, float(p["pos"][1]) - me.z).length()
-		if d > PLACE_REACH or d < float(p.get("flat", 30.0)):
+		if d > PLACE_REACH or d < float(p.get("flat", 30.0)) or String(p["kind"]) == "landing":  # (polish1 F1a) level ground only, not a place
 			continue
 		if found.has(String(p["id"])):
 			marks.append({"x": float(p["pos"][0]), "z": float(p["pos"][1]), "kind": "place", "sign": String(p["kind"]), "name": String(p["name"])})

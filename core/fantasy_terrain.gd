@@ -1,10 +1,14 @@
 # Purpose: pure shape of the fantasy world: for any point, which regions it belongs to (they blend into each other),
 # the ground height, the ground colour, the mood (fog, sky, light) and the enemy level. Every machine computes the same
 # land from the same data, so the host and the clients agree where the ground is. No nodes.
-# Dependencies: none (uses the engine's FastNoiseLite). Data: data/fantasy/world.json.
+# A COUNTRY (polish1 F1a: data/fantasy/countries/<id>.json, made into world data by core/country_world.gd) has a
+# "shape" instead: its big land comes from core/country_shape.gd and its regions are the looks its zones wear.
+# Dependencies: core/country_shape.gd (uses the engine's FastNoiseLite). Data: data/fantasy/world.json or a country.
 extends RefCounted
 
-const RULES_VERSION := 4  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
+const CountryShape = preload("res://core/country_shape.gd")
+
+const RULES_VERSION := 8  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
 const RING_HEIGHT := 34.0  # the mountain ring around the last region
 const RING_WIDTH := 42.0
 const PASS_ANGLE := 0.5  # radians: how wide the gap in the ring is (it faces south, towards the start)
@@ -39,6 +43,20 @@ var _seg_b := PackedVector2Array()
 var _seg_cells := {}  # ... and which stretches pass near each SEG_CELL square: Vector2i -> PackedInt32Array
 var _no_segments := PackedInt32Array()
 var _cones: Array = []  # volcano cones: {"x", "z", "crater", "rim", "radius", "height", "open" (bearing of the way in)}
+var country_shape: RefCounted = null  # (polish1 F1a) a country's compiled shape (core/country_shape.gd), null for the old world
+var _levels := Vector2(1, 50)  # a country's level band
+var _snowline := INF  # a country's snowline (metres): above it the land is white
+const SNOW := Color(0.93, 0.95, 0.98)
+var _spawn := Vector2.ZERO
+const RELIEF := 0.8  # a country: how much of a look's own hills and landforms stand on the big land
+const RIVER_DEPTH := 1.4  # metres of water in the middle of a river
+const PEAKS := 62.0  # a country's high ground: metres of sharp ridges and peaks the mountains carry over their big shape
+const GULLIES := 9.0  # metres the rain has cut gullies into steep slopes
+const ROLL := 6.0  # metres of rolling hills on the lowlands
+const LEDGE := 7.0  # metres between the rock ledges on steep high ground
+var _ridges := FastNoiseLite.new()  # (polish1 F1a) a country's ridgelines: ridged noise bent by a warp
+var _gullies := FastNoiseLite.new()
+var _roll := FastNoiseLite.new()
 
 const ROAD_WIDTH := 2.3  # half width of a path, metres
 const SEG_CELL := 80.0  # paths are looked up through a grid of squares this wide
@@ -63,9 +81,41 @@ func _init(world_data: Dictionary) -> void:
 	_detail.noise_type = FastNoiseLite.TYPE_SIMPLEX
 	_detail.fractal_octaves = 2
 	_detail.frequency = 1.0 / 17.0
-	var last: Dictionary = regions[regions.size() - 1]
-	_ring_center = Vector2(float(last["center"][0]), float(last["center"][1]))
-	_ring_radius = float(last["radius"]) + 30.0
+	_ridges.seed = int(data["seed"]) + 23
+	_ridges.noise_type = FastNoiseLite.TYPE_SIMPLEX_SMOOTH
+	_ridges.fractal_type = FastNoiseLite.FRACTAL_RIDGED
+	_ridges.fractal_octaves = 5
+	_ridges.fractal_gain = 0.52
+	_ridges.frequency = 1.0 / 420.0
+	_ridges.domain_warp_enabled = true
+	_ridges.domain_warp_type = FastNoiseLite.DOMAIN_WARP_SIMPLEX
+	_ridges.domain_warp_amplitude = 90.0
+	_ridges.domain_warp_frequency = 1.0 / 700.0
+	_gullies.seed = int(data["seed"]) + 29
+	_gullies.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_gullies.fractal_octaves = 3
+	_gullies.frequency = 1.0 / 70.0
+	_roll.seed = int(data["seed"]) + 31
+	_roll.noise_type = FastNoiseLite.TYPE_SIMPLEX
+	_roll.fractal_octaves = 3
+	_roll.frequency = 1.0 / 260.0
+	if data.has("shape"):
+		country_shape = CountryShape.new(data, float(data.get("grid", 16.0)))
+		var picked: Array = []  # the regions are the looks, in the shape's order
+		for look: String in country_shape.looks:
+			for template: Dictionary in data["regions"]:
+				if String(template["id"]) == look:
+					picked.append(template)
+		regions = picked
+		var band := String(data.get("levels", "1-50")).split("-")
+		_levels = Vector2(float(band[0]), float(band[band.size() - 1]))
+		var low: Array = data.get("low_at", data["spawn"])
+		_spawn = Vector2(float(low[0]), float(low[1]))
+		_snowline = float(data.get("snowline", INF))
+	else:
+		var last: Dictionary = regions[regions.size() - 1]
+		_ring_center = Vector2(float(last["center"][0]), float(last["center"][1]))
+		_ring_radius = float(last["radius"]) + 30.0
 	for p: Dictionary in places:
 		_place_level.append(maxf(_raw_height(float(p["pos"][0]), float(p["pos"][1])), sea + 1.2))
 		var flat := float(p.get("flat", 0.0))
@@ -125,7 +175,12 @@ func _init(world_data: Dictionary) -> void:
 				area["z"] = float(entry["pos"][1]) - (float(area["radius"]) + float(area["inner"])) * 0.5
 		if area.has("x"):
 			areas.append(area)
-	for lake: Dictionary in lakes:
+	if country_shape != null:  # a country's lakes are cut into its big land already; listed for their water and names
+		for lake: Dictionary in country_shape.lakes:
+			var entry := lake.duplicate()
+			entry["name"] = String(lake.get("name", ""))
+			lakes.append(entry)
+	for lake: Dictionary in lakes if country_shape == null else []:
 		_lake_at.append(Vector3(float(lake["x"]), float(lake["z"]), float(lake["r"])))
 		_lake_level.append(float(lake["level"]))
 		_lake_depth.append(float(lake["depth"]))
@@ -174,6 +229,8 @@ func area_by_id(id: String) -> Dictionary:
 # One weight per region (same order as `regions`), adding up to 1: high for the region the point is in, shared
 # smoothly near a border.
 func weights(x: float, z: float) -> PackedFloat32Array:
+	if country_shape != null:
+		return country_shape.weights(x, z)
 	var scores := PackedFloat32Array()
 	var best := INF
 	for region: Dictionary in regions:
@@ -218,6 +275,8 @@ func place(id: String) -> Dictionary:
 
 # Enemy level at a point: the low end of the region's band at its edge, the high end near its heart.
 func level_at(x: float, z: float) -> int:
+	if country_shape != null:  # a country: its low end where you come in at its heart, its high end at its far edges
+		return roundi(lerpf(_levels.x, _levels.y, clampf(Vector2(x, z).distance_to(_spawn) / (size * 0.55), 0.0, 1.0)))
 	var region := region_at(x, z)
 	var d := Vector2(x - float(region["center"][0]), z - float(region["center"][1])).length()
 	var t := clampf(1.0 - d / float(region["radius"]), 0.0, 1.0)
@@ -284,6 +343,8 @@ func _landforms(shape: Dictionary, x: float, z: float, plain: float) -> float:
 
 # The land before places are levelled and lakes cut. `wild` (see `wildness`) scales the regions' landforms.
 func _raw_height(x: float, z: float, wild: float = 0.0) -> float:
+	if country_shape != null:
+		return _country_height(x, z, wild)
 	var w := weights(x, z)
 	var h := 0.0
 	for i in regions.size():
@@ -311,6 +372,61 @@ func _raw_height(x: float, z: float, wild: float = 0.0) -> float:
 	var edge := maxf(absf(x), absf(z))
 	var shore := smoothstep(size * 0.5 - 150.0, size * 0.5 - 30.0, edge)
 	return lerpf(h, sea - 3.2, shore)
+
+
+# (polish1 F1a) A country's land: its big shape, each look's own hills and landforms on top (less near the sea),
+# the rivers' beds cut into it.
+func _country_height(x: float, z: float, wild: float) -> float:
+	var big: float = country_shape.height(x, z)
+	# the land's character from its big shape: how mountainous, how steep (metres a metre)
+	var slope_xz := Vector2(country_shape.height(x + 12.0, z) - country_shape.height(x - 12.0, z), country_shape.height(x, z + 12.0) - country_shape.height(x, z - 12.0))
+	var steep := slope_xz.length() / 24.0
+	var mount := smoothstep(18.0, 150.0, big)
+	var inland := smoothstep(0.5, 8.0, big)
+	var tame := 0.6 + 0.4 * maxf(wild, 0.0)  # places and paths keep a gentler ground
+	# peaks: ridgelines that grow with the mountains (sharp crests, broad shoulders, valleys between)
+	var crest := 0.5 + 0.5 * _ridges.get_noise_2d(x, z)
+	big += (pow(crest, 1.7) - 0.3) * PEAKS * mount * inland * tame
+	# gullies the rain has cut straight down the steeper slopes (the noise is stretched along the fall line)
+	var fall := slope_xz.normalized()
+	var along := x * fall.x + z * fall.y
+	var across := -x * fall.y + z * fall.x
+	big -= pow(1.0 - absf(_gullies.get_noise_2d(across, along * 0.22)), 3.0) * GULLIES * smoothstep(0.06, 0.35, steep) * inland * tame
+	# the low ground: broad plains with hills standing out of them here and there
+	big += pow(maxf(_roll.get_noise_2d(x, z), 0.0), 1.5) * ROLL * 2.2 * (1.0 - mount) * inland * tame
+	# crags: steep faces are broken rock, not smooth banks
+	if steep > 0.3:
+		big += (0.5 + 0.5 * _ridges.get_noise_2d(x * 6.0 + 900.0, z * 6.0)) * 5.0 * smoothstep(0.3, 0.8, steep) * inland
+	# rock ledges: steep high ground breaks into bands
+	var ledgy := smoothstep(0.25, 0.6, steep) * mount * tame
+	if ledgy > 0.0:
+		var band := big / LEDGE
+		var stepped := (floorf(band) + smoothstep(0.65, 1.0, band - floorf(band))) * LEDGE
+		big = lerpf(big, stepped, ledgy * 0.35)
+	var w := weights(x, z)
+	var add := 0.0
+	for i in regions.size():
+		if w[i] < 0.002:
+			continue
+		var form: Dictionary = regions[i]["height"]
+		var rough := float(form["rough"])
+		var plain := float(form["amp"]) * _noise.get_noise_2d(x / rough, z / rough)
+		if wild > 0.0:
+			plain += wild * _landforms(form, x, z, big + plain)
+		add += w[i] * plain
+	var h := big + add * RELIEF * smoothstep(0.5, 6.0, big)
+	h = maxf(h, minf(big, sea + 1.5)) if big > sea else h  # the relief never drowns land
+	h += 0.5 * _detail.get_noise_2d(x, z)
+	var river: Vector3 = country_shape.river_near(x, z)
+	var vale: float = river.y * 6.0 + 45.0  # a river runs in its own valley, wider where the river is
+	if river.x < vale:
+		var floor_h := river.z + 0.4 + river.x * 0.02
+		h = lerpf(minf(h, floor_h + (h - floor_h) * 0.25), h, smoothstep(river.y * 2.0, vale, river.x))  # the valley floor
+		var bank := maxf(h, river.z + 0.35)
+		var bed := river.z - RIVER_DEPTH * (1.0 - pow(minf(river.x / maxf(river.y, 0.5), 1.0), 2.0)) - 0.1
+		h = lerpf(bed, lerpf(bank, h, smoothstep(river.y * 1.6, river.y * 3.0 + 2.0, river.x)), smoothstep(river.y * 0.85, river.y * 1.3, river.x))
+	var edge := maxf(absf(x), absf(z))
+	return lerpf(h, minf(h, sea - 3.2), smoothstep(size * 0.5 - 60.0, size * 0.5 - 10.0, edge))
 
 
 # The land with its places levelled (towns, farms and boss arenas sit on flat ground), before lakes are cut.
@@ -344,6 +460,14 @@ func height(x: float, z: float) -> float:
 
 # What water lies at a point: "" = dry land, "salt" = the sea, else a lake's kind ("fresh", "lava").
 func water_at(x: float, z: float) -> String:
+	if country_shape != null:
+		var at: int = country_shape.lake_at(x, z)
+		if at >= 0:
+			return String(lakes[at].get("water", "fresh"))
+		var river: Vector3 = country_shape.river_near(x, z)
+		if river.x < river.y - 0.3:
+			return "fresh"
+		return "salt" if _placed_height(x, z) < sea - 0.3 else ""
 	for lake: Dictionary in lakes:
 		if Vector2(x - float(lake["x"]), z - float(lake["z"])).length() < float(lake["r"]) - 0.5:
 			return String(lake["water"])
@@ -411,6 +535,8 @@ func color(x: float, z: float, h: float, slope: float) -> Color:
 		cliff += Color(g[2][0], g[2][1], g[2][2]) * w[i]
 	var patch := 0.5 + 0.5 * _noise.get_noise_2d(x / 23.0, z / 23.0)
 	var c := low.lerp(high, patch)
+	if country_shape != null:
+		c = _country_colour(c, low, cliff, x, z, h, slope)
 	c = c.lerp(cliff, smoothstep(0.32, 0.62, slope))
 	c = c.lerp(BEACH, 1.0 - smoothstep(sea + 0.4, sea + 2.2, h))
 	var worn := trodden(x, z)
@@ -419,6 +545,29 @@ func color(x: float, z: float, h: float, slope: float) -> Color:
 		c = c.lerp(PAVED if String(here.get("yard", "")) == "g_cobble" else DIRT, worn * 0.85)
 	c.a = 1.0
 	return c
+
+
+# (polish1 F1a) A country's ground over its looks' own colours: big patches of lighter and darker land (meadow,
+# heath, fields), greener valley floors along the rivers, bare stone below the snowline, snow above it.
+func _country_colour(c: Color, low: Color, cliff: Color, x: float, z: float, h: float, slope: float) -> Color:
+	var broad := _roll.get_noise_2d(x * 1.9 + 400.0, z * 1.9)
+	c = c.lightened(broad * 0.12) if broad > 0.0 else c.darkened(-broad * 0.16)
+	var river: Vector3 = country_shape.river_near(x, z)
+	if river.x < river.y * 5.0 + 30.0:
+		c = c.lerp(low.darkened(0.12).lerp(Color(0.32, 0.5, 0.22), 0.4), 0.45 * (1.0 - smoothstep(river.y * 1.5, river.y * 5.0 + 30.0, river.x)))
+	var line := _snowline + 9.0 * _detail.get_noise_2d(x * 0.25, z * 0.25)
+	c = c.lerp(cliff.lerp(Color(0.55, 0.53, 0.5), 0.4), 0.55 * smoothstep(line - 35.0, line - 5.0, h))  # bare stone toward the snow
+	c = c.lerp(SNOW, snow_at(x, z, h) * (1.0 - smoothstep(0.5, 0.75, slope)))
+	return c
+
+
+# (polish1 F1a) How much snow lies at a point of a country (0 none .. 1): above its snowline, which wanders a little.
+# The ground shader lays it on the level parts (ledges, tops), the steep faces stay rock. 0 in the old world.
+func snow_at(x: float, z: float, h: float) -> float:
+	if country_shape == null:
+		return 0.0
+	var line := _snowline + 9.0 * _detail.get_noise_2d(x * 0.25, z * 0.25)
+	return smoothstep(line, line + 5.0, h)
 
 
 # Fog, sky and light at a point: {"fog": Color, "density": float, "sky_top": Color, "sky_horizon": Color,

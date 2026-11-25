@@ -1,9 +1,11 @@
-Polish1 E5: grand chapel interior, coach stations in walled towns, gil
+Polish1 F1a: the continent and its countries as separate worlds
 
-- 122 the chapel inside is a grand hall (16 x 26 m, 8.5 m to the eaves, open timber roof with trusses under a stone gable): clustered stone columns, tall stained-glass lancet windows down both sides, a rose window over the altar, candelabras, banners, a lectern, a red runner and 14 pews; rooms may now have their own size, height, pitched roof, windows and light (interiors.json)
-- 126 every walled town has a coach house (shed, parked coach, sign, fare board) with a coachman; talking to him (or using the coach house) opens the Coach page: every other walled town of a country already visited, distance and fare; riding pays the fare and shows the coach card while the road loads
-- director: fares are paid in the game's chips, called GIL in Aurelind with their own coin (inventory bar too)
-- data: coaches.json (fare base + per km, ride time, coachman look and lines), layouts.json coach rule; dev !e5
+- tools/worldgen: the continent grown from tectonic plates, meteor craters, rivers and climate (plates.json); export_countries.py cuts each country into data/fantasy/countries/<id>.json (height contours, rivers, lakes, craters, land zones, border walls, crossings) plus the atlas pictures
+- core/country_shape.gd compiles a country's shapes into its land (kept per machine in user://); core/country_world.gd makes a country into world data; core/fantasy_terrain.gd country land: peaks, gullies, plains with hills, crags, ledges, river valleys, snowline colours
+- one country loaded at a time: crossings (road, ford, pass, ferry, ship) take the whole party (the host decides), a card while the next country loads, levels rise from the way in; save version 2 = the full Aurelind reset (director)
+- land detail: rock outcrops, scree and boulders by the lie of the land (country_rocks.json, new crag and scree models), triplanar rock and snow on ledges in the ground shader, forests seen from afar (graphics tier far_trees), river water, finer far land, thinner haze
+- the map is a cartographer's chart (height lines, inked shore, trees, hachures, rivers, crossing gates) with the continent atlas beside it
+- dev !f1a at / cross / air / view / ground / spawn / note; check tools/country_shot.gd
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

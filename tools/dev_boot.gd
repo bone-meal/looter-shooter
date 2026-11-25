@@ -3134,6 +3134,88 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"f1a":  # (polish1 F1a, countries) "!f1a at <n>": stand at this country's crossing n (0..), facing out; "!f1a cross <n>": take crossing n (the whole
+			# party goes); "!f1a air <x> <z> <height> [tx tz]": a view from above; "!f1a spawn"; "!f1a note": the country, its crossings, where we stand
+			var fwf: Node = session.call("fantasy")
+			var terf: RefCounted = fwf.get("terrain") if fwf != null else null
+			var crossf: Array = []
+			if terf != null:
+				for pf: Dictionary in terf.get("places"):
+					if String(pf["kind"]) == "crossing":
+						crossf.append(pf)
+			match words[1] if words.size() > 1 else "note":
+				"at":
+					var cf: Dictionary = crossf[int(words[2])]
+					var spf: Array = terf.get("data")["spawn"]
+					var outf := (Vector2(float(cf["pos"][0]), float(cf["pos"][1])) - Vector2(float(spf[0]), float(spf[1]))).normalized()
+					player.call("teleport", fwf.call("ground_world", float(cf["pos"][0]) - outf.x * 4.0, float(cf["pos"][1]) - outf.y * 4.0), 0.0)
+					player.call("look_at_point", fwf.call("ground_world", float(cf["pos"][0]) + outf.x * 30.0, float(cf["pos"][1]) + outf.y * 30.0) + Vector3(0, 2.0, 0))
+				"cross":
+					var cc: Dictionary = crossf[int(words[2])]
+					session.call("_cross_country", String(cc["to"]), String(cc["id"]))
+				"air":
+					var tx := float(words[5]) if words.size() > 6 else float(words[2])
+					var tz := float(words[6]) if words.size() > 6 else float(words[3]) - 1.0
+					player.call("teleport", fwf.call("ground_world", float(words[2]), float(words[3])) + Vector3(0, float(words[4]), 0), 0.0)
+					player.call("look_at_point", fwf.call("ground_world", tx, tz))
+				"spawn":
+					player.call("teleport", fwf.call("spawn_world"), 0.0)
+				"ground":  # "!f1a ground": every scattered piece in the dressed land (trees, nodes, rock, clutter) against the drawn ground under it
+					var landg: Node = fwf.get("land")
+					var scat: Node = fwf.get("scatter")
+					var tally := {}  # model -> [pieces, floating > 0.15 m, deep > 2 m (crags excepted)]
+					for mmi in scat.find_children("*", "MultiMeshInstance3D", true, false):
+						var mm: MultiMesh = (mmi as MultiMeshInstance3D).multimesh
+						if mm == null or mm.mesh == null or mm.use_colors:
+							continue  # grass tufts are coloured instances: skipped
+						var label := String(mm.mesh.resource_name) if mm.mesh.resource_name != "" else str(mm.mesh.get_instance_id())
+						for i in mm.visible_instance_count if mm.visible_instance_count >= 0 else mm.instance_count:
+							var at: Vector3 = mm.get_instance_transform(i).origin
+							var g: Vector2 = landg.call("ground", at.x, at.z)
+							if is_nan(g.x):
+								continue
+							if not tally.has(label):
+								tally[label] = [0, 0, 0]
+							tally[label][0] += 1
+							if at.y > g.x + 0.15:
+								tally[label][1] += 1
+							if at.y < g.x - 2.0:
+								tally[label][2] += 1
+					var parts_g := PackedStringArray()
+					for k: String in tally:
+						parts_g.append("%s %d/%d/%d" % [k, tally[k][0], tally[k][1], tally[k][2]])
+					var ex: Vector3 = fwf.call("exit_world")
+					var exl: Vector3 = fwf.call("local_of", ex)
+					var exg: Vector2 = landg.call("ground", exl.x, exl.z)
+					_lines.append("F1A GROUND (pieces/floating>0.15/deep>2) %s | painting foot %.2f vs drawn %.2f" % [", ".join(parts_g), exl.y + 0.3, exg.x])
+				"view":  # "!f1a view <name> x z height tx tz": a picture (no HUD) from a camera that high over the ground at x z, looking at tx tz
+					var was_f := get_viewport().get_camera_3d()
+					var cam_f := Camera3D.new()
+					get_tree().root.add_child(cam_f)
+					cam_f.global_position = (fwf.call("ground_world", float(words[3]), float(words[4])) as Vector3) + Vector3(0.0, float(words[5]), 0.0)
+					cam_f.look_at((fwf.call("ground_world", float(words[6]), float(words[7])) as Vector3) + Vector3(0.0, 2.0, 0.0), Vector3.UP)
+					cam_f.fov = 60.0
+					cam_f.far = was_f.far
+					cam_f.current = true
+					var layers_f: Array = []
+					for found_f in get_tree().root.find_children("*", "CanvasLayer", true, false):
+						if (found_f as CanvasLayer).visible:
+							(found_f as CanvasLayer).visible = false
+							layers_f.append(found_f)
+					for i_f in 6:
+						await RenderingServer.frame_post_draw
+					get_viewport().get_texture().get_image().save_jpg(OUT + "boot_compatibility_%s.jpg" % words[2], 0.9)
+					for layer_f: CanvasLayer in layers_f:
+						layer_f.visible = true
+					cam_f.queue_free()
+					was_f.current = true
+				_:
+					var namesf := PackedStringArray()
+					for i in crossf.size():
+						namesf.append("%d:%s->%s(%s)" % [i, String(crossf[i]["id"]), String(crossf[i]["to"]), String(crossf[i]["crossing"])])
+					var mef: Vector3 = fwf.call("player_local")
+					_lines.append("F1A country %s, crossings %s, here %s ground %.1f water '%s' level %d, seen %s" % [String(fwf.get("country")), ", ".join(namesf), str(mef.snapped(Vector3.ONE)),
+						float(terf.call("height", mef.x, mef.z)), String(terf.call("water_at", mef.x, mef.z)), int(terf.call("level_at", mef.x, mef.z)), str((fwf.get("countries_seen") as Dictionary).keys())])
 		"e5":  # (polish1 stage E5, places) "!e5 chapel [place]": go in the chapel of that place (millbrook); "!e5 view <x> <y> <z> <tx> <ty> <tz>": inside a room, stand
 			# at room-local metres looking at another room-local point; "!e5 note": the room's size and pieces
 			var fw5: Node = session.call("fantasy")

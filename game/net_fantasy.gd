@@ -21,6 +21,7 @@ var _state_timer := 0.0
 var _ask_timer := 0.0
 var _bound := {}  # ghost instance id -> true once its `struck` signal is connected
 var _was_inside := false
+var on_cross := Callable()  # (polish1 F1a) the session's: take this machine's party member over a border (to, crossing)
 
 
 func bind(fantasy_world: Node3D, wave_director: Node3D) -> void:
@@ -213,6 +214,48 @@ func _ask_all() -> void:
 			_spawn.rpc_id(peer, id, String(_enemies[id].get("enemy_id")), (_enemies[id] as Node3D).global_position)
 	_log.rpc_id(peer, world.quests.to_dict())
 	send_node_state(peer)  # (polish1 item 114) which spots are used up, hibernating or woken
+	_country.rpc_id(peer, String(world.country))  # (polish1 F1a) the party is in the host's country
+
+
+# --- (polish1 F1a) crossing a border: the whole party goes, the host decides ---
+
+# Anyone at a crossing asks; the host takes everyone over (itself included).
+func ask_cross(to: String, crossing: String) -> void:
+	if is_client():
+		_ask_cross.rpc_id(1, to, crossing)
+	else:
+		_host_cross(to, crossing)
+
+
+func _host_cross(to: String, crossing: String) -> void:
+	if world == null:
+		return
+	var p: Dictionary = world.terrain.place(crossing)
+	if p.is_empty() or String(p.get("kind", "")) != "crossing" or String(p.get("to", "")) != to:
+		return
+	if net.can_send():
+		_cross.rpc(to, crossing)
+	if on_cross.is_valid():
+		on_cross.call(to, crossing)
+
+
+@rpc("any_peer", "call_remote", "reliable")
+func _ask_cross(to: String, crossing: String) -> void:
+	if net.is_host() and net.roster.has(multiplayer.get_remote_sender_id()):
+		_host_cross(to, crossing)
+
+
+@rpc("authority", "call_remote", "reliable")
+func _cross(to: String, crossing: String) -> void:
+	if on_cross.is_valid():
+		on_cross.call(to, crossing)
+
+
+# A joiner whose own save stood in another country follows the host to the host's (arriving at its spawn).
+@rpc("authority", "call_remote", "reliable")
+func _country(id: String) -> void:
+	if world != null and String(world.country) != id and on_cross.is_valid():
+		on_cross.call(id, "")
 
 
 # --- requests from the other machines ---

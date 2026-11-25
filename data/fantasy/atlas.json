@@ -1,0 +1,45 @@
+{
+ "_about": "Polish1 F1a: where each country's name sits on assets/ui/atlas.jpg (shares of its width / height). Made by tools/worldgen/export_countries.py.",
+ "countries": {
+  "amberfield": {
+   "x": 0.1225,
+   "y": 0.6236,
+   "levels": "1-6"
+  },
+  "greenwald": {
+   "x": 0.2575,
+   "y": 0.4431,
+   "levels": "6-12"
+  },
+  "brinemouth": {
+   "x": 0.7212,
+   "y": 0.8278,
+   "levels": "12-18"
+  },
+  "sunscar": {
+   "x": 0.56,
+   "y": 0.875,
+   "levels": "18-25"
+  },
+  "frostmere": {
+   "x": 0.1725,
+   "y": 0.2194,
+   "levels": "25-32"
+  },
+  "cinderreach": {
+   "x": 0.7488,
+   "y": 0.1167,
+   "levels": "32-39"
+  },
+  "stormcrown": {
+   "x": 0.3513,
+   "y": 0.2681,
+   "levels": "39-45"
+  },
+  "hollow_crown": {
+   "x": 0.4825,
+   "y": 0.1667,
+   "levels": "45-50"
+  }
+ }
+}

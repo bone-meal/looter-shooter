@@ -13,6 +13,8 @@ extends Node3D
 const SkillPerks = preload("res://core/skill_perks.gd")
 const FantasyData = preload("res://core/fantasy_data.gd")
 const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
+const CountryWorldRef = preload("res://core/country_world.gd")
+const FarForest = preload("res://game/far_forest.gd")
 const FantasyLayout = preload("res://core/fantasy_layout.gd")
 const FantasyBag = preload("res://core/fantasy_bag.gd")
 const SkillLevels = preload("res://core/skill_levels.gd")
@@ -44,7 +46,7 @@ const ElementBox = preload("res://game/element_box.gd")
 const FantasyPanel = preload("res://game/fantasy_panel.gd")
 
 const OFFSET := Vector3(20000.0, 0.0, 0.0)
-const SAVE_VERSION := 1
+const SAVE_VERSION := 2  # (polish1 F1a) 2 = the countries: an older Aurelind save starts from nothing (the director's full reset)
 const GOOD := Color(0.6, 1.0, 0.6)
 const GOLD := Color(1.0, 0.85, 0.4)
 const WALK_LAND := 0
@@ -62,6 +64,7 @@ signal boss_move(text: String, color: Color)  # a boss starts one of its special
 signal coach_left(destination: String)  # (polish1 E5) a coach ride began: the HUD's travel card
 signal vanquished(creature: String, phantom: bool, won: Array)  # (polish1 E4) a great creature fell: the HUD's page, what this player won
 signal fade  # the screen should fade (a door was used)
+signal cross(to: String, crossing: String)  # (polish1 F1a) the party should go over a border: the session builds the next country
 signal changed  # bag, skills or quests changed: the HUD redraws, the session saves
 signal spell_cast(spell_name: String, mix: String)  # a spell left the staff (the session counts it: core/stat_book.gd)
 signal worked(skill: String, item: String, count: int, made: bool)  # gathered (made false) or crafted (made true)
@@ -99,6 +102,11 @@ var map := FantasyMap.new()
 var interiors: FantasyInteriors  # what is inside which building
 var rooms := FantasyRooms.new()  # doors, rooms and containers
 var found := {}  # ids of the regions and places the player has been to (the map names only these)
+var country := "amberfield"  # (polish1 F1a) the country this world is (data/fantasy/countries/<id>.json)
+var countries_seen := {}  # the countries the player has been to (the atlas names only these)
+var _box: Control = null  # the element box on the HUD layer (put away with the world)
+var far_forest := FarForest.new()
+var _forest_key := Vector2i(99999, 99999)
 var inside := false
 var hud_node: Control  # game/fantasy_hud.gd (its compass)
 var mana := 0.0
@@ -130,13 +138,15 @@ var _busy := false  # true while rewards are being handed out (stops quest check
 var _claimed := {}  # not the host: "quest:step" already reported as passed
 
 
-func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer, numbers: Node, settings: RefCounted) -> void:
+func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer, numbers: Node, settings: RefCounted, country_id: String = "amberfield") -> void:
+	country = country_id
+	countries_seen[country] = true
 	_player = player
 	_style = style
 	_env = style.get("env")
 	_sun = style.get("sun")
 	position = OFFSET
-	data = FantasyData.load_all()
+	data = FantasyData.load_all(country)
 	LoadClock.mark("fantasy: data and writing files")
 	for problem: String in data["problems"]:
 		push_warning("Fantasy text: " + problem)
@@ -149,6 +159,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	var spell_data: Dictionary = data["spells"]
 	spells = SpellBook.new(spell_data)
 	layout = FantasyLayout.new(terrain, data["layouts"], data["props"], skilling["nodes"])
+	layout.rocks = data.get("country_rocks", {})  # (polish1 F1a) a country's crags, scree and boulders
 	interiors = FantasyInteriors.new(data["interiors"], data["props"])
 	layout.interiors = interiors
 	_caster = spell_data["caster"]
@@ -162,6 +173,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	add_child(gather)
 	add_child(scatter)
 	scatter.setup(terrain, layout, land, gather, skilling)
+	add_child(far_forest)  # (polish1 F1a) a country's forests seen from afar (planted once the graphics tier is known: set_detail)
 	LoadClock.mark("fantasy: scatter set up")
 	add_child(places)
 	var folk := {}
@@ -234,6 +246,7 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	hud.settings = settings
 	hud_layer.add_child(hud)
 	var box := ElementBox.new()
+	_box = box
 	box.caster = caster
 	box.world = self
 	box.settings = settings
@@ -291,13 +304,46 @@ func _unhandled_input(event: InputEvent) -> void:
 func prompt(key: String) -> String:
 	if panel.is_open():
 		return ""
+	var crossing := crossing_near()
+	if not crossing.is_empty():
+		return "[%s] %s%s" % [key, String(crossing["name"]), "  (hard country)" if bool(crossing.get("hard", false)) else ""]
 	var ours := rooms.prompt(key)
 	return ours if ours != "" or rooms.inside() else work.prompt(key)
 
 
 func interact() -> void:
-	if not panel.is_open() and not rooms.interact():
+	if panel.is_open():
+		return
+	var crossing := crossing_near()
+	if not crossing.is_empty():
+		cross.emit(String(crossing["to"]), String(crossing["id"]))
+		return
+	if not rooms.interact():
 		work.interact()
+
+
+# (polish1 F1a) A country's name as the writers' files call it (its look region's name), for the atlas.
+func country_title(id: String) -> String:
+	return CountryWorldRef.country_name(id, data.get("old_world", data["world"]))
+
+
+# (polish1 F1a) The border crossing the player stands at ({} when none): within its level ground.
+func crossing_near() -> Dictionary:
+	if rooms.inside() or _player == null:
+		return {}
+	var local := local_of(_player.global_position)
+	for p: Dictionary in terrain.places:
+		if String(p["kind"]) == "crossing" and Vector2(local.x - float(p["pos"][0]), local.z - float(p["pos"][1])).length() < float(p["flat"]):
+			return p
+	return {}
+
+
+# Where a player arriving over a crossing stands (world space): at this country's end of it, else at the spawn.
+func arrival_world(crossing: String) -> Vector3:
+	var p := terrain.place(crossing)
+	if p.is_empty():
+		return spawn_world()
+	return ground_world(float(p["pos"][0]), float(p["pos"][1]))
 
 
 func _on_cast(spell: Dictionary, sequence: String, origin: Vector3, aim: Vector3) -> void:
@@ -427,6 +473,8 @@ func spawn_world() -> Vector3:
 
 func farm_world() -> Vector3:
 	var farm := terrain.place("hale_farm")
+	if farm.is_empty():  # (polish1 F1a) a country without the old farm: look over the land from the spawn
+		return spawn_world() + Vector3(0.0, 0.0, -20.0)
 	return ground_world(float(farm["pos"][0]) - 6.0, float(farm["pos"][1]) - 4.0)
 
 
@@ -502,6 +550,13 @@ func enter(world_pos: Vector3) -> void:
 		spawner.start()  # online only the host runs creatures (game/net_fantasy.gd)
 
 
+# (polish1 F1a) A country put away at a border: its screens on the HUD layer go with it.
+func _exit_tree() -> void:
+	for node: Node in [hud_node, _box, map, panel]:
+		if is_instance_valid(node):
+			node.queue_free()
+
+
 func leave() -> void:
 	inside = false
 	snares.clear()
@@ -532,6 +587,8 @@ func set_detail(detail: Dictionary) -> void:
 	scatter.tree_radius = int(detail.get("trees", 3))
 	scatter.tuft_radius = int(detail.get("grass", 2))
 	scatter.tuft_scale = float(detail.get("blades", 1.0))
+	if not far_forest.planted:
+		far_forest.setup(terrain, float(detail.get("far_trees", 0.0)))
 	places.show_at = float(detail.get("places_m", 240.0))
 	places.prop_share = float(detail.get("props", 1.0))
 	places.folk_share = float(detail.get("folk", 1.0))
@@ -553,6 +610,10 @@ func _process(delta: float) -> void:
 	var local := rooms.anchor() if rooms.inside() else player_local()  # indoors the player counts as standing at the door
 	land.follow(local)
 	scatter.follow(land.key_at(local))
+	var key: Vector2i = land.key_at(local)
+	if key != _forest_key:  # the far trees give way where the real ones stand
+		_forest_key = key
+		far_forest.cut(Vector2((float(key.x) + 0.5) * land.chunk_size(), (float(key.y) + 0.5) * land.chunk_size()), (float(scatter.tree_radius) + 0.5) * land.chunk_size())
 	_blend_mood(1.0 - exp(-1.5 * delta))
 	var now := Time.get_ticks_msec() / 1000.0
 	var near_fire := places.fire_near(local, float(skilling["fire"]["radius"]) * (1.0 + perk("firemaking", "fire_radius")))
@@ -586,14 +647,15 @@ func _process(delta: float) -> void:
 		_region = String(region["id"])
 		sounds.call("set_region", _region)
 		_find(_region)
-		notice.emit("%s  (levels %d-%d)" % [region["name"], int(region["level"][0]), int(region["level"][1])])
+		if terrain.country_shape == null:  # (polish1 F1a) in a country the regions are only the looks of its land: no "you entered" notice
+			notice.emit("%s  (levels %d-%d)" % [region["name"], int(region["level"][0]), int(region["level"][1])])
 	var here := ""
 	for place: Dictionary in terrain.places:
 		if Vector2(local.x - float(place["pos"][0]), local.z - float(place["pos"][1])).length() < float(place["flat"]):
 			here = String(place["id"])
 	if here != _place:
 		_place = here
-		if here != "":
+		if here != "" and String(terrain.place(here)["name"]) != "":
 			notice.emit(String(terrain.place(here)["name"]))
 			_find(here)
 			report({"type": "reach", "place": here})
@@ -613,7 +675,7 @@ func _process(delta: float) -> void:
 func _blend_mood(k: float) -> void:
 	var m := _mood
 	_env.fog_light_color = _env.fog_light_color.lerp(m["fog"], k)
-	_env.fog_density = lerpf(_env.fog_density, float(m["density"]), k)
+	_env.fog_density = lerpf(_env.fog_density, float(m["density"]) * float(data["world"].get("haze", 1.0)), k)
 	if _photo:
 		_sun.light_color = _sun.light_color.lerp(Color.WHITE.lerp(m["sun"], 0.6), k)
 		return
@@ -1223,7 +1285,8 @@ func command(command_name: String, args: PackedStringArray, usage: String) -> Pa
 # --- saving ---
 
 func to_dict() -> Dictionary:
-	return {"v": SAVE_VERSION, "bag": bag.to_dict(), "skills": skills.to_dict(), "quests": quests.to_dict(), "found": found.keys(), "looted": _still_empty(), "repaired": agility.repaired_keys()}
+	return {"v": SAVE_VERSION, "country": country, "countries_seen": countries_seen.keys(), "bag": bag.to_dict(), "skills": skills.to_dict(), "quests": quests.to_dict(),
+		"found": found.keys(), "looted": _still_empty(), "repaired": agility.repaired_keys()}
 
 
 # The containers that have not refilled yet (the others need no remembering).
@@ -1251,4 +1314,6 @@ func from_dict(saved: Variant) -> void:
 	found = {}
 	for id: Variant in saved.get("found", []):  # older saves have none: the map starts blank
 		found[String(id)] = true
+	for id: Variant in saved.get("countries_seen", []):
+		countries_seen[String(id)] = true
 	mana = max_mana()

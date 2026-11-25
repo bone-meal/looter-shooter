@@ -32,6 +32,7 @@ void fragment() {
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.1;
 }"""
+const COUNTRY_FAR_M := 16.0  # (polish1 F1a) metres a square of a country's whole-land mesh
 const FAR_DROP := 5.0  # the far mesh sits this much lower so near ground always covers it
 const APPLY_PER_FRAME := 2
 
@@ -77,6 +78,42 @@ func setup(land: FantasyTerrain) -> void:
 		pool.visibility_range_end = 700.0
 		pool.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
 		add_child(pool)
+	if terrain.country_shape != null:  # (polish1 F1a) a country's rivers: a ribbon of water down each, falling with its bed
+		for river: Dictionary in terrain.country_shape.rivers:
+			add_child(_river_sheet(river, water.material_override))
+
+
+# One river's water: a strip a little wider than its bed, at its water level point by point.
+func _river_sheet(river: Dictionary, mat: Material) -> MeshInstance3D:
+	var pts: PackedVector2Array = river["points"]
+	var wid: PackedFloat32Array = river["width"]
+	var lev: PackedFloat32Array = river["level"]
+	var verts := PackedVector3Array()
+	var faces := PackedInt32Array()
+	for i in pts.size():
+		var along := (pts[mini(i + 1, pts.size() - 1)] - pts[maxi(i - 1, 0)]).normalized()
+		var side := Vector2(-along.y, along.x) * (wid[i] * 0.5 + 0.8)
+		verts.append(Vector3(pts[i].x + side.x, lev[i], pts[i].y + side.y))
+		verts.append(Vector3(pts[i].x - side.x, lev[i], pts[i].y - side.y))
+		if i > 0:
+			var k := i * 2
+			faces.append_array([k - 2, k - 1, k, k - 1, k + 1, k, k - 2, k, k - 1, k - 1, k, k + 1])  # both windings: seen from above whichever way it runs
+	var arrays := []
+	arrays.resize(Mesh.ARRAY_MAX)
+	arrays[Mesh.ARRAY_VERTEX] = verts
+	var normals := PackedVector3Array()
+	normals.resize(verts.size())
+	normals.fill(Vector3.UP)
+	arrays[Mesh.ARRAY_NORMAL] = normals
+	arrays[Mesh.ARRAY_INDEX] = faces
+	var mesh := ArrayMesh.new()
+	mesh.add_surface_from_arrays(Mesh.PRIMITIVE_TRIANGLES, arrays)
+	var sheet := MeshInstance3D.new()
+	sheet.mesh = mesh
+	sheet.material_override = mat
+	sheet.visibility_range_end = 900.0
+	sheet.cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
+	return sheet
 
 
 func chunk_size() -> float:
@@ -293,7 +330,7 @@ func _arrays(x0: float, z0: float, cell: float, cells: int, drop: float, relativ
 			if first >= 0:
 				var w := terrain.weights(x0 + x, z0 + z)
 				var share := 0.0 if first == second else w[second] / maxf(w[first] + w[second], 0.001)
-				blend.append_array(PackedFloat32Array([share, smoothstep(0.3, 0.6, 1.0 - n.y), terrain.trodden(x0 + x, z0 + z), 0.0]))
+				blend.append_array(PackedFloat32Array([share, smoothstep(0.3, 0.6, 1.0 - n.y), terrain.trodden(x0 + x, z0 + z), terrain.snow_at(x0 + x, z0 + z, h)]))  # (polish1 F1a) the 4th: snow lying here
 	var index := PackedInt32Array()
 	for gz in cells:
 		for gx in cells:
@@ -320,7 +357,10 @@ func _add_far_mesh() -> void:
 
 
 func _far_work() -> void:
-	_show_far.call_deferred(_arrays(-terrain.size / 2.0, -terrain.size / 2.0, terrain.size / float(FAR_CELLS), FAR_CELLS, FAR_DROP, false))
+	var cells := FAR_CELLS
+	if terrain.country_shape != null:  # (polish1 F1a) a country's mountains are seen from afar: a finer whole-land mesh (~16 m squares)
+		cells = clampi(int(terrain.size / COUNTRY_FAR_M), FAR_CELLS, 288)
+	_show_far.call_deferred(_arrays(-terrain.size / 2.0, -terrain.size / 2.0, terrain.size / float(cells), cells, FAR_DROP, false))
 
 
 func _show_far(arrays: Array) -> void:

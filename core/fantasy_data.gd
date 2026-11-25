@@ -2,19 +2,22 @@
 # writers' text files (data/fantasy/writing/*.txt), and puts every name and spoken line back where the rules expect it
 # (region["name"], quest["text"], item["name"] ...). Anything the writers' files do not name gets its id as a stand-in
 # and is listed in "problems", so a missing line never breaks the game and tools/fantasy_check.tscn can report it.
-# Dependencies: core/data_store.gd, core/text_book.gd.
+# (polish1 F1a) With a country id the world is that country (core/country_world.gd); world.json's regions are then
+# only the looks its land wears, and the old world is kept as "old_world".
+# Dependencies: core/data_store.gd, core/text_book.gd, core/country_world.gd.
 extends RefCounted
 
 const DataStore = preload("res://core/data_store.gd")
 const TextBook = preload("res://core/text_book.gd")
+const CountryWorld = preload("res://core/country_world.gd")
 
 const FOLDER := "res://data/fantasy/"
 
 
 # {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "combat", "ground", "squad", "agility", "props", "text", "problems": PackedStringArray}
-static func load_all() -> Dictionary:
+static func load_all(country: String = "") -> Dictionary:
 	var d := {}
-	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad", "agility", "coaches"]:
+	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad", "agility", "coaches", "country_rocks"]:
 		d[part] = DataStore.load_json(FOLDER + part + ".json")
 	d["props"] = DataStore.load_json(FOLDER + "props.json")["props"]
 	var files := PackedStringArray([FOLDER + "writing/spells.txt", FOLDER + "writing/items.txt", FOLDER + "writing/skills.txt", FOLDER + "writing/buildings.txt"])
@@ -23,6 +26,11 @@ static func load_all() -> Dictionary:
 		files.append("%swriting/%d_%s.txt" % [FOLDER, i + 1, regions[i]["id"]])
 	d["text"] = TextBook.read_files(files)
 	d["problems"] = _apply(d)
+	if country != "":
+		d["old_world"] = d["world"]
+		d["world"] = CountryWorld.build(CountryWorld.load_country(country), d["old_world"])
+		d["old_quests"] = d["quests"]["quests"]
+		d["quests"]["quests"] = []  # the countries start fresh: their quests come with their people (F2-F4)
 	return d
 
 

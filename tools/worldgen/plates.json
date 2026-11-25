@@ -1,0 +1,63 @@
+{
+ "_doc": "Aurelind's tectonic plates for tools/worldgen/continent.py. x, y = the plate's centre as a share of the map (y 0 = north edge). continental: true = land crust, false = sea floor. move = drift direction and speed (x east, y south). Where plates close on each other they raise ranges (continent on continent: the highest; sea floor under continent: a coastal range with volcanoes); where they part, a rift or a gulf opens. craters: meteor impacts (r in map cells, age 0 fresh .. 1 worn). countries: x, y = a hint for where the country's heart lies; share = how much of the land it aims to hold; the borders grow from the hearts and follow ridges, rivers and coasts. peninsulas: land pushed out along a line (map shares), width in cells at its root. islands: chains of islands along a line, count and size (cells).",
+ "size": [800, 720],
+ "latitude": {"north": 72, "south": -6},
+ "land_share": 0.38,
+ "plates": [
+  {"id": "north_shield", "x": 0.5, "y": 0.17, "continental": true, "move": [0.0, 0.55]},
+  {"id": "frost_block", "x": 0.17, "y": 0.15, "continental": true, "move": [0.45, -0.1]},
+  {"id": "east_spur", "x": 0.8, "y": 0.2, "continental": true, "move": [-0.2, 0.25]},
+  {"id": "heartland", "x": 0.3, "y": 0.5, "continental": true, "move": [0.3, -0.6]},
+  {"id": "south_block", "x": 0.62, "y": 0.84, "continental": true, "move": [0.05, 0.6]},
+  {"id": "west_horn", "x": 0.33, "y": 0.86, "continental": true, "move": [0.25, -0.55]},
+  {"id": "east_sea_floor", "x": 0.95, "y": 0.42, "continental": false, "move": [-0.9, 0.05]},
+  {"id": "middle_sea_floor", "x": 0.66, "y": 0.5, "continental": false, "move": [0.2, 0.0]},
+  {"id": "strait_floor", "x": 0.42, "y": 0.68, "continental": false, "move": [0.0, 0.0]},
+  {"id": "west_sea_floor", "x": -0.02, "y": 0.45, "continental": false, "move": [0.25, -0.5]},
+  {"id": "north_sea_floor", "x": 0.5, "y": -0.06, "continental": false, "move": [0.0, -0.1]},
+  {"id": "south_sea_floor", "x": 0.45, "y": 1.07, "continental": false, "move": [0.0, 0.75]},
+  {"id": "northwest_sea_floor", "x": -0.02, "y": 0.02, "continental": false, "move": [0.0, 0.0]},
+  {"id": "northeast_sea_floor", "x": 1.02, "y": 0.02, "continental": false, "move": [-0.9, 0.3]},
+  {"id": "southwest_sea_floor", "x": 0.05, "y": 0.96, "continental": false, "move": [0.2, -0.2]},
+  {"id": "southeast_sea_floor", "x": 1.0, "y": 0.95, "continental": false, "move": [-0.6, -0.3]},
+  {"id": "far_east_floor", "x": 1.04, "y": 0.68, "continental": false, "move": [-0.7, 0.1]}
+ ],
+ "craters": [
+  {"id": "hollow_crown", "x": 0.5, "y": 0.17, "r": 46, "age": 0.55, "rim_m": 1100, "floor_m": -160},
+  {"id": "glass_pan", "x": 0.47, "y": 0.86, "r": 14, "age": 0.15, "rim_m": 260, "floor_m": -140},
+  {"id": "old_bowl", "x": 0.78, "y": 0.3, "r": 16, "age": 0.8, "rim_m": 200, "floor_m": -120},
+  {"id": "star_lake", "x": 0.3, "y": 0.46, "r": 10, "age": 0.5, "rim_m": 120, "floor_m": -160}
+ ],
+ "peninsulas": [
+  {"id": "amber_point", "points": [[0.14, 0.55], [0.07, 0.63], [0.05, 0.7]], "width": 20},
+  {"id": "sunscar_horn", "points": [[0.32, 0.86], [0.2, 0.9], [0.13, 0.85]], "width": 22},
+  {"id": "frost_finger", "points": [[0.14, 0.18], [0.05, 0.3]], "width": 16},
+  {"id": "cinder_cape", "points": [[0.8, 0.26], [0.9, 0.33], [0.93, 0.44]], "width": 18},
+  {"id": "green_arm", "points": [[0.42, 0.47], [0.52, 0.53], [0.57, 0.61]], "width": 18},
+  {"id": "brine_tail", "points": [[0.78, 0.88], [0.9, 0.96]], "width": 15}
+ ],
+ "islands": [
+  {"id": "west_hotspot_isles", "points": [[0.04, 0.42], [0.1, 0.36]], "count": 6, "r": 10},
+  {"id": "painted_isles", "points": [[0.9, 0.84], [0.97, 0.72]], "count": 7, "r": 9},
+  {"id": "strait_isles", "points": [[0.38, 0.66], [0.52, 0.68]], "count": 5, "r": 8},
+  {"id": "frost_skerries", "points": [[0.05, 0.08], [0.22, 0.03]], "count": 9, "r": 6},
+  {"id": "sunset_isles", "points": [[0.12, 0.76], [0.2, 0.72]], "count": 4, "r": 9}
+ ],
+ "landmarks": [
+  {"id": "painted_coast", "name": "The Painted Coast", "country": "brinemouth", "x": 0.88, "y": 0.86}
+ ],
+ "voyages": [
+  {"from": "greenwald", "to": "frostmere", "why": "the long ship north across the bay: the way to the cold countries without climbing Stormcrown"},
+  {"from": "frostmere", "to": "cinderreach", "why": "the north coast run: ships go round the Hollow Crown instead of over it"}
+ ],
+ "countries": [
+  {"id": "amberfield", "levels": "1-6", "x": 0.12, "y": 0.56, "share": 0.08, "colour": [222, 186, 84]},
+  {"id": "greenwald", "levels": "6-12", "x": 0.35, "y": 0.47, "share": 0.13, "colour": [88, 150, 72]},
+  {"id": "brinemouth", "levels": "12-18", "x": 0.75, "y": 0.8, "share": 0.12, "colour": [70, 168, 160]},
+  {"id": "sunscar", "levels": "18-25", "x": 0.42, "y": 0.86, "share": 0.18, "colour": [232, 160, 72]},
+  {"id": "frostmere", "levels": "25-32", "x": 0.18, "y": 0.15, "share": 0.15, "colour": [190, 210, 236]},
+  {"id": "cinderreach", "levels": "32-39", "x": 0.8, "y": 0.13, "share": 0.1, "colour": [170, 70, 58]},
+  {"id": "stormcrown", "levels": "39-45", "x": 0.5, "y": 0.34, "share": 0.17, "colour": [124, 120, 178]},
+  {"id": "hollow_crown", "levels": "45-50", "x": 0.5, "y": 0.17, "share": 0.07, "colour": [168, 168, 176]}
+ ]
+}
