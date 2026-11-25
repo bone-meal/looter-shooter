@@ -46,6 +46,7 @@ const ElementBox = preload("res://game/element_box.gd")
 const FantasyPanel = preload("res://game/fantasy_panel.gd")
 
 const OFFSET := Vector3(20000.0, 0.0, 0.0)
+const ARRIVE_IN := 12.0  # (polish1 F1a) metres in from a crossing where an arriving party stands (past its 9 m prompt ring)
 const SAVE_VERSION := 2  # (polish1 F1a) 2 = the countries: an older Aurelind save starts from nothing (the director's full reset)
 const GOOD := Color(0.6, 1.0, 0.6)
 const GOLD := Color(1.0, 0.85, 0.4)
@@ -338,12 +339,18 @@ func crossing_near() -> Dictionary:
 	return {}
 
 
-# Where a player arriving over a crossing stands (world space): at this country's end of it, else at the spawn.
-func arrival_world(crossing: String) -> Vector3:
+# Where a player arrives over a border: a few metres in from the crossing, toward the land's heart, each party slot
+# (0..5) on its own spot beside the others so nobody lands inside another or on the way back out.
+func arrival_world(crossing: String, slot: int = 0) -> Vector3:
 	var p := terrain.place(crossing)
 	if p.is_empty():
 		return spawn_world()
-	return ground_world(float(p["pos"][0]), float(p["pos"][1]))
+	var gate := Vector2(float(p["pos"][0]), float(p["pos"][1]))
+	var spawn: Array = terrain.data["spawn"]
+	var inward := (Vector2(float(spawn[0]), float(spawn[1])) - gate).normalized()
+	var side := Vector2(-inward.y, inward.x)
+	var at := gate + inward * (ARRIVE_IN + 2.5 * floorf(slot / 3.0)) + side * (float(slot % 3) - 1.0) * 2.5
+	return ground_world(at.x, at.y)
 
 
 func _on_cast(spell: Dictionary, sequence: String, origin: Vector3, aim: Vector3) -> void:

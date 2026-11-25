@@ -3,13 +3,12 @@
 # triangles), so forested hills read as forest across the land. One MultiMesh per 400 m tile (culled by distance);
 # a square round the player, where the real trees stand, is cut out in the shader. Spacing per graphics tier
 # (data/graphics.json fantasy "far_trees" metres, 0 = none). Built once on a worker thread.
-# Dependencies: core/fantasy_terrain.gd (height, weights, snow_at, water), game/fantasy_ground.gd (toned).
+# Dependencies: core/fantasy_terrain.gd (height, weights, snow_at, water).
 extends Node3D
 
 const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
-const FantasyGround = preload("res://game/fantasy_ground.gd")
 
-const WOODED := {"greenwald": Color(0.2, 0.34, 0.17), "brinemouth": Color(0.16, 0.38, 0.18)}  # look -> crown colour
+const WOODED := {"greenwald": Color(0.34, 0.5, 0.22), "brinemouth": Color(0.3, 0.52, 0.24)}  # look -> crown colour (the real trees' leaf greens)
 const TILE := 400.0  # metres a side of one drawn batch
 const SHOW_M := 1700.0  # batches further than this are not drawn
 const NEED := 0.5  # share of a wooded look a spot needs
@@ -25,8 +24,10 @@ void fragment() {
 	if (abs(spot.x - hole.x) < hole.z && abs(spot.z - hole.y) < hole.z) {
 		discard;
 	}
+	// a crown faces mostly up for its light, as a stand of trees does from afar: with the sun behind it, it stays green
+	NORMAL = normalize(mix(NORMAL, (VIEW_MATRIX * vec4(0.0, 1.0, 0.0, 0.0)).xyz, 0.65));
 	ALBEDO = COLOR.rgb;
-	EMISSION = COLOR.rgb * 0.3;  // a crown with the sun behind it stays green, not black
+	EMISSION = COLOR.rgb * 0.2;
 	ROUGHNESS = 1.0;
 	SPECULAR = 0.05;
 }"""
@@ -102,8 +103,8 @@ func _plant() -> void:
 			var key := Vector2i(floori((x + half) / TILE), floori((z + half) / TILE))
 			if not tiles.has(key):
 				tiles[key] = []
-			var tint := (crown / share).lerp(Color(0.32, 0.42, 0.2), vary * 0.35)
-			(tiles[key] as Array).append([Transform3D(Basis(Vector3.UP, vary * TAU).scaled(Vector3(grow, grow * (0.9 + 0.3 * FantasyTerrain.hash01(gx, gz, 74)), grow)), Vector3(x, h, z)), FantasyGround.toned(tint)])
+			var tint := (crown / share).lerp(Color(0.42, 0.55, 0.26), vary * 0.35)
+			(tiles[key] as Array).append([Transform3D(Basis(Vector3.UP, vary * TAU).scaled(Vector3(grow, grow * (0.9 + 0.3 * FantasyTerrain.hash01(gx, gz, 74)), grow)), Vector3(x, h, z)), tint.srgb_to_linear()])  # saturated like the real leaves (the ground's toned() greys it to olive)
 	var out: Array = []
 	for key: Vector2i in tiles:
 		out.append([Vector3(-half + (float(key.x) + 0.5) * TILE, 0.0, -half + (float(key.y) + 0.5) * TILE), tiles[key]])

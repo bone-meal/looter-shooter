@@ -1,11 +1,11 @@
-Polish1 F1a: the continent and its countries as separate worlds
+Polish1 F1a fixes: online crossing checked, arrivals spread, mountain ribs, far tree colour
 
-- tools/worldgen: the continent grown from tectonic plates, meteor craters, rivers and climate (plates.json); export_countries.py cuts each country into data/fantasy/countries/<id>.json (height contours, rivers, lakes, craters, land zones, border walls, crossings) plus the atlas pictures
-- core/country_shape.gd compiles a country's shapes into its land (kept per machine in user://); core/country_world.gd makes a country into world data; core/fantasy_terrain.gd country land: peaks, gullies, plains with hills, crags, ledges, river valleys, snowline colours
-- one country loaded at a time: crossings (road, ford, pass, ferry, ship) take the whole party (the host decides), a card while the next country loads, levels rise from the way in; save version 2 = the full Aurelind reset (director)
-- land detail: rock outcrops, scree and boulders by the lie of the land (country_rocks.json, new crag and scree models), triplanar rock and snow on ledges in the ground shader, forests seen from afar (graphics tier far_trees), river water, finer far land, thinner haze
-- the map is a cartographer's chart (height lines, inked shore, trees, hachures, rivers, crossing gates) with the continent atlas beside it
-- dev !f1a at / cross / air / view / ground / spawn / note; check tools/country_shot.gd
+- an arriving party stands 12 m in from the crossing (past its prompt), each party slot on its own spot: two copies no longer land inside each other
+- online crossing checked with two copies: a joiner asks, the host takes the whole party both ways (pair set country)
+- big mountain faces ribbed with rounded rock spurs between the gullies (SPURS 18 m, rules version 9)
+- far trees: crowns lit mostly from above and as light as the real leaves (they read brown and black)
+- Frostmere: two crossings stood 17 m apart; export_countries.py keeps a country's crossings at least 220 m apart
+- the load clock marks the start of a crossing (its numbers were counting play time)
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

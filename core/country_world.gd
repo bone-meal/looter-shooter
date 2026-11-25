@@ -9,6 +9,9 @@ extends RefCounted
 const FOLDER := "res://data/fantasy/countries/"
 const CROSSING_FLAT := 9.0  # metres of level ground at a crossing
 const EXIT_FROM_SPAWN := Vector2(10.0, -6.0)  # where the painting home stands, from the country's spawn
+const CROSSING_REACH := 30.0  # metres over which a crossing's level ground eases back into the land
+const HEART_FLAT := 16.0  # metres of level ground round the spawn (the painting home stands on it too)
+const HEART_REACH := 60.0  # ... easing back into the land over this many metres (no pit walls round the spawn)
 const HAZE := 0.4  # a country's fog: its looks' fog density times this (the land is seen across kilometres)
 
 
@@ -47,12 +50,12 @@ static func build(country: Dictionary, old_world: Dictionary) -> Dictionary:
 		var to := String(c["to"])
 		var harder := int(String(load_country(to).get("levels", "0")).split("-")[0]) > int(band[0])  # "hard country" only on the way into the harder one
 		var way := {"ferry": "Ferry to %s", "voyage": "Ship to %s"}.get(String(c["kind"]), "To %s") as String
-		places.append({"id": String(c["id"]), "region": id, "pos": c["pos"], "kind": "crossing", "flat": CROSSING_FLAT, "yard": "g_dirt",
+		places.append({"id": String(c["id"]), "region": id, "pos": c["pos"], "kind": "crossing", "flat": CROSSING_FLAT, "reach": CROSSING_REACH, "yard": "g_dirt",
 			"name": way % country_name(to, old_world), "to": to, "crossing": String(c["kind"]), "hard": bool(c.get("hard", false)) and harder})
 	var spawn: Array = country["spawn"]
 	var exit := [float(spawn[0]) + EXIT_FROM_SPAWN.x, float(spawn[1]) + EXIT_FROM_SPAWN.y]
-	places.append({"id": id + "_heart", "region": id, "pos": spawn, "kind": "landing", "flat": 7.0, "yard": "g_dirt", "name": ""})  # level ground where the party first stands
-	places.append({"id": id + "_painting", "region": id, "pos": exit, "kind": "landing", "flat": 5.0, "yard": "g_dirt", "name": ""})  # and under the painting home
+	# level ground where the party first stands and the painting home hangs, easing into the land over HEART_REACH m
+	places.append({"id": id + "_heart", "region": id, "pos": spawn, "kind": "landing", "flat": HEART_FLAT, "reach": HEART_REACH, "yard": "g_dirt", "name": ""})
 	# where the country is easiest: the way in from the easiest neighbour (its levels rise from there), else the spawn
 	var low_at: Array = spawn
 	var easiest := int(band[0])

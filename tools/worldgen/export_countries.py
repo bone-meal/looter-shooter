@@ -38,6 +38,7 @@ LOOK = {"farmland": "amberfield", "grassland": "amberfield", "forest": "greenwal
     "swamp": "brinemouth", "volcanic": "cinderreach", "crater": "hollow_crown"}
 # continent metres -> game metres: the country's relief, squeezed so mountains stay climbable at play scale
 RELIEF = {"scale": 220.0, "per": 2000.0, "power": 0.8, "sea_per_m": 0.012, "sea_most": 22.0}
+SPREAD_M = 220.0  # metres two crossings of one country stand apart at least
 CONTOURS_M = [0, 30, 70, 130, 210, 320, 460, 640, 860, 1120, 1450, 1850, 2350, 2950]
 MARGIN = 0.07  # share of the world left round the country's land on each side
 
@@ -193,6 +194,7 @@ def export(i):
     shape["walls"] = [[to_world(fr, xa + p[1] - 1, ya + p[0] - 1) for p in measure.approximate_polygon(np.array(w_), 0.6)] for w_ in walls]
     # crossings: this country's end of every crossing it takes part in
     crossings = []
+    picked = []
     for n_, c in enumerate(X["crossings"]):
         if cid not in (c["from"], c["to"]):
             continue
@@ -208,7 +210,10 @@ def export(i):
         own = np.argwhere(owner == i)
         dist_in = ndimage.distance_transform_edt(owner == i)
         dd = np.hypot(own[:, 0] - ey, own[:, 1] - ex) - np.minimum(dist_in[own[:, 0], own[:, 1]], 3.0) * 1.5
+        for pr, pc in picked:  # two crossings never share a spot: each stands at least SPREAD_M from the others
+            dd = dd + np.where(np.hypot(own[:, 0] - pr, own[:, 1] - pc) * fr[3] < SPREAD_M, 1e6, 0.0)
         r, col = own[int(np.argmin(dd))]
+        picked.append((r, col))
         crossings.append({"id": "%s_%s_%d" % (c["from"], c["to"], n_), "to": other, "kind": c["kind"], "pos": to_world(fr, col + 0.5, r + 0.5),
             "hard": c.get("rough", 0.0) >= X.get("rough_cut", 1e9)})
     # the spawn: low, dry, gentle ground nearest the country's heart

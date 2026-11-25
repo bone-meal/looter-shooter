@@ -6260,6 +6260,7 @@ func _do_cross(to: String, crossing: String) -> void:
 	if _border_busy or _fantasy == null:
 		return
 	_border_busy = true
+	LoadClock.mark("(play until a border was crossed)")  # the crossing's own load times start here
 	var was_inside := _in_fantasy
 	if loading != null:
 		loading.call("begin", 6)
@@ -6291,7 +6292,7 @@ func _do_cross(to: String, crossing: String) -> void:
 	if was_inside:
 		_in_fantasy = true
 		_player.unstuck.ground_height = _fantasy.drawn_height
-		_player.teleport(_fantasy.arrival_world(crossing), 0.0)
+		_player.teleport(_fantasy.arrival_world(crossing, _party_slot()), 0.0)
 		apply_settings()
 		_fantasy.enter(_player.global_position)
 	if loading != null:

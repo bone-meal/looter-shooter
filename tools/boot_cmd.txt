@@ -1,1 +1,1 @@
-!uncap;!wait 2;!immortal;!go fantasy;!wait 25;!f1a at 2;!wait 10;!f1a ground;!f1a view o_amber_pass_air 78 -1000 30 78 -1400;!f1a view o_amber_pass_air2 -100 -1150 25 300 -1300
+!uncap;!wait 2;!immortal;/tp club;!wait 6;!pool open 0;!wait 1;!pool start rookie 0;!wait 3;!pool aim ball 1 2;!wait 1;!shot pool_guide;!pool shot 0 0.95;!wait 8;!pool wait;!pool auto;!wait 6;!pool wait;!pool aim ai;!wait 1;!shot pool_mid;!pool cam;!wait 1;!shot pool_top;!pool esc

@@ -8,7 +8,7 @@ extends RefCounted
 
 const CountryShape = preload("res://core/country_shape.gd")
 
-const RULES_VERSION := 8  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
+const RULES_VERSION := 10  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
 const RING_HEIGHT := 34.0  # the mountain ring around the last region
 const RING_WIDTH := 42.0
 const PASS_ANGLE := 0.5  # radians: how wide the gap in the ring is (it faces south, towards the start)
@@ -34,6 +34,7 @@ var _ready_places := false
 var _calm_at := PackedVector3Array()  # places and lakes: (x, z, radius inside which the land is calm)
 var _calm_out := PackedFloat32Array()  # ... and the radius from which it is fully wild again
 var _flat_at := PackedVector3Array()  # every place, same order as `places`: (x, z, flat radius)
+var _reach := PackedFloat32Array()  # every place: the radius where its level ground has eased back into the land
 var _trod_in := PackedFloat32Array()  # every place: the radius of its fully trodden middle
 var _lake_at := PackedVector3Array()  # every lake, same order as `lakes`: (x, z, radius)
 var _lake_level := PackedFloat32Array()
@@ -52,6 +53,7 @@ const RELIEF := 0.8  # a country: how much of a look's own hills and landforms s
 const RIVER_DEPTH := 1.4  # metres of water in the middle of a river
 const PEAKS := 62.0  # a country's high ground: metres of sharp ridges and peaks the mountains carry over their big shape
 const GULLIES := 9.0  # metres the rain has cut gullies into steep slopes
+const SPURS := 18.0  # metres the rock spurs between the gullies stand out of a big mountain face
 const ROLL := 6.0  # metres of rolling hills on the lowlands
 const LEDGE := 7.0  # metres between the rock ledges on steep high ground
 var _ridges := FastNoiseLite.new()  # (polish1 F1a) a country's ridgelines: ridged noise bent by a warp
@@ -120,10 +122,11 @@ func _init(world_data: Dictionary) -> void:
 		_place_level.append(maxf(_raw_height(float(p["pos"][0]), float(p["pos"][1])), sea + 1.2))
 		var flat := float(p.get("flat", 0.0))
 		_flat_at.append(Vector3(float(p["pos"][0]), float(p["pos"][1]), flat))
+		_reach.append(float(p.get("reach", flat * 1.5)))
 		_trod_in.append(flat * (0.72 if String(p["kind"]).begins_with("town") or String(p["kind"]) == "arena" else 0.4))
 		if flat > 0.0:
 			_calm_at.append(Vector3(float(p["pos"][0]), float(p["pos"][1]), float(p["flat"]) * 1.1))
-			_calm_out.append(float(p["flat"]) * 3.0)
+			_calm_out.append(maxf(float(p["flat"]) * 3.0, _reach[_reach.size() - 1]))
 	_ready_places = true
 	for entry: Dictionary in data.get("lakes", []):
 		_calm_at.append(Vector3(float(entry["pos"][0]), float(entry["pos"][1]), float(entry["radius"]) + 8.0))
@@ -392,6 +395,9 @@ func _country_height(x: float, z: float, wild: float) -> float:
 	var along := x * fall.x + z * fall.y
 	var across := -x * fall.y + z * fall.x
 	big -= pow(1.0 - absf(_gullies.get_noise_2d(across, along * 0.22)), 3.0) * GULLIES * smoothstep(0.06, 0.35, steep) * inland * tame
+	# spurs: a big face is ribbed with broad rock buttresses running down it, so it never reads as one smooth bank
+	var rib := 1.0 - absf(_gullies.get_noise_2d(across * 0.25 + 600.0, along * 0.06))
+	big += (rib * rib * (3.0 - 2.0 * rib) - 0.55) * SPURS * smoothstep(0.12, 0.45, steep) * mount * inland * tame  # rounded ribs, no sheer slots
 	# the low ground: broad plains with hills standing out of them here and there
 	big += pow(maxf(_roll.get_noise_2d(x, z), 0.0), 1.5) * ROLL * 2.2 * (1.0 - mount) * inland * tame
 	# crags: steep faces are broken rock, not smooth banks
@@ -434,7 +440,7 @@ func _placed_height(x: float, z: float) -> float:
 	var h := _raw_height(x, z, wildness(x, z))
 	for i in _flat_at.size():
 		var spot := _flat_at[i]
-		var reach := spot.z * 1.5
+		var reach := _reach[i]
 		var dx := x - spot.x
 		var dz := z - spot.y
 		if absf(dx) < reach and absf(dz) < reach:

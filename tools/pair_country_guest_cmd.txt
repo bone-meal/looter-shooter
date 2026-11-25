@@ -1,1 +1,1 @@
-!uncap;!wait 2;!immortal;!net wait_guest;!go fantasy;!wait 30;!f1a note;!f1a at 0;!wait 5;!f1a cross 0;!wait 40;!f1a note;!shot country_guest;!wait 35;!f1a note;!shot country_guest_back
+!uncap;!wait 2;!immortal;!wait 15;!go fantasy;!wait 30;!f1a note;!f1a at 0;!wait 5;!f1a cross 0;!wait 40;!f1a note;!shot country_guest;!wait 40;!f1a note;!shot country_guest_back
