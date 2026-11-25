@@ -1,10 +1,10 @@
-Polish1 F1c: calmer spawns, thinner haze aloft, ferry barge and cog, the seven countries surveyed, Cinderreach ash
+Polish1 F2 + F3 part 1: Amberfield's story written, its 14 places and roads built on the new land
 
-- export_countries.py: spawns on the calmest ground near the heart (Amberfield 45 to 15 m of rise within 50 m); plates.json warm_m (snowline) and looks per country: Cinderreach is ash land with snow on its ice
-- haze thins with the camera's height, so peaks and high views see across a country
-- new models ferry_boat and cog_ship moored at ferry and ship piers (on the side with water, else off the end), colliders at deck height
-- all eight countries loaded in turn on the 1080: no errors, nothing floating, lakes whole, every landing with its pier and boat
-- dev !f1a go country; fantasy_life.py builds with ONLY= again
+- diary: DESIGN_AMBERFIELD.md (director: a gentle Baroness, the tithe, the hero late, the short tithe ending)
+- data/fantasy/places/amberfield.json: hand-placed places, roads, named areas and lake names (the export never touches it), read by core/country_world.gd, named from the writing file
+- Millbrook on Amber Mere, Amberhall (the manor), Hale Farm, Reedby, Thornwick, Fordham, the Threshing Floor with the Harvest King, Wrack Landing, Kettlewick, Oakshaw, Kestrel Hollow, Saltcombe, Brackenfold, Ashby Lodge
+- new place plans: manor, fishing / orchard / woodland villages, hamlets, mill hamlet, woodcutters' lodge
+- places kept clear of rivers so their level ground does not cut the riverbeds
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

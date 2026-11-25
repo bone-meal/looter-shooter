@@ -1,12 +1,13 @@
 # Purpose: pure (polish1 F1a): makes one COUNTRY (data/fantasy/countries/<id>.json) into the world data the fantasy
 # land runs on (the same keys as data/fantasy/world.json): its shape, size, level band and spawn; the looks of
 # world.json's regions as its regions (ground, sky, trees, gatherables), each at the country's level band; its
-# CROSSINGS as places (flat ground, a name "To <country>") with what they lead to. Countries start fresh: no people,
-# quests' places or roads yet (F2-F4 fill them).
-# Dependencies: none. Data: a country file + the loaded world.json (for the looks, names and folk).
+# CROSSINGS as places (flat ground, a name "To <country>") with what they lead to; (polish1 F3) the country's own
+# places, roads, named areas and lake names placed by hand in data/fantasy/places/<id>.json (none yet = an empty land).
+# Dependencies: none. Data: a country file, its places file + the loaded world.json (for the looks, names and folk).
 extends RefCounted
 
 const FOLDER := "res://data/fantasy/countries/"
+const PLACES := "res://data/fantasy/places/"  # (polish1 F3) hand-placed places per country: not rewritten by the export
 const CROSSING_FLAT := 9.0  # metres of level ground at a crossing
 const EXIT_FROM_SPAWN := Vector2(10.0, -6.0)  # where the painting home stands, from the country's spawn
 const CROSSING_REACH := 30.0  # metres over which a crossing's level ground eases back into the land
@@ -65,12 +66,25 @@ static func build(country: Dictionary, old_world: Dictionary) -> Dictionary:
 		if from < easiest:
 			easiest = from
 			low_at = c["pos"]
+	var own: Dictionary = {}  # (polish1 F3) the hand-placed places, roads, areas and lake names
+	if FileAccess.file_exists(PLACES + id + ".json"):
+		var parsed: Variant = JSON.parse_string(FileAccess.get_file_as_string(PLACES + id + ".json"))
+		own = parsed if parsed is Dictionary else {}
+	for p: Dictionary in own.get("places", []):
+		var placed := p.duplicate(true)
+		placed["region"] = id
+		places.append(placed)
+	var areas: Array = []
+	for a: Dictionary in own.get("areas", []):
+		var area := a.duplicate(true)
+		area["region"] = id
+		areas.append(area)
 	var world := {
 		"version": int(old_world.get("version", 1)), "country": id, "country_name": country_name(id, old_world),
 		"size": float(country["size"]), "seed": int(country.get("seed", 1)), "chunk": int(country.get("chunk", 50)), "sea_level": float(country.get("sea_level", 0.0)),
 		"blend": float(old_world.get("blend", 60.0)), "spawn": spawn, "low_at": low_at, "exit_painting": exit,
 		"levels": String(country.get("levels", "1-50")), "haze": float(country.get("haze", HAZE)), "grid": float(country.get("grid", 16.0)), "shape": country["shape"], "crossings": country.get("crossings", []),
-		"regions": regions, "places": places, "npcs": [], "lakes": [], "roads": [], "areas": [], "patches": [],
+		"regions": regions, "places": places, "npcs": [], "lakes": [], "roads": own.get("roads", []), "areas": areas, "patches": [], "lake_names": own.get("lakes", {}),
 		"name": old_world.get("name", "Aurelind"), "first_hint": old_world.get("first_hint", ""), "guard_folk": old_world.get("guard_folk", {}),
 	}
 	return world

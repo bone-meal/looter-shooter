@@ -55,6 +55,65 @@ name: The Mill Water
 # WHAT: the wide fields between Millbrook and the Old Threshing Floor (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
 name: The Far Fields
 
+# ---------------- (polish1 F3) AMBERFIELD AS A COUNTRY: its own places (data/fantasy/places/amberfield.json) ----------------
+# The story behind them: diary/DESIGN_AMBERFIELD.md. Hale Farm, Millbrook, the Old Threshing Floor and the Far Fields keep their names above.
+
+[place amberhall]
+# WHAT: the manor of the Baroness, on a rise above the great lake.
+name: Amberhall
+
+[place reedby]
+# WHAT: a fishing village on the west shore of the great lake.
+name: Reedby
+
+[place thornwick]
+# WHAT: a village among orchards.
+name: Thornwick
+
+[place fordham]
+# WHAT: a hamlet by the ford into Greenwald.
+name: Fordham
+
+[place wrack_landing]
+# WHAT: a hamlet by the ferry to Sunscar.
+name: Wrack Landing
+
+[place kettlewick]
+# WHAT: a mill hamlet in the north-east woods.
+name: Kettlewick
+
+[place oakshaw]
+# WHAT: a woodland village of charcoal burners and foresters.
+name: Oakshaw
+
+[place kestrel_hollow]
+# WHAT: a village of fishers and fowlers by the tarn in the far north-east.
+name: Kestrel Hollow
+
+[place saltcombe]
+# WHAT: a fishing hamlet on the east coast.
+name: Saltcombe
+
+[place brackenfold]
+# WHAT: a farm in the north-east.
+name: Brackenfold
+
+[place ashby_lodge]
+# WHAT: a woodcutters' lodge on the road north to the pass.
+name: Ashby Lodge
+
+[area frostgate_pass]
+# WHAT: the high pass out of Amberfield into Frostmere (named on the map and compass once walked into).
+name: Frostgate Pass
+
+[lake amber_mere]
+# WHAT: the great lake below Millbrook and Amberhall.
+name: Amber Mere
+
+[lake kestrel_tarn]
+# WHAT: the small lake in the far north-east.
+name: Kestrel Tarn
+
 # ---------------- PEOPLE OF AMBERFIELD ----------------
 
 [folk amberfield]

@@ -181,7 +181,7 @@ func _init(world_data: Dictionary) -> void:
 	if country_shape != null:  # a country's lakes are cut into its big land already; listed for their water and names
 		for lake: Dictionary in country_shape.lakes:
 			var entry := lake.duplicate()
-			entry["name"] = String(lake.get("name", ""))
+			entry["name"] = String((data.get("lake_names", {}) as Dictionary).get(String(lake["id"]), lake.get("name", "")))  # (polish1 F3) named in the places file
 			lakes.append(entry)
 	for lake: Dictionary in lakes if country_shape == null else []:
 		_lake_at.append(Vector3(float(lake["x"]), float(lake["z"]), float(lake["r"])))

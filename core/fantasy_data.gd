@@ -29,9 +29,28 @@ static func load_all(country: String = "") -> Dictionary:
 	if country != "":
 		d["old_world"] = d["world"]
 		d["world"] = CountryWorld.build(CountryWorld.load_country(country), d["old_world"])
+		var problems: PackedStringArray = d["problems"]
+		problems.append_array(_name_country(d))
+		d["problems"] = problems
 		d["old_quests"] = d["quests"]["quests"]
 		d["quests"]["quests"] = []  # the countries start fresh: their quests come with their people (F2-F4)
 	return d
+
+
+# (polish1 F3) Names for a country's own places, areas and lakes from the writers' files (crossings carry theirs).
+static func _name_country(d: Dictionary) -> PackedStringArray:
+	var missing := PackedStringArray()
+	var text: Dictionary = d["text"]
+	var world: Dictionary = d["world"]
+	for place: Dictionary in world["places"]:
+		if not place.has("name"):
+			place["name"] = _line(text, "place", String(place["id"]), "name", missing)
+	for area: Dictionary in world["areas"]:
+		area["name"] = _line(text, "area", String(area["id"]), "name", missing)
+	var lakes: Dictionary = world.get("lake_names", {})
+	for lake_id: String in lakes:  # the shape's lake id -> the writers' lake id -> its name
+		lakes[lake_id] = _line(text, "lake", String(lakes[lake_id]), "name", missing)
+	return missing
 
 
 # One text of the writers' files, or the id itself (and a note in `missing`) when it is not there.

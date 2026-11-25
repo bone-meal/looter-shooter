@@ -1,0 +1,31 @@
+{
+ "_about": "Polish1 F3: Amberfield's own places, roads and named areas, placed by hand on its land (data/fantasy/countries/amberfield.json is rewritten by tools/worldgen/export_countries.py; this file is not). Read by core/country_world.gd. Names in data/fantasy/writing/1_amberfield.txt ([place id], [area id], [lake id]). Story: diary/DESIGN_AMBERFIELD.md.",
+ "places": [
+  {"id": "hale_farm", "pos": [-40, 270], "kind": "farm", "flat": 34, "yard": "g_dirt"},
+  {"id": "millbrook", "pos": [60, 380], "kind": "town", "flat": 52, "yard": "g_cobble"},
+  {"id": "amberhall", "pos": [-90, 690], "kind": "town_open", "layout": "manor", "flat": 30, "yard": "g_cobble"},
+  {"id": "reedby", "pos": [-190, 570], "kind": "village", "layout": "village_fishing", "flat": 30, "yard": "g_dirt"},
+  {"id": "thornwick", "pos": [240, 200], "kind": "village", "layout": "village_orchard", "flat": 34, "yard": "g_dirt"},
+  {"id": "fordham", "pos": [230, 290], "kind": "village", "layout": "hamlet", "flat": 22, "yard": "g_dirt"},
+  {"id": "threshing_floor", "pos": [120, 860], "kind": "arena", "flat": 30, "boss": "harvest_king", "yard": "g_cobble", "layout": "arena_threshing"},
+  {"id": "wrack_landing", "pos": [630, 1140], "kind": "village", "layout": "hamlet_coast", "flat": 24, "yard": "g_dirt"},
+  {"id": "kettlewick", "pos": [660, -400], "kind": "village", "layout": "hamlet_mill", "flat": 26, "yard": "g_dirt"},
+  {"id": "oakshaw", "pos": [530, -790], "kind": "village", "layout": "village_wood", "flat": 30, "yard": "g_dirt"},
+  {"id": "kestrel_hollow", "pos": [1120, -760], "kind": "village", "layout": "village_fishing", "flat": 28, "yard": "g_dirt"},
+  {"id": "saltcombe", "pos": [920, -300], "kind": "village", "layout": "hamlet_coast", "flat": 24, "yard": "g_dirt"},
+  {"id": "brackenfold", "pos": [580, -220], "kind": "farm", "flat": 34, "yard": "g_dirt"},
+  {"id": "ashby_lodge", "pos": [180, -680], "kind": "camp", "layout": "lodge", "flat": 22, "yard": "g_dirt"}
+ ],
+ "roads": [
+  ["amberfield_heart", "hale_farm"], ["hale_farm", "millbrook"], ["millbrook", "fordham"], ["fordham", "amberfield_greenwald_0"],
+  ["millbrook", "reedby"], ["reedby", "amberhall"], ["amberhall", "threshing_floor"], ["threshing_floor", "wrack_landing"],
+  ["wrack_landing", "amberfield_sunscar_16"], ["hale_farm", "thornwick"], ["thornwick", "fordham"], ["thornwick", "ashby_lodge"], ["thornwick", "kettlewick"], ["kettlewick", "brackenfold"], ["brackenfold", "saltcombe"],
+  ["kettlewick", "oakshaw"], ["oakshaw", "kestrel_hollow"], ["oakshaw", "ashby_lodge"],
+  ["ashby_lodge", "amberfield_greenwald_1"], ["ashby_lodge", "amberfield_frostmere_2"]
+ ],
+ "areas": [
+  {"id": "far_fields", "pos": [100, 880], "radius": 170},
+  {"id": "frostgate_pass", "pos": [78, -1200], "radius": 130}
+ ],
+ "lakes": {"amberfield_lake_2": "amber_mere", "amberfield_lake_1": "kestrel_tarn"}
+}
