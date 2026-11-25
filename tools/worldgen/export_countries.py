@@ -39,6 +39,8 @@ LOOK = {"farmland": "amberfield", "grassland": "amberfield", "forest": "greenwal
 # continent metres -> game metres: the country's relief, squeezed so mountains stay climbable at play scale
 RELIEF = {"scale": 220.0, "per": 2000.0, "power": 0.8, "sea_per_m": 0.012, "sea_most": 22.0}
 SPREAD_M = 220.0  # metres two crossings of one country stand apart at least
+SPAWN_WINDOW = 9  # cells round a spawn whose highest and lowest ground are compared
+SPAWN_PER_CELL = 4.0  # metres of relief a cell further from the heart is worth
 LANDING_IN = 3.0  # cells of the main land round a ferry or ship landing (no landings on spits)
 CONTOURS_M = [0, 30, 70, 130, 210, 320, 460, 640, 860, 1120, 1450, 1850, 2350, 2950]
 MARGIN = 0.07  # share of the world left round the country's land on each side
@@ -165,8 +167,9 @@ def export(i):
     bgrid, _, _ = crop(fr, biome.astype(float), -1.0)
     zones = []
     looks = {}
+    own_looks = next(c for c in SPEC["countries"] if c["id"] == cid).get("looks", {})  # (polish1 F1c) a country may wear a land kind its own way (Cinderreach's tundra is ash)
     for b in np.unique(bgrid[bgrid >= 0]).astype(int):
-        looks.setdefault(LOOK.get(BIOMES[b], "amberfield"), []).append(b)
+        looks.setdefault(own_looks.get(BIOMES[b], LOOK.get(BIOMES[b], "amberfield")), []).append(b)
     for look, bs in sorted(looks.items()):
         m = np.isin(bgrid, bs).astype(float)
         polys = rings(fr, ndimage.gaussian_filter(m, 0.8), 0.5, xa, ya, tol=0.8, least=5)
@@ -226,12 +229,16 @@ def export(i):
     calm = (owner == i) & land & ~lake & ~river & (height < 400) & (np.hypot(gx_, gy_) < 40)
     cy_, cx_ = np.nonzero(calm)
     hx, hy = Z["caps"][i]
-    k_ = int(np.argmin((cx_ - hx) ** 2 + (cy_ - hy) ** 2)) if len(cx_) else 0
+    # (polish1 F1b) near the heart, the calmest ground round about: the land's relief over SPAWN_WINDOW cells counts
+    # with the distance (the nearest calm cell sat in a valley under a 45 m slope in Amberfield)
+    relief = ndimage.maximum_filter(height, size=SPAWN_WINDOW) - ndimage.minimum_filter(height, size=SPAWN_WINDOW)
+    k_ = int(np.argmin(relief[cy_, cx_] + SPAWN_PER_CELL * np.hypot(cx_ - hx, cy_ - hy))) if len(cx_) else 0
     cap = (int(cx_[k_]), int(cy_[k_])) if len(cx_) else (int(hx), int(hy))
     # snow lies above the height where the year averages -2 C at the country's latitude
     lat_n, lat_s = SPEC["latitude"]["north"], SPEC["latitude"]["south"]
     lat = float(np.mean(lat_n + (lat_s - lat_n) * np.nonzero(owner == i)[0] / (H - 1)))
     snow_m = max((29.0 - 0.5 * abs(lat)) / 0.0065, 0.0)
+    snow_m += float(next(c for c in SPEC["countries"] if c["id"] == cid).get("warm_m", 0.0))  # (polish1 F1c) volcanic ground keeps its low land bare: ash, not snow
     country = {
         "version": 1,
         "_about": "Polish1 F1a country shape, cut from the grown continent by tools/worldgen/export_countries.py. The game compiles shape into land (core/country_shape.gd). Edit freely.",

@@ -136,9 +136,11 @@ def build_all():
     model("watchtower", watchtower)
 
     model("town_wall", fantasy_walls.town_wall, plain=True)  # one 6 m stretch with a walk and teeth along the top
-    maker.sizes["town_wall"]["w"] = 6.0  # stretches stand 6 m apart; the end piers reach a little further so a curve closes up
+    if "town_wall" in maker.sizes:  # (absent when ONLY= builds other models)
+        maker.sizes["town_wall"]["w"] = 6.0  # stretches stand 6 m apart; the end piers reach a little further so a curve closes up
     model("town_gate", fantasy_walls.town_gate, plain=True)
-    maker.sizes["town_gate"].update({"walls": [[3.6, 0, 2.6, 2.6], [-3.6, 0, 2.6, 2.6]], "wall_h": 6.0})  # only the two towers are solid: the arch is open
+    if "town_gate" in maker.sizes:
+        maker.sizes["town_gate"].update({"walls": [[3.6, 0, 2.6, 2.6], [-3.6, 0, 2.6, 2.6]], "wall_h": 6.0})  # only the two towers are solid: the arch is open
 
     # ---------- what stands in yards and streets ----------
     model("barrel", lambda m: (barrel_at(m, 0, 0), barrel_at(m, 0.85, 0.2), barrel_at(m, 0.4, 0.15, y=1.0, s=0.8)))
@@ -329,6 +331,50 @@ def build_all():
         for sx in (-1, 1):
             m.rod(K("wood", WOOD), 0.03, (sx * 0.3, 0.6, -0.2), (sx * 1.6, 0.5, 0.9), segs=5)
     model("boat", boat)
+
+    def ferry_boat(m):  # (polish1 F1b) the ferry at a crossing's pier: a broad flat-bottomed barge with rails, a sweep oar and a lantern
+        hull = K("wood", (0.45, 0.33, 0.22))
+        m.loft(hull, [(0, 0.45, -4.6, 1.1, 0.42), (0, 0.42, -3.4, 1.55, 0.45), (0, 0.42, 0.0, 1.65, 0.45), (0, 0.42, 3.2, 1.55, 0.45), (0, 0.5, 4.5, 1.0, 0.4)], segs=10, steps=3)
+        m.box(K("wood", WOOD), (2.9, 0.08, 8.4), (0, 0.86, 0), bevel=0.01)  # the deck
+        for k in range(-4, 5):
+            m.box(K("wood", DARK), (2.95, 0.03, 0.06), (0, 0.91, k * 0.95), bevel=0)  # plank seams
+        for sx in (-1, 1):
+            for f in (-3.6, -1.8, 0.0, 1.8, 3.6):
+                post(m, K("wood", DARK), sx * 1.4, f, 0.85, 0.05, y0=0.88)
+            m.rod(K("wood", WOOD), 0.05, (sx * 1.4, 1.72, -3.8), (sx * 1.4, 1.72, 3.8), segs=6)  # rails
+        m.rod(K("wood", WOOD), 0.06, (0.3, 1.5, -3.8), (0.0, 0.3, -6.8), segs=6)  # the sweep oar over the stern
+        m.box(K("wood", WOOD), (0.35, 0.05, 1.2), (0.0, 0.32, -6.6), bevel=0.01)
+        post(m, K("wood", DARK), -1.1, 3.9, 2.4, 0.07, y0=0.88)
+        m.box(K("metal", IRON), (0.26, 0.34, 0.26), (-1.1, 3.1, 3.9), bevel=0.02)
+        m.box(glow, (0.16, 0.22, 0.16), (-1.1, 3.1, 3.9), bevel=0.01)  # the lantern at the bow
+        crate_at(m, 0.6, 2.4, y=0.9, s=0.6)
+        barrel_at(m, -0.6, -2.6, y=0.9, s=0.75)
+    model("ferry_boat", ferry_boat)
+
+    def cog_ship(m):  # (polish1 F1b) the ship at a voyage's pier: a high-sided cog, one mast with a square sail, castles fore and aft
+        hull = K("wood", (0.4, 0.29, 0.19))
+        m.loft(hull, [(0, 1.5, -7.2, 1.2, 1.4), (0, 1.3, -5.5, 2.1, 1.5), (0, 1.25, 0.0, 2.35, 1.5), (0, 1.3, 5.0, 2.0, 1.5), (0, 1.7, 7.4, 0.5, 1.2)], segs=12, steps=3)
+        m.box(K("wood", WOOD), (3.9, 0.1, 11.0), (0, 2.45, 0), bevel=0.01)  # main deck
+        m.box(hull, (4.0, 1.4, 3.0), (0, 3.15, -5.4), bevel=0.04)  # aft castle
+        m.box(K("wood", WOOD), (4.1, 0.1, 3.1), (0, 3.9, -5.4), bevel=0.01)
+        m.box(hull, (2.8, 0.9, 1.8), (0, 2.9, 5.6), bevel=0.04)  # fore castle
+        for sx in (-1, 1):
+            m.box(K("paint", (0.55, 0.16, 0.12)), (0.06, 0.25, 9.0), (sx * 2.33, 2.75, 0.3), bevel=0)  # a painted strake
+        mast = K("wood", DARK)
+        m.rod(mast, 0.17, (0, 2.4, 0.6), (0, 13.0, 0.6), r2=0.11, segs=8)
+        m.rod(mast, 0.09, (-3.2, 11.6, 0.6), (3.2, 11.6, 0.6), segs=6)  # the yard
+        m.box(K("cloth", (0.86, 0.8, 0.66)), (6.0, 6.0, 0.05), (0, 8.5, 0.75), bevel=0)  # the square sail
+        m.box(K("cloth", (0.6, 0.18, 0.14)), (6.02, 1.1, 0.06), (0, 8.5, 0.77), bevel=0)  # a red band across it
+        for sx in (-1, 1):
+            m.rod(K("cloth", ROPE), 0.025, (sx * 2.2, 2.5, -1.4), (0, 12.6, 0.6), segs=4)  # shrouds
+            m.rod(K("cloth", ROPE), 0.025, (sx * 2.2, 2.5, 2.4), (0, 12.6, 0.6), segs=4)
+        m.rod(K("cloth", ROPE), 0.025, (0, 3.4, 6.4), (0, 12.8, 0.6), segs=4)  # forestay
+        m.rod(K("wood", DARK), 0.08, (0, 3.0, 6.6), (0, 4.0, 9.2), segs=6)  # bowsprit
+        m.box(K("cloth", (0.6, 0.18, 0.14)), (0.04, 0.6, 1.0), (0, 12.9, 0.1), bevel=0)  # pennant
+        barrel_at(m, 1.2, 2.2, y=2.5, s=0.8)
+        crate_at(m, -1.1, 1.6, y=2.5, s=0.8)
+        crate_at(m, -1.0, -2.4, y=2.5, s=0.7)
+    model("cog_ship", cog_ship)
 
     def dock(m):
         m.box(K("wood", WOOD), (3.0, 0.14, 8.0), (0, 1.0, 0), bevel=0.02)

@@ -46,6 +46,8 @@ const ElementBox = preload("res://game/element_box.gd")
 const FantasyPanel = preload("res://game/fantasy_panel.gd")
 
 const OFFSET := Vector3(20000.0, 0.0, 0.0)
+const HAZE_FROM_M := 40.0  # (polish1 F1b) metres above the sea where the haze starts to thin ...
+const HAZE_HALF_M := 150.0  # ... and how many metres higher it is half as thick
 const ARRIVE_IN := 12.0  # (polish1 F1a) metres in from a crossing where an arriving party stands (past its 9 m prompt ring)
 const SAVE_VERSION := 2  # (polish1 F1a) 2 = the countries: an older Aurelind save starts from nothing (the director's full reset)
 const GOOD := Color(0.6, 1.0, 0.6)
@@ -682,7 +684,9 @@ func _process(delta: float) -> void:
 func _blend_mood(k: float) -> void:
 	var m := _mood
 	_env.fog_light_color = _env.fog_light_color.lerp(m["fog"], k)
-	_env.fog_density = lerpf(_env.fog_density, float(m["density"]) * float(data["world"].get("haze", 1.0)), k)
+	var cam := get_viewport().get_camera_3d()
+	var aloft := 1.0 / (1.0 + maxf((cam.global_position.y if cam != null else 0.0) - HAZE_FROM_M, 0.0) / HAZE_HALF_M)  # (polish1 F1b) the haze thins high up: from a peak the land stays clear
+	_env.fog_density = lerpf(_env.fog_density, float(m["density"]) * float(data["world"].get("haze", 1.0)) * aloft, k)
 	if _photo:
 		_sun.light_color = _sun.light_color.lerp(Color.WHITE.lerp(m["sun"], 0.6), k)
 		return

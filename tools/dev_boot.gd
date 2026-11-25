@@ -3147,7 +3147,7 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
 		"f1a":  # (polish1 F1a, countries) "!f1a at <n>": stand at this country's crossing n (0..), facing out; "!f1a cross <n>": take crossing n (the whole
-			# party goes); "!f1a air <x> <z> <height> [tx tz]": a view from above; "!f1a spawn"; "!f1a note": the country, its crossings, where we stand
+			# party goes); "!f1a go <country>": into that country at its heart; "!f1a air <x> <z> <height> [tx tz]": a view from above; "!f1a spawn"; "!f1a note": the country, its crossings, where we stand
 			var fwf: Node = session.call("fantasy")
 			var terf: RefCounted = fwf.get("terrain") if fwf != null else null
 			var crossf: Array = []
@@ -3165,6 +3165,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 				"cross":
 					var cc: Dictionary = crossf[int(words[2])]
 					session.call("_cross_country", String(cc["to"]), String(cc["id"]))
+				"go":  # "!f1a go <country>": (F1c) straight into that country, at its heart (the whole party goes)
+					session.call("_cross_country", words[2], "")
 				"air":
 					var tx := float(words[5]) if words.size() > 6 else float(words[2])
 					var tz := float(words[6]) if words.size() > 6 else float(words[3]) - 1.0

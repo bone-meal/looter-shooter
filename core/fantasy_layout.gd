@@ -235,7 +235,7 @@ func _water_along(x: float, z: float, dir: Vector2, kind: String, most: float, o
 
 
 # (polish1 F1b) What a crossing has that a plan cannot say: a ferry or ship landing's PIER from the shore out over the
-# sea with its boat moored at the end; a ford's STEPPING STONES across the river it fords. These stand at water level
+# sea with its boat moored at the end (ferry_boat, or cog_ship for a voyage); a ford's STEPPING STONES across the river it fords. These stand at water level
 # ("y"); a pier's collider is only as high as its deck ("deck_h").
 func _crossing_extras(out: Array, place: Dictionary, facing: float) -> void:
 	var cx := float(place["pos"][0])
@@ -251,8 +251,18 @@ func _crossing_extras(out: Array, place: Dictionary, facing: float) -> void:
 			for k in long:
 				var at := Vector2(cx, cz) + dir * (shore - 3.0 + 4.0 + 8.0 * float(k))
 				out.append({"model": "dock", "x": at.x, "z": at.y, "turn": facing, "solid": true, "station": "", "y": terrain.sea, "deck_h": DOCK_DECK})
-			var boat := Vector2(cx, cz) + dir * (shore - 3.0 + 8.0 * float(long) - 2.0) + side * 2.7
-			out.append({"model": "boat", "x": boat.x, "z": boat.y, "turn": facing, "solid": true, "station": "", "y": terrain.sea - 0.35})
+			var ship := String(place["crossing"]) == "voyage"  # a cog for a voyage, the ferry barge for a ferry, moored alongside the pier's end
+			var along := (7.5 if ship else 4.5)
+			var end := Vector2(cx, cz) + dir * (shore - 3.0 + 8.0 * float(long))
+			var boat := end + dir * (along + 1.0)  # off the pier's end, unless a side has water all along the boat
+			for way: float in [1.0, -1.0]:
+				var beside := end - dir * along + side * way * (3.9 if ship else 3.2)
+				if terrain.water_at(beside.x, beside.y) == "salt" and terrain.water_at(beside.x + dir.x * along, beside.y + dir.y * along) == "salt" \
+						and terrain.water_at(beside.x - dir.x * along, beside.y - dir.y * along) == "salt":
+					boat = beside
+					break
+			out.append({"model": "cog_ship" if ship else "ferry_boat", "x": boat.x, "z": boat.y, "turn": facing, "solid": true, "station": "",
+				"y": terrain.sea - (1.1 if ship else 0.35), "deck_h": 2.55 if ship else 0.95})
 		"ford":
 			var river := _water_along(cx, cz, dir, "fresh", FORD_LOOK_M)
 			if river == INF:
