@@ -30,14 +30,14 @@
    "id": "frostmere_cinderreach_15",
    "to": "frostmere",
    "kind": "voyage",
-   "pos": [-1359.4, -436.6],
+   "pos": [-1315.2, -403.4],
    "hard": false
   },
   {
    "id": "brinemouth_cinderreach_19",
    "to": "brinemouth",
    "kind": "ferry",
-   "pos": [1812.6, 2072.3],
+   "pos": [276.3, 856.5],
    "hard": false
   }
  ],

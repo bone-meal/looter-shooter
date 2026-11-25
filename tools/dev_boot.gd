@@ -2929,6 +2929,18 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 					_lines.append("E1 at (%d, %d) areas %s | quests %s | rumours %s | compass marks %d" % [roundi(here_e.x), roundi(here_e.z), str(fw.get("terrain").call("areas_at", here_e.x, here_e.z)), " ; ".join(act), str(q_e.call("rumours", 3)), (comp.get("marks") as Array).size()])
 		"go":  # "!go club": travel there without the chat command (a joiner may not use /tp)
 			session.call("travel", words[1])
+		"geomtrace":  # "!geomtrace": every mesh node that enters the tree from now on is printed into the engine log (with its
+			# script, mesh and materials), so an engine error about a material shows up right after the node that caused it
+			get_tree().node_added.connect(func(n: Node) -> void:
+				if n is GeometryInstance3D:
+					var mesh_g: Mesh = n.get("mesh") if n is MeshInstance3D else ((n as MultiMeshInstance3D).multimesh.mesh if n is MultiMeshInstance3D and (n as MultiMeshInstance3D).multimesh != null else null)
+					var mats := PackedStringArray()
+					if mesh_g != null:
+						for k in mesh_g.get_surface_count():
+							var m: Material = mesh_g.surface_get_material(k)
+							mats.append("null" if m == null else "%s:%s" % [m.get_class(), m.resource_path.get_file()])
+					var over: Material = (n as GeometryInstance3D).material_override
+					print("[geom] f%d %s script=%s mesh=%s mats=%s override=%s" % [Engine.get_frames_drawn(), n.get_path(), String((n.get_script() as Script).resource_path) if n.get_script() != null else "", mesh_g.resource_name if mesh_g != null else "none", ",".join(mats), "none" if over == null else over.get_class()]))
 		"immortal":  # "!immortal": no damage taken, also on a joiner (where /god is the host's to give); "!immortal off" ends it
 			player.set("cheat_god", not (words.size() > 1 and words[1] == "off"))
 		"unstuck":  # (polish1 item 110) "!unstuck bury <m>": the body pushed that far down into the ground, then 1.5 s; "!unstuck <note>": what it did
@@ -3170,6 +3182,8 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 							continue  # grass tufts are coloured instances: skipped
 						var label := String(mm.mesh.resource_name) if mm.mesh.resource_name != "" else str(mm.mesh.get_instance_id())
 						for i in mm.visible_instance_count if mm.visible_instance_count >= 0 else mm.instance_count:
+							if mm.get_instance_transform(i).basis.get_scale().x < 0.01:
+								continue  # a dormant or spent gather node, parked out of sight (game/gather_nodes.gd _hidden)
 							var at: Vector3 = mm.get_instance_transform(i).origin
 							var g: Vector2 = landg.call("ground", at.x, at.z)
 							if is_nan(g.x):

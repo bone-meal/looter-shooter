@@ -10,6 +10,11 @@ extends RefCounted
 
 const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
 
+const PIER_LOOK_M := 160.0  # (polish1 F1b) how far a landing looks for the sea its pier reaches into
+const PIER_OPEN_M := 28.0  # ... where the water goes on this far past the shore (not a pool or a creek)
+const FORD_LOOK_M := 90.0  # ... and a ford for the river it crosses
+const DOCK_DECK := 1.1  # metres from a dock's foot (sea level) to the top of its deck
+
 const TREE_SLOTS := 10
 const CLUTTER_SLOTS := 12  # the most pieces of solid clutter on one piece of land
 const NODE_SLOTS := 8
@@ -54,7 +59,10 @@ func place_items(place: Dictionary, keep: Array = []) -> Array:
 		var scheme := String(terrain.region_by_id(String(place["region"])).get("scheme", "amber"))
 		var cx := float(place["pos"][0])
 		var cz := float(place["pos"][1])
-		_places[id] = _lay(rules["kinds"].get(String(place.get("layout", place["kind"])), []), cx, cz, float(place["flat"]), scheme, int(cx), int(cz), keep, false)
+		var facing := _facing(place)
+		_places[id] = _lay(rules["kinds"].get(String(place.get("layout", place["kind"])), []), cx, cz, float(place["flat"]), scheme, int(cx), int(cz), keep, false, facing)
+		if String(place["kind"]) == "crossing":
+			_crossing_extras(_places[id], place, facing)
 		_remember(_places[id])
 		if interiors != null:  # the furniture of the main story's walk-in houses stands in the open world
 			for item: Dictionary in (_places[id] as Array).duplicate():
@@ -127,7 +135,7 @@ func _size(model: String) -> Dictionary:
 	return props.get(model, {"w": 1.0, "d": 1.0, "h": 1.0, "x": 0.0, "z": 0.0, "solid": false})
 
 
-func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x: int, seed_z: int, keep: Array, slopes: bool) -> Array:
+func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x: int, seed_z: int, keep: Array, slopes: bool, facing: float = 0.0) -> Array:
 	var out: Array = []
 	var taken: Array = []  # [x, z, radius] of what already stands
 	for spot: Vector2 in keep:
@@ -147,12 +155,10 @@ func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x
 		if rule.has("wall"):
 			_wall(out, taken, rule, cx, cz, flat)
 		elif rule.has("model"):
-			var at := Vector2(cx, cz)
-			if rule.has("at_m"):
-				at += Vector2(float(rule["at_m"][0]), float(rule["at_m"][1]))
-			else:
-				at += Vector2(float(rule["at"][0]), float(rule["at"][1])) * flat
-			var turn := deg_to_rad(float(rule.get("turn", 0.0)))
+			var off := Vector2(float(rule["at_m"][0]), float(rule["at_m"][1])) if rule.has("at_m") else Vector2(float(rule["at"][0]), float(rule["at"][1])) * flat
+			var turned := Basis(Vector3.UP, facing) * Vector3(off.x, 0.0, off.y)  # (polish1 F1b) a place that faces a way turns its plan with it
+			var at := Vector2(cx + turned.x, cz + turned.z)
+			var turn := deg_to_rad(float(rule.get("turn", 0.0))) + facing
 			if String(rule.get("face", "")) == "in":
 				turn = atan2(at.x - cx, at.y - cz)
 			_put(out, taken, String(rule["model"]).replace("$", scheme), at.x, at.y, turn, String(rule.get("station", "")), true, slopes)
@@ -188,6 +194,79 @@ func _lay(list: Array, cx: float, cz: float, flat: float, scheme: String, seed_x
 					if _put(out, taken, model, x, z, turn, String(rule.get("station", "")), false, slopes):
 						break
 	return out
+
+
+# (polish1 F1b) Which way a place's plan faces (its -z): a crossing looks out of the country, a ferry or ship landing
+# toward the nearest open water (which is where its pier goes); every other place faces north (0).
+func _facing(place: Dictionary) -> float:
+	if String(place["kind"]) != "crossing":
+		return 0.0
+	var cx := float(place["pos"][0])
+	var cz := float(place["pos"][1])
+	var spawn: Array = terrain.data["spawn"]
+	var way := (Vector2(cx, cz) - Vector2(float(spawn[0]), float(spawn[1]))).normalized()
+	if String(place.get("crossing", "")) in ["ferry", "voyage"]:
+		var best := INF
+		for k in 32:
+			var dir := Vector2.from_angle(TAU * float(k) / 32.0)
+			var shore := _water_along(cx, cz, dir, "salt", PIER_LOOK_M, PIER_OPEN_M)
+			if shore < best:
+				best = shore
+				way = dir
+	return atan2(-way.x, -way.y)
+
+
+# Metres from (x, z) along dir to the first water of that kind ("" = any), INF when none within `most`. `open` = the
+# water must go on for that many metres more (the open sea, not a pool or a creek in the shore).
+func _water_along(x: float, z: float, dir: Vector2, kind: String, most: float, open: float = 0.0) -> float:
+	var m := 2.0
+	while m <= most:
+		var w := terrain.water_at(x + dir.x * m, z + dir.y * m)
+		if w != "" and (kind == "" or w == kind):
+			var on := true
+			var k := 4.0
+			while on and k <= open:
+				on = terrain.water_at(x + dir.x * (m + k), z + dir.y * (m + k)) == w
+				k += 4.0
+			if on:
+				return m
+		m += 2.0
+	return INF
+
+
+# (polish1 F1b) What a crossing has that a plan cannot say: a ferry or ship landing's PIER from the shore out over the
+# sea with its boat moored at the end; a ford's STEPPING STONES across the river it fords. These stand at water level
+# ("y"); a pier's collider is only as high as its deck ("deck_h").
+func _crossing_extras(out: Array, place: Dictionary, facing: float) -> void:
+	var cx := float(place["pos"][0])
+	var cz := float(place["pos"][1])
+	var dir := Vector2(-sin(facing), -cos(facing))
+	var side := Vector2(dir.y, -dir.x)
+	match String(place.get("crossing", "")):
+		"ferry", "voyage":
+			var shore := _water_along(cx, cz, dir, "salt", PIER_LOOK_M, PIER_OPEN_M)
+			if shore == INF:
+				return
+			var long := 2 if String(place["crossing"]) == "ferry" else 3  # docks of 8 m end to end
+			for k in long:
+				var at := Vector2(cx, cz) + dir * (shore - 3.0 + 4.0 + 8.0 * float(k))
+				out.append({"model": "dock", "x": at.x, "z": at.y, "turn": facing, "solid": true, "station": "", "y": terrain.sea, "deck_h": DOCK_DECK})
+			var boat := Vector2(cx, cz) + dir * (shore - 3.0 + 8.0 * float(long) - 2.0) + side * 2.7
+			out.append({"model": "boat", "x": boat.x, "z": boat.y, "turn": facing, "solid": true, "station": "", "y": terrain.sea - 0.35})
+		"ford":
+			var river := _water_along(cx, cz, dir, "fresh", FORD_LOOK_M)
+			if river == INF:
+				return
+			var x0 := cx + dir.x * river
+			var z0 := cz + dir.y * river
+			var near: Vector3 = terrain.country_shape.river_near(x0, z0) if terrain.country_shape != null else Vector3(INF, 0.0, 0.0)
+			var level := near.z if near.x < INF else terrain.height(x0, z0)
+			var across := maxf(near.y * 2.0 + 4.0, 6.0) if near.x < INF else 8.0
+			var k := 0.0
+			while k < across:  # stones of 3.8 m end to end from bank to bank
+				var at := Vector2(x0, z0) + dir * (k - 2.0 + 1.9)
+				out.append({"model": "path_stones", "x": at.x, "z": at.y, "turn": facing, "solid": false, "station": "", "y": maxf(level + 0.04, terrain.height(at.x, at.y) + 0.02)})
+				k += 3.8
 
 
 # Adds one thing if it fits (does not overlap what stands, not in water; on a slope only when `slopes` allows a
@@ -393,9 +472,15 @@ func nodes(key: Vector2i) -> Array:
 		var spots := maxi(int(float(lake["r"]) / 5.0), 3)
 		for k in spots:
 			var a := float(k) * TAU / float(spots) + 0.4
-			var x := float(lake["x"]) + cos(a) * (float(lake["r"]) - 3.0)
-			var z := float(lake["z"]) + sin(a) * (float(lake["r"]) - 3.0)
-			if floori(x / _chunk) == key.x and floori(z / _chunk) == key.y:
+			var r := float(lake["r"]) - 3.0
+			if terrain.country_shape != null:  # (polish1 F1b) a country's lake is no circle: in from its real bank, or no spot
+				r = float(lake["r"])
+				while r > 0.0 and terrain.water_at(float(lake["x"]) + cos(a) * r, float(lake["z"]) + sin(a) * r) == "":
+					r -= 2.0
+				r -= 3.0
+			var x := float(lake["x"]) + cos(a) * r
+			var z := float(lake["z"]) + sin(a) * r
+			if r > 0.0 and floori(x / _chunk) == key.x and floori(z / _chunk) == key.y:
 				var id := String(terrain.region_at(x, z)["fish"]["fresh"])
 				out.append([slot, id, x, float(lake["level"]) + 0.02, z, 0.0])
 				slot += 1

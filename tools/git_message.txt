@@ -1,11 +1,11 @@
-Polish1 F1a fixes: online crossing checked, arrivals spread, mountain ribs, far tree colour
+Polish1 F1b part 1: Amberfield crossings dressed, the great lake whole, landings on the main land
 
-- an arriving party stands 12 m in from the crossing (past its prompt), each party slot on its own spot: two copies no longer land inside each other
-- online crossing checked with two copies: a joiner asks, the host takes the whole party both ways (pair set country)
-- big mountain faces ribbed with rounded rock spurs between the gullies (SPURS 18 m, rules version 9)
-- far trees: crowns lit mostly from above and as light as the real leaves (they read brown and black)
-- Frostmere: two crossings stood 17 m apart; export_countries.py keeps a country's crossings at least 220 m apart
-- the load clock marks the start of a crossing (its numbers were counting play time)
+- every crossing has its own look by kind (layouts crossing_road / ford / pass / ferry / voyage), planned facing out of the country
+- ferry and ship landings: a pier of docks from the shore out over open water at sea level, with the boat moored; colliders as high as the deck
+- fords: stepping stones across the river they ford, above the water and the banks
+- export_countries.py: crossings stand on a country's main land (the Amberfield ferry stood on a 25 m islet, a Brinemouth one outside its map), ferry and ship landings on solid ground
+- country lakes: the land's detail no longer lifts the lake bed into islands (the great lake was broken into pools), fishing spots from the real bank; rules version 11
+- dev: !geomtrace (mesh nodes into the engine log), !f1a ground skips parked dormant gather nodes
 
 Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

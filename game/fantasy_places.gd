@@ -479,7 +479,8 @@ func _build(id: String, items: Array) -> void:
 			continue
 		var sunk := 0.14 if size.has("inner") else 0.05  # a walk-in house sits lower: its floor is level with the ground
 		var inside := bool(item.get("inside", false))
-		var at := Transform3D(Basis(Vector3.UP, float(item["turn"])), Vector3(x, terrain.height(x, z) - (-0.03 if inside else sunk), z))
+		var foot := float(item["y"]) if item.has("y") else terrain.height(x, z) - (-0.03 if inside else sunk)  # (polish1 F1b) piers and boats stand at water level
+		var at := Transform3D(Basis(Vector3.UP, float(item["turn"])), Vector3(x, foot, z))
 		if String(item["station"]) != "":  # model, yaw and n (its number among the place's stations of that kind): Agility's obstacles
 			var n := 0
 			for other: Dictionary in stations:
@@ -513,9 +514,9 @@ func _build(id: String, items: Array) -> void:
 			else:
 				var block := BoxShape3D.new()
 				var trim := 0.22 if inside else 0.0  # (polish1 item 100) furniture in a walk-in house is a little smaller than drawn: corners no longer catch
-				block.size = Vector3(maxf(float(box[2]) - trim, 0.3), float(box[4]), maxf(float(box[3]) - trim, 0.3))
+				block.size = Vector3(maxf(float(box[2]) - trim, 0.3), float(item.get("deck_h", box[4])), maxf(float(box[3]) - trim, 0.3))
 				shape.shape = block
-			shape.transform = at * Transform3D(Basis(), Vector3(float(box[0]), float(box[4]) * 0.5, float(box[1])))
+			shape.transform = at * Transform3D(Basis(), Vector3(float(box[0]), float(item.get("deck_h", box[4])) * 0.5, float(box[1])))
 			body.add_child(shape)
 		if size.has("inner"):  # a walk-in house: a warm light inside
 			var lamp := OmniLight3D.new()

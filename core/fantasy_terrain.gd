@@ -8,7 +8,7 @@ extends RefCounted
 
 const CountryShape = preload("res://core/country_shape.gd")
 
-const RULES_VERSION := 10  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
+const RULES_VERSION := 11  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
 const RING_HEIGHT := 34.0  # the mountain ring around the last region
 const RING_WIDTH := 42.0
 const PASS_ANGLE := 0.5  # radians: how wide the gap in the ring is (it faces south, towards the start)
@@ -423,6 +423,8 @@ func _country_height(x: float, z: float, wild: float) -> float:
 	var h := big + add * RELIEF * smoothstep(0.5, 6.0, big)
 	h = maxf(h, minf(big, sea + 1.5)) if big > sea else h  # the relief never drowns land
 	h += 0.5 * _detail.get_noise_2d(x, z)
+	if country_shape.lake_at(x, z) >= 0:
+		h = minf(h, country_shape.height(x, z))  # (polish1 F1b) a lake's bed stays under its water: the land's detail lifted it into islands
 	var river: Vector3 = country_shape.river_near(x, z)
 	var vale: float = river.y * 6.0 + 45.0  # a river runs in its own valley, wider where the river is
 	if river.x < vale:

@@ -50,7 +50,7 @@ static func build(country: Dictionary, old_world: Dictionary) -> Dictionary:
 		var to := String(c["to"])
 		var harder := int(String(load_country(to).get("levels", "0")).split("-")[0]) > int(band[0])  # "hard country" only on the way into the harder one
 		var way := {"ferry": "Ferry to %s", "voyage": "Ship to %s"}.get(String(c["kind"]), "To %s") as String
-		places.append({"id": String(c["id"]), "region": id, "pos": c["pos"], "kind": "crossing", "flat": CROSSING_FLAT, "reach": CROSSING_REACH, "yard": "g_dirt",
+		places.append({"id": String(c["id"]), "region": id, "pos": c["pos"], "kind": "crossing", "flat": CROSSING_FLAT, "reach": CROSSING_REACH, "layout": "crossing_" + String(c["kind"]), "yard": "g_dirt",
 			"name": way % country_name(to, old_world), "to": to, "crossing": String(c["kind"]), "hard": bool(c.get("hard", false)) and harder})
 	var spawn: Array = country["spawn"]
 	var exit := [float(spawn[0]) + EXIT_FROM_SPAWN.x, float(spawn[1]) + EXIT_FROM_SPAWN.y]

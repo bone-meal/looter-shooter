@@ -58,14 +58,14 @@
    "id": "greenwald_brinemouth_17",
    "to": "brinemouth",
    "kind": "ferry",
-   "pos": [1725.4, 709.5],
+   "pos": [1725.4, 698.8],
    "hard": false
   },
   {
    "id": "greenwald_sunscar_18",
    "to": "sunscar",
    "kind": "ferry",
-   "pos": [1198.6, 1204.0],
+   "pos": [1553.4, 559.0],
    "hard": false
   }
  ],

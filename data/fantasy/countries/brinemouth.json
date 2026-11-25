@@ -30,14 +30,14 @@
    "id": "greenwald_brinemouth_17",
    "to": "greenwald",
    "kind": "ferry",
-   "pos": [-659.5, -1368.4],
+   "pos": [-643.0, -1368.4],
    "hard": false
   },
   {
    "id": "brinemouth_cinderreach_19",
    "to": "cinderreach",
    "kind": "ferry",
-   "pos": [1434.4, -3940.4],
+   "pos": [296.8, -1516.8],
    "hard": false
   }
  ],

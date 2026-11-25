@@ -51,14 +51,14 @@
    "id": "frostmere_cinderreach_15",
    "to": "cinderreach",
    "kind": "voyage",
-   "pos": [1241.2, -1276.7],
+   "pos": [1241.2, -1264.9],
    "hard": false
   },
   {
    "id": "frostmere_hollow_crown_20",
    "to": "hollow_crown",
    "kind": "ferry",
-   "pos": [1182.1, -1063.9],
+   "pos": [1111.2, -1454.0],
    "hard": false
   }
  ],

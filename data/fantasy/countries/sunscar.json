@@ -30,14 +30,14 @@
    "id": "amberfield_sunscar_16",
    "to": "amberfield",
    "kind": "ferry",
-   "pos": [-1088.2, -368.2],
+   "pos": [-973.6, -229.1],
    "hard": false
   },
   {
    "id": "greenwald_sunscar_18",
    "to": "greenwald",
    "kind": "ferry",
-   "pos": [662.7, -891.8],
+   "pos": [908.2, -679.1],
    "hard": false
   }
  ],

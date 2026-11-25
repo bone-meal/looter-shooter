@@ -39,6 +39,7 @@ LOOK = {"farmland": "amberfield", "grassland": "amberfield", "forest": "greenwal
 # continent metres -> game metres: the country's relief, squeezed so mountains stay climbable at play scale
 RELIEF = {"scale": 220.0, "per": 2000.0, "power": 0.8, "sea_per_m": 0.012, "sea_most": 22.0}
 SPREAD_M = 220.0  # metres two crossings of one country stand apart at least
+LANDING_IN = 3.0  # cells of the main land round a ferry or ship landing (no landings on spits)
 CONTOURS_M = [0, 30, 70, 130, 210, 320, 460, 640, 860, 1120, 1450, 1850, 2350, 2950]
 MARGIN = 0.07  # share of the world left round the country's land on each side
 
@@ -195,6 +196,8 @@ def export(i):
     # crossings: this country's end of every crossing it takes part in
     crossings = []
     picked = []
+    lab_, n_lab = ndimage.label(owner == i)
+    body = lab_ == (int(np.argmax(ndimage.sum(owner == i, lab_, range(1, n_lab + 1)))) + 1)  # the country's main land
     for n_, c in enumerate(X["crossings"]):
         if cid not in (c["from"], c["to"]):
             continue
@@ -206,10 +209,12 @@ def export(i):
             ex, ey = mine_end
         else:
             ex, ey = c["x"], c["y"]
-        # stand on this country's own land, a few cells in from the border / shore
-        own = np.argwhere(owner == i)
-        dist_in = ndimage.distance_transform_edt(owner == i)
+        # stand on this country's own MAIN land (an islet is out of reach on foot), a few cells in from the border / shore
+        own = np.argwhere(body)
+        dist_in = ndimage.distance_transform_edt(body)
         dd = np.hypot(own[:, 0] - ey, own[:, 1] - ex) - np.minimum(dist_in[own[:, 0], own[:, 1]], 3.0) * 1.5
+        if c["kind"] in ("ferry", "voyage"):  # a landing stands on solid ground, its pier reaches the water
+            dd = dd + np.where(dist_in[own[:, 0], own[:, 1]] < LANDING_IN, 1e5, 0.0)
         for pr, pc in picked:  # two crossings never share a spot: each stands at least SPREAD_M from the others
             dd = dd + np.where(np.hypot(own[:, 0] - pr, own[:, 1] - pc) * fr[3] < SPREAD_M, 1e6, 0.0)
         r, col = own[int(np.argmin(dd))]
