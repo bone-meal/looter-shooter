@@ -3146,6 +3146,45 @@ func _dev(renderer: String, session: Node, words: PackedStringArray) -> void:
 			else:
 				var held_c: Dictionary = bag_c.call("holster_gun", hand_c) if hand_c >= 0 else {}
 				_lines.append("CAMO %s: in hand %s wears %s" % [" ".join(words.slice(1)), String(bag_c.call("holster_body", hand_c)) if hand_c >= 0 else "-", str(held_c.get("camo", "none"))])
+		"f3":  # (polish1 F3, Amberfield lived in) "!f3 note": animals / carts built, travellers standing, bridges; "!f3 deck <n>": stand on bridge n's deck
+			# looking along it; "!f3 walker <n> [cart] [side]": stand 7 m in front of the n-th traveller (cart: the n-th carter; side: beside his ox and cart) looking at them
+			var fw3: Node = session.call("fantasy")
+			var ter3: RefCounted = fw3.get("terrain")
+			var folk3: Array = (fw3.get("places") as Node).get("people")
+			match words[1] if words.size() > 1 else "note":
+				"deck":
+					var br3: Dictionary = (ter3.get("bridges") as Array)[int(words[2])]
+					var sp3: Array = (br3["spans"] as Array)[0]
+					var along3 := Vector2(-sin(float(sp3[2])), -cos(float(sp3[2])))
+					var on3: Vector3 = fw3.call("ground_world", float(br3["x"]), float(br3["z"]))
+					on3.y = (fw3 as Node3D).global_position.y + float(br3["y"]) + 0.3
+					player.call("teleport", on3, 0.0)
+					player.call("look_at_point", on3 + Vector3(along3.x * 20.0, 1.2, along3.y * 20.0))
+				"walker":
+					var seen3 := 0
+					for who3: Dictionary in folk3:
+						if not String(who3["id"]).begins_with("traveller") or (words.size() > 3 and not who3.has("cart")):
+							continue
+						if seen3 == int(words[2]):
+							var path3: PackedVector2Array = who3["path"]
+							var next3 := path3[int(who3["next"])]
+							var way3 := (next3 - Vector2(who3["at"].x, who3["at"].z)).normalized()
+							var ahead3 := -3.0 if words.size() > 4 else 7.0  # "side": beside the ox and cart behind him
+							var beside3 := 8.0 if words.size() > 4 else 2.5
+							player.call("teleport", fw3.call("ground_world", who3["at"].x + way3.x * ahead3 + way3.y * beside3, who3["at"].z + way3.y * ahead3 - way3.x * beside3), 0.0)
+							player.call("look_at_point", fw3.call("ground_world", who3["at"].x - way3.x * 3.0, who3["at"].z - way3.y * 3.0) + Vector3(0, 1.0, 0))
+							break
+						seen3 += 1
+				_:
+					var stood3 := 0
+					var walkers3 := 0
+					for who3: Dictionary in folk3:
+						if String(who3["id"]).begins_with("traveller"):
+							walkers3 += 1
+							if who3["node"] != null:
+								stood3 += 1
+					var stock3: Vector2i = (fw3.get("livestock") as Node).call("counts")
+					_lines.append("F3 animals %d carts %d travellers %d (standing %d) bridges %d" % [stock3.x, stock3.y, walkers3, stood3, (ter3.get("bridges") as Array).size()])
 		"f1a":  # (polish1 F1a, countries) "!f1a at <n>": stand at this country's crossing n (0..), facing out; "!f1a cross <n>": take crossing n (the whole
 			# party goes); "!f1a go <country>": into that country at its heart; "!f1a air <x> <z> <height> [tx tz]": a view from above; "!f1a spawn"; "!f1a note": the country, its crossings, where we stand
 			var fwf: Node = session.call("fantasy")

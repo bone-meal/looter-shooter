@@ -696,7 +696,7 @@
    "ice_mage": "mage",
    "fire_mage": "mage",
    "french_artist": "merchant",
-   "chef": "cook"
+   "chef": "cook", "noble": "long_skirt", "steward": "merchant", "woodcutter": "woodsman"
   }
  },
  "wear": {

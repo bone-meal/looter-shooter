@@ -91,6 +91,54 @@ func setup(land_terrain: FantasyTerrain, world_layout: FantasyLayout, folk: Dict
 				"place": String(place["id"]), "greet": String(lines[(i + int(absf(cz))) % lines.size()]) if not lines.is_empty() else "", "folk": true, "node": null, "mark": null,
 				"look": {"gender": style[0], "outfit": "desert_nomad" if tribe else style[1], "hair": style[2], "hair_color": style[3], "skin": (i * 3 + int(absf(cx))) % 10}})
 		_post_guards(place, things, folk.get("guard", {}))
+	_post_travellers(folk.get("traveller", {}))
+
+
+# (polish1 F3, item 130) Travellers on the roads (numbers and looks in data/fantasy/layouts.json "travellers"): each
+# walks its road from the edge of one place to the edge of the other on the right-hand side and back again, like a
+# guard on a very long round (show only, each machine walks its own). One in `carter_every` is a CARTER leading an
+# ox and cart (game/fantasy_livestock.gd draws those behind anyone with "cart").
+func _post_travellers(words: Dictionary) -> void:
+	var rule: Dictionary = layout.rules.get("travellers", {})
+	if rule.is_empty():
+		return
+	var lines: Array = words.get("lines", [])
+	var looks: Array = rule["looks"]
+	var count := 0
+	for r in terrain.roads.size():
+		var road: PackedVector2Array = terrain.roads[r]
+		var length := road[0].distance_to(road[1]) + road[1].distance_to(road[2])
+		var from := terrain.place(String(terrain.road_ends[r][0]))
+		var to := terrain.place(String(terrain.road_ends[r][1]))
+		var first := float(from["flat"]) * float(rule["keep_out"]) + 4.0  # they turn round at the edge of a place
+		var last := length - float(to["flat"]) * float(rule["keep_out"]) - 4.0
+		if last - first < float(rule["shortest_m"]):
+			continue
+		var out := PackedVector2Array()
+		var back := PackedVector2Array()
+		var along := first
+		while along <= last:
+			var p := terrain.road_point(r, along)
+			var ahead := (terrain.road_point(r, along + 1.0) - p).normalized()
+			var right := Vector2(-ahead.y, ahead.x) * float(rule["side_m"])
+			out.append(p + right)
+			back.append(p - right)
+			along += 3.0
+		back.reverse()
+		var path := out + back
+		for n in clampi(roundi((last - first) / float(rule["every_m"])), 1, int(rule["most_a_road"])):
+			if count >= int(rule["most"]):
+				return
+			var start := int(FantasyTerrain.hash01(r, n, 811) * float(path.size())) % path.size()
+			var style: Array = looks[(count + r) % looks.size()]
+			var who := {"id": "traveller:%d:%d" % [r, n], "name": String(words.get("name", "")), "at": Vector3(path[start].x, terrain.walk_height(path[start].x, path[start].y), path[start].y),
+				"place": String(from["id"]), "greet": String(lines[(count + r) % lines.size()]) if not lines.is_empty() else "", "folk": true, "node": null, "mark": null,
+				"look": {"gender": style[0], "outfit": style[1], "hair": style[2], "hair_color": style[3], "skin": (count * 3 + r) % 10}, "path": path, "next": (start + 1) % path.size(), "pace": float(rule["pace"])}
+			if count % int(rule["carter_every"]) == int(rule["carter_every"]) - 1 and float(to["flat"]) > 0.0:
+				who["cart"] = true
+				who["pace"] = float(rule["cart_pace"])
+			people.append(who)
+			count += 1
 
 
 # Show-only guards (round 5, numbers in data/fantasy/layouts.json "guards"): some stand just inside each gate looking
@@ -170,10 +218,10 @@ func _walk(who: Dictionary, delta: float) -> float:
 	if to.length() < 0.25:
 		who["next"] = (int(who["next"]) + 1) % path.size()
 		return 0.45
-	var step := to.normalized() * float(guards["pace"]) * delta
+	var step := to.normalized() * float(who.get("pace", guards["pace"])) * delta
 	at.x += step.x
 	at.z += step.y
-	at.y = terrain.height(at.x, at.z)
+	at.y = terrain.walk_height(at.x, at.z)  # over a bridge where the road has one
 	who["at"] = at
 	var body: Node3D = who["node"]
 	body.position = at
@@ -209,6 +257,14 @@ func follow(local: Vector3) -> void:
 				next_d = d
 				next_id = String(site["id"])
 				next_items = site["items"]
+	for bridge: Dictionary in layout.bridge_items():  # (polish1 F3) the bridges of the roads
+		var d := Vector2(local.x - float(bridge["x"]), local.z - float(bridge["z"])).length()
+		if d < show_at and d < next_d and not _built.has(bridge["id"]):
+			next_d = d
+			next_id = String(bridge["id"])
+			next_items = bridge["items"]
+		elif d > show_at + HIDE_EXTRA and _built.has(bridge["id"]):
+			_unbuild(String(bridge["id"]))
 	if next_id != "":
 		_build(next_id, next_items)
 	for id: String in _built.keys():
@@ -225,7 +281,7 @@ func follow(local: Vector3) -> void:
 		if wanted and who["node"] == null and stood < 2:  # two a call: the first body of each kind takes a moment to merge
 			_stand(who)
 			stood += 1
-		if who["node"] != null and bool(who.get("shaded", true)) != (d < NEAR_M):
+		if who["node"] != null and bool(who.get("shaded", true)) != (d < NEAR_M) and _clock - float(who.get("stood", 0.0)) > 0.4:  # (polish1 F3) not in its first moments: a body stilled before it was ever posed stood in a T
 			who["shaded"] = d < NEAR_M
 			for part: Node in (who["node"] as Node).find_children("*", "MeshInstance3D", true, false):
 				(part as MeshInstance3D).cast_shadow = GeometryInstance3D.SHADOW_CASTING_SETTING_ON if d < NEAR_M else GeometryInstance3D.SHADOW_CASTING_SETTING_OFF
@@ -659,6 +715,7 @@ func _stand(entry: Dictionary) -> void:
 	look.merge(entry["look"], true)
 	var body := NpcBody.build(look)
 	entry["shaded"] = true  # a new body casts a shadow until `follow` finds it far away
+	entry["stood"] = _clock
 	body.position = entry["at"]
 	BodyMotion.animate(body, 0.0, 0.0, 0.0, false)  # a standing pose even on tiers where people do not move
 	var home := terrain.place(String(entry["place"]))

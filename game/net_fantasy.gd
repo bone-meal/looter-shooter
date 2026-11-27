@@ -79,7 +79,9 @@ func _host_tick(delta: float) -> void:
 	for body: Node3D in net.target_nodes():
 		if not _bound.has(body.get_instance_id()) and body.has_signal("struck"):
 			_bound[body.get_instance_id()] = true
-			body.connect("struck", _on_ghost_struck.bind(body))
+			var on_struck := _on_ghost_struck.bind(body)
+			if not body.is_connected("struck", on_struck):  # a ghost outlives a border crossing, _bound does not
+				body.connect("struck", on_struck)
 	_state_timer += delta
 	if _state_timer < 0.1 or _enemies.is_empty():
 		return

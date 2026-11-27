@@ -474,6 +474,11 @@ SPEC = {
     "ice_elk": dict(plan="quad", len=1.7, h=1.12, w=0.3, neck=0.5, snout=0.34, tail=0.14, body=(0.58, 0.55, 0.52), limb=(0.36, 0.33, 0.3), extras=["antlers", "mane"], antler=1.35, horn=(0.9, 0.93, 0.95), kinds={"body": "fur", "limb": "fur"}),
     "mountain_goat": dict(plan="quad", len=1.0, h=0.72, w=0.22, neck=0.3, snout=0.22, tail=0.1, body=(0.9, 0.88, 0.84), limb=(0.8, 0.78, 0.74), extras=["curled_horns", "beard"], horn=(0.35, 0.32, 0.3), kinds={"body": "fur", "limb": "fur"}),
     "pale_stag": dict(plan="quad", len=1.4, h=1.0, w=0.24, neck=0.55, snout=0.28, tail=0.14, body=(0.93, 0.93, 0.96), limb=(0.86, 0.86, 0.9), extras=["antlers", "glow_tips"], antler=1.2, horn=(0.97, 0.95, 0.88), kinds={"body": "fur", "limb": "fur"}),
+    # polish1 F3: farm animals (show only: game/fantasy_livestock.gd), the ox also draws carts on the roads
+    "cow": dict(plan="quad", len=1.9, h=1.05, w=0.36, neck=0.2, snout=0.36, tail=0.75, body=(0.5, 0.3, 0.18), limb=(0.86, 0.82, 0.74), extras=["horns"], horn=(0.9, 0.86, 0.74), kinds={"body": "fur", "limb": "fur"}),
+    "ox": dict(plan="quad", len=2.15, h=1.22, w=0.42, neck=0.22, snout=0.4, tail=0.8, body=(0.4, 0.35, 0.3), limb=(0.3, 0.26, 0.22), extras=["horns"], horn=(0.92, 0.88, 0.78), kinds={"body": "fur", "limb": "fur"}),
+    "sheep": dict(plan="quad", len=1.0, h=0.56, w=0.3, neck=0.12, snout=0.2, tail=0.1, body=(0.9, 0.87, 0.78), limb=(0.22, 0.2, 0.18), kinds={"body": "fur", "limb": "fur"}),
+    "hen": dict(plan="gamebird", body=(0.8, 0.6, 0.38), kinds={"body": "feather"}),
     "pallid_king": dict(plan="biped", bulk=1.2, head="skull", body=(0.9, 0.9, 0.9), limb=(0.78, 0.78, 0.8), skin=(0.96, 0.96, 0.94), trim=(0.85, 0.75, 0.4), extras=["crown", "cloak", "sword", "plates"], cloak=(0.82, 0.82, 0.86), crown=(0.9, 0.8, 0.4), kinds={"body": "cloth", "limb": "cloth", "skin": "bone"}),
 }
 

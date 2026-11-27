@@ -1,0 +1,25 @@
+{
+ "_about": "Polish1 F3 (item 130): the farm animals of the fantasy world, show only (game/fantasy_livestock.gd; each machine keeps its own, nothing is sent). kinds: model = a creature model (assets/models/fantasy/creatures/), pace = walking speed m/s, roam_m = how far it strays from its spot, rest_s = [shortest, longest] it stands grazing between walks, shy_m = it steps away from a player this close. herds: which animals a place keeps, looked up by the place's layout, else by its kind; 'site:<kind>' for the small sites between places. Each entry: kind, count, ring = [from, to] as shares of the place's flat radius where they graze (ring_m = metres, for sites). show_m = a herd is built inside this distance, near_m = inside this its animals walk and cast shadows, most = animals built at once. cart = the ox and cart a carter on the road leads (people with 'cart' in game/fantasy_places.gd): metres behind the carter where the ox walks and the cart's axle rolls, shafts_deg = how far the cart is tipped up to the ox.",
+ "show_m": 95,
+ "near_m": 50,
+ "most": 30,
+ "kinds": {
+  "cow": {"model": "cow", "pace": 0.45, "roam_m": 9, "rest_s": [6, 24], "shy_m": 2.4},
+  "ox": {"model": "ox", "pace": 0.45, "roam_m": 6, "rest_s": [8, 26], "shy_m": 2.4},
+  "sheep": {"model": "sheep", "pace": 0.5, "roam_m": 7, "rest_s": [4, 18], "shy_m": 2.6},
+  "hen": {"model": "hen", "pace": 0.7, "roam_m": 3.5, "rest_s": [1, 6], "shy_m": 1.6}
+ },
+ "herds": {
+  "farm": [{"kind": "cow", "count": 5, "ring": [1.15, 1.7]}, {"kind": "hen", "count": 5, "ring": [0.25, 0.7]}],
+  "village": [{"kind": "sheep", "count": 5, "ring": [1.15, 1.65]}, {"kind": "hen", "count": 4, "ring": [0.2, 0.7]}],
+  "village_fishing": [{"kind": "hen", "count": 4, "ring": [0.2, 0.7]}],
+  "village_wood": [{"kind": "sheep", "count": 3, "ring": [1.15, 1.6]}, {"kind": "hen", "count": 3, "ring": [0.2, 0.7]}],
+  "hamlet": [{"kind": "sheep", "count": 4, "ring": [1.2, 1.9]}, {"kind": "hen", "count": 3, "ring": [0.2, 0.7]}],
+  "hamlet_coast": [{"kind": "hen", "count": 3, "ring": [0.2, 0.7]}],
+  "hamlet_mill": [{"kind": "cow", "count": 3, "ring": [1.2, 1.9]}, {"kind": "hen", "count": 3, "ring": [0.2, 0.7]}],
+  "manor": [{"kind": "sheep", "count": 6, "ring": [1.2, 1.8]}, {"kind": "ox", "count": 2, "ring": [1.2, 1.6]}, {"kind": "hen", "count": 3, "ring": [0.5, 0.85]}],
+  "site:farmstead": [{"kind": "sheep", "count": 3, "ring_m": [22, 32]}, {"kind": "hen", "count": 3, "ring_m": [4, 10]}],
+  "site:windmill": [{"kind": "cow", "count": 2, "ring_m": [14, 24]}]
+ },
+ "cart": {"ox_behind_m": 3.0, "axle_behind_m": 6.0, "shafts_deg": 14}
+}

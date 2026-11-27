@@ -2,7 +2,7 @@
 # land runs on (the same keys as data/fantasy/world.json): its shape, size, level band and spawn; the looks of
 # world.json's regions as its regions (ground, sky, trees, gatherables), each at the country's level band; its
 # CROSSINGS as places (flat ground, a name "To <country>") with what they lead to; (polish1 F3) the country's own
-# places, roads, named areas and lake names placed by hand in data/fantasy/places/<id>.json (none yet = an empty land).
+# places, people, roads, named areas and lake names placed by hand in data/fantasy/places/<id>.json (none yet = an empty land).
 # Dependencies: none. Data: a country file, its places file + the loaded world.json (for the looks, names and folk).
 extends RefCounted
 
@@ -84,7 +84,7 @@ static func build(country: Dictionary, old_world: Dictionary) -> Dictionary:
 		"size": float(country["size"]), "seed": int(country.get("seed", 1)), "chunk": int(country.get("chunk", 50)), "sea_level": float(country.get("sea_level", 0.0)),
 		"blend": float(old_world.get("blend", 60.0)), "spawn": spawn, "low_at": low_at, "exit_painting": exit,
 		"levels": String(country.get("levels", "1-50")), "haze": float(country.get("haze", HAZE)), "grid": float(country.get("grid", 16.0)), "shape": country["shape"], "crossings": country.get("crossings", []),
-		"regions": regions, "places": places, "npcs": [], "lakes": [], "roads": own.get("roads", []), "areas": areas, "patches": [], "lake_names": own.get("lakes", {}),
-		"name": old_world.get("name", "Aurelind"), "first_hint": old_world.get("first_hint", ""), "guard_folk": old_world.get("guard_folk", {}),
+		"regions": regions, "places": places, "npcs": (own.get("npcs", []) as Array).duplicate(true), "lakes": [], "roads": own.get("roads", []), "areas": areas, "patches": [], "lake_names": own.get("lakes", {}),
+		"name": old_world.get("name", "Aurelind"), "first_hint": old_world.get("first_hint", ""), "guard_folk": old_world.get("guard_folk", {}), "traveller_folk": old_world.get("traveller_folk", {}),
 	}
 	return world

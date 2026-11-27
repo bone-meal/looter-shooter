@@ -17,7 +17,7 @@ const FOLDER := "res://data/fantasy/"
 # {"world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "combat", "ground", "squad", "agility", "props", "text", "problems": PackedStringArray}
 static func load_all(country: String = "") -> Dictionary:
 	var d := {}
-	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad", "agility", "coaches", "country_rocks"]:
+	for part: String in ["world", "quests", "gear", "skilling", "spells", "enemies", "layouts", "sounds", "interiors", "combat", "ground", "squad", "agility", "coaches", "country_rocks", "livestock"]:
 		d[part] = DataStore.load_json(FOLDER + part + ".json")
 	d["props"] = DataStore.load_json(FOLDER + "props.json")["props"]
 	var files := PackedStringArray([FOLDER + "writing/spells.txt", FOLDER + "writing/items.txt", FOLDER + "writing/skills.txt", FOLDER + "writing/buildings.txt"])
@@ -47,6 +47,9 @@ static func _name_country(d: Dictionary) -> PackedStringArray:
 			place["name"] = _line(text, "place", String(place["id"]), "name", missing)
 	for area: Dictionary in world["areas"]:
 		area["name"] = _line(text, "area", String(area["id"]), "name", missing)
+	for npc: Dictionary in world["npcs"]:
+		npc["name"] = _line(text, "person", String(npc["id"]), "name", missing)
+		npc["greet"] = _line(text, "person", String(npc["id"]), "greeting", missing)
 	var lakes: Dictionary = world.get("lake_names", {})
 	for lake_id: String in lakes:  # the shape's lake id -> the writers' lake id -> its name
 		lakes[lake_id] = _line(text, "lake", String(lakes[lake_id]), "name", missing)
@@ -77,6 +80,9 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 	var guard: Dictionary = text.get("folk", {}).get("guard", {})
 	var guard_says: Variant = guard.get("says", [])
 	world["guard_folk"] = {"name": _line(text, "folk", "guard", "name", missing), "lines": guard_says if guard_says is Array else [guard_says]}
+	var traveller: Dictionary = text.get("folk", {}).get("traveller", {})  # (polish1 F3) the people walking the roads
+	var traveller_says: Variant = traveller.get("says", [])
+	world["traveller_folk"] = {"name": _line(text, "folk", "traveller", "name", missing), "lines": traveller_says if traveller_says is Array else [traveller_says]}
 	for place: Dictionary in world["places"]:
 		place["name"] = _line(text, "place", String(place["id"]), "name", missing)
 	for lake: Dictionary in world.get("lakes", []):

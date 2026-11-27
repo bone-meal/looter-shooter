@@ -1992,6 +1992,7 @@
    }
   }
  },
+ "travellers": {"_about": "(polish1 F3, item 130) People walking the roads, show only (game/fantasy_places.gd _post_travellers): one for every every_m metres of a road (at most most_a_road on one road and most in the country; roads shorter than shortest_m between the edges of their places have none). They keep side_m to the right of the road's middle and turn round keep_out times a place's flat radius from its middle. pace / cart_pace = walking speed in m/s; every carter_every-th traveller is a carter leading an ox and cart (game/fantasy_livestock.gd). looks = [gender, trade, hair, hair colour] (the trade picks the clothes: data/characters.json npc.outfits).", "every_m": 260, "most_a_road": 2, "most": 18, "shortest_m": 70, "keep_out": 1.1, "side_m": 1.1, "pace": 1.3, "cart_pace": 0.95, "carter_every": 3, "looks": [["male", "farmer", "crop", "#5a4630"], ["female", "druid", "bob", "#3b2a1a"], ["male", "woodcutter", "mullet", "#2e2a22"], ["female", "fisher", "ponytail", "#8a5a2a"], ["male", "steward", "sidepart", "#777777"], ["female", "farmer", "long_straight", "#b98a4a"]]},
  "walk_over": [
   "scree_basalt",
   "scree_grey",

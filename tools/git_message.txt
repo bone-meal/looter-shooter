@@ -1,10 +1,12 @@
-Polish1 F2 + F3 part 1: Amberfield's story written, its 14 places and roads built on the new land
+Polish1 F3 part 2: graded roads and bridges, named people, travellers and ox carts, livestock
 
-- diary: DESIGN_AMBERFIELD.md (director: a gentle Baroness, the tithe, the hero late, the short tithe ending)
-- data/fantasy/places/amberfield.json: hand-placed places, roads, named areas and lake names (the export never touches it), read by core/country_world.gd, named from the writing file
-- Millbrook on Amber Mere, Amberhall (the manor), Hale Farm, Reedby, Thornwick, Fordham, the Threshing Floor with the Harvest King, Wrack Landing, Kettlewick, Oakshaw, Kestrel Hollow, Saltcombe, Brackenfold, Ashby Lodge
-- new place plans: manor, fishing / orchard / woodland villages, hamlets, mill hamlet, woodcutters' lodge
-- places kept clear of rivers so their level ground does not cut the riverbeds
+- core/fantasy_terrain.gd: a country's roads get a graded bed (smoothed, cut through rises to their grade, level bridge decks over rivers); road data may carry a bend point and a grade; walk_height; rules version 12
+- 12 timber bridges in Amberfield (model bridge_span, built by fantasy_places like a site); tools/road_router.gd suggests road bends; six roads bent round hills and the mere, two given a steeper grade
+- Amberfield's people: Hale, Mirren, Oswin, Edda, Pim, Baroness Isolde and Master Callow (places file npcs, names in the writing file)
+- travellers walk the roads (layouts.json travellers, words in writing/buildings.txt); every third leads an ox and cart
+- game/fantasy_livestock.gd + data/fantasy/livestock.json: show-only cows, sheep, hens and oxen round farms, villages and farmsteads; they step out of a player's way
+- fix: people built far away stood in a T until a player came close
+- fix: the host tried to connect a ghost's struck signal again after a border crossing (error line in the log)
 
-Co-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

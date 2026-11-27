@@ -13,6 +13,7 @@ const FantasyTerrain = preload("res://core/fantasy_terrain.gd")
 const PIER_LOOK_M := 160.0  # (polish1 F1b) how far a landing looks for the sea its pier reaches into
 const PIER_OPEN_M := 28.0  # ... where the water goes on this far past the shore (not a pool or a creek)
 const FORD_LOOK_M := 90.0  # ... and a ford for the river it crosses
+const BRIDGE_DECK := 0.45  # metres from a bridge span's foot to the top of its planks
 const DOCK_DECK := 1.1  # metres from a dock's foot (sea level) to the top of its deck
 
 const TREE_SLOTS := 10
@@ -30,6 +31,7 @@ var interiors: RefCounted  # core/fantasy_interiors.gd, set by whoever builds th
 
 var _places := {}  # place id -> Array of items
 var _sites := {}  # Vector2i cell -> site ({} = nothing there)
+var _bridges: Array = []  # (polish1 F3) see bridge_items
 var _trees := {}  # chunk key -> Array of [model, x, z, grow, turn]
 var _clutter := {}  # chunk key -> Array of [model, x, z, grow, turn, radius]
 var _grid := {}  # Vector2i square -> Array of [x, z, half width, half depth, cos, sin]
@@ -71,6 +73,19 @@ func place_items(place: Dictionary, keep: Array = []) -> Array:
 					if not (plain and covers(piece, interiors.call("entry_spot", item), 0.5)):  # nothing plain stands in the doorway
 						(_places[id] as Array).append(piece)
 	return _places[id]
+
+
+# (polish1 F3) The bridges that carry a country's roads over water (core/fantasy_terrain.gd `bridges`), each to be
+# built like a small place: [{"id", "x", "z", "items"}], one bridge_span per 4 m with its deck top at the road bed.
+func bridge_items() -> Array:
+	if _bridges.is_empty():
+		for bridge: Dictionary in terrain.bridges:
+			var items: Array = []
+			for span: Array in bridge["spans"]:
+				items.append({"model": "bridge_span", "x": float(span[0]), "z": float(span[1]), "turn": float(span[2]), "solid": true, "station": "", "run": true,
+					"y": float(bridge["y"]) - BRIDGE_DECK, "deck_h": BRIDGE_DECK})
+			_bridges.append({"id": String(bridge["id"]), "x": float(bridge["x"]), "z": float(bridge["z"]), "items": items})
+	return _bridges
 
 
 # --- sites: small spots between the places ---

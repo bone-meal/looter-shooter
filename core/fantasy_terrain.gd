@@ -8,7 +8,7 @@ extends RefCounted
 
 const CountryShape = preload("res://core/country_shape.gd")
 
-const RULES_VERSION := 11  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
+const RULES_VERSION := 12  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
 const RING_HEIGHT := 34.0  # the mountain ring around the last region
 const RING_WIDTH := 42.0
 const PASS_ANGLE := 0.5  # radians: how wide the gap in the ring is (it faces south, towards the start)
@@ -43,6 +43,13 @@ var _seg_a := PackedVector2Array()  # every stretch of path: its two ends ...
 var _seg_b := PackedVector2Array()
 var _seg_cells := {}  # ... and which stretches pass near each SEG_CELL square: Vector2i -> PackedInt32Array
 var _no_segments := PackedInt32Array()
+var _seg_road := PackedInt32Array()  # (polish1 F3) every stretch of path: which road it is part of ...
+var _seg_from := PackedFloat32Array()  # ... and how many metres of that road lie before it
+var _grade: Array = []  # (polish1 F3, countries) per road: the graded road bed's height every GRADE_STEP m (PackedFloat32Array)
+var _grade_bridge: Array = []  # ... and where it is a bridge deck over water (PackedByteArray: 1 = bridge)
+var _road_most := PackedFloat32Array()  # per road: the steepest it climbs (GRADE_MOST unless its data says otherwise)
+var _graded := false  # true once the road beds are worked out (they are measured on the land without them)
+var bridges: Array = []  # (polish1 F3) {"id", "x", "z", "y" (deck top), "spans": [[x, z, turn]]}: every bridge carrying a road over water
 var _cones: Array = []  # volcano cones: {"x", "z", "crater", "rim", "radius", "height", "open" (bearing of the way in)}
 var country_shape: RefCounted = null  # (polish1 F1a) a country's compiled shape (core/country_shape.gd), null for the old world
 var _levels := Vector2(1, 50)  # a country's level band
@@ -63,6 +70,12 @@ var _roll := FastNoiseLite.new()
 const ROAD_WIDTH := 2.3  # half width of a path, metres
 const SEG_CELL := 80.0  # paths are looked up through a grid of squares this wide
 const CALM_NEAR := 7.0  # this close to a path the land has none of its wild landforms ...
+const GRADE_STEP := 4.0  # (polish1 F3) a graded road bed is measured every so many metres along its road
+const GRADE_IN := 3.2  # this close to a road's middle the ground IS the road bed ...
+const GRADE_OUT := 12.0  # ... and from here on the land is its own again (cuttings and banks between)
+const GRADE_MOST := 0.26  # the steepest a road climbs unless its data says otherwise (rise per metre: about 15 degrees)
+const BRIDGE_MOST := 32.0  # metres of water a road will bridge (wider = a lake or the sea: the road needs a bend in its data)
+const BRIDGE_CLEAR := 1.1  # metres a bridge deck clears the water by
 const CALM_FAR := 40.0  # ... and from here on all of them: a path through mountains runs in a pass
 const DIRT := Color(0.46, 0.38, 0.27)
 const PAVED := Color(0.5, 0.48, 0.45)
@@ -151,7 +164,15 @@ func _init(world_data: Dictionary) -> void:
 		var from := Vector2(float(a["pos"][0]), float(a["pos"][1]))
 		var to := Vector2(float(b["pos"][0]), float(b["pos"][1]))
 		var bend := (to - from).orthogonal().normalized() * (to - from).length() * 0.14 * (hash01(int(from.x), int(to.y), 5) - 0.5) * 2.0
-		roads.append(PackedVector2Array([from, (from + to) * 0.5 + bend, to]))
+		var middle := (from + to) * 0.5 + bend
+		var most := GRADE_MOST
+		for k in range(2, pair.size()):  # (polish1 F3) a road may name the point it bends through ([x, z]: round a lake, a hill) and how steep it may climb (a number)
+			if pair[k] is Array:
+				middle = Vector2(float(pair[k][0]), float(pair[k][1]))
+			else:
+				most = float(pair[k])
+		_road_most.append(most)
+		roads.append(PackedVector2Array([from, middle, to]))
 		road_ends.append([String(pair[0]), String(pair[1])])
 	for entry: Dictionary in data.get("areas", []):
 		var area := {"id": String(entry["id"]), "name": String(entry.get("name", "")), "region": String(entry.get("region", "")), "radius": float(entry.get("radius", 0.0)),
@@ -192,6 +213,8 @@ func _init(world_data: Dictionary) -> void:
 			var index := _seg_a.size()
 			_seg_a.append(road[i])
 			_seg_b.append(road[i + 1])
+			_seg_road.append(roads.find(road))
+			_seg_from.append(0.0 if i == 0 else road[0].distance_to(road[1]))
 			var reach := CALM_FAR + 6.0
 			for cz in range(floori((minf(road[i].y, road[i + 1].y) - reach) / SEG_CELL), floori((maxf(road[i].y, road[i + 1].y) + reach) / SEG_CELL) + 1):
 				for cx in range(floori((minf(road[i].x, road[i + 1].x) - reach) / SEG_CELL), floori((maxf(road[i].x, road[i + 1].x) + reach) / SEG_CELL) + 1):
@@ -199,6 +222,8 @@ func _init(world_data: Dictionary) -> void:
 					var list: PackedInt32Array = _seg_cells.get(cell, PackedInt32Array())
 					list.append(index)
 					_seg_cells[cell] = list
+	if country_shape != null:
+		_grade_roads()
 
 
 # (polish1 item 129) The ids of the named areas a point lies in.
@@ -440,6 +465,8 @@ func _country_height(x: float, z: float, wild: float) -> float:
 # The land with its places levelled (towns, farms and boss arenas sit on flat ground), before lakes are cut.
 func _placed_height(x: float, z: float) -> float:
 	var h := _raw_height(x, z, wildness(x, z))
+	if _graded:
+		h = _on_road_bed(x, z, h)
 	for i in _flat_at.size():
 		var spot := _flat_at[i]
 		var reach := _reach[i]
@@ -447,6 +474,126 @@ func _placed_height(x: float, z: float) -> float:
 		var dz := z - spot.y
 		if absf(dx) < reach and absf(dz) < reach:
 			h = lerpf(_place_level[i], h, smoothstep(spot.z * 0.75, reach, sqrt(dx * dx + dz * dz)))
+	return h
+
+
+# (polish1 F3) GRADED ROADS of a country. A road no longer lies on whatever the land does under it: its bed is
+# measured along the road, smoothed, and kept under GRADE_MOST steep by cutting through rises (never by filling,
+# except up to a bridge). Where it crosses water up to BRIDGE_MOST wide the bed is a level BRIDGE deck from bank to
+# bank (the land under it keeps its river; game/fantasy_places.gd stands the spans, `bridges`). Within GRADE_IN of
+# the road's middle the ground is the bed, easing back into the land by GRADE_OUT.
+func _grade_roads() -> void:
+	for r in roads.size():
+		var road: PackedVector2Array = roads[r]
+		var rise := _road_most[r] * GRADE_STEP  # the most the bed climbs from one sample to the next
+		var length := road[0].distance_to(road[1]) + road[1].distance_to(road[2])
+		var count := maxi(ceili(length / GRADE_STEP) + 1, 2)
+		var raw := PackedFloat32Array()
+		var wet := PackedByteArray()
+		var level := PackedFloat32Array()
+		for i in count:
+			var p := road_point(r, float(i) * GRADE_STEP)
+			raw.append(_placed_height(p.x, p.y))
+			var water := water_at(p.x, p.y)
+			wet.append(1 if water != "" else 0)
+			var river: Vector3 = country_shape.river_near(p.x, p.y)
+			level.append(river.z if water == "fresh" and river.x < river.y + 1.0 else (sea if water == "salt" else raw[i]))
+		var bed := PackedFloat32Array()
+		for i in count:  # the small ups and downs under the road are smoothed away (the mean of 28 m of it)
+			var sum := 0.0
+			var n := 0
+			for k in range(maxi(i - 3, 0), mini(i + 4, count)):
+				if wet[k] == 0:
+					sum += raw[k]
+					n += 1
+			bed.append(sum / float(n) if n > 0 else raw[i])
+		var deck := PackedByteArray()
+		deck.resize(count)
+		var i0 := 0
+		while i0 < count:  # every run of water becomes a bridge: one bank sample on each side, a level deck between
+			if wet[i0] == 0:
+				i0 += 1
+				continue
+			var i1 := i0
+			while i1 + 1 < count and wet[i1 + 1] == 1:
+				i1 += 1
+			var a := maxi(i0 - 1, 0)
+			var b := mini(i1 + 1, count - 1)
+			if float(b - a) * GRADE_STEP <= BRIDGE_MOST and a > 0 and b < count - 1:
+				var top := maxf(bed[a], bed[b])
+				for k in range(a, b + 1):
+					top = maxf(top, level[k] + BRIDGE_CLEAR)
+				var spans: Array = []
+				for k in range(a, b + 1):
+					bed[k] = top
+					deck[k] = 1
+					if k < b:
+						var from := road_point(r, float(k) * GRADE_STEP)
+						var to := road_point(r, float(k + 1) * GRADE_STEP)
+						spans.append([(from.x + to.x) * 0.5, (from.y + to.y) * 0.5, atan2(-(to.x - from.x), -(to.y - from.y))])
+				var mid := road_point(r, float(a + b) * 0.5 * GRADE_STEP)
+				bridges.append({"id": "bridge:%d:%d" % [r, a], "x": mid.x, "z": mid.y, "y": top, "spans": spans, "half": float(b - a) * GRADE_STEP * 0.5, "road": r})
+			i0 = i1 + 1
+		var fill := PackedFloat32Array()  # banks rise to a bridge deck: the only place a road is built up
+		for i in count:
+			fill.append(bed[i] if deck[i] == 1 else -INF)
+		for i in range(1, count):
+			fill[i] = maxf(fill[i], fill[i - 1] - rise)
+		for i in range(count - 2, -1, -1):
+			fill[i] = maxf(fill[i], fill[i + 1] - rise)
+		for i in count:
+			bed[i] = maxf(bed[i], fill[i])
+		for i in range(1, count):  # ... and everywhere else the road cuts through what is too steep to climb
+			if deck[i] == 0:
+				bed[i] = minf(bed[i], bed[i - 1] + rise)
+		for i in range(count - 2, -1, -1):
+			if deck[i] == 0:
+				bed[i] = minf(bed[i], bed[i + 1] + rise)
+		_grade.append(bed)
+		_grade_bridge.append(deck)
+	_graded = true
+
+
+# The point `along` metres down a road (its bent line of three points).
+func road_point(road_index: int, along: float) -> Vector2:
+	var road: PackedVector2Array = roads[road_index]
+	var first := road[0].distance_to(road[1])
+	if along <= first:
+		return road[0].lerp(road[1], along / maxf(first, 0.001))
+	return road[1].lerp(road[2], minf((along - first) / maxf(road[1].distance_to(road[2]), 0.001), 1.0))
+
+
+# The land's height `h` at a point, worked into the graded road beds near it (see _grade_roads).
+func _on_road_bed(x: float, z: float, h: float) -> float:
+	var near: PackedInt32Array = _seg_cells.get(Vector2i(floori(x / SEG_CELL), floori(z / SEG_CELL)), _no_segments)
+	if near.is_empty():
+		return h
+	var here := Vector2(x, z)
+	for s in near:
+		var a := _seg_a[s]
+		var b := _seg_b[s]
+		var along := clampf((here - a).dot(b - a) / (b - a).length_squared(), 0.0, 1.0)
+		var d := here.distance_to(a + (b - a) * along)
+		if d >= GRADE_OUT:
+			continue
+		var bed: PackedFloat32Array = _grade[_seg_road[s]]
+		var deck: PackedByteArray = _grade_bridge[_seg_road[s]]
+		var t := minf((_seg_from[s] + along * a.distance_to(b)) / GRADE_STEP, float(bed.size()) - 1.001)
+		var i := int(t)
+		var f := t - float(i)
+		var open := 1.0 - lerpf(float(deck[i]), float(deck[i + 1]), f)  # under a bridge the land keeps its river
+		h = lerpf(h, lerpf(bed[i], bed[i + 1], f), (1.0 - smoothstep(GRADE_IN, GRADE_OUT, d)) * open)
+	return h
+
+
+# (polish1 F3) The height to WALK at on a point: a bridge deck where one carries a road there, else the ground.
+func walk_height(x: float, z: float) -> float:
+	var h := height(x, z)
+	for bridge: Dictionary in bridges:
+		if absf(x - float(bridge["x"])) < float(bridge["half"]) + 3.0 and absf(z - float(bridge["z"])) < float(bridge["half"]) + 3.0:
+			for span: Array in bridge["spans"]:
+				if absf(x - float(span[0])) < 3.0 and absf(z - float(span[1])) < 3.0:
+					return maxf(h, float(bridge["y"]))
 	return h
 
 

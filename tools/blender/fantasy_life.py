@@ -376,6 +376,26 @@ def build_all():
         crate_at(m, -1.0, -2.4, y=2.5, s=0.7)
     model("cog_ship", cog_ship)
 
+    def bridge_span(m):  # (polish1 F3) 4 m of a timber road bridge: plank deck (top at 0.45), beams, rails, piles going down into the river
+        beam = K("wood", DARK)
+        for sx in (-1, 1):
+            m.box(beam, (0.28, 0.3, 4.02), (sx * 1.7, 0.22, 0), bevel=0.01)
+            for f in (-2.0, 2.0):
+                m.rod(beam, 0.17, (sx * 1.95, 0.3, f), (sx * 1.95, -6.0, f), segs=7)  # piles
+                post(m, K("wood", WOOD), sx * 2.15, f, 1.15, 0.07, y0=0.4)
+            m.rod(K("wood", WOOD), 0.055, (sx * 2.15, 1.5, -2.0), (sx * 2.15, 1.5, 2.0), segs=6)  # rails
+            m.rod(K("wood", WOOD), 0.045, (sx * 2.15, 1.0, -2.0), (sx * 2.15, 1.0, 2.0), segs=6)
+            post(m, K("wood", WOOD), sx * 2.15, 0.0, 1.1, 0.055, y0=0.4)
+        for f in (-2.0, 2.0):
+            m.box(beam, (4.1, 0.26, 0.26), (0, 0.2, f), bevel=0.01)  # cross beams on the piles
+            m.rod(beam, 0.07, (-1.95, -0.4, f), (1.95, -2.6, f), segs=5)  # a brace between them
+        for k in range(8):  # planks, a little uneven
+            w = 0.47
+            m.box(K("wood", WOOD if k % 3 else (0.5, 0.4, 0.28)), (4.5, 0.09, w), (0, 0.405 + 0.006 * (k % 2), -2.0 + 0.25 + k * 0.5), bevel=0.008)
+    model("bridge_span", bridge_span)
+    if "bridge_span" in maker.sizes:
+        maker.sizes["bridge_span"].update({"w": 4.5, "d": 4.0, "h": 0.45, "x": 0.0, "z": 0.0})  # the collider is the deck (its piles reach 6 m down)
+
     def dock(m):
         m.box(K("wood", WOOD), (3.0, 0.14, 8.0), (0, 1.0, 0), bevel=0.02)
         for f in (-3.6, -1.2, 1.2, 3.6):

@@ -108,3 +108,15 @@ says: Nothing from the wilds gets past the boundary stones. Stay inside them and
 says: Keep your staff low inside the walls.
 says: Quiet watch. I would like it to stay that way.
 says: The beasts turn back at the border. Do not ask me why; I only walk the round.
+
+# ---------------- TRAVELLERS ----------------
+
+[folk traveller]
+# WHO: the people walking the roads between places (polish1 F3; some lead an ox and cart). They have no quests.
+# `name` floats over each of them; each `says` line is one thing one of them tells a player who talks to them.
+name: Traveller
+says: The road is dry as far as the bridge. Past that, mind your boots.
+says: Flour for Wrack Landing. The ferry waits for nobody.
+says: The tallymen were out by the Far Fields again. Counting, always counting.
+says: If you pass Thornwick, the cider is worth the stop.
+says: Quiet country, this. Long may it stay so.

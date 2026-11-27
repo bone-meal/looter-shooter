@@ -1,5 +1,5 @@
 {
- "_about": "Polish1 F3: Amberfield's own places, roads and named areas, placed by hand on its land (data/fantasy/countries/amberfield.json is rewritten by tools/worldgen/export_countries.py; this file is not). Read by core/country_world.gd. Names in data/fantasy/writing/1_amberfield.txt ([place id], [area id], [lake id]). Story: diary/DESIGN_AMBERFIELD.md.",
+ "_about": "Polish1 F3: Amberfield's own places, people (npcs: as in world.json: id, place, offset from its middle in metres, look, indoors = stands in the place's walk-in house), roads (a road may also name the point it bends through, [x, z], and the steepest it climbs, a number, default 0.26: [from, to, [x, z], 0.42]; tools/road_router.gd suggests bends) and named areas, placed by hand on its land (data/fantasy/countries/amberfield.json is rewritten by tools/worldgen/export_countries.py; this file is not). Read by core/country_world.gd. Names in data/fantasy/writing/1_amberfield.txt ([place id], [area id], [lake id]). Story: diary/DESIGN_AMBERFIELD.md.",
  "places": [
   {"id": "hale_farm", "pos": [-40, 270], "kind": "farm", "flat": 34, "yard": "g_dirt"},
   {"id": "millbrook", "pos": [60, 380], "kind": "town", "flat": 52, "yard": "g_cobble"},
@@ -18,10 +18,19 @@
  ],
  "roads": [
   ["amberfield_heart", "hale_farm"], ["hale_farm", "millbrook"], ["millbrook", "fordham"], ["fordham", "amberfield_greenwald_0"],
-  ["millbrook", "reedby"], ["reedby", "amberhall"], ["amberhall", "threshing_floor"], ["threshing_floor", "wrack_landing"],
-  ["wrack_landing", "amberfield_sunscar_16"], ["hale_farm", "thornwick"], ["thornwick", "fordham"], ["thornwick", "ashby_lodge"], ["thornwick", "kettlewick"], ["kettlewick", "brackenfold"], ["brackenfold", "saltcombe"],
-  ["kettlewick", "oakshaw"], ["oakshaw", "kestrel_hollow"], ["oakshaw", "ashby_lodge"],
-  ["ashby_lodge", "amberfield_greenwald_1"], ["ashby_lodge", "amberfield_frostmere_2"]
+  ["millbrook", "reedby", [-120, 450]], ["reedby", "amberhall"], ["amberhall", "threshing_floor"], ["threshing_floor", "wrack_landing", [291, 1153]],
+  ["wrack_landing", "amberfield_sunscar_16", [660, 1123]], ["hale_farm", "thornwick"], ["thornwick", "fordham"], ["thornwick", "ashby_lodge", 0.42], ["thornwick", "kettlewick", [534, -220]], ["kettlewick", "brackenfold", [610, -336]], ["brackenfold", "saltcombe"],
+  ["kettlewick", "oakshaw"], ["oakshaw", "kestrel_hollow"], ["oakshaw", "ashby_lodge", [307, -643]],
+  ["ashby_lodge", "amberfield_greenwald_1"], ["ashby_lodge", "amberfield_frostmere_2", 0.42]
+ ],
+ "npcs": [
+  {"id": "farmer_hale", "place": "hale_farm", "offset": [6, 8], "color": [0.5, 0.36, 0.2], "look": {"gender": "male", "outfit": "farmer", "hair": "crop", "hair_color": "#6b5a45", "skin": 0}, "indoors": true},
+  {"id": "mirren", "place": "hale_farm", "offset": [-8, 4], "color": [0.4, 0.25, 0.5], "look": {"gender": "female", "outfit": "witch", "hair": "long_straight", "hair_color": "#c9c2d6", "skin": 5}, "indoors": true},
+  {"id": "miller_oswin", "place": "millbrook", "offset": [10, -6], "color": [0.8, 0.78, 0.7], "look": {"gender": "male", "outfit": "chef", "hair": "buzz", "hair_color": "#3b2a1a", "skin": 0}, "indoors": true},
+  {"id": "smith_edda", "place": "millbrook", "offset": [-12, 8], "color": [0.35, 0.3, 0.3], "look": {"gender": "female", "outfit": "dwarf_smith", "hair": "ponytail", "hair_color": "#a04a20", "skin": 5}},
+  {"id": "angler_pim", "place": "millbrook", "offset": [18, 14], "color": [0.3, 0.45, 0.55], "look": {"gender": "male", "outfit": "fisher", "hair": "curly", "hair_color": "#7a4a2a", "skin": 0}},
+  {"id": "baroness_isolde", "place": "amberhall", "offset": [3, 5], "color": [0.55, 0.2, 0.25], "look": {"gender": "female", "outfit": "noble", "hair": "long_straight", "hair_color": "#b88a4e", "skin": 1}},
+  {"id": "steward_callow", "place": "amberhall", "offset": [-5, 3], "color": [0.3, 0.3, 0.35], "look": {"gender": "male", "outfit": "steward", "hair": "sidepart", "hair_color": "#777777", "skin": 0}}
  ],
  "areas": [
   {"id": "far_fields", "pos": [100, 880], "radius": 170},

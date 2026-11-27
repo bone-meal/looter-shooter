@@ -58,6 +58,18 @@ name: The Far Fields
 # ---------------- (polish1 F3) AMBERFIELD AS A COUNTRY: its own places (data/fantasy/places/amberfield.json) ----------------
 # The story behind them: diary/DESIGN_AMBERFIELD.md. Hale Farm, Millbrook, the Old Threshing Floor and the Far Fields keep their names above.
 
+[person baroness_isolde]
+# WHO: Baroness Isolde Fenwright, who holds Amberfield for the Oaken Crown (diary/DESIGN_AMBERFIELD.md). In the courtyard of Amberhall.
+name: Baroness Isolde
+# The Baroness says this when a player walks up and talks:
+greeting: Welcome to Amberhall. If it is a quarrel over a hedge, my steward keeps the list.
+
+[person steward_callow]
+# WHO: Master Callow, the Baroness's steward, who keeps her ledgers (the tithe column among them). At Amberhall.
+name: Master Callow
+# The steward says this when a player walks up and talks:
+greeting: The ledgers balance. They have always balanced. Mind the fountain.
+
 [place amberhall]
 # WHAT: the manor of the Baroness, on a rise above the great lake.
 name: Amberhall

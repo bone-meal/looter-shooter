@@ -24,6 +24,7 @@ const FantasyLand = preload("res://game/fantasy_land.gd")
 const FantasyScatter = preload("res://game/fantasy_scatter.gd")
 const GatherNodes = preload("res://game/gather_nodes.gd")
 const FantasyPlaces = preload("res://game/fantasy_places.gd")
+const FantasyLivestock = preload("res://game/fantasy_livestock.gd")
 const FantasyWork = preload("res://game/fantasy_work.gd")
 const Snares = preload("res://game/snares.gd")
 const Agility = preload("res://game/agility.gd")
@@ -89,6 +90,7 @@ var land := FantasyLand.new()
 var scatter := FantasyScatter.new()
 var gather := GatherNodes.new()
 var places := FantasyPlaces.new()
+var livestock := FantasyLivestock.new()  # (polish1 F3)
 var work := FantasyWork.new()
 var snares := Snares.new()  # Hunting: snares set from the bag and the trails that tracks lay
 var agility := Agility.new()  # course obstacles and the cliff shortcuts
@@ -183,8 +185,11 @@ func setup(player: Node3D, director: Node3D, style: Node, hud_layer: CanvasLayer
 	for region: Dictionary in terrain.regions:
 		folk[String(region["id"])] = region["folk"]
 	folk["guard"] = data["world"]["guard_folk"]
+	folk["traveller"] = data["world"].get("traveller_folk", {})  # (polish1 F3) the people walking the roads
 	places.setup(terrain, layout, folk)
 	places.add_coachmen(data.get("coaches", {}))  # (polish1 E5) a coachman at every walled town's coach house
+	add_child(livestock)  # (polish1 F3) farm animals and ox carts
+	livestock.setup(terrain, layout, places, data.get("livestock", {}))
 	LoadClock.mark("fantasy: every place laid out")
 	mana = max_mana()
 	add_child(work)
@@ -539,6 +544,7 @@ func enter(world_pos: Vector3) -> void:
 	scatter.follow(land.key_at(local))
 	LoadClock.mark("fantasy: trees and grass")
 	places.follow(local)
+	livestock.follow(local)
 	LoadClock.mark("fantasy: places near the player")
 	_photo = bool(_style.call("has_photo_sky"))
 	if not _photo:  # a look without a photo sky (toon, vivid ...): this world's own plain sky
@@ -607,6 +613,8 @@ func set_detail(detail: Dictionary) -> void:
 	rooms.real_views = int(detail.get("views", 1)) > 0
 	var motion := int(detail.get("motion", 3))
 	places.motion = motion
+	livestock.motion = motion
+	livestock.share = float(detail.get("folk", 1.0))
 	EnemyBody.limbs_move = motion >= 1
 	scatter.set_wind(motion >= 3)
 	caster.ring_turns = motion >= 3
@@ -645,6 +653,7 @@ func _process(delta: float) -> void:
 	_mood = terrain.mood(local.x, local.z)
 	_set_tint(0.3)
 	places.follow(local)
+	livestock.follow(local)
 	agility.follow(local)
 	if not _buff.is_empty() and now >= float(_buff["until"]):
 		_buff = {}
