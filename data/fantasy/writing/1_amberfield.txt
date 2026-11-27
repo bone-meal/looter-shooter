@@ -91,7 +91,7 @@ name: Fordham
 name: Wrack Landing
 
 [place kettlewick]
-# WHAT: a mill hamlet in the north-east woods.
+# WHAT: a mill hamlet on the rise north of Hale Farm.
 name: Kettlewick
 
 [place oakshaw]
@@ -99,15 +99,15 @@ name: Kettlewick
 name: Oakshaw
 
 [place kestrel_hollow]
-# WHAT: a village of fishers and fowlers by the tarn in the far north-east.
+# WHAT: a village of fishers in a hollow on the north-west shore.
 name: Kestrel Hollow
 
 [place saltcombe]
-# WHAT: a fishing hamlet on the east coast.
+# WHAT: a salt-boilers' hamlet on the west coast.
 name: Saltcombe
 
 [place brackenfold]
-# WHAT: a farm in the north-east.
+# WHAT: a sheep farm north of Thornwick.
 name: Brackenfold
 
 [place ashby_lodge]
@@ -123,7 +123,7 @@ name: Frostgate Pass
 name: Amber Mere
 
 [lake kestrel_tarn]
-# WHAT: the small lake in the far north-east.
+# WHAT: (not used since 2026-11-27: that lake lies beyond the border, in Greenwald.)
 name: Kestrel Tarn
 
 # ---------------- PEOPLE OF AMBERFIELD ----------------
@@ -431,12 +431,12 @@ name: Garrick the Woodward
 greeting: Every tree here has a name. I will tell you which ones you may cut.
 
 [person fisher_wynn]
-# WHO: a fisher of Kestrel Hollow by Kestrel Tarn.
-name: Wynn of the Tarn
+# WHO: a fisher of Kestrel Hollow on the north-west shore.
+name: Wynn the Netter
 greeting: Quiet. You will scare the water.
 
 [person salter_ansel]
-# WHO: a salt-boiler of Saltcombe on the east coast.
+# WHO: a salt-boiler of Saltcombe on the west coast.
 name: Ansel the Salter
 greeting: Everything keeps in salt. Fish, pork, grudges.
 
@@ -619,11 +619,11 @@ step 2: Bring eight ash logs
 done: Clean cuts. You may come back.
 
 [quest as10]
-# SIDE. GIVEN BY: Wynn of the Tarn (Kestrel Hollow). NEEDS FIRST: am1. REWARD: 200 Fishing xp.
-title: The Tarn's Catch
-hint: The fishers of Kestrel Hollow need more hands on the tarn.
-offer: The smokehouse is empty and the tarn is full. Eight minnows, fresh, and keep your voice down while you catch them.
-step 1: Bring eight fresh minnows
+# SIDE. GIVEN BY: Wynn the Netter (Kestrel Hollow). NEEDS FIRST: am1. REWARD: 200 Fishing xp.
+title: The Hollow's Catch
+hint: The fishers of Kestrel Hollow need more hands on the shore.
+offer: The smokehouse is empty and the shallows are full. Eight sprats, fresh, and keep your voice down while you catch them.
+step 1: Bring eight fresh sprats
 done: That will fill a rack. Quietly done.
 
 [quest as11]

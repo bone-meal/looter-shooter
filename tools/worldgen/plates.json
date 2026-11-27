@@ -51,8 +51,8 @@
   {"from": "frostmere", "to": "cinderreach", "why": "the north coast run: ships go round the Hollow Crown instead of over it"}
  ],
  "countries": [
-  {"id": "amberfield", "levels": "1-6", "x": 0.12, "y": 0.56, "share": 0.08, "colour": [222, 186, 84]},
-  {"id": "greenwald", "levels": "6-12", "x": 0.35, "y": 0.47, "share": 0.13, "colour": [88, 150, 72]},
+  {"id": "amberfield", "levels": "1-6", "x": 0.12, "y": 0.56, "share": 0.08, "colour": [222, 186, 84], "looks": {"shrubland": "amberfield", "desert": "amberfield", "salt": "amberfield", "savanna": "amberfield", "jungle": "amberfield", "swamp": "amberfield", "volcanic": "amberfield", "tundra": "amberfield", "alpine": "amberfield"}},
+  {"id": "greenwald", "levels": "6-12", "x": 0.35, "y": 0.47, "share": 0.13, "colour": [88, 150, 72], "looks": {"farmland": "greenwald", "grassland": "greenwald", "swamp": "greenwald", "savanna": "greenwald", "jungle": "greenwald", "shrubland": "greenwald", "desert": "greenwald", "salt": "greenwald", "volcanic": "greenwald", "tundra": "greenwald", "ice": "stormcrown"}, "looks_keep": {"farmland": {"near": "amberfield", "within_m": 500}}},
   {"id": "brinemouth", "levels": "12-18", "x": 0.75, "y": 0.8, "share": 0.12, "colour": [70, 168, 160]},
   {"id": "sunscar", "levels": "18-25", "x": 0.42, "y": 0.86, "share": 0.18, "colour": [232, 160, 72]},
   {"id": "frostmere", "levels": "25-32", "x": 0.18, "y": 0.15, "share": 0.15, "colour": [190, 210, 236]},

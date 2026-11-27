@@ -111,6 +111,11 @@ says: The beasts turn back at the border. Do not ask me why; I only walk the rou
 
 # ---------------- TRAVELLERS ----------------
 
+[folk border]
+# WHAT: the line shown in the middle of the screen when a player has climbed past a border ridge into the neighbour's
+# land and is put back (polish1 F3: countries are entered only at their crossings).
+name: No way through here. Find a crossing.
+
 [folk traveller]
 # WHO: the people walking the roads between places (polish1 F3; some lead an ox and cart). They have no quests.
 # `name` floats over each of them; each `says` line is one thing one of them tells a player who talks to them.

@@ -166,15 +166,30 @@ def export(i):
     # zones: outlines of each look over this country's land (and the neighbours' land seen past the walls)
     bgrid, _, _ = crop(fr, biome.astype(float), -1.0)
     zones = []
-    looks = {}
-    own_looks = next(c for c in SPEC["countries"] if c["id"] == cid).get("looks", {})  # (polish1 F1c) a country may wear a land kind its own way (Cinderreach's tundra is ash)
-    for b in np.unique(bgrid[bgrid >= 0]).astype(int):
-        looks.setdefault(own_looks.get(BIOMES[b], LOOK.get(BIOMES[b], "amberfield")), []).append(b)
-    for look, bs in sorted(looks.items()):
-        m = np.isin(bgrid, bs).astype(float)
+    spec = next(c for c in SPEC["countries"] if c["id"] == cid)
+    own_looks = spec.get("looks", {})  # (polish1 F1c) a country may wear a land kind its own way (Cinderreach's tundra is ash) ...
+    keep = spec.get("looks_keep", {})  # ... except near a neighbour: {kind: {"near": country, "within_m": game metres}} keeps the usual look there
+    own = ogrid == i  # (director 2026-11-27) ... and only on its OWN land: the neighbours' land seen past the walls wears the neighbours' looks
+    names = sorted(set(LOOK.values()) | set(own_looks.values()))
+    look_grid = np.full(bgrid.shape, -1, int)
+    for b_ in np.unique(bgrid[bgrid >= 0]).astype(int):
+        kind = BIOMES[b_]
+        usual = LOOK.get(kind, "amberfield")
+        cells = bgrid == b_
+        look_grid[cells] = names.index(usual)
+        if kind in own_looks:
+            mine_ = cells & own
+            if kind in keep:
+                near = ndimage.distance_transform_edt(ogrid != IDS.index(keep[kind]["near"])) * mpc
+                mine_ &= near > float(keep[kind]["within_m"])
+            look_grid[mine_] = names.index(own_looks[kind])
+    for k_, look in enumerate(names):
+        m = (look_grid == k_).astype(float)
+        if m.sum() == 0:
+            continue
         polys = rings(fr, ndimage.gaussian_filter(m, 0.8), 0.5, xa, ya, tol=0.8, least=5)
         if polys:
-            zones.append({"look": look, "kinds": [BIOMES[b] for b in bs], "rings": polys})
+            zones.append({"look": look, "kinds": sorted({BIOMES[int(b_)] for b_ in np.unique(bgrid[look_grid == k_])}), "rings": polys})
     shape["zones"] = zones
     # border walls: this country's outline wherever another country's land lies beyond it
     mine = (ogrid == i).astype(float)

@@ -17,7 +17,7 @@
   {"id": "as07", "chapter": 0, "giver": "old_jory", "requires": ["am1"], "steps": [{"type": "make", "item": "grilled_sprat", "count": 3}], "rewards": {"skill_xp": {"fishing": 120, "cooking": 80}}},
   {"id": "as08", "chapter": 0, "giver": "hester_kettle", "requires": ["am1"], "steps": [{"type": "have", "item": "wheat", "count": 12, "take": true}], "rewards": {"skill_xp": {"farming": 150}, "items": {"bread": 3}}},
   {"id": "as09", "chapter": 0, "giver": "woodward_garrick", "requires": ["am1"], "steps": [{"type": "skill", "skill": "woodcutting", "level": 5}, {"type": "have", "item": "ash_log", "count": 8, "take": true}], "rewards": {"skill_xp": {"woodcutting": 200}}},
-  {"id": "as10", "chapter": 0, "giver": "fisher_wynn", "requires": ["am1"], "steps": [{"type": "have", "item": "minnow", "count": 8, "take": true}], "rewards": {"skill_xp": {"fishing": 200}}},
+  {"id": "as10", "chapter": 0, "giver": "fisher_wynn", "requires": ["am1"], "steps": [{"type": "have", "item": "sprat", "count": 8, "take": true}], "rewards": {"skill_xp": {"fishing": 200}}},
   {"id": "as11", "chapter": 0, "giver": "salter_ansel", "requires": ["am1"], "steps": [{"type": "make", "item": "roast_rabbit", "count": 3}], "rewards": {"skill_xp": {"hunting": 100, "cooking": 100}}},
   {"id": "as12", "chapter": 0, "giver": "nan_bracken", "requires": ["am1"], "steps": [{"type": "kill", "enemy": "strawling", "count": 10, "area": "bracken_pastures"}], "rewards": {"xp": 150, "items": {"bread": 3}}},
   {"id": "as13", "chapter": 0, "giver": "huntsman_rolf", "requires": ["am1"], "steps": [{"type": "make", "item": "roast_fowl", "count": 3}], "rewards": {"skill_xp": {"hunting": 150, "cooking": 100}}},

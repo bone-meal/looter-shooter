@@ -45,6 +45,7 @@ const EnemyBody = preload("res://game/enemy.gd")
 const FantasyHud = preload("res://game/fantasy_hud.gd")
 const ElementBox = preload("res://game/element_box.gd")
 const FantasyPanel = preload("res://game/fantasy_panel.gd")
+const BorderGuard = preload("res://game/border_guard.gd")
 
 const OFFSET := Vector3(20000.0, 0.0, 0.0)
 const HAZE_FROM_M := 40.0  # (polish1 F1b) metres above the sea where the haze starts to thin ...
@@ -91,6 +92,7 @@ var scatter := FantasyScatter.new()
 var gather := GatherNodes.new()
 var places := FantasyPlaces.new()
 var livestock := FantasyLivestock.new()  # (polish1 F3)
+var border: RefCounted = BorderGuard.new()  # (polish1 F3) nobody wanders into a neighbour's land past a border ridge
 var work := FantasyWork.new()
 var snares := Snares.new()  # Hunting: snares set from the bag and the trails that tracks lay
 var agility := Agility.new()  # course obstacles and the cliff shortcuts
@@ -655,6 +657,11 @@ func _process(delta: float) -> void:
 	places.follow(local)
 	livestock.follow(local)
 	agility.follow(local)
+	var back: Vector3 = border.call("check", terrain.country_shape, local)
+	if back != Vector3.INF and not rooms.inside():
+		_player.call("teleport", ground_world(back.x, back.z), float(_player.get("_yaw")))
+		notice.emit(String(data["world"].get("border_line", "")))
+		return
 	if not _buff.is_empty() and now >= float(_buff["until"]):
 		_buff = {}
 		apply_stats()

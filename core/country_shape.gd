@@ -8,8 +8,12 @@
 # Dependencies: none.
 extends RefCounted
 
-const WALL_HEIGHT := 32.0  # metres: a border wall of rough high ground ...
+const WALL_HEIGHT := 60.0  # metres: a border wall of rough high ground (director 2026-11-27: a real barrier, was 32) ...
 const WALL_HALF := 16.0  # ... this wide either side of the border line
+const WALL_LEAST := 0.85  # the wall's height wanders between this share of WALL_HEIGHT and WALL_MOST (was 0.39 - 1.11: low stretches were walked over)
+const WALL_MOST := 1.25
+const WALL_REACH := 600.0  # metres a wall's loose end is carried on toward the sea when it stops short of it (so the two sides stay apart)
+const AWAY_PAST := 24.0  # metres past the border line where the neighbour's land counts as AWAY (game/border_guard.gd turns players back there)
 const GAP := 40.0  # metres round a crossing where the wall opens into a pass
 const SEA_SLOPE := 0.06  # the sea floor drops this much a metre from the coast ...
 const SEA_MOST := 22.0  # ... down to here
@@ -17,7 +21,7 @@ const TOP_SLOPE := 0.03  # above the highest line the land keeps rising this muc
 const TOP_MOST := 18.0  # ... at most this much
 const BLEND := 3  # cells: how far one look blends into the next
 const RIVER_CELL := 60.0  # rivers are looked up through a grid of squares this wide
-const COMPILER := 3  # raise when the compiling below changes: kept grids are then made afresh
+const COMPILER := 4  # raise when the compiling below changes: kept grids are then made afresh
 
 var cell: float
 var n: int
@@ -26,6 +30,7 @@ var macro := PackedFloat32Array()  # big height at every grid corner
 var looks := PackedStringArray()  # look ids, in the order of `look_weight`
 var look_weight: Array = []  # PackedFloat32Array per look: its share at every grid corner (they add up to 1)
 var lake_index := PackedInt32Array()  # which lake (index into `lakes`) a grid corner lies in, -1 none
+var away := PackedByteArray()  # 1 = a neighbour's land beyond the border wall, AWAY_PAST and more past the line (empty: no walls)
 var lakes: Array = []  # {"id", "level", "x", "z", "r" (a circle round it), "depth"}
 var crossings: Array = []  # the country's crossings as they are in the data
 var rivers: Array = []  # {"points": PackedVector2Array, "width": PackedFloat32Array, "level": PackedFloat32Array (water at each point)}
@@ -48,7 +53,7 @@ func _init(country: Dictionary, grid: float = 16.0) -> void:
 	if not _load(kept):
 		_heights(shape)
 		_craters(shape.get("craters", []))
-		_walls(shape.get("walls", []))
+		_walls(shape.get("walls", []), country.get("spawn", [0.0, 0.0]))
 		_zones(shape.get("zones", []))
 		_lakes(shape.get("lakes", []))
 		_save(kept)
@@ -69,16 +74,26 @@ func _load(path: String) -> bool:
 	look_weight = got["look_weight"]
 	lake_index = got["lake_index"]
 	lakes = got["lakes"]
+	away = got.get("away", PackedByteArray())
 	return macro.size() == n * n
 
 
 func _save(path: String) -> void:
 	var f := FileAccess.open(path, FileAccess.WRITE)
 	if f != null:
-		f.store_var({"n": n, "macro": macro, "looks": looks, "look_weight": look_weight, "lake_index": lake_index, "lakes": lakes})
+		f.store_var({"n": n, "macro": macro, "looks": looks, "look_weight": look_weight, "lake_index": lake_index, "lakes": lakes, "away": away})
 
 
 # ---------- reading ----------
+
+# Whether a point lies on a neighbour's land beyond the border wall (well past the line: not on the crest or in a pass).
+func away_at(x: float, z: float) -> bool:
+	if away.is_empty():
+		return false
+	var ix := clampi(roundi((x + half) / cell), 0, n - 1)
+	var iz := clampi(roundi((z + half) / cell), 0, n - 1)
+	return away[iz * n + ix] == 1
+
 
 func _sample(grid: PackedFloat32Array, x: float, z: float) -> float:
 	var fx := clampf((x + half) / cell, 0.0, float(n - 1) - 0.001)
@@ -281,11 +296,13 @@ func _craters(list: Array) -> void:
 
 
 # Rough high ground along the borders with the neighbours, open round each crossing.
-func _walls(list: Array) -> void:
+func _walls(list: Array, spawn: Array) -> void:
 	if list.is_empty():
 		return
 	var seeds := PackedByteArray()
 	seeds.resize(n * n)
+	var line := PackedByteArray()  # the border as the two sides see it: the walls, carried on to the sea at their loose ends
+	line.resize(n * n)
 	for wall: Array in list:
 		for i in wall.size() - 1:
 			var a := Vector2(float(wall[i][0]), float(wall[i][1]))
@@ -297,7 +314,44 @@ func _walls(list: Array) -> void:
 				var iz := roundi((p.y + half) / cell)
 				if ix >= 0 and ix < n and iz >= 0 and iz < n:
 					seeds[iz * n + ix] = 1
+		for tip: Array in [[0, mini(3, wall.size() - 1)], [wall.size() - 1, maxi(wall.size() - 4, 0)]]:
+			var end := Vector2(float(wall[tip[0]][0]), float(wall[tip[0]][1]))
+			var before := Vector2(float(wall[tip[1]][0]), float(wall[tip[1]][1]))
+			var on := (end - before).normalized()
+			for s in int(WALL_REACH / (cell * 0.5)):
+				var p := end + on * (float(s) * cell * 0.5)
+				var ix := roundi((p.x + half) / cell)
+				var iz := roundi((p.y + half) / cell)
+				if ix < 0 or ix >= n or iz < 0 or iz >= n:
+					break
+				line[iz * n + ix] = 1
+	for k in n * n:  # ... and thick enough that a flood cannot slip through it cornerwise
+		if seeds[k] == 1:
+			for dz in range(-1, 2):
+				for dx in range(-1, 2):
+					var ix := k % n + dx
+					var iz := floori(float(k) / float(n)) + dz
+					if ix >= 0 and ix < n and iz >= 0 and iz < n:
+						line[iz * n + ix] = 1
 	var d := _distance(seeds, 1)
+	# HOME is the land reached from the spawn without crossing the border; AWAY is the land on its other side, well
+	# past the line. Sea and islands are neither.
+	var side := PackedByteArray()  # 1 = home land, 2 = the neighbours' land
+	side.resize(n * n)
+	_flood(side, line, [Vector2i(roundi((float(spawn[0]) + half) / cell), roundi((float(spawn[1]) + half) / cell))], 1)
+	var far: Array[Vector2i] = []
+	for k in n * n:
+		if line[k] == 1 and seeds[k] == 0:
+			continue
+		if seeds[k] == 1:
+			for step: Vector2i in [Vector2i(2, 0), Vector2i(-2, 0), Vector2i(0, 2), Vector2i(0, -2)]:
+				far.append(Vector2i(k % n, floori(float(k) / float(n))) + step)
+	_flood(side, line, far, 2)
+	away.resize(n * n)
+	away.fill(0)
+	for k in n * n:
+		if side[k] == 2 and d[k] * cell > AWAY_PAST:
+			away[k] = 1
 	# each crossing cuts a pass through the wall: from the crossing to the nearest point of the wall and past it
 	var cuts: Array = []
 	for c: Dictionary in crossings:
@@ -331,7 +385,27 @@ func _walls(list: Array) -> void:
 				open = minf(open, smoothstep(GAP * 0.5, GAP * 1.5, here.distance_to(a + (b - a) * t)))
 			var vary := crags.get_noise_2d(here.x, here.y)
 			var wide := WALL_HALF * (1.0 + 0.6 * vary)
-			macro[k] += WALL_HEIGHT * (0.75 + 0.6 * vary) * exp(-pow(m / wide, 2.0)) * open
+			macro[k] += WALL_HEIGHT * clampf(1.05 + 0.6 * vary, WALL_LEAST, WALL_MOST) * exp(-pow(m / wide, 2.0)) * open
+
+
+# Marks with `mark` every land cell reached from `from` by steps up, down, left and right that is not on the border
+# `line` and not marked yet.
+func _flood(side: PackedByteArray, line: PackedByteArray, from: Array, mark: int) -> void:
+	var todo: Array[Vector2i] = []
+	for start: Vector2i in from:
+		todo.append(start)
+	while not todo.is_empty():
+		var at: Vector2i = todo.pop_back()
+		if at.x < 0 or at.x >= n or at.y < 0 or at.y >= n:
+			continue
+		var k := at.y * n + at.x
+		if side[k] != 0 or line[k] == 1 or macro[k] <= 0.0:
+			continue
+		side[k] = mark
+		todo.append(at + Vector2i(1, 0))
+		todo.append(at + Vector2i(-1, 0))
+		todo.append(at + Vector2i(0, 1))
+		todo.append(at + Vector2i(0, -1))
 
 
 func _zones(list: Array) -> void:

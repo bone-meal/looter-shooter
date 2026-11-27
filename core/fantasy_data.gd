@@ -105,6 +105,7 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 	var traveller: Dictionary = text.get("folk", {}).get("traveller", {})  # (polish1 F3) the people walking the roads
 	var traveller_says: Variant = traveller.get("says", [])
 	world["traveller_folk"] = {"name": _line(text, "folk", "traveller", "name", missing), "lines": traveller_says if traveller_says is Array else [traveller_says]}
+	world["border_line"] = _line(text, "folk", "border", "name", missing)  # (polish1 F3) shown when a border ridge turns a player back
 	for place: Dictionary in world["places"]:
 		place["name"] = _line(text, "place", String(place["id"]), "name", missing)
 	for lake: Dictionary in world.get("lakes", []):

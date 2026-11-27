@@ -9,18 +9,18 @@
   {"id": "fordham", "pos": [230, 290], "kind": "village", "layout": "hamlet", "flat": 22, "yard": "g_dirt"},
   {"id": "threshing_floor", "pos": [120, 860], "kind": "arena", "flat": 30, "boss": "harvest_king", "yard": "g_cobble", "layout": "arena_threshing"},
   {"id": "wrack_landing", "pos": [630, 1140], "kind": "village", "layout": "hamlet_coast", "flat": 24, "yard": "g_dirt"},
-  {"id": "kettlewick", "pos": [660, -400], "kind": "village", "layout": "hamlet_mill", "flat": 26, "yard": "g_dirt"},
-  {"id": "oakshaw", "pos": [530, -790], "kind": "village", "layout": "village_wood", "flat": 30, "yard": "g_dirt"},
-  {"id": "kestrel_hollow", "pos": [1120, -760], "kind": "village", "layout": "village_fishing", "flat": 28, "yard": "g_dirt"},
-  {"id": "saltcombe", "pos": [920, -300], "kind": "village", "layout": "hamlet_coast", "flat": 24, "yard": "g_dirt"},
-  {"id": "brackenfold", "pos": [580, -220], "kind": "farm", "flat": 34, "yard": "g_dirt"},
+  {"id": "kettlewick", "pos": [-75, 25], "kind": "village", "layout": "hamlet_mill", "flat": 26, "reach": 55, "yard": "g_dirt"},
+  {"id": "oakshaw", "pos": [-200, -625], "kind": "village", "layout": "village_wood", "flat": 30, "yard": "g_dirt"},
+  {"id": "kestrel_hollow", "pos": [-325, -425], "kind": "village", "layout": "village_fishing", "flat": 28, "reach": 60, "yard": "g_dirt"},
+  {"id": "saltcombe", "pos": [-500, 500], "kind": "village", "layout": "hamlet_coast", "flat": 24, "yard": "g_dirt"},
+  {"id": "brackenfold", "pos": [200, -50], "kind": "farm", "flat": 34, "yard": "g_dirt"},
   {"id": "ashby_lodge", "pos": [180, -680], "kind": "camp", "layout": "lodge", "flat": 22, "yard": "g_dirt"}
  ],
  "roads": [
   ["amberfield_heart", "hale_farm"], ["hale_farm", "millbrook"], ["millbrook", "fordham"], ["fordham", "amberfield_greenwald_0"],
   ["millbrook", "reedby", [-120, 450]], ["reedby", "amberhall"], ["amberhall", "threshing_floor"], ["threshing_floor", "wrack_landing", [291, 1153]],
-  ["wrack_landing", "amberfield_sunscar_16", [660, 1123]], ["hale_farm", "thornwick"], ["thornwick", "fordham"], ["thornwick", "ashby_lodge", 0.42], ["thornwick", "kettlewick", [534, -220]], ["kettlewick", "brackenfold", [610, -336]], ["brackenfold", "saltcombe"],
-  ["kettlewick", "oakshaw"], ["oakshaw", "kestrel_hollow"], ["oakshaw", "ashby_lodge", [307, -643]],
+  ["wrack_landing", "amberfield_sunscar_16", [660, 1123]], ["hale_farm", "thornwick"], ["thornwick", "fordham"], ["thornwick", "ashby_lodge", 0.42], ["thornwick", "brackenfold"], ["hale_farm", "kettlewick", [9, 88]], ["kettlewick", "brackenfold", [82, -47]], ["reedby", "saltcombe"],
+  ["kestrel_hollow", "oakshaw"], ["oakshaw", "ashby_lodge", [-53, -685], 0.42],
   ["ashby_lodge", "amberfield_greenwald_1"], ["ashby_lodge", "amberfield_frostmere_2", 0.42]
  ],
  "npcs": [
@@ -51,7 +51,7 @@
   {"id": "frostgate_pass", "pos": [78, -1200], "radius": 130},
   {"id": "hale_rows", "pos": [-40, 270], "radius": 140},
   {"id": "reed_beds", "pos": [-190, 570], "radius": 130},
-  {"id": "bracken_pastures", "pos": [580, -220], "radius": 140}
+  {"id": "bracken_pastures", "pos": [200, -50], "radius": 140}
  ],
- "lakes": {"amberfield_lake_2": "amber_mere", "amberfield_lake_1": "kestrel_tarn"}
+ "lakes": {"amberfield_lake_2": "amber_mere"}
 }

@@ -1,9 +1,11 @@
-Polish1 F3 Greenwald part 1: 26 places and 33 roads on its land; roads ramp up to places on hillsides
+Countries keep to their own land: border ridges are barriers, own looks, Amberfield's five places moved home
 
-- data/fantasy/places/greenwald.json: Oakenhold (walled town), Fernhollow (palisade town), Ringwater Landing, the cliff village Harrowmouth above the ferries, villages, hamlets, farms, lodges, the Ringed's camp, the Greenjacks' hide, the ringed chapel, the Rootmother's arena by the crater lake; roads bent by tools/road_router.gd, mountain roads at grade 0.42; lake names
-- data/fantasy/layouts.json: plans ringed_camp, bandit_hide, chapel_yard, watch_post; names in writing/2_greenwald.txt
-- core/fantasy_terrain.gd (rules 13): a place's level ground holds a road's bed and the road may be built up toward it; the bed is worked in after the places. On hillsides a road met a place's terrace as a step (up to 47 degrees); now the steepest stretch is about 34 degrees. Amberfield's steepest road stretch went from 45 to 32 degrees
-- checked on the 1080: all 26 places built on carved ground, 17 bridges, no script errors; Amberfield unchanged to the eye, 0 floating pieces
+- director 2026-11-27: Greenwald's lowland is forest with farm country by the Amberfield fords; every country's own land wears mainly its own look (done for Greenwald and Amberfield); borders are entered only at crossings
+- core/country_shape.gd (compiler 4): border walls 51-75 m high (were 12-35 and walkable), an away mask of the neighbours' land beyond the wall; game/border_guard.gd puts a player found there back at home with a line from writing/buildings.txt
+- tools/worldgen: plates.json looks now apply to a country's own cells only, looks_keep keeps the usual look near a neighbour; Greenwald and Amberfield re-exported (only their zones changed)
+- fix of my own mistake: Kettlewick, Oakshaw, Kestrel Hollow, Saltcombe and Brackenfold stood beyond Amberfield's border on Greenwald's land; they are re-sited on Amberfield's own land with their people, quests and roads (Kestrel Hollow is now a sea village: its quest asks for sprats; the Bracken Pastures moved with the farm)
+- tools/country_check.gd: lists places and roads that leave a country's own land
+- checked on the 1080: both countries, 0 problems in the check, turn-back works, no script errors
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
