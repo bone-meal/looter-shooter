@@ -1,7 +1,9 @@
-Amberfield's lines follow the story rule: only the hero knows of the loops
+Polish1 F3 Greenwald part 1: 26 places and 33 roads on its land; roads ramp up to places on hillsides
 
-- director 2026-11-27: only the hero (the Wanderer) and the entity have any idea of the future or the loops
-- writing/1_amberfield.txt: Hale, the Tallyman and the staff line no longer hint at it; the stranger's last line sends the player to ordinary people who do not know what he knows; am5's closing line is plain
+- data/fantasy/places/greenwald.json: Oakenhold (walled town), Fernhollow (palisade town), Ringwater Landing, the cliff village Harrowmouth above the ferries, villages, hamlets, farms, lodges, the Ringed's camp, the Greenjacks' hide, the ringed chapel, the Rootmother's arena by the crater lake; roads bent by tools/road_router.gd, mountain roads at grade 0.42; lake names
+- data/fantasy/layouts.json: plans ringed_camp, bandit_hide, chapel_yard, watch_post; names in writing/2_greenwald.txt
+- core/fantasy_terrain.gd (rules 13): a place's level ground holds a road's bed and the road may be built up toward it; the bed is worked in after the places. On hillsides a road met a place's terrace as a step (up to 47 degrees); now the steepest stretch is about 34 degrees. Amberfield's steepest road stretch went from 45 to 32 degrees
+- checked on the 1080: all 26 places built on carved ground, 17 bridges, no script errors; Amberfield unchanged to the eye, 0 floating pieces
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

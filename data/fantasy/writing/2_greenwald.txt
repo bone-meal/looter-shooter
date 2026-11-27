@@ -169,3 +169,107 @@ move seed_burst: Seed Burst
 [place course_greenwald]
 # WHAT: an Agility course (sea step 3).
 name: Fernhollow Treetop Course
+
+# ---------------- (polish1 F3) GREENWALD AS A COUNTRY: its own places (data/fantasy/places/greenwald.json) ----------------
+# Story and politics: diary/DESIGN_GREENWALD.md. Every name is a placeholder for the director.
+# RULE (director 2026-11-27): only the hero and the entity know of the loops or the future. Nobody else's lines may hint at it.
+
+[place oakenhold]
+# WHAT: the walled town of the Oaken Crown, where the young Queen holds court.
+name: Oakenhold
+
+[place ringwater_landing]
+# WHAT: the river town where felled timber is counted and floated to the coast.
+name: Ringwater Landing
+
+[place harrowmouth]
+# WHAT: the cliff village above the piers of the two ferries (to Brinemouth and to Sunscar).
+name: Harrowmouth
+
+[place wardstone]
+# WHAT: a hamlet at the northern ford into Amberfield.
+name: Wardstone
+
+[place cinderglade]
+# WHAT: a charcoal burners' clearing where the families turned out of ringed houses have camped.
+name: Cinderglade
+
+[place greenjacks_hide]
+# WHAT: the hidden camp of the Greenjacks, the bandits who rob the timber rafts. No road leads to it.
+name: The Greenjacks' Hide
+
+[place alderwick]
+# WHAT: a woodland village near the Rootmother's hollow; doors here wear the pale ring.
+name: Alderwick
+
+[place hazelmere]
+# WHAT: a woodland village above Fernhollow; doors here wear the pale ring.
+name: Hazelmere
+
+[place ringed_chapel]
+# WHAT: a wayside chapel with a pale ring on its door.
+name: The Ringed Chapel
+
+[place sawpit]
+# WHAT: a sawmill hamlet on the river.
+name: Sawpit
+
+[place verderers_lodge]
+# WHAT: the hunting lodge of the Queen's foresters, under the Stormcrown pass.
+name: The Verderers' Lodge
+
+[place brackwell_farm]
+# WHAT: a farm on the road south to Mossford.
+name: Brackwell Farm
+
+[place hollin_farm]
+# WHAT: a farm by the bay.
+name: Hollin Farm
+
+[place stonegate]
+# WHAT: a hamlet under the road into Stormcrown.
+name: Stonegate
+
+[place rimeford]
+# WHAT: a hamlet at the ford into Frostmere.
+name: Rimeford
+
+[place baywick]
+# WHAT: a fishing village on the great bay.
+name: Baywick
+
+[place narrowstrand]
+# WHAT: the last hamlet before the cliff road to the ferries.
+name: Narrowstrand
+
+[place southmere]
+# WHAT: an orchard village in the far south-west.
+name: Southmere
+
+[place colliers_camp]
+# WHAT: a charcoal burners' camp high in the northern woods.
+name: The Colliers' Camp
+
+[place eastbrook_farm]
+# WHAT: a farm east of the bay.
+name: Eastbrook Farm
+
+[place halfway_house]
+# WHAT: a waystation on the cliff road to the ferries.
+name: The Halfway House
+
+[place hornwatch]
+# WHAT: the wardens' watch where the eastern horn begins.
+name: Hornwatch
+
+[place gullcombe]
+# WHAT: a cliff hamlet above Harrowmouth.
+name: Gullcombe
+
+[lake starfall_tarn]
+# WHAT: the round lake in the old crater, beside the Rootmother's hollow.
+name: Starfall Tarn
+
+[lake ford_water]
+# WHAT: the lake on the Amberfield border in the south-west.
+name: Ford Water

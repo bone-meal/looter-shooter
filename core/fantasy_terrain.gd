@@ -8,7 +8,7 @@ extends RefCounted
 
 const CountryShape = preload("res://core/country_shape.gd")
 
-const RULES_VERSION := 12  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
+const RULES_VERSION := 13  # raise when these rules change the shape or colour of the land: saved charts are then painted afresh
 const RING_HEIGHT := 34.0  # the mountain ring around the last region
 const RING_WIDTH := 42.0
 const PASS_ANGLE := 0.5  # radians: how wide the gap in the ring is (it faces south, towards the start)
@@ -465,8 +465,6 @@ func _country_height(x: float, z: float, wild: float) -> float:
 # The land with its places levelled (towns, farms and boss arenas sit on flat ground), before lakes are cut.
 func _placed_height(x: float, z: float) -> float:
 	var h := _raw_height(x, z, wildness(x, z))
-	if _graded:
-		h = _on_road_bed(x, z, h)
 	for i in _flat_at.size():
 		var spot := _flat_at[i]
 		var reach := _reach[i]
@@ -474,7 +472,17 @@ func _placed_height(x: float, z: float) -> float:
 		var dz := z - spot.y
 		if absf(dx) < reach and absf(dz) < reach:
 			h = lerpf(_place_level[i], h, smoothstep(spot.z * 0.75, reach, sqrt(dx * dx + dz * dz)))
+	if _graded:  # after the places: a road keeps its grade up to a place's level ground (rules 13; it was worked in before them)
+		h = _on_road_bed(x, z, h)
 	return h
+
+
+# Whether a point lies on a place's level ground (where _placed_height is exactly the place's level).
+func _in_flat(x: float, z: float) -> bool:
+	for spot: Vector3 in _flat_at:
+		if Vector2(x - spot.x, z - spot.y).length() <= spot.z * 0.75:
+			return true
+	return false
 
 
 # (polish1 F3) GRADED ROADS of a country. A road no longer lies on whatever the land does under it: its bed is
@@ -482,6 +490,8 @@ func _placed_height(x: float, z: float) -> float:
 # except up to a bridge). Where it crosses water up to BRIDGE_MOST wide the bed is a level BRIDGE deck from bank to
 # bank (the land under it keeps its river; game/fantasy_places.gd stands the spans, `bridges`). Within GRADE_IN of
 # the road's middle the ground is the bed, easing back into the land by GRADE_OUT.
+# (rules 13) A place's level ground HOLDS the bed at the place's level, and like a bridge deck the road may be built
+# up toward it: on a hillside a road now ramps up to a terrace instead of meeting its edge as a step.
 func _grade_roads() -> void:
 	for r in roads.size():
 		var road: PackedVector2Array = roads[r]
@@ -491,9 +501,11 @@ func _grade_roads() -> void:
 		var raw := PackedFloat32Array()
 		var wet := PackedByteArray()
 		var level := PackedFloat32Array()
+		var held := PackedByteArray()  # 1 = the bed is fixed here (a place's level ground, a bridge deck)
 		for i in count:
 			var p := road_point(r, float(i) * GRADE_STEP)
 			raw.append(_placed_height(p.x, p.y))
+			held.append(1 if _in_flat(p.x, p.y) else 0)
 			var water := water_at(p.x, p.y)
 			wet.append(1 if water != "" else 0)
 			var river: Vector3 = country_shape.river_near(p.x, p.y)
@@ -506,7 +518,7 @@ func _grade_roads() -> void:
 				if wet[k] == 0:
 					sum += raw[k]
 					n += 1
-			bed.append(sum / float(n) if n > 0 else raw[i])
+			bed.append(raw[i] if held[i] == 1 else (sum / float(n) if n > 0 else raw[i]))
 		var deck := PackedByteArray()
 		deck.resize(count)
 		var i0 := 0
@@ -527,6 +539,7 @@ func _grade_roads() -> void:
 				for k in range(a, b + 1):
 					bed[k] = top
 					deck[k] = 1
+					held[k] = 1
 					if k < b:
 						var from := road_point(r, float(k) * GRADE_STEP)
 						var to := road_point(r, float(k + 1) * GRADE_STEP)
@@ -534,9 +547,9 @@ func _grade_roads() -> void:
 				var mid := road_point(r, float(a + b) * 0.5 * GRADE_STEP)
 				bridges.append({"id": "bridge:%d:%d" % [r, a], "x": mid.x, "z": mid.y, "y": top, "spans": spans, "half": float(b - a) * GRADE_STEP * 0.5, "road": r})
 			i0 = i1 + 1
-		var fill := PackedFloat32Array()  # banks rise to a bridge deck: the only place a road is built up
+		var fill := PackedFloat32Array()  # banks rise to a bridge deck or a place's level ground: the only places a road is built up
 		for i in count:
-			fill.append(bed[i] if deck[i] == 1 else -INF)
+			fill.append(bed[i] if held[i] == 1 else -INF)
 		for i in range(1, count):
 			fill[i] = maxf(fill[i], fill[i - 1] - rise)
 		for i in range(count - 2, -1, -1):
@@ -544,10 +557,10 @@ func _grade_roads() -> void:
 		for i in count:
 			bed[i] = maxf(bed[i], fill[i])
 		for i in range(1, count):  # ... and everywhere else the road cuts through what is too steep to climb
-			if deck[i] == 0:
+			if held[i] == 0:
 				bed[i] = minf(bed[i], bed[i - 1] + rise)
 		for i in range(count - 2, -1, -1):
-			if deck[i] == 0:
+			if held[i] == 0:
 				bed[i] = minf(bed[i], bed[i + 1] + rise)
 		_grade.append(bed)
 		_grade_bridge.append(deck)
