@@ -391,6 +391,7 @@ greeting: Mind the nets. And the reeds. Something in the reeds minds you back.
 
 [person wanderer]
 # WHO: the Wanderer: a ragged stranger by the mere who knows how this country's story is supposed to go (DESIGN_AMBERFIELD.md).
+# RULE (director 2026-11-27): he is the ONLY person in the whole game with any idea of the future or the loops. Nobody else's lines may hint at it.
 name: A Ragged Stranger
 greeting: Fine harvest this year. It is always a fine harvest this year.
 
@@ -471,7 +472,7 @@ step 5: Cast one Air
 step 6: Mix Fire and Water in one cast (steam)
 # Step 7: kill strawlings inside Hale's Rows only.
 step 7: Clear the strawlings out of Hale's Rows
-done: The rows are standing. First year I can remember that they are. Odd thing to say, now I hear it.
+done: The rows are standing. Best year this farm has had since my grandmother's day.
 
 [quest am2]
 # CHAPTER 1, main step 2 (TO THE MILL). GIVEN BY: Farmer Hale. NEEDS FIRST: am1. REWARD: 150 Magic xp, 120 Farming xp, 5 x Bread.
@@ -509,7 +510,7 @@ says 2: Every tree in the orchard, and wrote down one fewer than there is. I did
 step 3: Ask Tamsin Wade at Fordham
 says 3: Counted the stones of the ford. One of them is still there, by the well. He has not blinked.
 step 4: Speak to the Tallyman at Fordham
-says 4: Nine, and none. The share was left. The share was not gathered. This has not happened. Who are you, that it happened?
+says 4: Nine, and none. The share was left. The share was not gathered. In all the counts there is no such line. Who are you?
 step 5: Bring the count back to Master Callow
 says 5: Well? Out with it. What did the grey men count?
 done: Not gathered. Then the column is short by all of it. It has never been short. I do not have a word for this.
@@ -523,8 +524,8 @@ step 1: Find the ragged stranger in Reedby
 says 1: You. And Hale's farm stands? That farm burns. It has always burned. Show me. No. Go and look, and tell me I am wrong.
 step 2: Go back to Hale Farm
 step 3: Speak to Farmer Hale
-says 3: Burned? Not a scorch on it. Though I keep smelling smoke, these nights. Tell your friend to stay off my land.
-done: Standing. Then the story has a hole in it, and you are the hole. Stay near the Baroness. The count is coming.
+says 3: Burned? Not a scorch on it, and there never was. Your friend is cracked. Tell him to stay off my land.
+done: The farm stands. Whatever the stranger expected to find here, it was not this.
 
 [quest am6]
 # CHAPTER 1, main step 6 (THE SHORT TITHE), the end of Amberfield's chapter. GIVEN BY: Baroness Isolde. NEEDS FIRST: am5. REWARD: 400 Magic xp, Old Mother Hale's Staff.
@@ -536,9 +537,9 @@ says 1: The share is short. The hall holds winter stores. The stores will make t
 step 2: Hear the Baroness's answer
 says 2: No. Those stores are my people's winter. Count that, and carry it to your Crown Beyond: Amberhall said no.
 step 3: Tell Farmer Hale
-says 3: She said no? To them? Wait here. This was my grandmother's. She said it was for the year the wheat stood. Take it.
+says 3: She said no? To them? Wait here. This was my grandmother's. She said to give it to whoever saved a harvest. Take it.
 step 4: Find the stranger again in Reedby
-says 4: A refusal. I have waited a long time to see one. There are more of us. North, over the ford, into Greenwald. They will want to meet the hole in the story.
+says 4: A refusal. I have waited longer than you would believe to see one. Go north, over the ford, into Greenwald. There are people there who have been pushed far enough to say no as well. They do not know what I know. Do not tell them.
 done: Go north when you are ready. The Tallymen know your face now.
 
 [quest as01]

@@ -1,11 +1,7 @@
-Polish1 F4 part 1: Amberfield's quests as a country (6 main steps, 14 side quests, written new)
+Amberfield's lines follow the story rule: only the hero knows of the loops
 
-- data/fantasy/quests/amberfield.json: a country's own quest file (am1-am6 the chapter from Hale's Blight to The Short Tithe, as01-as14 one side quest giver at every place); core/fantasy_data.gd reads and words it for the country (the old quests.json stays the old world's)
-- 14 new people in data/fantasy/places/amberfield.json (village givers, the Wanderer, a Tallyman, the Seventh Tally) and 3 named areas (Hale's Rows, the Reed Beds, the Bracken Pastures); words in writing/1_amberfield.txt
-- core/quest_log.gd: a kill step may carry echo true = only the boss's echo counts (as14, the Harvest King's phantom); the kill event says whether it was an echo
-- data/fantasy/gear.json: hale_staff, Old Mother Hale's Staff, the reward of am6
-- fix: a villager no longer stands on top of a named person (talking picks the nearest; Fordham's keeper could not be reached)
-- checked on the 1080: the whole main line played by script from the first talk to the staff, the echo quest, every giver marked on the map
+- director 2026-11-27: only the hero (the Wanderer) and the entity have any idea of the future or the loops
+- writing/1_amberfield.txt: Hale, the Tallyman and the staff line no longer hint at it; the stranger's last line sends the player to ordinary people who do not know what he knows; am5's closing line is plain
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
