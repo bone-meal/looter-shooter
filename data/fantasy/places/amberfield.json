@@ -30,11 +30,28 @@
   {"id": "smith_edda", "place": "millbrook", "offset": [-12, 8], "color": [0.35, 0.3, 0.3], "look": {"gender": "female", "outfit": "dwarf_smith", "hair": "ponytail", "hair_color": "#a04a20", "skin": 5}},
   {"id": "angler_pim", "place": "millbrook", "offset": [18, 14], "color": [0.3, 0.45, 0.55], "look": {"gender": "male", "outfit": "fisher", "hair": "curly", "hair_color": "#7a4a2a", "skin": 0}},
   {"id": "baroness_isolde", "place": "amberhall", "offset": [3, 5], "color": [0.55, 0.2, 0.25], "look": {"gender": "female", "outfit": "noble", "hair": "long_straight", "hair_color": "#b88a4e", "skin": 1}},
-  {"id": "steward_callow", "place": "amberhall", "offset": [-5, 3], "color": [0.3, 0.3, 0.35], "look": {"gender": "male", "outfit": "steward", "hair": "sidepart", "hair_color": "#777777", "skin": 0}}
+  {"id": "steward_callow", "place": "amberhall", "offset": [-5, 3], "color": [0.3, 0.3, 0.35], "look": {"gender": "male", "outfit": "steward", "hair": "sidepart", "hair_color": "#777777", "skin": 0}},
+  {"id": "maud_rushlow", "place": "reedby", "offset": [5, 1], "color": [0.3, 0.45, 0.5], "look": {"gender": "female", "outfit": "fisher", "hair": "ponytail", "hair_color": "#5a4632", "skin": 1}},
+  {"id": "wanderer", "place": "reedby", "offset": [-4, 3], "color": [0.35, 0.33, 0.3], "look": {"gender": "male", "outfit": "monk", "hair": "curly", "hair_color": "#8a8478", "skin": 0}},
+  {"id": "bram_pippin", "place": "thornwick", "offset": [5, 1], "color": [0.55, 0.4, 0.2], "look": {"gender": "male", "outfit": "farmer", "hair": "buzz", "hair_color": "#7a4a2a", "skin": 5}},
+  {"id": "tamsin_wade", "place": "fordham", "offset": [5, 1], "color": [0.3, 0.4, 0.3], "look": {"gender": "female", "outfit": "ranger", "hair": "long_straight", "hair_color": "#3b2a1a", "skin": 0}},
+  {"id": "tallyman", "place": "fordham", "offset": [-4, 3], "color": [0.5, 0.5, 0.52], "look": {"gender": "male", "outfit": "steward", "hair": "sidepart", "hair_color": "#9a9a9a", "skin": 1}},
+  {"id": "seventh_tally", "place": "amberhall", "offset": [10, 6], "color": [0.55, 0.55, 0.58], "look": {"gender": "female", "outfit": "steward", "hair": "long_straight", "hair_color": "#c8c8cc", "skin": 1}},
+  {"id": "old_jory", "place": "wrack_landing", "offset": [5, 1], "color": [0.3, 0.35, 0.5], "look": {"gender": "male", "outfit": "sailor", "hair": "crop", "hair_color": "#c9c2b6", "skin": 0}},
+  {"id": "hester_kettle", "place": "kettlewick", "offset": [5, 1], "color": [0.8, 0.78, 0.7], "look": {"gender": "female", "outfit": "chef", "hair": "ponytail", "hair_color": "#8a6a4a", "skin": 0}},
+  {"id": "woodward_garrick", "place": "oakshaw", "offset": [5, 1], "color": [0.4, 0.3, 0.2], "look": {"gender": "male", "outfit": "woodcutter", "hair": "crop", "hair_color": "#4a3626", "skin": 5}},
+  {"id": "fisher_wynn", "place": "kestrel_hollow", "offset": [5, 1], "color": [0.3, 0.45, 0.55], "look": {"gender": "female", "outfit": "fisher", "hair": "curly", "hair_color": "#a04a20", "skin": 0}},
+  {"id": "salter_ansel", "place": "saltcombe", "offset": [5, 1], "color": [0.75, 0.75, 0.7], "look": {"gender": "male", "outfit": "sailor", "hair": "sidepart", "hair_color": "#3b2a1a", "skin": 5}},
+  {"id": "nan_bracken", "place": "brackenfold", "offset": [5, 1], "color": [0.5, 0.4, 0.25], "look": {"gender": "female", "outfit": "farmer", "hair": "long_straight", "hair_color": "#777777", "skin": 0}},
+  {"id": "huntsman_rolf", "place": "ashby_lodge", "offset": [3, 4], "color": [0.3, 0.4, 0.25], "look": {"gender": "male", "outfit": "ranger", "hair": "buzz", "hair_color": "#6b5a45", "skin": 0}},
+  {"id": "gleaner_sib", "place": "threshing_floor", "offset": [-13, -5], "color": [0.6, 0.5, 0.3], "look": {"gender": "female", "outfit": "farmer", "hair": "ponytail", "hair_color": "#b8b0a0", "skin": 1}}
  ],
  "areas": [
   {"id": "far_fields", "pos": [100, 880], "radius": 170},
-  {"id": "frostgate_pass", "pos": [78, -1200], "radius": 130}
+  {"id": "frostgate_pass", "pos": [78, -1200], "radius": 130},
+  {"id": "hale_rows", "pos": [-40, 270], "radius": 140},
+  {"id": "reed_beds", "pos": [-190, 570], "radius": 130},
+  {"id": "bracken_pastures", "pos": [580, -220], "radius": 140}
  ],
  "lakes": {"amberfield_lake_2": "amber_mere", "amberfield_lake_1": "kestrel_tarn"}
 }

@@ -366,3 +366,294 @@ move sow: Sow the Field
 [place course_amberfield]
 # WHAT: an Agility course (sea step 3).
 name: Millbrook Runs
+
+# ---------------- (polish1 F4) AMBERFIELD'S QUESTS AS A COUNTRY (data/fantasy/quests/amberfield.json) ----------------
+# 6 main steps (am1-am6) + 14 side quests (as01-as14), written new on 2026-11-27. The list and the story behind it:
+# diary/DESIGN_AMBERFIELD_QUESTS.md and diary/DESIGN_AMBERFIELD.md. Every line here is a placeholder for the director.
+# The old [quest m..] / [quest s..] entries above belong to the old world's quests and are not used in the country.
+
+[area hale_rows]
+# WHAT: the wheat rows round Hale Farm (a named area: am1's strawlings must fall here).
+name: Hale's Rows
+
+[area reed_beds]
+# WHAT: the wet ground round Reedby on Amber Mere (as04's slimes must fall here).
+name: The Reed Beds
+
+[area bracken_pastures]
+# WHAT: the sheep pastures round Brackenfold in the north (as12's strawlings must fall here).
+name: The Bracken Pastures
+
+[person maud_rushlow]
+# WHO: a net-mender of Reedby, the fishing village on Amber Mere.
+name: Maud Rushlow
+greeting: Mind the nets. And the reeds. Something in the reeds minds you back.
+
+[person wanderer]
+# WHO: the Wanderer: a ragged stranger by the mere who knows how this country's story is supposed to go (DESIGN_AMBERFIELD.md).
+name: A Ragged Stranger
+greeting: Fine harvest this year. It is always a fine harvest this year.
+
+[person bram_pippin]
+# WHO: the orchardman of Thornwick.
+name: Bram Pippin
+greeting: Apples are not ready. Cider is always ready.
+
+[person tamsin_wade]
+# WHO: keeper of the ford at Fordham, on the road into Greenwald.
+name: Tamsin Wade
+greeting: The ford is knee deep today. I do not answer for tomorrow.
+
+[person tallyman]
+# WHO: one of the grey Tallymen who count the Old Tithe (one sheaf in ten, left in the Far Fields). On the road at Fordham.
+name: A Tallyman
+greeting: Nine, and one. Nine, and one. Do not stand in the count.
+
+[person seventh_tally]
+# WHO: the Seventh Tally, who comes to Amberhall when a tithe falls short. In Amberhall's courtyard.
+name: The Seventh Tally
+greeting: I am early. I am never early.
+
+[person old_jory]
+# WHO: an old beachcomber of Wrack Landing on the south coast.
+name: Old Jory
+greeting: Tide brings it in, tide takes it out. I only argue with it at supper.
+
+[person hester_kettle]
+# WHO: she runs the mill at Kettlewick in the north.
+name: Hester Kettle
+greeting: The wheel turns whether I am happy or not. Today, not.
+
+[person woodward_garrick]
+# WHO: woodward of Oakshaw, the woodland village.
+name: Garrick the Woodward
+greeting: Every tree here has a name. I will tell you which ones you may cut.
+
+[person fisher_wynn]
+# WHO: a fisher of Kestrel Hollow by Kestrel Tarn.
+name: Wynn of the Tarn
+greeting: Quiet. You will scare the water.
+
+[person salter_ansel]
+# WHO: a salt-boiler of Saltcombe on the east coast.
+name: Ansel the Salter
+greeting: Everything keeps in salt. Fish, pork, grudges.
+
+[person nan_bracken]
+# WHO: the shepherd of Brackenfold farm.
+name: Nan Bracken
+greeting: Count them for me, would you? I keep getting one more than I own.
+
+[person huntsman_rolf]
+# WHO: huntsman of Ashby Lodge on the road to the Frostgate Pass.
+name: Rolf the Huntsman
+greeting: Wipe your boots. The lodge has standards and I am both of them.
+
+[person gleaner_sib]
+# WHO: an old gleaner who picks over the Threshing Floor for dropped grain.
+name: Sib the Gleaner
+greeting: I take what the reapers leave. Lately the reapers are straw.
+
+[quest am1]
+# CHAPTER 1, main step 1 (HALE'S BLIGHT). GIVEN BY: Farmer Hale. NEEDS FIRST: nothing. REWARD: 250 Magic xp, 2 x Mana Tonic.
+title: Hale's Blight
+hint: The painting set you down in wheat. The nearest roof belongs to Farmer Hale, and his rows look sick.
+offer: Blight in the rows and the scarecrows have started walking. You hold that stick like a tourist. See Mirren first, then help me save what stands.
+# Step 1: talk to Mirren.
+step 1: Speak to Mirren the Hedge-witch at Hale Farm
+says 1: A staff and no idea. Good, no bad habits. Hold the cast key, add one Water, let go. Blight hates a soaking.
+# Steps 2-5: cast exactly that one element.
+step 2: Hold the cast key, add one Water, release: douse the blight
+step 3: Cast one Fire
+step 4: Cast one Earth
+step 5: Cast one Air
+# Step 6: cast a spell made of Fire and Water together.
+step 6: Mix Fire and Water in one cast (steam)
+# Step 7: kill strawlings inside Hale's Rows only.
+step 7: Clear the strawlings out of Hale's Rows
+done: The rows are standing. First year I can remember that they are. Odd thing to say, now I hear it.
+
+[quest am2]
+# CHAPTER 1, main step 2 (TO THE MILL). GIVEN BY: Farmer Hale. NEEDS FIRST: am1. REWARD: 150 Magic xp, 120 Farming xp, 5 x Bread.
+title: To the Mill
+hint: Hale has a harvest for once and no way to get it to Millbrook.
+offer: Grain is no use in the field. Reap ten sheaves and take them to Oswin at the Millbrook mill. Then the Baroness holds her assize, and my name is on her list.
+step 1: Reap ten sheaves of ripe wheat (walk up to it and use it)
+step 2: Take the grain to Miller Oswin in Millbrook
+says 2: Hale's grain? Hale never has grain. Put it down before it changes its mind.
+step 3: Hand over the ten sheaves
+step 4: Follow the road to Amberhall
+step 5: Speak for Hale before Baroness Isolde
+says 5: A full cart from Hale Farm. Then the debt is met and the land stays his. Callow, strike the line. Strike it, I said.
+done: Hale keeps his land. My steward looks as if the ledger bit him.
+
+[quest am3]
+# CHAPTER 1, main step 3 (THE FAR FIELDS). GIVEN BY: Baroness Isolde. NEEDS FIRST: am2. ADVISED: Magic 5. REWARD: 500 Magic xp, Amber Pigment (one more element slot for the party).
+title: The Far Fields
+hint: The straw men come from the tithe fields south of Millbrook. The Baroness wants it ended.
+offer: One sheaf in ten is left in the Far Fields for the Crown Beyond. This year something walks there, gathering. Clear the fields, then see what stands on the Old Threshing Floor.
+step 1: Cut down strawlings in the Far Fields
+step 2: Go to the Old Threshing Floor
+step 3: Bring down the Harvest King
+done: It is done, then. And the tithe sheaves still lie where they were left. Nobody came for them.
+
+[quest am4]
+# CHAPTER 1, main step 4 (THE TALLY). GIVEN BY: Master Callow. NEEDS FIRST: am3. REWARD: 200 Magic xp, 2 x Health Draught.
+title: The Tally
+hint: Grey men with counting cords are on the roads, and Amberhall's steward has stopped sleeping.
+offer: The Tallymen are walking and my tithe column will not add. Ask in Reedby, Thornwick and Fordham what they counted. Then find one of them and ask him. Politely.
+step 1: Ask Maud Rushlow in Reedby what the Tallymen counted
+says 1: They counted my nets. Twice. Then they counted me.
+step 2: Ask Bram Pippin in Thornwick
+says 2: Every tree in the orchard, and wrote down one fewer than there is. I did not correct them.
+step 3: Ask Tamsin Wade at Fordham
+says 3: Counted the stones of the ford. One of them is still there, by the well. He has not blinked.
+step 4: Speak to the Tallyman at Fordham
+says 4: Nine, and none. The share was left. The share was not gathered. This has not happened. Who are you, that it happened?
+step 5: Bring the count back to Master Callow
+says 5: Well? Out with it. What did the grey men count?
+done: Not gathered. Then the column is short by all of it. It has never been short. I do not have a word for this.
+
+[quest am5]
+# CHAPTER 1, main step 5 (THE WANDERER). GIVEN BY: Angler Pim. NEEDS FIRST: am4. REWARD: 200 Magic xp.
+title: The Wanderer
+hint: Somebody by the mere has been asking for you by name. The Millbrook anglers hear everything.
+offer: There is a ragged fellow over at Reedby asking after you. By name. Asked after Hale too, and went white when I said the farm was fine.
+step 1: Find the ragged stranger in Reedby
+says 1: You. And Hale's farm stands? That farm burns. It has always burned. Show me. No. Go and look, and tell me I am wrong.
+step 2: Go back to Hale Farm
+step 3: Speak to Farmer Hale
+says 3: Burned? Not a scorch on it. Though I keep smelling smoke, these nights. Tell your friend to stay off my land.
+done: Standing. Then the story has a hole in it, and you are the hole. Stay near the Baroness. The count is coming.
+
+[quest am6]
+# CHAPTER 1, main step 6 (THE SHORT TITHE), the end of Amberfield's chapter. GIVEN BY: Baroness Isolde. NEEDS FIRST: am5. REWARD: 400 Magic xp, Old Mother Hale's Staff.
+title: The Short Tithe
+hint: A grey rider has come to Amberhall for a share nobody gathered.
+offer: The Seventh Tally stands in my courtyard asking for the missing share. Hear what it wants. Then hear what I say.
+step 1: Hear the Seventh Tally in Amberhall's courtyard
+says 1: The share is short. The hall holds winter stores. The stores will make the share whole. It is always made whole.
+step 2: Hear the Baroness's answer
+says 2: No. Those stores are my people's winter. Count that, and carry it to your Crown Beyond: Amberhall said no.
+step 3: Tell Farmer Hale
+says 3: She said no? To them? Wait here. This was my grandmother's. She said it was for the year the wheat stood. Take it.
+step 4: Find the stranger again in Reedby
+says 4: A refusal. I have waited a long time to see one. There are more of us. North, over the ford, into Greenwald. They will want to meet the hole in the story.
+done: Go north when you are ready. The Tallymen know your face now.
+
+[quest as01]
+# SIDE. GIVEN BY: Mirren (Hale Farm). NEEDS FIRST: am1. REWARD: 100 Cooking xp, 60 Firemaking xp, 2 x Bread.
+title: A Proper Hearth
+hint: Mirren at Hale Farm thinks a mage who cannot feed themselves is half a mage.
+offer: You can throw fire. Can you keep one? Light a fire and bake a loaf on it. Three sheaves of wheat to a loaf.
+step 1: Light a fire
+step 2: Bake a loaf of bread on a fire
+done: Burnt underneath. Everyone's first one is.
+
+[quest as02]
+# SIDE. GIVEN BY: Smith Edda (Millbrook). NEEDS FIRST: am1. REWARD: 150 Smithing xp, 100 Mining xp, 2 x Copper Bar.
+title: Copper for the Share
+hint: Millbrook's smith is short of copper and shorter of patience.
+offer: Scythes do not mend themselves. Dig copper out of the grey rocks and smelt three bars at my forge.
+step 1: Smelt copper bars at a forge
+done: Decent bars. Keep a couple, you earned the ore.
+
+[quest as03]
+# SIDE. GIVEN BY: Master Callow (Amberhall). NEEDS FIRST: am2. REWARD: 120 Magic xp, 120 Cooking xp, 2 x Mana Tonic.
+title: Winter Stores
+hint: Amberhall's steward is filling the manor's stores early this year.
+offer: The Baroness wants the winter stores full before the first frost. Five loaves and three fried minnows would close a line in my ledger.
+step 1: Bring five loaves of bread
+step 2: Bring three fried minnows
+done: Entered. The stores are the one column that still adds.
+
+[quest as04]
+# SIDE. GIVEN BY: Maud Rushlow (Reedby). NEEDS FIRST: am1. REWARD: 150 Magic xp, 3 x Fried Minnow.
+title: Slimes in the Reeds
+hint: The net-menders of Reedby will not go down to the reeds any more.
+offer: Slimes in the reed beds, fat as cushions. They eat the nets. Thin them out, round the village.
+step 1: Burst field slimes in the Reed Beds
+done: I can hear the frogs again. Have some supper.
+
+[quest as05]
+# SIDE. GIVEN BY: Bram Pippin (Thornwick). NEEDS FIRST: am1. REWARD: 150 Farming xp, 1 x Health Draught.
+title: Mint for the Press
+hint: Thornwick's cider is missing something green this year.
+offer: Proper Thornwick cider wants meadowmint in the press. It grows wild in the fields. Five sprigs.
+step 1: Bring five sprigs of meadowmint
+done: Smell that. That is what the year should smell like.
+
+[quest as06]
+# SIDE. GIVEN BY: Tamsin Wade (Fordham). NEEDS FIRST: am1. REWARD: 120 Magic xp.
+title: The Ford Watch
+hint: The keeper of the Greenwald ford has not left her post in days.
+offer: Straw men keep drifting down to the ford. Walk out to the crossing for me and put down any you meet.
+step 1: Walk out to the ford into Greenwald
+step 2: Cut down strawlings
+done: Quiet water. I can sit down.
+
+[quest as07]
+# SIDE. GIVEN BY: Old Jory (Wrack Landing). NEEDS FIRST: am1. REWARD: 120 Fishing xp, 80 Cooking xp.
+title: Salt Supper
+hint: An old man at Wrack Landing swears sea fish taste better than anything from the mere.
+offer: Mere fish taste of mud. Catch sprats off the shore here and grill three. Then tell me I am wrong.
+step 1: Grill three sprats on a fire
+done: Told you. Mud, the others.
+
+[quest as08]
+# SIDE. GIVEN BY: Hester Kettle (Kettlewick). NEEDS FIRST: am1. REWARD: 150 Farming xp, 3 x Bread.
+title: Grist
+hint: The mill at Kettlewick is turning with nothing under the stones.
+offer: A mill with no grain is a noisy shed. Reap me twelve sheaves and I will send you off with bread.
+step 1: Bring twelve sheaves of wheat
+done: Listen to that. Stones with work to do.
+
+[quest as09]
+# SIDE. GIVEN BY: Garrick the Woodward (Oakshaw). NEEDS FIRST: am1. REWARD: 200 Woodcutting xp.
+title: First Felling
+hint: Oakshaw's woodward judges people by how they hold an axe.
+offer: Show me you can swing before I let you near my good trees. Get your woodcutting up, then bring eight ash logs.
+step 1: Reach Woodcutting level 5
+step 2: Bring eight ash logs
+done: Clean cuts. You may come back.
+
+[quest as10]
+# SIDE. GIVEN BY: Wynn of the Tarn (Kestrel Hollow). NEEDS FIRST: am1. REWARD: 200 Fishing xp.
+title: The Tarn's Catch
+hint: The fishers of Kestrel Hollow need more hands on the tarn.
+offer: The smokehouse is empty and the tarn is full. Eight minnows, fresh, and keep your voice down while you catch them.
+step 1: Bring eight fresh minnows
+done: That will fill a rack. Quietly done.
+
+[quest as11]
+# SIDE. GIVEN BY: Ansel the Salter (Saltcombe). NEEDS FIRST: am1. REWARD: 100 Hunting xp, 100 Cooking xp.
+title: The Cliff Warren
+hint: Saltcombe's salter is tired of fish.
+offer: Hares all over the cliff path and nothing but fish in my pot. Roast three rabbits and I will salt the rest of your catch for free. One day.
+step 1: Roast three rabbits on a fire
+done: Meat that never swam. Bless you.
+
+[quest as12]
+# SIDE. GIVEN BY: Nan Bracken (Brackenfold). NEEDS FIRST: am1. REWARD: 150 Magic xp, 3 x Bread.
+title: Straw in the Pasture
+hint: The shepherd at Brackenfold keeps counting one sheep too many.
+offer: One of my flock is made of straw and I cannot tell which. Clear the pastures round the farm of anything that rustles.
+step 1: Cut down strawlings in the Bracken Pastures
+done: Right number again. Take some bread for the road.
+
+[quest as13]
+# SIDE. GIVEN BY: Rolf the Huntsman (Ashby Lodge). NEEDS FIRST: am1. REWARD: 150 Hunting xp, 100 Cooking xp.
+title: The Lodge's Table
+hint: Ashby Lodge is expecting company from over the pass and the larder is bare.
+offer: Guests from Frostmere and nothing on the table. Roast three fowl. Pheasants, in the long grass.
+step 1: Roast three fowl on a fire
+done: That is a table. Sit, if you have wiped your boots.
+
+[quest as14]
+# SIDE. GIVEN BY: Sib the Gleaner (the Old Threshing Floor). NEEDS FIRST: am3. ADVISED: Magic 6. REWARD: 300 Magic xp, 3 x Mana Tonic.
+# The Harvest King's echo: the binding still trying to gather the share (polish1 item 133). Only the echo counts, not the King himself.
+title: The King Who Comes Back
+hint: An old gleaner on the Threshing Floor says the Harvest King has been seen again, pale and blue.
+offer: You put him down, I watched. He was back by supper, thin as smoke, still reaching for the sheaves. Put down the echo too.
+step 1: Bring down the Harvest King's echo on the Old Threshing Floor
+done: He will be back again. Things with a task do not stay down. But tonight I glean in peace.

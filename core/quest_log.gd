@@ -97,6 +97,8 @@ func note(event: Dictionary) -> Array:
 func _matches(s: Dictionary, event: Dictionary) -> bool:
 	match String(s["type"]):
 		"kill":  # (polish1 item 129) a step bound to a named area counts kills inside it only (event "areas": where the kill was)
+			if bool(s.get("echo", false)) and not bool(event.get("echo", false)):
+				return false  # (polish1 F4) a step that asks for a boss's echo: the boss itself does not count
 			return String(s["enemy"]) == String(event.get("enemy", "")) and (not s.has("area") or (event.get("areas", []) as Array).has(String(s["area"])))
 		"reach":
 			return String(s["place"]) == String(event.get("place", ""))
@@ -133,7 +135,7 @@ func check(bag: Dictionary, levels: Dictionary) -> Array:
 					bag[String(s["item"])] = int(bag[String(s["item"])]) - int(s["count"])
 			elif String(s["type"]) == "skill":
 				ok = int(levels.get(String(s["skill"]), 1)) >= int(s["level"])
-			elif String(s["type"]) == "kill" and int(s.get("count", 1)) <= 1 and slain.has(String(s["enemy"])):
+			elif String(s["type"]) == "kill" and int(s.get("count", 1)) <= 1 and slain.has(String(s["enemy"])) and not bool(s.get("echo", false)):
 				ok = true  # this boss already fell (in an earlier quest, or before this one was taken): it counts
 			if ok:
 				var change := _advance(id)

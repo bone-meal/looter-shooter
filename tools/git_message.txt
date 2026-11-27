@@ -1,12 +1,11 @@
-Polish1 F3 part 2: graded roads and bridges, named people, travellers and ox carts, livestock
+Polish1 F4 part 1: Amberfield's quests as a country (6 main steps, 14 side quests, written new)
 
-- core/fantasy_terrain.gd: a country's roads get a graded bed (smoothed, cut through rises to their grade, level bridge decks over rivers); road data may carry a bend point and a grade; walk_height; rules version 12
-- 12 timber bridges in Amberfield (model bridge_span, built by fantasy_places like a site); tools/road_router.gd suggests road bends; six roads bent round hills and the mere, two given a steeper grade
-- Amberfield's people: Hale, Mirren, Oswin, Edda, Pim, Baroness Isolde and Master Callow (places file npcs, names in the writing file)
-- travellers walk the roads (layouts.json travellers, words in writing/buildings.txt); every third leads an ox and cart
-- game/fantasy_livestock.gd + data/fantasy/livestock.json: show-only cows, sheep, hens and oxen round farms, villages and farmsteads; they step out of a player's way
-- fix: people built far away stood in a T until a player came close
-- fix: the host tried to connect a ghost's struck signal again after a border crossing (error line in the log)
+- data/fantasy/quests/amberfield.json: a country's own quest file (am1-am6 the chapter from Hale's Blight to The Short Tithe, as01-as14 one side quest giver at every place); core/fantasy_data.gd reads and words it for the country (the old quests.json stays the old world's)
+- 14 new people in data/fantasy/places/amberfield.json (village givers, the Wanderer, a Tallyman, the Seventh Tally) and 3 named areas (Hale's Rows, the Reed Beds, the Bracken Pastures); words in writing/1_amberfield.txt
+- core/quest_log.gd: a kill step may carry echo true = only the boss's echo counts (as14, the Harvest King's phantom); the kill event says whether it was an echo
+- data/fantasy/gear.json: hale_staff, Old Mother Hale's Staff, the reward of am6
+- fix: a villager no longer stands on top of a named person (talking picks the nearest; Fordham's keeper could not be reached)
+- checked on the 1080: the whole main line played by script from the first talk to the staff, the echo quest, every giver marked on the map
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

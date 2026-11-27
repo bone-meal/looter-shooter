@@ -33,8 +33,30 @@ static func load_all(country: String = "") -> Dictionary:
 		problems.append_array(_name_country(d))
 		d["problems"] = problems
 		d["old_quests"] = d["quests"]["quests"]
-		d["quests"]["quests"] = []  # the countries start fresh: their quests come with their people (F2-F4)
+		# (polish1 F4) a country has its own quest file (data/fantasy/quests/<country>.json); none yet = no quests there
+		var own := FOLDER + "quests/" + country + ".json"
+		d["quests"]["quests"] = DataStore.load_json(own)["quests"] if FileAccess.file_exists(own) else []
+		problems.append_array(_name_quests(d["quests"]["quests"], d["text"]))
+		d["problems"] = problems
 	return d
+
+
+# The writers' words for a list of quests: title, offer, done, hint, each step's text and what a talk step's person says.
+static func _name_quests(quests: Array, text: Dictionary) -> PackedStringArray:
+	var missing := PackedStringArray()
+	for quest: Dictionary in quests:
+		var id := String(quest["id"])
+		quest["name"] = _line(text, "quest", id, "title", missing)
+		quest["text"] = _line(text, "quest", id, "offer", missing)
+		quest["done"] = _line(text, "quest", id, "done", missing)
+		quest["hint"] = _line(text, "quest", id, "hint", missing)  # (polish1 item 127) the quest log's medium hint toward its giver
+		var steps: Array = quest["steps"]
+		for i in steps.size():
+			steps[i]["text"] = _line(text, "quest", id, "step %d" % (i + 1), missing)
+			if String(steps[i]["type"]) == "talk":  # (polish1 item 103) what the person says when that talk step is done
+				var said: Variant = text.get("quest", {}).get(id, {}).get("says %d" % (i + 1))
+				steps[i]["says"] = String(said) if said is String else ""
+	return missing
 
 
 # (polish1 F3) Names for a country's own places, areas and lakes from the writers' files (crossings carry theirs).
@@ -92,18 +114,7 @@ static func _apply(d: Dictionary) -> PackedStringArray:
 	for npc: Dictionary in world["npcs"]:
 		npc["name"] = _line(text, "person", String(npc["id"]), "name", missing)
 		npc["greet"] = _line(text, "person", String(npc["id"]), "greeting", missing)
-	for quest: Dictionary in d["quests"]["quests"]:
-		var id := String(quest["id"])
-		quest["name"] = _line(text, "quest", id, "title", missing)
-		quest["text"] = _line(text, "quest", id, "offer", missing)
-		quest["done"] = _line(text, "quest", id, "done", missing)
-		quest["hint"] = _line(text, "quest", id, "hint", missing)  # (polish1 item 127) the quest log's medium hint toward its giver
-		var steps: Array = quest["steps"]
-		for i in steps.size():
-			steps[i]["text"] = _line(text, "quest", id, "step %d" % (i + 1), missing)
-			if String(steps[i]["type"]) == "talk":  # (polish1 item 103) what the person says when that talk step is done
-				var said: Variant = text.get("quest", {}).get(id, {}).get("says %d" % (i + 1))
-				steps[i]["says"] = String(said) if said is String else ""
+	missing.append_array(_name_quests(d["quests"]["quests"], text))
 	var words := {}
 	for key: String in ["weak", "strong", "perfect"]:
 		words[key] = _line(text, "combat", "words", key, missing)

@@ -16,6 +16,7 @@ const BodyMotion = preload("res://game/body_motion.gd")
 
 const HIDE_EXTRA := 60.0
 const PEOPLE_AT := 80.0  # people are built later than houses (bodies cost more)
+const FOLK_CLEAR := 3.5  # (polish1 F4) metres a villager keeps from a named person (past the 3 m talking reach, game/fantasy_work.gd)
 const NEAR_M := 28.0  # people farther than this stand still and cast no shadow: a moving body is skinned piece by piece every frame and drawn a dozen times in every shadow split (ten guards cost Millbrook 2-4 ms, round 5). Guards on their round keep walking.
 const JOINTED := ["windmill", "hearth"]  # models made of more than one part: placed as scenes, not as copies
 const MERGE_PER_FRAME := 6  # buildings folded into a place's one mesh each frame
@@ -85,6 +86,10 @@ func setup(land_terrain: FantasyTerrain, world_layout: FantasyLayout, folk: Dict
 			var a := FantasyTerrain.hash01(int(cx), int(cz), 700 + i) * TAU
 			var r := float(place["flat"]) * (0.12 + 0.4 * FantasyTerrain.hash01(int(cx), int(cz), 720 + i))
 			var spot := layout.push_out(cx + cos(a) * r, cz + sin(a) * r, 0.9)
+			for named: Vector2 in keep.get(place["id"], []):  # (polish1 F4) not on top of a named person: talking picks the nearest
+				if spot.distance_to(named) < FOLK_CLEAR:
+					var away := (spot - named).normalized() if spot.distance_to(named) > 0.05 else Vector2(cos(a), sin(a))
+					spot = layout.push_out(named.x + away.x * FOLK_CLEAR, named.y + away.y * FOLK_CLEAR, 0.9)
 			var style: Array = FOLK_LOOKS[(i + int(absf(cx))) % FOLK_LOOKS.size()]
 			var tribe := String(place["kind"]).begins_with("tribe")
 			people.append({"id": "folk:%s:%d" % [place["id"], i], "name": String(words.get("name", "")), "at": Vector3(spot.x, terrain.height(spot.x, spot.y), spot.y),

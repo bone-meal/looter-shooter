@@ -13,6 +13,7 @@
 [items staff]
 # WHAT: the names of every staff. Read a line as  item id: Name .
 ash_staff: Ash Staff
+hale_staff: Old Mother Hale's Staff
 oak_staff: Oakheart Staff
 coral_staff: Coral Staff
 sunstone_staff: Sunstone Staff

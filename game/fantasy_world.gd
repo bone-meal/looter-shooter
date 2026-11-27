@@ -406,7 +406,7 @@ func _on_slain(enemy_id: String, where: Vector3) -> void:
 	if inside:
 		spawner.pay(enemy_id)
 	var at := local_of(where)
-	report({"type": "kill", "enemy": String(spawner.stats_of(enemy_id).get("phantom_of", enemy_id)), "areas": terrain.areas_at(at.x, at.z)})  # (polish1 E4) an echo counts as its boss
+	report({"type": "kill", "enemy": String(spawner.stats_of(enemy_id).get("phantom_of", enemy_id)), "echo": spawner.stats_of(enemy_id).has("phantom_of"), "areas": terrain.areas_at(at.x, at.z)})  # (polish1 E4) an echo counts as its boss
 	if party != null and not party.call("is_client"):
 		party.call("send_slain", enemy_id)
 

@@ -26,6 +26,18 @@
    ],
    "icon": "staff"
   },
+  "hale_staff": {
+   "kind": "staff",
+   "power": 1.2,
+   "slots": 0,
+   "mana": 10,
+   "color": [
+    0.95,
+    0.78,
+    0.3
+   ],
+   "icon": "staff"
+  },
   "oak_staff": {
    "kind": "staff",
    "power": 1.4,
