@@ -7,7 +7,7 @@ extends RefCounted
 const Style = preload("res://game/fantasy_style.gd")
 const IconArt = preload("res://game/icon_art.gd")
 
-const STEP_SHAPES := {"talk": "talk", "cast": "spark", "kill": "sword", "have": "bag", "reach": "pin", "fire": "flame", "skill": "star", "make": "bag"}
+const STEP_SHAPES := {"talk": "talk", "cast": "spark", "kill": "sword", "have": "bag", "reach": "pin", "fire": "flame", "skill": "star", "make": "bag", "pay": "bag"}
 const ROW := 62.0
 
 

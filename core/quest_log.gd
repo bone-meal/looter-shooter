@@ -4,6 +4,8 @@
 # Dependencies: none. Data: data/fantasy/quests.json.
 extends RefCounted
 
+const GIL := "gil"  # the purse's key in the bag handed to check(): not an item
+
 var active := {}  # quest id -> {"step": index, "n": progress of that step}
 var done: Array[String] = []
 var slain := {}  # (polish1 item 132) bosses (one-kill steps' enemies) the party has killed: a later quest needing one is passed
@@ -119,8 +121,10 @@ func _matches(s: Dictionary, event: Dictionary) -> bool:
 	return false
 
 
-# Checks the steps that depend on what a player carries or has learned ("have", "skill"). bag = {item: count},
+# Checks the steps that depend on what a player carries or has learned ("have", "skill", "pay"). bag = {item: count},
 # levels = {skill: level}. Returns changes like note(); a finished "have" step with take lists it under "take".
+# (polish1 F4) A "pay" step {"type": "pay", "gil": n} is a SALE: it passes when the purse (bag[GIL]) holds the price,
+# which is listed under "take" as GIL. Taking the quest is agreeing to the price.
 func check(bag: Dictionary, levels: Dictionary) -> Array:
 	var changes: Array = []
 	var moved := true
@@ -135,6 +139,11 @@ func check(bag: Dictionary, levels: Dictionary) -> Array:
 				if ok and bool(s.get("take", false)):
 					take[String(s["item"])] = int(s["count"])
 					bag[String(s["item"])] = int(bag[String(s["item"])]) - int(s["count"])
+			elif String(s["type"]) == "pay":
+				ok = int(bag.get(GIL, 0)) >= int(s["gil"])
+				if ok:
+					take[GIL] = int(s["gil"])
+					bag[GIL] = int(bag[GIL]) - int(s["gil"])
 			elif String(s["type"]) == "skill":
 				ok = int(levels.get(String(s["skill"]), 1)) >= int(s["level"])
 			elif String(s["type"]) == "kill" and int(s.get("count", 1)) <= 1 and slain.has(String(s["enemy"])) and not bool(s.get("echo", false)):
@@ -147,12 +156,12 @@ func check(bag: Dictionary, levels: Dictionary) -> Array:
 	return changes
 
 
-# Online: a party member says their own bag or skills pass the step this quest is on. Only "have" and "skill" steps
+# Online: a party member says their own bag, skills or purse pass the step this quest is on. Only "have", "skill" and "pay" steps
 # can be passed this way (kills and bosses are decided by the host). Returns changes like note().
 func claim(id: String, step_index: int) -> Array:
 	if not active.has(id) or int(active[id]["step"]) != step_index:
 		return []
-	if not (String(step(id)["type"]) in ["have", "skill"]):
+	if not (String(step(id)["type"]) in ["have", "skill", "pay"]):
 		return []
 	return [_advance(id)]
 

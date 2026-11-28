@@ -88,6 +88,7 @@ func _ready() -> void:
 							var reg: Dictionary = area_terrain.region_at(float(area["x"]), float(area["z"]))
 							_need((reg["enemies"] as Array).has(String(s["enemy"])), "area %s lies in %s, where %s does not live" % [s["area"], reg["id"], s["enemy"]])
 				"have": _need(items.has(String(s["item"])), "quest %s wants unknown item %s" % [quest["id"], s["item"]])
+				"pay": _need(int(s.get("gil", 0)) > 0, "quest %s sells for nothing" % quest["id"])
 				"reach": _need(place_ids.has(String(s["place"])), "quest %s reaches unknown place" % quest["id"])
 				"skill": _need((skilling["skills"] as Dictionary).has(String(s["skill"])), "quest %s wants unknown skill" % quest["id"])
 				"cast":
@@ -133,6 +134,7 @@ func _ready() -> void:
 				var changes: Array = []
 				match String(s["type"]):
 					"have": changes = out_log.check({String(s["item"]): int(s["count"])}, {})
+					"pay": changes = out_log.check({"gil": int(s["gil"])}, {})
 					"skill": changes = out_log.check({}, {String(s["skill"]): int(s["level"])})
 					"kill":
 						for _n in int(s["count"]):

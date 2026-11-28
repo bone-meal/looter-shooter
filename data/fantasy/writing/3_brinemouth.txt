@@ -49,16 +49,19 @@ says: My nets come up grey some mornings. No fish, no colour.
 says: A boat is a promise you make to the weather.
 
 [person captain_ysolde]
-# WHO: quest giver at Brinemouth. Gives: Salt Air (m12), The Drowned Crew (m14), The Tidewarden (m15).
+# WHO: Captain Ysolde Marrow, who speaks for the free captains at Lantern Cove (in the country of Brinemouth). Years ago a
+# ragged stranger paid her harbour debt on the morning her ship was to be seized; she has never understood why and does not ask.
+# (The old world's quests m12, m14, m15 below are not used in the country.)
 name: Captain Ysolde
 # Captain Ysolde says this when a player walks up and talks:
-greeting: My crew won't sail. Says the flats are walking. I've seen it too.
+greeting: No list is posted in this cove, so no name of ours gets struck. The Table calls that piracy. I call it reading.
 
 [person netmender_brill]
-# WHO: quest giver at Brinemouth. Gives: Nets and Needles (m13), Driftwood (s05).
+# WHO: Netmender Brill, struck from a crew list twenty years ago, who speaks for the Struck at the Shorehouse in Saltmarsh
+# (in the country of Brinemouth). (The old world's quests m13 and s05 below are not used in the country.)
 name: Netmender Brill
 # Netmender Brill says this when a player walks up and talks:
-greeting: Silverfin run past the breakwater at this hour.
+greeting: Twenty years ashore. You stop looking at the water after the first five. Mostly.
 
 # ---------------- QUESTS GIVEN IN BRINEMOUTH COAST ----------------
 
@@ -257,3 +260,414 @@ says: A whole crew struck in one night. I have never heard of more than one name
 says: Keep off the flats at low water. The crabs are the least of it.
 says: The road west is dry by noon. Carry water past Dustgate.
 says: The Table does not rule anybody. It only owns the ships, the quay and the debt.
+
+# ---------------- (polish1 F4) BRINEMOUTH'S PEOPLE AND QUESTS AS A COUNTRY ----------------
+# People: data/fantasy/places/brinemouth.json. Quests: data/fantasy/quests/brinemouth.json (7 main bm1-bm7, 20 side bs01-bs20).
+# Story: diary/DESIGN_BRINEMOUTH.md. Every line is a placeholder for the director.
+# RULE (director 2026-11-27): only the hero (the ragged stranger, Corin) and the entity know of the loops or the future.
+# Nobody else's lines may hint at it. People may speak of what has always been done, never of how things "should" go.
+# Captain Ysolde and Netmender Brill use their entries above. The Tallyman and the Seventh Tally use their entries in
+# 1_amberfield.txt.
+
+[person corin]
+# WHO: Corin, the ragged stranger (the hero: the only person who knows). At Northlanding, off the ferry from Greenwald.
+name: Corin
+greeting: Solid ground. Enjoy it. This coast charges for everything else.
+
+[person corin_cove]
+# WHO: Corin again, at Lantern Cove, calling in an old debt with Captain Ysolde.
+name: Corin
+greeting: She will hear you. She owes me a morning.
+
+[person corin_dustgate]
+# WHO: Corin again, waiting at Dustgate at the end of the chapter.
+name: Corin
+greeting: You were sold. I did not see that either.
+
+[person pell_ferryman]
+# WHO: the ferryman's mate at Northlanding.
+name: Pell the Ferryman
+greeting: The ferry sails because a ferry's crew is two men and a rope. Nobody posts a list for that.
+
+[person mistress_vane]
+# WHO: Mistress Odalys Vane, the largest ship-owner at the Table, which rules the free port. She counts everything.
+name: Mistress Vane
+greeting: You are the Greenwald outlaw. That is Greenwald's ledger, not mine. Are your dues paid?
+
+[person old_tobias]
+# WHO: Old Tobias Quill, the Roll-Keeper, who has posted the crew lists on the Roll House wall every evening for forty years.
+name: Old Tobias
+greeting: Forty years I have pinned the lists up at dusk. I have never once seen the line drawn.
+
+[person reeve_hallet]
+# WHO: Ser Jorn Hallet, the Harbour Reeve: the Table's hired sword. The port's guards are his.
+name: The Harbour Reeve
+greeting: Dues first. Then you may be anyone you like.
+
+[person sabela_roe]
+# WHO: Sabela Roe, a quay merchant who sells staffs of sea-coral (bs01, bs02: the Coral Staff is bought from her).
+name: Sabela Roe
+greeting: Everything on this table has a price and none of them are secrets.
+
+[person imre_dunne]
+# WHO: Factor Imre Dunne, who buys cane, indigo and ironwood at Sweetwater's market for the ship-owners.
+name: Factor Dunne
+greeting: Cane up, indigo up, and not a hull to carry either. Good prices are a poor comfort.
+
+[person orrin_slake]
+# WHO: Orrin Slake, the panmaster at Saltmarsh, who runs the salt pans the Struck work.
+name: Panmaster Slake
+greeting: A hundred new hands this season and the same number of pans. Find me the arithmetic in that.
+
+[person nix_harrow]
+# WHO: Nix Harrow, quartermaster at Lantern Cove.
+name: Quartermaster Nix
+greeting: If it is not on my tally it did not come ashore. Most things here did not come ashore.
+
+[person lise_corran]
+# WHO: Lise Corran, who keeps the landing on the Painted Coast, where ships from far off put in.
+name: Lise Corran
+greeting: Strange sails stop here sometimes. They pay in coin I have to weigh. I do not ask where it was struck.
+
+[person brannoc_toll]
+# WHO: Brannoc, the Table's tollkeeper on the north road into Sunscar.
+name: Tollkeeper Brannoc
+greeting: One coin a wheel, one a hoof, and nothing for feet. The Table has not thought of feet yet.
+
+[person sergeant_maro]
+# WHO: Sergeant Maro, who holds the watch post at Dustgate on the south road into Sunscar.
+name: Sergeant Maro
+greeting: West of this post is sand and somebody else's trouble. I like this post.
+
+[person ione_bluefield]
+# WHO: Ione, the dyer of Bluefield Farm (indigo).
+name: Ione the Dyer
+greeting: Blue hands, blue apron, blue dog. Mind the vats.
+
+[person josun_reed]
+# WHO: Josun Reed, the planter of Sweetcane Farm.
+name: Planter Reed
+greeting: Cane wants cutting whether ships sail or not. It does not read the lists.
+
+[person elder_mabyn]
+# WHO: Elder Mabyn of Palmhollow, a jungle village far from the port.
+name: Elder Mabyn
+greeting: The port sends for our young ones every spring. This spring it sent them back.
+
+[person odo_stilt]
+# WHO: Odo, a river fisher of Stiltwick.
+name: Odo of Stiltwick
+greeting: River fish do not care about the sea's troubles. Neither do I, on a good day.
+
+[person senna_heron]
+# WHO: Senna, the herbwife of Heronmere.
+name: Herbwife Senna
+greeting: Glowcap for fever, glowcap for the damp lung. In this country that is everyone by autumn.
+
+[person dow_kettering]
+# WHO: Dow Kettering, mate of a ship whose whole crew was struck from the list in one night. They camp by their ship's boat.
+name: Dow Kettering
+greeting: Thirty-one names on our list. Thirty-one grey lines by morning. I counted them twice, as if it would help.
+
+[person old_garrow]
+# WHO: Old Garrow, who gathers what the sea gives back at Wreckers' Point.
+name: Old Garrow
+greeting: I wreck nothing. I only pick up after the sea, and the sea is an untidy eater.
+
+[person wenna_light]
+# WHO: Wenna, keeper of the port's beacon at Saltlight.
+name: Lightkeeper Wenna
+greeting: I light it every dusk for ships that are not allowed to leave. It is still a good light.
+
+[person sister_avel]
+# WHO: Sister Avel, who carves the struck names at the Chapel of Names.
+name: Sister Avel
+greeting: One name in ten, since before the stone was quarried. This year I have run out of wall.
+
+[person calla_thorn]
+# WHO: Calla Thorn, foreman of Ironwood Camp.
+name: Foreman Thorn
+greeting: Ironwood sinks, so it goes out as deck and keel or not at all. This year, not at all.
+
+[person hask_digger]
+# WHO: Hask, who runs the iron diggings at Redcut.
+name: Hask of Redcut
+greeting: Red rock, red hands, red bread. You get used to all but the bread.
+
+[person brae_huntress]
+# WHO: Brae, huntress of Boarwallow Lodge.
+name: Brae the Huntress
+greeting: Boar are honest. They tell you exactly when they mean to kill you.
+
+[quest bm1]
+# CHAPTER 3, main step 1 (THE LANDING). GIVEN BY: Corin (Northlanding). NEEDS FIRST: gm7. ADVISED: Magic 12. REWARD: 500 Magic xp, 2 x Health Draught.
+# Director 2026-11-28: the harbour dues are WORKED OFF (no gil).
+title: Harbour Dues
+hint: Off the Greenwald ferry at Northlanding, the ragged stranger is waiting on the cliff path.
+offer: Brinemouth has no queen to name you outlaw. It has a table of ship-owners, and they ask only one question. Go east to the port and answer it. I have someone to find in the south.
+step 1: Take the coast road east to Brinemouth
+step 2: Speak to the Harbour Reeve
+says 2: An outlaw. From a kingdom. We do not have those here, we have debtors. Harbour dues, then. No coin? The Table takes work. Reef crabs are at the quay road again.
+step 3: Clear reef crabs for the Harbour Reeve
+step 4: Report to the Harbour Reeve
+says 4: Paid. You are entered in the roll as a person of no interest, which is the best thing a person can be in this port.
+done: Dues paid, name unasked. You will want the Roll House next. Everyone does, this year.
+
+[quest bm2]
+# CHAPTER 3, main step 2 (THE ROLL HOUSE). GIVEN BY: the Harbour Reeve. NEEDS FIRST: bm1. ADVISED: Magic 13. REWARD: 450 Magic xp.
+title: The Tenth Name
+hint: The quay at Brinemouth is full of ships, and none of them are loading.
+offer: Look at my quay. Forty hulls and not one sailing. Ask Old Tobias at the Roll House why. Then go and look at what it does to a crew.
+step 1: Speak to Old Tobias at the Roll House
+says 1: I pin the crew lists up at dusk. By morning one name in ten has a grey line through it, and that sailor stays ashore for life. That is the Tenth Name and it is older than my ledgers. This year it is every name. Every list. Go east past the bay and see.
+step 2: Find the struck crew's camp east of the port
+step 3: Speak to Dow Kettering
+says 3: A ship that sails with a struck name aboard does not come back. Everyone knows a ship it happened to. So we sit here beside a sound hull and watch the tide go out without us.
+step 4: Speak to Mistress Vane at the Table
+says 4: A ship that cannot sail is money rotting at the quay. I do not care what draws the line. I care what it costs. Find out why it changed, outlaw, and the Table will owe you. We always pay what we owe.
+done: The Struck are kept at Saltmarsh, by contract. If there is anything to learn it is there, in the pans.
+
+[quest bm3]
+# CHAPTER 3, main step 3 (THE SHOREHOUSE). GIVEN BY: Mistress Vane. NEEDS FIRST: bm2. ADVISED: Magic 14. REWARD: 550 Magic xp, 3 x Mana Tonic.
+title: The Shorehouse
+hint: South-east of the port, by the Lagoon, the Struck work the salt pans at Saltmarsh.
+offer: The port keeps the Struck at Saltmarsh. Bed, board and the pans, for life. It was a fair contract when it was one name in ten. Go and see what it is now.
+step 1: Go to Saltmarsh, by the Lagoon
+step 2: Speak to Netmender Brill at the Shorehouse
+says 2: Built for sixty. We are past three hundred, and more come down the road every tide. Before you ask me anything clever, the crabs are in the pans and the new hands do not know to mind their feet.
+step 3: Clear reef crabs from the Pans
+step 4: Return to Netmender Brill
+says 4: Thank you. Now the clever question. The salt goes out on grey barges for the Crown Beyond, and grey men count us at the pans each season. It has always been so. What changed, I cannot tell you. There is a captain on the south shore who might.
+done: Lantern Cove. The free captains post no list, so they lose no names. The Table hates them for it. Mind the path down.
+
+[quest bm4]
+# CHAPTER 3, main step 4 (THE FREE CAPTAINS). GIVEN BY: Netmender Brill. NEEDS FIRST: bm3. ADVISED: Magic 15. REWARD: 600 Magic xp, 3 x Health Draught.
+title: No List Posted
+hint: On the far south shore there is a cove with lanterns and no harbour dues.
+offer: Captain Ysolde, at Lantern Cove. South through the jungle to the far shore. She has seen ships with struck names go down. Nobody else has seen it and come back to say.
+step 1: Cross the jungle to Lantern Cove
+step 2: Speak to Corin at the cove
+says 2: There you are. Years ago I paid a debt for the woman by that fire, on the right morning. I knew which morning, then. Go and be the reason I did it.
+step 3: Speak to Captain Ysolde
+says 3: He paid my harbour debt the day they came to seize my ship, and walked off. I never knew why. So this is the bill. Fair. First show me you are worth a hull: the drowned are coming up my beach.
+step 4: Put down drowned sailors
+step 5: Return to Captain Ysolde
+says 5: Good. Now listen. I have watched three ships sail with a struck name aboard. All three went down in the same water, off the Tidal Flats, in a flat calm. Something there keeps the tide.
+done: The crews it takes walk the flats afterwards. I have seen faces I knew. We end it at low water.
+
+[quest bm5]
+# CHAPTER 3, main step 5 (THE FLATS). GIVEN BY: Captain Ysolde. NEEDS FIRST: bm4. ADVISED: Magic 17. REWARD: 1100 Magic xp, 1 x Azure Pigment, one more element slot.
+title: The Tidewarden
+hint: Captain Ysolde says every ship that sailed with a struck name went down off the Tidal Flats.
+offer: East shore, past Saltmarsh. The drowned crews walk Saltwrack Shore and the thing that drowned them stands on the flats. Lay them down, then it. My people will hold the cove.
+step 1: Lay the drowned to rest on Saltwrack Shore
+step 2: Go out onto the Tidal Flats
+step 3: Defeat the Tidewarden
+done: The tide is only a tide again. Azure, the colour of deep water. It is yours, you paid for it.
+
+[quest bm6]
+# CHAPTER 3, main step 6 (THE COUNT AT THE PANS). GIVEN BY: Captain Ysolde. NEEDS FIRST: bm5. ADVISED: Magic 17. REWARD: 450 Magic xp.
+title: The Count at the Pans
+hint: The tide is quiet. At Saltmarsh, grey men are counting hands.
+offer: The grey counters came down to Saltmarsh the same night. Go and listen. I would sooner know what they count than guess.
+step 1: Return to Saltmarsh
+step 2: Speak to the Tallyman at the pans
+says 2: Nine, and none. No new hands come down the road. The share is short. It was short in the wheat, and short in the wood, and now it is short in the salt. You again.
+step 3: Speak to Netmender Brill
+says 3: Nobody new this morning. First morning in twenty years. But we who are struck are still struck, he says. Still owed. A grey rider has gone up the port road.
+step 4: Speak to Old Tobias at the Roll House
+says 4: I pinned the lists at dusk and at dawn there was not a line on them. Forty years. I sat down on the step and laughed like a fool. Then the grey rider went in to the Table.
+done: Whatever is said in there is said in prices. Stay close to my door.
+
+[quest bm7]
+# CHAPTER 3, main step 7 (THE PORT SELLS), the end of Brinemouth's chapter. GIVEN BY: Old Tobias. NEEDS FIRST: bm6. ADVISED: Magic 18. REWARD: 900 Magic xp, 3 x Health Draught, 3 x Mana Tonic.
+title: The Port Sells
+hint: The Seventh Tally is at the Table in Brinemouth, and the Table is listening to an offer.
+offer: The grey rider is at the long table and the owners have sent for their scales. Go in. You should hear your own price.
+step 1: Hear the Seventh Tally at the Table
+says 1: The share is short. Here is the offer. Every struck crew free to sail on the next tide. In return, the one who made it short. It is a fair price. It is always a fair price.
+step 2: Hear Mistress Vane
+says 2: Forty hulls sailing against one outlaw who is not even ours. I am sorry, truly. The Table votes by tonnage and the tonnage has voted. You have until the Reeve finishes his supper.
+step 3: Speak to Old Tobias
+says 3: The back door of the Roll House has no bar on it tonight. I am old and I forget things. Go by the struck camp. They should see who paid for their tide.
+step 4: Speak to Dow Kettering
+says 4: We sail at dawn. Bought with you. I know what that makes us. Captain Ysolde has people on the jungle road as far as Dustgate. Go. Some of us will remember the price.
+step 5: Take the jungle road south-west to Dustgate
+step 6: Find Corin at Dustgate
+says 6: Refused, bowed to, and now sold. Three countries and I have not guessed one ending. I used to know every step of this road. West. Sunscar. The sand does not keep ledgers.
+done: The captains have ships and a grudge. That is worth more than a queen. Keep walking.
+
+[quest bs01]
+# SIDE. GIVEN BY: Sabela Roe (Brinemouth). NEEDS FIRST: bm1. REWARD: 300 Magic xp. Opens her stall: bs02 sells the Coral Staff.
+title: A Stall on the Quay
+hint: A merchant on Brinemouth's quay has staffs to sell and no licence to sell them.
+offer: I have coral staffs under this cloth and no stall licence, because my factor in Sweetwater holds my papers. Fetch his word and I can open.
+step 1: Speak to Factor Dunne in Sweetwater
+says 1: Sabela's papers? Paid and stamped since spring. Tell her she may trade. Tell her also that she owes me a dinner.
+step 2: Return to Sabela Roe
+says 2: Stamped! Then I am open. And you get first look.
+done: First look is free. The staff is not.
+
+[quest bs02]
+# SIDE, A SALE. GIVEN BY: Sabela Roe (Brinemouth). NEEDS FIRST: bs01. PRICE: 400 gil, taken from the purse when the quest is
+# accepted and the purse holds it (director 2026-11-28: the Coral Staff is bought at the port). REWARD: 1 x Coral Staff.
+title: The Coral Staff
+hint: Sabela Roe on Brinemouth's quay sells staffs of sea-coral. She does not haggle.
+offer: Sea-coral, grown on a wreck for a hundred years, one socket for a stone. Four hundred gil. Take it or admire it.
+step 1: Pay Sabela Roe 400 gil
+done: Sold. Mind it near open flame, and do not tell the Table what I charged you.
+
+[quest bs03]
+# SIDE. GIVEN BY: Factor Dunne (Sweetwater). NEEDS FIRST: bm1. REWARD: 350 Magic xp, 4 x Bread.
+title: Standing Orders
+hint: The factor at Sweetwater market needs word carried to the plantations.
+offer: No ships, so no buyers, so I must tell the plantations to cut slow. They will not thank the man who tells them. Would you be that man?
+step 1: Speak to Planter Reed at Sweetcane Farm
+says 1: Cut slow? Cane does not grow slow. Tell Dunne I heard him and that I am ignoring him.
+step 2: Speak to Ione the Dyer at Bluefield Farm
+says 2: Indigo keeps. Tell the factor I will fill every vat I own and sell it dear when the hulls move.
+step 3: Return to Factor Dunne
+says 3: Well? No, do not soften it. I can read it on your face.
+done: Ignored by one and outbid by the other. That went better than I hoped.
+
+[quest bs04]
+# SIDE. GIVEN BY: Panmaster Slake (Saltmarsh). NEEDS FIRST: bm3. REWARD: 400 Firemaking xp.
+title: Boiling Down
+hint: The panmaster at Saltmarsh has more brine than fire.
+offer: Sun is slow and I have three hundred mouths. I am boiling the brine down. Light me fires, and bring palm to feed them.
+step 1: Light three fires
+step 2: Bring palm logs to the panmaster
+done: White gold by morning. Well, grey gold. It all goes on the same barge.
+
+[quest bs05]
+# SIDE. GIVEN BY: Pell the Ferryman (Northlanding). NEEDS FIRST: bm1. REWARD: 350 Fishing xp.
+title: Ferryman's Supper
+hint: At Northlanding the ferry crew eat river trout or nothing.
+offer: Sea fish goes to the port by contract. We on the cliff get what swims in the streams. Bring me trout and I will call you friend for a week.
+step 1: Bring trout to Pell
+done: A week, I said. Starting now.
+
+[quest bs06]
+# SIDE. GIVEN BY: Quartermaster Nix (Lantern Cove). NEEDS FIRST: bm4. REWARD: 400 Cooking xp, 150 Fishing xp.
+title: Hot Rations
+hint: The quartermaster at Lantern Cove feeds forty on one fire.
+offer: Crews that eat cold start arguing. Sear me silverfin, properly, skin down. I will know if you boiled it.
+step 1: Sear silverfin over a fire
+done: Skin down. Good. You may eat with the watch.
+
+[quest bs07]
+# SIDE. GIVEN BY: Lise Corran (the Painted Coast). NEEDS FIRST: bm1. REWARD: 450 Fishing xp.
+title: A Table for Strangers
+hint: Over the east ridge, the keeper of the Painted Coast landing is expecting guests.
+offer: When a strange sail puts in, I set a table. It is good manners and better business. Silverfin, fresh from the sea.
+step 1: Bring silverfin to Lise Corran
+done: Enough for a full crew. Whoever they turn out to be.
+
+[quest bs08]
+# SIDE. GIVEN BY: Tollkeeper Brannoc (Tollbar). NEEDS FIRST: bm1. REWARD: 380 Magic xp.
+title: A Clear Road
+hint: The tollkeeper at Tollbar cannot charge for a road nobody dares use.
+offer: Crabs on the Sunscar road, right up to the border stones. No carts, no tolls, and the Table blames me. Walk it to the crossing and clear what you meet.
+step 1: Walk the road to the Sunscar crossing
+step 2: Clear reef crabs
+done: Wheels again by noon. I will not charge you for today.
+
+[quest bs09]
+# SIDE. GIVEN BY: Sergeant Maro (Dustgate). NEEDS FIRST: bm1. REWARD: 420 Magic xp.
+title: Dry Feet
+hint: At Dustgate the watch has seen drowned men a long way from any water.
+offer: Drowned sailors, at my gate, a day's walk from the sea. They leave wet prints in the dust. Go as far as the crossing and put down any you find.
+step 1: Go to the south Sunscar crossing
+step 2: Put down drowned sailors
+done: Back to dust and lizards. That is how I like a report to end.
+
+[quest bs10]
+# SIDE. GIVEN BY: Ione the Dyer (Bluefield Farm). NEEDS FIRST: bm1. REWARD: 350 Magic xp, 2 x Mana Tonic.
+title: Setting the Blue
+hint: The dyer at Bluefield Farm says a mage could save her a week.
+offer: Indigo sets with steam, and steam takes me a week of fires. You carry fire and water in a stick. Stand over my vats and do it in an hour.
+step 1: Cast Steam (Fire and Water) four times
+done: Look at that. Blue as the deep. You may keep the stained boots.
+
+[quest bs11]
+# SIDE. GIVEN BY: Planter Reed (Sweetcane Farm). NEEDS FIRST: bm1. REWARD: 380 Magic xp, 4 x Bread.
+title: Crabs in the Cane
+hint: At Sweetcane Farm the cutters will not go into the rows.
+offer: Reef crabs, in a cane field, a mile from any reef. They hide in the rows and take a man's ankle. Clear them and my cutters will work.
+step 1: Clear reef crabs
+done: Listen. Knives in the cane. Best sound in the country.
+
+[quest bs12]
+# SIDE. GIVEN BY: Elder Mabyn (Palmhollow). NEEDS FIRST: bm1. REWARD: 450 Magic xp.
+title: The Deeps
+hint: The elder of Palmhollow says there are sailors in the jungle who never learned to walk in it.
+offer: Drowned men in the Ironwood Deeps, between here and the loggers. Our children gather glowcap there. Lay them down, mage. Gently, if it can be done gently.
+step 1: Put down drowned sailors in the Ironwood Deeps
+done: Then the children may go back. We will leave salt on the path for the ones you laid down.
+
+[quest bs13]
+# SIDE. GIVEN BY: Odo (Stiltwick). NEEDS FIRST: bm1. REWARD: 350 Cooking xp.
+title: River Supper
+hint: A fisher at Stiltwick has guests coming and burns everything he cooks.
+offer: My sister's family is coming upriver and I can catch a trout but I cannot cook one. Grill me six and I will say I did it.
+step 1: Grill trout over a fire
+done: Perfect. If she asks, I turned them twice.
+
+[quest bs14]
+# SIDE. GIVEN BY: Herbwife Senna (Heronmere). NEEDS FIRST: bm1. REWARD: 400 Farming xp, 3 x Health Draught.
+title: The Damp Lung
+hint: The herbwife at Heronmere is short of glowcap, and the Shorehouse is full of coughing.
+offer: Three hundred packed in the Shorehouse and the damp lung goes through them like weather. I need glowcap, more than I can pick.
+step 1: Bring glowcap to Senna
+done: Enough for a week of draughts. Take three. You walk through worse than damp.
+
+[quest bs15]
+# SIDE. GIVEN BY: Old Garrow (Wreckers' Point). NEEDS FIRST: bm1. REWARD: 420 Magic xp, 1 x Rough Gem.
+title: Picked Clean
+hint: At Wreckers' Point the crabs get to the wrecks before the wreckers do.
+offer: Something comes ashore, and the crabs have it stripped before I am down the cliff. A dozen fewer would give an old man a fair start.
+step 1: Clear reef crabs
+done: Fair start, fair share. Found this in a sea-chest. Never knew what to do with it.
+
+[quest bs16]
+# SIDE. GIVEN BY: Sister Avel (the Chapel of Names). NEEDS FIRST: bm2. REWARD: 380 Magic xp.
+title: Names for the Wall
+hint: The sister at the Chapel of Names cannot carve names she has not been given.
+offer: I carve every struck name, so that someone has written it down kindly. This year I do not even have them all. Walk to the struck camp, the Shorehouse and the Roll House, and let them know I am asking.
+step 1: Visit the struck crew's camp
+step 2: Visit Saltmarsh
+step 3: Visit Brinemouth
+done: They will send the names up. I will need a second wall. I would rather need it than not carve them.
+
+[quest bs17]
+# SIDE. GIVEN BY: Foreman Thorn (Ironwood Camp). NEEDS FIRST: bm1. REWARD: 450 Woodcutting xp.
+title: Light Timber
+hint: The loggers at Ironwood Camp need palm, of all things.
+offer: Ironwood sinks. To float a raft of it downriver you lash it to palm. I have the ironwood and no palm cut. Ten logs.
+step 1: Bring palm logs to Foreman Thorn
+done: That will float one raft. Come back when you are bored.
+
+[quest bs18]
+# SIDE. GIVEN BY: Hask (Redcut). NEEDS FIRST: bm1. REWARD: 420 Mining xp.
+title: Short Weight
+hint: The diggings at Redcut owe the port a load of ore and are a barrow short.
+offer: The Table weighs my ore to the ounce, and I am ten lumps under contract. Dig them anywhere you like. Ore does not remember where it came from.
+step 1: Bring iron ore to Hask
+done: To the ounce. They will be disappointed, they like a fine.
+
+[quest bs19]
+# SIDE. GIVEN BY: Brae the Huntress (Boarwallow Lodge). NEEDS FIRST: bm1. REWARD: 300 Hunting xp, 250 Cooking xp.
+title: Boar for the Lodge
+hint: The huntress at Boarwallow Lodge has a bad shoulder and a hungry lodge.
+offer: A sow put me on my back last week and I cannot draw a bow. Track boar, roast it, bring three. I will tell you where you went wrong.
+step 1: Roast boar over a fire
+done: Hm. Nothing wrong. Annoying.
+
+[quest bs20]
+# SIDE. GIVEN BY: Lightkeeper Wenna (Saltlight). NEEDS FIRST: bm5. ADVISED: Magic 18. REWARD: 800 Magic xp, 3 x Mana Tonic.
+# The Tidewarden's echo: the binding still trying to strike. Only the echo counts, not the Tidewarden itself.
+title: Slack Water
+hint: The lightkeeper at Saltlight says something pale is standing on the flats again at the turn of the tide.
+offer: From up here I see the whole east shore. At slack water there is a shape on the flats, thin as spray, where the big one stood. The tide stutters when it is there.
+step 1: Bring down the Tidewarden's echo on the Tidal Flats
+done: The tide ran clean tonight. It will be back. I will keep the lamp trimmed and tell you when.

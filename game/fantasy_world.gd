@@ -1045,7 +1045,9 @@ func _after_change() -> void:
 	if party != null and party.call("is_client"):
 		_claim_steps()
 	elif not _busy:
-		_apply(quests.check(bag.items.duplicate(), skills.levels()))
+		var carried: Dictionary = bag.items.duplicate()
+		carried[QuestLog.GIL] = int(gil.call())  # (polish1 F4) the purse, for "pay" steps
+		_apply(quests.check(carried, skills.levels()))
 	_reach_here()
 	changed.emit()
 
@@ -1082,6 +1084,9 @@ func _claim_steps() -> void:
 				notice.emit("Handed over %d %s" % [int(step["count"]), bag.item_name(String(step["item"]))])
 		elif String(step["type"]) == "skill" and skills.level(String(step["skill"])) >= int(step["level"]):
 			passed = true
+		elif String(step["type"]) == "pay" and int(gil.call()) >= int(step["gil"]) and bool(pay_gil.call(int(step["gil"]))):
+			passed = true  # (polish1 F4) a sale: paid from our own purse
+			notice.emit("Paid %d gil" % int(step["gil"]))
 		if passed:
 			_claimed[tag] = true
 			party.call("send_claim", id, int(quests.active[id]["step"]))
@@ -1093,6 +1098,10 @@ func _apply(changes: Array) -> void:
 	_busy = true
 	for change: Dictionary in changes:
 		for item: String in change.get("take", {}):
+			if item == QuestLog.GIL:  # (polish1 F4) a "pay" step's price
+				pay_gil.call(int(change["take"][item]))
+				notice.emit("Paid %d gil" % int(change["take"][item]))
+				continue
 			bag.remove(item, int(change["take"][item]))
 			notice.emit("Handed over %d %s" % [int(change["take"][item]), bag.item_name(item)])  # (polish1 item 161) never silently
 		if bool(change["finished"]):

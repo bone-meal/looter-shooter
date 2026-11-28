@@ -1,12 +1,10 @@
-Polish1 F3 Brinemouth: 22 places and 30 roads on a jungle coast
+Polish1 F4 Brinemouth: its people and 27 quests; a pay step sells the Coral Staff
 
-- director 2026-11-28: a free port ruled by ship-owners, the Tenth Name, the free captains, the port sells (diary/DESIGN_BRINEMOUTH.md); 22 places as charted, the port on the north bay, the whole country jungle and mangrove
-- data/fantasy/places/brinemouth.json: Brinemouth (walled port), Sweetwater (market town), Saltmarsh, the Tidal Flats (Tidewarden), Lantern Cove, the Painted Coast and 16 more; roads bent with tools/road_router.gd; 4 named areas; names and travellers lines in writing/3_brinemouth.txt
-- layouts.json: plans salt_works, smugglers_cove, struck_camp, beacon_post, diggings
-- looks: plates.json turns every land kind on Brinemouth's own land into its look; world.json region brinemouth is now jungle (dark green ground, dense palms with broadleaf, undergrowth, forest floor); mossy rock
-- fix: shore strips no outline covers wore Amberfield's look in every country. core/country_shape.gd gives them the country's own look (compiler 5) and the exporter gives unowned shore strips the exported country's looks. Greenwald re-exported: its cliffs and shores are forest now
-- tools/pair_brine_*_cmd.txt: two copies cross Amberfield, Greenwald and the ferry into Brinemouth
-- checked on the 1080 (he was in a game, so times are high): port 22.8 ms 1193 draws, jungle 15.0 ms, Oakenhold 37.7 ms in the same run; country_check 0 problems in all three; pair run clean
+- director 2026-11-28: 20 side quests on the 7 main steps; the Coral Staff is bought at the port; the harbour dues are worked off
+- data/fantasy/quests/brinemouth.json: bm1 Harbour Dues to bm7 The Port Sells (chapter 3, after gm7), bs01-bs20 with a giver at nearly every place; 30 people in places/brinemouth.json; words in writing/3_brinemouth.txt
+- story people come and go: Corin at Northlanding, then Lantern Cove, then Dustgate; the Tallyman at the pans after the Tidewarden falls; the Seventh Tally at the Table after the count
+- new quest step pay (a sale): core/quest_log.gd passes it when the purse holds the price, game/fantasy_world.gd takes the gil (a joiner pays from its own purse); bs02 sells the Coral Staff for 400 gil after bs01 opens the stall
+- checked on the 1080: the main line played by script from the ferry to Dustgate, every story person present at their step, 400 gil taken and the staff in the bag, no script errors; port 13.4 to 14.2 ms at about 1200 draws with the PC idle
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5
