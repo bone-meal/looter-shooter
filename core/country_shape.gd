@@ -21,7 +21,7 @@ const TOP_SLOPE := 0.03  # above the highest line the land keeps rising this muc
 const TOP_MOST := 18.0  # ... at most this much
 const BLEND := 3  # cells: how far one look blends into the next
 const RIVER_CELL := 60.0  # rivers are looked up through a grid of squares this wide
-const COMPILER := 4  # raise when the compiling below changes: kept grids are then made afresh
+const COMPILER := 5  # raise when the compiling below changes: kept grids are then made afresh
 
 var cell: float
 var n: int
@@ -54,7 +54,7 @@ func _init(country: Dictionary, grid: float = 16.0) -> void:
 		_heights(shape)
 		_craters(shape.get("craters", []))
 		_walls(shape.get("walls", []), country.get("spawn", [0.0, 0.0]))
-		_zones(shape.get("zones", []))
+		_zones(shape.get("zones", []), String(country.get("country", country.get("id", ""))))
 		_lakes(shape.get("lakes", []))
 		_save(kept)
 	_rivers(shape.get("rivers", []))
@@ -408,7 +408,8 @@ func _flood(side: PackedByteArray, line: PackedByteArray, from: Array, mark: int
 		todo.append(at + Vector2i(0, -1))
 
 
-func _zones(list: Array) -> void:
+# Land no zone covers (thin shores the outlines miss) wears the country's OWN look (was: whichever look came first).
+func _zones(list: Array, own: String) -> void:
 	var total := PackedFloat32Array()
 	total.resize(n * n)
 	for zone: Dictionary in list:
@@ -433,10 +434,11 @@ func _zones(list: Array) -> void:
 	for w: PackedFloat32Array in look_weight:
 		for k in n * n:
 			total[k] += w[k]
+	var bare := maxi(looks.find(own), 0)
 	for i in looks.size():
 		var w: PackedFloat32Array = look_weight[i]
 		for k in n * n:
-			w[k] = w[k] / total[k] if total[k] > 0.0001 else (1.0 if i == 0 else 0.0)
+			w[k] = w[k] / total[k] if total[k] > 0.0001 else (1.0 if i == bare else 0.0)
 		look_weight[i] = w
 
 

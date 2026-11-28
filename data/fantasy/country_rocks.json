@@ -1,6 +1,6 @@
 {
  "_about": "Polish1 F1a: the rock of a country's land, laid by core/fantasy_layout.gd country_rocks() over the looks' own clutter. stone: which stone each look's rock is (crag_<stone>, scree_<stone> and its boulder). slots: tries a 50 m piece of land. steep = metres up a metre of ground (0.5 = 27 degrees, 1 = 45). crag: outcrops breaking out of steep ground, faced downhill, sunk deep; their chance grows from nothing at height low to full at high (metres), so low country keeps its hills grassy; mountain_grow: how much bigger they are high up (from high to twice high). scree: loose stones below them on the middle slopes. boulder: on gentler ground, more of them high up (height in metres: low .. high). tilt: how much a piece leans with the slope (0 upright, 1 fully).",
- "stone": {"amberfield": "grey", "greenwald": "moss", "brinemouth": "grey", "sunscar": "sand", "frostmere": "ice", "cinderreach": "basalt", "stormcrown": "grey", "hollow_crown": "pale"},
+ "stone": {"amberfield": "grey", "greenwald": "moss", "brinemouth": "moss", "sunscar": "sand", "frostmere": "ice", "cinderreach": "basalt", "stormcrown": "grey", "hollow_crown": "pale"},
  "boulder": {"grey": "boulder_grey", "moss": "boulder_moss", "sand": "boulder_sand", "ice": "boulder_ice", "basalt": "boulder_basalt", "pale": "boulder_pale"},
  "slots": 14,
  "crag": {"steep": [0.55, 2.5], "chance": 0.7, "low": 25.0, "high": 90.0, "grow": [0.8, 1.7], "mountain_grow": 1.2, "sink": 0.35, "tilt": 0.25},

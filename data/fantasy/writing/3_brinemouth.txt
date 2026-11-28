@@ -26,7 +26,7 @@ name: Brinemouth
 name: The Tidal Flats
 
 [place saltmarsh]
-# WHAT: a farming village.
+# WHAT: a village (in the country of Brinemouth: the Shorehouse, where the Struck are kept, and the salt pans).
 name: Saltmarsh
 
 [lake brine_lagoon]
@@ -153,3 +153,107 @@ move breaker: Breaker
 [place course_brinemouth]
 # WHAT: an Agility course (sea step 3).
 name: Dockside Course
+
+# ---------------- (polish1 F3) BRINEMOUTH AS A COUNTRY: its own places (data/fantasy/places/brinemouth.json) ----------------
+# Story and politics: diary/DESIGN_BRINEMOUTH.md. Every name is a placeholder for the director.
+# RULE (director 2026-11-27): only the hero and the entity know of the loops or the future. Nobody else's lines may hint at it.
+# Brinemouth (above) is the free port on the north bay, ruled by a table of ship-owners. Saltmarsh (above) is the
+# village by the Lagoon where the Struck are kept and work the salt pans. The Tidal Flats lie on the east estuary.
+
+[place sweetwater]
+# WHAT: the inland market town at the crossroads, where cane, indigo and ironwood are sold on to the port.
+name: Sweetwater
+
+[place northlanding]
+# WHAT: the cliff-top hamlet above the ferry from Greenwald.
+name: Northlanding
+
+[place lantern_cove]
+# WHAT: the free captains' hidden berth on the south shore, outside the port's contracts.
+name: Lantern Cove
+
+[place painted_coast]
+# WHAT: the landing village on the east shore behind the ridge, where ships from beyond Aurelind put in.
+name: The Painted Coast
+
+[place tollbar]
+# WHAT: the hamlet where the port takes its toll on the north road into Sunscar.
+name: Tollbar
+
+[place dustgate]
+# WHAT: the watch post on the south road into Sunscar.
+name: Dustgate
+
+[place bluefield_farm]
+# WHAT: an indigo plantation (the blue of Brinemouth's roofs and of azure pigment).
+name: Bluefield Farm
+
+[place sweetcane_farm]
+# WHAT: a cane plantation above the north shore.
+name: Sweetcane Farm
+
+[place palmhollow]
+# WHAT: a jungle village in the west.
+name: Palmhollow
+
+[place stiltwick]
+# WHAT: a river village in the southern mangroves.
+name: Stiltwick
+
+[place heronmere]
+# WHAT: a jungle village among the streams south of the arrival painting.
+name: Heronmere
+
+[place becalmed]
+# WHAT: the camp of a whole crew struck from the lists in one night, beside their ship's boat.
+name: The Becalmed
+
+[place wreckers_point]
+# WHAT: a camp on the south-east cliffs where what the sea gives back is gathered.
+name: Wreckers' Point
+
+[place saltlight]
+# WHAT: the port's beacon on the high ground east of the bay.
+name: Saltlight
+
+[place chapel_of_names]
+# WHAT: the chapel where the names struck from the crew lists are carved, on the road from Sweetwater to the port.
+name: The Chapel of Names
+
+[place ironwood_camp]
+# WHAT: a loggers' camp in the deep jungle.
+name: Ironwood Camp
+
+[place redcut]
+# WHAT: the iron diggings under the east ridge.
+name: Redcut
+
+[place boarwallow_lodge]
+# WHAT: a hunters' lodge in the southern jungle.
+name: Boarwallow Lodge
+
+[place ridgewatch]
+# WHAT: the watch post on the pass over the east ridge, on the way to the Painted Coast.
+name: Ridgewatch
+
+[area the_pans]
+# WHAT: the salt pans round Saltmarsh, where the Struck work.
+name: The Pans
+
+[area ironwood_deeps]
+# WHAT: the thick jungle between Palmhollow and Ironwood Camp.
+name: The Ironwood Deeps
+
+[area boar_thickets]
+# WHAT: the thickets between Boarwallow Lodge and Stiltwick.
+name: The Boar Thickets
+
+[folk traveller_brinemouth]
+# WHO: the people walking Brinemouth's roads (some lead an ox and cart). `says` lines are what they tell a player.
+name: Traveller
+says: Cane for Sweetwater, and from Sweetwater to the quay. If anything on the quay still sails.
+says: Pay the toll and nobody asks your name. That is the whole law of this coast.
+says: A whole crew struck in one night. I have never heard of more than one name in ten.
+says: Keep off the flats at low water. The crabs are the least of it.
+says: The road west is dry by noon. Carry water past Dustgate.
+says: The Table does not rule anybody. It only owns the ships, the quay and the debt.

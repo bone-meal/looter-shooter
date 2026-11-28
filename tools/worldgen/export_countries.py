@@ -169,7 +169,7 @@ def export(i):
     spec = next(c for c in SPEC["countries"] if c["id"] == cid)
     own_looks = spec.get("looks", {})  # (polish1 F1c) a country may wear a land kind its own way (Cinderreach's tundra is ash) ...
     keep = spec.get("looks_keep", {})  # ... except near a neighbour: {kind: {"near": country, "within_m": game metres}} keeps the usual look there
-    own = ogrid == i  # (director 2026-11-27) ... and only on its OWN land: the neighbours' land seen past the walls wears the neighbours' looks
+    own = (ogrid == i) | (ogrid < 0)  # (director 2026-11-27) ... and only on its OWN land (and the shore strips no country owns): the neighbours' land seen past the walls wears the neighbours' looks
     names = sorted(set(LOOK.values()) | set(own_looks.values()))
     look_grid = np.full(bgrid.shape, -1, int)
     for b_ in np.unique(bgrid[bgrid >= 0]).astype(int):

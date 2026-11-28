@@ -1,11 +1,12 @@
-Polish1 F4 Greenwald: its people and 31 quests; one quest log for the continent; people come and go with the story
+Polish1 F3 Brinemouth: 22 places and 30 roads on a jungle coast
 
-- director 2026-11-28: 24 side quests on the 7 main steps; the Oakheart Staff is crafted, taught by a quest (gs01); story people appear and leave with the story
-- data/fantasy/quests/greenwald.json (gm1 Over the Ford to gm7 The Crown Bows, gs01-gs24 one giver at nearly every place), 34 people and 4 areas in places/greenwald.json, words and Greenwald's own travellers' lines in writing/2_greenwald.txt
-- fix: the quest log only knew the country being walked, so crossing a border dropped every other country's finished quests, pigments and bosses. The log now holds all countries' quests (core/fantasy_data.gd), rumours point only at the country you are in (core/quest_log.gd here)
-- people may carry after / until quest ids in a places file (game/fantasy_places.gd set_gone, game/fantasy_world.gd refresh_marks): Amberfield's stranger, Tallyman and Seventh Tally and Greenwald's Tallyman, Seventh Tally, forager and the stranger at the ferry now arrive with their steps
-- fix: the border turn-back line was empty in a country
-- checked on the 1080: Greenwald's main line played by script from the ford to the ferry, the stranger absent then present at Reedby, no script errors
+- director 2026-11-28: a free port ruled by ship-owners, the Tenth Name, the free captains, the port sells (diary/DESIGN_BRINEMOUTH.md); 22 places as charted, the port on the north bay, the whole country jungle and mangrove
+- data/fantasy/places/brinemouth.json: Brinemouth (walled port), Sweetwater (market town), Saltmarsh, the Tidal Flats (Tidewarden), Lantern Cove, the Painted Coast and 16 more; roads bent with tools/road_router.gd; 4 named areas; names and travellers lines in writing/3_brinemouth.txt
+- layouts.json: plans salt_works, smugglers_cove, struck_camp, beacon_post, diggings
+- looks: plates.json turns every land kind on Brinemouth's own land into its look; world.json region brinemouth is now jungle (dark green ground, dense palms with broadleaf, undergrowth, forest floor); mossy rock
+- fix: shore strips no outline covers wore Amberfield's look in every country. core/country_shape.gd gives them the country's own look (compiler 5) and the exporter gives unowned shore strips the exported country's looks. Greenwald re-exported: its cliffs and shores are forest now
+- tools/pair_brine_*_cmd.txt: two copies cross Amberfield, Greenwald and the ferry into Brinemouth
+- checked on the 1080 (he was in a game, so times are high): port 22.8 ms 1193 draws, jungle 15.0 ms, Oakenhold 37.7 ms in the same run; country_check 0 problems in all three; pair run clean
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

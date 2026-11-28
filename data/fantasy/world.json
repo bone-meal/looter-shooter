@@ -304,19 +304,19 @@
    },
    "ground": [
     [
-     0.74,
-     0.688,
-     0.516
+     0.17,
+     0.4,
+     0.17
     ],
     [
-     0.43,
-     0.602,
-     0.344
+     0.3,
+     0.52,
+     0.2
     ],
     [
-     0.516,
-     0.499,
-     0.447
+     0.36,
+     0.33,
+     0.26
     ]
    ],
    "mood": {
@@ -348,7 +348,8 @@
     ]
    },
    "trees": {
-    "tree_palm": 1.6
+    "tree_palm": 6.0,
+    "tree_oak": 2.5
    },
    "nodes": {
     "palm_tree": 0.8,
@@ -364,29 +365,29 @@
    "pigment": "azure_pigment",
    "tuft": {
     "color": [
-     0.42,
-     0.6,
-     0.3
+     0.13,
+     0.4,
+     0.15
     ],
     "tip": [
-     0.75,
-     0.82,
-     0.5
+     0.45,
+     0.72,
+     0.3
     ],
-    "count": 60,
-    "height": 0.5
+    "count": 130,
+    "height": 0.7
    },
    "scheme": "brine",
-   "surface": "g_coast",
+   "surface": "g_forest",
    "fish": {
     "fresh": "river_spot",
     "salt": "sea_spot"
    },
    "clutter": {
-    "boulder_grey": 1.6,
-    "bush_dry": 1.6,
-    "fallen_log": 1.0,
-    "bush_green": 0.8
+    "boulder_moss": 1.2,
+    "bush_green": 4.0,
+    "fallen_log": 1.6,
+    "bush_dry": 0.4
    },
    "animals": {
     "hare": 1,

@@ -1,0 +1,1 @@
+!uncap;!wait 2;!immortal;!wait 15;!go fantasy;!wait 30;!wait 125;!f1a note;!shot brine_guest;!wait 10
