@@ -1,1 +1,11 @@
-Release v1.18
+Polish1 F3 Sunscar: grown to 8 km, 14 places and 18 roads on a desert with a green south coast
+
+- director 2026-11-28: nobody rules, two Banners at war; the sealed wells; the Bannerless; the Banners turn (diary/DESIGN_SUNSCAR.md). Land: grow the square from 4.5 to 8 km (the long thin horn came out 2.3 km2 and steep; now 7.4 km2 and a third as rough), these 14 places, desert with the generated green kept along the south shore
+- tools/worldgen: SIZE_KM sunscar 8.0; plates.json looks turn every land kind on Sunscar's own land into desert, looks_keep with a new shore rule keeps savanna, jungle and swamp within 260 m of the south sea
+- data/fantasy/places/sunscar.json: Dunehaven, both Banner camps and The Reddening (old ids and kinds, so the tribes fight as built), Glassmaw's Pit, Stillwater, Firstwell, Thirstmark, two ferry hamlets, Horn's End, Dry Run, Scar Pass on the saddle over the peak, Sunstone Cut; 4 areas; names and travellers lines in writing/4_sunscar.txt
+- layouts.json: plans sealed_well, capped_well (a well ringed with crystal as its glass lid), oasis_camp, hunters_camp, pass_watch, sunstone_diggings
+- tools/pair_sun_*_cmd.txt: two copies take the Amberfield ferry to Sunscar
+- checked on the 1080: every place pictured, country_check 0 problems, Dunehaven 11.7 ms at 964 draws, The Reddening with the war running 10.0 to 11.5 ms; the first compile of the bigger land takes 26 s once
+
+Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

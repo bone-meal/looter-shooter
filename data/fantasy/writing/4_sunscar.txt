@@ -162,3 +162,75 @@ move spear_cast: Spear Cast
 [place course_sunscar]
 # WHAT: an Agility course (sea step 3).
 name: Dunehaven Dune Run
+
+# ---------------- (polish1 F3) SUNSCAR AS A COUNTRY: its own places (data/fantasy/places/sunscar.json) ----------------
+# Story and politics: diary/DESIGN_SUNSCAR.md. Every name is a placeholder for the director.
+# RULE (director 2026-11-27): only the hero and the entity know of the loops or the future. Nobody else's lines may hint at it.
+# Dunehaven, Glassmaw's Pit, the two Banner camps, The Reddening and the Last Oasis (above) keep their names in the country.
+# Dunehaven is the neutral well-town by the Last Oasis; the Red Banner camps in the north-east, the Blue in the south-east.
+
+[place stillwater]
+# WHAT: the hidden spring in the far west where the Bannerless, deserters from both tribes, camp together. On no well-road.
+name: Stillwater
+
+[place firstwell]
+# WHAT: the first village inside the border on the road from Brinemouth. Its well is capped with glass.
+name: Firstwell
+
+[place saltstair]
+# WHAT: the cliff hamlet above the ferry to Greenwald.
+name: Saltstair
+
+[place hornhead]
+# WHAT: the hamlet above the ferry to Amberfield, on the horn's north shore.
+name: Hornhead
+
+[place horns_end]
+# WHAT: the beacon on the horn's western tip.
+name: Horn's End
+
+[place thirstmark]
+# WHAT: a capped well on the west road, with the caravan-masters' shelter beside it.
+name: Thirstmark
+
+[place dry_run_camp]
+# WHAT: an antelope hunters' camp on the green south shore.
+name: Dry Run
+
+[place scar_pass]
+# WHAT: the watch on the saddle over the peak, the only road between the west and the east of the country.
+name: Scar Pass
+
+[place sunstone_cut]
+# WHAT: the sunstone diggings east of the peak.
+name: Sunstone Cut
+
+[lake spearwater]
+# WHAT: the lake by the Blue Banner's camp (fresh water).
+name: Spearwater
+
+[area well_road]
+# WHAT: the road from the Brinemouth border past Firstwell toward The Reddening.
+name: The Well Road
+
+[area glass_dunes]
+# WHAT: the dunes under the peak round Glassmaw's Pit, above the round lagoon where a star fell.
+name: The Glass Dunes
+
+[area west_sands]
+# WHAT: the empty sands between Thirstmark and Stillwater.
+name: The West Sands
+
+[area spearwater_shore]
+# WHAT: the shore of Spearwater, by the Blue camp.
+name: Spearwater Shore
+
+[folk traveller_sunscar]
+# WHO: the people walking Sunscar's roads (some lead an ox and cart). `says` lines are what they tell a player.
+name: Traveller
+says: Three wells between here and Dunehaven, and two of them wear a glass lid now.
+says: The Red say the Blue did it. The Blue say the Red. I say I am thirsty.
+says: Leave the grey-stone wells alone. Those were never ours to draw.
+says: Dunehaven waters anybody. Red, Blue, or dusty. It is the only place that does.
+says: Over the Scar by daylight, never at dusk. The sand moves at dusk.
+says: I counted twelve wagons into the dunes once. I do not count wagons any more.

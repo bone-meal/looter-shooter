@@ -30,8 +30,8 @@ H, W = height.shape
 land = height > 0
 river = river & (acc > np.percentile(acc[land], 98.8))  # only the bigger rivers become rivers in a country
 
-# country world size in km (approved by the director 2026-11-23)
-SIZE_KM = {"amberfield": 3.0, "greenwald": 4.1, "brinemouth": 3.7, "sunscar": 4.5, "frostmere": 4.0, "cinderreach": 3.2, "stormcrown": 4.4, "hollow_crown": 2.8}
+# country world size in km (approved by the director 2026-11-23; Sunscar 4.5 -> 8.0 on 2026-11-28: its long thin horn came out 2.3 km2 and steep)
+SIZE_KM = {"amberfield": 3.0, "greenwald": 4.1, "brinemouth": 3.7, "sunscar": 8.0, "frostmere": 4.0, "cinderreach": 3.2, "stormcrown": 4.4, "hollow_crown": 2.8}
 # which look (a region of data/fantasy/world.json: ground colours, mood, trees, gatherables) each kind of land wears
 LOOK = {"farmland": "amberfield", "grassland": "amberfield", "forest": "greenwald", "taiga": "greenwald", "tundra": "frostmere", "ice": "frostmere",
     "alpine": "stormcrown", "shrubland": "sunscar", "desert": "sunscar", "salt": "sunscar", "savanna": "brinemouth", "jungle": "brinemouth",
@@ -169,6 +169,11 @@ def export(i):
     spec = next(c for c in SPEC["countries"] if c["id"] == cid)
     own_looks = spec.get("looks", {})  # (polish1 F1c) a country may wear a land kind its own way (Cinderreach's tundra is ash) ...
     keep = spec.get("looks_keep", {})  # ... except near a neighbour: {kind: {"near": country, "within_m": game metres}} keeps the usual look there
+    # ... or along the south shore: {kind: {"shore": "south", "within_m": game metres}} keeps it where the sea lies that close to the south (Sunscar's green coast, director 2026-11-28)
+    to_south = np.zeros(bgrid.shape)
+    for r_ in range(bgrid.shape[0] - 1, -1, -1):
+        below = to_south[r_ + 1] + 1.0 if r_ + 1 < bgrid.shape[0] else np.full(bgrid.shape[1], 1e6)
+        to_south[r_] = np.where(hgrid[r_] <= 0, 0.0, below)
     own = (ogrid == i) | (ogrid < 0)  # (director 2026-11-27) ... and only on its OWN land (and the shore strips no country owns): the neighbours' land seen past the walls wears the neighbours' looks
     names = sorted(set(LOOK.values()) | set(own_looks.values()))
     look_grid = np.full(bgrid.shape, -1, int)
@@ -179,7 +184,9 @@ def export(i):
         look_grid[cells] = names.index(usual)
         if kind in own_looks:
             mine_ = cells & own
-            if kind in keep:
+            if kind in keep and "shore" in keep[kind]:
+                mine_ &= to_south * mpc > float(keep[kind]["within_m"])
+            elif kind in keep:
                 near = ndimage.distance_transform_edt(ogrid != IDS.index(keep[kind]["near"])) * mpc
                 mine_ &= near > float(keep[kind]["within_m"])
             look_grid[mine_] = names.index(own_looks[kind])

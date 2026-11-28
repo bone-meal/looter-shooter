@@ -1,0 +1,48 @@
+{
+ "version": 1,
+ "_about": "Polish1 F3: Sunscar's own places, roads, people and named areas, placed by hand on its land (same keys as data/fantasy/places/amberfield.json: see its note; data/fantasy/countries/sunscar.json is rewritten by tools/worldgen/export_countries.py, this file is not). Read by core/country_world.gd. Names in data/fantasy/writing/4_sunscar.txt. Story: diary/DESIGN_SUNSCAR.md. Director 2026-11-28: the country grown to an 8 km square, these 14 places, desert with a green south coast. red_camp, blue_camp and the_reddening keep the old world's ids and kinds: the Banners' war (game/fantasy_spawner.gd) runs on them.",
+ "places": [
+  {"id": "dunehaven", "pos": [-120, 840], "kind": "town", "flat": 50, "yard": "g_cobble"},
+  {"id": "the_reddening", "pos": [1760, 360], "kind": "battlefield", "flat": 34, "yard": "g_dirt"},
+  {"id": "red_camp", "pos": [1920, -400], "kind": "tribe_red", "flat": 30, "yard": "g_dirt"},
+  {"id": "blue_camp", "pos": [1760, 1000], "kind": "tribe_blue", "flat": 30, "yard": "g_dirt"},
+  {"id": "glassmaw_pit", "pos": [240, 640], "kind": "arena", "flat": 32, "boss": "glassmaw", "yard": "g_cobble"},
+  {"id": "stillwater", "pos": [-2000, 640], "kind": "camp", "layout": "oasis_camp", "flat": 26, "yard": "g_dirt"},
+  {"id": "firstwell", "pos": [2480, 560], "kind": "village", "layout": "sealed_well", "flat": 24, "yard": "g_dirt"},
+  {"id": "saltstair", "pos": [1840, -800], "kind": "village", "layout": "hamlet_coast", "flat": 22, "yard": "g_dirt"},
+  {"id": "hornhead", "pos": [-1600, -240], "kind": "village", "layout": "hamlet_coast", "flat": 22, "yard": "g_dirt"},
+  {"id": "horns_end", "pos": [-2680, 560], "kind": "camp", "layout": "beacon_post", "flat": 20, "yard": "g_dirt"},
+  {"id": "thirstmark", "pos": [-1400, 640], "kind": "camp", "layout": "capped_well", "flat": 22, "yard": "g_dirt"},
+  {"id": "dry_run_camp", "pos": [-760, 1000], "kind": "camp", "layout": "hunters_camp", "flat": 22, "yard": "g_dirt"},
+  {"id": "scar_pass", "pos": [680, 1000], "kind": "camp", "layout": "pass_watch", "flat": 20, "reach": 60, "yard": "g_dirt"},
+  {"id": "sunstone_cut", "pos": [1560, 560], "kind": "camp", "layout": "sunstone_diggings", "flat": 22, "yard": "g_dirt"}
+ ],
+ "roads": [
+  ["sunscar_heart", "dunehaven", [-231, 727]],
+  ["dunehaven", "glassmaw_pit"],
+  ["glassmaw_pit", "scar_pass", [400, 880], 0.42],
+  ["scar_pass", "sunstone_cut", [1240, 600], 0.42],
+  ["sunstone_cut", "the_reddening"],
+  ["the_reddening", "red_camp"],
+  ["the_reddening", "blue_camp"],
+  ["the_reddening", "firstwell"],
+  ["firstwell", "brinemouth_sunscar_8"],
+  ["blue_camp", "firstwell", [2048, 824]],
+  ["red_camp", "saltstair", [1936, -528]],
+  ["saltstair", "greenwald_sunscar_18"],
+  ["red_camp", "brinemouth_sunscar_7", [2164, -710]],
+  ["dunehaven", "dry_run_camp"],
+  ["dunehaven", "thirstmark"],
+  ["thirstmark", "horns_end", [-2176, 720], 0.42],
+  ["thirstmark", "hornhead", [-1256, 52], 0.42],
+  ["hornhead", "amberfield_sunscar_16"]
+ ],
+ "npcs": [],
+ "areas": [
+  {"id": "well_road", "pos": [2150, 480], "radius": 260},
+  {"id": "glass_dunes", "pos": [350, 500], "radius": 280},
+  {"id": "west_sands", "pos": [-1700, 600], "radius": 280},
+  {"id": "spearwater_shore", "pos": [2250, 900], "radius": 240}
+ ],
+ "lakes": {"sunscar_lake_3": "last_oasis", "sunscar_lake_4": "spearwater", "sunscar_lake_5": "spearwater"}
+}
