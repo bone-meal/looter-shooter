@@ -59,7 +59,8 @@ func setup(land_terrain: FantasyTerrain, world_layout: FantasyLayout, folk: Dict
 		var x := float(home["pos"][0]) + float(npc["offset"][0])
 		var z := float(home["pos"][1]) + float(npc["offset"][1])
 		people.append({"id": String(npc["id"]), "name": String(npc["name"]), "at": Vector3(x, terrain.height(x, z), z), "place": String(npc["place"]),
-			"greet": String(npc["greet"]), "look": npc["look"], "folk": false, "node": null, "mark": null, "indoors": bool(npc.get("indoors", false))})
+			"greet": String(npc["greet"]), "look": npc["look"], "folk": false, "node": null, "mark": null, "indoors": bool(npc.get("indoors", false)),
+			"after": String(npc.get("after", "")), "until": String(npc.get("until", "")), "gone": false})  # (polish1 F4) after / until: quest ids that bring this person here and take them away
 		if bool(npc.get("indoors", false)):
 			continue  # stands inside the place's walk-in house: placed below, once the place is laid out
 		if not keep.has(npc["place"]):
@@ -282,7 +283,7 @@ func follow(local: Vector3) -> void:
 	for i in people.size():
 		var who: Dictionary = people[i]
 		var d := Vector2(local.x - who["at"].x, local.z - who["at"].z).length()
-		var wanted := d < PEOPLE_AT and (not bool(who["folk"]) or FantasyTerrain.hash01(i, 7, 3) < folk_share)
+		var wanted := d < PEOPLE_AT and not bool(who.get("gone", false)) and (not bool(who["folk"]) or FantasyTerrain.hash01(i, 7, 3) < folk_share)
 		if wanted and who["node"] == null and stood < 2:  # two a call: the first body of each kind takes a moment to merge
 			_stand(who)
 			stood += 1
@@ -349,6 +350,19 @@ func haven_near(local: Vector3) -> Vector3:
 				var spot := layout.push_out(x + 4.0, z + 6.0, 1.0)
 				best = Vector3(spot.x, terrain.height(spot.x, spot.y) + 0.3, spot.y)
 	return best
+
+
+# (polish1 F4, director 2026-11-28) People come and go with the story: `ids` = the named people who are not here now
+# (game/fantasy_world.gd refresh_marks decides from the party's quest log). They have no body and cannot be talked to.
+func set_gone(ids: Dictionary) -> void:
+	for entry: Dictionary in people:
+		if bool(entry["folk"]):
+			continue
+		entry["gone"] = ids.has(entry["id"])
+		if bool(entry["gone"]) and entry["node"] != null:
+			(entry["node"] as Node3D).queue_free()
+			entry["node"] = null
+			entry["mark"] = null
 
 
 # Text shown above people's heads ("!" has a quest, "..." a quest points here). {} clears all.

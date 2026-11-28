@@ -1,11 +1,11 @@
-Countries keep to their own land: border ridges are barriers, own looks, Amberfield's five places moved home
+Polish1 F4 Greenwald: its people and 31 quests; one quest log for the continent; people come and go with the story
 
-- director 2026-11-27: Greenwald's lowland is forest with farm country by the Amberfield fords; every country's own land wears mainly its own look (done for Greenwald and Amberfield); borders are entered only at crossings
-- core/country_shape.gd (compiler 4): border walls 51-75 m high (were 12-35 and walkable), an away mask of the neighbours' land beyond the wall; game/border_guard.gd puts a player found there back at home with a line from writing/buildings.txt
-- tools/worldgen: plates.json looks now apply to a country's own cells only, looks_keep keeps the usual look near a neighbour; Greenwald and Amberfield re-exported (only their zones changed)
-- fix of my own mistake: Kettlewick, Oakshaw, Kestrel Hollow, Saltcombe and Brackenfold stood beyond Amberfield's border on Greenwald's land; they are re-sited on Amberfield's own land with their people, quests and roads (Kestrel Hollow is now a sea village: its quest asks for sprats; the Bracken Pastures moved with the farm)
-- tools/country_check.gd: lists places and roads that leave a country's own land
-- checked on the 1080: both countries, 0 problems in the check, turn-back works, no script errors
+- director 2026-11-28: 24 side quests on the 7 main steps; the Oakheart Staff is crafted, taught by a quest (gs01); story people appear and leave with the story
+- data/fantasy/quests/greenwald.json (gm1 Over the Ford to gm7 The Crown Bows, gs01-gs24 one giver at nearly every place), 34 people and 4 areas in places/greenwald.json, words and Greenwald's own travellers' lines in writing/2_greenwald.txt
+- fix: the quest log only knew the country being walked, so crossing a border dropped every other country's finished quests, pigments and bosses. The log now holds all countries' quests (core/fantasy_data.gd), rumours point only at the country you are in (core/quest_log.gd here)
+- people may carry after / until quest ids in a places file (game/fantasy_places.gd set_gone, game/fantasy_world.gd refresh_marks): Amberfield's stranger, Tallyman and Seventh Tally and Greenwald's Tallyman, Seventh Tally, forager and the stranger at the ferry now arrive with their steps
+- fix: the border turn-back line was empty in a country
+- checked on the 1080: Greenwald's main line played by script from the ford to the ferry, the stranger absent then present at Reedby, no script errors
 
 Co-Authored-By: Claude Fable 5.2 <noreply@anthropic.com>
 Claude-Session: https://claude.ai/code/session_016gSias6zhcE1FHgzcyYsY5

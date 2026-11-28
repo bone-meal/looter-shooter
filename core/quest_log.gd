@@ -8,12 +8,14 @@ var active := {}  # quest id -> {"step": index, "n": progress of that step}
 var done: Array[String] = []
 var slain := {}  # (polish1 item 132) bosses (one-kill steps' enemies) the party has killed: a later quest needing one is passed
 
+var here := ""  # (polish1 F4) the country being walked ("" = the old single world): rumours point only at its quests
 var _quests := {}  # id -> quest
 var _bosses := {}  # enemies a quest asks to kill once (the region bosses)
 var _order: Array[String] = []
 
 
 func _init(quest_data: Dictionary) -> void:
+	here = String(quest_data.get("here", ""))
 	for entry: Dictionary in quest_data["quests"]:
 		_quests[String(entry["id"])] = entry
 		_order.append(String(entry["id"]))
@@ -215,7 +217,7 @@ func rumours(limit: int) -> Array[String]:
 	var main: Array[String] = []
 	var side: Array[String] = []
 	for id in _order:
-		if can_start(id):
+		if can_start(id) and (here == "" or String(_quests[id].get("country", here)) == here):
 			(main if int(_quests[id]["chapter"]) > 0 else side).append(id)
 	var out: Array[String] = main + side
 	return out.slice(0, limit)

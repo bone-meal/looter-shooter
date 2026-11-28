@@ -29,13 +29,32 @@ static func load_all(country: String = "") -> Dictionary:
 	if country != "":
 		d["old_world"] = d["world"]
 		d["world"] = CountryWorld.build(CountryWorld.load_country(country), d["old_world"])
+		d["world"]["border_line"] = d["old_world"].get("border_line", "")
+		var own_road: Dictionary = d["text"].get("folk", {}).get("traveller_" + country, {})  # (polish1 F4) a country's travellers talk of their own roads
+		if own_road.has("says"):
+			var road_says: Variant = own_road["says"]
+			d["world"]["traveller_folk"] = {"name": String(own_road.get("name", d["world"]["traveller_folk"].get("name", ""))), "lines": road_says if road_says is Array else [road_says]}
 		var problems: PackedStringArray = d["problems"]
 		problems.append_array(_name_country(d))
 		d["problems"] = problems
 		d["old_quests"] = d["quests"]["quests"]
-		# (polish1 F4) a country has its own quest file (data/fantasy/quests/<country>.json); none yet = no quests there
-		var own := FOLDER + "quests/" + country + ".json"
-		d["quests"]["quests"] = DataStore.load_json(own)["quests"] if FileAccess.file_exists(own) else []
+		# (polish1 F4) each country has its own quest file (data/fantasy/quests/<country>.json; none yet = no quests
+		# there). The party's log holds EVERY country's quests, easiest country first, so what was done in one
+		# country is still done after a border (each quest carries its "country"; "here" = the country being walked).
+		var by_level := {}
+		for other: String in CountryWorld.ids():
+			by_level[other] = int(String(CountryWorld.load_country(other).get("levels", "0")).split("-")[0])
+		var all_ids: Array = by_level.keys()
+		all_ids.sort_custom(func(a: String, b: String) -> bool: return int(by_level[a]) < int(by_level[b]))
+		var all_quests: Array = []
+		for other: String in all_ids:
+			var file := FOLDER + "quests/" + other + ".json"
+			if FileAccess.file_exists(file):
+				for quest: Dictionary in DataStore.load_json(file)["quests"]:
+					quest["country"] = other
+					all_quests.append(quest)
+		d["quests"]["quests"] = all_quests
+		d["quests"]["here"] = country
 		problems.append_array(_name_quests(d["quests"]["quests"], d["text"]))
 		d["problems"] = problems
 	return d

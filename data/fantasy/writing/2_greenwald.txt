@@ -38,7 +38,7 @@ name: Fern Mere
 name: Heron Pool
 
 [area wolfwood]
-# WHAT: the woods all round Fernhollow, where the wolf packs run (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
+# WHAT: the woods round Cinderglade north of Fernhollow, where the wolf packs run (polish1 item 129: a named area; a quest can ask for kills here only; on the map and the compass once walked into).
 name: The Wolfwood
 
 [area mushroom_glades]
@@ -273,3 +273,487 @@ name: Starfall Tarn
 [lake ford_water]
 # WHAT: the lake on the Amberfield border in the south-west.
 name: Ford Water
+
+# ---------------- (polish1 F4) GREENWALD'S PEOPLE AND QUESTS AS A COUNTRY ----------------
+# People: data/fantasy/places/greenwald.json. Quests: data/fantasy/quests/greenwald.json (7 main gm1-gm7, 24 side gs01-gs24).
+# Story: diary/DESIGN_GREENWALD.md. Every line is a placeholder for the director.
+# RULE (director 2026-11-27): only the hero (the ragged stranger) and the entity know of the loops or the future.
+# Nobody else's lines may hint at it. People may speak of what has always been done, never of how things "should" go.
+# The Wolfwood (above) is now the woods round Cinderglade. The stranger, the Tallyman and the Seventh Tally use their
+# entries in 1_amberfield.txt.
+
+[folk traveller_greenwald]
+# WHO: the people walking Greenwald's roads (some lead an ox and cart). `says` lines are what they tell a player.
+name: Traveller
+says: Keep to the road after dark. The wolves have learned what a cart is.
+says: Timber for Ringwater Landing. Ringed timber, so nobody haggles.
+says: There is a ring on the chapel door. On a chapel. I did not think I would see the day.
+says: Oakenhold has a queen now. Young. They say she listens, which is new.
+says: If the Greenjacks stop you, give them the purse and keep the horse.
+says: The ferries still run from Harrowmouth. For those who are let aboard.
+
+[area crater_wood]
+# WHAT: the old wood round the crater and the Rootmother's hollow (gm5's barkhides must fall here).
+name: The Crater Wood
+
+[area goblin_brakes]
+# WHAT: the thickets between Mossford and the farms (gs04's mossgoblins must fall here).
+name: The Goblin Brakes
+
+[area ringwater_reach]
+# WHAT: the bends of the Ringwater below Sawpit, where the ringed timber floats down (gm4's mossgoblins must fall here).
+name: Ringwater Reach
+
+[person queen_elspeth]
+# WHO: Queen Elspeth Oakenholt, crowned this spring. Young, fair-minded, has never yet gone against her council.
+name: Queen Elspeth
+greeting: You are from the wheat country. Sit. Nobody here has told me the truth since the crown went on.
+
+[person lord_verderer]
+# WHO: Aldous Thorne, Lord Verderer: law and custom. Pay what is owed, keep quiet.
+name: Lord Verderer Thorne
+greeting: The wood has rules older than the crown. I merely read them aloud.
+
+[person sorrel_ames]
+# WHO: herbalist of Oakenhold.
+name: Sorrel Ames
+greeting: Glowcap for fever, mint for nerves. The court buys a great deal of mint this year.
+
+[person oska_fenn]
+# WHO: Warden-Captain Oska Fenn of Fernhollow. Years ago a ragged stranger warned her off a bridge that then fell; she owes him one favour and has never understood how he knew.
+name: Warden-Captain Oska
+greeting: Fernhollow keeps the roads. State your business and keep your hands where the gate can see them.
+
+[person tam_carver]
+# WHO: woodwright of Fernhollow, who makes staves for the wardens.
+name: Tam the Carver
+greeting: Ash bends. Oak remembers. Which sort of mage are you?
+
+[person brenna_holloway]
+# WHO: Brenna Holloway, Mistress of Rivers: the timber-floating guild. The ringed timber goes down her river and she is paid for it.
+name: Mistress Holloway
+greeting: Every log on this river has an owner. Most of them are me.
+
+[person jem_poleman]
+# WHO: a raftsman at Ringwater Landing.
+name: Jem Poleman
+greeting: Twenty years on the booms and I still cannot swim. Do not tell the river.
+
+[person hob_mosswick]
+# WHO: a villager of Mossford whose door wears a pale ring. The fellers come for his house tomorrow.
+name: Hob Mosswick
+greeting: You see that ring? It was not there at supper. My father built this house.
+
+[person goody_marsh]
+# WHO: a goodwife of Mossford.
+name: Goody Marsh
+greeting: Wipe your feet, wheat-country. We have mud enough of our own.
+
+[person bartram_wade]
+# WHO: keeper of the northern ford at Wardstone.
+name: Old Bartram
+greeting: Forty winters at this ford. The water I trust. The woods behind me, less.
+
+[person wend_forager]
+# WHO: a forager who works the edge of the Rootmother's hollow now that it is quiet.
+name: Wend the Forager
+greeting: Best mushrooms in the wood grow where she fell. I try not to think about why.
+
+[person maren_tolley]
+# WHO: Maren Tolley, a miller whose mill was ringed. She speaks for the Ringed at Cinderglade. She only wants her home back.
+name: Maren Tolley
+greeting: If you are from the crown, the answer is still no. If you are not, there is soup.
+
+[person old_tibb]
+# WHO: the oldest of the Ringed at Cinderglade.
+name: Old Tibb
+greeting: Seventy years under one roof. Now a tent. The tent leaks less, I will say that.
+
+[person rook_calder]
+# WHO: Rook Calder, who leads the Greenjacks. He knows every bend of the Ringwater. A ragged stranger once warned him off a raft full of wardens; he thinks the man is lucky.
+name: Rook Calder
+greeting: You found the Hide. Either you are clever or someone told you. I can guess who.
+
+[person reeve_ingram]
+# WHO: reeve of Alderwick, nearest village to the hollow.
+name: Reeve Ingram
+greeting: Three doors ringed on my street. I keep the list. I hate keeping the list.
+
+[person fenna_hazel]
+# WHO: a widow of Hazelmere.
+name: Fenna Hazel
+greeting: The fellers were polite about it. That was the worst part.
+
+[person brother_anselm]
+# WHO: the brother who keeps the wayside chapel. Its door wears a ring.
+name: Brother Anselm
+greeting: The door is ringed and the roof still keeps the rain off. I preach under it while I can.
+
+[person dunstan_pike]
+# WHO: the sawyer of Sawpit.
+name: Dunstan Pike
+greeting: Mind the blade. It has had three of my fingers and wants the set.
+
+[person huntsman_corwin]
+# WHO: huntsman at the Verderers' Lodge.
+name: Corwin the Huntsman
+greeting: The lords come to hunt deer. Lately the wood hunts back.
+
+[person edith_brackwell]
+# WHO: the farmer of Brackwell Farm.
+name: Edith Brackwell
+greeting: Field work does not stop for kings or queens. Hand me that hoe or stand clear.
+
+[person old_hollin]
+# WHO: the farmer of Hollin Farm by the bay.
+name: Old Hollin
+greeting: Salt wind, thin soil, good neighbours. Two out of three, most years.
+
+[person gatewarden_merrick]
+# WHO: the warden at Stonegate, under the road into Stormcrown.
+name: Gatewarden Merrick
+greeting: Up that road is Stormcrown. Nobody who came down it lately looked glad of the trip.
+
+[person ferrier_agda]
+# WHO: the smith and farrier of Rimeford.
+name: Agda the Farrier
+greeting: Horses for the north road want winter shoes. So do people, if you ask me.
+
+[person netmaker_lowri]
+# WHO: a netmaker of Baywick.
+name: Lowri the Netmaker
+greeting: A net is mostly holes. People forget that and blame the net.
+
+[person innkeep_barnaby]
+# WHO: innkeeper at Narrowstrand, the last hamlet before the cliff road.
+name: Barnaby
+greeting: Last hot meal before the cliffs. First one after, if you make it back.
+
+[person pernel_south]
+# WHO: an orchardwife of Southmere.
+name: Pernel
+greeting: Apples, pears and gossip. The gossip is free.
+
+[person collier_jeb]
+# WHO: a charcoal burner at the high camp.
+name: Jeb the Collier
+greeting: A good burn takes five days and no sleep. Talk quietly.
+
+[person marta_eastbrook]
+# WHO: the farmer of Eastbrook Farm.
+name: Marta Eastbrook
+greeting: You came the long way round the bay. Everyone does. Nobody likes the short way.
+
+[person keeper_tobin]
+# WHO: keeper of the Halfway House on the cliff road.
+name: Tobin
+greeting: Halfway to the ferries, halfway back. I charge the same either direction.
+
+[person warden_ysbel]
+# WHO: the warden at Hornwatch, where the eastern horn begins.
+name: Warden Ysbel
+greeting: From here I see both ferries and most of the bay. Nobody passes Hornwatch unseen.
+
+[person old_kerra]
+# WHO: an old fishwife of Gullcombe.
+name: Old Kerra
+greeting: Mind the edge. We lose a goat a year and a visitor every other.
+
+[quest gm1]
+# CHAPTER 2, main step 1 (OVER THE FORD). GIVEN BY: Hob Mosswick (Mossford). NEEDS FIRST: am6. ADVISED: Magic 6. REWARD: 350 Magic xp, 2 x Health Draught.
+title: Over the Ford
+hint: Across the ford in Mossford, a man is standing in front of his own door as if it might bite him.
+offer: A pale ring on my door. What is ringed is felled, that is the law, and the fellers come tomorrow. The wardens at Fernhollow might listen to a stranger. They have stopped listening to us.
+step 1: Follow the road north to Fernhollow
+step 2: Speak to Warden-Captain Oska at Fernhollow
+says 2: So you are the one. A man I owe told me a mage from the wheat country would come over the ford. He did not say why. Prove you are worth a favour: the goblins are at my road again.
+step 3: Drive off mossgoblins
+step 4: Report to Warden-Captain Oska
+says 4: Good. I cannot stop the fellers, mage. But I can tell you where the turned-out families went.
+done: Hob's door will come down all the same. Go to Cinderglade. See what the law leaves behind.
+
+[quest gm2]
+# CHAPTER 2, main step 2 (THE RINGED). GIVEN BY: Warden-Captain Oska. NEEDS FIRST: gm1. ADVISED: Magic 7. REWARD: 400 Magic xp, 2 x Mana Tonic.
+title: The Ringed
+hint: The families turned out of ringed houses have camped at a charcoal clearing north of Fernhollow.
+offer: They call themselves the Ringed. They are at Cinderglade, and the wolves have found them. I cannot spare wardens for people the law has finished with. You are not a warden.
+step 1: Find the camp at Cinderglade
+step 2: Speak to Maren Tolley
+says 2: Oska sent you? Then she still has a conscience. We have children here and wolves at the edge of the firelight every night.
+step 3: Kill wolves in the Wolfwood round the camp
+step 4: Tell Maren the camp is safe
+says 4: First night's sleep in a week. Nobody ringed my mill for anything I did. I want to know who did, and why doors, and why now.
+done: There is one person who could stop the fellers with a word. She has only worn the crown since spring.
+
+[quest gm3]
+# CHAPTER 2, main step 3 (THE QUEEN'S LAW). GIVEN BY: Maren Tolley. NEEDS FIRST: gm2. ADVISED: Magic 8. REWARD: 350 Magic xp.
+title: The Queen's Law
+hint: The Ringed want a hearing at Oakenhold. Only the wardens can open that door.
+offer: The Queen has never seen Cinderglade. Her council makes sure of it. Ask Oska to get you in front of her. Tell her what a ringed door looks like from the inside.
+step 1: Ask Warden-Captain Oska for an audience
+says 1: That is the favour, then. One audience. After this I owe the ragged man nothing. Ride to Oakenhold and use my name at the gate.
+step 2: Go to Oakenhold
+step 3: Speak to Queen Elspeth
+says 3: Doors. They told me it was a few old sheds. What is ringed is felled, it is the oldest law we have, and I do not know how to unmake a law nobody wrote.
+step 4: Hear the Lord Verderer
+says 4: The share was always met. Then Amberfield refused its tithe, and now the rings are on doors. I draw no conclusion. I merely note the order of events.
+step 5: Speak to the Queen again
+says 5: He blames your Baroness. I would rather blame whatever paints the rings. Show me where they come from and I will have something to put before my council.
+done: Find the source. The river guild will not help you. The people who rob the river guild might.
+
+[quest gm4]
+# CHAPTER 2, main step 4 (THE GREENJACKS). GIVEN BY: Queen Elspeth. NEEDS FIRST: gm3. ADVISED: Magic 9. REWARD: 450 Magic xp, 3 x Mana Tonic.
+title: The Greenjacks
+hint: The ringed timber floats down the Ringwater. The bandits who rob the rafts know that river better than its guild. Their camp is on the west shore of the bay, off any road.
+offer: I cannot be seen to ask this. The Greenjacks rob my timber rafts and my wardens have never found their camp. You are not one of my wardens. Find Rook Calder and learn where the ringed wood comes from.
+step 1: Find the Greenjacks' Hide on the bay's west shore
+step 2: Speak to Rook Calder
+says 2: The Queen sends a mage to the thief. I like her already. The rings? Clear the goblins off my river bends and I will show you what the current brings.
+step 3: Clear mossgoblins from Ringwater Reach
+step 4: Speak to Rook Calder
+says 4: Watch the water. Every ringed log comes down from one place. Upriver, past Alderwick, where the ground is a bowl and nothing sings. The old crater.
+done: I rob rafts. I do not rob graves, and that wood feels like one. You go. I will hold the river.
+
+[quest gm5]
+# CHAPTER 2, main step 5 (THE HOLLOW). GIVEN BY: Rook Calder. NEEDS FIRST: gm4. ADVISED: Magic 11. REWARD: 800 Magic xp, Verdant Pigment (one more element slot for the party).
+title: The Hollow
+hint: The rings come from the old crater. Something under that wood is doing the marking.
+offer: The crater wood is thick with barkhides, and they do not like visitors. Whatever is ringing our trees sits in the hollow at the middle. Cut your way in.
+step 1: Cut down barkhides in the Crater Wood
+step 2: Go down into the Rootmother's Hollow
+step 3: Bring down the Rootmother
+done: Roots. Roots under the whole wood, and a ring wherever they came up. Well. They will not come up again.
+
+[quest gm6]
+# CHAPTER 2, main step 6 (THE COUNT ON THE RIVER). GIVEN BY: Rook Calder. NEEDS FIRST: gm5. ADVISED: Magic 11. REWARD: 350 Magic xp.
+title: The Count on the River
+hint: No new rings since the Rootmother fell. At Ringwater Landing, grey men are counting logs.
+offer: The rings have stopped. So has the ringed timber, and the grey counters are at the Landing with their cords. Go and hear what a short count sounds like. I will stay off that quay, for my health.
+step 1: Go to Ringwater Landing
+step 2: Speak to the Tallyman on the quay
+says 2: Nine, and none. The marked wood has stopped. The share is short. It is short in the wheat country and now it is short here. Who are you, to be standing in both?
+step 3: Speak to Mistress Holloway
+says 3: No ringed timber, no fee. Do you know what that costs me a season? Someone will answer for my river, and I have told the council who.
+step 4: Warn Warden-Captain Oska
+says 4: A grey rider passed my gate at dawn, making for Oakenhold. I have never seen one hurry before.
+done: Whatever it wants, it wants it from the Queen. Get there before her council does her thinking for her.
+
+[quest gm7]
+# CHAPTER 2, main step 7 (THE CROWN BOWS), the end of Greenwald's chapter. GIVEN BY: Warden-Captain Oska. NEEDS FIRST: gm6. ADVISED: Magic 12. REWARD: 700 Magic xp, 3 x Health Draught, 3 x Mana Tonic.
+title: The Crown Bows
+hint: The Seventh Tally is in Oakenhold, and the Queen's council has had a night to work on her.
+offer: The grey rider is in the Queen's hall. Whatever is decided there, hear it yourself. Then come back to me, quickly.
+step 1: Hear the Seventh Tally at Oakenhold
+says 1: The share is short. The crown's own wood will make the share whole. What is ringed is felled. It is always made whole.
+step 2: Hear the Queen's answer
+says 2: I am sorry. My council is of one voice and I have not yet learned to outvote it. The royal wood will pay, the ringed houses come down, and you are named outlaw with your Baroness to blame. Go, while it is only words.
+step 3: Return to Warden-Captain Oska
+says 3: I heard. I owe the ragged man nothing more, so call this one mine: the east road is not watched tonight. Say goodbye at Cinderglade and do not stop again before the ferries.
+step 4: Say goodbye to Maren Tolley
+says 4: She bowed. Then we do not. The Greenjacks will take us in, and that is where we will be. Go on. Harrowmouth.
+step 5: Take the cliff road to Harrowmouth
+step 6: Find the ragged stranger at the ferry
+says 6: You look surprised to see me. Good. So am I, these days. My name is Corin, since you have earned it. I did not see the rings on the doors coming, and I always see it coming. South. Brinemouth. We need friends who are harder to frighten than a queen.
+done: The ferry leaves when the tide turns. Greenwald will still be here. So will its queen, and she did not enjoy bowing.
+
+[quest gs01]
+# SIDE, THE STAFF LADDER'S STEP 2 (crafted, taught by a quest: director 2026-11-28). GIVEN BY: Tam the Carver (Fernhollow). NEEDS FIRST: gm1. REWARD: 200 Magic xp, 300 Carpentry xp.
+# The recipe (staff_oak, a workbench): 6 oak planks, 2 copper bars, 1 Amber Pigment (the Harvest King's).
+title: The Oakheart
+hint: Fernhollow's woodwright thinks little of the staff you carry.
+offer: That is a farm staff. A good one, but wheat country made it. Saw six oak planks at the sawhorse. Then the workbench: the planks, two copper bars and that amber pigment you carry. I will talk you through the rest.
+step 1: Saw six oak planks at a sawhorse
+step 2: Craft an Oakheart Staff at a workbench
+done: There. Oak remembers. Carry both if you like, but that one is Greenwald's.
+
+[quest gs02]
+# SIDE. GIVEN BY: Sorrel Ames (Oakenhold). NEEDS FIRST: gm3. REWARD: 250 Alchemy xp, 2 x Mana Tonic.
+title: Something for the Nerves
+hint: Oakenhold's herbalist cannot brew fast enough for the court.
+offer: Half the council wants a draught before every sitting. Brew me three health draughts. Mint and glowcap, any cauldron.
+step 1: Brew three health draughts at a cauldron
+done: These will be gone by supper. Thank you.
+
+[quest gs03]
+# SIDE. GIVEN BY: Jem Poleman (Ringwater Landing). NEEDS FIRST: gm1. REWARD: 250 Fishing xp.
+title: Boom Supper
+hint: The raftsmen at Ringwater Landing eat what the river gives them.
+offer: The boom crew wants trout and I am the only one who cannot be spared to catch them. Six, fresh from the river.
+step 1: Bring six fresh trout
+done: Six. I will tell them I caught three.
+
+[quest gs04]
+# SIDE. GIVEN BY: Goody Marsh (Mossford). NEEDS FIRST: gm1. REWARD: 250 Magic xp, 3 x Grilled Trout.
+title: The Goblin Brakes
+hint: Mossford's children are not allowed past the last fence any more.
+offer: Goblins in the brakes between here and the farms. They took my washing. All of it. Thin them out.
+step 1: Kill mossgoblins in the Goblin Brakes
+done: I do not want the washing back. Not now. Have some fish.
+
+[quest gs05]
+# SIDE. GIVEN BY: Old Bartram (Wardstone). NEEDS FIRST: gm1. REWARD: 220 Magic xp.
+title: The North Ford
+hint: The keeper of the northern ford has heard howling closer every night.
+offer: Walk down to the ford for me, my knees will not, and put down any wolf you meet on the way.
+step 1: Walk to the northern ford into Amberfield
+step 2: Kill forest wolves
+done: Quiet tonight, then. I will leave the lamp lit anyway.
+
+[quest gs06]
+# SIDE. GIVEN BY: Wend the Forager (the Rootmother's Hollow). NEEDS FIRST: gm5. ADVISED: Magic 12. REWARD: 500 Magic xp, 3 x Mana Tonic.
+# The Rootmother's echo: the binding still trying to mark the wood. Only the echo counts, not the Rootmother herself.
+title: What Still Grows
+hint: A forager at the hollow says the Rootmother has been seen again, pale and thin as mist.
+offer: She was back this morning. Not all of her. A sort of shape, feeling about for the roots. It spoils the mushrooms. Would you?
+step 1: Bring down the Rootmother's echo in the hollow
+done: Gone again. She will be back. Things with a task do not stay down.
+
+[quest gs07]
+# SIDE. GIVEN BY: Old Tibb (Cinderglade). NEEDS FIRST: gm2. REWARD: 200 Magic xp, 200 Cooking xp.
+title: Hot Supper
+hint: The oldest of the Ringed has not had a cooked meal since his door came down.
+offer: Soup, soup, soup. I had a kitchen once. Five grilled trout and I will die a happy man. Not tonight, mind.
+step 1: Bring five grilled trout
+done: That is the stuff. Sit. I will tell you about my kitchen.
+
+[quest gs08]
+# SIDE. GIVEN BY: Reeve Ingram (Alderwick). NEEDS FIRST: gm1. REWARD: 280 Farming xp, 2 x Health Draught.
+title: Fever Caps
+hint: There is fever in Alderwick and the reeve has run out of everything.
+offer: Three households with fever and the herbalist is at court. Glowcap grows in the damp under the oaks. Six caps.
+step 1: Bring six glowcaps
+done: That will see them through. I will put it on a happier list.
+
+[quest gs09]
+# SIDE. GIVEN BY: Fenna Hazel (Hazelmere). NEEDS FIRST: gm1. REWARD: 280 Woodcutting xp.
+title: Wood for Winter
+hint: A widow in Hazelmere is facing winter without a woodpile.
+offer: My husband cut the wood. Then my son did. Now he is a feller for the crown and cuts other people's houses. Ten oak logs would see me to spring.
+step 1: Bring ten oak logs
+done: Stack them by the door. The one without a ring.
+
+[quest gs10]
+# SIDE. GIVEN BY: Brother Anselm (the Ringed Chapel). NEEDS FIRST: gm1. REWARD: 250 Magic xp.
+title: Three Doors
+hint: The brother at the wayside chapel asks travellers to carry word between the ringed villages.
+offer: I cannot leave my door, it may not be here when I come back. Walk to Alderwick, Hazelmere and Mossford for me. Let them see that someone came.
+step 1: Visit Alderwick
+step 2: Visit Hazelmere
+step 3: Visit Mossford
+done: Then they know they are not alone in it. That is most of what a chapel is for.
+
+[quest gs11]
+# SIDE. GIVEN BY: Dunstan Pike (Sawpit). NEEDS FIRST: gm1. REWARD: 250 Carpentry xp.
+title: Short of Hands
+hint: The sawyer of Sawpit has orders stacked higher than his timber.
+offer: The crown wants planks and I want the fingers I have left. Saw eight oak planks at any sawhorse and bring them here.
+step 1: Bring eight oak planks
+done: Square and true. You could do this for a living. Do not.
+
+[quest gs12]
+# SIDE. GIVEN BY: Corwin the Huntsman (the Verderers' Lodge). NEEDS FIRST: gm1. REWARD: 300 Magic xp.
+title: The Wood Hunts Back
+hint: The huntsman at the Verderers' Lodge has stopped taking lords into the forest.
+offer: Barkhides. Walking stumps with a temper. They broke two hounds last week. Put down four and I can open the chase again.
+step 1: Cut down barkhides
+done: Four fewer. The hounds thank you. The lords will not think to.
+
+[quest gs13]
+# SIDE. GIVEN BY: Edith Brackwell (Brackwell Farm). NEEDS FIRST: gm1. REWARD: 200 Farming xp, 4 x Bread.
+title: Mint in the Hedge
+hint: Brackwell Farm trades bread for anything green that keeps.
+offer: Meadowmint keeps the flies off the dairy. Six sprigs and you eat my bread for a week.
+step 1: Bring six sprigs of meadowmint
+done: Good and strong. Here. Still warm.
+
+[quest gs14]
+# SIDE. GIVEN BY: Old Hollin (Hollin Farm). NEEDS FIRST: gm1. REWARD: 200 Hunting xp, 150 Cooking xp.
+title: Pheasant Weather
+hint: The farmer at Hollin Farm has guests and an empty spit.
+offer: My daughter is bringing her new husband and I have nothing on the spit. Roast three fowl. Pheasants, along the hedges.
+step 1: Roast three fowl on a fire
+done: He will think we eat like this always. Let him.
+
+[quest gs15]
+# SIDE. GIVEN BY: Gatewarden Merrick (Stonegate). NEEDS FIRST: gm1. REWARD: 300 Mining xp.
+title: Iron for the Gate
+hint: The gate at Stonegate hangs on one hinge.
+offer: One good storm and this gate is firewood. There is iron in the dark rocks up the slope. Eight lumps of ore and the smith does the rest.
+step 1: Bring eight lumps of iron ore
+done: That is two hinges and a bolt. I will sleep better.
+
+[quest gs16]
+# SIDE. GIVEN BY: Agda the Farrier (Rimeford). NEEDS FIRST: gm1. REWARD: 260 Magic xp.
+title: The Cold Ford
+hint: Rimeford's farrier has lost two customers on the road to the Frostmere ford.
+offer: Wolves on the ford road, and my customers arrive on four legs. Walk out to the Frostmere ford and clear what you find.
+step 1: Walk to the ford into Frostmere
+step 2: Kill forest wolves
+done: Good. Horses can smell a wolf road. They will know before I tell them.
+
+[quest gs17]
+# SIDE. GIVEN BY: Lowri the Netmaker (Baywick). NEEDS FIRST: gm1. REWARD: 220 Fishing xp.
+title: Proof of the Net
+hint: A netmaker in Baywick wants her work tested by someone with no reason to flatter her.
+offer: Everyone here says my nets are fine because they owe me money. Catch ten sprats in the shallows and tell me how it went.
+step 1: Bring ten fresh sprats
+done: Ten, and no holes that were not meant. I will raise my prices.
+
+[quest gs18]
+# SIDE. GIVEN BY: Barnaby (Narrowstrand). NEEDS FIRST: gm1. REWARD: 250 Cooking xp.
+title: The Last Hot Meal
+hint: The inn at Narrowstrand has travellers for the cliff road and nothing to feed them.
+offer: Four for the ferries tonight and my cook has gone to her sister's. Grill me four trout. I will say I did it.
+step 1: Grill four trout on a fire
+done: Perfect. If anyone asks, I have always cooked like this.
+
+[quest gs19]
+# SIDE. GIVEN BY: Pernel (Southmere). NEEDS FIRST: gm1. REWARD: 150 Hunting xp, 150 Cooking xp.
+title: Orchard Thieves
+hint: Southmere's orchards are being eaten from the bark up.
+offer: Hares. They ring the young trees worse than any law. Roast me four and we are even, the orchard and I.
+step 1: Roast four rabbits on a fire
+done: Lovely. Take some pears. The hares left a few.
+
+[quest gs20]
+# SIDE. GIVEN BY: Jeb the Collier (the Colliers' Camp). NEEDS FIRST: gm1. REWARD: 250 Firemaking xp.
+title: Five Days and No Sleep
+hint: The charcoal burners in the high camp are a man short.
+offer: A burn wants watching and feeding. Light three fires to show me you know one end of a flame from the other, then bring six oak logs for the stack.
+step 1: Light three fires
+step 2: Bring six oak logs
+done: You will do. Now I am going to sleep. Wake me if it turns white.
+
+[quest gs21]
+# SIDE. GIVEN BY: Marta Eastbrook (Eastbrook Farm). NEEDS FIRST: gm1. REWARD: 240 Magic xp, 3 x Bread.
+title: East of the Bay
+hint: Eastbrook Farm is the last farm before the cliffs, and the goblins know it.
+offer: No wardens come this far round the bay. Goblins come instead. Six fewer would be a kindness.
+step 1: Kill mossgoblins
+done: The hens are laying again. That is how I can tell.
+
+[quest gs22]
+# SIDE. GIVEN BY: Tobin (the Halfway House). NEEDS FIRST: gm1. REWARD: 300 Smithing xp.
+title: Iron for the Cliff Road
+hint: The keeper of the Halfway House is mending the cliff road's rails himself.
+offer: The crown mends the road when the crown remembers. I need three iron bars for the rail posts. Any forge will do. Fernhollow's is nearest, which says a lot.
+step 1: Smelt three iron bars at a forge
+done: Three posts. Three travellers who will not go over the edge. Probably.
+
+[quest gs23]
+# SIDE. GIVEN BY: Warden Ysbel (Hornwatch). NEEDS FIRST: gm1. REWARD: 260 Magic xp.
+title: The Horn Patrol
+hint: The warden at Hornwatch has nobody to walk the horn for her.
+offer: I watch. Someone else has to walk. Go out to Gullcombe and down to Harrowmouth, and deal with any goblins on the way.
+step 1: Walk to Gullcombe
+step 2: Walk to Harrowmouth
+step 3: Kill mossgoblins
+done: Seen every step of it from up here. Tidy work.
+
+[quest gs24]
+# SIDE. GIVEN BY: Old Kerra (Gullcombe). NEEDS FIRST: gm1. REWARD: 200 Cooking xp, 100 Fishing xp.
+title: Cliff Supper
+hint: An old fishwife at Gullcombe no longer goes down to the water.
+offer: The path to the shore is two hundred steps and I have counted my last. Grill me five sprats, there is a dear.
+step 1: Grill five sprats on a fire
+done: Just like my mother's. She burnt them too.

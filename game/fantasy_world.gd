@@ -1206,6 +1206,13 @@ func refresh_marks() -> void:  # (polish1 item 101) grey "?" in progress, gold "
 		var step := quests.step(id)
 		if String(step.get("type", "")) == "talk":
 			over_heads[String(step["npc"])] = "?gold"
+	var gone := {}  # (polish1 F4) people the story has not brought here yet or has taken away; never one a quest needs right now
+	for person: Dictionary in places.people:
+		var after := String(person.get("after", ""))
+		var until := String(person.get("until", ""))
+		if ((after != "" and not quests.is_done(after)) or (until != "" and quests.is_done(until))) and not over_heads.has(String(person["id"])):
+			gone[String(person["id"])] = true
+	places.set_gone(gone)
 	places.set_marks(over_heads)
 
 
